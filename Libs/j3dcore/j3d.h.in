@@ -1,0 +1,168 @@
+
+#ifndef J3DCORE_H
+#define J3DCORE_H
+#include <stdbool.h>
+#include <stdint.h>
+
+// Version definition
+#define J3D_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define J3D_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define J3D_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+#define J3D_VERSION        (J3D_VERSION_MAJOR * 10000 + J3D_VERSION_MINOR * 100 + J3D_VERSION_PATCH)
+#define J3D_VERSION_STRING "v@PROJECT_VERSION_PATCH@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
+#define J3D_VERSION_FULL   "@PROJECT_NAME@ " J3D_VERSION_STRING
+
+#define J3D_FILE __BASE_FILE__
+
+// Platform specific definitions
+#ifdef _WIN32
+#   ifndef NDEBUG
+#       define J3D_DEBUG 1
+#   endif
+#   define WIN32_LEAN_AND_MEAN
+#   include <Windows.h>
+#   define strcmpi _strcmpi
+#else
+    // TODO: define J3D_DEBUG
+    typedef int      BOOL;
+    typedef uint8_t  BYTE;
+    typedef uint16_t WORD;
+#endif
+
+#ifdef _MSC_VER 
+#   define strtok_r strtok_s
+#endif
+
+#define J3D_UNUSED(x) (x)
+#define J3DNORETURN _Noreturn
+#define J3DAPI __cdecl
+
+// TODO: Detect if C23 and N3030 - Enhanced Enumerations is supported
+//       In this case define macro as: #define J3D_ENUM_TYPE(x) : x
+#define J3D_ENUM_TYPE( x )
+
+#define J3DMIN(a, b) (((a) < (b)) ? (a) : (b))
+#define J3DMAX(a, b) (((a) > (b)) ? (a) : (b))
+
+
+/**
+* @brief Base logging macro
+* @param log_func - Function pointer to the logging function
+* @param format - Format string (printf-style)
+* @param ... Additional arguments for the format string
+*/
+#define J3DLOG(log_func, format, ...) \
+    do { \
+        stdPrintf( log_func, J3D_FILE, __LINE__, format, ##__VA_ARGS__); \
+    } while(0)
+
+/**
+* @brief Log a debug message
+* @param module - Pointer to the module containing logging functions
+* @param format - Format string (printf-style)
+* @param ... Additional arguments for the format string
+*/
+#define J3DLOG_DEBUG(module, format, ...) \
+    J3DLOG(module->pDebugPrint, format, ##__VA_ARGS__)
+
+/**
+* @brief Log a status message
+* @param module - Pointer to the host services module containing logging functions
+* @param format - Format string (printf-style)
+* @param ... Additional arguments for the format string
+*/
+#define J3DLOG_STATUS(module, format, ...) \
+    J3DLOG(module->pStatusPrint, format, ##__VA_ARGS__)
+
+/**
+* @brief Log a general message
+* @param module - Pointer to the host services module containing logging functions
+* @param format - Format string (printf-style)
+* @param ... Additional arguments for the format string
+*/
+#define J3DLOG_MESSAGE(module, format, ...) \
+    J3DLOG(module->pMessagePrint, format, ##__VA_ARGS__)
+
+/**
+* @brief Log a warning message
+* @param module - Pointer to the host services module containing logging functions
+* @param format - Format string (printf-style)
+* @param ... Additional arguments for the format string
+*/
+#define J3DLOG_WARNING(module, format, ...) \
+    J3DLOG(module->pWarningPrint, format, ##__VA_ARGS__)
+
+/**
+* @brief Log an error message
+* @param module - Pointer to the host services module containing logging functions
+* @param format - Format string (printf-style)
+* @param ... Additional arguments for the format string
+*/
+#define J3DLOG_ERROR(module, format, ...) \
+    J3DLOG(module->pErrorPrint, format, ##__VA_ARGS__)
+
+/**
+* @brief Log an fatal message and asserts
+* @param module - Pointer to the host services module containing assert function
+* @param format - Message string
+*/
+#define J3DLOG_FATAL(module, message) \
+    module->pAssert(message, J3D_FILE, __LINE__)
+
+
+#ifdef J3D_DEBUG
+/**
+* @brief Asserts a condition in debug build only.
+*
+* Checks if the condition is true. If the condition evaluates to false,
+* it triggers an assertion by calling the assert function (`pAssert`) from the
+* provided host services module (`hs`).
+*
+* @param condition - Condition to check.
+* @param hs - Pointer to host services with the assert function.
+*
+* @note This assertion is NOT preserved in release builds.
+*
+* @usage J3D_ASSERT(x > 0, hs);
+*/
+#   define J3D_ASSERT( condition, hs ) \
+    do { \
+        if ( !(condition) ) { \
+            hs->pAssert( #condition, J3D_FILE, __LINE__ ); \
+        } \
+    } while(0)
+#else
+#   define J3D_ASSERT( condition, hs )
+#endif
+
+/**
+* @brief Asserts a condition.
+*
+* Checks if the condition is true. If the condition evaluates to false,
+* it triggers an assertion by calling the assert function (`pAssert`) from the
+* provided host services module (`hs`).
+*
+* @param condition - Condition to check.
+* @param hs - Pointer to host services with the assert function.
+*
+* @note This assertion is preserved in release builds.
+*
+* @usage J3D_ASSERTREL(x > 0, hs);
+*/
+#define J3D_ASSERTREL( condition, hs ) \
+    do { \
+        if ( !(condition) ) { \
+            hs->pAssert( #condition, J3D_FILE, __LINE__ ); \
+        } \
+    } while(0)
+
+#ifdef __cplusplus
+#  define J3D_EXTERN_C_START extern "C" {
+#  define J3D_EXTERN_C_END }
+#else
+#  define J3D_EXTERN_C_START
+#  define J3D_EXTERN_C_END
+#endif // __cplusplus
+
+#endif // J3DCORE_H
