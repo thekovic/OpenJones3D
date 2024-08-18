@@ -5,7 +5,7 @@
 
 // Function addresses
 
-#define wkernel_Main_ADDR 0x004C41F0
+#define wkernel_Run_ADDR 0x004C41F0
 #define wkernel_PeekProcessEvents_ADDR 0x004C42B0
 #define wkernel_ProcessEvents_ADDR 0x004C4340
 #define wkernel_SetWindowStyle_ADDR 0x004C43B0

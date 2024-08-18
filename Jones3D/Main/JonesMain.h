@@ -16,6 +16,12 @@ J3D_EXTERN_C_START
 // extern HANDLE JonesMain_g_mainMutex;
 
 int J3DAPI JonesMain_Startup(const char* lpCmdLine);
+void JonesMain_Shutdown(void);
+
+int JonesMain_Open(void);
+int JonesMain_Close(void);
+int JonesMain_IsOpen(void);
+
 int J3DAPI JonesMain_GameWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void J3DAPI JonesMain_HandleWMGetMinMaxInfo(HWND hwnd, LPMINMAXINFO pMinMaxInfo);
 void J3DAPI JonesMain_HandleWMPaint(HWND hWnd);
@@ -28,25 +34,31 @@ void J3DAPI JonesMain_OnAppActivate(HWND hWnd, int bActivated);
 void J3DAPI JonesMain_HandleWMChar(HWND hwnd, char chr);
 void J3DAPI JonesMain_HandleWMSysCommand(HWND hWnd, WPARAM wParam);
 void J3DAPI JonesMain_HandleWMPowerBroadcast(HWND hWnd, WPARAM wParam);
-void JonesMain_Shutdown(void);
+
 void J3DAPI JonesMain_PauseGame();
 void J3DAPI JonesMain_ResumeGame();
 int J3DAPI JonesMain_IsGamePaused();
+
+int JonesMain_Process(void);
+int JonesMain_ProcessWindowEvents(void);
 int JonesMain_ProcessGame(void);
 void JonesMain_ProcessMenu(void);
 void J3DAPI JonesMain_PrintFramerate();
 int J3DAPI JonesMain_TogglePrintFramerate();
-int JonesMain_Open(void);
+
+
 int J3DAPI JonesMain_EnsureFile(const char* pFilename);
-int JonesMain_Close(void);
+
 int J3DAPI JonesMain_Restore(const char* pNdsFilePath);
 int JonesMain_ProcessGamesaveState(void);
+
 void JonesMain_UpdateLevelNum(void);
 int JonesMain_ProcessEndLevel(void);
 void JonesMain_SetBonusLevel(void);
 void JonesMain_ShowEndCredits(void);
 int JonesMain_Credits(void);
-int JonesMain_IsOpen(void);
+
+
 StdDisplayEnvironment* JonesMain_GetDisplayEnvironment(void);
 JonesDisplaySettings* JonesMain_GetDisplaySettings(void);
 int J3DAPI JonesMain_CloseWindow();

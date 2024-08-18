@@ -1,23 +1,25 @@
+#include <stdio.h>
+#include <stdint.h>
+
 #include "types.h" // Should be included first due to Windows.h / CommCtrl.h conflict
-#include "RTI/addresses.h"
-#include "RTI/symbols.h"
 
 #include <j3dcore/j3d.h>
 #include <j3dcore/j3dhook.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <Indy3D.h>
-#include <Display/JonesConsole.h>
-#include <Display/JonesDisplay.h>
-#include <Display/JonesHud.h>
-#include <Display/jonesConfig.h>
-#include <Gui/JonesDialog.h>
-#include <Main/JonesMain.h>
-#include <Main/JonesFile.h>
-#include <Main/jonesString.h>
-#include <Play/jonesCog.h>
-#include <Play/JonesControl.h>
-#include <Play/jonesInventory.h>
+
+#include "Display/JonesConsole.h"
+#include "Display/JonesHud.h"
+#include "Display/jonesConfig.h"
+#include "Display/JonesDisplay.h"
+#include "Gui/JonesDialog.h"
+#include "Main/JonesMain.h"
+#include "Main/JonesFile.h"
+#include "Main/jonesString.h"
+#include "Play/jonesCog.h"
+#include "Play/JonesControl.h"
+#include "Play/jonesInventory.h"
+#include "RTI/addresses.h"
+#include "RTI/symbols.h"
+
 #include <rdroid/Engine/rdCamera.h>
 #include <rdroid/Engine/rdMaterial.h>
 #include <rdroid/Engine/rdKeyframe.h>
@@ -31,13 +33,13 @@
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
 #include <rdroid/Math/rdMath.h>
+#include <rdroid/Primitives/rdWallpaper.h>
 #include <rdroid/Primitives/rdModel3.h>
 #include <rdroid/Primitives/rdParticle.h>
 #include <rdroid/Primitives/rdFont.h>
 #include <rdroid/Primitives/rdPrimit2.h>
 #include <rdroid/Primitives/rdPolyline.h>
 #include <rdroid/Primitives/rdSprite.h>
-#include <rdroid/Primitives/rdWallpaper.h>
 #include <rdroid/Primitives/rdPrimit3.h>
 #include <rdroid/Raster/rdCache.h>
 #include <rdroid/Raster/rdFace.h>
@@ -134,13 +136,16 @@
 #include <w32util/wuRegistry.h>
 #include <wkernel/wkernel.h>
 
+static const char* appName = "Open Jones 3D";
 
 bool InstallHooks(void);
 bool ResetGlobals(void);
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
 {
-    switch (dwReason)
+    J3D_UNUSED(hModule);
+    J3D_UNUSED(lpReserved);
+    switch ( dwReason )
     {
         case DLL_PROCESS_ATTACH:
         {
@@ -155,15 +160,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
         #endif
 
             // Init function hooks
-            if (!InstallHooks())
+            if ( !InstallHooks() )
             {
                 printf("CRITICAL ERROR: Failed to install hooks!\n");
                 MessageBox(NULL, "Failed to install function hooks!", "Jones3D",
                     MB_ICONINFORMATION | MB_DEFBUTTON1
                 );
-            {
+            }
 
-            if (!ResetGlobals())
+            if ( !ResetGlobals() )
             {
                 printf("CRITICAL ERROR: Failed to reset global vars!\n");
                 MessageBox(NULL, "Failed to reset global variables!", "Jones3D",
@@ -180,24 +185,43 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
     return TRUE;
 }
 
+int Startup(const char* aCmd)
+{
+    if ( JonesMain_Startup(aCmd) )
+    {
+        JonesMain_Shutdown();
+        return -1;
+    }
+    return 0;
+}
+
 // Indy3D.exe entry point
 int WINAPI Indy3D_WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-    return J3D_TRAMPOLINE_CALL(Indy3D_WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd);
+    JonesMain_g_mainMutex = CreateMutexA(0, 1, "INDY3D");
+    if ( GetLastError() != ERROR_ALREADY_EXISTS )
+    {
+        wkernel_SetProcessProc(JonesMain_Process);
+        wkernel_SetStartupCallback(Startup);
+        wkernel_SetShutdownCallback(JonesMain_Shutdown);
+        return wkernel_Run(hInstance, hPrevInstance, lpCmdLine, nShowCmd, appName);
+    }
+
+    CloseHandle(JonesMain_g_mainMutex);
+    return -1;
 }
 
 bool InstallHooks(void)
 {
     J3DHookContext ctx;
-    if (!J3DStartHookContext(&ctx, EXE_TEXT_START_ADDR, EXE_TEXT_END_ADDR)) {
+    if ( !J3DStartHookContext(&ctx, EXE_TEXT_START_ADDR, EXE_TEXT_END_ADDR) ) {
         return false;
     }
 
-    //J3D_HOOKFUNC(Indy3D_WinMain); // TODO: Uncomment when implemented
+    J3D_HOOKFUNC(Indy3D_WinMain);
 
     AudioLib_InstallHooks();
     Driver_InstallHooks();
-    Indy3D_InstallHooks();
     JonesConsole_InstallHooks();
     JonesControl_InstallHooks();
     JonesDialog_InstallHooks();
@@ -329,13 +353,12 @@ bool InstallHooks(void)
 bool ResetGlobals(void)
 {
     J3DHookContext ctx;
-    if (!J3DStartHookContext(&ctx, EXE_RDATA_START_ADDR, EXE_RDATA_END_ADDR)) {
+    if ( !J3DStartHookContext(&ctx, EXE_RDATA_START_ADDR, EXE_RDATA_END_ADDR) ) {
         return false;
     }
 
     AudioLib_ResetGlobals();
     Driver_ResetGlobals();
-    Indy3D_ResetGlobals();
     JonesConsole_ResetGlobals();
     JonesControl_ResetGlobals();
     JonesDialog_ResetGlobals();
