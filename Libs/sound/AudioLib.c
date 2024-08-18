@@ -118,8 +118,8 @@ void AudioLib_ResetGlobals(void)
       29794,
       32767
     };
-    memcpy((int16_t *)&AudioLib_aStepTable, &AudioLib_aStepTable_tmp, sizeof(AudioLib_aStepTable));
-    
+    memcpy((int16_t*)&AudioLib_aStepTable, &AudioLib_aStepTable_tmp, sizeof(AudioLib_aStepTable));
+
     const uint8_t AudioLib_aStepBits_tmp[89] = {
       4u,
       4u,
@@ -211,20 +211,20 @@ void AudioLib_ResetGlobals(void)
       7u,
       7u
     };
-    memcpy((uint8_t *)&AudioLib_aStepBits, &AudioLib_aStepBits_tmp, sizeof(AudioLib_aStepBits));
-    
-    const int8_t *AudioLib_aIndexTableTable_tmp[8] = {
-      NULL,
-      NULL,
-      &AudioLib_aIndex2Bit,
-      &AudioLib_aIndex3Bit,
-      &AudioLib_aIndex4Bit,
-      &AudioLib_aIndex5Bit,
-      &AudioLib_aIndex6Bit,
-      &AudioLib_aIndex7Bit
-    };
-    memcpy((int8_t **)&AudioLib_aIndexTableTable, &AudioLib_aIndexTableTable_tmp, sizeof(AudioLib_aIndexTableTable));
-    
+    memcpy((uint8_t*)&AudioLib_aStepBits, &AudioLib_aStepBits_tmp, sizeof(AudioLib_aStepBits));
+
+    /* const int8_t *AudioLib_aIndexTableTable_tmp[8] = {
+       NULL,
+       NULL,
+       &AudioLib_aIndex2Bit,
+       &AudioLib_aIndex3Bit,
+       &AudioLib_aIndex4Bit,
+       &AudioLib_aIndex5Bit,
+       &AudioLib_aIndex6Bit,
+       &AudioLib_aIndex7Bit
+     };
+     memcpy((int8_t **)&AudioLib_aIndexTableTable, &AudioLib_aIndexTableTable_tmp, sizeof(AudioLib_aIndexTableTable));*/
+
     memset(&AudioLib_aDeltaTable, 0, sizeof(AudioLib_aDeltaTable));
     memset(&AudioLib_word_14E4928, 0, sizeof(AudioLib_word_14E4928));
     memset(&AudioLib_bDeltaTableInitialized, 0, sizeof(AudioLib_bDeltaTableInitialized));

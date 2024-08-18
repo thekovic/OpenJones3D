@@ -13,7 +13,7 @@ J3D_EXTERN_C_START
 // extern tHashTable *sithTemplate_g_pHashtable;
 
 int sithTemplate_Startup(void);
-void J3DAPI sithTemplate_Shutdown();
+void J3DAPI sithTemplate_Shutdown(void);
 int J3DAPI sithTemplate_AllocWorldTemplates(SithWorld* pWorld, unsigned int size);
 SithThing* J3DAPI sithTemplate_GetTemplateByIndex(int idx);
 int J3DAPI sithTemplate_GetTemplateIndex(const SithThing* pTemplate);
@@ -22,6 +22,7 @@ int J3DAPI sithTemplate_CNDWriteTemplateSection(tFileHandle fh, SithWorld* pWorl
 int J3DAPI sithTemplate_CNDReadTemplateSection(tFileHandle fh, SithWorld* pWorld);
 void J3DAPI sithTemplate_AddTemplate(SithThing* pTemplate);
 void J3DAPI sithTemplate_FreeWorldTemplates(SithWorld* pWorld);
+SithThing* J3DAPI sithTemplate_GetTemplate(const char* pName);
 SithThing* J3DAPI sithTemplate_Parse(SithWorld* pWorld);
 SithThing* J3DAPI sithTemplate_CacheFind(const char* pName);
 void J3DAPI sithTemplate_CacheAdd(SithThing* pThing);

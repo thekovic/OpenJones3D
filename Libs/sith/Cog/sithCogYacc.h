@@ -7,12 +7,14 @@
 #include <sith/RTI/addresses.h>
 #include <std/types.h>
 
+#include <stdio.h>
+
 J3D_EXTERN_C_START
 
 #define sithCogYacc_g_yylineno J3D_DECL_FAR_VAR(sithCogYacc_g_yylineno, int)
 // extern int sithCogYacc_g_yylineno;
 
-#define sithCogYacc_g_yylval J3D_DECL_FAR_VAR(sithCogYacc_g_yylval, YYSTYPE)
+//#define sithCogYacc_g_yylval J3D_DECL_FAR_VAR(sithCogYacc_g_yylval, YYSTYPE)
 // extern YYSTYPE sithCogYacc_g_yylval;
 
 void J3DAPI sithCogYacc_yyerror(const char* msg);
@@ -23,8 +25,8 @@ int sithCogYacc_yy_get_previous_state(void);
 int J3DAPI sithCogYacc_yy_try_NUL_trans(int yy_current_state);
 void J3DAPI sithCogYacc_yyrestart(FILE* input_file);
 void sithCogYacc_yy_load_buffer_state(void);
-YY_BUFFER_STATE J3DAPI sithCogYacc_yy_create_buffer(FILE* file, int size);
-void J3DAPI sithCogYacc_yy_init_buffer(YY_BUFFER_STATE b, FILE* file);
+//YY_BUFFER_STATE J3DAPI sithCogYacc_yy_create_buffer(FILE* file, int size);
+//void J3DAPI sithCogYacc_yy_init_buffer(YY_BUFFER_STATE b, FILE* file);
 
 // Helper hooking functions
 void sithCogYacc_InstallHooks(void);

@@ -3,7 +3,7 @@
 #include <sith/RTI/symbols.h>
 
 #define sithCogYacc_yy_accept J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yy_accept, const int16_t(*)[121])
-#define sithCogYacc_yy_ec J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yy_ec, const YY_CHAR(*)[128])
+//#define sithCogYacc_yy_ec J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yy_ec, const YY_CHAR(*)[128])
 #define sithCogYacc_yy_meta J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yy_meta, const char(*)[55])
 #define sithCogYacc_yy_base J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yy_base, const int16_t(*)[128])
 #define sithCogYacc_yy_def J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yy_def, const int16_t(*)[126])
@@ -20,27 +20,27 @@
 #define sithCogYacc_yycheck J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yycheck, int16_t(*)[826])
 #define sithCogYacc_yy_init J3D_DECL_FAR_VAR(sithCogYacc_yy_init, int)
 #define sithCogYacc_yy_did_buffer_switch_on_eof J3D_DECL_FAR_VAR(sithCogYacc_yy_did_buffer_switch_on_eof, int)
-#define sithCogYacc_yy_hold_char J3D_DECL_FAR_VAR(sithCogYacc_yy_hold_char, YY_CHAR)
+//#define sithCogYacc_yy_hold_char J3D_DECL_FAR_VAR(sithCogYacc_yy_hold_char, YY_CHAR)
 #define sithCogYacc_yy_n_chars J3D_DECL_FAR_VAR(sithCogYacc_yy_n_chars, int)
-#define sithCogYacc_yy_last_accepting_cpos J3D_DECL_FAR_VAR(sithCogYacc_yy_last_accepting_cpos, YY_CHAR*)
-#define sithCogYacc_yy_current_buffer J3D_DECL_FAR_VAR(sithCogYacc_yy_current_buffer, YY_BUFFER_STATE)
-#define sithCogYacc_yy_last_accepting_state J3D_DECL_FAR_VAR(sithCogYacc_yy_last_accepting_state, yy_state_type)
+//#define sithCogYacc_yy_last_accepting_cpos J3D_DECL_FAR_VAR(sithCogYacc_yy_last_accepting_cpos, YY_CHAR*)
+//#define sithCogYacc_yy_current_buffer J3D_DECL_FAR_VAR(sithCogYacc_yy_current_buffer, YY_BUFFER_STATE)
+//#define sithCogYacc_yy_last_accepting_state J3D_DECL_FAR_VAR(sithCogYacc_yy_last_accepting_state, yy_state_type)
 #define sithCogYacc_aLexerSymText J3D_DECL_FAR_ARRAYVAR(sithCogYacc_aLexerSymText, char(*)[256])
 #define sithCogYacc_yyin J3D_DECL_FAR_VAR(sithCogYacc_yyin, FILE*)
 #define sithCogYacc_yyout J3D_DECL_FAR_VAR(sithCogYacc_yyout, FILE*)
-#define sithCogYacc_yy_c_buf_p J3D_DECL_FAR_VAR(sithCogYacc_yy_c_buf_p, YY_CHAR*)
+//#define sithCogYacc_yy_c_buf_p J3D_DECL_FAR_VAR(sithCogYacc_yy_c_buf_p, YY_CHAR*)
 #define sithCogYacc_yy_start J3D_DECL_FAR_VAR(sithCogYacc_yy_start, int)
 #define sithCogYacc_yyleng J3D_DECL_FAR_VAR(sithCogYacc_yyleng, int)
-#define sithCogYacc_yytext J3D_DECL_FAR_VAR(sithCogYacc_yytext, YY_CHAR*)
+//#define sithCogYacc_yytext J3D_DECL_FAR_VAR(sithCogYacc_yytext, YY_CHAR*)
 #define sithCogYacc_yyerrflag J3D_DECL_FAR_VAR(sithCogYacc_yyerrflag, int)
 #define sithCogYacc_conditionNode J3D_DECL_FAR_VAR(sithCogYacc_conditionNode, SithCogSyntaxNode*)
 #define sithCogYacc_yychar J3D_DECL_FAR_VAR(sithCogYacc_yychar, int)
 #define sithCogYacc_yyss J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yyss, int16_t(*)[300])
-#define sithCogYacc_yyvs J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yyvs, YYSTYPE(*)[300])
-#define sithCogYacc_yyval J3D_DECL_FAR_VAR(sithCogYacc_yyval, YYSTYPE)
+//#define sithCogYacc_yyvs J3D_DECL_FAR_ARRAYVAR(sithCogYacc_yyvs, YYSTYPE(*)[300])
+//#define sithCogYacc_yyval J3D_DECL_FAR_VAR(sithCogYacc_yyval, YYSTYPE)
 #define sithCogYacc_yyssp J3D_DECL_FAR_VAR(sithCogYacc_yyssp, int16_t*)
 #define sithCogYacc_yynerrs J3D_DECL_FAR_VAR(sithCogYacc_yynerrs, int)
-#define sithCogYacc_yyvsp J3D_DECL_FAR_VAR(sithCogYacc_yyvsp, YYSTYPE*)
+//#define sithCogYacc_yyvsp J3D_DECL_FAR_VAR(sithCogYacc_yyvsp, YYSTYPE*)
 #define sithCogYacc_yydebug J3D_DECL_FAR_VAR(sithCogYacc_yydebug, int)
 #define sithCogYacc_beanchNode J3D_DECL_FAR_VAR(sithCogYacc_beanchNode, SithCogSyntaxNode*)
 
@@ -185,140 +185,140 @@ void sithCogYacc_ResetGlobals(void)
       2,
       0
     };
-    memcpy((int16_t *)&sithCogYacc_yy_accept, &sithCogYacc_yy_accept_tmp, sizeof(sithCogYacc_yy_accept));
-    
-    const YY_CHAR sithCogYacc_yy_ec_tmp[128] = {
-      0u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      2u,
-      3u,
-      2u,
-      2u,
-      4u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      1u,
-      2u,
-      5u,
-      6u,
-      7u,
-      1u,
-      8u,
-      9u,
-      10u,
-      11u,
-      12u,
-      13u,
-      14u,
-      15u,
-      16u,
-      17u,
-      18u,
-      19u,
-      20u,
-      20u,
-      20u,
-      20u,
-      20u,
-      20u,
-      20u,
-      20u,
-      20u,
-      21u,
-      22u,
-      23u,
-      24u,
-      25u,
-      1u,
-      1u,
-      31u,
-      32u,
-      33u,
-      34u,
-      35u,
-      36u,
-      37u,
-      38u,
-      39u,
-      30u,
-      40u,
-      41u,
-      30u,
-      42u,
-      43u,
-      44u,
-      30u,
-      45u,
-      46u,
-      47u,
-      48u,
-      30u,
-      49u,
-      50u,
-      30u,
-      30u,
-      26u,
-      27u,
-      28u,
-      29u,
-      30u,
-      1u,
-      31u,
-      32u,
-      33u,
-      34u,
-      35u,
-      36u,
-      37u,
-      38u,
-      39u,
-      30u,
-      40u,
-      41u,
-      30u,
-      42u,
-      43u,
-      44u,
-      30u,
-      45u,
-      46u,
-      47u,
-      48u,
-      30u,
-      49u,
-      50u,
-      30u,
-      30u,
-      51u,
-      52u,
-      53u,
-      54u,
-      1u
-    };
-    memcpy((YY_CHAR *)&sithCogYacc_yy_ec, &sithCogYacc_yy_ec_tmp, sizeof(sithCogYacc_yy_ec));
-    
+    memcpy((int16_t*)&sithCogYacc_yy_accept, &sithCogYacc_yy_accept_tmp, sizeof(sithCogYacc_yy_accept));
+
+    //const YY_CHAR sithCogYacc_yy_ec_tmp[128] = {
+    //  0u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  2u,
+    //  3u,
+    //  2u,
+    //  2u,
+    //  4u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  1u,
+    //  2u,
+    //  5u,
+    //  6u,
+    //  7u,
+    //  1u,
+    //  8u,
+    //  9u,
+    //  10u,
+    //  11u,
+    //  12u,
+    //  13u,
+    //  14u,
+    //  15u,
+    //  16u,
+    //  17u,
+    //  18u,
+    //  19u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  20u,
+    //  21u,
+    //  22u,
+    //  23u,
+    //  24u,
+    //  25u,
+    //  1u,
+    //  1u,
+    //  31u,
+    //  32u,
+    //  33u,
+    //  34u,
+    //  35u,
+    //  36u,
+    //  37u,
+    //  38u,
+    //  39u,
+    //  30u,
+    //  40u,
+    //  41u,
+    //  30u,
+    //  42u,
+    //  43u,
+    //  44u,
+    //  30u,
+    //  45u,
+    //  46u,
+    //  47u,
+    //  48u,
+    //  30u,
+    //  49u,
+    //  50u,
+    //  30u,
+    //  30u,
+    //  26u,
+    //  27u,
+    //  28u,
+    //  29u,
+    //  30u,
+    //  1u,
+    //  31u,
+    //  32u,
+    //  33u,
+    //  34u,
+    //  35u,
+    //  36u,
+    //  37u,
+    //  38u,
+    //  39u,
+    //  30u,
+    //  40u,
+    //  41u,
+    //  30u,
+    //  42u,
+    //  43u,
+    //  44u,
+    //  30u,
+    //  45u,
+    //  46u,
+    //  47u,
+    //  48u,
+    //  30u,
+    //  49u,
+    //  50u,
+    //  30u,
+    //  30u,
+    //  51u,
+    //  52u,
+    //  53u,
+    //  54u,
+    //  1u
+    //};
+    //memcpy((YY_CHAR*)&sithCogYacc_yy_ec, &sithCogYacc_yy_ec_tmp, sizeof(sithCogYacc_yy_ec));
+
     const char sithCogYacc_yy_meta_tmp[55] = {
       '\0',
       '\x01',
@@ -376,8 +376,8 @@ void sithCogYacc_ResetGlobals(void)
       '\x01',
       '\x01'
     };
-    memcpy((char *)&sithCogYacc_yy_meta, &sithCogYacc_yy_meta_tmp, sizeof(sithCogYacc_yy_meta));
-    
+    memcpy((char*)&sithCogYacc_yy_meta, &sithCogYacc_yy_meta_tmp, sizeof(sithCogYacc_yy_meta));
+
     const int16_t sithCogYacc_yy_base_tmp[128] = {
       0,
       0,
@@ -508,8 +508,8 @@ void sithCogYacc_ResetGlobals(void)
       0,
       0
     };
-    memcpy((int16_t *)&sithCogYacc_yy_base, &sithCogYacc_yy_base_tmp, sizeof(sithCogYacc_yy_base));
-    
+    memcpy((int16_t*)&sithCogYacc_yy_base, &sithCogYacc_yy_base_tmp, sizeof(sithCogYacc_yy_base));
+
     const int16_t sithCogYacc_yy_def_tmp[126] = {
       0,
       120,
@@ -638,8 +638,8 @@ void sithCogYacc_ResetGlobals(void)
       120,
       120
     };
-    memcpy((int16_t *)&sithCogYacc_yy_def, &sithCogYacc_yy_def_tmp, sizeof(sithCogYacc_yy_def));
-    
+    memcpy((int16_t*)&sithCogYacc_yy_def, &sithCogYacc_yy_def_tmp, sizeof(sithCogYacc_yy_def));
+
     const int16_t sithCogYacc_yy_nxt_tmp[253] = {
       0,
       4,
@@ -895,8 +895,8 @@ void sithCogYacc_ResetGlobals(void)
       120,
       120
     };
-    memcpy((int16_t *)&sithCogYacc_yy_nxt, &sithCogYacc_yy_nxt_tmp, sizeof(sithCogYacc_yy_nxt));
-    
+    memcpy((int16_t*)&sithCogYacc_yy_nxt, &sithCogYacc_yy_nxt_tmp, sizeof(sithCogYacc_yy_nxt));
+
     const int16_t sithCogYacc_yy_chk_tmp[253] = {
       0,
       1,
@@ -1152,8 +1152,8 @@ void sithCogYacc_ResetGlobals(void)
       120,
       120
     };
-    memcpy((int16_t *)&sithCogYacc_yy_chk, &sithCogYacc_yy_chk_tmp, sizeof(sithCogYacc_yy_chk));
-    
+    memcpy((int16_t*)&sithCogYacc_yy_chk, &sithCogYacc_yy_chk_tmp, sizeof(sithCogYacc_yy_chk));
+
     int16_t sithCogYacc_yylhs_tmp[68] = {
       -1,
       1,
@@ -1225,7 +1225,7 @@ void sithCogYacc_ResetGlobals(void)
       0
     };
     memcpy(&sithCogYacc_yylhs, &sithCogYacc_yylhs_tmp, sizeof(sithCogYacc_yylhs));
-    
+
     int16_t sithCogYacc_yylen_tmp[68] = {
       2,
       1,
@@ -1297,7 +1297,7 @@ void sithCogYacc_ResetGlobals(void)
       0
     };
     memcpy(&sithCogYacc_yylen, &sithCogYacc_yylen_tmp, sizeof(sithCogYacc_yylen));
-    
+
     int16_t sithCogYacc_yydefred_tmp[128] = {
       0,
       0,
@@ -1429,7 +1429,7 @@ void sithCogYacc_ResetGlobals(void)
       0
     };
     memcpy(&sithCogYacc_yydefred, &sithCogYacc_yydefred_tmp, sizeof(sithCogYacc_yydefred));
-    
+
     int16_t sithCogYacc_yydgoto_tmp[24] = {
       18,
       19,
@@ -1457,7 +1457,7 @@ void sithCogYacc_ResetGlobals(void)
       40
     };
     memcpy(&sithCogYacc_yydgoto, &sithCogYacc_yydgoto_tmp, sizeof(sithCogYacc_yydgoto));
-    
+
     int16_t sithCogYacc_yysindex_tmp[128] = {
       34,
       -37,
@@ -1589,7 +1589,7 @@ void sithCogYacc_ResetGlobals(void)
       0
     };
     memcpy(&sithCogYacc_yysindex, &sithCogYacc_yysindex_tmp, sizeof(sithCogYacc_yysindex));
-    
+
     int16_t sithCogYacc_yyrindex_tmp[128] = {
       0,
       57,
@@ -1721,7 +1721,7 @@ void sithCogYacc_ResetGlobals(void)
       0
     };
     memcpy(&sithCogYacc_yyrindex, &sithCogYacc_yyrindex_tmp, sizeof(sithCogYacc_yyrindex));
-    
+
     int16_t sithCogYacc_yygindex_tmp[24] = {
       128,
       0,
@@ -1749,7 +1749,7 @@ void sithCogYacc_ResetGlobals(void)
       0
     };
     memcpy(&sithCogYacc_yygindex, &sithCogYacc_yygindex_tmp, sizeof(sithCogYacc_yygindex));
-    
+
     int16_t sithCogYacc_yytable_tmp[826] = {
       15,
       59,
@@ -2579,7 +2579,7 @@ void sithCogYacc_ResetGlobals(void)
       37
     };
     memcpy(&sithCogYacc_yytable, &sithCogYacc_yytable_tmp, sizeof(sithCogYacc_yytable));
-    
+
     int16_t sithCogYacc_yycheck_tmp[826] = {
       33,
       0,
@@ -3409,34 +3409,34 @@ void sithCogYacc_ResetGlobals(void)
       267
     };
     memcpy(&sithCogYacc_yycheck, &sithCogYacc_yycheck_tmp, sizeof(sithCogYacc_yycheck));
-    
+
     int sithCogYacc_yy_init_tmp = 1;
     memcpy(&sithCogYacc_yy_init, &sithCogYacc_yy_init_tmp, sizeof(sithCogYacc_yy_init));
-    
+
     memset(&sithCogYacc_yy_did_buffer_switch_on_eof, 0, sizeof(sithCogYacc_yy_did_buffer_switch_on_eof));
-    memset(&sithCogYacc_yy_hold_char, 0, sizeof(sithCogYacc_yy_hold_char));
+    //memset(&sithCogYacc_yy_hold_char, 0, sizeof(sithCogYacc_yy_hold_char));
     memset(&sithCogYacc_yy_n_chars, 0, sizeof(sithCogYacc_yy_n_chars));
-    memset(&sithCogYacc_yy_last_accepting_cpos, 0, sizeof(sithCogYacc_yy_last_accepting_cpos));
-    memset(&sithCogYacc_yy_current_buffer, 0, sizeof(sithCogYacc_yy_current_buffer));
-    memset(&sithCogYacc_yy_last_accepting_state, 0, sizeof(sithCogYacc_yy_last_accepting_state));
+    //memset(&sithCogYacc_yy_last_accepting_cpos, 0, sizeof(sithCogYacc_yy_last_accepting_cpos));
+    //memset(&sithCogYacc_yy_current_buffer, 0, sizeof(sithCogYacc_yy_current_buffer));
+    //memset(&sithCogYacc_yy_last_accepting_state, 0, sizeof(sithCogYacc_yy_last_accepting_state));
     memset(&sithCogYacc_aLexerSymText, 0, sizeof(sithCogYacc_aLexerSymText));
     memset(&sithCogYacc_yyin, 0, sizeof(sithCogYacc_yyin));
     memset(&sithCogYacc_yyout, 0, sizeof(sithCogYacc_yyout));
-    memset(&sithCogYacc_yy_c_buf_p, 0, sizeof(sithCogYacc_yy_c_buf_p));
+    //memset(&sithCogYacc_yy_c_buf_p, 0, sizeof(sithCogYacc_yy_c_buf_p));
     memset(&sithCogYacc_yy_start, 0, sizeof(sithCogYacc_yy_start));
     memset(&sithCogYacc_yyleng, 0, sizeof(sithCogYacc_yyleng));
     memset(&sithCogYacc_g_yylineno, 0, sizeof(sithCogYacc_g_yylineno));
-    memset(&sithCogYacc_yytext, 0, sizeof(sithCogYacc_yytext));
+    //memset(&sithCogYacc_yytext, 0, sizeof(sithCogYacc_yytext));
     memset(&sithCogYacc_yyerrflag, 0, sizeof(sithCogYacc_yyerrflag));
-    memset(&sithCogYacc_g_yylval, 0, sizeof(sithCogYacc_g_yylval));
+    //memset(&sithCogYacc_g_yylval, 0, sizeof(sithCogYacc_g_yylval));
     memset(&sithCogYacc_conditionNode, 0, sizeof(sithCogYacc_conditionNode));
     memset(&sithCogYacc_yychar, 0, sizeof(sithCogYacc_yychar));
     memset(&sithCogYacc_yyss, 0, sizeof(sithCogYacc_yyss));
-    memset(&sithCogYacc_yyvs, 0, sizeof(sithCogYacc_yyvs));
-    memset(&sithCogYacc_yyval, 0, sizeof(sithCogYacc_yyval));
+    //memset(&sithCogYacc_yyvs, 0, sizeof(sithCogYacc_yyvs));
+    //memset(&sithCogYacc_yyval, 0, sizeof(sithCogYacc_yyval));
     memset(&sithCogYacc_yyssp, 0, sizeof(sithCogYacc_yyssp));
     memset(&sithCogYacc_yynerrs, 0, sizeof(sithCogYacc_yynerrs));
-    memset(&sithCogYacc_yyvsp, 0, sizeof(sithCogYacc_yyvsp));
+    //memset(&sithCogYacc_yyvsp, 0, sizeof(sithCogYacc_yyvsp));
     memset(&sithCogYacc_yydebug, 0, sizeof(sithCogYacc_yydebug));
     memset(&sithCogYacc_beanchNode, 0, sizeof(sithCogYacc_beanchNode));
 }
@@ -3481,12 +3481,12 @@ void sithCogYacc_yy_load_buffer_state(void)
     J3D_TRAMPOLINE_CALL(sithCogYacc_yy_load_buffer_state);
 }
 
-YY_BUFFER_STATE J3DAPI sithCogYacc_yy_create_buffer(FILE* file, int size)
-{
-    return J3D_TRAMPOLINE_CALL(sithCogYacc_yy_create_buffer, file, size);
-}
-
-void J3DAPI sithCogYacc_yy_init_buffer(YY_BUFFER_STATE b, FILE* file)
-{
-    J3D_TRAMPOLINE_CALL(sithCogYacc_yy_init_buffer, b, file);
-}
+//YY_BUFFER_STATE J3DAPI sithCogYacc_yy_create_buffer(FILE* file, int size)
+//{
+//    return J3D_TRAMPOLINE_CALL(sithCogYacc_yy_create_buffer, file, size);
+//}
+//
+//void J3DAPI sithCogYacc_yy_init_buffer(YY_BUFFER_STATE b, FILE* file)
+//{
+//    J3D_TRAMPOLINE_CALL(sithCogYacc_yy_init_buffer, b, file);
+//}

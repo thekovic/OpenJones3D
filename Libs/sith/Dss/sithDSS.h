@@ -3,7 +3,6 @@
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
 #include <sith/types.h>
-#include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
 #include <std/types.h>
 

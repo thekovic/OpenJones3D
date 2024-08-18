@@ -91,7 +91,7 @@ void sithThing_InstallHooks(void)
 
 void sithThing_ResetGlobals(void)
 {
-    const char *sithThing_aStrThingTypes_tmp[15] = {
+    const char* sithThing_aStrThingTypes_tmp[15] = {
       "free",
       "camera",
       "actor",
@@ -108,9 +108,9 @@ void sithThing_ResetGlobals(void)
       "sprite",
       "polyline"
     };
-    memcpy((char **)&sithThing_aStrThingTypes, &sithThing_aStrThingTypes_tmp, sizeof(sithThing_aStrThingTypes));
-    
-    const char *sithThing_aStrThingArgs_tmp[77] = {
+    memcpy((char**)&sithThing_aStrThingTypes, &sithThing_aStrThingTypes_tmp, sizeof(sithThing_aStrThingTypes));
+
+    const char* sithThing_aStrThingArgs_tmp[77] = {
       "--invalid--",
       "type",
       "collide",
@@ -189,14 +189,14 @@ void sithThing_ResetGlobals(void)
       "voicecolor",
       "perflevel"
     };
-    memcpy((char **)&sithThing_aStrThingArgs, &sithThing_aStrThingArgs_tmp, sizeof(sithThing_aStrThingArgs));
-    
+    memcpy((char**)&sithThing_aStrThingArgs, &sithThing_aStrThingArgs_tmp, sizeof(sithThing_aStrThingArgs));
+
     unsigned int sithThing_curSignature_tmp = 1u;
     memcpy(&sithThing_curSignature, &sithThing_curSignature_tmp, sizeof(sithThing_curSignature));
-    
+
     uint16_t sithThing_guidEntropy_tmp = 1u;
     memcpy(&sithThing_guidEntropy, &sithThing_guidEntropy_tmp, sizeof(sithThing_guidEntropy));
-    
+
     float sithThing_aWeaponCoefficients_tmp[10] = {
       0.0f,
       0.0f,
@@ -210,10 +210,10 @@ void sithThing_ResetGlobals(void)
       0.0f
     };
     memcpy(&sithThing_aWeaponCoefficients, &sithThing_aWeaponCoefficients_tmp, sizeof(sithThing_aWeaponCoefficients));
-    
+
     float sithThing_jeepHitMinVelocityZ_tmp = -1.65f;
     memcpy(&sithThing_jeepHitMinVelocityZ, &sithThing_jeepHitMinVelocityZ_tmp, sizeof(sithThing_jeepHitMinVelocityZ));
-    
+
     memset(&sithThing_apUnsyncedThings, 0, sizeof(sithThing_apUnsyncedThings));
     memset(&sithThing_pParseHashtbl, 0, sizeof(sithThing_pParseHashtbl));
     memset(&sithThing_prevQuetzAttachInfo, 0, sizeof(sithThing_prevQuetzAttachInfo));

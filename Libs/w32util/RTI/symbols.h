@@ -1,7 +1,6 @@
 #ifndef W32UTIL_RTI_SYMBOLS_H
 #define W32UTIL_RTI_SYMBOLS_H
 #include <j3dcore/j3d.h>
-#include <w32util/types.h>
 
 #define wuRegistry_Startup_TYPE int (J3DAPI*)(HKEY, LPCSTR)
 #define wuRegistry_Shutdown_TYPE void (J3DAPI*)()

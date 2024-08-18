@@ -31,10 +31,10 @@ void sithPlayer_ResetGlobals(void)
 {
     int sithPlayer_g_bPlayerInPor_tmp = 1;
     memcpy(&sithPlayer_g_bPlayerInPor, &sithPlayer_g_bPlayerInPor_tmp, sizeof(sithPlayer_g_bPlayerInPor));
-    
+
     int sithPlayer_g_impFireType_tmp = -1;
     memcpy(&sithPlayer_g_impFireType, &sithPlayer_g_impFireType_tmp, sizeof(sithPlayer_g_impFireType));
-    
+
     memset(&sithPlayer_awLocalPlayerName, 0, sizeof(sithPlayer_awLocalPlayerName));
     memset(&sithPlayer_g_playerNum, 0, sizeof(sithPlayer_g_playerNum));
     memset(&sithPlayer_g_numPlayers, 0, sizeof(sithPlayer_g_numPlayers));
@@ -69,7 +69,7 @@ void J3DAPI sithPlayer_PlacePlayers(SithWorld* pWorld)
     J3D_TRAMPOLINE_CALL(sithPlayer_PlacePlayers, pWorld);
 }
 
-void J3DAPI sithPlayer_HidePlayer(unsigned int playerNum)
+void J3DAPI sithPlayer_HidePlayer(size_t playerNum)
 {
     J3D_TRAMPOLINE_CALL(sithPlayer_HidePlayer, playerNum);
 }
@@ -79,12 +79,12 @@ int J3DAPI sithPlayer_ShowPlayer(size_t playerNum, DPID id)
     return J3D_TRAMPOLINE_CALL(sithPlayer_ShowPlayer, playerNum, id);
 }
 
-void J3DAPI sithPlayer_SetLocalPlayer(unsigned int playerNum)
+void J3DAPI sithPlayer_SetLocalPlayer(size_t playerNum)
 {
     J3D_TRAMPOLINE_CALL(sithPlayer_SetLocalPlayer, playerNum);
 }
 
-void J3DAPI sithPlayer_Reset(unsigned int playerNum)
+void J3DAPI sithPlayer_Reset(size_t playerNum)
 {
     J3D_TRAMPOLINE_CALL(sithPlayer_Reset, playerNum);
 }

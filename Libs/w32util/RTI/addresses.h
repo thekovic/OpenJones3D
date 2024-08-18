@@ -1,7 +1,6 @@
 #ifndef W32UTIL_RTI_ADDRESSES_H
 #define W32UTIL_RTI_ADDRESSES_H
 #include <j3dcore/j3d.h>
-#include <w32util/types.h>
 
 // Function addresses
 

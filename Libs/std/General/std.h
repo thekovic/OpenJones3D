@@ -41,8 +41,8 @@ J3D_EXTERN_C_START
 
 void J3DAPI stdStartup(tHostServices* pHS);
 void stdShutdown(void);
-void stdPrintf(tPrintfFunc pfPrint, const char* pFilePath, unsigned int linenum, const char* format, ...);
-signed int stdConsolePrintf(const char* pFormat, ...);
+void J3DAPI stdPrintf(tPrintfFunc fpPrint, const char* pFilePath, unsigned int linenum, const char* format, ...);
+int stdConsolePrintf(const char* pFormat, ...);
 const char* J3DAPI stdFileFromPath(const char* pPath);
 int J3DAPI stdCalcBitPos(int a1);
 tFileHandle J3DAPI stdFileOpen(const char* pFilename, const char* mode);

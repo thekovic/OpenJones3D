@@ -93,7 +93,7 @@ int J3DAPI sithDSSThing_ProcessPlaySound(const SithMessage* pMsg)
     return J3D_TRAMPOLINE_CALL(sithDSSThing_ProcessPlaySound, pMsg);
 }
 
-signed int J3DAPI sithDSSThing_PlaySoundMode(const SithThing* pThing, int16_t mode, int channel, float a4)
+int J3DAPI sithDSSThing_PlaySoundMode(const SithThing* pThing, int16_t mode, int channel, float a4)
 {
     return J3D_TRAMPOLINE_CALL(sithDSSThing_PlaySoundMode, pThing, mode, channel, a4);
 }
@@ -113,7 +113,7 @@ int J3DAPI sithDSSThing_ProcessPlayKey(const SithMessage* pMsg)
     return J3D_TRAMPOLINE_CALL(sithDSSThing_ProcessPlayKey, pMsg);
 }
 
-signed int J3DAPI sithDSSThing_PlayKeyMode(const SithThing* pThing, SithPuppetSubMode mode, unsigned int trackGUID, DPID idTo, unsigned int outstream)
+int J3DAPI sithDSSThing_PlayKeyMode(const SithThing* pThing, SithPuppetSubMode mode, unsigned int trackGUID, DPID idTo, unsigned int outstream)
 {
     return J3D_TRAMPOLINE_CALL(sithDSSThing_PlayKeyMode, pThing, mode, trackGUID, idTo, outstream);
 }
@@ -143,7 +143,7 @@ int J3DAPI sithDSSThing_ProcessStopKey(const SithMessage* pMsg)
     return J3D_TRAMPOLINE_CALL(sithDSSThing_ProcessStopKey, pMsg);
 }
 
-signed int J3DAPI sithDSSThing_StopSound(tSoundChannelHandle hChannel, float secFadeTime, DPID idTo, unsigned int outstream)
+int J3DAPI sithDSSThing_StopSound(tSoundChannelHandle hChannel, float secFadeTime, DPID idTo, unsigned int outstream)
 {
     return J3D_TRAMPOLINE_CALL(sithDSSThing_StopSound, hChannel, secFadeTime, idTo, outstream);
 }
@@ -158,12 +158,12 @@ int J3DAPI sithDSSThing_Fire(const SithThing* pShooter, const SithThing* pProjec
     return J3D_TRAMPOLINE_CALL(sithDSSThing_Fire, pShooter, pProjectileTemplate, fireDir, firePos, hFireSnd, puppetSubmode, extra, projectileFlags, sedRapidFireTime, projectileGUID, idTo, outstream);
 }
 
-signed int J3DAPI sithDSSThing_ProcessFire(const SithMessage* pMsg)
+int J3DAPI sithDSSThing_ProcessFire(const SithMessage* pMsg)
 {
     return J3D_TRAMPOLINE_CALL(sithDSSThing_ProcessFire, pMsg);
 }
 
-signed int J3DAPI sithDSSThing_Death(const SithThing* pThing, const SithThing* pKiller, char bKillPlayer, DPID to, unsigned int outstream)
+int J3DAPI sithDSSThing_Death(const SithThing* pThing, const SithThing* pKiller, char bKillPlayer, DPID to, unsigned int outstream)
 {
     return J3D_TRAMPOLINE_CALL(sithDSSThing_Death, pThing, pKiller, bKillPlayer, to, outstream);
 }

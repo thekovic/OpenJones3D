@@ -53,10 +53,10 @@ void sithCogParse_ResetGlobals(void)
 {
     int sithCogParse_nextlabel_tmp = 1;
     memcpy(&sithCogParse_nextlabel, &sithCogParse_nextlabel_tmp, sizeof(sithCogParse_nextlabel));
-    
+
     int sithCogParse_bSkipYYRestart_tmp = 1;
     memcpy(&sithCogParse_bSkipYYRestart, &sithCogParse_bSkipYYRestart_tmp, sizeof(sithCogParse_bSkipYYRestart));
-    
+
     memset(&sithCogParse_pCurrentSymbols, 0, sizeof(sithCogParse_pCurrentSymbols));
     memset(&sithCogParse_aLabelTable, 0, sizeof(sithCogParse_aLabelTable));
     memset(&sithCogParse_pCurrentCode, 0, sizeof(sithCogParse_pCurrentCode));
@@ -128,10 +128,10 @@ SithCogSyntaxNode* J3DAPI sithCogParse_MakeLeafNode(int opcode, int symbolId)
     return J3D_TRAMPOLINE_CALL(sithCogParse_MakeLeafNode, opcode, symbolId);
 }
 
-SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(int opcode, const YYSTYPE* pVal)
-{
-    return J3D_TRAMPOLINE_CALL(sithCogParse_MakeVectorLeafNode, opcode, pVal);
-}
+//SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(int opcode, const YYSTYPE* pVal)
+//{
+//    return J3D_TRAMPOLINE_CALL(sithCogParse_MakeVectorLeafNode, opcode, pVal);
+//}
 
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeNode(SithCogSyntaxNode* pLeft, SithCogSyntaxNode* pRight, int opcode, int value)
 {

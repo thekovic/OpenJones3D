@@ -38,7 +38,7 @@ int sithTemplate_Startup(void)
     return J3D_TRAMPOLINE_CALL(sithTemplate_Startup);
 }
 
-void J3DAPI sithTemplate_Shutdown()
+void J3DAPI sithTemplate_Shutdown(void)
 {
     J3D_TRAMPOLINE_CALL(sithTemplate_Shutdown);
 }
@@ -81,6 +81,11 @@ void J3DAPI sithTemplate_AddTemplate(SithThing* pTemplate)
 void J3DAPI sithTemplate_FreeWorldTemplates(SithWorld* pWorld)
 {
     J3D_TRAMPOLINE_CALL(sithTemplate_FreeWorldTemplates, pWorld);
+}
+
+SithThing* J3DAPI sithTemplate_GetTemplate(const char* pName)
+{
+    return J3D_TRAMPOLINE_CALL(sithTemplate_GetTemplate, pName);
 }
 
 SithThing* J3DAPI sithTemplate_Parse(SithWorld* pWorld)

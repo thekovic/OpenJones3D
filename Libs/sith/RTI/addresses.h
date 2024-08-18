@@ -1031,6 +1031,7 @@
 #define sithTemplate_CNDReadTemplateSection_ADDR 0x0045CDF0
 #define sithTemplate_AddTemplate_ADDR 0x0045CE40
 #define sithTemplate_FreeWorldTemplates_ADDR 0x0045CE50
+#define sithTemplate_GetTemplate_ADDR 0x0045CF40
 #define sithTemplate_Parse_ADDR 0x0045D0D0
 #define sithTemplate_CacheFind_ADDR 0x0045D340
 #define sithTemplate_CacheAdd_ADDR 0x0045D380

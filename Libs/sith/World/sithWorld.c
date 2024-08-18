@@ -56,9 +56,9 @@ void sithWorld_InstallHooks(void)
 
 void sithWorld_ResetGlobals(void)
 {
-    const char sithWorld_aCopyrightSymbol_tmp[1216] = "................................................@...@...@...@................@...@..@..@...@....................@.@.@.@.@.@.....@@@@@@@@......@...........@.....@@@@@@@@....@@......@@@....@....@@.....@.....@......@@@.....@@..@@.@@@@@......@.....@@@......@@.@@@@@@@@.......@....@@.....@@...@@@@@@@@.........@@@@@@@@@@.....@@@@@@@@..........@@@@@@........@@.....@..........@@@@@.........@@.@@@@@.........@@@@@@.........@@.....@.........@@@@@@.........@@@@@@@@.........@@@@@@.........@@@@@@@@.........@@@@@@@........@@@...@@.........@@@@@@@........@@.@@@.@.........@.....@........@@..@..@........@.......@.......@@@@@@@@........@.......@.......@@@@@@@@.......@........@.......@@..@@@@.......@........@.......@@@@..@@......@.........@.......@@@@.@.@......@.........@.......@@....@@........................@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@@@.@.@.@@@@.@.@@@.@..@@...@@@..@@@..@@@@@@....@@@..@@@@@.@@@@.@@@@@@@@@@...@@.@@@.@@@@@..@@...@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.(c).lucasarts.entertainment..@@.........company.llc..........@@....(c).lucasfilm.ltd.&.tm....@@.....all.rights.reserved......@@...used.under.authorization...@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@";
-    memcpy((char *)&sithWorld_aCopyrightSymbol, &sithWorld_aCopyrightSymbol_tmp, sizeof(sithWorld_aCopyrightSymbol));
-    
+    const char sithWorld_aCopyrightSymbol_tmp[1217] = "................................................@...@...@...@................@...@..@..@...@....................@.@.@.@.@.@.....@@@@@@@@......@...........@.....@@@@@@@@....@@......@@@....@....@@.....@.....@......@@@.....@@..@@.@@@@@......@.....@@@......@@.@@@@@@@@.......@....@@.....@@...@@@@@@@@.........@@@@@@@@@@.....@@@@@@@@..........@@@@@@........@@.....@..........@@@@@.........@@.@@@@@.........@@@@@@.........@@.....@.........@@@@@@.........@@@@@@@@.........@@@@@@.........@@@@@@@@.........@@@@@@@........@@@...@@.........@@@@@@@........@@.@@@.@.........@.....@........@@..@..@........@.......@.......@@@@@@@@........@.......@.......@@@@@@@@.......@........@.......@@..@@@@.......@........@.......@@@@..@@......@.........@.......@@@@.@.@......@.........@.......@@....@@........................@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@@@.@.@.@@@@.@.@@@.@..@@...@@@..@@@..@@@@@@....@@@..@@@@@.@@@@.@@@@@@@@@@...@@.@@@.@@@@@..@@...@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.(c).lucasarts.entertainment..@@.........company.llc..........@@....(c).lucasfilm.ltd.&.tm....@@.....all.rights.reserved......@@...used.under.authorization...@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@";
+    memcpy((char*)&sithWorld_aCopyrightSymbol, &sithWorld_aCopyrightSymbol_tmp, sizeof(sithWorld_aCopyrightSymbol));
+
     const CndSectionParser sithWorld_aCNDSectionParsers_tmp[17] = {
       { "sounds", &sithSound_CNDReadSoundSection, &sithSound_CNDWriteSoundSection },
       {
@@ -126,8 +126,8 @@ void sithWorld_ResetGlobals(void)
       { "things", &sithThing_CNDReadThingSection, &sithThing_CNDWriteThingSection },
       { "pvs", &sithPVS_CNDReadPVSSection, &sithPVS_CNDWritePVSSection }
     };
-    memcpy((CndSectionParser *)&sithWorld_aCNDSectionParsers, &sithWorld_aCNDSectionParsers_tmp, sizeof(sithWorld_aCNDSectionParsers));
-    
+    memcpy((CndSectionParser*)&sithWorld_aCNDSectionParsers, &sithWorld_aCNDSectionParsers_tmp, sizeof(sithWorld_aCNDSectionParsers));
+
     memset(&sithWorld_pfLoadProgressCallback, 0, sizeof(sithWorld_pfLoadProgressCallback));
     memset(&sithWorld_aCopyrightBuf, 0, sizeof(sithWorld_aCopyrightBuf));
     memset(&sithWorld_aNdyParseHandlers, 0, sizeof(sithWorld_aNdyParseHandlers));

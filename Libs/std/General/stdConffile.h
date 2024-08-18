@@ -4,6 +4,8 @@
 #include <std/types.h>
 #include <std/RTI/addresses.h>
 
+#include <stdio.h>
+
 J3D_EXTERN_C_START
 
 #define stdConffile_g_entry J3D_DECL_FAR_VAR(stdConffile_g_entry, StdConffileEntry)

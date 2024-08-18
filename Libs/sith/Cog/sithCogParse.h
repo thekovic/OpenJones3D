@@ -5,7 +5,9 @@
 #include <sith/types.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
+
 #include <std/types.h>
+#include <std/General/stdConffile.h>
 
 J3D_EXTERN_C_START
 
@@ -21,7 +23,7 @@ SithCogSymbol* J3DAPI sithCogParse_GetSymbol(const SithCogSymbolTable* pLocal, c
 SithCogSymbol* J3DAPI sithCogParse_GetSymbolByID(const SithCogSymbolTable* pTable, unsigned int symbolId);
 int J3DAPI sithCogParse_GetSymbolLabel(unsigned int symbolId);
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeLeafNode(int opcode, int symbolId);
-SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(int opcode, const YYSTYPE* pVal);
+//SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(int opcode, const YYSTYPE* pVal);
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeNode(SithCogSyntaxNode* pLeft, SithCogSyntaxNode* pRight, int opcode, int value);
 void J3DAPI sithCogParse_LexerGetSymbol(const char* pName);
 void J3DAPI sithCogParse_LexerSetStringLiteral(const char* pString);

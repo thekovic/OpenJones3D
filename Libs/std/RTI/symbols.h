@@ -62,6 +62,7 @@
 #define stdDisplay_DDGetStatus_TYPE const char* (J3DAPI*)(HRESULT)
 #define stdDisplay_CreateZBuffer_TYPE int (J3DAPI*)(LPDDPIXELFORMAT, int)
 #define stdDisplay_InitDirectDraw_TYPE int (J3DAPI*)(HWND)
+#define stdDisplay_InitDirectDraw_TYPE int (J3DAPI*)(HWND hwnd)
 #define stdDisplay_ReleaseDirectDraw_TYPE void (J3DAPI*)()
 #define stdDisplay_DDEnumCallback_TYPE BOOL (__stdcall*)(GUID*, LPSTR, LPSTR, LPVOID)
 #define stdDisplay_EnumVideoModesCallback_TYPE HRESULT (__stdcall*)(LPDDSURFACEDESC2, LPVOID)

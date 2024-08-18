@@ -5,7 +5,9 @@
 #include <sith/types.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
+
 #include <std/types.h>
+#include <std/General/stdConffile.h>
 
 J3D_EXTERN_C_START
 
@@ -13,7 +15,7 @@ void sithWeapon_Open(void);
 void J3DAPI sithWeapon_InitalizeActor(SithThing* pThing);
 void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing);
 void J3DAPI sithWeapon_Update(SithThing* pThing, float secDeltaTime);
-signed int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId);
+int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId);
 int J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon);
 int J3DAPI sithWeapon_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
 SithThing* J3DAPI sithWeapon_WeaponFire(SithThing* pShooter, const SithThing* pProjectileTemplate, const rdVector3* pFireDir, rdVector3* pFirePos, tSoundHandle hFireSnd, SithPuppetSubMode submode, float extra, SithFireProjectileFlags projectileFlags, float secDeltaTime);
