@@ -5,6 +5,8 @@
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
 #include <sith/types.h>
+
+#include <std/General/stdConffile.h>
 #include <std/types.h>
 
 J3D_EXTERN_C_START

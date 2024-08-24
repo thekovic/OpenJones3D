@@ -9,7 +9,7 @@
 
 J3D_EXTERN_C_START
 
-// Returns 0 for success and 1 indecating error
+// Returns 0 for success and 1 indicating error
 int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings);
 void JonesDisplay_Shutdown(void);
 int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings);
