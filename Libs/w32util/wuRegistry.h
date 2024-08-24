@@ -6,10 +6,8 @@
 
 J3D_EXTERN_C_START
 
-#define wuRegistry_g_bStarted J3D_DECL_FAR_VAR(wuRegistry_g_bStarted, int)
-// extern int wuRegistry_g_bStarted;
-
 int J3DAPI wuRegistry_Startup(HKEY hKey, LPCSTR lpSubKey);
+bool wuRegistry_HasStarted(void);
 void J3DAPI wuRegistry_Shutdown();
 int J3DAPI wuRegistry_SaveInt(const char* pKey, int value);
 int J3DAPI wuRegistry_SaveFloat(const char* pKey, float value);

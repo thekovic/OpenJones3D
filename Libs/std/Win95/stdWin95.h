@@ -11,6 +11,7 @@ HWND J3DAPI stdWin95_GetWindow();
 void J3DAPI stdWin95_SetInstance(HINSTANCE hinstance);
 HINSTANCE stdWin95_GetInstance(void);
 void J3DAPI stdWin95_SetGuid(const GUID* pGuid);
+const GUID* J3DAPI stdWin95_GetGuid(void); // Added
 
 // Helper hooking functions
 void stdWin95_InstallHooks(void);
