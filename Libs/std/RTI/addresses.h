@@ -8,6 +8,11 @@
 #define stdio_open_ADDR 0x004EA080
 #define stdio_close_ADDR 0x004EA0B0
 #define stdio_flush_ADDR 0x004EA0E0
+
+#define word_183962C_ADDR 0x183962C
+#define word_1839630_ADDR 0x1839630
+#define word_183962E_ADDR 0x183962E
+
 #define stdControl_Startup_ADDR 0x004B7830
 #define stdControl_Shutdown_ADDR 0x004B7960
 #define stdControl_Open_ADDR 0x004B7A40
@@ -229,12 +234,14 @@
 #define stdConffile_PopStack_ADDR 0x004B9BA0
 #define stdPlatform_InitServices_ADDR 0x004C0350
 #define stdPlatform_ClearServices_ADDR 0x004C0420
+#define stdPlatform_GetTimeMsec_ADDR 0x004C0440
 #define stdPlatform_Assert_ADDR 0x004C0450
 #define stdPlatform_Printf_ADDR 0x004C0520
 #define stdPlatform_AllocHandle_ADDR 0x004C0550
 #define stdPlatform_FreeHandle_ADDR 0x004C0560
 #define stdPlatform_ReallocHandle_ADDR 0x004C0570
 #define stdPlatform_LockHandle_ADDR 0x004C0590
+#define stdPlatform_UnlockHandle_ADDR 0x0046D9E0
 #define stdGob_Startup_ADDR 0x004C0700
 #define stdGob_Shutdown_ADDR 0x004C0750
 #define stdGob_Load_ADDR 0x004C07A0
