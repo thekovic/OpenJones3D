@@ -3,6 +3,9 @@
 #include <j3dcore/j3d.h>
 #include <std/types.h>
 
+// Extra definition
+#define stdio_open_TYPE tFileHandle (J3API*)(char *Filename, char *mode)
+
 #define stdControl_Startup_TYPE int (J3DAPI*)(int)
 #define stdControl_Shutdown_TYPE void (*)(void)
 #define stdControl_Open_TYPE int (*)(void)
@@ -61,7 +64,6 @@
 #define stdDisplay_GetTotalMemory_TYPE int (J3DAPI*)(size_t*, size_t*)
 #define stdDisplay_DDGetStatus_TYPE const char* (J3DAPI*)(HRESULT)
 #define stdDisplay_CreateZBuffer_TYPE int (J3DAPI*)(LPDDPIXELFORMAT, int)
-#define stdDisplay_InitDirectDraw_TYPE int (J3DAPI*)(HWND)
 #define stdDisplay_InitDirectDraw_TYPE int (J3DAPI*)(HWND hwnd)
 #define stdDisplay_ReleaseDirectDraw_TYPE void (J3DAPI*)()
 #define stdDisplay_DDEnumCallback_TYPE BOOL (__stdcall*)(GUID*, LPSTR, LPSTR, LPVOID)
@@ -177,8 +179,8 @@
 #define stdMath_Dist3D1_TYPE float (J3DAPI*)(float, float, float)
 #define stdStartup_TYPE void (J3DAPI*)(tHostServices*)
 #define stdShutdown_TYPE void (*)(void)
-#define stdPrintf_TYPE void (*)(tPrintfFunc, const char*, unsigned int, const char*, ...)
-#define stdConsolePrintf_TYPE signed int (*)(const char*, ...)
+#define stdPrintf_TYPE void (J3DAPI*)(tPrintfFunc fpPrint, const char* pFilePath, unsigned int linenum, const char* format, ...)
+#define stdConsolePrintf_TYPE int (*)(const char*, ...)
 #define stdFileFromPath_TYPE const char* (J3DAPI*)(const char*)
 #define stdCalcBitPos_TYPE int (J3DAPI*)(int)
 #define stdFileOpen_TYPE tFileHandle (J3DAPI*)(const char*, const char*)

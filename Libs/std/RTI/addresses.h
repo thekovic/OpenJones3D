@@ -5,6 +5,9 @@
 
 // Function addresses
 
+#define stdio_open_ADDR 0x004EA080
+#define stdio_close_ADDR 0x004EA0B0
+#define stdio_flush_ADDR 0x004EA0E0
 #define stdControl_Startup_ADDR 0x004B7830
 #define stdControl_Shutdown_ADDR 0x004B7960
 #define stdControl_Open_ADDR 0x004B7A40
@@ -245,7 +248,7 @@
 #define stdGob_FileEOF_ADDR 0x004C0F10
 #define stdGob_FileRead_ADDR 0x004C0F50
 #define stdGob_FileGets_ADDR 0x004C0FD0
-#define stdEffect_ResetImpl_ADDR 0x004C2010
+#define stdEffect_InitFadeFactorImpl_ADDR 0x004C2010
 #define stdEffect_SetFadeFactor_ADDR 0x004C2030
 #define stdEffect_GetFadeFactor_ADDR 0x004C2050
 #define stdConsole_Startup_ADDR 0x004C2270

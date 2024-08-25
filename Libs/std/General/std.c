@@ -1,123 +1,251 @@
+#include <stdio.h>
+
 #include "std.h"
+#include "stdMemory.h"
+#include "stdUtil.h"
+
 #include <j3dcore/j3dhook.h>
 #include <std/RTI/symbols.h>
+#include <std/Win95/stdConsole.h>
 
-#define std_printBuffer J3D_DECL_FAR_ARRAYVAR(std_printBuffer, char(*)[2048])
-#define std_bStdStartup J3D_DECL_FAR_VAR(std_bStdStartup, int)
+static char aPrintBuffer[2048]     = { 0 };
+static char aFilePrintBuffer[2048] = { 0 };
+static bool bStdStartup = false;
+
+#define word_183962C J3D_DECL_FAR_VAR(word_183962C, int16_t)
+#define word_1839630 J3D_DECL_FAR_VAR(word_1839630, int16_t)
+#define word_183962E J3D_DECL_FAR_VAR(word_183962E, int16_t)
 
 void std_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
+    J3D_HOOKFUNC(stdStartup);
+    J3D_HOOKFUNC(stdShutdown);
+    J3D_HOOKFUNC(stdPrintf);
+    J3D_HOOKFUNC(stdConsolePrintf);
+    J3D_HOOKFUNC(stdFileFromPath);
+    J3D_HOOKFUNC(stdCalcBitPos);
+    J3D_HOOKFUNC(stdFileOpen);
+    J3D_HOOKFUNC(stdFileClose);
+    J3D_HOOKFUNC(stdFileRead);
+    J3D_HOOKFUNC(stdFileWrite);
+    J3D_HOOKFUNC(stdFileGets);
+    J3D_HOOKFUNC(stdFileGetws);
+    J3D_HOOKFUNC(stdFileEof);
+    J3D_HOOKFUNC(stdFileTell);
+    J3D_HOOKFUNC(stdFileSize);
+    J3D_HOOKFUNC(stdFilePrintf);
+    J3D_HOOKFUNC(stdFileSeek);
 
-    // J3D_HOOKFUNC(stdStartup);
-    // J3D_HOOKFUNC(stdShutdown);
-    // J3D_HOOKFUNC(stdPrintf);
-    // J3D_HOOKFUNC(stdConsolePrintf);
-    // J3D_HOOKFUNC(stdFileFromPath);
-    // J3D_HOOKFUNC(stdCalcBitPos);
-    // J3D_HOOKFUNC(stdFileOpen);
-    // J3D_HOOKFUNC(stdFileClose);
-    // J3D_HOOKFUNC(stdFileRead);
-    // J3D_HOOKFUNC(stdFileWrite);
-    // J3D_HOOKFUNC(stdFileGets);
-    // J3D_HOOKFUNC(stdFileGetws);
-    // J3D_HOOKFUNC(stdFileEof);
-    // J3D_HOOKFUNC(stdFileTell);
-    // J3D_HOOKFUNC(stdFileSize);
-    // J3D_HOOKFUNC(stdFilePrintf);
-    // J3D_HOOKFUNC(stdFileSeek);
+    // Hook on stdio_open, stdio_close & stdio_flush due to stdio_services using stdFile* functions which might have conflicting FILE* object
+    // Note on debug version this should be skipped
+    J3DHookFunction(stdio_open_ADDR, (void*)stdFileOpen);
+    J3DHookFunction(stdio_close_ADDR, (void*)stdFileClose);
+    J3DHookFunction(stdio_flush_ADDR, (void*)stdFileFlush);
 }
 
 void std_ResetGlobals(void)
 {
-    memset((char *)&std_g_aEmptyString, 0, sizeof(std_g_aEmptyString));
-    memset(&std_printBuffer, 0, sizeof(std_printBuffer));
-    memset(&std_bStdStartup, 0, sizeof(std_bStdStartup));
+    memset((char*)&std_g_aEmptyString, 0, sizeof(std_g_aEmptyString));
+    //memset(&aPrintBuffer, 0, sizeof(aPrintBuffer));
+    //memset(&bStdStartup, 0, sizeof(bStdStartup));
     memset(&std_g_genBuffer, 0, sizeof(std_g_genBuffer));
     memset(&std_g_pHS, 0, sizeof(std_g_pHS));
 }
 
 void J3DAPI stdStartup(tHostServices* pHS)
 {
-    J3D_TRAMPOLINE_CALL(stdStartup, pHS);
+    int16_t v1;
+
+    std_g_pHS = pHS; // TODO: Should probably be moved within if scope
+
+    if ( !bStdStartup )
+    {
+        // TODO: Should probably do success check
+        stdMemory_Startup();
+        stdMemory_Open();
+
+        // TODO: Remove when all round and rand float functions are replaced && updated
+        // TODO: consider setting FE_DOWNWARD for round functions (lrintf); i.e.: fesetround(FE_DOWNWARD) to mimic same behavior as OG
+        short  tmp = 0;
+        __asm  fnstcw word ptr[tmp];
+        word_183962C = tmp;
+
+        // The following flags control in binary (Indy3D.exe) FPU rounding control flags for frndint (floorf, ceilf) and fistp (lrintf)
+        // and should not have any effect in the reimplementation since these vars aren't used.
+        v1 = (0xB00 | word_183962C & 0xFF); // round up CF for in binary ceilf function
+        word_1839630 = v1;
+        v1 = (0x700 | word_183962C & 0xFF); // Round down CF for in binary floorf & lrintf
+        word_183962E = v1;
+        bStdStartup = true;
+    }
 }
 
 void stdShutdown(void)
 {
-    J3D_TRAMPOLINE_CALL(stdShutdown);
+    if ( bStdStartup )
+    {
+        stdMemory_Close();
+        stdMemory_Shutdown();
+        bStdStartup = false;
+    }
 }
 
-void stdPrintf(tPrintfFunc pfPrint, const char* pFilePath, unsigned int linenum, const char* format, ...)
+void J3DAPI stdPrintf(tPrintfFunc pfPrint, const char* pFilePath, unsigned int linenum, const char* format, ...)
 {
-    J3D_TRAMPOLINE_CALL(stdPrintf, pfPrint, pFilePath, linenum, format);
+    if ( pfPrint )
+    {
+        va_list args;
+        va_start(args, format);
+
+        size_t fnIdx = 0;
+        bool bFnFound = false;
+        for ( size_t i = 0; pFilePath[i]; ++i )
+        {
+            if ( pFilePath[i] == '\\' )
+            {
+                bFnFound = true;
+                fnIdx = i;
+            }
+        }
+
+        if ( bFnFound )
+        {
+            ++fnIdx;
+        }
+
+        // Format string: <filename>(linenum): format
+        int fnSize = _snprintf(aPrintBuffer, sizeof(aPrintBuffer), &pFilePath[fnIdx]);
+        size_t remain = sizeof(aPrintBuffer) - fnSize;
+        int nWritten = _snprintf(&aPrintBuffer[fnSize], remain, "(%d): ", linenum);
+        vsnprintf_s(
+            &aPrintBuffer[nWritten + fnSize],
+            STD_ARRAYLEN(aPrintBuffer) - (nWritten + fnSize),
+            remain - nWritten,
+            format,
+            args
+        );
+        va_end(args);
+
+        // Write to output function
+        pfPrint(aPrintBuffer);
+    }
 }
 
 signed int stdConsolePrintf(const char* pFormat, ...)
 {
-    return J3D_TRAMPOLINE_CALL(stdConsolePrintf, pFormat);
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, sizeof(std_g_genBuffer), sizeof(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args);
+
+    stdConsole_WriteConsole(std_g_genBuffer, 7u);
+    return sizeof(std_g_genBuffer);
 }
 
 const char* J3DAPI stdFileFromPath(const char* pPath)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileFromPath, pPath);
+    char* pFilename;
+
+    pFilename = strrchr(pPath, '\\');
+    if ( pFilename )
+    {
+        return pFilename + 1;
+    }
+    else
+    {
+        return pPath;
+    }
 }
 
-int J3DAPI stdCalcBitPos(int a1)
+int J3DAPI stdCalcBitPos(int bit)
 {
-    return J3D_TRAMPOLINE_CALL(stdCalcBitPos, a1);
+    int pos = 0;
+    while ( bit > 1 )
+    {
+        bit >>= 1;
+        pos++;
+    }
+
+    return pos;
 }
+
+// TODO: Below functions might all be needed to move to stdPlatform
 
 tFileHandle J3DAPI stdFileOpen(const char* pFilename, const char* mode)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileOpen, pFilename, mode);
+    FILE* fh;
+    if ( fopen_s(&fh, pFilename, mode) != 0 ) {
+        fh = NULL; // Make sure it's null
+    }
+    return (tFileHandle)fh;
 }
 
 int J3DAPI stdFileClose(tFileHandle fh)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileClose, fh);
+    fclose((FILE*)fh);
+    return 0;
 }
 
 size_t J3DAPI stdFileRead(tFileHandle fh, void* pOutData, size_t size)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileRead, fh, pOutData, size);
+    return fread(pOutData, 1u, size, (FILE*)fh);
 }
 
 size_t J3DAPI stdFileWrite(tFileHandle fh, const void* pData, size_t size)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileWrite, fh, pData, size);
+    return fwrite(pData, 1u, size, (FILE*)fh);
+}
+
+int J3DAPI stdFileFlush(tFileHandle fh)
+{
+    return fflush((FILE*)fh);
 }
 
 char* J3DAPI stdFileGets(tFileHandle fh, char* pStr, size_t size)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileGets, fh, pStr, size);
+    return fgets(pStr, size, (FILE*)fh);
 }
 
 wchar_t* J3DAPI stdFileGetws(tFileHandle fh, wchar_t* pOutStr, size_t size)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileGetws, fh, pOutStr, size);
+    return fgetws(pOutStr, size, (FILE*)fh);
 }
 
 int J3DAPI stdFileEof(tFileHandle fh)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileEof, fh);
+    return feof((FILE*)fh);
 }
 
 int J3DAPI stdFileTell(tFileHandle fh)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileTell, fh);
+    return ftell((FILE*)fh);
 }
 
 size_t J3DAPI stdFileSize(const char* pFilePath)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileSize, pFilePath);
+    tFileHandle fh = stdFileOpen(pFilePath, "rb");
+    if ( !fh ) {
+        return 0;
+    }
+
+    stdFileSeek(fh, 0, 2);
+    int size = stdFileTell(fh);
+    stdFileClose(fh);
+    return size;
 }
 
 int stdFilePrintf(tFileHandle fh, const char* pFormat, ...)
 {
-    return J3D_TRAMPOLINE_CALL(stdFilePrintf, fh, pFormat);
+    va_list args;
+    va_start(args, pFormat);
+    int size = vsnprintf_s(aFilePrintBuffer, sizeof(aFilePrintBuffer), sizeof(aFilePrintBuffer) - 1, pFormat, args);
+    va_end(args);
+
+    stdFileWrite(fh, aFilePrintBuffer, size);
+    return 0;
 }
 
-int J3DAPI stdFileSeek(tFileHandle pFile, int offset, int origin)
+int J3DAPI stdFileSeek(tFileHandle fh, int offset, int origin)
 {
-    return J3D_TRAMPOLINE_CALL(stdFileSeek, pFile, offset, origin);
+    return fseek((FILE*)fh, offset, origin);
 }

@@ -30,6 +30,7 @@ J3D_EXTERN_C_START
 #define STD_ASSERTREL(condition) \
     J3D_ASSERTREL(condition, std_g_pHS)
 
+
 #define std_g_aEmptyString J3D_DECL_FAR_ARRAYVAR(std_g_aEmptyString, const char(*)[8])
 // extern const char std_g_aEmptyString[8];
 
@@ -49,6 +50,7 @@ tFileHandle J3DAPI stdFileOpen(const char* pFilename, const char* mode);
 int J3DAPI stdFileClose(tFileHandle fh);
 size_t J3DAPI stdFileRead(tFileHandle fh, void* pOutData, size_t size);
 size_t J3DAPI stdFileWrite(tFileHandle fh, const void* pData, size_t size);
+int J3DAPI stdFileFlush(tFileHandle fh);
 char* J3DAPI stdFileGets(tFileHandle fh, char* pStr, size_t size);
 wchar_t* J3DAPI stdFileGetws(tFileHandle fh, wchar_t* pOutStr, size_t size);
 int J3DAPI stdFileEof(tFileHandle fh);
