@@ -6,7 +6,9 @@
 
 J3D_EXTERN_C_START
 
-void J3DAPI stdEffect_ResetImpl();
+void stdEffect_Startup(void);
+void stdEffect_Shutdown(void); // Added
+void stdEffect_Reset(void);
 void J3DAPI stdEffect_SetFadeFactor(int bEnabled, float factor);
 const tStdFadeFactor* J3DAPI stdEffect_GetFadeFactor();
 

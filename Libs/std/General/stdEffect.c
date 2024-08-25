@@ -2,33 +2,43 @@
 #include <j3dcore/j3dhook.h>
 #include <std/RTI/symbols.h>
 
-#define stdEffect_fadeFactor J3D_DECL_FAR_VAR(stdEffect_fadeFactor, tStdFadeFactor)
+static tStdFadeFactor stdEffect_fadeFactor;
 
 void stdEffect_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(stdEffect_ResetImpl);
-    // J3D_HOOKFUNC(stdEffect_SetFadeFactor);
-    // J3D_HOOKFUNC(stdEffect_GetFadeFactor);
+    J3D_HOOKFUNC(stdEffect_Startup);
+    J3D_HOOKFUNC(stdEffect_Reset);
+    J3D_HOOKFUNC(stdEffect_SetFadeFactor);
+    J3D_HOOKFUNC(stdEffect_GetFadeFactor);
 }
 
 void stdEffect_ResetGlobals(void)
 {
-    memset(&stdEffect_fadeFactor, 0, sizeof(stdEffect_fadeFactor));
 }
 
-void J3DAPI stdEffect_ResetImpl()
+void stdEffect_Startup(void)
 {
-    J3D_TRAMPOLINE_CALL(stdEffect_ResetImpl);
+    stdEffect_Reset();
+}
+
+void stdEffect_Shutdown(void)
+{
+    stdEffect_Reset();
+}
+
+void stdEffect_Reset(void)
+{
+    stdEffect_fadeFactor.bEnabled = 0;
+    stdEffect_fadeFactor.factor   = 1.0f;
 }
 
 void J3DAPI stdEffect_SetFadeFactor(int bEnabled, float factor)
 {
-    J3D_TRAMPOLINE_CALL(stdEffect_SetFadeFactor, bEnabled, factor);
+    stdEffect_fadeFactor.bEnabled = bEnabled;
+    stdEffect_fadeFactor.factor = factor;
 }
 
 const tStdFadeFactor* J3DAPI stdEffect_GetFadeFactor()
 {
-    return J3D_TRAMPOLINE_CALL(stdEffect_GetFadeFactor);
+    return &stdEffect_fadeFactor;
 }

@@ -248,7 +248,8 @@
 #define stdGob_FileEOF_ADDR 0x004C0F10
 #define stdGob_FileRead_ADDR 0x004C0F50
 #define stdGob_FileGets_ADDR 0x004C0FD0
-#define stdEffect_InitFadeFactorImpl_ADDR 0x004C2010
+#define stdEffect_Startup_ADDR 0x004C2000
+#define stdEffect_Reset_ADDR 0x004C2010
 #define stdEffect_SetFadeFactor_ADDR 0x004C2030
 #define stdEffect_GetFadeFactor_ADDR 0x004C2050
 #define stdConsole_Startup_ADDR 0x004C2270
