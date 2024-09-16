@@ -1,123 +1,301 @@
+#include "std.h"
 #include "stdHashtbl.h"
+#include "stdLinklist.h"
+#include "stdMemory.h"
+#include "stdUtil.h"
+
 #include <j3dcore/j3dhook.h>
 #include <std/RTI/symbols.h>
 
-#define stdHashtbl_aPrimeTable J3D_DECL_FAR_ARRAYVAR(stdHashtbl_aPrimeTable, int(*)[32])
+static size_t stdHashtbl_aPrimeTable[32] = {
+    23u,   53u,   79u,   101u,  151u,  211u,  251u,  307u,
+    353u,  401u,  457u,  503u,  557u,  601u,  653u,  701u,
+    751u,  809u,  853u,  907u,  953u,  1009u, 1103u, 1201u,
+    1301u, 1409u, 1511u, 1601u, 1709u, 1801u, 1901u, 1999u
+};
+
+static inline unsigned int J3DAPI CalculateHash(const char* pData, signed int hashSize);
+static inline size_t J3DAPI GetNextPrime(size_t nextPrime);
+static inline int J3DAPI isPrime(size_t val);
 
 void stdHashtbl_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(stdHashtbl_New);
-    // J3D_HOOKFUNC(stdHashtbl_CalculateHash);
-    // J3D_HOOKFUNC(stdHashtbl_GetNextPrime);
-    // J3D_HOOKFUNC(stdHashtbl_isPrime);
-    // J3D_HOOKFUNC(stdHashtbl_nextPrime);
-    // J3D_HOOKFUNC(stdHashtbl_Free);
-    // J3D_HOOKFUNC(stdHashtbl_FreeListNodes);
-    // J3D_HOOKFUNC(stdHashtbl_Add);
-    // J3D_HOOKFUNC(stdHashtbl_GetTailNode);
-    // J3D_HOOKFUNC(stdHashtbl_Find);
-    // J3D_HOOKFUNC(stdHashtbl_FindNode);
-    // J3D_HOOKFUNC(stdHashtbl_Remove);
+    J3D_HOOKFUNC(stdHashtbl_New);
+    J3D_HOOKFUNC(CalculateHash);
+    J3D_HOOKFUNC(GetNextPrime);
+    J3D_HOOKFUNC(isPrime);
+    J3D_HOOKFUNC(stdHashtbl_nextPrime);
+    J3D_HOOKFUNC(stdHashtbl_Free);
+    J3D_HOOKFUNC(stdHashtbl_FreeListNodes);
+    J3D_HOOKFUNC(stdHashtbl_Add);
+    J3D_HOOKFUNC(stdHashtbl_GetTailNode);
+    J3D_HOOKFUNC(stdHashtbl_Find);
+    J3D_HOOKFUNC(stdHashtbl_FindNode);
+    J3D_HOOKFUNC(stdHashtbl_Remove);
 }
 
 void stdHashtbl_ResetGlobals(void)
 {
-    int stdHashtbl_aPrimeTable_tmp[32] = {
-      23,
-      53,
-      79,
-      101,
-      151,
-      211,
-      251,
-      307,
-      353,
-      401,
-      457,
-      503,
-      557,
-      601,
-      653,
-      701,
-      751,
-      809,
-      853,
-      907,
-      953,
-      1009,
-      1103,
-      1201,
-      1301,
-      1409,
-      1511,
-      1601,
-      1709,
-      1801,
-      1901,
-      1999
+    /*int stdHashtbl_aPrimeTable_tmp[32] = {
+        23u,   53u,   79u,   101u,  151u,  211u,  251u,  307u,
+        353u,  401u,  457u,  503u,  557u,  601u,  653u,  701u,
+        751u,  809u,  853u,  907u,  953u,  1009u, 1103u, 1201u,
+        1301u, 1409u, 1511u, 1601u, 1709u, 1801u, 1901u, 1999u
     };
-    memcpy(&stdHashtbl_aPrimeTable, &stdHashtbl_aPrimeTable_tmp, sizeof(stdHashtbl_aPrimeTable));
-    
+    memcpy(&stdHashtbl_aPrimeTable, &stdHashtbl_aPrimeTable_tmp, sizeof(stdHashtbl_aPrimeTable));*/
+
+}
+
+unsigned int J3DAPI CalculateHash(const char* pData, signed int hashSize)
+{
+    signed int hashValue = 0;
+    while ( *pData ) {
+        hashValue = *pData++ + 65599 * hashValue;
+    }
+
+    hashValue = abs(hashValue % hashSize);
+    STD_ASSERTREL(hashValue >= 0);
+    STD_ASSERTREL(hashValue < hashSize);
+    return hashValue;
+}
+
+size_t J3DAPI GetNextPrime(size_t nextPrime)
+{
+    for ( size_t i = 0; i < STD_ARRAYLEN(stdHashtbl_aPrimeTable); ++i )
+    {
+        if ( nextPrime < stdHashtbl_aPrimeTable[i] )
+        {
+            nextPrime = stdHashtbl_aPrimeTable[i];
+            break;
+        }
+    }
+
+    if ( nextPrime > 1999u ) {
+        nextPrime = stdHashtbl_nextPrime(nextPrime);
+    }
+
+    STD_ASSERTREL(isPrime(nextPrime));
+    return nextPrime;
+}
+
+int J3DAPI isPrime(size_t val)
+{
+    if ( val < 2 ) {
+        return 0;
+    }
+
+    for ( size_t i = 2; i < (val - 1); ++i )
+    {
+        if ( !(val % i) ) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 tHashTable* J3DAPI stdHashtbl_New(size_t size)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_New, size);
-}
+    tHashTable* pTable = (tHashTable*)STDMALLOC(sizeof(tHashTable));
+    if ( !pTable ) {
+        return NULL;
+    }
 
-unsigned int J3DAPI stdHashtbl_CalculateHash(const char* pData, signed int hashSize)
-{
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_CalculateHash, pData, hashSize);
-}
+    memset(pTable, 0, sizeof(tHashTable));
 
-size_t J3DAPI stdHashtbl_GetNextPrime(size_t nextPrime)
-{
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_GetNextPrime, nextPrime);
-}
+    pTable->numNodes = GetNextPrime(size);
+    pTable->paNodes = (tLinkListNode*)STDMALLOC(sizeof(tLinkListNode) * pTable->numNodes);
+    if ( !pTable->paNodes ) {
+        return NULL;
+    }
 
-int J3DAPI stdHashtbl_isPrime(size_t val)
-{
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_isPrime, val);
+    memset(pTable->paNodes, 0, sizeof(tLinkListNode) * pTable->numNodes);
+    pTable->pfHashFunc = CalculateHash;
+    return pTable;
 }
 
 size_t J3DAPI stdHashtbl_nextPrime(size_t candidate)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_nextPrime, candidate);
+    while ( !isPrime(candidate) ) {
+        ++candidate;
+    }
+
+    STD_ASSERTREL(isPrime(candidate));
+    return candidate;
 }
 
 void J3DAPI stdHashtbl_Free(tHashTable* pTable)
 {
-    J3D_TRAMPOLINE_CALL(stdHashtbl_Free, pTable);
+
+    STD_ASSERTREL(pTable != ((void*)0));
+    for ( size_t i = 0; i < pTable->numNodes; ++i ) {
+        stdHashtbl_FreeListNodes(&pTable->paNodes[i]);
+    }
+
+    stdMemory_Free(pTable->paNodes);
+    stdMemory_Free(pTable);
 }
 
 void J3DAPI stdHashtbl_FreeListNodes(tLinkListNode* pNode)
 {
-    J3D_TRAMPOLINE_CALL(stdHashtbl_FreeListNodes, pNode);
+    tLinkListNode* pNextNode = NULL;
+    for ( tLinkListNode* pCurNode = pNode->next; pCurNode; pCurNode = pNextNode )
+    {
+        pNextNode = pCurNode->next;
+        stdMemory_Free(pCurNode);
+    }
 }
 
 int J3DAPI stdHashtbl_Add(tHashTable* pTable, const char* pName, void* pData)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_Add, pTable, pName, pData);
+    STD_ASSERTREL(pTable != ((void*)0));
+    STD_ASSERTREL(pData != ((void*)0));
+
+    if ( stdHashtbl_Find(pTable, pName) ) {
+        return 0;
+    }
+
+    unsigned int nodeIdx = pTable->pfHashFunc(pName, pTable->numNodes);
+    tLinkListNode* pCur = stdHashtbl_GetTailNode(&pTable->paNodes[nodeIdx]);
+    if ( pCur->name )
+    {
+        tLinkListNode* pNode = (tLinkListNode*)STDMALLOC(sizeof(tLinkListNode));
+        if ( !pNode ) {
+            return 0;
+        }
+
+        memset(pNode, 0, sizeof(tLinkListNode));
+        pNode->name = pName;
+        pNode->data = pData;
+        stdLinkList_AddNode(pCur, pNode);
+    }
+    else
+    {
+        memset(&pTable->paNodes[nodeIdx], 0, sizeof(pTable->paNodes[nodeIdx]));
+        pTable->paNodes[nodeIdx].name = pName;
+        pTable->paNodes[nodeIdx].data = pData;
+    }
+
+    return 1;
 }
 
 tLinkListNode* J3DAPI stdHashtbl_GetTailNode(const tLinkListNode* pCur)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_GetTailNode, pCur);
+    STD_ASSERTREL(pCur != ((void*)0));
+    while ( pCur->next ) {
+        pCur = pCur->next;
+    }
+
+    return (tLinkListNode*)pCur;
 }
 
 void* J3DAPI stdHashtbl_Find(const tHashTable* pTable, const char* pName)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_Find, pTable, pName);
+    int pNodeHash;
+    tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &pNodeHash);
+    if ( pNode ) {
+        return pNode->data;
+    }
+    return NULL;
 }
 
-tLinkListNode* J3DAPI stdHashtbl_FindNode(const tHashTable* pTable, const char* pName, int* pNodeHash)
+tLinkListNode* J3DAPI stdHashtbl_FindNode(const tHashTable* pTable, const char* pName, int* pNodeIdx)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_FindNode, pTable, pName, pNodeHash);
+    if ( !pTable ) {
+        return NULL;
+    }
+
+    *pNodeIdx = pTable->pfHashFunc(pName, pTable->numNodes);
+    for ( tLinkListNode* pCurNode = &pTable->paNodes[*pNodeIdx]; pCurNode && pCurNode->name; pCurNode = pCurNode->next )
+    {
+        if ( strcmp(pCurNode->name, pName) == 0 ) {
+            return pCurNode;
+        }
+    }
+
+    return NULL;
 }
 
 int J3DAPI stdHashtbl_Remove(tHashTable* pTable, const char* pName)
 {
-    return J3D_TRAMPOLINE_CALL(stdHashtbl_Remove, pTable, pName);
+    STD_ASSERTREL(pTable != ((void*)0));
+
+    int nodeIdx = -1;
+    tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &nodeIdx);
+    if ( !pNode ) {
+        return 0;
+    }
+
+    tLinkListNode* pNodeNext = pNode->next;
+    stdLinkList_RemoveNode(pNode);
+
+    if ( &pTable->paNodes[nodeIdx] == pNode )
+    {
+        if ( pNodeNext )
+        {
+            memcpy(&pTable->paNodes[nodeIdx], pNodeNext, sizeof(pTable->paNodes[nodeIdx]));
+            tLinkListNode* pNext = pTable->paNodes[nodeIdx].next;
+            if ( pNext ) {
+                pNext->prev = &pTable->paNodes[nodeIdx];
+            }
+            stdMemory_Free(pNodeNext);
+        }
+        else {
+            memset(&pTable->paNodes[nodeIdx], 0, sizeof(pTable->paNodes[nodeIdx]));
+        }
+    }
+    else {
+        stdMemory_Free(pNode);
+    }
+
+    return 1;
+}
+
+void J3DAPI stdHashtbl_PrintTableDiagnostics(tHashTable* pTable)
+{
+    STD_ASSERTREL(pTable != ((void*)0));
+    std_g_pHS->pDebugPrint("\nHASHTABLE Diagnostics\n");
+    std_g_pHS->pDebugPrint("---------------------\n");
+
+    size_t usedIndices = 0;
+    size_t totalNodes = 0;
+    size_t maxLookup = 0;
+    for ( size_t i = 0; i < pTable->numNodes; ++i )
+    {
+        if ( pTable->paNodes[i].name )
+        {
+            ++usedIndices;
+            size_t numNodes = stdLinklist_GetCount(&pTable->paNodes[i]);
+            totalNodes += numNodes;
+            if ( numNodes > maxLookup )
+            {
+                maxLookup = numNodes;
+            }
+        }
+    }
+
+    std_g_pHS->pDebugPrint(" Maximum Lookups = %d\n", maxLookup);
+    std_g_pHS->pDebugPrint(" Filled Indices = %d/%d (%2.2f%%)\n", usedIndices, pTable->numNodes, (double)usedIndices * 100.0f / (double)pTable->numNodes);
+    std_g_pHS->pDebugPrint(" Average Lookup = %2.2f\n", (double)totalNodes / (double)usedIndices);
+    std_g_pHS->pDebugPrint(" Weighted Lookup = %2.2f\n", (double)totalNodes / (double)pTable->numNodes);
+    std_g_pHS->pDebugPrint("---------------------\n");
+}
+
+void J3DAPI stdHashtbl_DumpTable(tHashTable* pTable)
+{
+    STD_ASSERTREL(pTable != ((void*)0));
+    std_g_pHS->pDebugPrint("\nHASHTABLE\n---------\n");
+    for ( size_t i = 0; i < pTable->numNodes; ++i )
+    {
+        std_g_pHS->pDebugPrint("Index: %d\t", i);
+        std_g_pHS->pDebugPrint("Strings:");
+        tLinkListNode* pNode = &pTable->paNodes[i];
+        while ( pNode )
+        {
+            std_g_pHS->pDebugPrint(" '%s'", pNode->name);
+            pNode = pNode->next;
+        }
+
+        std_g_pHS->pDebugPrint("\n");
+    }
 }

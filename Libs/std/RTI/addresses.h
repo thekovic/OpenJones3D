@@ -146,9 +146,9 @@
 #define std3D_FreeDisplayEnvironment_ADDR 0x004BFD80
 #define std3D_SetFindAllDevices_ADDR 0x004BFE00
 #define stdHashtbl_New_ADDR 0x004BFE10
-#define stdHashtbl_CalculateHash_ADDR 0x004BFE90
-#define stdHashtbl_GetNextPrime_ADDR 0x004BFF10
-#define stdHashtbl_isPrime_ADDR 0x004BFF80
+#define CalculateHash_ADDR 0x004BFE90
+#define GetNextPrime_ADDR 0x004BFF10
+#define isPrime_ADDR 0x004BFF80
 #define stdHashtbl_nextPrime_ADDR 0x004BFFC0
 #define stdHashtbl_Free_ADDR 0x004C0010
 #define stdHashtbl_FreeListNodes_ADDR 0x004C0070
