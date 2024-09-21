@@ -1,130 +1,374 @@
+#include "std.h"
 #include "stdConffile.h"
+#include "stdMemory.h"
+#include "stdUtil.h"
+
 #include <j3dcore/j3dhook.h>
 #include <std/RTI/symbols.h>
 
-#define stdConffile_aWriteFilename J3D_DECL_FAR_ARRAYVAR(stdConffile_aWriteFilename, char(*)[128])
-#define stdConffile_aFilenameStack J3D_DECL_FAR_ARRAYVAR(stdConffile_aFilenameStack, char(*)[20][128])
-#define stdConffile_apBufferStack J3D_DECL_FAR_ARRAYVAR(stdConffile_apBufferStack, char*(*)[20])
-#define stdConffile_linenumStack J3D_DECL_FAR_ARRAYVAR(stdConffile_linenumStack, size_t(*)[20])
-#define stdConffile_pFilename J3D_DECL_FAR_ARRAYVAR(stdConffile_pFilename, char(*)[128])
-#define stdConffile_aEntryStack J3D_DECL_FAR_ARRAYVAR(stdConffile_aEntryStack, StdConffileEntry(*)[20])
-#define stdConffile_openFileStack J3D_DECL_FAR_ARRAYVAR(stdConffile_openFileStack, tFileHandle(*)[20])
-#define stdConffile_linenum J3D_DECL_FAR_VAR(stdConffile_linenum, size_t)
-#define stdConffile_bOpen J3D_DECL_FAR_VAR(stdConffile_bOpen, int)
-#define stdConffile_openFile J3D_DECL_FAR_VAR(stdConffile_openFile, tFileHandle)
-#define stdConffile_writeFile J3D_DECL_FAR_VAR(stdConffile_writeFile, tFileHandle)
-#define stdConffile_stackLevel J3D_DECL_FAR_VAR(stdConffile_stackLevel, size_t)
+#define STDCONFFILE_STACKSIZE 20
+#define STDCONFFILE_FILENAMESIZE 128
+
+static bool stdConffile_bOpen = false;
+
+static tFileHandle openFile  = 0;
+static tFileHandle writeFile = 0;
+
+static size_t stackLevel = 0;
+static char* apBufferStack[STDCONFFILE_STACKSIZE]          = { 0 };
+static tFileHandle openFileStack[STDCONFFILE_STACKSIZE]    = { 0 };
+static StdConffileEntry aEntryStack[STDCONFFILE_STACKSIZE] = { 0 };
+static char aFilenameStack[STDCONFFILE_STACKSIZE][STDCONFFILE_FILENAMESIZE] = { 0 };
+
+static char stdConffile_pFilename[STDCONFFILE_FILENAMESIZE]      = { 0 };
+static char stdConffile_aWriteFilename[STDCONFFILE_FILENAMESIZE] = { 0 };
+
+static size_t stdConffile_linenum = 0;
+static size_t linenumStack[STDCONFFILE_STACKSIZE] = { 0 };
+
+static char printBuffer[4096] = { 0 };
+
+void stdConffile_PushStack(void);
+void stdConffile_PopStack(void);
 
 void stdConffile_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(stdConffile_Open);
-    // J3D_HOOKFUNC(stdConffile_OpenWrite);
-    // J3D_HOOKFUNC(stdConffile_OpenMode);
-    // J3D_HOOKFUNC(stdConffile_Close);
-    // J3D_HOOKFUNC(stdConffile_CloseWrite);
-    // J3D_HOOKFUNC(stdConffile_Write);
-    // J3D_HOOKFUNC(stdConffile_Read);
-    // J3D_HOOKFUNC(stdConffile_ReadArgsFromStr);
-    // J3D_HOOKFUNC(stdConffile_ReadArgs);
-    // J3D_HOOKFUNC(stdConffile_ReadLine);
-    // J3D_HOOKFUNC(stdConffile_GetFileHandle);
-    // J3D_HOOKFUNC(stdConffile_GetLineNumber);
-    // J3D_HOOKFUNC(stdConffile_GetFilename);
-    // J3D_HOOKFUNC(stdConffile_PushStack);
-    // J3D_HOOKFUNC(stdConffile_PopStack);
+    J3D_HOOKFUNC(stdConffile_Open);
+    J3D_HOOKFUNC(stdConffile_OpenWrite);
+    J3D_HOOKFUNC(stdConffile_OpenMode);
+    J3D_HOOKFUNC(stdConffile_Close);
+    J3D_HOOKFUNC(stdConffile_CloseWrite);
+    J3D_HOOKFUNC(stdConffile_Write);
+    J3D_HOOKFUNC(stdConffile_Read);
+    J3D_HOOKFUNC(stdConffile_ReadArgsFromStr);
+    J3D_HOOKFUNC(stdConffile_ReadArgs);
+    J3D_HOOKFUNC(stdConffile_ReadLine);
+    J3D_HOOKFUNC(stdConffile_GetFileHandle);
+    J3D_HOOKFUNC(stdConffile_GetLineNumber);
+    J3D_HOOKFUNC(stdConffile_GetFilename);
+    J3D_HOOKFUNC(stdConffile_PushStack);
+    J3D_HOOKFUNC(stdConffile_PopStack);
 }
 
 void stdConffile_ResetGlobals(void)
 {
-    memset(&stdConffile_aWriteFilename, 0, sizeof(stdConffile_aWriteFilename));
-    memset(&stdConffile_aFilenameStack, 0, sizeof(stdConffile_aFilenameStack));
-    memset(&stdConffile_apBufferStack, 0, sizeof(stdConffile_apBufferStack));
-    memset(&stdConffile_linenumStack, 0, sizeof(stdConffile_linenumStack));
-    memset(&stdConffile_pFilename, 0, sizeof(stdConffile_pFilename));
-    memset(&stdConffile_aEntryStack, 0, sizeof(stdConffile_aEntryStack));
-    memset(&stdConffile_openFileStack, 0, sizeof(stdConffile_openFileStack));
-    memset(&stdConffile_linenum, 0, sizeof(stdConffile_linenum));
-    memset(&stdConffile_bOpen, 0, sizeof(stdConffile_bOpen));
-    memset(&stdConffile_openFile, 0, sizeof(stdConffile_openFile));
-    memset(&stdConffile_writeFile, 0, sizeof(stdConffile_writeFile));
-    memset(&stdConffile_stackLevel, 0, sizeof(stdConffile_stackLevel));
+    //memset(&stdConffile_aWriteFilename, 0, sizeof(stdConffile_aWriteFilename));
+    //memset(&aFilenameStack, 0, sizeof(aFilenameStack));
+    //memset(&apBufferStack, 0, sizeof(apBufferStack));
+    //memset(&linenumStack, 0, sizeof(linenumStack));
+    //memset(&stdConffile_pFilename, 0, sizeof(stdConffile_pFilename));
+    //memset(&aEntryStack, 0, sizeof(aEntryStack));
+    //memset(&openFileStack, 0, sizeof(openFileStack));
+    //memset(&stdConffile_linenum, 0, sizeof(stdConffile_linenum));
+    //memset(&stdConffile_bOpen, 0, sizeof(stdConffile_bOpen));
+    //memset(&stdConffile_openFile, 0, sizeof(stdConffile_openFile));
+    //memset(&stdConffile_writeFile, 0, sizeof(stdConffile_writeFile));
+    //memset(&stdConffile_stackLevel, 0, sizeof(stdConffile_stackLevel));
+
     memset(&stdConffile_g_entry, 0, sizeof(stdConffile_g_entry));
     memset(&stdConffile_g_aLine, 0, sizeof(stdConffile_g_aLine));
 }
 
 int J3DAPI stdConffile_Open(const char* pFilename)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_Open, pFilename);
+    return stdConffile_OpenMode(pFilename, "r");
 }
 
 int J3DAPI stdConffile_OpenWrite(const char* pFilename)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_OpenWrite, pFilename);
+    if ( writeFile ) {
+        return 0;
+    }
+
+    writeFile = std_g_pHS->pFileOpen(pFilename, "wb");
+    if ( writeFile )
+    {
+        stdUtil_StringCopy(stdConffile_aWriteFilename, sizeof(stdConffile_aWriteFilename), pFilename);
+        return 1;
+    }
+    else
+    {
+        writeFile = 0;
+        return 0;
+    }
 }
 
 int J3DAPI stdConffile_OpenMode(const char* pFilename, const char* openMode)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_OpenMode, pFilename, openMode);
+    if ( stdConffile_bOpen ) {
+        stdConffile_PushStack();
+    }
+
+    STD_ASSERTREL(openFile == 0);
+    if ( strcmp(pFilename, "none") == 0 ) {
+        openFile = 0;
+    }
+    else
+    {
+        openFile = std_g_pHS->pFileOpen(pFilename, openMode);
+        if ( !openFile )
+        {
+            #ifdef J3D_DEBUG
+            STDLOG_DEBUG("Conffile '%s' could not be opened (handle=%d)\n", pFilename, openFile);
+            #endif
+
+            openFile = 0;
+            if ( stdConffile_bOpen ) {
+                stdConffile_PopStack();
+            }
+
+            return 0;
+        }
+    }
+
+    stdConffile_g_aLine = (char*)STDMALLOC(STDCONFFILE_LINESIZE);
+    stdUtil_StringCopy(stdConffile_pFilename, sizeof(stdConffile_pFilename), pFilename);
+
+    stdConffile_linenum = 0;
+    stdConffile_bOpen   = true;
+    return 1;
 }
 
 void stdConffile_Close(void)
 {
-    J3D_TRAMPOLINE_CALL(stdConffile_Close);
+    if ( !stdConffile_bOpen )
+    {
+        STDLOG_ERROR("Warning: System already closed!\n");
+        return;
+    }
+
+    STD_ASSERTREL(stdConffile_g_aLine != ((void*)0));
+    if ( openFile ) {
+        std_g_pHS->pFileClose(openFile);
+    }
+
+    openFile = 0;
+    stdMemory_Free(stdConffile_g_aLine);
+
+    if ( stackLevel ) {
+        stdConffile_PopStack();
+    }
+    else {
+        stdConffile_bOpen = false;
+    }
 }
 
 void stdConffile_CloseWrite(void)
 {
-    J3D_TRAMPOLINE_CALL(stdConffile_CloseWrite);
+    if ( writeFile )
+    {
+        std_g_pHS->pFileClose(writeFile);
+        writeFile = 0;
+        stdUtil_StringCopy(stdConffile_aWriteFilename, sizeof(stdConffile_aWriteFilename), "NOT_OPEN");
+    }
 }
 
-int J3DAPI stdConffile_Write(const void* pData, int size)
+int J3DAPI stdConffile_WriteLine(const char* pLine)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_Write, pData, size);
+    if ( !writeFile || !pLine )
+    {
+        return 1;
+    }
+
+    size_t len = strlen(pLine);
+    return len != std_g_pHS->pFileWrite(writeFile, pLine, len);
+}
+
+int J3DAPI stdConffile_Write(const void* pData, size_t size)
+{
+    return !writeFile || !pData || size != std_g_pHS->pFileWrite(writeFile, pData, size);
+}
+
+int stdConffile_Printf(const char* pFormat, ...)
+{
+    if ( !writeFile || !pFormat ) {
+        return 1;
+    }
+
+    va_list args;
+    va_start(args, pFormat);
+    size_t nWrite = vsnprintf(printBuffer, sizeof(printBuffer), pFormat, args);
+    va_end(args);
+
+    return std_g_pHS->pFileWrite(writeFile, printBuffer, nWrite) != nWrite;
 }
 
 int J3DAPI stdConffile_Read(void* pData, size_t size)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_Read, pData, size);
+    STD_ASSERTREL(pData && (size > 0));
+    return stdConffile_bOpen && openFile && std_g_pHS->pFileRead(openFile, pData, size) == size;
 }
 
 int J3DAPI stdConffile_ReadArgsFromStr(char* pStr)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_ReadArgsFromStr, pStr);
+    size_t argNum = 0;
+    stdConffile_g_entry.numArgs = 0;
+
+    char* pntok = NULL;
+    for ( char* ptok = strtok_r(pStr, ", \t\n\r", &pntok); ptok; ptok = strtok_r(NULL, ", \t\n\r", &pntok) )
+    {
+        if ( argNum >= STDCONFILE_MAXARGS ) // Fixed; original: argNum > STDCONFILE_MAXARGS
+        {
+            STDLOG_ERROR("conffile  %s line %d too many args.\n", stdConffile_pFilename, stdConffile_linenum);
+            return 1;
+        }
+
+        char* pqstr = strchr(ptok, '"');
+        if ( pqstr )
+        {
+            stdConffile_g_entry.aArgs[argNum].argName  = pqstr + 1;
+            stdConffile_g_entry.aArgs[argNum].argValue = pqstr + 1;
+            if ( ptok[strlen(ptok) - 1] == '"' )
+            {
+                ptok[strlen(ptok) - 1] = '\0';
+            }
+            else
+            {
+                ptok[strlen(ptok)] = ' ';
+                strtok_r(NULL, ",\t\n\r\"", &pntok);
+            }
+        }
+        else
+        {
+            char* pval = strchr(ptok, '=');
+            if ( pval )
+            {
+                *pval = '\0';
+                stdConffile_g_entry.aArgs[argNum].argName = ptok;
+                stdConffile_g_entry.aArgs[argNum].argValue = pval + 1;
+            }
+            else
+            {
+                stdConffile_g_entry.aArgs[argNum].argName = ptok;
+                stdConffile_g_entry.aArgs[argNum].argValue = ptok;
+            }
+        }
+
+        ++argNum;
+    }
+
+    stdConffile_g_entry.numArgs = argNum;
+    return 0;
 }
 
 int stdConffile_ReadArgs(void)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_ReadArgs);
+    STD_ASSERTREL((stdConffile_bOpen) && (openFile != 0));
+    do
+    {
+        if ( !stdConffile_ReadLine() )
+        {
+            return 0;
+        }
+
+        if ( stdConffile_ReadArgsFromStr(stdConffile_g_aLine) )
+        {
+            return 0;
+        }
+    } while ( !stdConffile_g_entry.numArgs );
+
+    return 1;
 }
 
 int stdConffile_ReadLine(void)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_ReadLine);
+    int bEnd = 0;
+    char* pLine  = stdConffile_g_aLine;
+    size_t nRead = STDCONFFILE_LINESIZE - 1;
+
+    while ( !bEnd && nRead )
+    {
+        if ( !std_g_pHS->pFileGets(openFile, pLine, nRead) )
+        {
+            return 0;
+        }
+
+        ++stdConffile_linenum;
+        if ( *pLine != ';' && *pLine != '#' && *pLine != '\n' && *pLine != '\r' )
+        {
+            char* pCommentLine = strchr(pLine, '#');
+            if ( pCommentLine )
+            {
+                *pCommentLine = '\0';
+            }
+
+            // Convert line to lower case
+            stdUtil_ToLower(pLine);
+
+            size_t len = strlen(stdConffile_g_aLine);
+            if ( stdConffile_g_aLine[len - 2] == '\\' )
+            {
+                nRead = STDCONFFILE_LINESIZE - len;
+                if ( len == STDCONFFILE_LINESIZE )
+                {
+                    STDLOG_ERROR("conffile line %d too long.  Truncated.\n", stdConffile_linenum);
+                }
+
+                pLine = &stdConffile_g_aLine[len - 2];
+            }
+            else
+            {
+                bEnd = 1;
+                if ( stdConffile_g_aLine[len - 1] == '\r' || stdConffile_g_aLine[len - 1] == '\n' )
+                {
+                    stdConffile_g_aLine[len - 1] = '\0';
+                }
+            }
+        }
+    }
+
+    return 1;
 }
 
 tFileHandle stdConffile_GetFileHandle(void)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_GetFileHandle);
+    STD_ASSERTREL(openFile != 0);
+    return openFile;
 }
 
-int stdConffile_GetLineNumber(void)
+size_t stdConffile_GetLineNumber(void)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_GetLineNumber);
+    return stdConffile_linenum;
 }
 
 const char* stdConffile_GetFilename(void)
 {
-    return J3D_TRAMPOLINE_CALL(stdConffile_GetFilename);
+    return stdConffile_pFilename;
+}
+
+const char* stdConffile_GetWriteFilename(void)
+{
+    return stdConffile_aWriteFilename;
 }
 
 void stdConffile_PushStack(void)
 {
-    J3D_TRAMPOLINE_CALL(stdConffile_PushStack);
+    STD_ASSERTREL(stackLevel < STDCONFFILE_STACKSIZE);
+    STD_ASSERTREL(strlen(stdConffile_pFilename) < STDCONFFILE_FILENAMESIZE); // TODO: What's up with this check? The len should be guarantied when copying to it.
+    stdUtil_StringCopy(aFilenameStack[stackLevel], sizeof(stdConffile_pFilename), stdConffile_pFilename);
+
+    linenumStack[stackLevel] = stdConffile_linenum;
+    stdConffile_linenum = 0;
+
+    openFileStack[stackLevel] = openFile;
+    openFile = 0;
+
+    apBufferStack[stackLevel] = stdConffile_g_aLine;
+
+    memcpy(&aEntryStack[stackLevel], &stdConffile_g_entry, sizeof(StdConffileEntry));
+    ++stackLevel;
 }
 
 void stdConffile_PopStack(void)
 {
-    J3D_TRAMPOLINE_CALL(stdConffile_PopStack);
+    if ( stackLevel )
+    {
+        stdUtil_StringCopy(stdConffile_pFilename, sizeof(stdConffile_pFilename), aFilenameStack[--stackLevel]);
+
+        stdConffile_linenum = linenumStack[stackLevel];
+        openFile = openFileStack[stackLevel];
+
+        stdConffile_g_aLine = apBufferStack[stackLevel];
+        memcpy(&stdConffile_g_entry, &aEntryStack[stackLevel], sizeof(stdConffile_g_entry));
+    }
 }
