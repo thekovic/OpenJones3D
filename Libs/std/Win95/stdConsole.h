@@ -10,7 +10,7 @@ int J3DAPI stdConsole_Startup(const char* pTitleText, int attributes, int bShowM
 int J3DAPI stdConsole_SetAttributes(WORD wAttributes);
 int J3DAPI stdConsole_SetConsoleTextAttribute(WORD wAttributes);
 int J3DAPI stdConsole_InitOutputConsole();
-int J3DAPI stdConsole_WriteConsole(const char* pStr, uint32_t textAttribute);
+int J3DAPI stdConsole_WriteConsole(const char* pText, uint32_t textAttribute);
 
 // Helper hooking functions
 void stdConsole_InstallHooks(void);
