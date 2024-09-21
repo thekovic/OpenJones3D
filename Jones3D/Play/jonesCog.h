@@ -23,15 +23,8 @@ J3D_EXTERN_C_START
 
 int jonesCog_Startup(void);
 void jonesCog_Shutdown(void);
-int J3DAPI jonesCog_RegisterFunctions();
-void J3DAPI jonesCog_HideHealthDisplay(SithCog* pCog);
-void J3DAPI jonesCog_ShowHealthDisplay(SithCog* pCog);
-void J3DAPI jonesCog_InventoryItemChanged(SithCog* pCog);
+
 void jonesCog_EndLevel(void);
-void J3DAPI jonesCog_StartCutsceneImpl(SithCog* pCog);
-void J3DAPI jonesCog_EndCutscene(SithCog* pCog);
-void J3DAPI jonesCog_UpdateDifficulty(SithCog* pCog);
-void J3DAPI jonesCog_EnableInterfaceImpl(SithCog* pCog);
 void J3DAPI jonesCog_StartCutscene(SithCog* pCog);
 void J3DAPI jonesCog_EnableInterface(SithCog* pCog);
 

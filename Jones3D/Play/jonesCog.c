@@ -1,41 +1,65 @@
 #include "jonesCog.h"
 #include <j3dcore/j3dhook.h>
+
+#include <Jones3D/Display/JonesConsole.h>
+#include <Jones3D/Display/JonesHud.h>
+#include <Jones3D/Main/JonesMain.h>
+#include <Jones3D/Play/jonesInventory.h>
 #include <Jones3D/RTI/symbols.h>
 
-#define jonesCog_curCutsceneType J3D_DECL_FAR_VAR(jonesCog_curCutsceneType, int)
-#define jonesCog_bInterfaceEnabled J3D_DECL_FAR_VAR(jonesCog_bInterfaceEnabled, int)
-#define jonesCog_bOverlayMapVisible J3D_DECL_FAR_VAR(jonesCog_bOverlayMapVisible, int)
-#define jonesCog_bStartup J3D_DECL_FAR_VAR(jonesCog_bStartup, int)
+#include <sith/AI/sithAI.h>
+#include <sith/Cog/sithCog.h>
+#include <sith/Cog/sithCogExec.h>
+#include <sith/Devices/sithConsole.h>
+#include <sith/Devices/sithSoundMixer.h>
+#include <sith/Engine/sithCamera.h>
+#include <sith/Gameplay/sithOverlayMap.h>
+#include <sith/Gameplay/sithPlayerControls.h>
+#include <sith/Gameplay/sithPlayer.h>
+#include <sith/World/sithThing.h>
+#include <sith/World/sithWorld.h>
+
+#include <std/General/std.h>
+#include <std/General/stdUtil.h>
+
+static int jonesCog_curCutsceneType     = -1;
+static int jonesCog_bInterfaceEnabled   = -1;
+static bool jonesCog_bOverlayMapVisible = false;
+static bool jonesCog_bStartup           = false;
+
+
+int J3DAPI jonesCog_RegisterFunctions();
+void J3DAPI jonesCog_HideHealthDisplay(SithCog* pCog);
+void J3DAPI jonesCog_ShowHealthDisplay(SithCog* pCog);
+void J3DAPI jonesCog_EnableInterfaceFunc(SithCog* pCog);
+void J3DAPI jonesCog_EndLevelFunc(SithCog* pCog);
+void J3DAPI jonesCog_ExitToShell(SithCog* pCog);
+void J3DAPI jonesCog_StartCutsceneFunc(SithCog* pCog);
+void J3DAPI jonesCog_EndCutscene(SithCog* pCog);
+void J3DAPI jonesCog_UpdateDifficulty(SithCog* pCog);
+void J3DAPI jonesCog_InventoryItemChanged(SithCog* pCog);
 
 void jonesCog_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(jonesCog_Startup);
-    // J3D_HOOKFUNC(jonesCog_Shutdown);
-    // J3D_HOOKFUNC(jonesCog_RegisterFunctions);
-    // J3D_HOOKFUNC(jonesCog_HideHealthDisplay);
-    // J3D_HOOKFUNC(jonesCog_ShowHealthDisplay);
-    // J3D_HOOKFUNC(jonesCog_InventoryItemChanged);
-    // J3D_HOOKFUNC(jonesCog_EndLevel);
-    // J3D_HOOKFUNC(jonesCog_StartCutsceneImpl);
-    // J3D_HOOKFUNC(jonesCog_EndCutscene);
-    // J3D_HOOKFUNC(jonesCog_UpdateDifficulty);
-    // J3D_HOOKFUNC(jonesCog_EnableInterfaceImpl);
-    // J3D_HOOKFUNC(jonesCog_StartCutscene);
-    // J3D_HOOKFUNC(jonesCog_EnableInterface);
+    J3D_HOOKFUNC(jonesCog_Startup);
+    J3D_HOOKFUNC(jonesCog_Shutdown);
+    J3D_HOOKFUNC(jonesCog_RegisterFunctions);
+    J3D_HOOKFUNC(jonesCog_HideHealthDisplay);
+    J3D_HOOKFUNC(jonesCog_ShowHealthDisplay);
+    J3D_HOOKFUNC(jonesCog_InventoryItemChanged);
+    J3D_HOOKFUNC(jonesCog_EndLevel);
+    J3D_HOOKFUNC(jonesCog_EndLevelFunc);
+    J3D_HOOKFUNC(jonesCog_ExitToShell);
+    J3D_HOOKFUNC(jonesCog_StartCutsceneFunc);
+    J3D_HOOKFUNC(jonesCog_EndCutscene);
+    J3D_HOOKFUNC(jonesCog_UpdateDifficulty);
+    J3D_HOOKFUNC(jonesCog_EnableInterfaceFunc);
+    J3D_HOOKFUNC(jonesCog_StartCutscene);
+    J3D_HOOKFUNC(jonesCog_EnableInterface);
 }
 
 void jonesCog_ResetGlobals(void)
 {
-    int jonesCog_curCutsceneType_tmp = -1;
-    memcpy(&jonesCog_curCutsceneType, &jonesCog_curCutsceneType_tmp, sizeof(jonesCog_curCutsceneType));
-    
-    int jonesCog_bInterfaceEnabled_tmp = -1;
-    memcpy(&jonesCog_bInterfaceEnabled, &jonesCog_bInterfaceEnabled_tmp, sizeof(jonesCog_bInterfaceEnabled));
-    
-    jonesCog_bOverlayMapVisible = 0;
-    jonesCog_bStartup = 0;
     memset(&jonesCog_g_bShowHealthHUD, 0, sizeof(jonesCog_g_bShowHealthHUD));
     memset(&jonesCog_g_bMenuVisible, 0, sizeof(jonesCog_g_bMenuVisible));
     memset(&jonesCog_g_bEnableGamesave, 0, sizeof(jonesCog_g_bEnableGamesave));
@@ -44,65 +68,270 @@ void jonesCog_ResetGlobals(void)
 
 int jonesCog_Startup(void)
 {
-    return J3D_TRAMPOLINE_CALL(jonesCog_Startup);
+    if ( jonesCog_bStartup ) {
+        return 1;
+    }
+
+    if ( jonesCog_RegisterFunctions() ) {
+        return 1;
+    }
+
+    JonesMain_UpdateLevelNum();
+    jonesCog_bOverlayMapVisible = false;
+    jonesCog_curCutsceneType    = -1;
+    jonesCog_bStartup           = true;
+    return 0;
 }
 
 void jonesCog_Shutdown(void)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_Shutdown);
+    jonesCog_bStartup = false;
 }
 
 int J3DAPI jonesCog_RegisterFunctions()
 {
-    return J3D_TRAMPOLINE_CALL(jonesCog_RegisterFunctions);
+    return sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_HideHealthDisplay, "healthdisplayoff")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_ShowHealthDisplay, "healthdisplayon")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_InventoryItemChanged, "jonesinvitemchanged")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_EndLevelFunc, "jonesendlevel")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_ExitToShell, "exittoshell")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_StartCutsceneFunc, "startcutscene")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_EndCutscene, "endcutscene")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_UpdateDifficulty, "updatedifficulty")
+        || sithCog_RegisterFunction(sithCog_g_pSymbolTable, jonesCog_EnableInterfaceFunc, "enableinterface");
 }
 
 void J3DAPI jonesCog_HideHealthDisplay(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_HideHealthDisplay, pCog);
+    J3D_UNUSED(pCog);
+    jonesCog_g_bShowHealthHUD = 0;
+    JonesHud_SetFadeHealthHUD(0, 1);
 }
 
 void J3DAPI jonesCog_ShowHealthDisplay(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_ShowHealthDisplay, pCog);
+    J3D_UNUSED(pCog);
+    jonesCog_g_bShowHealthHUD = 1;
+    JonesHud_SetFadeHealthHUD(1, 1);
 }
 
 void J3DAPI jonesCog_InventoryItemChanged(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_InventoryItemChanged, pCog);
+    int bin = sithCogExec_PopInt(pCog);
+    JonesHud_InventoryItemChanged(bin);
 }
 
 void jonesCog_EndLevel(void)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_EndLevel);
+    if ( JonesConsole_g_bVisible ) {
+        JonesConsole_HideConsole();
+    }
+
+    jonesInventory_AdvanceStatistics();
+
+    ++sithPlayer_g_curLevelNum;
+    jonesCog_g_bShowHealthHUD = 0;
+
+    if ( sithOverlayMap_IsMapVisible() ) {
+        sithOverlayMap_ToggleMap();
+    }
+
+    sithSoundMixer_StopAll();
+
+    if ( sithPlayer_g_curLevelNum >= 17 ) { // If cur level is Peru or higher show end credits
+        JonesMain_ShowEndCredits();
+    }
+    else if ( JonesHud_ShowLevelCompleted() )
+    {
+        JonesMain_SetBonusLevel();
+        sithPlayer_g_bBonusMapBought = 1;
+    }
+    else if ( sithPlayer_g_curLevelNum != 16 || sithPlayer_g_bBonusMapBought ) {
+        JonesMain_NextLevel();
+    }
+    else
+    {
+        sithSoundMixer_StopAll();
+        JonesMain_ShowEndCredits();
+    }
 }
 
-void J3DAPI jonesCog_StartCutsceneImpl(SithCog* pCog)
+void J3DAPI jonesCog_EndLevelFunc(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_StartCutsceneImpl, pCog);
+    J3D_UNUSED(pCog);
+    jonesCog_EndLevel();
+}
+
+void J3DAPI jonesCog_ExitToShell(SithCog* pCog)
+{
+    J3D_UNUSED(pCog);
+    JonesMain_ShowEndCredits();
+}
+
+void J3DAPI jonesCog_StartCutsceneFunc(SithCog* pCog)
+{
+
+
+    SithWorld* pWorld = sithWorld_g_pCurrentWorld;
+    STD_ASSERTREL(pWorld != ((void*)0));
+
+    int type;
+    if ( pCog )
+    {
+        type = sithCogExec_PopInt(pCog);
+        if ( jonesCog_g_bMenuVisible )
+        {
+            JonesHud_CutsceneStart(1);
+            jonesCog_curCutsceneType = type;
+            return;
+        }
+    }
+    else
+    {
+        type = jonesCog_curCutsceneType;
+        if ( jonesCog_curCutsceneType <= -1 )
+        {
+            return;
+        }
+
+        jonesCog_curCutsceneType = -1;
+    }
+
+    jonesCog_bOverlayMapVisible = sithOverlayMap_IsMapVisible();
+    if ( jonesCog_bOverlayMapVisible )
+    {
+        sithOverlayMap_ToggleMap();
+    }
+
+    if ( type )
+    {
+        if ( type == 1 )
+        {
+            jonesCog_g_bShowHealthHUD = 0;
+            JonesHud_SetFadeHealthHUD(0, 1);
+        }
+
+        else if ( type == 2 )
+        {
+            jonesCog_g_bShowHealthHUD = 0;
+            JonesHud_SetFadeHealthHUD(0, 0);
+        }
+    }
+    else
+    {
+        jonesCog_g_bShowHealthHUD = 1;
+        JonesHud_SetFadeHealthHUD(1, 0);
+    }
+
+    JonesHud_EnableMenu(0);
+
+    jonesCog_g_bEnableGamesave = 0;
+    sithCamera_g_stateFlags |= SITHCAMERA_STATE_CUTSCENE;
+
+    if ( sithPlayer_g_pLocalPlayerThing )
+    {
+        SithThing* pPlayerThing = sithPlayer_g_pLocalPlayerThing;
+        sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.flags |= SITH_AF_INVULNERABLE;
+        if ( pPlayerThing->pCog )
+        {
+            sithCog_SendMessage(pPlayerThing->pCog, SITHCOG_MSG_USER2, SITHCOG_SYM_REF_THING, pPlayerThing->idx, SITHCOG_SYM_REF_NONE, 0, 0);
+        }
+    }
+
+    // Destroy all flying bullets
+    SithThing* pCurThing = pWorld->aThings;
+    int thingNum = 0;
+    while ( thingNum <= pWorld->lastThingIdx )
+    {
+        if ( pCurThing->type == SITH_THING_WEAPON )
+        {
+            sithThing_DestroyThing(pCurThing);
+        }
+
+        ++thingNum;
+        ++pCurThing;
+    }
+
+    sithPlayerControls_g_bCutsceneMode = 1;
+    sithAI_StopAllAttackingAIs();
 }
 
 void J3DAPI jonesCog_EndCutscene(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_EndCutscene, pCog);
+    J3D_UNUSED(pCog);
+
+    if ( jonesCog_bOverlayMapVisible ) {
+        sithOverlayMap_ToggleMap();
+    }
+
+    jonesCog_g_bShowHealthHUD = 1;
+    JonesHud_SetFadeHealthHUD(1, 1);
+    JonesHud_EnableMenu(1);
+
+    jonesCog_g_bEnableGamesave = 1;
+
+    if ( sithPlayer_g_pLocalPlayerThing )
+    {
+        if ( !sithPlayer_g_bPlayerInvulnerable ) {
+            sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.flags &= ~SITH_AF_INVULNERABLE;
+        }
+
+        if ( sithPlayer_g_pLocalPlayerThing->pCog ) {
+            sithCog_SendMessage(sithPlayer_g_pLocalPlayerThing->pCog, SITHCOG_MSG_USER3, SITHCOG_SYM_REF_THING, sithPlayer_g_pLocalPlayerThing->idx, SITHCOG_SYM_REF_NONE, 0, 0);
+        }
+    }
+
+    //cameraState = sithCamera_g_stateFlags;  
+    //(cameraState & 0xFF) = sithCamera_g_stateFlags & ~SITHCAMERA_STATE_CUTSCENE;
+    //sithCamera_g_stateFlags = cameraState;
+    sithCamera_g_stateFlags &= ~SITHCAMERA_STATE_CUTSCENE;
+    sithPlayerControls_g_bCutsceneMode = 0;
 }
 
 void J3DAPI jonesCog_UpdateDifficulty(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_UpdateDifficulty, pCog);
+    unsigned int difficulty = sithCogExec_PopInt(pCog);
+    if ( difficulty > 5 ) {
+        difficulty = 5;
+    }
+
+    jonesInventory_UpdateIQPoints(difficulty);
 }
 
-void J3DAPI jonesCog_EnableInterfaceImpl(SithCog* pCog)
+void J3DAPI jonesCog_EnableInterfaceFunc(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_EnableInterfaceImpl, pCog);
+    int bEnable = 0; // Added: init to 0
+    if ( pCog )
+    {
+        bEnable = sithCogExec_PopInt(pCog);
+        if ( jonesCog_g_bMenuVisible )
+        {
+            JonesHud_EnableInterface(1);
+            jonesCog_bInterfaceEnabled = bEnable;
+            return;
+        }
+    }
+    else
+    {
+        bEnable = jonesCog_bInterfaceEnabled;
+        if ( jonesCog_bInterfaceEnabled <= -1 )
+        {
+            return;
+        }
+
+        jonesCog_bInterfaceEnabled = -1;
+    }
+
+    JonesHud_EnableMenu(bEnable);
+    jonesCog_g_bEnableGamesave = bEnable;
 }
 
 void J3DAPI jonesCog_StartCutscene(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_StartCutscene, pCog);
+    jonesCog_StartCutsceneFunc(pCog);
 }
 
 void J3DAPI jonesCog_EnableInterface(SithCog* pCog)
 {
-    J3D_TRAMPOLINE_CALL(jonesCog_EnableInterface, pCog);
+    jonesCog_EnableInterfaceFunc(pCog);
 }
