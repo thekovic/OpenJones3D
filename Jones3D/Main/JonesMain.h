@@ -43,6 +43,7 @@ int JonesMain_Process(void);
 int JonesMain_ProcessWindowEvents(void);
 int JonesMain_ProcessGame(void);
 void JonesMain_ProcessMenu(void);
+
 void J3DAPI JonesMain_PrintFramerate();
 int J3DAPI JonesMain_TogglePrintFramerate();
 
@@ -53,6 +54,7 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath);
 int JonesMain_ProcessGamesaveState(void);
 
 void JonesMain_UpdateLevelNum(void);
+void JonesMain_NextLevel(void); // Added
 int JonesMain_ProcessEndLevel(void);
 void JonesMain_SetBonusLevel(void);
 void JonesMain_ShowEndCredits(void);
