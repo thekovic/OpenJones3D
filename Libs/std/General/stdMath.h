@@ -4,21 +4,39 @@
 #include <std/types.h>
 #include <std/RTI/addresses.h>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 J3D_EXTERN_C_START
 
+#define STDMATH_CLAMP(val, minv, maxv) (((val) < (minv)) ? (minv) : ((val) > (maxv)) ? (maxv) : (val))
+
 float J3DAPI stdMath_FlexPower(float base, int exponent);
+inline float stdMath_ClipNearZero(float val); // Added
+
 float J3DAPI stdMath_NormalizeAngle(float angle);
 float J3DAPI stdMath_NormalizeAngleAcute(float angle);
-// Calculate sinus and cosinus of value x
+
+// Calculate sinus and cousins of value angle
 void J3DAPI stdMath_SinCos(float angle, float* pSinOut, float* pCosOut);
 float J3DAPI stdMath_Tan(float angle);
 float J3DAPI stdMath_ArcSin1(float angle);
+float J3DAPI stdMath_ArcSin2(float value); // Added
 float J3DAPI stdMath_ArcSin3(float angle);
+
 // Returns value of the arc tangent
-// Name pulled from grim.
 float J3DAPI stdMath_ArcTan4(float x, float y);
 float J3DAPI stdMath_Dist2D1(float x, float y);
 float J3DAPI stdMath_Dist3D1(float x, float y, float z);
+
+inline float stdMath_ClipNearZero(float val)
+{
+    if ( fabsf(val) <= 0.00001f )
+    {
+        return 0.0f;
+    }
+    return val;
+}
 
 // Helper hooking functions
 void stdMath_InstallHooks(void);
