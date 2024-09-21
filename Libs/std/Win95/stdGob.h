@@ -7,9 +7,9 @@
 J3D_EXTERN_C_START
 
 void J3DAPI stdGob_Startup(tHostServices* pHS);
-void stdGob_Shutdown(void);
-Gob* J3DAPI stdGob_Load(const char* pFilename, int numFileHandles, int bMMapFile);
-int J3DAPI stdGob_LoadEntry(Gob* pGob, const char* pFilename, int numFileHandles, int bMMapFile);
+void J3DAPI stdGob_Shutdown();
+Gob* J3DAPI stdGob_Load(const char* pFilename, int numFileHandles, int bMapFile);
+int J3DAPI stdGob_LoadEntry(Gob* pGob, const char* pFilename, int numFileHandles, int bMapFile);
 void J3DAPI stdGob_Free(Gob* pGob);
 void J3DAPI stdGob_FreeEntry(Gob* pGob);
 GobFileHandle* J3DAPI stdGob_FileOpen(Gob* pGob, const char* aName);
