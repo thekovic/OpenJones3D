@@ -770,3 +770,25 @@ int J3DAPI JonesMain_CurDisplaySupportsBPP(JonesDisplaySettings* pSettings, int 
 {
     return J3D_TRAMPOLINE_CALL(JonesMain_CurDisplaySupportsBPP, pSettings, bpp);
 }
+
+void JonesMain_NextLevel(void)
+{
+    if ( strcmpi(sithWorld_g_pCurrentWorld->aName, "17_PRU.cnd") )
+    {
+        STD_STRCPY(JonesMain_state.aCurLevelFilename, sithWorld_g_pCurrentWorld->aName);
+    }
+    else
+    {
+        const char* pPreviousLevelName = sithGamesave_GetPreviousLevelFilename();
+        STD_STRCPY(JonesMain_state.aCurLevelFilename, pPreviousLevelName);
+    }
+
+    JonesMain_state.startMode = 0;
+
+    // Advance level
+    JonesMain_UpdateLevelNum();
+    STD_STRCPY(JonesMain_state.aCurLevelFilename, JonesMain_aCndLevelLoadInfos[++JonesMain_curLevelNum].pFilename); // Note, the JonesMain_curLevelNum gets incremented here for some reason
+
+    // Set process
+    JonesMain_pfProcess = JonesMain_ProcessEndLevel;
+}
