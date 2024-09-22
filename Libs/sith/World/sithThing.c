@@ -2,6 +2,11 @@
 #include <j3dcore/j3dhook.h>
 #include <sith/RTI/symbols.h>
 
+// Just static regression test
+static_assert(SITHTHING_TYPEMASK(SITH_THING_PLAYER) == 0x400, "SITHTHING_TYPEMASK(SITH_THING_PLAYER) == 0x400");
+static_assert(SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER) == 0x404, "SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER) == 0x404");
+static_assert(SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER, SITH_THING_WEAPON) == 0x40C, "SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER, SITH_THING_WEAPON) == 0x40C");
+
 #define sithThing_aStrThingTypes J3D_DECL_FAR_ARRAYVAR(sithThing_aStrThingTypes, const char*(*)[15])
 #define sithThing_aStrThingArgs J3D_DECL_FAR_ARRAYVAR(sithThing_aStrThingArgs, const char*(*)[77])
 #define sithThing_curSignature J3D_DECL_FAR_VAR(sithThing_curSignature, unsigned int)
