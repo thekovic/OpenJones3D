@@ -9,6 +9,11 @@
 
 J3D_EXTERN_C_START
 
+// Added
+// The macro converts the resource index to static resource index (jones3Dstatic.cnd)
+#define SITHWORLD_STATICINDEX(idx) ((idx) | SITH_STATICRESOURCE_INDEXMASK)
+
+
 #define sithWorld_g_pCurrentWorld J3D_DECL_FAR_VAR(sithWorld_g_pCurrentWorld, SithWorld*)
 // extern SithWorld *sithWorld_g_pCurrentWorld;
 
@@ -45,6 +50,8 @@ int J3DAPI sithWorld_CNDWriteGeoresourceSection(tFileHandle fh, SithWorld* pWorl
 int J3DAPI sithWorld_CNDReadGeoresourceSection(tFileHandle fh, SithWorld* pWorld);
 // local variable allocation has failed, the output may be wrong!
 int J3DAPI sithWorld_LoadEntryBinary(SithWorld* pWorld, const char* pFilePath);
+
+
 
 // Helper hooking functions
 void sithWorld_InstallHooks(void);
