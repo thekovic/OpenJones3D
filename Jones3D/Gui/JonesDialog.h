@@ -17,9 +17,9 @@ int J3DAPI JonesDialog_RestoreBackground(HDC hdc, HWND hwnd, LPPOINT a3, LPRECT 
 int J3DAPI JonesDialog_ShowDialog(LPCSTR lpTemplateName, HWND hWnd, DLGPROC lpDialogFunc, LPARAM dwInitParam);
 void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowModeSupported);
 void J3DAPI JonesDialog_ResetGameState(JonesDialogGameState* pState, int bWindowModeSupported);
-int J3DAPI JonesDialog_DummyFlipGDI();
-INT_PTR __stdcall JonesDialog_FullscreenDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-LRESULT __stdcall JonesDialog_SubclassDialogWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int JonesDialog_DummyFlipGDI(void);
+INT_PTR CALLBACK JonesDialog_FullscreenDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK JonesDialog_SubclassDialogWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void J3DAPI JonesDialog_HandleWM_ERASEBKGND(HWND hwnd, WPARAM wParam, int bIconEraseBkgnd, JonesDialogData* pData);
 void J3DAPI JonesDialog_HandleWM_PAINT(HWND hWnd, JonesDialogData* lpData);
 void J3DAPI JonesDialog_HandleWM_NCPAINT(HWND hwnd, WPARAM wParam, JonesDialogData* lpData);
@@ -29,7 +29,7 @@ void J3DAPI JonesDialog_FreeScreenDIBSection();
 int J3DAPI JonesDialog_AllocOffScreenDIBSection(int* pBSkipedAllocation);
 int J3DAPI JonesDialog_FreeOffScreenDIBSection();
 BOOL J3DAPI JonesDialog_ShowFileSelectDialog(LPOPENFILENAMEA pofn, int bOpen);
-UINT_PTR __stdcall JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
+UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 // Helper hooking functions
 void JonesDialog_InstallHooks(void);
