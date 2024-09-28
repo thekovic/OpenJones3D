@@ -21,19 +21,22 @@ J3D_EXTERN_C_START
 // NOTE: all sithMessage functions should be in sithComm module
 void sithMessage_Startup(void);
 void sithMessage_Shutdown(void);
-int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, unsigned int outstream, unsigned int dwDPFlags);
-void sithMessage_ProcessMessages(void);
-void sithMessage_StopProcessMessages(void);
-DPID sithMessage_GetSenderID(void);
-int J3DAPI sithMessage_NetWrite(const SithMessage* pMsg, DPID idTo, uint32_t dwDPFlags);
-int J3DAPI sithMessage_ReceiveMessage(SithMessage* pMsg, DPID* pSender);
-void sithMessage_CloseGame(void);
-void J3DAPI sithMessage_CheckMembershipList(DPID idTo);
-int J3DAPI sithMessage_ProcessCheckMembershipList(const SithMessage* pMsg);
-void J3DAPI sithMessage_RegisterFunction(SithDSSType type, SithMessageProcessFunc pFunc);
+
+int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, uint32_t outstream, uint32_t dwDPFlags);
+
+void J3DAPI sithMessage_ProcessMessages();
 int J3DAPI sithMessage_Process(const SithMessage* pMessage);
-void sithMessage_InitMessageHandlers(void);
-int J3DAPI sithMessage_FileWrite(const SithMessage* pMessage);
+void J3DAPI sithMessage_StopProcessMessages();
+void sithMessage_Flush(void); // Added, discards any inbound message
+
+DPID sithMessage_GetSenderID(void);
+
+int J3DAPI sithMessage_StartGame(StdCommGame* pSettings); // Added
+int J3DAPI sithMessage_JoinGame(size_t gameNum, const wchar_t* pPassword); // Added
+void J3DAPI sithMessage_CheckMembershipList(DPID idTo);
+void sithMessage_CloseGame(void);
+
+void J3DAPI sithMessage_RegisterFunction(int type, SithMessageProcessFunc pFunc);
 
 // Helper hooking functions
 void sithComm_InstallHooks(void);

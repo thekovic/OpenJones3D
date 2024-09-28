@@ -395,7 +395,6 @@
 #define stdComm_numPlayers_ADDR 0x005DD180
 #define stdComm_pDirectPlay_ADDR 0x005DD184
 #define stdComm_bGameHost_ADDR 0x005DD188
-#define stdComm_aGames_ADDR 0x005DE310
 #define stdComm_bGameActive_ADDR 0x005E0F94
 #define stdComm_numGames_ADDR 0x005E0F98
 #define stdMath_aSinTable_ADDR 0x005417A8
