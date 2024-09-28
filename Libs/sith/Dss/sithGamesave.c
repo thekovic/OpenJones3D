@@ -2,6 +2,9 @@
 #include <j3dcore/j3dhook.h>
 #include <sith/RTI/symbols.h>
 
+#include <std/General/stdColor.h>
+#include <std/Win95/stdDisplay.h>
+
 #define sithGamesave_wszPlayerName J3D_DECL_FAR_ARRAYVAR(sithGamesave_wszPlayerName, wchar_t(*)[14])
 #define sithGamesave_state J3D_DECL_FAR_VAR(sithGamesave_state, int)
 #define sithGamesave_aLastFilename J3D_DECL_FAR_ARRAYVAR(sithGamesave_aLastFilename, char(*)[128])
@@ -31,7 +34,7 @@ void sithGamesave_InstallHooks(void)
     // J3D_HOOKFUNC(sithGamesave_ReadBlockTypeLength);
     // J3D_HOOKFUNC(sithGamesave_SaveFile);
     // J3D_HOOKFUNC(sithGamesave_ScreenShot);
-    // J3D_HOOKFUNC(sithGamesave_GetScreenShotBitmap);
+    J3D_HOOKFUNC(sithGamesave_GetScreenShotBitmap);
     // J3D_HOOKFUNC(sithGamesave_WriteScreenShot);
     // J3D_HOOKFUNC(sithGamesave_SeekThumbNail);
     // J3D_HOOKFUNC(sithGamesave_LoadThumbnail);
@@ -50,9 +53,9 @@ void sithGamesave_InstallHooks(void)
 
 void sithGamesave_ResetGlobals(void)
 {
-    wchar_t sithGamesave_wszPlayerName_tmp[14] = { 73u, 110u, 100u, 105u, 97u, 110u, 97u, 32u, 74u, 111u, 110u, 101u, 115u, 0u };
+    wchar_t sithGamesave_wszPlayerName_tmp[14] = L"Indiana Jones";
     memcpy(&sithGamesave_wszPlayerName, &sithGamesave_wszPlayerName_tmp, sizeof(sithGamesave_wszPlayerName));
-    
+
     memset(&sithGamesave_state, 0, sizeof(sithGamesave_state));
     memset(&sithGamesave_aLastFilename, 0, sizeof(sithGamesave_aLastFilename));
     memset(&sithGamesave_aNdsSaveSectionSizes, 0, sizeof(sithGamesave_aNdsSaveSectionSizes));
@@ -126,11 +129,6 @@ void J3DAPI sithGamesave_ScreenShot(tVBuffer* pVBuffer)
     J3D_TRAMPOLINE_CALL(sithGamesave_ScreenShot, pVBuffer);
 }
 
-HBITMAP J3DAPI sithGamesave_GetScreenShotBitmap()
-{
-    return J3D_TRAMPOLINE_CALL(sithGamesave_GetScreenShotBitmap);
-}
-
 int J3DAPI sithGamesave_WriteScreenShot(tFileHandle fh)
 {
     return J3D_TRAMPOLINE_CALL(sithGamesave_WriteScreenShot, fh);
@@ -200,3 +198,130 @@ void J3DAPI sithGamesave_SetSaveGameCallback(SithGameSaveCallback pfCallback)
 {
     J3D_TRAMPOLINE_CALL(sithGamesave_SetSaveGameCallback, pfCallback);
 }
+
+HBITMAP J3DAPI sithGamesave_GetScreenShotBitmap()
+{
+
+    //cfBMP.redBPP = 8;
+    //cfBMP.greenBPP = 8;
+    //cfBMP.blueBPP = 8;
+    //cfBMP.greenPosShift = 8;
+
+    //cfBMP.colorMode = STDCOLOR_RGB;
+    //cfBMP.bpp = 24;
+    //cfBMP.redPosShift = 0;
+    //cfBMP.bluePosShift = 16;
+
+    ColorInfo cfBMP = stdColor_cfRGB888; // Note, changed encoding format due to little-endian fix in stdColor_ColorConvertOneRow
+
+    HDC hdc       = NULL;
+    HDC hdcThumb  = NULL;
+    HBITMAP hBmp  = NULL;
+    void* pPixmap = NULL;
+
+    if ( sithGamesave_hBmpScreenShot )
+    {
+        return sithGamesave_hBmpScreenShot;
+    }
+
+    if ( sithGamesave_pVBufferScreenShot )
+    {
+        sithGamesave_pVBufferScreenShot = stdDisplay_VBufferConvertColorFormat(&cfBMP, sithGamesave_pVBufferScreenShot, 0, 0);
+
+        LONG imageSize = (sithGamesave_pVBufferScreenShot->rasterInfo.width * sithGamesave_pVBufferScreenShot->rasterInfo.height * cfBMP.bpp) / 8;
+
+        BITMAPINFO bmpInfo = { 0 };
+        bmpInfo.bmiHeader.biSize        = sizeof(bmpInfo.bmiHeader);
+        bmpInfo.bmiHeader.biWidth       = sithGamesave_pVBufferScreenShot->rasterInfo.width;
+        bmpInfo.bmiHeader.biHeight      = -(int32_t)sithGamesave_pVBufferScreenShot->rasterInfo.height;
+        bmpInfo.bmiHeader.biPlanes      = 1;
+        bmpInfo.bmiHeader.biBitCount    = cfBMP.bpp;
+        bmpInfo.bmiHeader.biCompression = BI_RGB;
+        bmpInfo.bmiHeader.biSizeImage   = imageSize;
+
+        hdc = CreateCompatibleDC(NULL);
+        if ( !hdc )
+        {
+            goto error;
+        }
+
+        hBmp = CreateDIBSection(hdc, &bmpInfo, 0, &pPixmap, 0, 0);
+        if ( !hBmp )
+        {
+            goto error;
+        }
+
+        memcpy(pPixmap, sithGamesave_pVBufferScreenShot->pPixels, bmpInfo.bmiHeader.biSizeImage);
+        bmpInfo.bmiHeader.biSize        = sizeof(bmpInfo.bmiHeader);;
+        bmpInfo.bmiHeader.biWidth       = SITHSAVEGAME_THUMB_WIDTH;
+        bmpInfo.bmiHeader.biHeight      = -SITHSAVEGAME_THUMB_HEIGHT;
+        bmpInfo.bmiHeader.biPlanes      = 1;
+        bmpInfo.bmiHeader.biBitCount    = cfBMP.bpp;
+        bmpInfo.bmiHeader.biCompression = 0;
+        bmpInfo.bmiHeader.biSizeImage   = (SITHSAVEGAME_THUMB_WIDTH * SITHSAVEGAME_THUMB_HEIGHT * cfBMP.bpp) / 8;
+        memset(&bmpInfo.bmiHeader.biXPelsPerMeter, 0, 16);
+
+        hdcThumb = CreateCompatibleDC(NULL);
+        if ( !hdcThumb )
+        {
+            goto error;
+        }
+        sithGamesave_hBmpScreenShot = CreateDIBSection(hdcThumb, &bmpInfo, 0, &pPixmap, NULL, 0);
+        if ( sithGamesave_hBmpScreenShot )
+        {
+            SelectObject(hdc, hBmp);
+            SelectObject(hdcThumb, sithGamesave_hBmpScreenShot);
+            SetStretchBltMode(hdcThumb, 4);
+
+            StretchBlt(
+                hdcThumb,
+                0,
+                0,
+                SITHSAVEGAME_THUMB_WIDTH,
+                SITHSAVEGAME_THUMB_HEIGHT,
+                hdc,
+                0,
+                0,
+                sithGamesave_pVBufferScreenShot->rasterInfo.width,
+                sithGamesave_pVBufferScreenShot->rasterInfo.height,
+                SRCCOPY
+            );
+
+            stdDisplay_VBufferFree(sithGamesave_pVBufferScreenShot);
+            sithGamesave_pVBufferScreenShot = 0;
+
+            DeleteDC(hdc);
+            DeleteObject(hBmp);
+            DeleteDC(hdcThumb);
+
+            sithGamesave_bScreenShot = 1;
+            return sithGamesave_hBmpScreenShot;
+        }
+    }
+
+error:
+    if ( sithGamesave_pVBufferScreenShot )
+    {
+        stdDisplay_VBufferFree(sithGamesave_pVBufferScreenShot);
+        sithGamesave_pVBufferScreenShot = NULL;
+    }
+
+    if ( hBmp )
+    {
+        DeleteObject(hBmp);
+    }
+
+    if ( hdc )
+    {
+        DeleteDC(hdc);
+    }
+
+    if ( hdcThumb )
+    {
+        DeleteDC(hdcThumb);
+    }
+
+    sithGamesave_bScreenShot = 0;
+    return 0;
+}
+

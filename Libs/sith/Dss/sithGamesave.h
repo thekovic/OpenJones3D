@@ -9,6 +9,9 @@
 
 J3D_EXTERN_C_START
 
+#define SITHSAVEGAME_THUMB_WIDTH  128
+#define SITHSAVEGAME_THUMB_HEIGHT 96
+
 SithGameStatistics* J3DAPI sithGamesave_GetGameStatistics();
 int sithGamesave_LockGameStatistics(void);
 int sithGamesave_UnlockGameStatistics(void);
