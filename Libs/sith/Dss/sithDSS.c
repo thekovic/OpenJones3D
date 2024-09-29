@@ -1,13 +1,45 @@
 #include "sithDSS.h"
 #include <j3dcore/j3dhook.h>
-#include <sith/RTI/symbols.h>
+
+#include <rdroid/Engine/rdPuppet.h>
+
+#include <sith/AI/sithAIMove.h>
+#include <sith/Devices/sithComm.h>
+#include <sith/Dss/sithMulti.h>
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Gameplay/sithPlayerControls.h>
 #include <sith/Gameplay/sithVehicleControls.h>
 #include <sith/Gameplay/sithWhip.h>
-#include <sith/AI/sithAIMove.h>
+#include <sith/RTI/symbols.h>
+#include <sith/World/sithThing.h>
+#include <sith/World/sithWorld.h>
 
-#define sithDSS_aPuppetCallbacks J3D_DECL_FAR_ARRAYVAR(sithDSS_aPuppetCallbacks, rdPuppetTrackCallback(*)[7])
+#include <std/General/stdUtil.h>
+
+
+#define VANILLACB(callback) ((rdPuppetTrackCallback)(callback##_ADDR))
+
+static const rdPuppetTrackCallback sithDSS_aPuppetCallbacks[7][2] = {
+    { &sithPuppet_DefaultCallback,           VANILLACB(sithPuppet_DefaultCallback)           },
+    { &sithPlayerControls_PuppetCallback,    VANILLACB(sithPlayerControls_PuppetCallback)    },
+    { &sithVehicleControls_PuppetCallback,   VANILLACB(sithVehicleControls_PuppetCallback)   },
+    { &sithAIMove_PuppetCallback,            VANILLACB(sithAIMove_PuppetCallback)            },
+    { &sithWhip_WhipClimbPuppetCallback,     VANILLACB(sithWhip_WhipClimbPuppetCallback)     },
+    { &sithWhip_ClimbDismountPuppetCallback, VANILLACB(sithWhip_ClimbDismountPuppetCallback) },
+    { &sithWhip_WhipFirePuppetCallback,      VANILLACB(sithWhip_WhipFirePuppetCallback)      }
+};
+
+// TODO: When all functions that are using following callbacks are defined, uncomment below const and remove previous definition above 
+//static const rdPuppetTrackCallback sithDSS_aPuppetCallbacks[7] = {
+//    &sithPuppet_DefaultCallback,
+//    &sithPlayerControls_PuppetCallback,
+//    &sithVehicleControls_PuppetCallback,
+//    &sithAIMove_PuppetCallback,
+//    &sithWhip_WhipClimbPuppetCallback,
+//    &sithWhip_ClimbDismountPuppetCallback,
+//    &sithWhip_WhipFirePuppetCallback
+//};
+
 
 void sithDSS_InstallHooks(void)
 {
@@ -27,8 +59,8 @@ void sithDSS_InstallHooks(void)
     // J3D_HOOKFUNC(sithDSS_ProcessInventory);
     // J3D_HOOKFUNC(sithDSS_AnimStatus);
     // J3D_HOOKFUNC(sithDSS_ProcessAnimStatus);
-    // J3D_HOOKFUNC(sithDSS_PuppetStatus);
-    // J3D_HOOKFUNC(sithDSS_ProcessPuppetStatus);
+    J3D_HOOKFUNC(sithDSS_PuppetStatus);
+    J3D_HOOKFUNC(sithDSS_ProcessPuppetStatus);
     // J3D_HOOKFUNC(sithDSS_SyncTaskEvents);
     // J3D_HOOKFUNC(sithDSS_ProcessSyncTaskEvents);
     // J3D_HOOKFUNC(sithDSS_SyncCameras);
@@ -43,17 +75,6 @@ void sithDSS_InstallHooks(void)
 
 void sithDSS_ResetGlobals(void)
 {
-    rdPuppetTrackCallback sithDSS_aPuppetCallbacks_tmp[7] = {
-      &sithPuppet_DefaultCallback,
-      &sithPlayerControls_PuppetCallback,
-      &sithVehicleControls_PuppetCallback,
-      &sithAIMove_PuppetCallback,
-      &sithWhip_WhipClimbPuppetCallback,
-      &sithWhip_ClimbDismountPuppetCallback,
-      &sithWhip_WhipFirePuppetCallback
-    };
-    memcpy(&sithDSS_aPuppetCallbacks, &sithDSS_aPuppetCallbacks_tmp, sizeof(sithDSS_aPuppetCallbacks));
-    
 }
 
 int J3DAPI sithDSS_SurfaceStatus(const SithSurface* pSurf, DPID idTo, unsigned int outstream)
@@ -126,15 +147,15 @@ int J3DAPI sithDSS_ProcessAnimStatus(const SithMessage* pMsg)
     return J3D_TRAMPOLINE_CALL(sithDSS_ProcessAnimStatus, pMsg);
 }
 
-int J3DAPI sithDSS_PuppetStatus(const SithThing* pThing, DPID idTo, unsigned int outstream)
-{
-    return J3D_TRAMPOLINE_CALL(sithDSS_PuppetStatus, pThing, idTo, outstream);
-}
-
-int J3DAPI sithDSS_ProcessPuppetStatus(const SithMessage* pMsg)
-{
-    return J3D_TRAMPOLINE_CALL(sithDSS_ProcessPuppetStatus, pMsg);
-}
+//int J3DAPI sithDSS_PuppetStatus(const SithThing* pThing, DPID idTo, unsigned int outstream)
+//{
+//    return J3D_TRAMPOLINE_CALL(sithDSS_PuppetStatus, pThing, idTo, outstream);
+//}
+//
+//int J3DAPI sithDSS_ProcessPuppetStatus(const SithMessage* pMsg)
+//{
+//    return J3D_TRAMPOLINE_CALL(sithDSS_ProcessPuppetStatus, pMsg);
+//}
 
 int J3DAPI sithDSS_SyncTaskEvents(const SithEvent* pEvent, DPID idTo, unsigned int outstream)
 {
@@ -184,4 +205,273 @@ int J3DAPI sithDSS_sub_4B3760(DPID idTo, unsigned int outstream)
 int J3DAPI sithDSS_sub_4B3790(const SithMessage* pMsg)
 {
     return J3D_TRAMPOLINE_CALL(sithDSS_sub_4B3790, pMsg);
+}
+
+
+int J3DAPI sithDSS_PuppetStatus(const SithThing* pThing, DPID idTo, unsigned int outstream)
+{
+    SITH_ASSERTREL(pThing && pThing->renderData.pPuppet);
+    rdPuppet* pPuppet = pThing->renderData.pPuppet;
+
+    SITHDSS_STARTOUT(SITHDSS_PUPPETSTATUS);
+
+    SITHDSS_PUSHINT32(sithThing_GetThingIndex(pThing));
+    //*(int32_t*)sithMulti_g_message.data = sithThing_GetThingIndex(pThing);
+
+    //uint8_t* pCurOut = &sithMulti_g_message.data[4];
+
+    size_t trackCount = 0;
+    for ( size_t i = 0; i < STD_ARRAYLEN(pPuppet->aTracks); ++i )
+    {
+        SITHDSS_PUSHINT32(pPuppet->aTracks[i].status);
+        /**(int32_t*)pCurOut = pPuppet->aTracks[i].status;
+        pCurOut += 4;*/
+
+        if ( pPuppet->aTracks[i].status )
+        {
+            SITH_ASSERTREL(pPuppet->aTracks[i].pKFTrack);
+
+            SITHDSS_PUSHINT32(pPuppet->aTracks[i].pKFTrack->idx);
+            /**(int32_t*)pCurOut = pPuppet->aTracks[i].pKFTrack->idx;
+            pCurOut += 4;*/
+
+            SITHDSS_PUSHINT32(pPuppet->aTracks[i].unknown0);
+            /**(int32_t*)pCurOut = pPuppet->aTracks[i].unknown0;
+            pCurOut += 4;*/
+
+            SITHDSS_PUSHINT16(pPuppet->aTracks[i].lowPriority);
+            /**(int16_t*)pCurOut = (uint16_t)pPuppet->aTracks[i].lowPriority;
+            pCurOut += 2;*/
+
+            SITHDSS_PUSHINT16(pPuppet->aTracks[i].highPriority);
+
+            /**(int16_t*)pCurOut = (uint16_t)pPuppet->aTracks[i].highPriority;
+            pCurOut += 2;*/
+
+            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].fps);
+            /**(float*)pCurOut = pPuppet->aTracks[i].fps;
+            pCurOut += 4;*/
+
+            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].playSpeed);
+            /* *(float*)pCurOut = pPuppet->aTracks[i].playSpeed;
+             pCurOut += 4;*/
+
+            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].curFrame);
+            /**(float*)pCurOut = pPuppet->aTracks[i].curFrame;
+            pCurOut += 4;*/
+
+            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].prevFrame);
+            /**(float*)pCurOut = pPuppet->aTracks[i].prevFrame;
+            pCurOut += 4;*/
+
+            if ( pPuppet->aTracks[i].pfCallback )
+            {
+                size_t cbIdx = 0;
+                for ( ; cbIdx < STD_ARRAYLEN(sithDSS_aPuppetCallbacks); ++cbIdx )
+                {
+                    if ( pPuppet->aTracks[i].pfCallback == sithDSS_aPuppetCallbacks[cbIdx][0]
+                        || pPuppet->aTracks[i].pfCallback == sithDSS_aPuppetCallbacks[cbIdx][1] )
+                    {
+                        SITHDSS_PUSHUINT8(cbIdx);
+                        //*pCurOut++ = (uint8_t)cbIdx;
+                        break;
+                    }
+                }
+
+                if ( cbIdx == STD_ARRAYLEN(sithDSS_aPuppetCallbacks) )
+                {
+                    SITHLOG_ERROR("Saving Unknown callback for %s\n", pPuppet->aTracks[i].pKFTrack->aName);
+                    SITHDSS_PUSHUINT8(STD_ARRAYLEN(sithDSS_aPuppetCallbacks)); // mark there is no callback
+                    //*pCurOut++ = STD_ARRAYLEN(sithDSS_aPuppetCallbacks);
+                }
+            }
+            else // mark there is no callback
+            {
+                SITHDSS_PUSHUINT8(STD_ARRAYLEN(sithDSS_aPuppetCallbacks));
+                //*pCurOut++ = STD_ARRAYLEN(sithDSS_aPuppetCallbacks);
+            }
+
+            ++trackCount;
+        }
+    }
+
+    if ( pThing->pPuppetState )
+    {
+        SITHDSS_PUSHINT16(pThing->pPuppetState->armedMode);
+        /**(int16_t*)pCurOut = (int16_t)pThing->pPuppetState->armedMode;
+        pCurOut += 2;*/
+
+        SITHDSS_PUSHINT16(pThing->pPuppetState->moveMode);
+        /* *(int16_t*)pCurOut = (int16_t)pThing->pPuppetState->moveMode;
+         pCurOut += 2;*/
+
+        SITHDSS_PUSHINT16(trackCount);
+
+        /**(int16_t*)pCurOut = (int16_t)trackCount;
+        pCurOut += 2;*/
+
+        SithPuppetTrack* pCurTrack = pThing->pPuppetState->pFirstTrack;
+        while ( trackCount )
+        {
+            if ( pCurTrack )
+            {
+                SITHDSS_PUSHINT32(pCurTrack->trackNum);
+                /**(int32_t*)pCurOut = pCurTrack->trackNum;
+                pCurOut += 4;*/
+
+                SITHDSS_PUSHUINT32(pCurTrack->submode);
+                /**(uint32_t*)pCurOut = pCurTrack->submode;
+                pCurOut += 4;*/
+
+                pCurTrack = pCurTrack->pNextTrack;
+            }
+            else // If no track
+            {
+                SITHDSS_PUSHUINT32(STD_ARRAYLEN(pPuppet->aTracks)); // mark null track
+                /**(uint32_t*)pCurOut = STD_ARRAYLEN(pPuppet->aTracks);
+                pCurOut += 4;*/
+
+                SITHDSS_PUSHUINT32(SITH_PUPPET_NUMSUBMODES); // mark no mode
+                /**(uint32_t*)pCurOut = SITH_PUPPET_NUMSUBMODES;
+                pCurOut += 4;*/
+            }
+
+            --trackCount;
+        }
+    }
+
+    /*sithMulti_g_message.type = SITHDSS_PUPPETSTATUS;
+    sithMulti_g_message.length = pCurOut - sithMulti_g_message.data;*/
+    SITHDSS_ENDOUT;
+    return sithMessage_SendMessage(&sithMulti_g_message, idTo, outstream, 1u);
+}
+
+int J3DAPI sithDSS_ProcessPuppetStatus(const SithMessage* pMsg)
+{
+    SITH_ASSERTREL(pMsg);
+
+    SITHDSS_STARTIN(pMsg);
+
+    SithThing* pThing = sithThing_GetThingByIndex(SITHDSS_POPINT32());
+    //uint8_t* pCurIn   = (uint8_t*)&pMsg->data[4];
+    //SithThing* pThing = sithThing_GetThingByIndex(*(int32_t*)pMsg->data);
+
+    if ( !pThing || !pThing->pPuppetClass || !pThing->pPuppetState || !pThing->renderData.pPuppet )
+    {
+        SITHLOG_ERROR("Error in DSS::PuppetStatus message format.\n");
+        SITHDSS_ENDIN;
+        return 0;
+    }
+
+    rdPuppet* pPuppet = pThing->renderData.pPuppet;
+    rdPuppet_NewEntry(pPuppet, &pThing->renderData);
+
+    for ( size_t i = 0; i < STD_ARRAYLEN(pPuppet->aTracks); ++i )
+    {
+        pPuppet->aTracks[i].status = SITHDSS_POPINT32();
+        /*pPuppet->aTracks[i].status = *(int32_t*)pCurIn;
+        pCurIn += 4;*/
+
+        if ( pPuppet->aTracks[i].status )
+        {
+            int kfIdx = SITHDSS_POPINT32();
+            /*int kfIdx = *(int32_t*)pCurIn;
+            pCurIn += 4;*/
+
+            pPuppet->aTracks[i].pKFTrack = sithPuppet_GetKeyframeByIndex(kfIdx);
+
+            pPuppet->aTracks[i].unknown0 = SITHDSS_POPINT32();
+            /*pPuppet->aTracks[i].unknown0 = *(int32_t*)pCurIn;
+            pCurIn += 4;*/
+
+            pPuppet->aTracks[i].lowPriority = SITHDSS_POPINT16();
+            /*pPuppet->aTracks[i].lowPriority = *(int16_t*)pCurIn;
+            pCurIn += 2;*/
+
+            pPuppet->aTracks[i].highPriority = SITHDSS_POPINT16();
+            /* pPuppet->aTracks[i].highPriority = *(int16_t*)pCurIn;
+             pCurIn += 2;*/
+
+            pPuppet->aTracks[i].fps = SITHDSS_POPFLOAT();
+            /*pPuppet->aTracks[i].fps = *(float*)pCurIn;
+            pCurIn += 4;*/
+
+            pPuppet->aTracks[i].playSpeed = SITHDSS_POPFLOAT();
+            /*pPuppet->aTracks[i].playSpeed = *(float*)pCurIn;
+            pCurIn += 4;*/
+
+            pPuppet->aTracks[i].curFrame = SITHDSS_POPFLOAT();
+            /*pPuppet->aTracks[i].curFrame = *(float*)pCurIn;
+            pCurIn += 4;*/
+
+            pPuppet->aTracks[i].prevFrame = SITHDSS_POPFLOAT();
+            /*pPuppet->aTracks[i].prevFrame = *(float*)pCurIn;
+            pCurIn += 4;*/
+
+            size_t cbIdx = SITHDSS_POPUINT8();
+            //size_t cbIdx = *pCurIn++;
+            if ( cbIdx < STD_ARRAYLEN(sithDSS_aPuppetCallbacks) )
+            {
+                pPuppet->aTracks[i].pfCallback = sithDSS_aPuppetCallbacks[cbIdx][0];
+            }
+            else
+            {
+                pPuppet->aTracks[i].pfCallback = NULL;
+            }
+        }
+    }
+
+    if ( !pThing->pPuppetState )
+    {
+        SITHDSS_ENDIN;
+        return 1;
+    }
+
+    uint32_t armMode = SITHDSS_POPINT16();
+    /*uint32_t armMode = *(int16_t*)pCurIn;
+    pCurIn += 2;*/
+
+    sithPuppet_SetArmedMode(pThing, armMode);
+
+    SithPuppetMoveMode moveMode = SITHDSS_POPUINT16();
+    /*SithPuppetMoveMode moveMode = *(uint16_t*)pCurIn;
+    pCurIn += 2;*/
+
+    int bControlsDisabled = false;
+    if ( pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR )
+    {
+        bControlsDisabled = pThing->thingInfo.actorInfo.bControlsDisabled;
+    }
+
+    sithPuppet_SetMoveMode(pThing, moveMode);
+    if ( pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR )
+    {
+        pThing->thingInfo.actorInfo.bControlsDisabled = bControlsDisabled;
+    }
+
+    size_t trackCount = SITHDSS_POPUINT16();
+    /*size_t trackCount = *(uint16_t*)pCurIn;
+    pCurIn += 2;*/
+
+    while ( trackCount )
+    {
+        size_t trackNum = SITHDSS_POPINT32();
+        /*size_t trackNum = *(int32_t*)pCurIn;
+        pCurIn += 4;*/
+
+        SithPuppetSubMode submode = SITHDSS_POPUINT32();
+        /*SithPuppetSubMode submode = *(uint32_t*)pCurIn;
+        pCurIn += 4;*/
+
+        if ( trackNum < STD_ARRAYLEN(pPuppet->aTracks) && sithPuppet_NewTrack(pThing, &pThing->pPuppetClass->aModes[pThing->pPuppetState->majorMode][submode], trackNum, submode) )
+        {
+            SITHDSS_ENDIN;
+            return 0;
+        }
+
+        --trackCount;
+    }
+
+    SITHDSS_ENDIN;
+    return 1;
 }
