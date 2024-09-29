@@ -27,6 +27,7 @@
 #define JonesHud_Startup_TYPE int (*)(void)
 #define JonesHud_Shutdown_TYPE void (*)(void)
 #define JonesHud_Open_TYPE int (J3DAPI*)()
+#define JonesHud_Close_TYPE void (*)(void)
 #define JonesHud_ToggleMenu_TYPE void (J3DAPI*)()
 #define JonesHud_EnableMenu_TYPE void (J3DAPI*)(int)
 #define JonesHud_IsMenuEnabled_TYPE int (J3DAPI*)()
