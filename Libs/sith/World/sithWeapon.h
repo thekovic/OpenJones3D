@@ -12,6 +12,7 @@
 J3D_EXTERN_C_START
 
 void sithWeapon_Open(void);
+void sithWeapon_Close(void); // Added
 void J3DAPI sithWeapon_InitalizeActor(SithThing* pThing);
 void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing);
 void J3DAPI sithWeapon_Update(SithThing* pThing, float secDeltaTime);
@@ -44,6 +45,7 @@ void J3DAPI sithWeapon_SetWeaponModel(SithThing* pThing, SithWeaponId weaponID);
 void J3DAPI sithWeapon_ResetWeaponModel(SithThing* pThing);
 void J3DAPI sithWeapon_SetHolsterModel(SithThing* pThing, SithWeaponId weaponID, signed int meshNum);
 void J3DAPI sithWeapon_ResetHolsterModel(SithThing* pThing, int holsterNum);
+void J3DAPI sithWeapon_EnablBloodsplort(bool bEnable); // Added, found in debug version
 void J3DAPI sithWeapon_SendMessageAim(SithThing* pThing, int bAim);
 void J3DAPI sithWeapon_SetActorKilledCallback(SithWeaponActorKilledCallback pfCallback);
 int J3DAPI sithWeapon_IsAiming(SithThing* pThing);
