@@ -11,12 +11,15 @@
 
 J3D_EXTERN_C_START
 
+#define SITHACTOR_MAX_UNDERWATER_MSEC 60000
+#define SITHACTOR_MAX_RAFT_DAMAGE     100000
+
+
 void J3DAPI sithActor_SetDifficulty(SithThing* pActor);
 void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime);
 
 float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float damage, SithDamageType damageType);
 float J3DAPI sithActor_DamageRaftActor(SithThing* pActor, SithThing* pPerpetrator, float damage, SithDamageType damageType);
-void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damageType);
 void J3DAPI sithActor_KillActor(SithThing* pThing, SithThing* pSrcThing, SithDamageType damageType);
 
 int J3DAPI sithActor_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pSurface, SithCollision* pHitStack);
