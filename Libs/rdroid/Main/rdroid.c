@@ -1,50 +1,36 @@
 #include "rdroid.h"
 #include <j3dcore/j3dhook.h>
+
+#include <rdroid/Primitives/rdFont.h>
+#include <rdroid/Raster/rdCache.h>
 #include <rdroid/RTI/symbols.h>
 
-#define rdroid_bRDroidStartup J3D_DECL_FAR_VAR(rdroid_bRDroidStartup, int)
-#define rdroid_bRDroidOpen J3D_DECL_FAR_VAR(rdroid_bRDroidOpen, int)
+#include <stdbool.h>
+//#define rdroid_bRDroidStartup J3D_DECL_FAR_VAR(rdroid_bRDroidStartup, int)
+//#define rdroid_bRDroidOpen J3D_DECL_FAR_VAR(rdroid_bRDroidOpen, int)
+
+static bool rdroid_bRDroidStartup;
+static bool rdroid_bRDroidOpen;
+
 
 void rdroid_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(rdSetServices);
-    // J3D_HOOKFUNC(rdClearServices);
-    // J3D_HOOKFUNC(rdStartup);
-    // J3D_HOOKFUNC(rdShutdown);
-    // J3D_HOOKFUNC(rdOpen);
-    // J3D_HOOKFUNC(rdClose);
-    // J3D_HOOKFUNC(rdSetRenderOptions);
-    // J3D_HOOKFUNC(rdSetGeometryMode);
-    // J3D_HOOKFUNC(rdSetLightingMode);
-    // J3D_HOOKFUNC(rdGetRenterOptions);
+    J3D_HOOKFUNC(rdSetServices);
+    J3D_HOOKFUNC(rdClearServices);
+    J3D_HOOKFUNC(rdStartup);
+    J3D_HOOKFUNC(rdShutdown);
+    J3D_HOOKFUNC(rdOpen);
+    J3D_HOOKFUNC(rdClose);
+    J3D_HOOKFUNC(rdSetRenderOptions);
+    J3D_HOOKFUNC(rdSetGeometryMode);
+    J3D_HOOKFUNC(rdSetLightingMode);
+    J3D_HOOKFUNC(rdGetRenterOptions);
 }
 
 void rdroid_ResetGlobals(void)
 {
-    const rdVector3 rdroid_g_zeroVector3_tmp = { { 0.0f }, { 0.0f }, { 0.0f } };
-    memcpy((rdVector3 *)&rdroid_g_zeroVector3, &rdroid_g_zeroVector3_tmp, sizeof(rdroid_g_zeroVector3));
-    
-    const rdVector3 rdroid_g_xVector3_tmp = { { 1.0f }, { 0.0f }, { 0.0f } };
-    memcpy((rdVector3 *)&rdroid_g_xVector3, &rdroid_g_xVector3_tmp, sizeof(rdroid_g_xVector3));
-    
-    const rdVector3 rdroid_g_yVector3_tmp = { { 0.0f }, { 1.0f }, { 0.0f } };
-    memcpy((rdVector3 *)&rdroid_g_yVector3, &rdroid_g_yVector3_tmp, sizeof(rdroid_g_yVector3));
-    
-    const rdVector3 rdroid_g_zVector3_tmp = { { 0.0f }, { 0.0f }, { 1.0f } };
-    memcpy((rdVector3 *)&rdroid_g_zVector3, &rdroid_g_zVector3_tmp, sizeof(rdroid_g_zVector3));
-    
-    const rdMatrix34 rdroid_g_identMatrix34_tmp = {
-      { { 1.0f }, { 0.0f }, { 0.0f } },
-      { { 0.0f }, { 1.0f }, { 0.0f } },
-      { { 0.0f }, { 0.0f }, { 1.0f } },
-      { { 0.0f }, { 0.0f }, { 0.0f } }
-    };
-    memcpy((rdMatrix34 *)&rdroid_g_identMatrix34, &rdroid_g_identMatrix34_tmp, sizeof(rdroid_g_identMatrix34));
-    
-    memset(&rdroid_bRDroidStartup, 0, sizeof(rdroid_bRDroidStartup));
-    memset(&rdroid_bRDroidOpen, 0, sizeof(rdroid_bRDroidOpen));
+    //memset(&rdroid_bRDroidStartup, 0, sizeof(rdroid_bRDroidStartup));
+    //memset(&rdroid_bRDroidOpen, 0, sizeof(rdroid_bRDroidOpen));
     memset(&rdroid_g_curLightingMode, 0, sizeof(rdroid_g_curLightingMode));
     memset(&rdroid_g_pHS, 0, sizeof(rdroid_g_pHS));
     memset(&rdroid_g_curGeometryMode, 0, sizeof(rdroid_g_curGeometryMode));
@@ -53,50 +39,95 @@ void rdroid_ResetGlobals(void)
 
 void J3DAPI rdSetServices(tHostServices* pHS)
 {
-    J3D_TRAMPOLINE_CALL(rdSetServices, pHS);
+    rdroid_g_pHS = pHS;
 }
 
-void rdClearServices(void)
+void J3DAPI rdClearServices()
 {
-    J3D_TRAMPOLINE_CALL(rdClearServices);
+    rdroid_g_pHS = NULL;
 }
 
 void J3DAPI rdStartup()
 {
-    J3D_TRAMPOLINE_CALL(rdStartup);
+    if ( rdroid_bRDroidStartup ) {
+        RDLOG_ERROR("Warning: rdStartup() has already been called!\n");
+        // TODO: should return with error
+    }
+
+    rdCache_Startup();
+    rdFont_Startup();
+    rdroid_bRDroidStartup = true;
 }
 
 void J3DAPI rdShutdown()
 {
-    J3D_TRAMPOLINE_CALL(rdShutdown);
+    if ( rdroid_bRDroidStartup )
+    {
+        rdFont_Shutdown();
+        rdroid_bRDroidStartup = false;
+    }
 }
 
 int J3DAPI rdOpen()
 {
-    return J3D_TRAMPOLINE_CALL(rdOpen);
+    if ( !rdroid_bRDroidStartup ) {
+        return 0;
+    }
+
+    if ( rdroid_bRDroidOpen )
+    {
+        RDLOG_ERROR("Warning: System already open!\n");
+        return 1;
+    }
+
+    if ( rdFont_Open() ) {
+        return 0;
+    }
+
+    rdroid_g_curGeometryMode  = RD_GEOMETRY_FULL;
+    rdroid_g_curLightingMode  = RD_LIGHTING_GOURAUD;
+    rdroid_g_curRenderOptions = RDROID_BACKFACE_CULLING_ENABLED;
+    rdroid_bRDroidOpen        = true;
+    return 1;
 }
 
 void J3DAPI rdClose()
 {
-    J3D_TRAMPOLINE_CALL(rdClose);
-}
-
-void J3DAPI rdSetRenderOptions(rdRoidFlags options)
-{
-    J3D_TRAMPOLINE_CALL(rdSetRenderOptions, options);
-}
-
-void J3DAPI rdSetGeometryMode(rdGeometryMode mode)
-{
-    J3D_TRAMPOLINE_CALL(rdSetGeometryMode, mode);
-}
-
-void J3DAPI rdSetLightingMode(rdLightMode mode)
-{
-    J3D_TRAMPOLINE_CALL(rdSetLightingMode, mode);
+    if ( rdroid_bRDroidStartup )
+    {
+        if ( rdroid_bRDroidOpen ) {
+            rdFont_Close();
+        }
+        rdroid_bRDroidOpen = false;
+    }
 }
 
 rdRoidFlags J3DAPI rdGetRenterOptions()
 {
-    return J3D_TRAMPOLINE_CALL(rdGetRenterOptions);
+    return rdroid_g_curRenderOptions;
+}
+
+void J3DAPI rdSetRenderOptions(rdRoidFlags options)
+{
+    rdroid_g_curRenderOptions = options;
+}
+
+rdGeometryMode J3DAPI rdSGetGeometryMode(void)
+{
+    return rdroid_g_curGeometryMode;
+}
+
+void J3DAPI rdSetGeometryMode(rdGeometryMode mode)
+{
+    rdroid_g_curGeometryMode = mode;
+}
+
+rdLightMode rdGetLightingMode(void)
+{
+    return rdroid_g_curLightingMode;
+}
+
+void J3DAPI rdSetLightingMode(rdLightMode mode)
+{
+    rdroid_g_curLightingMode = mode;
 }
