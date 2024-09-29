@@ -17,7 +17,6 @@ int J3DAPI jonesInventory_UseItem(SithThing* pPlayer, unsigned int typeId);
 int J3DAPI jonesInventory_ResetGameStatistics();
 int J3DAPI jonesInventory_GetMaxDifficultyLevel();
 void jonesInventory_UpdateSolvedHintsStatistics(void);
-// Maybe this function updates IQ points
 void J3DAPI jonesInventory_UpdateIQPoints(size_t difficulty);
 int jonesInventory_GetTotalIQPoints(void);
 void J3DAPI jonesInventory_AdvanceStatistics();
