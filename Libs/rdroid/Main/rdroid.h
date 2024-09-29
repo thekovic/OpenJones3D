@@ -54,7 +54,7 @@ int J3DAPI rdOpen();
 void J3DAPI rdClose();
 
 void J3DAPI rdSetServices(tHostServices* pHS);
-void J3DAPI rdClearServices();
+void rdClearServices(void);
 
 rdRoidFlags J3DAPI rdGetRenterOptions();
 void J3DAPI rdSetRenderOptions(rdRoidFlags options);

@@ -6,8 +6,6 @@
 #include <rdroid/RTI/symbols.h>
 
 #include <stdbool.h>
-//#define rdroid_bRDroidStartup J3D_DECL_FAR_VAR(rdroid_bRDroidStartup, int)
-//#define rdroid_bRDroidOpen J3D_DECL_FAR_VAR(rdroid_bRDroidOpen, int)
 
 static bool rdroid_bRDroidStartup;
 static bool rdroid_bRDroidOpen;
@@ -29,8 +27,6 @@ void rdroid_InstallHooks(void)
 
 void rdroid_ResetGlobals(void)
 {
-    //memset(&rdroid_bRDroidStartup, 0, sizeof(rdroid_bRDroidStartup));
-    //memset(&rdroid_bRDroidOpen, 0, sizeof(rdroid_bRDroidOpen));
     memset(&rdroid_g_curLightingMode, 0, sizeof(rdroid_g_curLightingMode));
     memset(&rdroid_g_pHS, 0, sizeof(rdroid_g_pHS));
     memset(&rdroid_g_curGeometryMode, 0, sizeof(rdroid_g_curGeometryMode));
@@ -42,7 +38,7 @@ void J3DAPI rdSetServices(tHostServices* pHS)
     rdroid_g_pHS = pHS;
 }
 
-void J3DAPI rdClearServices()
+void rdClearServices(void)
 {
     rdroid_g_pHS = NULL;
 }

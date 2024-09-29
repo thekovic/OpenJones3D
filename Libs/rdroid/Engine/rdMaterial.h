@@ -7,13 +7,18 @@
 
 J3D_EXTERN_C_START
 
-rdMaterialLoaderFunc J3DAPI rdMaterial_RegisterLoader(rdMaterialLoaderFunc pFunc);
+rdMaterialLoaderFunc J3DAPI rdMaterial_RegisterLoader(rdMaterialLoaderFunc pLoader);
+rdMaterialUnloaderFunc J3DAPI rdMaterial_RegisterUnloader(rdMaterialUnloaderFunc pFunc); // Added
+
 rdMaterial* J3DAPI rdMaterial_Load(const char* pFilename);
 int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat);
 void J3DAPI rdMaterial_Free(rdMaterial* pMaterial);
 void J3DAPI rdMaterial_FreeEntry(rdMaterial* pMaterial);
+
+int J3DAPI rdMaterial_Write(const char* pFilename, rdMaterial* pMaterial, tVBuffer*** paTextures, size_t numMipLevels); // Added
+
 size_t J3DAPI rdMaterial_GetMaterialMemUsage(const rdMaterial* pMaterial);
-size_t J3DAPI rdMaterial_GetMipSize(int width, int height, int mipLevels);
+size_t J3DAPI rdMaterial_GetMipSize(int width, int height, size_t mipLevels);
 
 // Helper hooking functions
 void rdMaterial_InstallHooks(void);
