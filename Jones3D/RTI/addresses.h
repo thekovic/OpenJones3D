@@ -171,6 +171,7 @@
 #define jonesCog_StartCutsceneFunc_ADDR 0x00401260
 #define jonesCog_EndCutscene_ADDR 0x004013C0
 #define jonesCog_UpdateDifficulty_ADDR 0x00401450
+#define jonesCog_EnableInterfaceFunc_ADDR 0x00401480
 #define jonesCog_StartCutscene_ADDR 0x004014E0
 #define jonesCog_EnableInterface_ADDR 0x004014F0
 #define jonesConfig_Startup_ADDR 0x00401500
@@ -409,7 +410,6 @@
 #define JonesConsole_g_bStarted_ADDR 0x00553080
 #define JonesConsole_bOpened_ADDR 0x00553084
 #define JonesConsole_pFuncHashtbl_ADDR 0x00553088
-#define JonesDisplay_dword_55332C_ADDR 0x0055332C
 #define JonesHud_colorGreen_ADDR 0x00506450
 #define JonesHud_colorYellow_ADDR 0x00506460
 #define JonesHud_colorRed_ADDR 0x00506470
@@ -420,7 +420,7 @@
 #define JonesHud_camViewPos_ADDR 0x005064C0
 #define JonesHud_pyrInventoryOrient_ADDR 0x005064D0
 #define JonesHud_vecSelectedMenuItemScale_ADDR 0x005064F0
-#define JonesHud_aStoreItemsInfo_ADDR 0x00513A18
+#define JonesHud_aStoreItems_ADDR 0x0050EDF0
 #define JonesHud_aDfltMenuItemsOrients_ADDR 0x005156F8
 #define JonesHud_apMenuIconModelNames_ADDR 0x00515F58
 #define JonesHud_apItemNames_ADDR 0x00516170

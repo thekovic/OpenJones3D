@@ -35,7 +35,7 @@
 #define JonesHud_Update_TYPE void (J3DAPI*)(const SithWorld*)
 #define JonesHud_SetCanvasSize_TYPE int (J3DAPI*)(int, int)
 #define JonesHud_UpdateSinCosTable_TYPE void (J3DAPI*)()
-#define JonesHud_UpdateHUDLayout_TYPE void (J3DAPI*)(unsigned int, unsigned int)
+#define JonesHud_UpdateHUDLayout_TYPE void (J3DAPI*)(uint32_t, uint32_t)
 #define JonesHud_MenuOpen_TYPE void (J3DAPI*)()
 #define JonesHud_MenuClose_TYPE void (*)(void)
 #define JonesHud_StartItemTranslation_TYPE void (J3DAPI*)(JonesHudMenuItem*, uint32_t, float, int)
