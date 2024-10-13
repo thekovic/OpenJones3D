@@ -64,7 +64,7 @@
 #define rdCamera_SetProjectType_TYPE void (J3DAPI*)(rdCamera*, rdCameraProjType)
 #define rdCamera_SetAspectRatio_TYPE void (J3DAPI*)(rdCamera*, float)
 #define rdCamera_BuildFOV_TYPE void (J3DAPI*)(rdCamera*)
-#define rdCamera_BuildClipFrustrum_TYPE void (J3DAPI*)(rdCamera*, rdClipFrustum*, float, float)
+#define rdCamera_BuildClipFrustrum_TYPE void (J3DAPI*)(const rdCamera*, rdClipFrustum*, float, float)
 #define rdCamera_SetFrustrum_TYPE int (J3DAPI*)(rdCamera*, rdClipFrustum*, int, int, int, int)
 #define rdCamera_Update_TYPE void (J3DAPI*)(const rdMatrix34*)
 #define rdCamera_OrthoProject_TYPE void (J3DAPI*)(rdVector3*, const rdVector3*)
