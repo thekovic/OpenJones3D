@@ -7,11 +7,15 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI rdPrimit2_DrawClippedLine(rdCanvas* pCanvas, int x1, int y1, int x2, int y2, int16_t color, unsigned int flags);
+int J3DAPI rdPrimit2_DrawLine(rdCanvas* pCanvas, int x1, int y1, int x2, int y2, uint32_t color, uint32_t flags); // Added
+int J3DAPI rdPrimit2_DrawClippedLine(rdCanvas* pCanvas, int x1, int y1, int x2, int y2, uint32_t color, uint32_t flags);
 void rdPrimit2_Reset(void);
 int J3DAPI rdPrimit2_DrawClippedLine2(float x1, float y1, float x2, float y2, uint32_t color);
-void J3DAPI rdPrimit2_DrawClippedCircle(rdCanvas* pCanvas, int x, int y, float radius, float step, int16_t color, unsigned int flags);
+void J3DAPI rdPrimit2_DrawClippedCircle(rdCanvas* pCanvas, int x, int y, float radius, float step, uint32_t color, uint32_t flags);
 void J3DAPI rdPrimit2_DrawClippedCircle2(float centerX, float centerY, float radius, float degrees, uint32_t color);
+
+int J3DAPI rdPrimit2_DrawRectangle(rdCanvas* pCanvas, int x1, int y1, int x2, int y2, uint32_t color, uint32_t flags); //Added
+int J3DAPI rdPrimit2_DrawTriangle(rdCanvas* pCanvas, int x1, int y1, int x2, int y2, int a6, int a7, uint32_t color, uint32_t flags); // Added
 
 // Helper hooking functions
 void rdPrimit2_InstallHooks(void);

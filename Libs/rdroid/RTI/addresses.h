@@ -260,7 +260,7 @@
 #define rdModel3_g_lightingMode_ADDR 0x0183B9C0
 #define rdParticle_aFaceTexVerts_ADDR 0x0054B2B0
 #define rdParticle_aFaceVerts_ADDR 0x014DFBF8
-#define rdParticle_aTransformedVertices_ADDR 0x014DFFB8
+#define rdParticle_aTransformedVerts_ADDR 0x014DFFB8
 #define rdFont_lightingMode_ADDR 0x005E1080
 #define rdFont_aFontColors_ADDR 0x005E1088
 #define rdFont_bStartup_ADDR 0x005E10C8
