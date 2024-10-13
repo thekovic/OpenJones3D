@@ -20,36 +20,34 @@ rdCamera* J3DAPI rdCamera_New(float fov, int bFarClip, float nearPlane, float fa
 int J3DAPI rdCamera_NewEntry(rdCamera* pCamera, float fov, int bClipFar, float nearPlane, float farPlane, float aspectRatio);
 void J3DAPI rdCamera_Free(rdCamera* pCamera);
 void J3DAPI rdCamera_FreeEntry(rdCamera* pCamera);
+
 void J3DAPI rdCamera_SetCanvas(rdCamera* pCamera, rdCanvas* pCanvas);
 void J3DAPI rdCamera_SetCurrent(rdCamera* pCamera);
+
 void J3DAPI rdCamera_SetFOV(rdCamera* pCamera, float fov);
 void J3DAPI rdCamera_SetProjectType(rdCamera* pCamera, rdCameraProjType type);
+int J3DAPI rdCamera_SetOrthoScale(rdCamera* pCamera, float scale); // Added
 void J3DAPI rdCamera_SetAspectRatio(rdCamera* pCamera, float ratio);
-void J3DAPI rdCamera_BuildFOV(rdCamera* pCamera);
-void J3DAPI rdCamera_BuildClipFrustrum(rdCamera* pCamera, rdClipFrustum* pFrustum, float width, float height);
 int J3DAPI rdCamera_SetFrustrum(rdCamera* pCamera, rdClipFrustum* pFrustrum, int left, int top, int right, int bottom);
+
 void J3DAPI rdCamera_Update(const rdMatrix34* orient);
-// Function does ortho projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
+
 void J3DAPI rdCamera_OrthoProject(rdVector3* pDestVertex, const rdVector3* pSrcVertex);
-// Function does ortho projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_OrthoProjectLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts);
-// Function does ortho projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_OrthoProjectSquare(rdVector3* pDestVertex, const rdVector3* pSrcVertex);
-// Function does ortho projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_OrthoProjectSquareLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts);
-// Function does perspective projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_PerspProject(rdVector3* pDestVertex, const rdVector3* pSrcVertex);
-// Function does perspective projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_PerspProjectLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts);
-// Function does perspective projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_PerspProjectSquare(rdVector3* pDestVertex, const rdVector3* pSrcVertex);
-// Function does perspective projection from view space (camera space ) to intermediante projection space. (2D projection in intermediante space between camera space and clip space) 
 void J3DAPI rdCamera_PerspProjectSquareLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts);
+
 void J3DAPI rdCamera_SetAmbientLight(rdCamera* pCamera, const rdVector4* pLight);
 void J3DAPI rdCamera_SetAttenuation(rdCamera* pCamera, float min, float max);
 int J3DAPI rdCamera_AddLight(rdCamera* pCamera, rdLight* pLight, const rdVector3* pPos);
 int J3DAPI rdCamera_ClearLights(rdCamera* pCamera);
-void J3DAPI rdCamera_sub_4C60B0(int bEnable);
+
+void J3DAPI rdCamera_sub_4C60B0(bool bEnable);
+bool rdCamera_sub_506861(void); // Added
 
 // Helper hooking functions
 void rdCamera_InstallHooks(void);
