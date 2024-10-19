@@ -192,7 +192,7 @@ static rdMaterial* JonesHud_apCreditsMats[STD_ARRAYLEN(JonesHud_aCredits)];
 static float JonesHud_creditTextHeight;
 static float JonesHud_aCreditsTextHeights[STD_ARRAYLEN(JonesHud_aCredits)];
 
-// Variables that are assigned values but are not currently being used
+// Variables that have values assigned but are not being used
 static int JonesHud_dword_554FDC;
 static float JonesHud_flt_554FE0;
 static float JonesHud_flt_554FE4;
@@ -819,10 +819,10 @@ void J3DAPI JonesHud_Update(const SithWorld* pWorld)
     uint32_t width, height;
     stdDisplay_GetBackBufferSize(&width, &height);
 
-    float wratio = (float)width / 640.0f;             // NOTE: fixed screen height 640
+    float wratio = (float)width / 640.0f; // NOTE: fixed screen height 640
     JonesHud_screenWidthScalar = wratio;
 
-    float hratio = (float)height / 480.0f;            // NOTE: fixed screen height 480
+    float hratio = (float)height / 480.0f; // NOTE: fixed screen height 480
     JonesHud_screenHeightScalar = hratio;
 
     size_t curTime = stdPlatform_GetTimeMsec();
@@ -915,7 +915,7 @@ void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height)
 
     JonesHud_healthIndBarPos.x = JonesHud_healthIndRect.x + JonesHud_healthIndRect.width / 2.0f;
     JonesHud_healthIndBarPos.y = JonesHud_healthIndRect.y + JonesHud_healthIndRect.height / 2.0f;
-    JonesHud_healthIndBarPos.z = 0.0f;           // z & w set later when drawing hud indicator
+    JonesHud_healthIndBarPos.z = 0.0f; // z & w set later when drawing hud indicator
     JonesHud_healthIndBarPos.w = 0.0f;
 
     JonesHud_enduranceRect.x      = (float)width - JonesHud_healthIndRect.x - JonesHud_healthIndRect.width;
@@ -1155,8 +1155,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
         JonesHud_Draw(
             JonesHud_pEnduranceOverlayMat,
             &JonesHud_enduranceRect,
-            /*z=*/0.000030518044f, // 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
-            /*rhw=*/0.000030518044f,
+            /*z=*/RD_FIXEDPOINT_RHW_SCALE, // 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
+            /*rhw=*/RD_FIXEDPOINT_RHW_SCALE,
             &color,
             /*celNum=*/0,
             /*bAlpha=*/1
@@ -1172,8 +1172,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
         JonesHud_Draw(
             JonesHud_pEnduranceOverlayMat,
             &JonesHud_enduranceRect,
-            /*z=*/0.000030518044f, // z; 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
-            /*rhw=*/0.000030518044f,
+            /*z=*/RD_FIXEDPOINT_RHW_SCALE, // z; 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
+            /*rhw=*/RD_FIXEDPOINT_RHW_SCALE,
             &color,
             /*celNum=*/0,
             /*bAlpha=*/1
@@ -1337,8 +1337,8 @@ void J3DAPI JonesHud_DrawHealthIndicator(float hitDelta, float health, float alp
         JonesHud_Draw(
             JonesHud_pPoisonedOverlayMat,
             &JonesHud_healthIndRect,
-            0.000030518044f,               // z; 0.00003051844f = 1/ 32767 - 1 / (128*256-1)
-            0.000030518044f,               // rhw
+            RD_FIXEDPOINT_RHW_SCALE,               // z; 0.00003051844f = 1/ 32767 - 1 / (128*256-1)
+            RD_FIXEDPOINT_RHW_SCALE,               // rhw
             &color,
             /*celNum=*/0,
             /*bAlpha=*/1

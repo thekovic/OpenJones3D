@@ -11,6 +11,11 @@
 
 J3D_EXTERN_C_START
 
+// Guessed macro: Older GPUs, particularly those in the DirectX 6 era, often used fixed - point math instead of floating - point for performance reasons.
+// The rhw value was frequently packed into a 16 - bit or 32 - bit fixed - point format, and 32767.5f is the middle value for a signed 16 - bit integer range(-32768 to 32767).
+// Using 1.0f / 32767.5f normalizes the W component, keeping it within a more precise range for the hardware.
+#define RD_FIXEDPOINT_RHW_SCALE (1.0f / 32767.5f) //0.000030518044f
+
 #define RDLOG_DEBUG(format, ...) \
     J3DLOG_DEBUG(rdroid_g_pHS, format, ##__VA_ARGS__)
 
