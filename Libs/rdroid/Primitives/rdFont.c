@@ -591,7 +591,7 @@ void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, floa
                 if ( nextPosX >= 0.0f )
                 {
                     if ( RDFONT_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RDFONT_REF_WIDTH * swidth >= curPosX
-                        && curPosY >= RDFONT_REF_HEIGHT && RDFONT_REF_HEIGHT * sheight >= curPosY )
+                        && curPosY >= 0 && RDFONT_REF_HEIGHT * sheight >= curPosY )
                     {
                         rdFont_DrawChar(curChar, (float)curPosX, (float)curPosY, z, pFont);
                     }
