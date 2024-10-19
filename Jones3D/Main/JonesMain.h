@@ -60,7 +60,6 @@ void JonesMain_SetBonusLevel(void);
 void JonesMain_ShowEndCredits(void);
 int JonesMain_Credits(void);
 
-
 StdDisplayEnvironment* JonesMain_GetDisplayEnvironment(void);
 JonesDisplaySettings* JonesMain_GetDisplaySettings(void);
 int J3DAPI JonesMain_CloseWindow();

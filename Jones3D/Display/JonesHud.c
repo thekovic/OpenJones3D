@@ -4333,7 +4333,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     {
         if ( hSndChannel )
         {
-            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 500.0f); // TODO [BUG]: FadeVolume accepts seconds not msec
+            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 2.0f); // Changed: Changed to 2 sec, was 500 sec
         }
 
         JonesHud_msecCreditsFadeStart = msecCurTime;
@@ -4349,7 +4349,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     {
         if ( hSndChannel )
         {
-            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 500.0f); // TODO [BUG]: FadeVolume accepts seconds not msec
+            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 2.0f); // Changed: Changed to 2 sec, was 500 sec
         }
 
         JonesHud_msecCreditsFadeStart = msecCurTime;
@@ -4359,8 +4359,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     float fontAlpha = 1.0f;
     if ( JonesHud_bEndingCredits )
     {
-        fontAlpha = 1.0f - (float)(msecCurTime - JonesHud_msecCreditsFadeStart) / 2000.0f; // 1000 msec aka 1 sec
-        if ( fontAlpha <= 0.0f )
+        fontAlpha = 1.0f - (float)(msecCurTime - JonesHud_msecCreditsFadeStart) / 2000.0f; // Changed: Changed fadeout to 2 sec from 1 sec
+        if ( fontAlpha <= 0.0f && (Sound_GetChannelFlags(hSndChannel) & SOUND_CHANNEL_PLAYING) == 0 )
         {
             // Finished fade out
 
@@ -4389,13 +4389,6 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]);
             JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] = NULL;
             return 1;
-        }
-
-        // Added: Quick sound fade fix to circumvent sithSoundMixer_FadeVolume bug
-        // TODO: Remove when sithSoundMixer_FadeVolume is fixed
-        if ( hSndChannel )
-        {
-            Sound_SetVolume(hSndChannel, fontAlpha);
         }
     }
 

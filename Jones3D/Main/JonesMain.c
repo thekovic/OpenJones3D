@@ -1,12 +1,24 @@
 #include "JonesMain.h"
 #include <j3dcore/j3dhook.h>
+
+#include <Jones3D/Display/JonesHud.h>
 #include <Jones3D/RTI/symbols.h>
 
+#include <rdroid/Raster/rdCache.h>
+
 #include <sith/DSS/sithGamesave.h>
+#include <sith/Devices/sithSoundMixer.h>
 #include <sith/World/sithWorld.h>
+
+#include <sound/Sound.h>
 
 #include <std/General/std.h>
 #include <std/General/stdUtil.h>
+#include <std/Win95/std3D.h>
+#include <std/Win95/stdControl.h>
+#include <std/Win95/stdDisplay.h>
+
+#include <wkernel/wkernel.h>
 
 #define JonesMain_curGamesaveState J3D_DECL_FAR_VAR(JonesMain_curGamesaveState, int)
 #define JonesMain_aOpenMenuKeyIds J3D_DECL_FAR_ARRAYVAR(JonesMain_aOpenMenuKeyIds, int(*)[8])
@@ -92,8 +104,8 @@ void JonesMain_InstallHooks(void)
     // J3D_HOOKFUNC(JonesMain_UpdateLevelNum);
     // J3D_HOOKFUNC(JonesMain_ProcessEndLevel);
     // J3D_HOOKFUNC(JonesMain_SetBonusLevel);
-    // J3D_HOOKFUNC(JonesMain_ShowEndCredits);
-    // J3D_HOOKFUNC(JonesMain_Credits);
+    J3D_HOOKFUNC(JonesMain_ShowEndCredits);
+    J3D_HOOKFUNC(JonesMain_Credits);
     // J3D_HOOKFUNC(JonesMain_IsOpen);
     // J3D_HOOKFUNC(JonesMain_GetDisplayEnvironment);
     // J3D_HOOKFUNC(JonesMain_GetDisplaySettings);
@@ -611,15 +623,15 @@ void JonesMain_SetBonusLevel(void)
     J3D_TRAMPOLINE_CALL(JonesMain_SetBonusLevel);
 }
 
-void JonesMain_ShowEndCredits(void)
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_ShowEndCredits);
-}
+//void JonesMain_ShowEndCredits(void)
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_ShowEndCredits);
+//}
 
-int JonesMain_Credits(void)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_Credits);
-}
+//int JonesMain_Credits(void)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_Credits);
+//}
 
 int JonesMain_IsOpen(void)
 {
@@ -791,4 +803,75 @@ void JonesMain_NextLevel(void)
 
     // Set process
     JonesMain_pfProcess = JonesMain_ProcessEndLevel;
+}
+
+void JonesMain_ShowEndCredits(void)
+{
+    sithSoundMixer_StopAll(); // Added: Stop all sounds before showing end credits
+    JonesMain_pfProcess = JonesMain_Credits;
+}
+
+int JonesMain_Credits(void)
+{
+    bool bFinished = false; // Added: Init. to false
+
+    if ( !JonesMain_bEndCredits )
+    {
+        JonesMain_hSndCredits = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(2)); // mus_enddemo.wav
+        if ( JonesMain_hSndCredits && !JonesMain_hCreditsMusic )
+        {
+            JonesMain_hCreditsMusic = sithSoundMixer_PlaySound(JonesMain_hSndCredits, 1.0, 0.0, SOUNDPLAY_PLAYONCE | SOUNDPLAY_LOOP);
+        }
+
+        stdControl_ReadControls();
+        int numEscPressed;
+        if ( !JonesMain_bEndCredits && stdControl_ReadKey(DIK_ESCAPE, &numEscPressed) )
+        {
+            JonesMain_bEndCredits = 1;
+        }
+    }
+
+    std3D_ClearZBuffer();
+    rdCache_AdvanceFrame();
+    sithSoundMixer_Update(); // Fixed: Added missing call to sithSoundMixer_Update which updates sound fadeout at the end of credits
+
+    if ( JonesMain_state.displaySettings.bClearBackBuffer )
+    {
+        stdDisplay_BackBufferFill(0, NULL);
+    }
+
+    if ( !std3D_StartScene() )
+    {
+        sithDrawScene();
+        if ( JonesMain_bEndCredits )
+        {
+            bFinished = JonesHud_DrawCredits(1, JonesMain_hCreditsMusic);
+        }
+        else
+        {
+            bFinished = JonesHud_DrawCredits(0, JonesMain_hCreditsMusic);
+        }
+
+        rdCache_Flush();
+        rdCache_FlushAlpha();
+        std3D_EndScene();
+        stdDisplay_Update();
+    }
+
+    if ( !bFinished )
+    {
+        return wkernel_PeekProcessEvents();
+    }
+
+    if ( JonesMain_hCreditsMusic )
+    {
+        sithSoundMixer_StopSound(JonesMain_hCreditsMusic);
+    }
+
+    JonesMain_pfProcess     = JonesMain_ProcessGame;
+    JonesMain_hSndCredits   = 0;
+    JonesMain_hCreditsMusic = 0;
+    JonesMain_bEndCredits   = 0;
+    JonesHud_ShowGameOverDialog(0);
+    return wkernel_PeekProcessEvents();
 }
