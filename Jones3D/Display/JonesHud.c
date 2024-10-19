@@ -174,6 +174,9 @@ static bool JonesHud_bSkipUpdateCredits = false; // Added init to false
 
 static int JonesHud_msecCreditsElapsedTime;
 static int JonesHud_msecCreditsFadeStart;
+
+float JonesHud_creditsAspectRatio;
+float JonesHud_creditsIconPosOffset;
 static float JonesHud_creditsSomeHeightRatio;
 
 #define JONESHUD_CREDITS_SPEEDFACTOR 1.5f // default 1.5
@@ -4126,6 +4129,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             stdDisplay_GetBackBufferSize(&JonesHud_creditsCanvasWidth, &JonesHud_creditsCanvasHeight);
 
             JonesHud_creditsSomeHeightRatio = (float)(int)JonesHud_creditsCanvasHeight / 8000.0f;
+            JonesHud_creditsAspectRatio   = ((float)JonesHud_creditsCanvasHeight * (4.0f / 3.0f)) / (float)JonesHud_creditsCanvasWidth;
+            JonesHud_creditsIconPosOffset = 48.0f / JonesHud_creditsAspectRatio;
 
             JonesHud_pCreditsFont1 = rdFont_Load("mat\\jonesComic Sans MS14.gcf");
             JonesHud_pCreditsFont2 = rdFont_Load("mat\\jonesCalisto MT20.gcf");
@@ -4273,7 +4278,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                         break;
 
                     case 4: // icon image 
-                        if ( JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] < -64.0f )
+                        if ( JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] < (-64.0f * JonesHud_screenWidthScalar) )
                         {
                             ++JonesHud_creditsCurIdx;
                         }
@@ -4355,7 +4360,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     if ( JonesHud_bEndingCredits )
     {
         fontAlpha = 1.0f - (float)(msecCurTime - JonesHud_msecCreditsFadeStart) / 1000.0f; // 1000 msec aka 1 sec
-        if ( fontAlpha <= 0.0f && (Sound_GetChannelFlags(hSndChannel) & SOUND_CHANNEL_PLAYING) == 0 )
+        if ( fontAlpha <= 0.0f )
         {
             // Finished fade out
 
@@ -4523,8 +4528,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 {
                     JonesHudRect rect;
                     rect.y = JonesHud_aCreditsCurPosY[i];
-                    rect.width  = 64.0f;
-                    rect.height = 64.0f;
+                    rect.width  = 64.0f * JonesHud_screenWidthScalar;
+                    rect.height = 64.0f * JonesHud_screenWidthScalar;
                     if ( i == JonesHud_creditsCurMatIdx + 1 && JonesHud_creditsCurMatIdx > 0 )
                     {
                         rect.x = (float)((JonesHud_creditsCanvasWidth - rect.height) / 2 + rect.height);
@@ -4556,7 +4561,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                     }
                     else
                     {
-                        JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar + JonesHud_aCreditsCurPosY[i];
+                        //JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar + JonesHud_aCreditsCurPosY[i];
+                        JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + JonesHud_creditsIconPosOffset) * lineScalar + JonesHud_aCreditsCurPosY[i];
                     }
 
                     JonesHud_creditsCurEndIdx = i + 1;
