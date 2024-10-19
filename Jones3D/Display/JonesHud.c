@@ -2645,7 +2645,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                     }
 
                     float textX = pos.x;
-                    float textY = (float)((int32_t)pos.y - (int32_t)(70.0f * JonesHud_screenHeightScalar)); // TODO: multiplying 70 by JonesHud_screenWidthScalar gives better spacing but still some additional adjustments has to be made
+                    float textY = (float)((int32_t)pos.y - (int32_t)(70.0f * JonesHud_screenWidthScalar)); // Changed: Was multiplying with JonesHud_screenHeighthScalar. Note, might need further adjustments
                     textX /= (JonesHud_screenWidthScalar * RDFONT_REF_WIDTH);
                     textY /= (JonesHud_screenHeightScalar * RDFONT_REF_HEIGHT);
                     rdFont_DrawTextLineClipped(aItemText, textX, textY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pMenuFont, RDFONT_ALIGNCENTER);
