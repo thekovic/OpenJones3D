@@ -254,7 +254,7 @@ void J3DAPI rdMaterial_FreeEntry(rdMaterial* pMaterial)
     memset(pMaterial, 0, sizeof(rdMaterial));
 }
 
-int J3DAPI rdMaterial_Write(const char* pFilename, rdMaterial* pMaterial, tVBuffer*** paTextures, size_t numMipLevels)
+int J3DAPI rdMaterial_Write(const char* pFilename, const rdMaterial* pMaterial, tVBuffer*** paTextures, size_t numMipLevels)
 {
     rdMatHeader header;
     STD_STRNCPY(header.magic, RDMAT_MAGIC, 4u);

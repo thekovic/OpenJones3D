@@ -2693,9 +2693,11 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                         }
                     }
 
-                    y   = (float)posY / (JonesHud_screenHeightScalar * 480.0f);// NOTE: fix screen size 480
-                    x_1 = (float)posX / (JonesHud_screenWidthScalar * 640.0f);// NOTE: fix screen size 640
-                    rdFont_DrawText2(aItemText, x_1, y, 0.000030518044f, JonesHud_pMenuFont, 1);
+                    float textX = pos.x;
+                    float textY = (float)((int32_t)pos.y - (int32_t)(70.0f * JonesHud_screenHeightScalar)); // TODO: multiplying 70 by JonesHud_screenWidthScalar gives better spacing but still some additional adjustments has to be made
+                    textX /= (JonesHud_screenWidthScalar * RDFONT_REF_WIDTH);
+                    textY /= (JonesHud_screenHeightScalar * RDFONT_REF_HEIGHT);
+                    rdFont_DrawTextLineClipped(aItemText, textX, textY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pMenuFont, RDFONT_ALIGNCENTER);
                 }
             }
 
@@ -4523,6 +4525,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 rdFont_SetFontColor(aFontColors);
                 ya = JonesHud_aCreditsTextHeights[i] / (float)(int)JonesHud_bufferHeight;
                 rdFont_DrawText(JonesHud_aCredits[i].aText, 0.5f, ya, 0.000030518044f, JonesHud_pCreditsFont2, 0x1);
+                rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont2, RDFONT_ALIGNCENTER);
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsTextHeights)
                   && !bEndCredits
@@ -4583,11 +4586,11 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 y = JonesHud_aCreditsTextHeights[i] / (float)(int)JonesHud_bufferHeight;
                 if ( pText )
                 {
-                    rdFont_DrawText(pText, 0.5f, y, 0.000030518044f, JonesHud_pCreditsFont1, 0x1);
+                    rdFont_DrawTextLine(pText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
                 }
                 else
                 {
-                    rdFont_DrawText(JonesHud_aCredits[i].aText, 0.5f, y, 0.000030518044f, JonesHud_pCreditsFont1, 0x1);
+                    rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
                 }
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsTextHeights)

@@ -15,7 +15,7 @@ int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat);
 void J3DAPI rdMaterial_Free(rdMaterial* pMaterial);
 void J3DAPI rdMaterial_FreeEntry(rdMaterial* pMaterial);
 
-int J3DAPI rdMaterial_Write(const char* pFilename, rdMaterial* pMaterial, tVBuffer*** paTextures, size_t numMipLevels); // Added
+int J3DAPI rdMaterial_Write(const char* pFilename, const rdMaterial* pMaterial, tVBuffer*** paTextures, size_t numMipLevels); // Added
 
 size_t J3DAPI rdMaterial_GetMaterialMemUsage(const rdMaterial* pMaterial);
 size_t J3DAPI rdMaterial_GetMipSize(int width, int height, size_t mipLevels);

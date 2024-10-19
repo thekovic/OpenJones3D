@@ -47,11 +47,11 @@
 #define rdFont_LoadMaterial_ADDR 0x004C49A0
 #define rdFont_Free_ADDR 0x004C4A00
 #define rdFont_SetFontColor_ADDR 0x004C4A40
-#define rdFont_GetTextEnd_ADDR 0x004C4A90
+#define rdFont_GetWrapLine_ADDR 0x004C4A90
 #define rdFont_GetTextWidth_ADDR 0x004C4B80
-#define rdFont_DrawText_ADDR 0x004C4BF0
+#define rdFont_DrawTextLine_ADDR 0x004C4BF0
 #define rdFont_DrawChar_ADDR 0x004C4E40
-#define rdFont_DrawText2_ADDR 0x004C5090
+#define rdFont_DrawTextLineClipped_ADDR 0x004C5090
 #define rdFont_Startup_ADDR 0x004C5300
 #define rdFont_Shutdown_ADDR 0x004C5340
 #define rdFont_Open_ADDR 0x004C5390

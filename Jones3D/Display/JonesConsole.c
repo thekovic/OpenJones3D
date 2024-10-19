@@ -180,7 +180,7 @@ void JonesConsole_FlushToDisplay(void)
             const char* pText = JonesConsole_aBuffers[i].aLine;
             while ( pText )
             {
-                const char* pEnd = rdFont_GetTextEnd(pText, JonesConsole_pFont, 1.0f);
+                const char* pEnd = rdFont_GetWrapLine(pText, JonesConsole_pFont, /*widthScale=*/1.0f);
                 if ( pEnd == pText )
                 {
                     pEnd = NULL;
@@ -190,16 +190,16 @@ void JonesConsole_FlushToDisplay(void)
                 {
                     memset(aPrintText, 0, sizeof(aPrintText));
                     stdUtil_StringNumCopy(aPrintText, sizeof(aPrintText), pText, pEnd - pText);
-                    rdFont_DrawText(aPrintText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, JonesConsole_pFont, 2);
+                    rdFont_DrawTextLine(aPrintText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, JonesConsole_pFont, RDFONT_ALIGNLEFT);
                     pText = pEnd;
                 }
                 else
                 {
-                    rdFont_DrawText(pText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, JonesConsole_pFont, 2);
-                    pText = 0;
+                    rdFont_DrawTextLine(pText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, JonesConsole_pFont, RDFONT_ALIGNLEFT);
+                    pText = NULL;
                 }
 
-                y = (float)JonesConsole_pFont->lineSpacing / 480.0f + y;// screen width considered as 480
+                y = rdFont_GetNormLineSpacing(JonesConsole_pFont) + y;
             }
         }
     }

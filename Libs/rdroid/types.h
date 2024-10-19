@@ -175,16 +175,6 @@ typedef void (J3DAPI* rdMaterialUnloaderFunc)(rdMaterial* pMaterial);
 typedef void (J3DAPI* rdModel3DrawFaceFunc)(const rdFace* pFace, const rdVector3* pTransformedVertices, int bBackFace, const rdVector4* pMeshColor);
 typedef int (J3DAPI* rdCacheSortFunc)(const rdCacheProcEntry*, const rdCacheProcEntry*);
 
-typedef struct srdGlyphMetrics
-{
-    float left;
-    float top;
-    float right;
-    float bottom;
-    int baselineOriginY;
-    int baselineOriginX;
-} rdGlyphMetrics;
-
 struct srdMaterial
 {
     char aName[64];
@@ -198,14 +188,26 @@ struct srdMaterial
 };
 static_assert(sizeof(rdMaterial) == 92, "sizeof(rdMaterial) == 92");
 
+typedef struct srdGlyphMetrics
+{
+    float left;
+    float top;
+    float right;
+    float bottom;
+    int baselineOriginY;
+    int baselineOriginX;
+} rdGlyphMetrics;
+static_assert(sizeof(rdGlyphMetrics) == 24, "sizeof(rdGlyphMetrics) == 24");
+
 typedef struct srdFont
 {
     rdGlyphMetrics* aGlyphs;
     int lineSpacing;
     char* pName;
-    int fontSize;
+    int32_t fontSize;
     rdMaterial* pMaterial;
 } rdFont;
+static_assert(sizeof(rdFont) == 20, "sizeof(rdFont) == 20");
 
 typedef struct srdMatHeader
 {
