@@ -327,8 +327,8 @@ void Driver_ResetGlobals(void)
       -10,
       -10
     };
-    memcpy((int *)&SoundDriver_aDBTable, &SoundDriver_aDBTable_tmp, sizeof(SoundDriver_aDBTable));
-    
+    memcpy((int*)&SoundDriver_aDBTable, &SoundDriver_aDBTable_tmp, sizeof(SoundDriver_aDBTable));
+
     const DXStatus SoundDriver_aDStatusTbl_tmp[16] = {
       { -2005401590, "DSERR_ALLOCATED" },
       { -2005401470, "DSERR_ALREADYINITIALIZED" },
@@ -347,23 +347,23 @@ void Driver_ResetGlobals(void)
       { -2147467263, "DSERR_UNSUPPORTED" },
       { 0, "Unknown error code." }
     };
-    memcpy((DXStatus *)&SoundDriver_aDStatusTbl, &SoundDriver_aDStatusTbl_tmp, sizeof(SoundDriver_aDStatusTbl));
-    
+    memcpy((DXStatus*)&SoundDriver_aDStatusTbl, &SoundDriver_aDStatusTbl_tmp, sizeof(SoundDriver_aDStatusTbl));
+
     float SoundDriver_maxVolume_tmp = 1.0f;
     memcpy(&SoundDriver_maxVolume, &SoundDriver_maxVolume_tmp, sizeof(SoundDriver_maxVolume));
-    
+
     float SoundDriver_minDistance_tmp = 15.0f;
     memcpy(&SoundDriver_minDistance, &SoundDriver_minDistance_tmp, sizeof(SoundDriver_minDistance));
-    
+
     float SoundDriver_maxDistance_tmp = 10000.0f;
     memcpy(&SoundDriver_maxDistance, &SoundDriver_maxDistance_tmp, sizeof(SoundDriver_maxDistance));
-    
+
     float SoundDriver_defaultRolloffFactor_tmp = 1.0f;
     memcpy(&SoundDriver_defaultRolloffFactor, &SoundDriver_defaultRolloffFactor_tmp, sizeof(SoundDriver_defaultRolloffFactor));
-    
+
     float SoundDriver_defaultDopplerFactor_tmp = 1.0f;
     memcpy(&SoundDriver_defaultDopplerFactor, &SoundDriver_defaultDopplerFactor_tmp, sizeof(SoundDriver_defaultDopplerFactor));
-    
+
     memset(&SoundDriver_pfLogError, 0, sizeof(SoundDriver_pfLogError));
     memset(&SoundDriver_aPanTable, 0, sizeof(SoundDriver_aPanTable));
     memset(&SoundDriver_frontOrientATan, 0, sizeof(SoundDriver_frontOrientATan));
@@ -461,7 +461,7 @@ void J3DAPI SoundDriver_ListenerCommitDeferred()
     J3D_TRAMPOLINE_CALL(SoundDriver_ListenerCommitDeferred);
 }
 
-void J3DAPI SoundDriver_SetPosAndVelocity(LPDIRECTSOUND3DBUFFER pBuffer, float x, float y, float z, float velX, float velY, float velZ, float minDistance, float maxDistance)
+void J3DAPI SoundDriver_SetPosAndVelocity(LPDIRECTSOUNDBUFFER pBuffer, float x, float y, float z, float velX, float velY, float velZ, float minDistance, float maxDistance)
 {
     J3D_TRAMPOLINE_CALL(SoundDriver_SetPosAndVelocity, pBuffer, x, y, z, velX, velY, velZ, minDistance, maxDistance);
 }

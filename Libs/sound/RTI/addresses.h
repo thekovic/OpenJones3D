@@ -95,8 +95,8 @@
 #define Sound_SetVolumeThing_ADDR 0x004DC800
 #define Sound_FadeVolumeThing_ADDR 0x004DC8C0
 #define Sound_IsThingFadingVol_ADDR 0x004DC990
-#define Sound_SetChannelPitch_ADDR 0x004DCA50
-#define Sound_GetChannelPitch_ADDR 0x004DCA80
+#define Sound_SetPitch_ADDR 0x004DCA50
+#define Sound_GetPitch_ADDR 0x004DCA80
 #define Sound_FadePitch_ADDR 0x004DCAA0
 #define Sound_SetPitchThing_ADDR 0x004DCBD0
 #define Sound_GetChannelFlags_ADDR 0x004DCC90

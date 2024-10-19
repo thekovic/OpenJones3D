@@ -1,6 +1,13 @@
 #include "Sound.h"
 #include <j3dcore/j3dhook.h>
+
+#include <rdroid/Math/rdVector.h>
+#include <rdroid/Math/rdMatrix.h>
+
+#include "Driver.h"
 #include <sound/RTI/symbols.h>
+
+#include <std/General/stdUtil.h>
 
 #define Sound_cacheBlockSize J3D_DECL_FAR_VAR(Sound_cacheBlockSize, int)
 #define Sound_maxVolume J3D_DECL_FAR_VAR(Sound_maxVolume, float)
@@ -87,12 +94,12 @@ void Sound_InstallHooks(void)
     // J3D_HOOKFUNC(Sound_SetVolumeThing);
     // J3D_HOOKFUNC(Sound_FadeVolumeThing);
     // J3D_HOOKFUNC(Sound_IsThingFadingVol);
-    // J3D_HOOKFUNC(Sound_SetChannelPitch);
-    // J3D_HOOKFUNC(Sound_GetChannelPitch);
+    // J3D_HOOKFUNC(Sound_SetPitch);
+    // J3D_HOOKFUNC(Sound_GetPitch);
     // J3D_HOOKFUNC(Sound_FadePitch);
     // J3D_HOOKFUNC(Sound_SetPitchThing);
     // J3D_HOOKFUNC(Sound_GetChannelFlags);
-    // J3D_HOOKFUNC(Sound_Update);
+    J3D_HOOKFUNC(Sound_Update);
     // J3D_HOOKFUNC(Sound_GenerateLipSync);
     // J3D_HOOKFUNC(Sound_SetReverseSound);
     // J3D_HOOKFUNC(Sound_GetNextHandle);
@@ -119,13 +126,13 @@ void Sound_ResetGlobals(void)
 {
     int Sound_cacheBlockSize_tmp = 2097152;
     memcpy(&Sound_cacheBlockSize, &Sound_cacheBlockSize_tmp, sizeof(Sound_cacheBlockSize));
-    
+
     float Sound_maxVolume_tmp = 1.0f;
     memcpy(&Sound_maxVolume, &Sound_maxVolume_tmp, sizeof(Sound_maxVolume));
-    
+
     float Sound_defaultDistanceFactor_tmp = 0.30000001f;
     memcpy(&Sound_defaultDistanceFactor, &Sound_defaultDistanceFactor_tmp, sizeof(Sound_defaultDistanceFactor));
-    
+
     memset(&Sound_pfGetThingInfoCallback, 0, sizeof(Sound_pfGetThingInfoCallback));
     memset(&Sound_aFades, 0, sizeof(Sound_aFades));
     memset(&Sound_nextHandle, 0, sizeof(Sound_nextHandle));
@@ -383,14 +390,14 @@ unsigned int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle)
     return J3D_TRAMPOLINE_CALL(Sound_IsThingFadingVol, thingId, handle);
 }
 
-void J3DAPI Sound_SetChannelPitch(tSoundChannelHandle hChannel, float pitch)
+void J3DAPI Sound_SetPitch(tSoundChannelHandle hChannel, float pitch)
 {
-    J3D_TRAMPOLINE_CALL(Sound_SetChannelPitch, hChannel, pitch);
+    J3D_TRAMPOLINE_CALL(Sound_SetPitch, hChannel, pitch);
 }
 
-float J3DAPI Sound_GetChannelPitch(tSoundChannelHandle hChannel)
+float J3DAPI Sound_GetPitch(tSoundChannelHandle hChannel)
 {
-    return J3D_TRAMPOLINE_CALL(Sound_GetChannelPitch, hChannel);
+    return J3D_TRAMPOLINE_CALL(Sound_GetPitch, hChannel);
 }
 
 void J3DAPI Sound_FadePitch(tSoundChannelHandle hChannel, float pitch, float secFadeTime)
@@ -409,10 +416,10 @@ tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel)
     return J3D_TRAMPOLINE_CALL(Sound_GetChannelFlags, hChannel);
 }
 
-void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, rdVector3* pTopOrient, rdVector3* pFrontOrient)
-{
-    J3D_TRAMPOLINE_CALL(Sound_Update, pPos, pVelocity, pTopOrient, pFrontOrient);
-}
+//void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, rdVector3* pTopOrient, rdVector3* pFrontOrient)
+//{
+//    J3D_TRAMPOLINE_CALL(Sound_Update, pPos, pVelocity, pTopOrient, pFrontOrient);
+//}
 
 int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, int* pMouthPosX, int* pMouthPosY, int a4)
 {
@@ -512,4 +519,248 @@ int J3DAPI Sound_ImportBank(tFileHandle fh, int bankNum)
 int J3DAPI Sound_ReadFile(tFileHandle fh, void* pData, unsigned int size)
 {
     return J3D_TRAMPOLINE_CALL(Sound_ReadFile, fh, pData, size);
+}
+
+static void Sound_UpdateFades(void) // Added
+{
+    for ( size_t i = 0; i < STD_ARRAYLEN(Sound_aFades); i++ )
+    {
+        SoundFade* pFade = &Sound_aFades[i];
+        if ( Sound_aFades[i].hChannel )
+        {
+            int dtime = Sound_GetDeltaTime();
+            tSoundChannel* pChannel = Sound_GetChannel(pFade->hChannel);
+            if ( !pChannel )
+            {
+                pFade->hChannel = 0;
+                continue;
+            }
+
+            if ( dtime < (int)pFade->msecEndTime )
+            {
+                double newValue = (pFade->endValue - pFade->startValue)
+                    * (double)(dtime - pFade->msecStartTime)
+                    / (double)(pFade->msecEndTime - pFade->msecStartTime)
+                    + pFade->startValue;
+
+                if ( newValue != 0.0 )
+                {
+                    if ( pFade->bPitch )
+                    {
+                        Sound_SetPitch(pFade->hChannel, (float)newValue);
+                    }
+                    else
+                    {
+                        Sound_SetVolume(pFade->hChannel, (float)newValue);
+                    }
+
+                    if ( (float)newValue == pFade->endValue )
+                    {
+                        pFade->hChannel = 0;
+                    }
+                }
+            }
+            else
+            {
+                if ( pFade->bPitch )
+                {
+                    Sound_SetPitch(pFade->hChannel, pFade->endValue);
+                    pChannel->flags &= ~SOUND_CHANNEL_PITCHFADE;
+                }
+                else if ( pFade->endValue == 0.0f )
+                {
+                    Sound_StopChannel(pFade->hChannel);
+                }
+                else
+                {
+                    Sound_SetVolume(pFade->hChannel, pFade->endValue);
+                    pChannel->flags &= ~SOUND_CHANNEL_VOLUMEFADE;
+                }
+
+                pFade->hChannel = 0;
+            }
+        }
+    }
+}
+
+void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, rdVector3* pTopOrient, rdVector3* pFrontOrient)
+{
+    // Was changed to function call
+    Sound_UpdateFades();
+
+    // TODO: should operate on copy orients
+    if ( pTopOrient && !Sound_bReverseSound )
+    {
+        pTopOrient->x = -pTopOrient->x;
+        pTopOrient->y = -pTopOrient->y;
+        pTopOrient->z = -pTopOrient->z;
+    }
+
+    if ( pFrontOrient && !Sound_bReverseSound )
+    {
+        pFrontOrient->x = -pFrontOrient->x;
+        pFrontOrient->y = -pFrontOrient->y;
+        pFrontOrient->z = -pFrontOrient->z;
+    }
+
+    if ( pPos )
+    {
+        rdVector_Copy3(&Sound_curUpdatePos, pPos);
+    }
+
+    SoundDriver_SetListenerPosition(pPos, pVelocity, pTopOrient, pFrontOrient);
+
+    int count = Sound_numChannels;
+    tSoundChannel* pCurChannel = &Sound_apChannels[Sound_numChannels];
+
+LABEL_30:
+    while ( 1 )
+    {
+        --pCurChannel;
+        if ( !count-- )
+        {
+            break;
+        }
+
+        if ( pCurChannel->handle && (pCurChannel->flags & SOUND_CHANNEL_3DSOUND) != 0 )
+        {
+            SoundThingInfo thngSndInfo;
+            if ( (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
+              && Sound_pfGetThingInfoCallback
+              && Sound_pfGetThingInfoCallback(pCurChannel->thingId, &thngSndInfo) )
+            {
+                pCurChannel->playPos.x = thngSndInfo.pos.x;
+                pCurChannel->playPos.y = thngSndInfo.pos.y;
+                pCurChannel->playPos.z = thngSndInfo.pos.z;
+                pCurChannel->envflags  = thngSndInfo.envflags;
+
+                SoundDriver_SetPosAndVelocity(
+                    pCurChannel->pDSoundBuffer,
+                    thngSndInfo.pos.x,
+                    thngSndInfo.pos.y,
+                    thngSndInfo.pos.z,
+                    thngSndInfo.velocity.x,
+                    thngSndInfo.velocity.y,
+                    thngSndInfo.velocity.z,
+                    pCurChannel->minRadius,
+                    pCurChannel->maxRadius
+                );
+            }
+
+            if ( !SoundDriver_Update(
+                &pCurChannel->pDSoundBuffer,
+                pCurChannel->playPos.x,
+                pCurChannel->playPos.y,
+                pCurChannel->playPos.z,
+                pCurChannel->volume,
+                pCurChannel->pitch,
+                &pCurChannel->flags,
+                pCurChannel->minRadius,
+                pCurChannel->maxRadius,
+                pCurChannel->envflags) )
+            {
+                Sound_StopChannel(count);       // TODO: Is this a bug? Shouldn't be using pCurChannel->handle?
+            }
+
+            else if ( (pCurChannel->flags & SOUND_CHANNEL_RESTART) != 0 )
+            {
+                pCurChannel->flags |= SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING;
+                pCurChannel->flags &= ~SOUND_CHANNEL_FAR;
+
+                if ( (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) == (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND) )
+                {
+                    tSoundChannel channel = *pCurChannel;
+                    pCurChannel->handle  = 0;
+                    pCurChannel->hSnd    = 0;
+                    pCurChannel->thingId = 0;
+                    if ( pCurChannel->pDSoundBuffer )
+                    {
+                        SoundDriver_Release(pCurChannel->pDSoundBuffer);
+                        pCurChannel->pDSoundBuffer = NULL;
+                    }
+
+                    tSoundChannelHandle hChannel = Sound_PlayThing(channel.hSnd, channel.volume, channel.priority, channel.flags, channel.thingId, channel.guid, channel.minRadius, channel.maxRadius);
+                    if ( !hChannel )
+                    {
+                        Sound_pHS->pErrorPrint("Sound_Update: Error restarting distant sound.\n");
+                    }
+                    else
+                    {
+                        for ( size_t i = Sound_numChannels; i-- > 0; )
+                        {
+                            tSoundChannel* pChannel = &Sound_apChannels[i];
+                            if ( pChannel->handle == hChannel )
+                            {
+                                pChannel->flags &= ~SOUND_CHANNEL_RESTART;
+                                pChannel->handle = channel.handle;
+                                goto LABEL_30;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    tSoundChannel channel = *pCurChannel;
+                    pCurChannel->handle = 0;
+                    if ( pCurChannel->pDSoundBuffer )
+                    {
+                        SoundDriver_Release(pCurChannel->pDSoundBuffer);
+                        pCurChannel->pDSoundBuffer = NULL;
+                    }
+
+                    tSoundChannelHandle hChannel = Sound_PlayPos(
+                        channel.hSnd,
+                        channel.volume,
+                        channel.priority,
+                        channel.flags,
+                        channel.playPos.x,
+                        channel.playPos.y,
+                        channel.playPos.z,
+                        channel.guid,
+                        channel.minRadius,
+                        channel.maxRadius,
+                        channel.envflags
+                    );
+                    if ( !hChannel )
+                    {
+                        Sound_pHS->pErrorPrint("Sound_Update: Error restarting distant sound.\n");
+                    }
+                    else
+                    {
+                        for ( size_t i = Sound_numChannels; i-- > 0; )
+                        {
+                            tSoundChannel* pChannel = &Sound_apChannels[i];
+                            if ( pChannel->handle == hChannel )
+                            {
+                                pChannel->flags &= ~SOUND_CHANNEL_RESTART;
+                                pChannel->handle = channel.handle;
+                                goto LABEL_30;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SoundDriver_ListenerCommitDeferred();
+
+    if ( Sound_apChannels )
+    {
+        for ( size_t i = 0; i < Sound_numChannels; ++i )
+        {
+            pCurChannel = &Sound_apChannels[i];
+            if ( pCurChannel->handle
+              && (SoundDriver_GetStatusAndCaps(pCurChannel->pDSoundBuffer) & SOUND_CHANNEL_PLAYING) == 0
+              && (pCurChannel->flags & SOUND_CHANNEL_PAUSED) == 0
+              && (pCurChannel->flags & SOUND_CHANNEL_FAR) == 0 )
+            {
+                SoundDriver_Release(pCurChannel->pDSoundBuffer);
+                pCurChannel->pDSoundBuffer = NULL;
+                pCurChannel->handle        = 0;
+                pCurChannel->hSnd          = 0;
+                pCurChannel->thingId       = 0;
+            }
+        }
+    }
 }

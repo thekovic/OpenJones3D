@@ -55,8 +55,8 @@ void J3DAPI Sound_SetVolumeThing(int thingId, int handle, float volume);
 void J3DAPI Sound_FadeVolumeThing(int thingId, int handle, float startVolume, float endVolume);
 // handle is either track handle or sound handle
 unsigned int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle);
-void J3DAPI Sound_SetChannelPitch(tSoundChannelHandle hChannel, float pitch);
-float J3DAPI Sound_GetChannelPitch(tSoundChannelHandle hChannel);
+void J3DAPI Sound_SetPitch(tSoundChannelHandle hChannel, float pitch);
+float J3DAPI Sound_GetPitch(tSoundChannelHandle hChannel);
 void J3DAPI Sound_FadePitch(tSoundChannelHandle hChannel, float pitch, float secFadeTime);
 // handle is either track handle or sound handle
 void J3DAPI Sound_SetPitchThing(int thingId, int handle, float pitch);
