@@ -152,30 +152,15 @@ void JonesConsole_FlushToDisplay(void)
         float x = 4.0f / (float)width;
         float y = 0.0f; // TODO: add initial small top padding
 
-        rdVector4 textColor[4];
-        textColor[0].red   = 1.0f;
-        textColor[0].green = 0.0f;
-        textColor[0].blue  = 0.0f;
-        textColor[0].alpha = 1.0f;
-
-        textColor[1].red   = 1.0f;
-        textColor[1].green = 0.0f;
-        textColor[1].blue  = 0.0f;
-        textColor[1].alpha = 1.0f;
-
-        textColor[2].red   = 1.0f;
-        textColor[2].green = 1.0f;
-        textColor[2].blue  = 0.0f;
-        textColor[2].alpha = 1.0f;
-
-        textColor[3].red   = 1.0f;
-        textColor[3].green = 1.0f;
-        textColor[3].blue  = 0.0f;
-        textColor[3].alpha = 1.0f;
+        rdFontColor textColor;
+        rdVector_Set4(&textColor[0], 1.0f, 0.0f, 0.0f, 1.0f);
+        rdVector_Set4(&textColor[1], 1.0f, 0.0f, 0.0f, 1.0f);
+        rdVector_Set4(&textColor[2], 1.0f, 1.0f, 0.0f, 1.0f);
+        rdVector_Set4(&textColor[3], 1.0f, 1.0f, 0.0f, 1.0f);
         rdFont_SetFontColor(textColor);
 
         char aPrintText[256] = { 0 };
-        for ( size_t i = 0; i < JonesConsole_nextIndex && i < 15; ++i )
+        for ( size_t i = 0; i < JonesConsole_nextIndex && i < STD_ARRAYLEN(JonesConsole_aBuffers); ++i )
         {
             const char* pText = JonesConsole_aBuffers[i].aLine;
             while ( pText )
@@ -224,7 +209,7 @@ size_t J3DAPI JonesConsole_PrintText(const char* pText)
     }
 
     size_t nextIndex = JonesConsole_nextIndex;
-    STD_ASSERTREL((((nextIndex) >= (0)) ? (((nextIndex) <= (15 - 1)) ? 1 : 0) : 0));
+    STD_ASSERTREL((((nextIndex) >= (0)) ? (((nextIndex) <= (STD_ARRAYLEN(JonesConsole_aBuffers) - 1)) ? 1 : 0) : 0));
 
     STD_STRCPY(JonesConsole_aBuffers[nextIndex].aLine, pText);
     JonesConsole_aBuffers[nextIndex].ID = 0;
