@@ -66,7 +66,7 @@ J3D_EXTERN_C_START
 */
 #define STD_STRCPY(dest, src)  \
     do {\
-        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'buf'"); \
+        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'dest'"); \
         stdUtil_StringCopy(dest, STD_ARRAYLEN(dest), src); \
     } while ( 0 )
 
@@ -80,7 +80,7 @@ J3D_EXTERN_C_START
 */
 #define STD_WSTRCPY(dest, src)  \
     do {\
-        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'buf'"); \
+        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'dest'"); \
         stdUtil_StringWCopy(dest, STD_ARRAYLEN(dest), src); \
     } while ( 0 )
 
@@ -95,9 +95,25 @@ J3D_EXTERN_C_START
 */
 #define STD_STRNCPY(dest, src, num)  \
     do {\
-        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'buf'"); \
+        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'dest'"); \
         stdUtil_StringNumCopy(dest, STD_ARRAYLEN(dest), src, num); \
     } while ( 0 )
+
+/**
+ * @brief Concatenates two strings, `str1` and `str2`.
+ *
+ * Ensures `str1` has sufficient space to hold the concatenated result.
+ * This macro wraps the functionality of `stdUtil_StringConcat`.
+ *
+ * @param str1 Destination string, which will hold the result of concatenation.
+ * @param str2 Source string to append to `str1`.
+*/
+#define STD_STRCAT(str1, str2)  \
+    do {\
+        _Static_assert(STD_ISSTRARRAY(str1), "STD_STRCAT requires an array type for 'str1'"); \
+        stdUtil_StringCat(str1, STD_ARRAYLEN(str1), str2); \
+    } while ( 0 )
+
 
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...);
 int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...); // Added
