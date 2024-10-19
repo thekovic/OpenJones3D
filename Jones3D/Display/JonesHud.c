@@ -169,28 +169,30 @@ static rdVector4 JonesHud_enduranceIndBarPos     = { 0 };
 static rdMaterial* JonesHud_pEnduranceOverlayMat = NULL;
 
 // End credit vars
-static int JonesHud_bFinishingCredits;
-static int JonesHud_bSomeCreditsBoolean;
+static bool JonesHud_bEndingCredits     = false; // Added init to false
+static bool JonesHud_bSkipUpdateCredits = false; // Added init to false
 
 static int JonesHud_msecCreditsElapsedTime;
 static int JonesHud_msecCreditsFadeStart;
 static float JonesHud_creditsSomeHeightRatio;
 
-static int JonesHud_creditsSomeIdx_0;
-static int JonesHud_creditsSomeIdx;
-static int JonesHud_creditsSomeIdx_1;
+#define JONESHUD_CREDITS_SPEEDFACTOR 1.5f // default 1.5
+
+static size_t JonesHud_creditsCurIdx;
+static size_t JonesHud_creditsCurMatIdx;
+static size_t JonesHud_creditsCurEndIdx;
 
 static rdFont* JonesHud_pCreditsFont1 = NULL;
 static rdFont* JonesHud_pCreditsFont2 = NULL;
 
-static uint32_t JonesHud_bufferWidth;
-static uint32_t JonesHud_bufferHeight;
+static uint32_t JonesHud_creditsCanvasWidth;
+static uint32_t JonesHud_creditsCanvasHeight;
 
 static int JonesHud_curCelNum;
 static rdMaterial* JonesHud_apCreditsMats[STD_ARRAYLEN(JonesHud_aCredits)];
 
 static float JonesHud_creditTextHeight;
-static float JonesHud_aCreditsTextHeights[STD_ARRAYLEN(JonesHud_aCredits)];
+static float JonesHud_aCreditsCurPosY[STD_ARRAYLEN(JonesHud_aCredits)];
 
 // Variables that have values assigned but are not being used
 static int JonesHud_dword_554FDC;
@@ -4178,67 +4180,26 @@ void J3DAPI JonesHud_RestoreTreasuresStatistics()
 
 int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel)
 {
-    float v3;
-    const rdVector4* pFontColor;
-    const rdVector4* v6;
-    rdVector4* pFontColor_2;
-    float v8;
-    float y;
-    float ya;
-    int v11;
-    float v12;
-    float v13;
-    float v14;
-    float v15;
-    int k;
-    rdVector4 aFontColors[4];
-    int v18;
-    const char* pText;
-    int m;
-    int fontColorNum;
-    rdVector4 apColor[4];
-    rdVector4 fontColor;
-    int colorNum;
-    JonesHudRect rect;
-    rdMaterial* pEntryMat;
-    int v27;
-    tSoundHandle hSnd;
-    int v29;
-    int v30;
-    float v31;
-    int j;
-    rdMaterial* pMat;
-    int v34;
-    unsigned int msecTime;
-    int i;
-    float fntAlpha;
-    float v38;
+    uint32_t msecCurTime = stdPlatform_GetTimeMsec();
 
-    msecTime = stdPlatform_GetTimeMsec();
-    if ( (float)(int)JonesHud_bufferHeight / 480.0f >= 1.0f ) // Note, bounded to screen height 480
+    float lineScalar = rdFont_GetNormY((float)JonesHud_creditsCanvasHeight);
+    if ( lineScalar < 1.0f )
     {
-        v15 = (float)(int)JonesHud_bufferHeight / 480.0f;
-    }
-    else
-    {
-        v15 = 1.0f;
+        lineScalar = 1.0f;
     }
 
-    v14 = v15;
-    v38 = v14;
-
-    if ( !bEndCredits && !JonesHud_bSomeCreditsBoolean )
+    // Update credits
+    if ( !bEndCredits && !JonesHud_bSkipUpdateCredits )
     {
-        if ( !JonesHud_msecCreditsElapsedTime )
+        if ( JonesHud_msecCreditsElapsedTime == 0 ) // initial init.
         {
-            JonesHud_bFinishingCredits    = 0;
+            JonesHud_bEndingCredits       = false;
             JonesHud_msecCreditsFadeStart = 0;
             JonesHud_creditTextHeight     = 0.0f;
-            JonesHud_creditsSomeIdx       = 0;
-            stdDisplay_GetBackBufferSize(&JonesHud_bufferWidth, &JonesHud_bufferHeight);
+            JonesHud_creditsCurMatIdx     = 0;
+            stdDisplay_GetBackBufferSize(&JonesHud_creditsCanvasWidth, &JonesHud_creditsCanvasHeight);
 
-            v13 = (float)(int)JonesHud_bufferHeight / 8000.0f;
-            JonesHud_creditsSomeHeightRatio = v13;
+            JonesHud_creditsSomeHeightRatio = (float)(int)JonesHud_creditsCanvasHeight / 8000.0f;
 
             JonesHud_pCreditsFont1 = rdFont_Load("mat\\jonesComic Sans MS14.gcf");
             JonesHud_pCreditsFont2 = rdFont_Load("mat\\jonesCalisto MT20.gcf");
@@ -4246,31 +4207,30 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
 
             memset(JonesHud_apCreditsMats, 0, sizeof(JonesHud_apCreditsMats));
 
-            for ( i = 0; i < STD_ARRAYLEN(JonesHud_aCredits); ++i )
+            for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aCredits); ++i )
             {
-                v34 = JonesHud_aCredits[i].flags & 8;
-                if ( (v34 ^ JonesHud_aCredits[i].flags) == 4 )
+                int v34 = JonesHud_aCredits[i].flags & 0x08;
+                if ( (v34 ^ JonesHud_aCredits[i].flags) == 0x04 )
                 {
-                    if ( v34 )                  // If icon
+                    if ( v34 ) // If icon
                     {
-                        if ( !JonesHud_creditsSomeIdx )
+                        if ( !JonesHud_creditsCurMatIdx )
                         {
-                            JonesHud_creditsSomeIdx = i;
-                            v12 = (float)JonesHud_pCreditsFont2->lineSpacing
+                            JonesHud_creditsCurMatIdx = i;
+                            JonesHud_creditTextHeight =
+                                (float)JonesHud_pCreditsFont2->lineSpacing
                                 + 48.0f
                                 + (float)JonesHud_pCreditsFont1->lineSpacing
                                 + (float)(2 * JonesHud_pCreditsFont1->fontSize);
-
-                            JonesHud_creditTextHeight = v12;
                         }
 
                         JonesHud_apCreditsMats[i] = (rdMaterial*)STDMALLOC(sizeof(rdMaterial));
-                        pMat = JonesHud_apCreditsMats[i];
+                        rdMaterial* pMat = JonesHud_apCreditsMats[i];
                         if ( pMat )
                         {
                             if ( rdMaterial_LoadEntry(JonesHud_aCredits[i].aText, pMat) )
                             {
-                                JonesHud_aCredits[i].flags &= ~8u;
+                                JonesHud_aCredits[i].flags &= ~0x08;
                                 rdMaterial_FreeEntry(pMat);
                                 pMat = NULL;
                             }
@@ -4283,12 +4243,12 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 }
             }
 
-            memset(JonesHud_aCreditsTextHeights, 0, sizeof(JonesHud_aCreditsTextHeights));
+            memset(JonesHud_aCreditsCurPosY, 0, sizeof(JonesHud_aCreditsCurPosY));
 
-            JonesHud_creditsSomeIdx_0 = 0;
-            JonesHud_creditsSomeIdx_1 = 0;
+            JonesHud_creditsCurIdx      = 0;
+            JonesHud_creditsCurEndIdx   = 0;
+            JonesHud_aCreditsCurPosY[0] = (float)(JonesHud_creditsCanvasHeight + 64); // init position, since 64 is the size of mat it should probably be scaled
 
-            JonesHud_aCreditsTextHeights[0] = (float)(JonesHud_bufferHeight + 64);
             if ( JonesHud_pCreditsFont1 && JonesHud_pCreditsFont2 )
             {
                 JonesHud_msecCreditsElapsedTime = stdPlatform_GetTimeMsec();
@@ -4297,26 +4257,25 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             else
             {
                 JonesHud_msecCreditsElapsedTime = 0;
-                JonesHud_bSomeCreditsBoolean = 0;
-                fntAlpha = 0.0f;
-                if ( JonesHud_apCreditsMats[JonesHud_creditsSomeIdx] )
+                JonesHud_bSkipUpdateCredits     = false;
+                if ( JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx] )
                 {
-                    rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]);
-                    stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]);
-                    JonesHud_apCreditsMats[JonesHud_creditsSomeIdx] = 0;
+                    rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]);
+                    stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]);
+                    JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx] = 0;
                 }
 
-                if ( JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1] )
+                if ( JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] )
                 {
-                    rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1]);
-                    stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1]);
-                    JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1] = 0;
+                    rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]);
+                    stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]);
+                    JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] = 0;
                 }
 
                 if ( JonesHud_pCreditsFont1 )
                 {
                     rdFont_Free(JonesHud_pCreditsFont1);
-                    JonesHud_pCreditsFont1 = 0;
+                    JonesHud_pCreditsFont1 = NULL;
                 }
 
                 if ( !JonesHud_pCreditsFont2 )
@@ -4325,39 +4284,38 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 }
 
                 rdFont_Free(JonesHud_pCreditsFont2);
-                JonesHud_pCreditsFont2 = 0;
+                JonesHud_pCreditsFont2 = NULL;
                 return 1;
             }
-        }
+        } // initial initi.
 
-        v31 = (float)(msecTime - JonesHud_msecCreditsElapsedTime) * JonesHud_creditsSomeHeightRatio;
+        //v31 = (float)(msecCurTime - JonesHud_msecCreditsElapsedTime) * JonesHud_creditsSomeHeightRatio; // Unused
 
-        for ( j = JonesHud_creditsSomeIdx_0; j < STD_ARRAYLEN(JonesHud_aCredits) && j <= JonesHud_creditsSomeIdx_1; ++j )
+        // Update credits movement progress and sound fx
+        for ( size_t j = JonesHud_creditsCurIdx; j < STD_ARRAYLEN(JonesHud_aCredits) && j <= JonesHud_creditsCurEndIdx; ++j )
         {
-            v30 = JonesHud_aCredits[JonesHud_creditsSomeIdx_0].flags & 8;
-            JonesHud_aCreditsTextHeights[j] = JonesHud_aCreditsTextHeights[j] - (float)(int)JonesHud_bufferHeight / 480.0f * 1.5f; // Note, bounded to res height 480
+            int v30 = JonesHud_aCredits[JonesHud_creditsCurIdx].flags & 0x08;
+            JonesHud_aCreditsCurPosY[j] -= rdFont_GetNormY((float)JonesHud_creditsCanvasHeight) * JONESHUD_CREDITS_SPEEDFACTOR; // Here we define the speed of moving credit text, default scale is 1.5
 
-            if ( j >= JonesHud_creditsSomeIdx
-              && JonesHud_creditsSomeIdx > 0
-              && JonesHud_aCreditsTextHeights[JonesHud_creditsSomeIdx] > 0.0f
-              && JonesHud_aCreditsTextHeights[JonesHud_creditsSomeIdx + 1] > 0.0f
-              && ((float)(int)JonesHud_bufferHeight - JonesHud_creditTextHeight) / 2.0f >= JonesHud_aCreditsTextHeights[JonesHud_creditsSomeIdx] )
+            if ( j >= JonesHud_creditsCurMatIdx
+              && JonesHud_creditsCurMatIdx > 0
+              && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] > 0.0f
+              && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx + 1] > 0.0f
+              && ((float)(int)JonesHud_creditsCanvasHeight - JonesHud_creditTextHeight) / 2.0f >= JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] )
             {
-                switch ( j - JonesHud_creditsSomeIdx )
+                switch ( j - JonesHud_creditsCurMatIdx )
                 {
                     case 0:
                     case 1:
-                        JonesHud_aCreditsTextHeights[j] = ((float)(int)JonesHud_bufferHeight - JonesHud_creditTextHeight) / 2.0f;
+                        JonesHud_aCreditsCurPosY[j] = ((float)(int)JonesHud_creditsCanvasHeight - JonesHud_creditTextHeight) / 2.0f;
                         break;
 
                     case 2:
-                        JonesHud_aCreditsTextHeights[j] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * v38
-                            + *((float*)&JonesHud_bufferHeight + j); // ?? where is it offsetting? 
+                        JonesHud_aCreditsCurPosY[j] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar + JonesHud_aCreditsCurPosY[j - 1];
                         break;
 
                     case 3:
-                        JonesHud_aCreditsTextHeights[j] = (float)JonesHud_pCreditsFont1->lineSpacing * v38
-                            + *((float*)&JonesHud_bufferHeight + j); // ?? where is it offsetting? 
+                        JonesHud_aCreditsCurPosY[j] = (float)JonesHud_pCreditsFont1->lineSpacing * lineScalar + JonesHud_aCreditsCurPosY[j - 1];
                         break;
 
                     default:
@@ -4365,65 +4323,68 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 }
             }
 
-            if ( j == JonesHud_creditsSomeIdx_0 )
+            if ( j == JonesHud_creditsCurIdx )
             {
-                switch ( v30 ^ JonesHud_aCredits[JonesHud_creditsSomeIdx_0].flags )
+                switch ( v30 ^ JonesHud_aCredits[JonesHud_creditsCurIdx].flags )
                 {
                     case 1:
-                        if ( (double)-JonesHud_pCreditsFont2->fontSize > JonesHud_aCreditsTextHeights[JonesHud_creditsSomeIdx_0] )
+                        // TODO: font size should be multiply by 2.5 in order for the text to smoothly disappear at the top
+                        if ( (double)-JonesHud_pCreditsFont2->fontSize > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
                         {
-                            ++JonesHud_creditsSomeIdx_0;
+                            ++JonesHud_creditsCurIdx;
                         }
 
                         break;
 
                     case 2:
                     case 0x10:
-                        if ( (double)-JonesHud_pCreditsFont1->fontSize > JonesHud_aCreditsTextHeights[JonesHud_creditsSomeIdx_0] )
+                        // TODO: font size should be multiply by 2.5 in order for the text to smoothly disappear at the top
+                        if ( (double)-JonesHud_pCreditsFont1->fontSize > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
                         {
-                            ++JonesHud_creditsSomeIdx_0;
+                            ++JonesHud_creditsCurIdx;
                         }
 
                         break;
 
-                    case 4:                     // icon image 
-                        if ( JonesHud_aCreditsTextHeights[JonesHud_creditsSomeIdx_0] < -64.0f )
+                    case 4: // icon image 
+                        if ( JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] < -64.0f )
                         {
-                            ++JonesHud_creditsSomeIdx_0;
+                            ++JonesHud_creditsCurIdx;
                         }
 
-                        if ( JonesHud_creditsSomeIdx_0 == JonesHud_creditsSomeIdx && JonesHud_creditsSomeIdx > 0 )
+                        if ( JonesHud_creditsCurIdx == JonesHud_creditsCurMatIdx && JonesHud_creditsCurMatIdx > 0 )
                         {
-                            if ( JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]
-                              && JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1] )
+                            if ( JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
+                              && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] )
                             {
-                                v29 = JonesHud_curCelNum;
+
                                 if ( !JonesHud_msecCreditsFadeStart )
                                 {
-                                    JonesHud_msecCreditsFadeStart = msecTime;
+                                    JonesHud_msecCreditsFadeStart = msecCurTime;
                                 }
 
-                                JonesHud_curCelNum = (msecTime - JonesHud_msecCreditsFadeStart) * JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]->numCels / 1000;
+                                int prevCelNum = JonesHud_curCelNum;
+                                JonesHud_curCelNum = (msecCurTime - JonesHud_msecCreditsFadeStart) * JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]->numCels / 1000;
 
-                                if ( v29 == 12 && JonesHud_curCelNum == 13 )// gg_a.mat whip fire cell 12 & 13
+                                if ( prevCelNum == 12 && JonesHud_curCelNum == 13 )// gg_a.mat whip fire cell 12 & 13
                                 {
-                                    hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(3));// gen_whip_fire.wav
+                                    tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(3));// gen_whip_fire.wav
                                     if ( hSnd )
                                     {
                                         JonesHud_hCurSndChannel = sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, SOUNDPLAY_PLAYONCE);
                                     }
                                 }
 
-                                if ( JonesHud_curCelNum == JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]->numCels
-                                  && !JonesHud_bSomeCreditsBoolean )
+                                if ( JonesHud_curCelNum == JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]->numCels
+                                  && !JonesHud_bSkipUpdateCredits )
                                 {
-                                    JonesHud_bSomeCreditsBoolean = 1;
-                                    JonesHud_msecCreditsFadeStart = msecTime;
+                                    JonesHud_bSkipUpdateCredits = true;
+                                    JonesHud_msecCreditsFadeStart = msecCurTime;
                                 }
                             }
                             else
                             {
-                                JonesHud_bSomeCreditsBoolean = 1;
+                                JonesHud_bSkipUpdateCredits = true;
                             }
                         }
 
@@ -4434,156 +4395,150 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 }
             }
         }
-    }
+    } // update credits
 
-    if ( !bEndCredits || JonesHud_bFinishingCredits )
-    {
-        if ( JonesHud_bSomeCreditsBoolean
-          && !JonesHud_bFinishingCredits
-          && (!JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]
-              || !JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1]
-              || JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]
-              && JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1]
-              && (float)(msecTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
-        {
-            if ( hSndChannel )
-            {
-                sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 500.0f);
-            }
-
-            JonesHud_msecCreditsFadeStart = msecTime;
-            JonesHud_bFinishingCredits = 1;
-        }
-    }
-    else
+    // End credits?
+    if ( bEndCredits && !JonesHud_bEndingCredits )
     {
         if ( hSndChannel )
         {
-            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 500.0f);
+            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 500.0f); // TODO [BUG]: FadeVolume accepts seconds not msec
         }
 
-        JonesHud_msecCreditsFadeStart = msecTime;
-        JonesHud_bFinishingCredits = 1;
+        JonesHud_msecCreditsFadeStart = msecCurTime;
+        JonesHud_bEndingCredits       = true;
+    }
+    else if ( JonesHud_bSkipUpdateCredits // At credits end
+      && !JonesHud_bEndingCredits
+      && (!JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
+          || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
+          || JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
+          && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
+          && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
+    {
+        if ( hSndChannel )
+        {
+            sithSoundMixer_FadeVolume(hSndChannel, 0.0f, 500.0f); // TODO [BUG]: FadeVolume accepts seconds not msec
+        }
+
+        JonesHud_msecCreditsFadeStart = msecCurTime;
+        JonesHud_bEndingCredits       = true;
     }
 
-    if ( JonesHud_bFinishingCredits )
+    float fontAlpha = 1.0f;
+    if ( JonesHud_bEndingCredits )
     {
-        v3 = 1.0f - (float)(msecTime - JonesHud_msecCreditsFadeStart) / 1000.0f;
-        fntAlpha = v3;
-        if ( v3 <= 0.0f )
+        fontAlpha = 1.0f - (float)(msecCurTime - JonesHud_msecCreditsFadeStart) / 1000.0f; // 1000 msec aka 1 sec
+        if ( fontAlpha <= 0.0f && (Sound_GetChannelFlags(hSndChannel) & SOUND_CHANNEL_PLAYING) == 0 )
         {
-            JonesHud_msecCreditsElapsedTime = 0;
-            JonesHud_bSomeCreditsBoolean = 0;
+            // Finished fade out
 
-            fntAlpha = 0.0f;
+            JonesHud_msecCreditsElapsedTime = 0;
+            JonesHud_bSkipUpdateCredits     = false;
+
+            fontAlpha = 0.0f;
             rdFont_Free(JonesHud_pCreditsFont1);
             rdFont_Free(JonesHud_pCreditsFont2);
-            JonesHud_pCreditsFont1 = 0;
-            JonesHud_pCreditsFont2 = 0;
-            if ( JonesHud_apCreditsMats[JonesHud_creditsSomeIdx] )
+            JonesHud_pCreditsFont1 = NULL;
+            JonesHud_pCreditsFont2 = NULL;
+
+            if ( JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx] )
             {
-                rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]);
-                stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx]);
-                JonesHud_apCreditsMats[JonesHud_creditsSomeIdx] = 0;
+                rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]);
+                stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]);
+                JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx] = NULL;
             }
 
-            if ( !JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1] )
+            if ( !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] )
             {
                 return 1;
             }
 
-            rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1]);
-            stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1]);
-            JonesHud_apCreditsMats[JonesHud_creditsSomeIdx + 1] = 0;
+            rdMaterial_FreeEntry(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]);
+            stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]);
+            JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] = NULL;
             return 1;
         }
     }
-    else
-    {
-        fntAlpha = 1.0f;
-    }
+
+    // Credit draw section
 
     // Fixed: Changed order so the i is first compared to len and some idx  before indexing into array
-    for ( i = JonesHud_creditsSomeIdx_0;
-          i < STD_ARRAYLEN(JonesHud_aCreditsTextHeights)
-       && i <= JonesHud_creditsSomeIdx_1
-       && ((double)(JonesHud_bufferHeight + 64) >= JonesHud_aCreditsTextHeights[i]);
-
-          ++i )
+    for ( size_t i = JonesHud_creditsCurIdx;
+          i < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
+       && i <= JonesHud_creditsCurEndIdx
+       && ((double)(JonesHud_creditsCanvasHeight + 64) >= JonesHud_aCreditsCurPosY[i]); ++i )
     {
-        v27 = JonesHud_aCredits[i].flags & 8;
+        int v27 = JonesHud_aCredits[i].flags & 0x08;
         switch ( v27 ^ JonesHud_aCredits[i].flags )
         {
-            case 1:
-                for ( k = 0; k < 4; ++k )
+            case 1: // Ascii text
+            {
+                rdFontColor aFontColor;
+                for ( size_t k = 0; k < STD_ARRAYLEN(aFontColor); ++k )
                 {
-                    rdVector_Copy4(&aFontColors[k], &JonesHud_colorWhite);
-                    //*(&aFontColors[0].w + 4 * k) = fntAlpha;
-                    aFontColors[k].alpha = fntAlpha;
+                    rdVector_Copy4(&aFontColor[k], &JonesHud_colorWhite);
+                    aFontColor[k].alpha = fontAlpha;
                 }
+                rdFont_SetFontColor(aFontColor);
 
-                rdFont_SetFontColor(aFontColors);
-                ya = JonesHud_aCreditsTextHeights[i] / (float)(int)JonesHud_bufferHeight;
-                rdFont_DrawText(JonesHud_aCredits[i].aText, 0.5f, ya, 0.000030518044f, JonesHud_pCreditsFont2, 0x1);
+                float posY = JonesHud_aCreditsCurPosY[i] / (float)(int)JonesHud_creditsCanvasHeight;
                 rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont2, RDFONT_ALIGNCENTER);
 
-                if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsTextHeights)
+                if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
                   && !bEndCredits
-                  && i + 1 > JonesHud_creditsSomeIdx_1
-                  && JonesHud_aCreditsTextHeights[i + 1] == 0.0f )
+                  && i + 1 > JonesHud_creditsCurEndIdx
+                  && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
                 {
-                    v11 = JonesHud_aCredits[i + 1].flags & 8 ^ JonesHud_aCredits[i + 1].flags;
-                    if ( v11 == 4 )
+                    int v11 = JonesHud_aCredits[i + 1].flags & 0x08 ^ JonesHud_aCredits[i + 1].flags;
+                    if ( v11 == 0x04 )
                     {
-                        JonesHud_aCreditsTextHeights[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * v38
-                            + JonesHud_aCreditsTextHeights[i];
+                        JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar
+                            + JonesHud_aCreditsCurPosY[i];
                     }
                     else
                     {
-                        if ( v11 == 16 )
+                        float lineSize;
+                        if ( v11 == 0x10 )
                         {
-                            v8 = (float)JonesHud_pCreditsFont2->lineSpacing * 2.25f * v38;
+                            lineSize = (float)JonesHud_pCreditsFont2->lineSpacing * 2.25f * lineScalar;
                         }
                         else
                         {
-                            v8 = (float)JonesHud_pCreditsFont2->lineSpacing * 1.25f * v38;
+                            lineSize = (float)JonesHud_pCreditsFont2->lineSpacing * 1.25f * lineScalar;
                         }
 
-                        JonesHud_aCreditsTextHeights[i + 1] = v8 + JonesHud_aCreditsTextHeights[i];
+                        JonesHud_aCreditsCurPosY[i + 1] = lineSize + JonesHud_aCreditsCurPosY[i];
                     }
 
-                    JonesHud_creditsSomeIdx_1 = i + 1;
+                    JonesHud_creditsCurEndIdx = i + 1;
                 }
 
-                break;
+            } break;
 
-            case 2:
-            case 0x10:
-                pText = 0;
-                fontColorNum = JonesHud_aCredits[i].fontColorNum;
-                for ( m = 0; m < 4; ++m )
+            // jones string text or ascii text
+            case 2:    // colored
+            case 0x10: // white color
+            {
+                rdFontColor textColor;
+                size_t m;
+                for ( m = 0; m < STD_ARRAYLEN(textColor); ++m )
                 {
                     if ( JonesHud_aCredits[i].flags == 0x10 )
                     {
-                        rdVector_Copy4(&apColor[m], &JonesHud_colorWhite);
+                        rdVector_Copy4(&textColor[m], &JonesHud_colorWhite);
                     }
                     else
                     {
-                        v6 = &JonesHud_aCreditFontColors[fontColorNum];
-                        pFontColor_2 = &apColor[m];
-                        pFontColor_2->x = v6->x;
-                        pFontColor_2->y = v6->y;
-                        pFontColor_2->z = v6->z;
-                        pFontColor_2->w = v6->w;
+                        rdVector_Copy4(&textColor[m], &JonesHud_aCreditFontColors[JonesHud_aCredits[i].fontColorNum]);
                     }
 
-                    apColor[m].alpha  = fntAlpha;
+                    textColor[m].alpha  = fontAlpha;
                 }
+                rdFont_SetFontColor(textColor);
 
-
-                rdFont_SetFontColor(apColor);
-                pText = jonesString_GetString(JonesHud_aCredits[i].aText);
-                y = JonesHud_aCreditsTextHeights[i] / (float)(int)JonesHud_bufferHeight;
+                const char* pText = jonesString_GetString(JonesHud_aCredits[i].aText);
+                float posY = JonesHud_aCreditsCurPosY[i] / (float)(int)JonesHud_creditsCanvasHeight;
                 if ( pText )
                 {
                     rdFont_DrawTextLine(pText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
@@ -4593,19 +4548,18 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                     rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
                 }
 
-                if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsTextHeights)
-                  && i + 1 > JonesHud_creditsSomeIdx_1
+                if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
+                  && i + 1 > JonesHud_creditsCurEndIdx
                   && !bEndCredits
-                  && JonesHud_aCreditsTextHeights[i + 1] == 0.0f )
+                  && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
                 {
                     if ( JonesHud_aCredits[i].flags == 0x10 )
                     {
-                        JonesHud_aCreditsTextHeights[i + 1] = (float)JonesHud_pCreditsFont2->lineSpacing * v38
-                            + JonesHud_aCreditsTextHeights[i];
+                        JonesHud_aCreditsCurPosY[i + 1] = (float)JonesHud_pCreditsFont2->lineSpacing * lineScalar + JonesHud_aCreditsCurPosY[i];
                     }
                     else
                     {
-                        v18 = JonesHud_aCredits[i + 1].flags & 8;
+                        int v18 = JonesHud_aCredits[i + 1].flags & 0x08;
                         switch ( v18 ^ JonesHud_aCredits[i + 1].flags )
                         {
                             case 1:
@@ -4613,22 +4567,17 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                             case 0x10:
                                 if ( i == 317 || i == 314 )
                                 {
-                                    JonesHud_aCreditsTextHeights[i + 1] = (float)JonesHud_pCreditsFont2->lineSpacing
-                                        * v38
-                                        + JonesHud_aCreditsTextHeights[i];
+                                    JonesHud_aCreditsCurPosY[i + 1] = (float)JonesHud_pCreditsFont2->lineSpacing * lineScalar + JonesHud_aCreditsCurPosY[i];
                                 }
                                 else
                                 {
-                                    JonesHud_aCreditsTextHeights[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 24.0f)
-                                        * v38
-                                        + JonesHud_aCreditsTextHeights[i];
+                                    JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 24.0f) * lineScalar + JonesHud_aCreditsCurPosY[i];
                                 }
 
                                 break;
 
                             case 2:
-                                JonesHud_aCreditsTextHeights[i + 1] = (float)JonesHud_pCreditsFont1->lineSpacing * v38
-                                    + JonesHud_aCreditsTextHeights[i];
+                                JonesHud_aCreditsCurPosY[i + 1] = (float)JonesHud_pCreditsFont1->lineSpacing * lineScalar + JonesHud_aCreditsCurPosY[i];
                                 break;
 
                             default:
@@ -4636,68 +4585,64 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                         }
                     }
 
-                    JonesHud_creditsSomeIdx_1 = i + 1;
+                    JonesHud_creditsCurEndIdx = i + 1;
                 }
 
-                break;
+            } break;
 
-            case 4:
-                pEntryMat = JonesHud_apCreditsMats[i];
-                if ( pEntryMat )
+            case 4: // mat icon
+            {
+                const rdMaterial* pIconMat = JonesHud_apCreditsMats[i];
+                if ( pIconMat )
                 {
-                    colorNum = JonesHud_aCredits[i].fontColorNum;
-                    rect.y = JonesHud_aCreditsTextHeights[i];
+                    JonesHudRect rect;
+                    rect.y = JonesHud_aCreditsCurPosY[i];
+                    rect.width  = 64.0f;
                     rect.height = 64.0f;
-                    rect.width = 64.0f;
-                    if ( i == JonesHud_creditsSomeIdx + 1 && JonesHud_creditsSomeIdx > 0 )
+                    if ( i == JonesHud_creditsCurMatIdx + 1 && JonesHud_creditsCurMatIdx > 0 )
                     {
-                        rect.x = (float)((JonesHud_bufferWidth - 64) / 2 + 64);
+                        rect.x = (float)((JonesHud_creditsCanvasWidth - rect.height) / 2 + rect.height);
                     }
                     else
                     {
-                        rect.x = (float)((JonesHud_bufferWidth - 64) / 2);
+                        rect.x = (float)((JonesHud_creditsCanvasWidth - rect.height) / 2);
                     }
 
-                    pFontColor = &JonesHud_aCreditFontColors[colorNum];
-                    fontColor.red = pFontColor->red;
-                    fontColor.y = pFontColor->green;
-                    fontColor.blue = pFontColor->blue;
-                    fontColor.alpha = fntAlpha;
-                    JonesHud_Draw(pEntryMat, &rect, 0.000030518044f, 0.000030518044f, &fontColor, JonesHud_curCelNum, 1);
+                    rdVector4 fontColor;
+                    rdVector_Copy4(&fontColor, &JonesHud_aCreditFontColors[JonesHud_aCredits[i].fontColorNum]);
+                    fontColor.alpha = fontAlpha;
+
+                    JonesHud_Draw(pIconMat, &rect, RD_FIXEDPOINT_RHW_SCALE, RD_FIXEDPOINT_RHW_SCALE, &fontColor, JonesHud_curCelNum, 1);
                 }
                 else
                 {
-                    /*flags = JonesHud_aCredits[i].flags;
-                    (flags & 0xFF) = flags & 247;
-                    JonesHud_aCredits[i].flags = flags;*/
                     JonesHud_aCredits[i].flags &= ~0x08;
                 }
 
-                if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsTextHeights)
-                  && i + 1 > JonesHud_creditsSomeIdx_1
+                if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
+                  && i + 1 > JonesHud_creditsCurEndIdx
                   && !bEndCredits
-                  && JonesHud_aCreditsTextHeights[i + 1] == 0.0f )
+                  && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
                 {
-                    if ( i == JonesHud_creditsSomeIdx && JonesHud_creditsSomeIdx > 0 )
+                    if ( i == JonesHud_creditsCurMatIdx && JonesHud_creditsCurMatIdx > 0 )
                     {
-                        JonesHud_aCreditsTextHeights[i + 1] = JonesHud_aCreditsTextHeights[i];
+                        JonesHud_aCreditsCurPosY[i + 1] = JonesHud_aCreditsCurPosY[i];
                     }
                     else
                     {
-                        JonesHud_aCreditsTextHeights[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * v38
-                            + JonesHud_aCreditsTextHeights[i];
+                        JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar + JonesHud_aCreditsCurPosY[i];
                     }
 
-                    JonesHud_creditsSomeIdx_1 = i + 1;
+                    JonesHud_creditsCurEndIdx = i + 1;
                 }
 
-                break;
+            } break;
 
             default:
                 continue;
         }
     }
 
-    JonesHud_msecCreditsElapsedTime = msecTime;
+    JonesHud_msecCreditsElapsedTime = msecCurTime;
     return 0;
 }

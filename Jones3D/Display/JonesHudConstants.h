@@ -508,7 +508,7 @@ static tJonesCreditEntry JonesHud_aCredits[325] =
     { "JONES_STR_HGAME", 2, 1 },
     { "(in alphabetical order)", 16, 0 },
     { "     ", 1, 0 },
-    { "JONES_STR_TPROJECT", 16, 1 },
+    { "JONES_STR_TPROJECT", 0x10, 1 },
     { "HAL BARWOOD", 1, 0 },
     { "gen_4_selfportrait.mat", 4, 2 },
     { "JONES_STR_HENGINE", 2, 2 },
@@ -825,8 +825,8 @@ static tJonesCreditEntry JonesHud_aCredits[325] =
     { "gen_4_r2d2.mat", 4, 1 },
     { "JONES_STR_HSPTHXS", 2, 1 },
     { "GEORGE LUCAS", 1, 0 },
-    { "mat\\gg_a.mat", 12, 11 },
-    { "mat\\gg_b.mat", 12, 11 },
+    { "mat\\gg_a.mat", 0x0C, 11 },
+    { "mat\\gg_b.mat", 0x0C, 11 },
     { "\xA9 LUCASARTS ENTERTAINMENT COMPANY LLC", 2, 0 },
     { "JONES_STR_HCOPY", 2, 0 }
 };
