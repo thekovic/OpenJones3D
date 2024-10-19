@@ -4359,7 +4359,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     float fontAlpha = 1.0f;
     if ( JonesHud_bEndingCredits )
     {
-        fontAlpha = 1.0f - (float)(msecCurTime - JonesHud_msecCreditsFadeStart) / 1000.0f; // 1000 msec aka 1 sec
+        fontAlpha = 1.0f - (float)(msecCurTime - JonesHud_msecCreditsFadeStart) / 2000.0f; // 1000 msec aka 1 sec
         if ( fontAlpha <= 0.0f )
         {
             // Finished fade out
@@ -4389,6 +4389,13 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             stdMemory_Free(JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]);
             JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] = NULL;
             return 1;
+        }
+
+        // Added: Quick sound fade fix to circumvent sithSoundMixer_FadeVolume bug
+        // TODO: Remove when sithSoundMixer_FadeVolume is fixed
+        if ( hSndChannel )
+        {
+            Sound_SetVolume(hSndChannel, fontAlpha);
         }
     }
 
@@ -4561,7 +4568,6 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                     }
                     else
                     {
-                        //JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar + JonesHud_aCreditsCurPosY[i];
                         JonesHud_aCreditsCurPosY[i + 1] = ((float)JonesHud_pCreditsFont1->lineSpacing + JonesHud_creditsIconPosOffset) * lineScalar + JonesHud_aCreditsCurPosY[i];
                     }
 
