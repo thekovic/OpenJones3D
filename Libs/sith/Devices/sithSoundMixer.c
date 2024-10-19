@@ -1,6 +1,12 @@
 #include "sithSoundMixer.h"
 #include <j3dcore/j3dhook.h>
+
+#include <rdroid/Math/rdVector.h>
+
+#include <sith/Engine/sithCamera.h>
 #include <sith/RTI/symbols.h>
+
+#include <sound/Sound.h>
 
 #define sithSoundMixer_channelGUIDSeed J3D_DECL_FAR_VAR(sithSoundMixer_channelGUIDSeed, uint16_t)
 #define sithSoundMixer_bStartup J3D_DECL_FAR_VAR(sithSoundMixer_bStartup, int)
@@ -25,7 +31,7 @@ void sithSoundMixer_InstallHooks(void)
     // J3D_HOOKFUNC(sithSoundMixer_SetVolumeThing);
     // J3D_HOOKFUNC(sithSoundMixer_FadeVolumeThing);
     // J3D_HOOKFUNC(sithSoundMixer_IsThingFadingVol);
-    // J3D_HOOKFUNC(sithSoundMixer_Update);
+    J3D_HOOKFUNC(sithSoundMixer_Update);
     // J3D_HOOKFUNC(sithSoundMixer_GetThingInfo);
     // J3D_HOOKFUNC(sithSoundMixer_CalcCameraRelativeSoundMix);
     // J3D_HOOKFUNC(sithSoundMixer_StopAllSoundsThing);
@@ -45,7 +51,7 @@ void sithSoundMixer_ResetGlobals(void)
 {
     uint16_t sithSoundMixer_channelGUIDSeed_tmp = 1u;
     memcpy(&sithSoundMixer_channelGUIDSeed, &sithSoundMixer_channelGUIDSeed_tmp, sizeof(sithSoundMixer_channelGUIDSeed));
-    
+
     memset(&sithSoundMixer_bStartup, 0, sizeof(sithSoundMixer_bStartup));
     memset(&sithSoundMixer_pCurSector, 0, sizeof(sithSoundMixer_pCurSector));
     memset(&sithSoundMixer_hCurAmbientChannel, 0, sizeof(sithSoundMixer_hCurAmbientChannel));
@@ -125,10 +131,10 @@ unsigned int J3DAPI sithSoundMixer_IsThingFadingVol(SithThing* pThing, unsigned 
     return J3D_TRAMPOLINE_CALL(sithSoundMixer_IsThingFadingVol, pThing, handle);
 }
 
-void sithSoundMixer_Update(void)
-{
-    J3D_TRAMPOLINE_CALL(sithSoundMixer_Update);
-}
+//void sithSoundMixer_Update(void)
+//{
+//    J3D_TRAMPOLINE_CALL(sithSoundMixer_Update);
+//}
 
 int J3DAPI sithSoundMixer_GetThingInfo(int thingId, SoundThingInfo* pThingInfo)
 {
@@ -194,4 +200,61 @@ int J3DAPI sithSoundMixer_GetThingID(int idx)
 int J3DAPI sithSoundMixer_GetThingIndex(int thingID)
 {
     return J3D_TRAMPOLINE_CALL(sithSoundMixer_GetThingIndex, thingID);
+}
+
+void sithSoundMixer_Update(void)
+{
+    if ( !sithCamera_g_pCurCamera || !sithCamera_g_pCurCamera->pSector )
+    {
+        Sound_Update(NULL, NULL, NULL, NULL);
+        return;
+    }
+
+    if ( sithCamera_g_pCurCamera->pSector != sithSoundMixer_pCurSector )
+    {
+        tSoundHandle hSndPrev = 0;
+        float sndVolPrev = 0.0f;
+        if ( sithSoundMixer_pCurSector )
+        {
+            hSndPrev = sithSoundMixer_pCurSector->hAmbientSound;
+            sndVolPrev = sithSoundMixer_pCurSector->ambientSoundVolume;
+        }
+
+        sithSoundMixer_pCurSector = sithCamera_g_pCurCamera->pSector;
+        tSoundHandle hSnd = sithSoundMixer_pCurSector->hAmbientSound;
+        float sndVol = sithSoundMixer_pCurSector->ambientSoundVolume;
+        if ( sithSoundMixer_pCurSector->ambientSoundVolume == 0.0f )
+        {
+            hSnd = 0;
+        }
+
+        if ( hSnd == hSndPrev )
+        {
+            if ( sndVol != sndVolPrev )
+            {
+                sithSoundMixer_FadeVolume(sithSoundMixer_hCurAmbientChannel, sndVol, 0.5f);
+            }
+        }
+        else
+        {
+            if ( sithSoundMixer_hCurAmbientChannel )
+            {
+                sithSoundMixer_FadeVolume(sithSoundMixer_hCurAmbientChannel, 0.0f, 0.5f);
+                sithSoundMixer_hCurAmbientChannel = 0;
+            }
+
+            if ( hSnd )
+            {
+                sithSoundMixer_hCurAmbientChannel = sithSoundMixer_PlaySound(hSnd, 0.0f, 0.0f, SOUNDPLAY_LOOP);
+                if ( sithSoundMixer_hCurAmbientChannel )
+                {
+                    sithSoundMixer_FadeVolume(sithSoundMixer_hCurAmbientChannel, sndVol, 0.5f);
+                }
+            }
+        }
+    }
+
+    rdVector3 fwdDir;
+    rdVector_Neg3(&fwdDir, &sithCamera_g_pCurCamera->orient.lvec);
+    Sound_Update(&sithCamera_g_pCurCamera->lookPos, 0, &sithCamera_g_pCurCamera->orient.uvec, &fwdDir);
 }
