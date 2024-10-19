@@ -4260,7 +4260,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 {
                     case 1:
                         // TODO: font size should be multiply by 2.5 in order for the text to smoothly disappear at the top
-                        if ( (double)-JonesHud_pCreditsFont2->fontSize > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
+                        if ( (double)-(JonesHud_pCreditsFont2->fontSize * lineScalar) > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
                         {
                             ++JonesHud_creditsCurIdx;
                         }
@@ -4270,7 +4270,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                     case 2:
                     case 0x10:
                         // TODO: font size should be multiply by 2.5 in order for the text to smoothly disappear at the top
-                        if ( (double)-JonesHud_pCreditsFont1->fontSize > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
+                        if ( (double)-(JonesHud_pCreditsFont1->fontSize * lineScalar) > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
                         {
                             ++JonesHud_creditsCurIdx;
                         }
