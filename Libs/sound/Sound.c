@@ -37,7 +37,7 @@
 #define soundbank_aNumSounds J3D_DECL_FAR_ARRAYVAR(soundbank_aNumSounds, int(*)[2])
 #define soundbank_aSizeSounds J3D_DECL_FAR_ARRAYVAR(soundbank_aSizeSounds, int(*)[2])
 #define Sound_apChannels J3D_DECL_FAR_VAR(Sound_apChannels, tSoundChannel*)
-#define Sound_numChannels J3D_DECL_FAR_VAR(Sound_numChannels, int)
+#define Sound_numChannels J3D_DECL_FAR_VAR(Sound_numChannels, size_t)
 #define Sound_sizeChannels J3D_DECL_FAR_VAR(Sound_sizeChannels, int)
 #define Sound_pMemfileBuf J3D_DECL_FAR_VAR(Sound_pMemfileBuf, void*)
 #define Sound_memfileSize J3D_DECL_FAR_VAR(Sound_memfileSize, int)
@@ -583,24 +583,23 @@ static void Sound_UpdateFades(void) // Added
     }
 }
 
-void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, rdVector3* pTopOrient, rdVector3* pFrontOrient)
+void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient)
 {
     // Was changed to function call
     Sound_UpdateFades();
 
-    // TODO: should operate on copy orients
+    // Fixed: Fixed negating orient by not modifying th original pointer var
+    rdVector3 orient;
     if ( pTopOrient && !Sound_bReverseSound )
     {
-        pTopOrient->x = -pTopOrient->x;
-        pTopOrient->y = -pTopOrient->y;
-        pTopOrient->z = -pTopOrient->z;
+        rdVector_Neg3(&orient, pTopOrient);
+        pTopOrient = &orient;
     }
 
     if ( pFrontOrient && !Sound_bReverseSound )
     {
-        pFrontOrient->x = -pFrontOrient->x;
-        pFrontOrient->y = -pFrontOrient->y;
-        pFrontOrient->z = -pFrontOrient->z;
+        rdVector_Neg3(&orient, pFrontOrient);
+        pFrontOrient = &orient;
     }
 
     if ( pPos )
@@ -659,7 +658,7 @@ LABEL_30:
                 pCurChannel->maxRadius,
                 pCurChannel->envflags) )
             {
-                Sound_StopChannel(count);       // TODO: Is this a bug? Shouldn't be using pCurChannel->handle?
+                Sound_StopChannel(pCurChannel->handle); // Fixed: Fixed bug to use correct channel handle; OG used count var
             }
 
             else if ( (pCurChannel->flags & SOUND_CHANNEL_RESTART) != 0 )
