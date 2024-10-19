@@ -2536,45 +2536,17 @@ void J3DAPI JonesHud_RenderMenuItems(JonesHudMenuItem* pItem)
 
 void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
 {
-    float v3;
-    float v4;
-    float v5;
-    int32_t bItemDisabled;
-    int32_t bItemDisabled_1;
-    int32_t bDisabled;
-    float x_1;
-    float y;
-    float v11;
-    float amount;
-    int32_t bItemDisabled_2;
-
-    char aItemText[256];
-    int posY;
-    rdVector3 vecPos;
-    int posX;
-    const char* pItemName;
-    rdMatrix34 curOrient;
-    rdVector4 fontColor[4];
-    rdMatrix34 transformedOrient;
-    int amount_1;
-    float v26;
-    char aItemName[512];
-    rdVector4 color;
-    rdMatrix34 placement;
-    rdVector3 pyrOrient;
-    rdVector3 vecScale;
-    rdVector3 vecIconRadiusScale;
-
-    memset(&pyrOrient, 0, sizeof(pyrOrient));
-    memcpy(&placement, &rdroid_g_identMatrix34, sizeof(placement));
+    rdMatrix34 placement = rdroid_g_identMatrix34;
 
     if ( pItem )
     {
+        rdVector3 vecIconRadiusScale;
         vecIconRadiusScale.z = 0.018204151f / pItem->prdIcon->data.pModel3->size;
         vecIconRadiusScale.y = vecIconRadiusScale.z;
         vecIconRadiusScale.x = vecIconRadiusScale.z;
         rdMatrix_PostScale34(&placement, &vecIconRadiusScale);
 
+        rdVector3 vecScale;
         vecScale.z = JonesHud_aDfltMenuItemsOrients[pItem->id].scale;
         vecScale.y = vecScale.z;
         vecScale.x = vecScale.z;
@@ -2584,70 +2556,51 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
         {
             if ( pItem->pos.z == pItem->endMovePos.z )
             {
-                pItemName = 0;
-                amount_1 = 0;
-                v26 = 20.0f * JonesHud_screenHeightScalar;
+                // Scope draws selected item text 
+                // 
+                //float v26 = 20.0f * JonesHud_screenHeightScalar; // Unused
 
-                rdVector_Copy3(&vecPos, &pItem->pos);
+                rdVector3 pos;
+                rdVector_Copy3(&pos, &pItem->pos);
 
-                memcpy(&curOrient, &rdroid_g_identMatrix34, sizeof(curOrient));
+                rdMatrix34 orient = rdroid_g_identMatrix34;
+                orient.dvec.x = pos.x;
+                orient.dvec.y = pos.y;
+                orient.dvec.z = pos.z;
 
-                curOrient.dvec.x = vecPos.x;
-                curOrient.dvec.y = vecPos.y;
-                curOrient.dvec.z = vecPos.z;
+                rdMatrix34 tmat;
+                rdMatrix_Multiply34(&tmat, &orient, &rdCamera_g_pCurCamera->orient);
+                rdCamera_PerspProject(&pos, &tmat.dvec);
 
-                rdMatrix_Multiply34(&transformedOrient, &curOrient, &rdCamera_g_pCurCamera->orient);
-                rdCamera_PerspProject(&vecPos, &transformedOrient.dvec);
-
-                fontColor[0].red   = 1.0f;
-                fontColor[0].green = 0.0f;
-                fontColor[0].blue  = 0.0f;
-                fontColor[0].alpha = 1.0f;
-
-                fontColor[1].red   = 1.0f;
-                fontColor[1].green = 0.0f;
-                fontColor[1].blue  = 0.0f;
-                fontColor[1].alpha = 1.0f;
-
-                fontColor[2].red   = 1.0f;
-                fontColor[2].green = 1.0f;
-                fontColor[2].blue  = 0.0f;
-                fontColor[2].alpha = 1.0f;
-
-                fontColor[3].red   = 1.0f;
-                fontColor[3].green = 1.0f;
-                fontColor[3].blue  = 0.0f;
-                fontColor[3].alpha = 1.0f;
+                rdFontColor fontColor;
+                rdVector_Set4(&fontColor[0], 1.0f, 0.0f, 0.0f, 1.0f);
+                rdVector_Set4(&fontColor[1], 1.0f, 0.0f, 0.0f, 1.0f);
+                rdVector_Set4(&fontColor[2], 1.0f, 1.0f, 0.0f, 1.0f);
+                rdVector_Set4(&fontColor[3], 1.0f, 1.0f, 0.0f, 1.0f);
                 rdFont_SetFontColor(fontColor);
 
-                posX = (int32_t)vecPos.x;
-                posY = (int32_t)vecPos.y - (int32_t)(70.0f * JonesHud_screenHeightScalar);
-                bItemDisabled_2 = (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0
+                bool bDisabled = (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0
                     ? sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED
                     : 0;
 
-                pItemName = bItemDisabled_2
+                const char* pItemName = bDisabled
                     ? jonesString_GetString("JONES_STR_INV_NOUSE")
                     : jonesString_GetString(JonesHud_apItemNames[pItem->id]);
                 if ( pItemName )
                 {
-                    //strcpy(aItemName, pItemName);
-                    stdUtil_StringCopy(aItemName, sizeof(aItemName), pItemName);
+                    char aItemName[512] = { 0 };
+                    STD_STRCPY(aItemName, pItemName);
 
-                    amount = 0.0f;
+                    float amount = 0.0f;
                     if ( (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
                     {
                         amount = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].amount;
                     }
 
-                    amount_1 = (int32_t)amount;
-                    memset(aItemText, 0, sizeof(aItemText));
-
+                    char aItemText[256] = { 0 };
                     if ( pItem->inventoryID == -1 || pItem->id > JONESHUD_MENU_INVITEM_BONUSMAP )
                     {
-                    LABEL_25:
-                        stdUtil_Format(aItemText, sizeof(aItemText), "%s", aItemName);
-                        //sprintf(aItemText, "%s", aItemName);
+                        STD_FORMAT(aItemText, "%s", aItemName);
                     }
                     else
                     {
@@ -2655,42 +2608,35 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                         {
                             case JONESHUD_MENU_WEAP_GLOVES:
                             case JONESHUD_MENU_WEAP_MACHETE:
-                                goto LABEL_25;
+                                STD_FORMAT(aItemText, "%s", aItemName);
+                                break;
 
                             case JONESHUD_MENU_WEAP_WHIP:
                                 if ( (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.flags & SITH_AF_ELECTRICWHIP) == 0 )
                                 {
-                                    goto LABEL_25;
+                                    STD_FORMAT(aItemText, "%s", aItemName);
+                                    break;
                                 }
 
-                                goto LABEL_24;
+                                STD_FORMAT(aItemText, "%s  %i\n", aItemName, (int)amount);
+                                break;
 
                             case JONESHUD_MENU_TREASURE_CHEST:
-                                stdUtil_Format(aItemText, sizeof(aItemText), "%s  %i ($%i)\n", aItemName, JonesHud_numFoundTreasures, amount_1);
-                                //sprintf(aItemText, "%s  %i ($%i)\n", aItemName, JonesHud_numFoundTreasures, amount_1);
+                                STD_FORMAT(aItemText, "%s  %i ($%i)\n", aItemName, JonesHud_numFoundTreasures, (int)amount);
                                 break;
 
                             case JONESHUD_MENU_INVITEM_PATCHKIT:
-                                goto LABEL_24;
+                                STD_FORMAT(aItemText, "%s  %i\n", aItemName, (int)amount);
+                                break;
 
                             default:
-                                if ( (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
+                                if ( (unsigned int)(int32_t)amount <= 1 )
                                 {
-                                    v11 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].amount;
-                                }
-                                else
-                                {
-                                    v11 = 0.0f;
+                                    STD_FORMAT(aItemText, "%s", aItemName);
+                                    break;
                                 }
 
-                                if ( (unsigned int)(int32_t)v11 <= 1 )
-                                {
-                                    goto LABEL_25;
-                                }
-
-                            LABEL_24:
-                                stdUtil_Format(aItemText, sizeof(aItemText), "%s  %i\n", aItemName, amount_1);
-                                //sprintf(aItemText, "%s  %i\n", aItemName, amount_1);
+                                STD_FORMAT(aItemText, "%s  %i\n", aItemName, (int)amount);
                                 break;
                         }
                     }
@@ -2703,10 +2649,11 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                 }
             }
 
-            bDisabled = 0;
+            // Highlight selected item by scaling it up a little bit
+            bool bDisabled = false;
             if ( (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
             {
-                bDisabled = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED;
+                bDisabled = (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED) != 0;
             }
 
             if ( !bDisabled )
@@ -2715,7 +2662,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
             }
         }
 
-        memset(&pyrOrient, 0, sizeof(pyrOrient));
+        rdVector3 pyrOrient = { 0 };
         pyrOrient.z = pItem->pyr.z;
         rdMatrix_PostRotate34(&placement, &pyrOrient);
 
@@ -2729,10 +2676,10 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
 
         rdVector_Copy3(&placement.dvec, &pItem->pos);
 
+        rdVector4 color;
         rdModel3_GetThingColor(pItem->prdIcon, &color);
         float oalpha = color.alpha;
-        color.alpha = pItem->alpha;
-
+        color.alpha  = pItem->alpha;
 
         if ( (pItem->flags & 8) == 0
           && ((pItem->flags & 0x10) != 0
@@ -2740,7 +2687,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
               || (pItem->flags & 0x80) != 0
               || (pItem->flags & 0x40) != 0) )
         {
-            float v14=1.0f, v15=1.0f;// Added Init to 1
+            float v14 = 1.0f, v15 = 1.0f;// Added Init to 1
             switch ( ((((pItem->flags >> 10) & 3) << 10) | pItem->flags & 0x302) ^ pItem->flags & 1 ^ pItem->flags )
             {
                 case 0x10:
@@ -2779,65 +2726,44 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
 
             color.alpha = alpha;
 
-            bItemDisabled = 0;
+            bool bDisabled = false;
             if ( (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
             {
-                bItemDisabled = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED;
+                bDisabled = (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED) != 0;
             }
 
-            if ( bItemDisabled )
+            if ( bDisabled )
             {
                 if ( color.alpha >= 0.40000001f )
                 {
-                    v5 = 0.40000001f;
+                    color.alpha  = 0.40000001f;
                 }
-                else
-                {
-                    v5 = color.alpha;
-                }
-
-                color.alpha = v5;
             }
             else
             {
                 if ( color.alpha >= 0.94999999f )
                 {
-                    v4 = 0.94999999f;
+                    color.alpha = 0.94999999f;
                 }
-                else
-                {
-                    v4 = color.alpha;
-                }
-
-                color.alpha = v4;
             }
 
             if ( (pItem->flags & 0x10) != 0 || (pItem->flags & 0x40) != 0 )
             {
                 if ( color.alpha <= 0.0f )
                 {
-                    v3 = 0.0f;
+                    color.alpha  = 0.0f;
                 }
-                else
-                {
-                    v3 = color.alpha;
-                }
-
-                color.alpha = v3;
             }
         }
         else
         {
+            bool bDisabled = false;
             if ( (sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
             {
-                bItemDisabled_1 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED;
-            }
-            else
-            {
-                bItemDisabled_1 = 0;
+                bDisabled = (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED) != 0;
             }
 
-            if ( bItemDisabled_1 )
+            if ( bDisabled )
             {
                 color.alpha = 0.40000001f;
             }
