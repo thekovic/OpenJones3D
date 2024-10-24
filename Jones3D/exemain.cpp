@@ -1,4 +1,4 @@
-#include <algorithm>
+﻿#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -46,8 +46,6 @@ bool IsValidFile(const fs::path& filepath, const std::string_view fileSha256)
 
 int main(int argc, char** argv)
 {
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-
     // Execute Indy3D.exe in suspended mode.
     fs::path exePath = "Indy3D.exe";
     if ( argc > 1 ) {
@@ -85,7 +83,11 @@ int main(int argc, char** argv)
     if ( !CreateProcess(exePath.native().c_str(), NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi) )
     {
         std::fprintf(stderr, "CreateProcess(\"%ls\") failed; error code = 0x%08X\n", exePath.c_str(), GetLastError());
-        MessageBox(NULL, L"Failed to start Indy3D.exe!", L"Jones3D Error", MB_ICONERROR | MB_OK);
+        const wchar_t* pError = L"Failed to start Indy3D.exe!";
+        if ( GetLastError() == ERROR_ELEVATION_REQUIRED ) {
+            pError = L"Failed to start Indy3D.exe!\n\nIt looks like administrator permissions are required to run this program?! 🤔";
+        }
+        MessageBox(NULL, pError, L"Jones3D Error", MB_ICONERROR | MB_OK);
         return 1;
     }
 
