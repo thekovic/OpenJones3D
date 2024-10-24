@@ -2120,7 +2120,7 @@ typedef struct sSithItemInfo
     rdVector3 pos;
     SithSector* pInSector;
     float secRespawnInterval;
-    unsigned int msecUnknownTime;
+    unsigned int msecLastTouchTime;
     int numItems;
     SithBackpackItem aBackpackItems[32];
 } SithItemInfo;

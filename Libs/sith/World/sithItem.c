@@ -46,9 +46,9 @@ int J3DAPI sithItem_PlayerCollisionHandler(SithThing* pItem, SithThing* pPlayer,
         return 0;
     }
 
-    if ( pItem->thingInfo.itemInfo.msecUnknownTime < sithTime_g_msecGameTime )
+    if ( pItem->thingInfo.itemInfo.msecLastTouchTime < sithTime_g_msecGameTime )
     {
-        pItem->thingInfo.itemInfo.msecUnknownTime = sithTime_g_msecGameTime + 500;
+        pItem->thingInfo.itemInfo.msecLastTouchTime = sithTime_g_msecGameTime + 500;
     }
 
     return 0;
