@@ -90,7 +90,7 @@
 #define Sound_StopThing_TYPE void (J3DAPI*)(int, unsigned int)
 #define Sound_SetVolume_TYPE void (J3DAPI*)(tSoundChannelHandle, float)
 #define Sound_FadeVolume_TYPE void (J3DAPI*)(tSoundChannelHandle, float, float)
-#define Sound_SetVolumeThing_TYPE void (J3DAPI*)(int, int, float)
+#define Sound_SetVolumeThing_TYPE void (J3DAPI*)(int, unsigned int, float)
 #define Sound_FadeVolumeThing_TYPE void (J3DAPI*)(int, int, float, float)
 #define Sound_IsThingFadingVol_TYPE unsigned int (J3DAPI*)(int, unsigned int)
 #define Sound_SetPitch_TYPE void (J3DAPI*)(tSoundChannelHandle, float)
