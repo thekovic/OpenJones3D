@@ -58,8 +58,10 @@ unsigned int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle);
 void J3DAPI Sound_SetPitch(tSoundChannelHandle hChannel, float pitch);
 float J3DAPI Sound_GetPitch(tSoundChannelHandle hChannel);
 void J3DAPI Sound_FadePitch(tSoundChannelHandle hChannel, float pitch, float secFadeTime);
-// handle is either track handle or sound handle
-void J3DAPI Sound_SetPitchThing(int thingId, int handle, float pitch);
+
+void J3DAPI Sound_SetPitchThing(int thingId, int handle, float pitch); // handle is either track handle or sound handle
+int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle); // Added // handle is either track handle or sound handle
+
 tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel);
 void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient);
 int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, int* pMouthPosX, int* pMouthPosY, int a4);

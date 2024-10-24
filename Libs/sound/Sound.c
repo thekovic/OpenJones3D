@@ -521,6 +521,42 @@ int J3DAPI Sound_ReadFile(tFileHandle fh, void* pData, unsigned int size)
     return J3D_TRAMPOLINE_CALL(Sound_ReadFile, fh, pData, size);
 }
 
+int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
+{
+    if ( (int)handle >= 1234 && (int)handle < 1112345 && (handle & 1) != 0 )
+    {
+        return (Sound_GetChannelFlags(handle) & SOUND_CHANNEL_PITCHFADE) != 0;
+    }
+
+    if ( handle && ((int)handle < 1234 || (int)handle >= 1112345 || (handle & 1) != 0) )
+    {
+        Sound_pHS->pErrorPrint("Sound_IsThingFadingPitch: Don't know what 'sound' is: %p\n", handle);
+        return 0;
+    }
+
+    size_t count = Sound_numChannels;
+    tSoundChannel* pCurChannel = &Sound_apChannels[Sound_numChannels];
+    while ( 1 )
+    {
+        --pCurChannel;
+        if ( !count-- )
+        {
+            break;
+        }
+
+        if ( pCurChannel->handle
+          && (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
+          && pCurChannel->thingId == thingId
+          && (!handle || pCurChannel->hSnd == handle)
+          && (pCurChannel->flags & SOUND_CHANNEL_PITCHFADE) != 0 )
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static void Sound_UpdateFades(void) // Added
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(Sound_aFades); i++ )
