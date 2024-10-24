@@ -5,7 +5,9 @@
 #include <sith/types.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
+
 #include <std/types.h>
+#include <std/General/std.h>
 
 J3D_EXTERN_C_START
 
@@ -29,7 +31,7 @@ J3D_EXTERN_C_START
     J3DLOG_FATAL(sith_g_pHS, message)
 
 #define SITH_ASSERT(condition) \
-    J3D_ASSERTR(condition, sith_g_pHS )
+    J3D_ASSERT(condition, sith_g_pHS )
 
 #define SITH_ASSERTREL(condition) \
     J3D_ASSERTREL(condition, sith_g_pHS )
