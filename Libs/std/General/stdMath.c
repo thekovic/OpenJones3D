@@ -63,20 +63,21 @@ float stdMath_NormalizeAngle(float angle)
         if ( angle < 360.0f ) {
             return angle;
         }
-        normAngle = (double)angle - (double)floor((double)angle / 360.0) * 360.0;
+        normAngle = (double)angle - floor((double)angle / 360.0) * 360.0;
     }
     else
     {
         if ( -angle >= 360.0f ) {
-            normAngle = 360.0 - (-(double)angle - (double)floor(-(double)angle / 360.0) * 360.0);
+            normAngle = 360.0 - (-(double)angle - floor(-(double)angle / 360.0) * 360.0);
         }
         else {
             normAngle = 360.0f + angle;
         }
     }
 
-    if ( normAngle == 360.0 )
+    if ( normAngle == 360.0 ) {
         normAngle = 0.0;
+    }
 
     STD_ASSERT(normAngle >= 0.0 && normAngle <= 360.0);
     return (float)normAngle;
