@@ -47,16 +47,6 @@ void wkernel_InstallHooks(void)
 
 void wkernel_ResetGlobals(void)
 {
-    //const GUID wkernel_guid_tmp = { 2194558368u, 40127u, 4561u, { 144u, 133u, 0u, 96u, 151u, 118u, 234u, 2u } };
-    //memcpy((GUID *)&wkernel_guid, &wkernel_guid_tmp, sizeof(wkernel_guid));
-    //
-    //memset(&wkernel_hwnd, 0, sizeof(wkernel_hwnd));
-    //memset(&wkernel_nShowCmd, 0, sizeof(wkernel_nShowCmd));
-    //memset(&wkernel_msg_1, 0, sizeof(wkernel_msg_1));
-    //memset(&wkernel_msg_2, 0, sizeof(wkernel_msg_2));
-    //memset(&wkernel_pfWndProc, 0, sizeof(wkernel_pfWndProc));
-    //memset(&wkernel_wndBorderWidth, 0, sizeof(wkernel_wndBorderWidth));
-    //memset(&wkernel_wndMenuBarHeight, 0, sizeof(wkernel_wndMenuBarHeight));
 }
 
 int J3DAPI wkernel_Run(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd, LPCSTR lpWindowName)
