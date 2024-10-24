@@ -43,6 +43,7 @@
 #include <rdroid/Primitives/rdPrimit3.h>
 #include <rdroid/Raster/rdCache.h>
 #include <rdroid/Raster/rdFace.h>
+
 #include <sith/AI/sithAIInstinct.h>
 #include <sith/AI/sithAI.h>
 #include <sith/AI/sithAIClass.h>
@@ -72,6 +73,7 @@
 #include <sith/Dss/sithDSSThing.h>
 #include <sith/Engine/sithCamera.h>
 #include <sith/Engine/sithRender.h>
+#include <sith/Engine/sithRenderSky.h>
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Engine/sithAnimate.h>
 #include <sith/Engine/sithPhysics.h>
@@ -108,9 +110,11 @@
 #include <sith/World/sithActor.h>
 #include <sith/World/sithItem.h>
 #include <sith/World/sithPVS.h>
+
 #include <sound/Driver.h>
 #include <sound/AudioLib.h>
 #include <sound/Sound.h>
+
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMath.h>
 #include <std/General/std.h>
@@ -133,6 +137,7 @@
 #include <std/Win95/stdWin95.h>
 #include <std/Win95/stdGob.h>
 #include <std/Win95/stdConsole.h>
+
 #include <w32util/wuRegistry.h>
 #include <wkernel/wkernel.h>
 
@@ -222,6 +227,7 @@ bool InstallHooks(void)
 
     AudioLib_InstallHooks();
     Driver_InstallHooks();
+
     JonesConsole_InstallHooks();
     JonesControl_InstallHooks();
     JonesDialog_InstallHooks();
@@ -229,11 +235,14 @@ bool InstallHooks(void)
     JonesFile_InstallHooks();
     JonesHud_InstallHooks();
     JonesMain_InstallHooks();
+
     Sound_InstallHooks();
+
     jonesCog_InstallHooks();
     jonesConfig_InstallHooks();
     jonesInventory_InstallHooks();
     jonesString_InstallHooks();
+
     rdCache_InstallHooks();
     rdCamera_InstallHooks();
     rdCanvas_InstallHooks();
@@ -257,6 +266,7 @@ bool InstallHooks(void)
     rdVector_InstallHooks();
     rdWallpaper_InstallHooks();
     rdroid_InstallHooks();
+
     sithAIAwareness_InstallHooks();
     sithAIClass_InstallHooks();
     sithAIInstinct_InstallHooks();
@@ -306,6 +316,7 @@ bool InstallHooks(void)
     sithPlayer_InstallHooks();
     sithPuppet_InstallHooks();
     sithRender_InstallHooks();
+    sithRenderSky_InstallHooks();
     sithSector_InstallHooks();
     sithShadow_InstallHooks();
     sithSoundClass_InstallHooks();
@@ -322,6 +333,7 @@ bool InstallHooks(void)
     sithWeapon_InstallHooks();
     sithWhip_InstallHooks();
     sithWorld_InstallHooks();
+
     std3D_InstallHooks();
     stdBmp_InstallHooks();
     stdCircBuf_InstallHooks();
@@ -344,6 +356,7 @@ bool InstallHooks(void)
     stdUtil_InstallHooks();
     stdWin95_InstallHooks();
     std_InstallHooks();
+
     wkernel_InstallHooks();
     wuRegistry_InstallHooks();
 
@@ -443,6 +456,7 @@ bool ResetGlobals(void)
     sithPlayer_ResetGlobals();
     sithPuppet_ResetGlobals();
     sithRender_ResetGlobals();
+    sithRenderSky_ResetGlobals();
     sithSector_ResetGlobals();
     sithShadow_ResetGlobals();
     sithSoundClass_ResetGlobals();
