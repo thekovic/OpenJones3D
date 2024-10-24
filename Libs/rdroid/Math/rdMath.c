@@ -18,26 +18,6 @@ void rdMath_ResetGlobals(void)
 
 }
 
-float J3DAPI rdMath_DistancePointToPlane(const rdVector3* pPoint, const rdVector3* pPlaneNormal, const rdVector3* pPointOnPlane)
-{
-    return (pPoint->x - pPointOnPlane->x) * pPlaneNormal->x
-        + (pPoint->y - pPointOnPlane->y) * pPlaneNormal->y
-        + (pPoint->z - pPointOnPlane->z) * pPlaneNormal->z;
-}
-
-float J3DAPI rdMath_DeltaAngleNormalizedAbs(const rdVector3* pVectorX, const rdVector3* pVectorY)
-{
-    float dot  = rdVector_Dot3(pVectorX, pVectorY);
-    if ( dot == 1.0 )
-    {
-        return 0.0f;
-    }
-    else
-    {
-        return 90.0f - stdMath_ArcSin1(dot);
-    }
-}
-
 float J3DAPI rdMath_DeltaAngleNormalized(const rdVector3* pVectorX, const rdVector3* pVectorY, const rdVector3* pVectorZ)
 {
     // Calculate dot product of vectors X and Y

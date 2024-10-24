@@ -45,6 +45,23 @@ inline void J3DAPI rdMath_ClampVector4(rdVector4* vect, float minVal, float maxV
     vect->w = STDMATH_CLAMP(vect->w, minVal, maxVal);
 }
 
+inline float J3DAPI rdMath_DistancePointToPlane(const rdVector3* pPoint, const rdVector3* pPlaneNormal, const rdVector3* pPointOnPlane)
+{
+    return (pPoint->x - pPointOnPlane->x) * pPlaneNormal->x
+        + (pPoint->y - pPointOnPlane->y) * pPlaneNormal->y
+        + (pPoint->z - pPointOnPlane->z) * pPlaneNormal->z;
+}
+
+inline float J3DAPI rdMath_DeltaAngleNormalizedAbs(const rdVector3* pVectorX, const rdVector3* pVectorY)
+{
+    float dot  = rdVector_Dot3(pVectorX, pVectorY);
+    if ( dot == 1.0 ) {
+        return 0.0f;
+    }
+
+    return 90.0f - stdMath_ArcSin1(dot);
+}
+
 // Helper hooking functions
 void rdMath_InstallHooks(void);
 void rdMath_ResetGlobals(void);
