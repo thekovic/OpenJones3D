@@ -7,8 +7,9 @@
 
 J3D_EXTERN_C_START
 
-rdWallpaper* J3DAPI rdWallpaper_New(const char* pMatFilePath);
+rdWallpaper* J3DAPI rdWallpaper_New(const char* pName);
 void J3DAPI rdWallpaper_Free(rdWallpaper* pWallpaper);
+
 void J3DAPI rdWallpaper_Draw(const rdWallpaper* pWallpaper);
 rdWallLine* J3DAPI rdWallpaper_NewWallLine(float startX, float startY, float endX, float endY, const rdVector4* pColor);
 void J3DAPI rdWallpaper_FreeWallLine(rdWallLine* pWallLine);

@@ -6,6 +6,12 @@
 
 // Function addresses
 
+#define rdWallpaper_New_ADDR 0x004C63B0
+#define rdWallpaper_Free_ADDR 0x004C6490
+#define rdWallpaper_Draw_ADDR 0x004C64D0
+#define rdWallpaper_NewWallLine_ADDR 0x004C6920
+#define rdWallpaper_FreeWallLine_ADDR 0x004C6A30
+#define rdWallpaper_DrawWallLine_ADDR 0x004C6A70
 #define rdSetServices_ADDR 0x004C60C0
 #define rdClearServices_ADDR 0x004C60D0
 #define rdStartup_ADDR 0x004C60E0
@@ -146,12 +152,6 @@
 #define rdCanvas_New_ADDR 0x004C6240
 #define rdCanvas_NewEntry_ADDR 0x004C62B0
 #define rdCanvas_Free_ADDR 0x004C6360
-#define rdWallpaper_New_ADDR 0x004C63B0
-#define rdWallpaper_Free_ADDR 0x004C6490
-#define rdWallpaper_Draw_ADDR 0x004C64D0
-#define rdWallpaper_NewWallLine_ADDR 0x004C6920
-#define rdWallpaper_FreeWallLine_ADDR 0x004C6A30
-#define rdWallpaper_DrawWallLine_ADDR 0x004C6A70
 #define rdMatrix_Build34_ADDR 0x004C76D0
 #define rdMatrix_BuildFromLook34_ADDR 0x004C77F0
 #define rdMatrix_InvertOrtho34_ADDR 0x004C7990

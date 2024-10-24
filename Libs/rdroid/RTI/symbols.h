@@ -4,6 +4,12 @@
 #include <rdroid/types.h>
 #include <std/types.h>
 
+#define rdWallpaper_New_TYPE rdWallpaper* (J3DAPI*)(const char*)
+#define rdWallpaper_Free_TYPE void (J3DAPI*)(rdWallpaper*)
+#define rdWallpaper_Draw_TYPE void (J3DAPI*)(const rdWallpaper*)
+#define rdWallpaper_NewWallLine_TYPE rdWallLine* (J3DAPI*)(float, float, float, float, const rdVector4*)
+#define rdWallpaper_FreeWallLine_TYPE void (J3DAPI*)(rdWallLine*)
+#define rdWallpaper_DrawWallLine_TYPE void (J3DAPI*)(const rdWallLine*, float)
 #define rdSetServices_TYPE void (J3DAPI*)(tHostServices*)
 #define rdClearServices_TYPE void (*)(void)
 #define rdStartup_TYPE void (J3DAPI*)()
@@ -144,12 +150,6 @@
 #define rdCanvas_New_TYPE rdCanvas* (J3DAPI*)(int, tVBuffer*, int, int, int, int)
 #define rdCanvas_NewEntry_TYPE int (J3DAPI*)(rdCanvas*, int, tVBuffer*, int, int, int, int)
 #define rdCanvas_Free_TYPE void (J3DAPI*)(rdCanvas*)
-#define rdWallpaper_New_TYPE rdWallpaper* (J3DAPI*)(const char*)
-#define rdWallpaper_Free_TYPE void (J3DAPI*)(rdWallpaper*)
-#define rdWallpaper_Draw_TYPE void (J3DAPI*)(const rdWallpaper*)
-#define rdWallpaper_NewWallLine_TYPE rdWallLine* (J3DAPI*)(float, float, float, float, const rdVector4*)
-#define rdWallpaper_FreeWallLine_TYPE void (J3DAPI*)(rdWallLine*)
-#define rdWallpaper_DrawWallLine_TYPE void (J3DAPI*)(const rdWallLine*, float)
 #define rdMatrix_Build34_TYPE void (J3DAPI*)(rdMatrix34*, const rdVector3*, const rdVector3*)
 #define rdMatrix_BuildFromLook34_TYPE void (J3DAPI*)(rdMatrix34*, const rdVector3*)
 #define rdMatrix_InvertOrtho34_TYPE void (J3DAPI*)(rdMatrix34*, const rdMatrix34*)
