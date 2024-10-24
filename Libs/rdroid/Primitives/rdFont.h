@@ -14,8 +14,8 @@ J3D_EXTERN_C_START
 #define RDFONT_ALIGNLEFT   2
 #define RDFONT_ALIGNRIGHT  4
 
-#define RDFONT_REF_WIDTH  640.0f
-#define RDFONT_REF_HEIGHT 480.0f
+#define RD_REF_WIDTH  640.0f
+#define RD_REF_HEIGHT 480.0f
 
 typedef rdVector4 rdFontColor[4];
 
@@ -41,13 +41,13 @@ rdFontColor* rdFont_DuplicateFontColor(void); // Added
 // Returns normalized X in screen pixels that can be used in draw line funcs
 inline float rdFont_GetNormX(float x)
 {
-    return (x / RDFONT_REF_WIDTH);
+    return (x / RD_REF_WIDTH);
 }
 
 // Returns normalized Y in screen pixels that can be used in draw line funcs
 inline float rdFont_GetNormY(float y)
 {
-    return (y / RDFONT_REF_HEIGHT);
+    return (y / RD_REF_HEIGHT);
 }
 
 inline float rdFont_GetNormLineSpacing(const rdFont* pFont)

@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-#define RDFONT_MAXGLYPHS 256u
+#define RDFONT_MAXGLYPHS  256u
 #define RDFONT_MAXNAMELEN 256u
 
 
@@ -339,7 +339,7 @@ const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, fl
         }
 
         textWidth = (float)pFont->aGlyphs[curChar].baselineOriginX + textWidth;
-        if ( RDFONT_REF_WIDTH * widthScale < textWidth )
+        if ( RD_REF_WIDTH * widthScale < textWidth )
         {
             if ( pTextEnd )
             {
@@ -393,8 +393,8 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
 
         uint32_t width, height;
         stdDisplay_GetBackBufferSize(&width, &height);
-        double swidth  = (double)width / RDFONT_REF_WIDTH;
-        double sheight = (double)height / RDFONT_REF_HEIGHT;
+        double swidth  = (double)width / RD_REF_WIDTH;
+        double sheight = (double)height / RD_REF_HEIGHT;
 
         double curPosX = (double)width * x;
         double curPosY = (double)height * y;
@@ -439,7 +439,7 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
                 double nextPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + curPosX;
                 if ( nextPosX >= 0.0f )
                 {
-                    if ( RDFONT_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RDFONT_REF_WIDTH * swidth >= curPosX )
+                    if ( RD_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RD_REF_WIDTH * swidth >= curPosX )
                     {
                         rdFont_DrawChar(curChar, (float)curPosX, (float)curPosY, z, pFont);
                     }
@@ -467,8 +467,8 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
 
     uint32_t width, height;
     stdDisplay_GetBackBufferSize(&width, &height);
-    float swidth  = (float)width / RDFONT_REF_WIDTH;
-    float sheight = (float)height / RDFONT_REF_HEIGHT;
+    float swidth  = (float)width / RD_REF_WIDTH;
+    float sheight = (float)height / RD_REF_HEIGHT;
 
     y = y - (float)pFont->aGlyphs[chr].baselineOriginY * sheight;
 
@@ -548,8 +548,8 @@ void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, floa
     {
         uint32_t width, height;
         stdDisplay_GetBackBufferSize(&width, &height);
-        double swidth = (double)width / RDFONT_REF_WIDTH;
-        double sheight = (double)height / RDFONT_REF_HEIGHT;
+        double swidth = (double)width / RD_REF_WIDTH;
+        double sheight = (double)height / RD_REF_HEIGHT;
 
         double curPosX = (double)width * x;
         double curPosY = (double)height * y;
@@ -590,8 +590,8 @@ void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, floa
                 double nextPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + curPosX;
                 if ( nextPosX >= 0.0f )
                 {
-                    if ( RDFONT_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RDFONT_REF_WIDTH * swidth >= curPosX
-                        && curPosY >= 0 && RDFONT_REF_HEIGHT * sheight >= curPosY )
+                    if ( RD_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RD_REF_WIDTH * swidth >= curPosX
+                        && curPosY >= 0 && RD_REF_HEIGHT * sheight >= curPosY )
                     {
                         rdFont_DrawChar(curChar, (float)curPosX, (float)curPosY, z, pFont);
                     }
