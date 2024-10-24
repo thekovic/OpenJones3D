@@ -807,7 +807,7 @@ void JonesMain_NextLevel(void)
 
 void JonesMain_ShowEndCredits(void)
 {
-    sithSoundMixer_StopAll(); // Added: Stop all sounds before showing end credits
+    Sound_StopAllSounds(); // Added: Stop all sounds before showing end credits. Note, don't call sithSoundMixer_StopAll(), as it clears cur camera sec, which is re-assigned when sithSoundMixer_Update() is called
     JonesMain_pfProcess = JonesMain_Credits;
 }
 
