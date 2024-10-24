@@ -30,6 +30,9 @@ add_dependencies(Jones3D Jones3D_DLL)
 # Add Unicode character set for Jones3D.exe
 target_compile_definitions(Jones3D PRIVATE _UNICODE )
 
+# Set DPI awareness
+set_property(TARGET Jones3D PROPERTY VS_DPI_AWARE "PerMonitor")
+
 # Rename the DLL target output
 set_target_properties(Jones3D_DLL PROPERTIES OUTPUT_NAME "Jones3D")
 
