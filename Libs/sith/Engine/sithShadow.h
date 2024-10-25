@@ -11,7 +11,7 @@ J3D_EXTERN_C_START
 
 void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing);
 int J3DAPI sithShadow_SearchForAttachDistance(SithThing* pThing, float* distance, float* radius);
-double J3DAPI sithShadow_DistanceThingToSurface(const SithThing* pThing, const rdVector3* normal, const rdFace* pFace);
+float J3DAPI sithShadow_DistanceThingToSurface(const SithThing* pThing, const rdVector3* normal, const rdFace* pFace);
 void J3DAPI sithShadow_DrawShadow(const rdMatrix34* orient, float size, float scale, int bCar);
 void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, rdVector3* leg, rdVector3* rleg, rdVector3* lvec, rdVector3* rvec);
 
