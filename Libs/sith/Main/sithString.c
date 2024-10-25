@@ -1,38 +1,100 @@
+#include "sithMain.h"
 #include "sithString.h"
+
 #include <j3dcore/j3dhook.h>
 #include <sith/RTI/symbols.h>
 
-#define sithString_sithStringsTbl J3D_DECL_FAR_VAR(sithString_sithStringsTbl, tStringTable)
-#define sithString_voiceStringsTbl J3D_DECL_FAR_VAR(sithString_voiceStringsTbl, tStringTable)
-#define sithString_bStartup J3D_DECL_FAR_VAR(sithString_bStartup, int)
+#include <std/General/stdMemory.h>
+#include <std/General/stdStrTable.h>
+
+static tStringTable sithStringsTbl;
+static tStringTable voiceStringsTbl;
+static bool bStartup = false;
+
 
 void sithString_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(sithString_Startup);
-    // J3D_HOOKFUNC(sithString_Shutdown);
-    // J3D_HOOKFUNC(sithString_GetString);
+    J3D_HOOKFUNC(sithString_Startup);
+    J3D_HOOKFUNC(sithString_Shutdown);
+    J3D_HOOKFUNC(sithString_GetString);
 }
 
 void sithString_ResetGlobals(void)
 {
-    memset(&sithString_sithStringsTbl, 0, sizeof(sithString_sithStringsTbl));
-    memset(&sithString_voiceStringsTbl, 0, sizeof(sithString_voiceStringsTbl));
-    memset(&sithString_bStartup, 0, sizeof(sithString_bStartup));
 }
 
 int sithString_Startup(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithString_Startup);
+    if ( bStartup )
+    {
+        SITHLOG_STATUS("sithString startup -- already started!\n");
+        return 0;
+    }
+
+    if ( !stdStrTable_Load(&voiceStringsTbl, "misc\\voiceStrings.uni")
+           && !stdStrTable_Load(&voiceStringsTbl, "\\Jones3D\\resource\\misc\\voiceStrings.uni") )
+    {
+        SITHLOG_ERROR("Error opening stringtable 'misc\\voiceStrings.uni'.\n");
+        return 1;
+    }
+    else if ( !stdStrTable_Load(&sithStringsTbl, "misc\\sithStrings.uni")
+           && !stdStrTable_Load(&sithStringsTbl, "\\Jones3D\\resource\\misc\\sithStrings.uni") )
+    {
+        SITHLOG_ERROR("Error opening stringtable 'misc\\sithStrings.uni'.\n");
+        return 1;
+    }
+
+    // Success
+    bStartup = true;
+    return 0;
 }
 
 void sithString_Shutdown(void)
 {
-    J3D_TRAMPOLINE_CALL(sithString_Shutdown);
+    if ( bStartup )
+    {
+        stdStrTable_Free(&voiceStringsTbl);
+        stdStrTable_Free(&sithStringsTbl);
+    }
+
+    bStartup = false;
+}
+
+// Found in dbg version
+wchar_t* J3DAPI sithString_sub_44D5CA(const char* pStr)
+{
+    SITH_ASSERTREL(bStartup);
+    if ( !pStr )
+    {
+        return NULL;
+    }
+
+    if ( strncmp("SITH", pStr, 4u) == 0 )
+    {
+        return stdStrTable_GetValue(&sithStringsTbl, pStr);
+    }
+
+    return stdStrTable_GetValue(&voiceStringsTbl, pStr);
 }
 
 wchar_t* J3DAPI sithString_GetString(const char* pStr)
 {
-    return J3D_TRAMPOLINE_CALL(sithString_GetString, pStr);
+    SITH_ASSERTREL(bStartup);
+    if ( pStr )
+    {
+        if ( !strncmp("SITH", pStr, 4u) )
+        {
+            return stdStrTable_GetValue(&sithStringsTbl, pStr);
+        }
+        else
+        {
+            return stdStrTable_GetValueOrKey(&voiceStringsTbl, pStr);
+        }
+    }
+    else
+    {
+        wchar_t* pRetStr  = (wchar_t*)STDMALLOC(sizeof(wchar_t));
+        memset(pRetStr, 0, sizeof(wchar_t));
+        return pRetStr;
+    }
 }
