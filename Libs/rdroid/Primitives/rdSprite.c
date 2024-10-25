@@ -359,7 +359,7 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
 
     // Fixed: Disable fog rendering for poly when fog is globally disabled
     //        OG: Poly fog rendering was enabled by default which lead to undesired render effect when fog is disabled in level (i.e.: fog color is applied)
-    if ( !sithWorld_g_pCurrentWorld->fog.bEnabled )
+    if ( !sithWorld_g_pCurrentWorld->fog.bEnabled ) // TODO: add special function that will enable/disable fog rendering
     {
         pPoly->flags &= ~RD_FF_FOG_ENABLED;
     }
