@@ -963,6 +963,7 @@
 #define sithModel_CNDWriteModelSection_ADDR 0x0044C3D0
 #define sithModel_CNDReadModelSection_ADDR 0x0044C470
 #define sithModel_FreeWorldModels_ADDR 0x0044C4F0
+#define sithModel_Load_ADDR 0x0044C5E0
 #define sithModel_GetModelMemUsage_ADDR 0x0044C810
 #define sithModel_AllocWorldModels_ADDR 0x0044C8A0
 #define sithModel_GetModelByIndex_ADDR 0x0044C950

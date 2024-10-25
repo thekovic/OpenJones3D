@@ -14,6 +14,7 @@ void sithModel_InstallHooks(void)
     // J3D_HOOKFUNC(sithModel_CNDWriteModelSection);
     // J3D_HOOKFUNC(sithModel_CNDReadModelSection);
     // J3D_HOOKFUNC(sithModel_FreeWorldModels);
+    // J3D_HOOKFUNC(sithModel_Load);
     // J3D_HOOKFUNC(sithModel_GetModelMemUsage);
     // J3D_HOOKFUNC(sithModel_AllocWorldModels);
     // J3D_HOOKFUNC(sithModel_GetModelByIndex);
@@ -60,6 +61,11 @@ int J3DAPI sithModel_CNDReadModelSection(tFileHandle fh, SithWorld* pWorld)
 void J3DAPI sithModel_FreeWorldModels(SithWorld* pWorld)
 {
     J3D_TRAMPOLINE_CALL(sithModel_FreeWorldModels, pWorld);
+}
+
+rdModel3* J3DAPI sithModel_Load(const char* pName, int bOnErrorSkipDefault)
+{
+    return  J3D_TRAMPOLINE_CALL(sithModel_Load, pName, bOnErrorSkipDefault);
 }
 
 unsigned int J3DAPI sithModel_GetModelMemUsage(const rdModel3* pModel)

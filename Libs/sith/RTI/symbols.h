@@ -961,6 +961,7 @@
 #define sithModel_CNDWriteModelSection_TYPE int (J3DAPI*)(tFileHandle, SithWorld*)
 #define sithModel_CNDReadModelSection_TYPE int (J3DAPI*)(tFileHandle, SithWorld*)
 #define sithModel_FreeWorldModels_TYPE void (J3DAPI*)(SithWorld*)
+#define sithModel_Load_TYPE rdModel3* (J3DAPI*)(const char*, int)
 #define sithModel_GetModelMemUsage_TYPE unsigned int (J3DAPI*)(const rdModel3*)
 #define sithModel_AllocWorldModels_TYPE int (J3DAPI*)(SithWorld*, int)
 #define sithModel_GetModelByIndex_TYPE rdModel3* (J3DAPI*)(uint16_t)
