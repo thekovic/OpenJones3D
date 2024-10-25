@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "rdVector.h"
+
 J3D_EXTERN_C_START
 
 void J3DAPI rdMath_CalcSurfaceNormal(rdVector3* pDestNormal, const rdVector3* pVert1, const rdVector3* pVert2, const rdVector3* pVert3); // Added
