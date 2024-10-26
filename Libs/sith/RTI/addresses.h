@@ -263,9 +263,9 @@
 #define sithControl_RegisterKeyFunction_ADDR 0x0043F6F0
 #define sithControl_BindControl_ADDR 0x0043F750
 #define sithControl_BindAxis_ADDR 0x0043F820
-#define sithControl_Unbind_ADDR 0x0043F9C0
-#define sithControl_UnbindIndex_ADDR 0x0043FA20
-#define sithControl_RemoveAllControlBindings_ADDR 0x0043FAD0
+#define sithControl_UnbindFunction_ADDR 0x0043F9C0
+#define sithControl_UnbindFunctionIndex_ADDR 0x0043FA20
+#define sithControl_UnbindControl_ADDR 0x0043FAD0
 #define sithControl_RegisterControlCallback_ADDR 0x0043FB20
 #define sithControl_Update_ADDR 0x0043FB70
 #define sithControl_GetKeyAsAxis_ADDR 0x0043FDA0
@@ -275,9 +275,9 @@
 #define sithControl_UnbindJoystickAxes_ADDR 0x004400B0
 #define sithControl_UnbindMouseAxes_ADDR 0x00440130
 #define sithControl_Reset_ADDR 0x004401B0
-#define sithControl_RegisterKeyFunctions_ADDR 0x004401D0
-#define sithControl_RegisterControlBindings_ADDR 0x00440420
-#define sithControl_GetNumJoystickDevices_ADDR 0x00440720
+#define sithControl_RegisterControlFunctions_ADDR 0x004401D0
+#define sithControl_RegisterKeyboardBindings_ADDR 0x00440420
+#define sithControl_RegisterJoystickBindings_ADDR 0x00440720
 #define sithGamesave_GetGameStatistics_ADDR 0x004416D0
 #define sithGamesave_LockGameStatistics_ADDR 0x004416F0
 #define sithGamesave_UnlockGameStatistics_ADDR 0x00441710
@@ -2091,8 +2091,9 @@
 #define sithControl_aControlFlags_ADDR 0x00562558
 #define sithControl_aControlBindings_ADDR 0x00562640
 #define sithControl_msecIdleTime_ADDR 0x00563CE8
-#define sithControl_g_bControlStartup_ADDR 0x00563CEC
+#define sithControl_bControlStartup_ADDR 0x00563CEC
 #define sithControl_bControlOpen_ADDR 0x00563CF0
+#define sithControl_g_controlOptions_ADDR 0x0180134C
 #define sithGamesave_wszPlayerName_ADDR 0x0052B89C
 #define sithGamesave_state_ADDR 0x00564398
 #define sithGamesave_aLastFilename_ADDR 0x005643A0

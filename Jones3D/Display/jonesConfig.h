@@ -14,9 +14,6 @@ J3D_EXTERN_C_START
 #define jonesConfig_g_fogDensity J3D_DECL_FAR_VAR(jonesConfig_g_fogDensity, float)
 // extern float jonesConfig_g_fogDensity ;
 
-#define jonesConfig_g_controlOptions J3D_DECL_FAR_VAR(jonesConfig_g_controlOptions, int)
-// extern int jonesConfig_g_controlOptions;
-
 int jonesConfig_Startup(void);
 int J3DAPI jonesConfig_InitKeySetsPath();
 int J3DAPI jonesConfig_InitKeyActions();

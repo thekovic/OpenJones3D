@@ -13,7 +13,7 @@
 #include <std/Win95/stdControl.h>
 #include <w32util/wuRegistry.h>
 
-#define JonesControl_bStartup J3D_DECL_FAR_VAR(JonesControl_bStartup, int)
+static bool JonesControl_bStartup = false; // Added: Init to false
 
 void JonesControl_InstallHooks(void)
 {
@@ -25,18 +25,12 @@ void JonesControl_InstallHooks(void)
 
 void JonesControl_ResetGlobals(void)
 {
-
 }
 
 int JonesControl_Startup(void)
 {
-    int bMouseControl;
-    JonesDisplaySettings* pSettings;
-    int functionId;
-    int bJoystickControl;
-
-    bMouseControl = wuRegistry_GetIntEx("Mouse Control", 0);
-    pSettings = JonesMain_GetDisplaySettings();
+    int bMouseControl = wuRegistry_GetIntEx("Mouse Control", 0);
+    JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
 
     if ( JonesControl_bStartup )
     {
@@ -48,11 +42,13 @@ int JonesControl_Startup(void)
         return 1;
     }
 
+    // Note, instead of manually initializing the sithControl_DefaultInit could be called 
+    // and unbind mouse controller afterwards
     sithControl_Reset();
-    jonesConfig_g_controlOptions = 4;
-    sithControl_RegisterControlBindings();
-
-    sithControl_GetNumJoystickDevices();        // ???
+    sithControl_g_controlOptions = 0x04;
+    sithControl_RegisterKeyboardBindings();
+    sithControl_RegisterJoystickBindings();
+    // Note, sithControl_RegisterMouseBindings() is not called probably because jonesconfig would unbind it anyway
 
     if ( !pSettings->windowMode || bMouseControl )
     {
@@ -63,12 +59,12 @@ int JonesControl_Startup(void)
     sithControl_RegisterControlCallback(sithWeapon_ProcessWeaponControls);
     sithControl_RegisterControlCallback(JonesControl_ProcessControls);
 
-    for ( functionId = 0; functionId < 58; ++functionId ) // This might be joystick controls? TODO: make macro or use existing
+    for ( size_t functionId = 0; functionId < SITHCONTROL_MAXFUNCTIONS; ++functionId )
     {
         sithControl_RegisterAxisFunction((SithControlFunction)functionId, SITHCONTROLFUNCTION_KEY);
     }
 
-    bJoystickControl = wuRegistry_GetIntEx("Joystick Control", 0);
+    int bJoystickControl = wuRegistry_GetIntEx("Joystick Control", 0);
     if ( bJoystickControl == 1 && stdControl_GetNumJoysticks() )
     {
         JonesControl_EnableJoystickAxes();
@@ -82,15 +78,14 @@ int JonesControl_Startup(void)
         sithControl_UnbindMouseAxes();
     }
 
-    JonesControl_bStartup = 1;
-
+    JonesControl_bStartup = true;
     return 0;
 }
 
 void JonesControl_Shutdown(void)
 {
     sithControl_Shutdown();
-    JonesControl_bStartup = 0;
+    JonesControl_bStartup = false;
 }
 
 int J3DAPI JonesControl_ProcessControls(SithThing* pPlayer, float secDeltaTime)
@@ -102,8 +97,9 @@ int J3DAPI JonesControl_ProcessControls(SithThing* pPlayer, float secDeltaTime)
         return 0;
     }
 
-    sithControl_GetKey(SITHCONTROL_TALK, (int*)&pPlayer);// F10 pressed, TODO: make new var for pPlayer
-    if ( pPlayer )
+    int numPressed = 0;
+    sithControl_GetKey(SITHCONTROL_TALK, &numPressed); // F10 pressed
+    if ( numPressed )
     {
         JonesConsole_ShowConsole();
     }

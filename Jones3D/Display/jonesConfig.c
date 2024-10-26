@@ -5,11 +5,13 @@
 #include <Jones3D/Main/jonesString.h>
 #include <Jones3D/RTI/symbols.h>
 
+#include <sith/Devices/sithControl.h>
 #include <sith/DSS/sithGamesave.h>
 #include <sith/Gameplay/sithPlayer.h>
 
 #include <std/General/std.h>
 #include <std/General/stdUtil.h>
+#include <std/Win95/stdControl.h>
 
 typedef struct sLoadGameDialogData
 {
@@ -21,7 +23,6 @@ typedef struct sLoadGameDialogData
     int unknown36;
     int unknown37;
 } LoadGameDialogData;
-
 
 
 #define jonesConfig_aStoreItems J3D_DECL_FAR_ARRAYVAR(jonesConfig_aStoreItems, tStoreItem(*)[14])
@@ -131,7 +132,7 @@ void jonesConfig_InstallHooks(void)
     // J3D_HOOKFUNC(jonesConfig_sub_406A00);
     // J3D_HOOKFUNC(jonesConfig_GamePlayOptionsInitDlg);
     // J3D_HOOKFUNC(jonesConfig_GamePlayOptions_HandleWM_COMMAND);
-    // J3D_HOOKFUNC(jonesConfig_EnableMouseControl);
+    J3D_HOOKFUNC(jonesConfig_EnableMouseControl);
     // J3D_HOOKFUNC(jonesConfig_FreeControlScheme);
     // J3D_HOOKFUNC(jonesConfig_FreeControlConfigEntry);
     // J3D_HOOKFUNC(jonesConfig_ShowControlOptions);
@@ -707,7 +708,6 @@ void jonesConfig_ResetGlobals(void)
     memset(&jonesConfig_hFontStoreDialog, 0, sizeof(jonesConfig_hFontStoreDialog));
     memset(&jonesConfig_hFontPurchaseMessageBox, 0, sizeof(jonesConfig_hFontPurchaseMessageBox));
     memset(&jonesConfig_hFontDialogInsertCD, 0, sizeof(jonesConfig_hFontDialogInsertCD));
-    memset(&jonesConfig_g_controlOptions, 0, sizeof(jonesConfig_g_controlOptions));
 }
 
 int jonesConfig_Startup(void)
@@ -950,10 +950,10 @@ int J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, int nResult)
     return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptions_HandleWM_COMMAND, hDlg, nResult);
 }
 
-void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_EnableMouseControl, bEnable);
-}
+//void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_EnableMouseControl, bEnable);
+//}
 
 void J3DAPI jonesConfig_FreeControlScheme(JonesControlsScheme* pConfig)
 {
@@ -1778,4 +1778,24 @@ int J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pof
     }
 
     return 1;
+}
+
+void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
+{
+    JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
+    if ( bEnable )
+    {
+        sithControl_UnbindMouseAxes();
+        sithControl_RegisterMouseBindings();
+    }
+
+    else if ( pSettings->windowMode )
+    {
+        stdControl_EnableMouse(0);
+    }
+    else
+    {
+        sithControl_UnbindMouseAxes();
+        stdControl_EnableMouse(1);
+    }
 }

@@ -1070,11 +1070,11 @@ typedef enum eSithAIWaypointLayerFlag
 
 typedef enum eSithControlBindFlag
 {
-    SITHCONTROLBIND_AXISCONTROL  = 0x1,
-    SITHCONTROLBIND_KEYCONTROL   = 0x2,
-    SITHCONTROLBIND_INVERT_AXIS  = 0x4,
-    SITHCONTROLBIND_AXIS_ENABLED = 0x8,
-    SITHCONTROLBIND_UNKNOWN_10   = 0x10,
+    SITHCONTROLBIND_AXISCONTROL      = 0x1,
+    SITHCONTROLBIND_KEYCONTROL       = 0x2,
+    SITHCONTROLBIND_INVERT_AXIS      = 0x4,
+    SITHCONTROLBIND_AXIS_ENABLED     = 0x8,
+    SITHCONTROLBIND_AXIS_HASDEADZONE = 0x10,
 } SithControlBindFlag;
 
 typedef enum eSithControlFunctionFlag
@@ -1082,6 +1082,7 @@ typedef enum eSithControlFunctionFlag
     SITHCONTROLFUNCTION_REGISTERED = 0x1,
     SITHCONTROLFUNCTION_AXIS       = 0x2,
     SITHCONTROLFUNCTION_KEY        = 0x4,
+    SITHCONTROLFUNCTION_UNKNOWN_8  = 0x8
 } SithControlFunctionFlag;
 
 typedef enum eSithControlFunction
@@ -1143,8 +1144,7 @@ typedef enum eSithControlFunction
     SITHCONTROL_GAMMA         = 54,
     SITHCONTROL_RUNFWD        = 55,
     SITHCONTROL_HEALTH        = 56,
-    SITHCONTROL_CHALK         = 57,
-    SITHCONTROL_MAXFUNCTIONS  = 58,
+    SITHCONTROL_CHALK         = 57
 } SithControlFunction;
 
 typedef enum eSithCogExecOpcode
@@ -2947,12 +2947,7 @@ typedef struct sSithControlBinding
     SithControlBindFlag flags;
     float sensitivity;
 } SithControlBinding;
-
-typedef struct sSithControlFunctionBinding
-{
-    int numBindings;
-    SithControlBinding aBindings[8];
-} SithControlFunctionBinding;
+static_assert(sizeof(SithControlBinding) == 12, "sizeof(SithControlBinding) == 100");
 
 typedef struct sCndSurfaceAdjoin
 {

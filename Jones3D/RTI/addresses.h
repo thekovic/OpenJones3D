@@ -629,7 +629,6 @@
 #define jonesConfig_hFontStoreDialog_ADDR 0x00551E24
 #define jonesConfig_hFontPurchaseMessageBox_ADDR 0x00551E28
 #define jonesConfig_hFontDialogInsertCD_ADDR 0x00551E2C
-#define jonesConfig_g_controlOptions_ADDR 0x0180134C
 #define JonesDialog_bWindowResized_ADDR 0x00513084
 #define JonesDialog_cursorPointIdx_ADDR 0x00513088
 #define JonesDialog_mousePos_ADDR 0x00553090
