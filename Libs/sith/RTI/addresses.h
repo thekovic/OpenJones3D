@@ -130,8 +130,8 @@
 #define sithSoundMixer_GetChannelHandle_ADDR 0x004285F0
 #define sithSoundMixer_StopSoundThing_ADDR 0x00428610
 #define sithSoundMixer_SetSectorAmbientSound_ADDR 0x00428630
-#define sithSoundMixer_GameSave_ADDR 0x00428680
-#define sithSoundMixer_GameRestore_ADDR 0x004286C0
+#define sithSoundMixer_Save_ADDR 0x00428680
+#define sithSoundMixer_Restore_ADDR 0x004286C0
 #define sithSoundMixer_GetNextChannelGUID_ADDR 0x00428720
 #define sithSoundMixer_PlayFlagsToChannelFlags_ADDR 0x00428760
 #define sithSoundMixer_GetPlayPriority_ADDR 0x00428780
