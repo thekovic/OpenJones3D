@@ -13,8 +13,6 @@
 
 #include<math.h>
 
-#define MAX_CLIP_VERTICIES 80
-
 static rdVector2 rdClip_aWorkTVerts[MAX_CLIP_VERTICIES] = { 0 };
 static rdVector2* rdClip_pSourceTVert;
 static rdVector2* rdClip_pDestTVert;

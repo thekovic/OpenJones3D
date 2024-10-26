@@ -7,6 +7,8 @@
 
 J3D_EXTERN_C_START
 
+#define MAX_CLIP_VERTICIES 80u
+
 #define rdClip_g_faceStatus J3D_DECL_FAR_VAR(rdClip_g_faceStatus, int)
 // extern int rdClip_g_faceStatus;
 
