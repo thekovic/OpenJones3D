@@ -1958,6 +1958,30 @@ int J3DAPI stdDisplay_LockBackBuffer(void** pSurface, uint32_t* pWidth, uint32_t
         DDLOCK_NOSYSLOCK | DDLOCK_WRITEONLY | DDLOCK_WAIT,
         NULL
     );
+
+    if ( ddres == DD_OK )
+    {
+        *pWidth   = dddesc.dwWidth;
+        *pHeight  = dddesc.dwHeight;
+        *pPitch   = dddesc.lPitch;
+        *pSurface = dddesc.lpSurface;
+        return 0;
+    }
+
+    // Added: Quick fix, trying to restore and re-lock the surface
+    if ( ddres == DDERR_SURFACELOST )
+    {
+        stdDisplay_Refresh(1);
+        ddres = IDirectDrawSurface4_Lock(
+           stdDisplay_g_backBuffer.surface.pDDSurf,
+           NULL,
+           &dddesc,
+           DDLOCK_NOSYSLOCK | DDLOCK_WRITEONLY | DDLOCK_WAIT,
+           NULL
+        );
+
+    }
+
     if ( ddres == DD_OK )
     {
         *pWidth   = dddesc.dwWidth;
