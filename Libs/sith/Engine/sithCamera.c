@@ -1,6 +1,10 @@
 #include "sithCamera.h"
 #include <j3dcore/j3dhook.h>
+
+#include <sith/Engine/sithRender.h>
 #include <sith/RTI/symbols.h>
+
+#include <rdroid/Engine/rdCamera.h>
 
 #define sithCamera_aCycleCamIndices J3D_DECL_FAR_ARRAYVAR(sithCamera_aCycleCamIndices, int(*)[3])
 #define sithCamera_vecExtCameraLookOffset J3D_DECL_FAR_VAR(sithCamera_vecExtCameraLookOffset, rdVector3)
@@ -52,7 +56,7 @@ void sithCamera_InstallHooks(void)
     // J3D_HOOKFUNC(sithCamera_GetPrimaryFocus);
     // J3D_HOOKFUNC(sithCamera_GetSecondaryFocus);
     // J3D_HOOKFUNC(sithCamera_Update);
-    // J3D_HOOKFUNC(sithCamera_RenderScene);
+    J3D_HOOKFUNC(sithCamera_RenderScene);
     // J3D_HOOKFUNC(sithCamera_SetPOVShake);
     // J3D_HOOKFUNC(sithCamera_SearchSectorInRadius);
     // J3D_HOOKFUNC(sithCamera_SetCameraStateFlags);
@@ -63,52 +67,52 @@ void sithCamera_ResetGlobals(void)
 {
     int sithCamera_aCycleCamIndices_tmp[3] = { 0, 1, 6 };
     memcpy(&sithCamera_aCycleCamIndices, &sithCamera_aCycleCamIndices_tmp, sizeof(sithCamera_aCycleCamIndices));
-    
+
     rdVector3 sithCamera_vecExtCameraLookOffset_tmp = { { 0.0f }, { 0.02f }, { 0.02f } };
     memcpy(&sithCamera_vecExtCameraLookOffset, &sithCamera_vecExtCameraLookOffset_tmp, sizeof(sithCamera_vecExtCameraLookOffset));
-    
+
     rdVector3 sithCamera_vecDefaultExtCamLookOffset_tmp = { { 0.0f }, { 0.02f }, { 0.02f } };
     memcpy(&sithCamera_vecDefaultExtCamLookOffset, &sithCamera_vecDefaultExtCamLookOffset_tmp, sizeof(sithCamera_vecDefaultExtCamLookOffset));
-    
+
     rdVector3 sithCamera_vecExtCameraOffset_tmp = { { 0.0f }, { -0.2f }, { 0.064999998f } };
     memcpy(&sithCamera_vecExtCameraOffset, &sithCamera_vecExtCameraOffset_tmp, sizeof(sithCamera_vecExtCameraOffset));
-    
+
     const rdVector3 sithCamera_vecDefaultCameraOffset_tmp = { { 0.0f }, { -0.22f }, { 0.15000001f } };
-    memcpy((rdVector3 *)&sithCamera_vecDefaultCameraOffset, &sithCamera_vecDefaultCameraOffset_tmp, sizeof(sithCamera_vecDefaultCameraOffset));
-    
+    memcpy((rdVector3*)&sithCamera_vecDefaultCameraOffset, &sithCamera_vecDefaultCameraOffset_tmp, sizeof(sithCamera_vecDefaultCameraOffset));
+
     rdVector3 sithCamera_vecDefaultExtCamOffset_tmp = { { 0.0f }, { -0.2f }, { 0.064999998f } };
     memcpy(&sithCamera_vecDefaultExtCamOffset, &sithCamera_vecDefaultExtCamOffset_tmp, sizeof(sithCamera_vecDefaultExtCamOffset));
-    
+
     rdVector3 sithCamera_vecDefaulExtCameraOffset_tmp = { { 0.0f }, { -0.2f }, { 0.14f } };
     memcpy(&sithCamera_vecDefaulExtCameraOffset, &sithCamera_vecDefaulExtCameraOffset_tmp, sizeof(sithCamera_vecDefaulExtCameraOffset));
-    
+
     rdVector3 sithCamera_vecCameraOffsetClimbingUp_tmp = { { 0.0f }, { -0.2f }, { -0.0099999998f } };
     memcpy(&sithCamera_vecCameraOffsetClimbingUp, &sithCamera_vecCameraOffsetClimbingUp_tmp, sizeof(sithCamera_vecCameraOffsetClimbingUp));
-    
+
     rdVector3 sithCamera_vecExtCameraClimbDownOffset_tmp = { { 0.0f }, { -0.2f }, { 0.16500001f } };
     memcpy(&sithCamera_vecExtCameraClimbDownOffset, &sithCamera_vecExtCameraClimbDownOffset_tmp, sizeof(sithCamera_vecExtCameraClimbDownOffset));
-    
+
     rdVector3 sithCamera_vecCameraOffsetClimbingLeft_tmp = { { 0.1f }, { -0.2f }, { 0.064999998f } };
     memcpy(&sithCamera_vecCameraOffsetClimbingLeft, &sithCamera_vecCameraOffsetClimbingLeft_tmp, sizeof(sithCamera_vecCameraOffsetClimbingLeft));
-    
+
     rdVector3 sithCamera_vecCameraOffsetClimbingRight_tmp = { { -0.1f }, { -0.2f }, { 0.064999998f } };
     memcpy(&sithCamera_vecCameraOffsetClimbingRight, &sithCamera_vecCameraOffsetClimbingRight_tmp, sizeof(sithCamera_vecCameraOffsetClimbingRight));
-    
+
     rdVector3 sithCamera_vecCameraOffsetSlideForward_tmp = { { 0.16500001f }, { 0.0099999998f }, { 0.17f } };
     memcpy(&sithCamera_vecCameraOffsetSlideForward, &sithCamera_vecCameraOffsetSlideForward_tmp, sizeof(sithCamera_vecCameraOffsetSlideForward));
-    
+
     rdVector3 sithCamera_vecCameraOffsetSlideBackward_tmp = { { 0.16500001f }, { -0.2f }, { 0.029999999f } };
     memcpy(&sithCamera_vecCameraOffsetSlideBackward, &sithCamera_vecCameraOffsetSlideBackward_tmp, sizeof(sithCamera_vecCameraOffsetSlideBackward));
-    
+
     rdVector3 sithCamera_vecCameraOffsetJumpRollback_tmp = { { 0.0f }, { -0.30000001f }, { 0.064999998f } };
     memcpy(&sithCamera_vecCameraOffsetJumpRollback, &sithCamera_vecCameraOffsetJumpRollback_tmp, sizeof(sithCamera_vecCameraOffsetJumpRollback));
-    
+
     rdVector3 sithCamera_vecOffsetCamType40_tmp = { { 0.0f }, { 1.0f }, { 1.0f } };
     memcpy(&sithCamera_vecOffsetCamType40, &sithCamera_vecOffsetCamType40_tmp, sizeof(sithCamera_vecOffsetCamType40));
-    
+
     rdVector3 sithCamera_vecOffsetCamType20_tmp = { { 0.0f }, { -0.2f }, { 0.064999998f } };
     memcpy(&sithCamera_vecOffsetCamType20, &sithCamera_vecOffsetCamType20_tmp, sizeof(sithCamera_vecOffsetCamType20));
-    
+
     memset(&sithCamera_vecExtCameraPrevLookOffset, 0, sizeof(sithCamera_vecExtCameraPrevLookOffset));
     memset(&sithCamera_orientCamType20, 0, sizeof(sithCamera_orientCamType20));
     memset(&sithCamera_g_pCurCamera, 0, sizeof(sithCamera_g_pCurCamera));
@@ -237,10 +241,10 @@ void J3DAPI sithCamera_Update(SithCamera* pCamera)
     J3D_TRAMPOLINE_CALL(sithCamera_Update, pCamera);
 }
 
-void sithCamera_RenderScene(void)
-{
-    J3D_TRAMPOLINE_CALL(sithCamera_RenderScene);
-}
+//void sithCamera_RenderScene(void)
+//{
+//    J3D_TRAMPOLINE_CALL(sithCamera_RenderScene);
+//}
 
 void J3DAPI sithCamera_SetPOVShake(const rdVector3* posOffset, const rdVector3* angleOffset, float posDelta, float angleDelta)
 {
@@ -260,4 +264,14 @@ void J3DAPI sithCamera_SetCameraStateFlags(SithCameraState flags)
 SithCameraState J3DAPI sithCamera_GetCameraStateFlags()
 {
     return J3D_TRAMPOLINE_CALL(sithCamera_GetCameraStateFlags);
+}
+
+void sithCamera_RenderScene(void)
+{
+    if ( sithCamera_g_pCurCamera )
+    {
+        rdCamera_SetCurrent(&sithCamera_g_pCurCamera->rdCamera);
+        rdCamera_Update(&sithCamera_g_pCurCamera->orient);
+        sithRender_RenderScene();
+    }
 }

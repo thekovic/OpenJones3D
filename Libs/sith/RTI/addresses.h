@@ -2121,14 +2121,15 @@
 #define sithVoice_bThingHasSwapHeadRdModel_ADDR 0x005647BC
 #define sithVoice_headHeight_ADDR 0x005647C0
 #define sithVoice_aSubtitleInfos_ADDR 0x017F9820
+#define sithRender_g_fogDensity_ADDR 0x0052BB44
 #define sithRender_bPVSClipEnabled_ADDR 0x0052BB48
 #define sithRenderSky_ceilingSkyNormal_ADDR 0x0053C9D8
 #define sithRender_aVisibleSectors_ADDR 0x005647C8
 #define sithRender_aClipVertices_ADDR 0x005649D0
-#define sithRender_dword_564D90_ADDR 0x00564D90
+#define sithRender_lastPVSIndex_ADDR 0x00564D90
 #define sithRender_aFaceVerts_ADDR 0x00564D98
 #define sithRender_aVisibleAdjoins_ADDR 0x00564DB8
-#define sithRender_dword_564FBC_ADDR 0x00564FBC
+#define sithRender_curPVSIndex_ADDR 0x00564FBC
 #define sithRender_renderflags_ADDR 0x00564FC0
 #define sithRender_numSectorPointLights_ADDR 0x00564FC4
 #define sithRender_numSpritesToDraw_ADDR 0x00564FC8
@@ -2166,7 +2167,7 @@
 #define sithRenderSky_ceilingSkyMinZ_ADDR 0x0059C168
 #define sithRenderSky_horizonSkyDistance_ADDR 0x0059C174
 #define sithRenderSky_lookRollSin_ADDR 0x0059C178
-#define sithRender_g_lightMode_ADDR 0x017F9800
+#define sithRender_lightMode_ADDR 0x017F9800
 #define sithRender_g_numVisibleSectors_ADDR 0x017F9804
 #define sithWeapon_bGenBloodsplort_ADDR 0x0052BD40
 #define sithWeapon_aMaxAimDistances_ADDR 0x0052BD48

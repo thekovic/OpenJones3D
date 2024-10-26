@@ -637,8 +637,6 @@ void jonesConfig_ResetGlobals(void)
     int jonesConfig_prevLevelNum_tmp = -1;
     memcpy(&jonesConfig_prevLevelNum, &jonesConfig_prevLevelNum_tmp, sizeof(jonesConfig_prevLevelNum));
 
-    float jonesConfig_g_fogDensity_tmp = 100.0f;
-    memcpy(&jonesConfig_g_fogDensity, &jonesConfig_g_fogDensity_tmp, sizeof(jonesConfig_g_fogDensity));
 
     jonesConfig_dword_5510B8 = 0;
     jonesConfig_dword_5510BC = 0;
@@ -708,6 +706,7 @@ void jonesConfig_ResetGlobals(void)
     memset(&jonesConfig_hFontStoreDialog, 0, sizeof(jonesConfig_hFontStoreDialog));
     memset(&jonesConfig_hFontPurchaseMessageBox, 0, sizeof(jonesConfig_hFontPurchaseMessageBox));
     memset(&jonesConfig_hFontDialogInsertCD, 0, sizeof(jonesConfig_hFontDialogInsertCD));
+
 }
 
 int jonesConfig_Startup(void)

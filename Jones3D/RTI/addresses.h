@@ -589,7 +589,6 @@
 #define jonesConfig_perfLevel_ADDR 0x0051195C
 #define jonesConfig_prevLevelNum_ADDR 0x00511960
 #define jonesConfig_aStoreItemsInfo_ADDR 0x00513A18
-#define jonesConfig_g_fogDensity_ADDR 0x0052BB44
 #define jonesConfig_dword_5510B8_ADDR 0x005510B8
 #define jonesConfig_dword_5510BC_ADDR 0x005510BC
 #define jonesConfig_dword_5510C0_ADDR 0x005510C0

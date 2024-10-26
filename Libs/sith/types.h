@@ -10,11 +10,6 @@ J3D_EXTERN_C_START
 
 #define SITHTHING_NUMADJECTIVES 77
 
-#define SITHRENDER_MAX_THING_LIGHTS        64
-#define SITHRENDER_MAX_ALPHA_ADJOINS       64
-#define SITHRENDER_MAX_VISIBLE_SECTORS     128
-#define SITHRENDER_MAX_SECTORS_WITH_THINGS 256
-
 #define SITH_PUPPET_NUMMOVEMODES  3
 #define SITH_PUPPET_NUMARMEDMODES 8
 #define SITH_PUPPET_NUMSUBMODES   84
@@ -1779,7 +1774,7 @@ struct sSithSurfaceAdjoin
 
 struct sSithSurface
 {
-    int renderTick;
+    size_t renderTick;
     SithSector* pSector;
     SithSurfaceAdjoin* pAdjoin;
     SithSurfaceFlag flags;
@@ -1816,7 +1811,7 @@ struct sSithSector
     rdBox3 collideBox;
     rdBox3 boundBox;
     float radius;
-    int renderTick;
+    size_t renderTick;
     int bBuildingSector;
     rdClipFrustum* pClipFrustum;
     int pvsIdx;
@@ -2495,11 +2490,11 @@ struct sSithWorld
     int numVertices;
     rdVector3* aVertices;
     rdVector3* aTransformedVertices;
-    int* aVertexRenderTickIds;
+    uint32_t* aVertexRenderTickIds;
     int numTexVertices;
     rdVector2* aTexVerticies;
     rdVector4* aVertDynamicLights;
-    int* aVertDynamicLightsRenderTicks;
+    uint32_t* aVertDynamicLightsRenderTicks;
     int numAdjoins;
     SithSurfaceAdjoin* aAdjoins;
     int numSurfaces;
@@ -2943,7 +2938,7 @@ typedef struct sCndSectorInfo
 
 typedef struct sSithControlBinding
 {
-    int controlId;
+    size_t controlId;
     SithControlBindFlag flags;
     float sensitivity;
 } SithControlBinding;
