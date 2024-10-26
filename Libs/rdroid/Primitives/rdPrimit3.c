@@ -5,6 +5,7 @@
 #include <rdroid/Engine/rdClip.h>
 #include <rdroid/Primitives/rdPrimit2.h>
 #include <rdroid/Math/rdMatrix.h>
+#include <rdroid/Math/rdVector.h>
 #include <rdroid/RTI/symbols.h>
 
 
@@ -101,7 +102,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
         case RD_GEOMETRY_NONE:
             for ( size_t i = 0; i < pSrc->numVertices; ++i )
             {
-                memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
+                rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
             }
 
             if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -119,7 +120,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
         case RD_GEOMETRY_WIREFRAME:
             for ( size_t i = 0; i < pSrc->numVertices; ++i )
             {
-                memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
+                rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
             }
 
             if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -140,7 +141,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                 case RD_LIGHTING_LIT:
                     for ( size_t i = 0; i < pSrc->numVertices; ++i )
                     {
-                        memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
+                        rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
                     }
 
                     if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -157,7 +158,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                 case RD_LIGHTING_DIFFUSE:
                     for ( size_t i = 0; i < pSrc->numVertices; ++i )
                     {
-                        memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
+                        rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
                     }
 
                     if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -176,7 +177,9 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
+                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+
+                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
 
                             if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red < 0.0f )
                             {
@@ -247,7 +250,9 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
+                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+
+                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
 
                             if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red < 0.0f )
                             {
@@ -339,8 +344,8 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                 {
                     for ( size_t i = 0; i < pSrc->numVertices; ++i )
                     {
-                        memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
-                        memcpy(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]], sizeof(pDest->aTexVertices[i]));
+                        rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                        rdVector_Copy2(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]]);
 
                         pDest->aTexVertices[i].x = pDest->aTexVertices[i].x + pTexVertOffset->x;
                         pDest->aTexVertices[i].y = pDest->aTexVertices[i].y + pTexVertOffset->y;
@@ -361,11 +366,13 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
-                            memcpy(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]], sizeof(pDest->aTexVertices[i]));
+                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                            rdVector_Copy2(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]]);
 
                             pDest->aTexVertices[i].x = pDest->aTexVertices[i].x + pTexVertOffset->x;
                             pDest->aTexVertices[i].y = pDest->aTexVertices[i].y + pTexVertOffset->y;
+
+                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
 
                             if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red < 0.0f )
                             {
@@ -436,11 +443,13 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            memcpy(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]], sizeof(pDest->aVertices[i]));
-                            memcpy(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]], sizeof(pDest->aTexVertices[i]));
+                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                            rdVector_Copy2(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]]);
 
                             pDest->aTexVertices[i].x = pDest->aTexVertices[i].x + pTexVertOffset->x;
                             pDest->aTexVertices[i].y = pDest->aTexVertices[i].y + pTexVertOffset->y;
+
+                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
 
                             if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red < 0.0f )
                             {
