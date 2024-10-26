@@ -3967,7 +3967,7 @@ void J3DAPI JonesHud_ShowGameOverDialog(int bPlayDiedMusic)
 
     hwnd = stdWin95_GetWindow();
     btnId = jonesConfig_ShowGameOverDialog(hwnd, aFilename, hSnd, &hSndChannel);
-    if ( btnId < 1177 || btnId > 1178 )         // if not buttns restart or load game were clicked
+    if ( btnId < 1177 || btnId > 1178 )         // if not buttons restart or load game were clicked
     {
         if ( (int)hSndChannel > 0 )
         {
