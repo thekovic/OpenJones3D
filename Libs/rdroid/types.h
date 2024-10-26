@@ -85,6 +85,7 @@ typedef enum erdPuppetTrackStatus
     RDPUPPET_TRACK_PAUSE_ON_LAST_FRAME         = 0x40,
     RDPUPPET_TRACK_FADEOUT_NOLOOP              = 0x80,
     RDPUPPET_TRACK_FADEOUT_PAUSE_ON_LAST_FRAME = 0x100,
+    RDPUPPET_TRACK_NOISESET                    = 0x1000
 } rdPuppetTrackStatus;
 
 typedef enum erdKeyMarkerType
@@ -521,7 +522,7 @@ typedef struct srdPuppetTrack
     float noise;
     float playSpeed;
     float fadeSpeed;
-    int aCurKfNodeEntryNums[RDPUPPET_MAX_KFNODES]; // TODO: make this field rt variable
+    size_t aCurKfNodeEntryNums[RDPUPPET_MAX_KFNODES]; // TODO: make this field rt variable
     float curFrame;
     float prevFrame;
     rdKeyframe* pKFTrack;
@@ -532,9 +533,9 @@ static_assert(sizeof(rdPuppetTrack) == 308, "sizeof(rdPuppetTrack) == 308");
 
 typedef struct srdPuppet
 {
-    int unknown;
+    bool bPaused; // was int
     rdThing* pThing;
-    rdPuppetTrack aTracks[8];
+    rdPuppetTrack aTracks[RDPUPPET_MAX_TRACKS];
 } rdPuppet;
 static_assert(sizeof(rdPuppet) == 2472, "sizeof(rdPuppet) == 2472");
 
