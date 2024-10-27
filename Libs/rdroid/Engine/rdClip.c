@@ -3950,6 +3950,8 @@ void J3DAPI rdClip_QFace3W(const rdClipFrustum* pFrustrum, const rdPrimit3* pSrc
 
 int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* pProcFace, const rdFace* pFace, const rdVector3* aVerts, const rdVector2* aTexVerts, const rdVector4* aLightColors, const rdVector4* aVertColors)
 {
+    // Clip and transform face vertices to screen space then assigns pProcFace
+
     // Added bounds check
     RD_ASSERTREL(pFace->numVertices < STD_ARRAYLEN(rdClip_aWorkFaceVerts));
 
@@ -3968,6 +3970,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
 
     float invNearPlane = rdCamera_g_pCurCamera->invNearClipPlane;
     float invFarPlane  = rdCamera_g_pCurCamera->invFarClipPlane;
+    float focalLength  = rdCamera_g_pCurCamera->focalLength * rdCamera_g_pCurCamera->aspectRatio; // Fixed: Multiplied focalLength by aspectRatio to account camera aspect ratio
 
     int result = 0;
 
@@ -3984,7 +3987,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
                 }
 
                 float invY = 1.0f / rdClip_aWorkFaceVerts[i].y;
-                float  scale = rdCamera_g_pCurCamera->focalLength * invY;
+                float  scale = focalLength * invY;
 
                 LPD3DTLVERTEX pOutVert = &pProcFace->aVertices[i];
                 pOutVert->sx = rdClip_aWorkFaceVerts[i].x * scale + ccenterX;
@@ -4012,7 +4015,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
                 }
 
                 float invY = 1.0f / rdClip_aWorkFaceVerts[i].y;
-                float scale = rdCamera_g_pCurCamera->focalLength * invY;
+                float  scale = focalLength * invY;
 
                 LPD3DTLVERTEX pOutVert = &pProcFace->aVertices[i];
                 pOutVert->sx = rdClip_aWorkFaceVerts[i].x * scale + ccenterX;
@@ -4039,7 +4042,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
             }
 
             float invY  = 1.0f / rdClip_aWorkFaceVerts[i].y;
-            float scale = rdCamera_g_pCurCamera->focalLength * invY;
+            float  scale = focalLength * invY;
 
             LPD3DTLVERTEX pOutVert = &pProcFace->aVertices[i];
             pOutVert->sx = rdClip_aWorkFaceVerts[i].x * scale + ccenterX;
@@ -4058,22 +4061,26 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
 
 void J3DAPI rdClip_VerticesToPlane(rdCacheProcEntry* pProcFace, const rdVector3* aVerts, const rdVector2* aTexVerts, size_t numVerts)
 {
+    // Transform vertices to screen space then assigns pProcFace
+
     float ccenterX = rdCamera_g_pCurCamera->pCanvas->center.x;
     float ccenterY = rdCamera_g_pCurCamera->pCanvas->center.y;
 
     float invNearClipPlane = rdCamera_g_pCurCamera->invNearClipPlane;
-    float invFarClipPlane = rdCamera_g_pCurCamera->invFarClipPlane;
+    float invFarClipPlane  = rdCamera_g_pCurCamera->invFarClipPlane;
+    float focalLength      = rdCamera_g_pCurCamera->focalLength * rdCamera_g_pCurCamera->aspectRatio; // Fixed: Multiplied focalLength by aspectRatio to account camera aspect ratio
 
     for ( size_t i = 0; i < numVerts; ++i )
     {
         float invY = 1.0f / aVerts[i].y;
-        float scale = rdCamera_g_pCurCamera->focalLength * invY;
+        float scale = focalLength * invY;
 
         LPD3DTLVERTEX pOutVert = &pProcFace->aVertices[i];
         pOutVert->sx = aVerts[i].x * scale + ccenterX;
         pOutVert->sy = ccenterY - aVerts[i].z * scale;
         pOutVert->sz = (invY - invNearClipPlane) * invFarClipPlane;
-        pOutVert->rhw = invY * 0.03125f;
+
+        pOutVert->rhw = invY * 0.03125f; // 0.03125f - 1/ 32
 
         pOutVert->tu = aTexVerts[i].x;
         pOutVert->tv = aTexVerts[i].y;

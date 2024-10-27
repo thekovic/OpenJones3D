@@ -47,11 +47,11 @@ RdFrustumCull J3DAPI rdClip_SphereInFrustrum(const rdClipFrustum* pFrustum, cons
 // Function does quick clipiping by getting number of vertices in laying in frustum and than  only near plane clipping is performed
 void J3DAPI rdClip_QFace3W(const rdClipFrustum* pFrustrum, const rdPrimit3* pSrc, rdPrimit3* pDst);
 
-// Function transforms face vertices to NDC screen space and assigns them to out pProcFace 
+// Function clips and transforms face vertices to screen space then assigns them to out pProcFace 
 // aVerts here should be transformed to camera space.
 int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* pProcFace, const rdFace* pFace, const rdVector3* aVerts, const rdVector2* aTexVerts, const rdVector4* aLightColors, const rdVector4* aVertColors);
 
-// Function transforms vertices to NDC screen space and assigns them to out pProcFace 
+// Function transforms vertices to screen space and assigns them to out pProcFace 
 // aVerts here should be transformed to camera space.
 void J3DAPI rdClip_VerticesToPlane(rdCacheProcEntry* pProcFace, const rdVector3* aVerts, const rdVector2* aTexVerts, size_t numVerts);
 

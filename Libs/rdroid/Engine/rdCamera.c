@@ -244,9 +244,9 @@ void J3DAPI rdCamera_BuildFOV(rdCamera* pCamera)
             float hwidth = (pCamera->pCanvas->rect.right - pCamera->pCanvas->rect.left) / 2.0f;
             float hheight = (pCamera->pCanvas->rect.bottom - pCamera->pCanvas->rect.top) / 2.0f;
 
-            pCamera->pFrustum->orthoLeftPlane   = -(hwidth / pCamera->orthoScale);
+            pCamera->pFrustum->orthoLeftPlane   = -(hwidth / pCamera->orthoScale) / pCamera->aspectRatio;
             pCamera->pFrustum->orthoTopPlane    = hheight / pCamera->orthoScale / pCamera->aspectRatio;
-            pCamera->pFrustum->orthoRightPlane  = hwidth / pCamera->orthoScale;
+            pCamera->pFrustum->orthoRightPlane  = hwidth / pCamera->orthoScale / pCamera->aspectRatio;
             pCamera->pFrustum->orthoBottomPlane = -(hheight / pCamera->orthoScale) / pCamera->aspectRatio;
 
             pCamera->focalLength = 0.0f;
@@ -275,10 +275,11 @@ void J3DAPI rdCamera_BuildFOV(rdCamera* pCamera)
                 pCamera->invNearClipPlane = 0.1f / (0.89999998f * pCamera->invFarClipPlane) + pCamera->invNearClipPlane;// Used for converting vertex to screen cords
             }
 
-            pCamera->pFrustum->topPlane    = hheight / pCamera->focalLength / pCamera->aspectRatio;
-            pCamera->pFrustum->leftPlane   = -hwidth / pCamera->focalLength;
-            pCamera->pFrustum->bottomPlane = -hheight / pCamera->focalLength / pCamera->aspectRatio;
-            pCamera->pFrustum->rightPlane  = hwidth / pCamera->focalLength;
+            // Setup frustum planes
+            pCamera->pFrustum->topPlane    = (hheight / pCamera->focalLength) / pCamera->aspectRatio;
+            pCamera->pFrustum->bottomPlane = -(hheight / pCamera->focalLength) / pCamera->aspectRatio;
+            pCamera->pFrustum->leftPlane   = -(hwidth / pCamera->focalLength) / pCamera->aspectRatio;
+            pCamera->pFrustum->rightPlane  = (hwidth / pCamera->focalLength) / pCamera->aspectRatio;
 
             float height = hheight * 2.0f;
             float width  = hwidth * 2.0f;
@@ -323,9 +324,9 @@ int J3DAPI rdCamera_SetFrustrum(rdCamera* pCamera, rdClipFrustum* pFrustrum, int
     float bsize = bottom - 0.5f - pCanvas->center.y;
 
     pFrustrum->topPlane    = tsize / pCamera->focalLength / pCamera->aspectRatio;
-    pFrustrum->leftPlane   = -lsize / pCamera->focalLength;
+    pFrustrum->leftPlane   = -lsize / pCamera->focalLength / pCamera->aspectRatio;
     pFrustrum->bottomPlane = -bsize / pCamera->focalLength / pCamera->aspectRatio;
-    pFrustrum->rightPlane  = rsize / pCamera->focalLength;
+    pFrustrum->rightPlane  = rsize / pCamera->focalLength / pCamera->aspectRatio;
 
     pFrustrum->bClipFar    = pCamera->pFrustum->bClipFar;
     pFrustrum->nearPlane   = pCamera->pFrustum->nearPlane;
@@ -361,9 +362,8 @@ void J3DAPI rdCamera_OrthoProject(rdVector3* pDestVertex, const rdVector3* pSrcV
     // Function does orthogonal projection from view space (camera space ) to screen space.
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
-    pDestVertex->x = rdCamera_g_pCurCamera->orthoScale * pSrcVertex->x + pCanvas->center.x;
+    pDestVertex->x = rdCamera_g_pCurCamera->orthoScale * rdCamera_g_pCurCamera->aspectRatio * pSrcVertex->x + pCanvas->center.x; // Fixed: Multiplied focalLength by aspectRatio
     pDestVertex->y = -(pSrcVertex->z * rdCamera_g_pCurCamera->orthoScale) * rdCamera_g_pCurCamera->aspectRatio + pCanvas->center.y;
-    pDestVertex->z = pSrcVertex->y;
     pDestVertex->z =  1.0f / pSrcVertex->y; // Fixed: Fixed inverting y coord to fit within the range of 0.9999. In original implementation y-coord was assigned without being inverted, i.e. 1/y.
 }
 
@@ -412,10 +412,9 @@ void J3DAPI rdCamera_PerspProject(rdVector3* pDestVertex, const rdVector3* pSrcV
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
     float tz = rdCamera_g_pCurCamera->focalLength / pSrcVertex->y;
-    float ty = rdCamera_g_pCurCamera->aspectRatio * tz;
-    pDestVertex->x = pSrcVertex->x * tz + pCanvas->center.x;
-    pDestVertex->y = pCanvas->center.y - pSrcVertex->z * ty;
-    pDestVertex->z = pSrcVertex->y;
+    float scale = rdCamera_g_pCurCamera->aspectRatio * tz;
+    pDestVertex->x = pSrcVertex->x * scale + pCanvas->center.x; // Fixed: Multiplied focalLength by aspectRatio
+    pDestVertex->y = pCanvas->center.y - pSrcVertex->z * scale;
     pDestVertex->z = 1.0f / pSrcVertex->y; // Fixed: Fixed inverting y coord to fit within the range of 0.9999. In original implementation y-coord was assigned without being inverted, i.e. 1/y. This fixes Z coord for sky rendering
 }
 
@@ -442,15 +441,15 @@ void J3DAPI rdCamera_PerspProjectSquare(rdVector3* pDestVertex, const rdVector3*
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
     float tz = 1.0f / pSrcVertex->y;
-    float ty = rdCamera_g_pCurCamera->focalLength * tz;
-    pDestVertex->x = pSrcVertex->x * ty + pCanvas->center.x;
-    pDestVertex->y = pCanvas->center.y - pSrcVertex->z * ty;
+    float scale = rdCamera_g_pCurCamera->focalLength * tz;
+    pDestVertex->x = pSrcVertex->x * scale + pCanvas->center.x;
+    pDestVertex->y = pCanvas->center.y - pSrcVertex->z * scale;
     pDestVertex->z = tz;
 }
 
 void J3DAPI rdCamera_PerspProjectSquareLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts)
 {
-    float cy = rdCamera_g_pCurCamera->pCanvas->center.y;
+    // Function does perspective projection from view space (camera space ) to screen space.
     while ( numVerts-- )
     {
         rdCamera_PerspProjectSquare(pDestVerts, pSrcVerts);

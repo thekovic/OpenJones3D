@@ -65,7 +65,7 @@ void sithRenderSky_Close(void)
 
 void sithRenderSky_Update(void)
 {
-    horizonScale = horizonSkyDistance / rdCamera_g_pCurCamera->focalLength;
+    horizonScale = horizonSkyDistance / (rdCamera_g_pCurCamera->focalLength * rdCamera_g_pCurCamera->aspectRatio);
     stdMath_SinCos(sithCamera_g_pCurCamera->lookPYR.z, &lookRollSin, &lookRollCos);
 
     lookYaw   = -(sithCamera_g_pCurCamera->lookPYR.yaw * horizonPixelsPerRev);
