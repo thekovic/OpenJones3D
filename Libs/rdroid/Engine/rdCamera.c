@@ -358,28 +358,21 @@ void J3DAPI rdCamera_Update(const rdMatrix34* orient)
 
 void J3DAPI rdCamera_OrthoProject(rdVector3* pDestVertex, const rdVector3* pSrcVertex)
 {
-    // Function does orthogonal projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
+    // Function does orthogonal projection from view space (camera space ) to screen space.
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
     pDestVertex->x = rdCamera_g_pCurCamera->orthoScale * pSrcVertex->x + pCanvas->center.x;
     pDestVertex->y = -(pSrcVertex->z * rdCamera_g_pCurCamera->orthoScale) * rdCamera_g_pCurCamera->aspectRatio + pCanvas->center.y;
     pDestVertex->z = pSrcVertex->y;
+    pDestVertex->z =  1.0f / pSrcVertex->y; // Fixed: Fixed inverting y coord to fit within the range of 0.9999. In original implementation y-coord was assigned without being inverted, i.e. 1/y.
 }
 
 void J3DAPI rdCamera_OrthoProjectLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts)
 {
-    // Function does orthogonal projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
-
-    float cx = rdCamera_g_pCurCamera->pCanvas->center.x;
-    float cy = rdCamera_g_pCurCamera->pCanvas->center.y;
-    float scale = rdCamera_g_pCurCamera->orthoScale;
-    float aspect = rdCamera_g_pCurCamera->aspectRatio * scale;
-
+    // Function does orthogonal projection from view space (camera space ) to screen space.
     while ( numVerts-- )
     {
-        pDestVerts->x = pSrcVerts->x * scale + cx;
-        pDestVerts->y = cy - pSrcVerts->z * aspect;
-        pDestVerts->z = pSrcVerts->y;
+        rdCamera_OrthoProject(pDestVerts, pSrcVerts);
         ++pSrcVerts;
         ++pDestVerts;
     }
@@ -387,27 +380,21 @@ void J3DAPI rdCamera_OrthoProjectLst(rdVector3* pDestVerts, const rdVector3* pSr
 
 void J3DAPI rdCamera_OrthoProjectSquare(rdVector3* pDestVertex, const rdVector3* pSrcVertex)
 {
-    // Function does orthogonal projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
+    // Function does orthogonal projection from view space (camera space) to screen space.
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
     pDestVertex->x = rdCamera_g_pCurCamera->orthoScale * pSrcVertex->x + pCanvas->center.x;
     pDestVertex->y = pCanvas->center.y - pSrcVertex->z * rdCamera_g_pCurCamera->orthoScale;
-    pDestVertex->z = pSrcVertex->y;
+    pDestVertex->z = 1.0f / pSrcVertex->y; // Fixed: Fixed inverting y coord to fit within the range of 0.9999. In original implementation y-coord was assigned without being inverted, i.e. 1/y.
 }
 
 void J3DAPI rdCamera_OrthoProjectSquareLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts)
 {
-    // Function does ortho projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
-
-    float cx = rdCamera_g_pCurCamera->pCanvas->center.x;
-    float cy = rdCamera_g_pCurCamera->pCanvas->center.y;
-    float scale = rdCamera_g_pCurCamera->orthoScale;
+    // Function does ortho projection from view space (camera space ) to screen space.
 
     while ( numVerts-- )
     {
-        pDestVerts->x = pSrcVerts->x * scale + cx;
-        pDestVerts->y = cy - pSrcVerts->z * scale;
-        pDestVerts->z = pSrcVerts->y;
+        rdCamera_OrthoProjectSquare(pDestVerts, pSrcVerts);
         ++pSrcVerts;
         ++pDestVerts;
     }
@@ -415,7 +402,7 @@ void J3DAPI rdCamera_OrthoProjectSquareLst(rdVector3* pDestVerts, const rdVector
 
 void J3DAPI rdCamera_PerspProject(rdVector3* pDestVertex, const rdVector3* pSrcVertex)
 {
-    // Function does perspective projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
+    // Function does perspective projection from view space (camera space ) to screen space.
     // 2D clip space coord system:
     //   ^
     // y | /z
@@ -429,22 +416,15 @@ void J3DAPI rdCamera_PerspProject(rdVector3* pDestVertex, const rdVector3* pSrcV
     pDestVertex->x = pSrcVertex->x * tz + pCanvas->center.x;
     pDestVertex->y = pCanvas->center.y - pSrcVertex->z * ty;
     pDestVertex->z = pSrcVertex->y;
+    pDestVertex->z = 1.0f / pSrcVertex->y; // Fixed: Fixed inverting y coord to fit within the range of 0.9999. In original implementation y-coord was assigned without being inverted, i.e. 1/y. This fixes Z coord for sky rendering
 }
 
 void J3DAPI rdCamera_PerspProjectLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts)
 {
     // Function does perspective projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
-
-    float cx = rdCamera_g_pCurCamera->pCanvas->center.x;
-    float cy = rdCamera_g_pCurCamera->pCanvas->center.y;
     while ( numVerts-- )
     {
-        float tz = rdCamera_g_pCurCamera->focalLength / pSrcVerts->y;
-        float ty = rdCamera_g_pCurCamera->aspectRatio * tz;
-
-        pDestVerts->x = pSrcVerts->x * tz + cx;
-        pDestVerts->y = cy - pSrcVerts->z * ty;
-        pDestVerts->z = pSrcVerts->y;
+        rdCamera_PerspProject(pDestVerts, pSrcVerts);
         ++pSrcVerts;
         ++pDestVerts;
     }
@@ -452,7 +432,7 @@ void J3DAPI rdCamera_PerspProjectLst(rdVector3* pDestVerts, const rdVector3* pSr
 
 void J3DAPI rdCamera_PerspProjectSquare(rdVector3* pDestVertex, const rdVector3* pSrcVertex)
 {
-    // Function does perspective projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
+    // Function does perspective projection from view space (camera space ) to screen space.
     // 2D clip space coord system:
     //   ^
     // y | /z
@@ -470,18 +450,10 @@ void J3DAPI rdCamera_PerspProjectSquare(rdVector3* pDestVertex, const rdVector3*
 
 void J3DAPI rdCamera_PerspProjectSquareLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts)
 {
-    // Function does perspective projection from view space (camera space ) to intermediate projection space. (2D projection in intermediate space between camera space and clip space) 
-
-    float cx = rdCamera_g_pCurCamera->pCanvas->center.x;
     float cy = rdCamera_g_pCurCamera->pCanvas->center.y;
     while ( numVerts-- )
     {
-        float z = 1.0f / pSrcVerts->y;
-        float ty = rdCamera_g_pCurCamera->focalLength * z;
-
-        pDestVerts->x = pSrcVerts->x * ty + cx;
-        pDestVerts->y = cy - pSrcVerts->z * ty;
-        pDestVerts->z = z;
+        rdCamera_PerspProjectSquare(pDestVerts, pSrcVerts);
         ++pSrcVerts;
         ++pDestVerts;
     }
