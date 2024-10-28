@@ -399,34 +399,34 @@ void J3DAPI rdWallpaper_DrawWallLine(const rdWallLine* pLine, float progress)
     }
     else
     {
-        float laspect = pLine->height / pLine->width;
-        float startY = pLine->startY - laspect * pLine->startX;
-        endY = (pLine->startX + endX) * laspect + startY - pLine->startY;
+        double laspect = pLine->height / pLine->width;
+        double startY = pLine->startY - laspect * pLine->startX;
+        endY = (float)((pLine->startX + endX) * laspect + startY - pLine->startY);
     }
 
     float widthHeightRatio = pLine->width / pLine->height;
-    float offsetY = pLine->startY - widthHeightRatio * pLine->startX;
-    float coeff1 = 2.0f * -pLine->startX;
-    float coeff2 = 2.0f * widthHeightRatio * (offsetY - pLine->startY);
+    double offsetY = pLine->startY - widthHeightRatio * pLine->startX;
+    double coeff1 = 2.0 * -pLine->startX;
+    double coeff2 = 2.0 * widthHeightRatio * (offsetY - pLine->startY);
 
-    float a = powf(widthHeightRatio, 2.0f) + 1.0f;
-    float b = coeff1 + coeff2;
-    float c = powf(pLine->startX, 2.f) + powf(offsetY - pLine->startY, 2.0) - powf(thickness, 2.f);
+    double a = pow(widthHeightRatio, 2.0) + 1.0f;
+    double b = coeff1 + coeff2;
+    double c = pow(pLine->startX, 2.0) + pow(offsetY - pLine->startY, 2.0) - pow(thickness, 2.0);
 
-    float discriminant = sqrtf(b * b - 4.0f * a * c);  // Calculate discriminant
-    if ( discriminant >= 0.0f ) // 1 or 2 real roots
+    double discriminant = sqrt(b * b - 4.0 * a * c);  // Calculate discriminant
+    if ( discriminant >= 0.0 ) // 1 or 2 real roots
     {
-        float denominator = 2.0f * a;
+        double denominator = 2.0 * a;
 
         // First root
-        float root = (-b + discriminant) / denominator;
-        float test = a * root * root + b * root + c;
-        if ( test >= 0.001f )
+        double root = (-b + discriminant) / denominator;
+        double test = a * root * root + b * root + c;
+        if ( test >= 0.001 )
         {
             // Second root
             root = (-b - discriminant) / denominator;
             test = a * root * root + b * root + c;
-            if ( test >= 0.001f )
+            if ( test >= 0.001 )
             {
                 // We couldn't find valid root so we can't draw a line
                 return;
@@ -434,8 +434,8 @@ void J3DAPI rdWallpaper_DrawWallLine(const rdWallLine* pLine, float progress)
         }
 
         // Final position calculations based on the valid root
-        float adjustedX = root;
-        float adjustedY = widthHeightRatio * adjustedX + offsetY;
+        float adjustedX = (float)root;
+        float adjustedY = widthHeightRatio * adjustedX + (float)offsetY;
         float deltaX = adjustedX - pLine->startX;
         float deltaY = adjustedY - pLine->startY;
 
