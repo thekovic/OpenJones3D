@@ -124,7 +124,7 @@ void sithWorld_ResetGlobals(void)
         &sithTemplate_CNDWriteTemplateSection
       },
       { "things", &sithThing_CNDReadThingSection, &sithThing_CNDWriteThingSection },
-      { "pvs", &sithPVS_CNDReadPVSSection, &sithPVS_CNDWritePVSSection }
+      { "pvs", &sithPVS_LoadBinary, &sithPVS_WriteBinary }
     };
     memcpy((CndSectionParser*)&sithWorld_aCNDSectionParsers, &sithWorld_aCNDSectionParsers_tmp, sizeof(sithWorld_aCNDSectionParsers));
 

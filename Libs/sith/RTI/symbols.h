@@ -1877,9 +1877,9 @@
 #define sithItem_SetItemTaken_TYPE void (J3DAPI*)(SithThing*, const SithThing*, int)
 #define sithItem_Remove_TYPE void (J3DAPI*)(SithThing*)
 #define sithItem_ParseArg_TYPE int (J3DAPI*)(StdConffileArg*, SithThing*, int)
-#define sithPVS_NDYReadPVSSection_TYPE int (J3DAPI*)(SithWorld*, int)
-#define sithPVS_CNDWritePVSSection_TYPE int (J3DAPI*)(tFileHandle, SithWorld*)
-#define sithPVS_CNDReadPVSSection_TYPE int (J3DAPI*)(tFileHandle, SithWorld*)
-#define sithPVS_SetTable_TYPE void (J3DAPI*)(uint8_t*, uint8_t*, int)
+#define sithPVS_LoadText_TYPE int (J3DAPI*)(SithWorld*, int)
+#define sithPVS_WriteBinary_TYPE int (J3DAPI*)(tFileHandle, SithWorld*)
+#define sithPVS_LoadBinary_TYPE int (J3DAPI*)(tFileHandle, SithWorld*)
+#define sithPVS_SetTable_TYPE void (J3DAPI*)(uint8_t*, const uint8_t*, size_t)
 
 #endif // SITH_RTI_SYMBOLS_H
