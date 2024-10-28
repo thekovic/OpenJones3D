@@ -29,7 +29,6 @@ void rdThing_InstallHooks(void)
 
 void rdThing_ResetGlobals(void)
 {
-
 }
 
 rdThing* J3DAPI rdThing_New(SithThing* pThing)

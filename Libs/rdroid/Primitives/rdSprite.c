@@ -217,24 +217,9 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
         }
 
         rdVector_Add3Acc(&rdSprite_aView.rvec, &tpos);
-        /*rdSprite_aView.rvec.x = rdSprite_aView.rvec.x + tpos.x;
-        rdSprite_aView.rvec.y = rdSprite_aView.rvec.y + tpos.y;
-        rdSprite_aView.rvec.z = rdSprite_aView.rvec.z + tpos.z;*/
-
         rdVector_Add3Acc(&rdSprite_aView.lvec, &tpos);
-        /*rdSprite_aView.lvec.x = rdSprite_aView.lvec.x + tpos.x;
-        rdSprite_aView.lvec.y = rdSprite_aView.lvec.y + tpos.y;
-        rdSprite_aView.lvec.z = rdSprite_aView.lvec.z + tpos.z;*/
-
         rdVector_Add3Acc(&rdSprite_aView.uvec, &tpos);
-        /*rdSprite_aView.uvec.x = rdSprite_aView.uvec.x + tpos.x;
-        rdSprite_aView.uvec.y = rdSprite_aView.uvec.y + tpos.y;
-        rdSprite_aView.uvec.z = rdSprite_aView.uvec.z + tpos.z;*/
-
         rdVector_Add3Acc(&rdSprite_aView.dvec, &tpos);
-        /* rdSprite_aView.tpos.x = rdSprite_aView.tpos.x + tpos.x;
-         rdSprite_aView.tpos.y = rdSprite_aView.tpos.y + tpos.y;
-         rdSprite_aView.tpos.z = rdSprite_aView.tpos.z + tpos.z;*/
     }
     else if ( pSprite3->type == 2 )
     {
@@ -246,41 +231,19 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
 
         if ( fabsf(lvec.z) < 1.0f ) // Fixed, was: if ( fabsf((double)(lvec.z >= 0.99989998f)) == 0.0f )
         {
-            // vec cross rdroid_g_zVector
-         /*   prod.x = 0.0f * lvec.z - 1.0f * lvec.y;
-            prod.y = 1.0f * lvec.x - 0.0f * lvec.z;
-            v3 = 0.0f * lvec.y - 0.0f * lvec.x;*/
-            rdVector_Cross3(&prod, &lvec, &rdroid_g_zVector3);
+            rdVector_Cross3(&prod, &rdroid_g_zVector3, &lvec);
         }
         else
         {
-            // vec cross rdroid_g_xVector3
-       /*     prod.x = 0.0f * lvec.z - 0.0f * lvec.y;
-            prod.y = 0.0f * lvec.x - 1.0f * lvec.z;
-            v3 = 1.0f * lvec.y - 0.0f * lvec.x;*/
-            rdVector_Cross3(&prod, &lvec, &rdroid_g_xVector3);
+            rdVector_Cross3(&prod, &rdroid_g_xVector3, &lvec);
         }
 
         // vec cross lvec
-        //prod.z = v3;
-      /*  v13.x = prod.y * lvec.z - prod.z * lvec.y;
-        v13.y = prod.z * lvec.x - prod.x * lvec.z;
-        v13.z = prod.x * lvec.y - prod.y * lvec.x;*/
         rdVector_Cross3(&v13, &prod, &lvec);
 
         rdVector_Scale3(&v11, &prod, pSprite3->widthHalf);
-        /* v11.x = pSprite3->widthHalf * prod.x;
-         v11.y = pSprite3->widthHalf * prod.y;
-         v11.z = pSprite3->widthHalf * prod.z;*/
 
         rdVector_Scale3(&v10, &v13, pSprite3->heightHalf);
-        /*  v10.x = pSprite3->heightHalf * v13.x;
-          v10.y = pSprite3->heightHalf * v13.y;
-          v10.z = pSprite3->heightHalf * v13.z;*/
-
-          /*  v9.x = -v11.x;
-            v9.y = -v11.y;
-            v9.z = -v11.z;*/
 
         rdVector_Neg3(&v9, &v11);
 
@@ -309,24 +272,9 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
         }
 
         rdVector_Add3Acc(&rdSprite_aView.rvec, &tpos);
-        /*rdSprite_aView.rvec.x = rdSprite_aView.rvec.x + tpos.x;
-        rdSprite_aView.rvec.y = rdSprite_aView.rvec.y + tpos.y;
-        rdSprite_aView.rvec.z = rdSprite_aView.rvec.z + tpos.z;*/
-
         rdVector_Add3Acc(&rdSprite_aView.lvec, &tpos);
-        /*rdSprite_aView.lvec.x = rdSprite_aView.lvec.x + tpos.x;
-        rdSprite_aView.lvec.y = rdSprite_aView.lvec.y + tpos.y;
-        rdSprite_aView.lvec.z = rdSprite_aView.lvec.z + tpos.z;*/
-
         rdVector_Add3Acc(&rdSprite_aView.uvec, &tpos);
-        /*rdSprite_aView.uvec.x = rdSprite_aView.uvec.x + tpos.x;
-        rdSprite_aView.uvec.y = rdSprite_aView.uvec.y + tpos.y;
-        rdSprite_aView.uvec.z = rdSprite_aView.uvec.z + tpos.z;*/
-
         rdVector_Add3Acc(&rdSprite_aView.dvec, &tpos);
-        /* rdSprite_aView.tpos.x = rdSprite_aView.tpos.x + tpos.x;
-         rdSprite_aView.tpos.y = rdSprite_aView.tpos.y + tpos.y;
-         rdSprite_aView.tpos.z = rdSprite_aView.tpos.z + tpos.z;*/
     }
 
     if ( pSprite3->type == 2 )
