@@ -191,6 +191,7 @@
 #define sithThing_Reset_TYPE void (J3DAPI*)(SithThing*)
 #define sithThing_MoveToSector_TYPE void (J3DAPI*)(SithThing*, SithSector*, int)
 #define sithThing_ExitSector_TYPE void (J3DAPI*)(SithThing*)
+#define sithThing_EnterSector_TYPE void (J3DAPI*)(SithThing*, SithSector*, int, int)
 #define sithThing_EnterWater_TYPE void (J3DAPI*)(SithThing*, int)
 #define sithThing_ExitWater_TYPE void (J3DAPI*)(SithThing*, int)
 #define sithThing_Create_TYPE SithThing* (J3DAPI*)(SithThingType)

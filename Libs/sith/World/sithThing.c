@@ -56,6 +56,7 @@ void sithThing_InstallHooks(void)
     // J3D_HOOKFUNC(sithThing_Reset);
     // J3D_HOOKFUNC(sithThing_MoveToSector);
     // J3D_HOOKFUNC(sithThing_ExitSector);
+    // J3D_HOOKFUNC(sithThing_EnterSector);
     // J3D_HOOKFUNC(sithThing_EnterWater);
     // J3D_HOOKFUNC(sithThing_ExitWater);
     // J3D_HOOKFUNC(sithThing_Create);
@@ -370,6 +371,11 @@ void J3DAPI sithThing_MoveToSector(SithThing* pThing, SithSector* pSector, int b
 void J3DAPI sithThing_ExitSector(SithThing* pThing)
 {
     J3D_TRAMPOLINE_CALL(sithThing_ExitSector, pThing);
+}
+
+void J3DAPI sithThing_EnterSector(SithThing* pThing, SithSector* pNewSector, int bNoWaterSplash, int bNoNotify)
+{
+    J3D_TRAMPOLINE_CALL(sithThing_EnterSector, pThing, pNewSector, bNoWaterSplash, bNoNotify);
 }
 
 void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash)

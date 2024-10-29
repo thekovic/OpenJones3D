@@ -78,6 +78,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
 void J3DAPI sithThing_Reset(SithThing* pThing);
 void J3DAPI sithThing_MoveToSector(SithThing* pThing, SithSector* pSector, int bNotify);
 void J3DAPI sithThing_ExitSector(SithThing* pThing);
+void J3DAPI sithThing_EnterSector(SithThing* pThing, SithSector* pNewSector, int bNoWaterSplash, int bNoNotify);
 void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash);
 void J3DAPI sithThing_ExitWater(SithThing* pThing, int bNoSplash);
 SithThing* J3DAPI sithThing_Create(SithThingType type);

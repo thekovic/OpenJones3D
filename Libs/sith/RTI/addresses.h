@@ -193,6 +193,7 @@
 #define sithThing_Reset_ADDR 0x00434FC0
 #define sithThing_MoveToSector_ADDR 0x00435020
 #define sithThing_ExitSector_ADDR 0x004350B0
+#define sithThing_EnterSector_ADDR 0x004351E0
 #define sithThing_EnterWater_ADDR 0x00435370
 #define sithThing_ExitWater_ADDR 0x004354D0
 #define sithThing_Create_ADDR 0x004355F0
