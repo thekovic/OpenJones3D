@@ -877,9 +877,9 @@
 #define sithCog_AllocWorldCogScripts_ADDR 0x00422AA0
 #define sithCog_AllocWorldCogs_ADDR 0x00422B80
 #define sithCog_GetSymbolRefInitializer_ADDR 0x00422C60
-#define sithCog_NDYReadCOGSection_ADDR 0x00423090
-#define sithCog_CNDWriteCOGSection_ADDR 0x00423390
-#define sithCog_CNDReadCOGSection_ADDR 0x004235C0
+#define sithCog_LoadText_ADDR 0x00423090
+#define sithCog_WriteBinary_ADDR 0x00423390
+#define sithCog_LoadBinary_ADDR 0x004235C0
 #define sithCog_ParseSymbolRef_ADDR 0x004237D0
 #define sithCog_LinkCog_ADDR 0x00423B40
 #define sithCog_Load_ADDR 0x00423CE0
@@ -895,9 +895,9 @@
 #define sithCog_SectorSendMessageEx_ADDR 0x00424410
 #define sithCog_SurfaceSendMessage_ADDR 0x00424550
 #define sithCog_SurfaceSendMessageEx_ADDR 0x00424570
-#define sithCog_NDYReadCogScripSection_ADDR 0x004246B0
-#define sithCog_CNDWriteCogScriptSection_ADDR 0x004248E0
-#define sithCog_CNDReadCogScriptSection_ADDR 0x00424950
+#define sithCog_LoadCogScriptsText_ADDR 0x004246B0
+#define sithCog_WriteCogScriptsBinary_ADDR 0x004248E0
+#define sithCog_LoadCogScriptsBinary_ADDR 0x00424950
 #define sithCog_LoadScript_ADDR 0x004249D0
 #define sithCog_ProcessCog_ADDR 0x00424B30
 #define sithCog_ProcessCogs_ADDR 0x00424F70

@@ -1315,8 +1315,9 @@ typedef enum eSithWeaponId
 
 typedef enum eSithMasterMode
 {
-    SITH_MODE_CLOSED = 0x0,
-    SITH_MODE_OPENED = 0x1,
+    SITH_MODE_CLOSED    = 0,
+    SITH_MODE_OPENED    = 1,
+    SITH_MODE_UNKNOWN_2 = 2,
 } SithMasterMode;
 
 typedef enum eSithMultiJoinStatus J3D_ENUM_TYPE(int32_t)
@@ -1378,30 +1379,34 @@ typedef union sSithCogValue
     const char* pString;
     rdVector3 vecValue;
 } SithCogValue;
+static_assert(sizeof(SithCogValue) == 12, "sizeof(SithCogValue) == 12");
 
 typedef struct sSithCogSymbolValue
 {
     SithCogValueType type;
     SithCogValue val;
 } SithCogSymbolValue;
+static_assert(sizeof(SithCogSymbolValue) == 16, "sizeof(SithCogSymbolValue) == 16");
 
 typedef struct sSithCogSymbol
 {
-    int id;
+    size_t id;
     SithCogSymbolValue val;
-    int label;
-    char* pName;
+    uint32_t label;
+    const char* pName;
 } SithCogSymbol;
+static_assert(sizeof(SithCogSymbol) == 28, "sizeof(SithCogSymbol) == 28");
 
 typedef struct sSithCogSymbolTable
 {
     SithCogSymbol* aSymbols;
     tHashTable* pHashtbl;
-    int numUsedSymbols;
-    int tableSize;
-    int firstId;
+    size_t numUsedSymbols;
+    size_t tableSize;
+    size_t firstId;
     int bIsCopy;
 } SithCogSymbolTable;
+static_assert(sizeof(SithCogSymbolTable) == 24, "sizeof(SithCogSymbolTable) == 24");
 
 typedef struct sSithEventTask
 {
@@ -1882,10 +1887,12 @@ typedef struct sSithMineCarUserBlock
 
 typedef struct sSithFairyDustUserBlock
 {
-    int numUsedDusts;
+    size_t numUsedDusts;
     SithThing* aDusts[4];
     int bCreateNormalFairyDust;
 } SithFairyDustUserBlock;
+static_assert(sizeof(SithFairyDustUserBlock) == 24, "sizeof(SithFairyDustUserBlock) == 24");
+
 
 typedef union sSithUserBlockUnion
 {
@@ -2160,14 +2167,15 @@ typedef struct sSithCogScript
 {
     SithCogFlag flags;
     char aName[64];
-    int* pCode;
-    unsigned int codeSize;
+    int32_t* pCode;
+    size_t codeSize;
     SithCogSymbolTable* pSymbolTable;
-    int numHandlers;
+    size_t numHandlers;
     SithCogScriptMsgHandler aHandlers[32];
     SithCogSymbolRef aSymRefs[256];
-    int numSymbolRefs;
+    size_t numSymbolRefs;
 } SithCogScript;
+static_assert(sizeof(SithCogScript) == 23000, "sizeof(SithCogScript) == 23000");
 
 struct sSithCog
 {
