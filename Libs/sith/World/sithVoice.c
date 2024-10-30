@@ -1,6 +1,11 @@
 #include "sithVoice.h"
 #include <j3dcore/j3dhook.h>
+
+#include <sith/Cog/sithCogExec.h>
+#include <sith/Devices/sithSoundMixer.h>
 #include <sith/RTI/symbols.h>
+
+#include <sound/Sound.h>
 
 #define sithVoice_secHeadSwapInterval J3D_DECL_FAR_VAR(sithVoice_secHeadSwapInterval, float)
 #define sithVoice_dword_52B9A8 J3D_DECL_FAR_VAR(sithVoice_dword_52B9A8, int)
@@ -29,7 +34,7 @@ void sithVoice_InstallHooks(void)
     // J3D_HOOKFUNC(sithVoice_RegisterCogFunctions);
     // J3D_HOOKFUNC(sithVoice_PlayThingVoice);
     // J3D_HOOKFUNC(sithVoice_UpdateLipSync);
-    // J3D_HOOKFUNC(sithVoice_PlayVoice);
+    J3D_HOOKFUNC(sithVoice_PlayVoice);
     // J3D_HOOKFUNC(sithVoice_SetThingVoiceHeads);
     // J3D_HOOKFUNC(sithVoice_SetVoiceHeadHeight);
     // J3D_HOOKFUNC(sithVoice_SetThingVoiceColor);
@@ -48,13 +53,13 @@ void sithVoice_ResetGlobals(void)
 {
     float sithVoice_secHeadSwapInterval_tmp = 0.1f;
     memcpy(&sithVoice_secHeadSwapInterval, &sithVoice_secHeadSwapInterval_tmp, sizeof(sithVoice_secHeadSwapInterval));
-    
+
     int sithVoice_dword_52B9A8_tmp = 50;
     memcpy(&sithVoice_dword_52B9A8, &sithVoice_dword_52B9A8_tmp, sizeof(sithVoice_dword_52B9A8));
-    
+
     int sithVoice_curHeadHeight_tmp = -1;
     memcpy(&sithVoice_curHeadHeight, &sithVoice_curHeadHeight_tmp, sizeof(sithVoice_curHeadHeight));
-    
+
     memset(&sithVoice_nextSubtitleNum, 0, sizeof(sithVoice_nextSubtitleNum));
     memset(&sithVoice_aVoiceHeadHeights, 0, sizeof(sithVoice_aVoiceHeadHeights));
     memset(&sithVoice_dword_5647A0, 0, sizeof(sithVoice_dword_5647A0));
@@ -104,10 +109,10 @@ void J3DAPI sithVoice_UpdateLipSync(SithThing* pThing)
     J3D_TRAMPOLINE_CALL(sithVoice_UpdateLipSync, pThing);
 }
 
-void J3DAPI sithVoice_PlayVoice(SithCog* pCog)
-{
-    J3D_TRAMPOLINE_CALL(sithVoice_PlayVoice, pCog);
-}
+//void J3DAPI sithVoice_PlayVoice(SithCog* pCog)
+//{
+//    J3D_TRAMPOLINE_CALL(sithVoice_PlayVoice, pCog);
+//}
 
 void J3DAPI sithVoice_SetThingVoiceHeads(SithCog* pCog)
 {
@@ -167,4 +172,57 @@ int J3DAPI sithVoice_ProcessVoiceState(const SithMessage* pMsg)
 const rdFont* J3DAPI sithVoice_GetTextFont()
 {
     return J3D_TRAMPOLINE_CALL(sithVoice_GetTextFont);
+}
+
+void J3DAPI sithVoice_PlayVoice(SithCog* pCog)
+{
+    int  bWait        = sithCogExec_PopInt(pCog);
+    float volume      = sithCogExec_PopFlex(pCog);
+    tSoundHandle hSnd = sithCogExec_PopSound(pCog);
+    SithThing* pThing = sithCogExec_PopThing(pCog);
+
+    if ( !pThing || !hSnd )
+    {
+        SITHLOG_ERROR("Cog %s: Bad params passed to PlayVoice().\n", pCog->aName);
+        sithCogExec_PushInt(pCog, -1);
+        return; // Fixed: Added missing return
+    }
+
+    SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
+    SITH_ASSERTREL(pThing->renderData.data.pModel3 != ((void*)0));
+
+    int guid = -1; // Fixed: Init to -1;
+    if ( strcmpi(pThing->renderData.data.pModel3->aName, "aet_gy.3do") != 0 )
+    {
+        if ( !sithVoice_PlayThingVoice(pThing, hSnd, volume) )
+        {
+            if ( pThing->thingInfo.actorInfo.voiceInfo.hSndChannel )
+            {
+                guid = Sound_GetChannelGUID(pThing->thingInfo.actorInfo.voiceInfo.hSndChannel);
+            }
+        }
+    }
+    else
+    {
+        tSoundChannelHandle hChannel = sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
+        if ( hChannel )
+        {
+            guid = Sound_GetChannelGUID(hChannel);
+        }
+    }
+
+    if ( guid == -1 )
+    {
+        sithCogExec_PushInt(pCog, -1);
+    }
+    else
+    {
+        if ( bWait )
+        {
+            pCog->status = SITHCOG_STATUS_WAITING_SOUND_TO_STOP;
+            pCog->statusParams[0] = guid;
+        }
+
+        sithCogExec_PushInt(pCog, guid);
+    }
 }
