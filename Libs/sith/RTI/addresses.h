@@ -2274,7 +2274,7 @@
 #define sithFX_aChalkMarkNames_ADDR 0x00539460
 #define sithFX_rowRippleLastPos_ADDR 0x00585430
 #define sithFX_msecLastCreatedFairyDustDeluxTime_ADDR 0x0058544C
-#define sithFX_numChalkMarks_ADDR 0x00585450
+#define sithFX_g_numChalkMarks_ADDR 0x00585450
 #define sithFX_fariyDustSizeFactor_ADDR 0x00585454
 #define sithFX_newFairyDustDeluxSizeFactor_ADDR 0x00585458
 #define sithFX_fairyDustDeluxSizeFactor_ADDR 0x0058545C
