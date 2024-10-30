@@ -67,7 +67,7 @@ void sithPuppet_InstallHooks(void)
 
 void sithPuppet_ResetGlobals(void)
 {
-    const char *sithPuppet_aStrSubModes_tmp[84] = {
+    const char* sithPuppet_aStrSubModes_tmp[84] = {
       "--RESERVED--",
       "stand",
       "walk",
@@ -153,8 +153,8 @@ void sithPuppet_ResetGlobals(void)
       "leapright",
       "fallforward"
     };
-    memcpy((char **)&sithPuppet_aStrSubModes, &sithPuppet_aStrSubModes_tmp, sizeof(sithPuppet_aStrSubModes));
-    
+    memcpy((char**)&sithPuppet_aStrSubModes, &sithPuppet_aStrSubModes_tmp, sizeof(sithPuppet_aStrSubModes));
+
     memset(&sithPuppet_g_pClassHashtable, 0, sizeof(sithPuppet_g_pClassHashtable));
     memset(&sithPuppet_g_pKeyHashtable, 0, sizeof(sithPuppet_g_pKeyHashtable));
     memset(&sithPuppet_pHashtblSubmodes, 0, sizeof(sithPuppet_pHashtblSubmodes));
@@ -259,7 +259,7 @@ int J3DAPI sithPuppet_PlayKey(rdPuppet* pPuppet, rdKeyframe* pTrack, int lowPrio
     return J3D_TRAMPOLINE_CALL(sithPuppet_PlayKey, pPuppet, pTrack, lowPriority, highPriority, flags, pfCallback);
 }
 
-unsigned int J3DAPI sithPuppet_GetTrackNumForGUID(const SithThing* pThing, int guid)
+int J3DAPI sithPuppet_GetTrackNumForGUID(const SithThing* pThing, int guid)
 {
     return J3D_TRAMPOLINE_CALL(sithPuppet_GetTrackNumForGUID, pThing, guid);
 }

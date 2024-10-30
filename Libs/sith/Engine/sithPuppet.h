@@ -40,7 +40,7 @@ void J3DAPI sithPuppet_SetArmedMode(SithThing* pThing, unsigned int newMode);
 int J3DAPI sithPuppet_PlayMode(SithThing* pThing, SithPuppetSubMode submode, rdPuppetTrackCallback pfCallback);
 int J3DAPI sithPuppet_PlayForceMoveMode(SithThing* pThing, SithPuppetSubMode submode, rdPuppetTrackCallback pfCallback);
 int J3DAPI sithPuppet_PlayKey(rdPuppet* pPuppet, rdKeyframe* pTrack, int lowPriority, int highPriority, rdKeyframeFlags flags, rdPuppetTrackCallback pfCallback);
-unsigned int J3DAPI sithPuppet_GetTrackNumForGUID(const SithThing* pThing, int guid);
+int J3DAPI sithPuppet_GetTrackNumForGUID(const SithThing* pThing, int guid);
 int J3DAPI sithPuppet_StopKey(rdPuppet* pPuppet, int track, float fadeTime);
 void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks);
 void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarkerType markerType);
