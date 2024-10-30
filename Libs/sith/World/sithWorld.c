@@ -114,10 +114,10 @@ void sithWorld_ResetGlobals(void)
       },
       {
         "cogcripts",
-        &sithCog_CNDReadCogScriptSection,
-        &sithCog_CNDWriteCogScriptSection
+        &sithCog_LoadCogScriptsBinary,
+        &sithCog_WriteCogScriptsBinary
       },
-      { "cogs", &sithCog_CNDReadCOGSection, &sithCog_CNDWriteCOGSection },
+      { "cogs", &sithCog_LoadBinary, &sithCog_WriteBinary },
       {
         "templates",
         &sithTemplate_CNDReadTemplateSection,
