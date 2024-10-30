@@ -2175,7 +2175,7 @@ struct sSithCog
     SithCogFlag flags;
     int idx;
     SithCogStatus status;
-    int execPos;
+    size_t execPos;
     int statusParams[2];
     unsigned int msecPulseInterval;
     unsigned int msecNextPulseTime;
@@ -2188,16 +2188,17 @@ struct sSithCog
     SithCogMsgType execMsgType;
     int params[4];
     int returnValue;
-    SithCogCallstackElement callstack[4];
-    int callDepth;
+    SithCogCallstackElement callstack[SITHCOGEXEC_CALLSTACKSIZE];
+    size_t callDepth;
     SithCogSymbolTable* pSymbolTable;
-    SithCogSymbolValue stack[256];
-    int stackSize;
+    SithCogSymbolValue stack[SITHCOGEXEC_STACKSIZE];
+    size_t stackSize;
     char aName[64];
-    char aSymRefValues[64][256];
+    char aSymRefValues[256][64];
     SithCogSymbolValue* aHeap;
-    int heapSize;
+    size_t heapSize;
 };
+static_assert(sizeof(SithCog) == 20712, "sizeof(SithCog) == 20712");
 
 typedef union sSithAttachStructure
 {
