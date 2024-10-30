@@ -3027,7 +3027,7 @@ void J3DAPI JonesHud_MenuActivateItem()
                         if ( pNoSaveFormat )
                         {
                             memset(aMsg, 0, sizeof(aMsg));
-                            stdUtil_Format(aMsg, sizeof(aMsg), pNoSaveFormat, aSaveGameFilename);
+                            STD_FORMAT(aMsg, pNoSaveFormat, aSaveGameFilename);
                             //sprintf(aMsg, pNoSaveFormat, aSaveGameFilename);
                             hwnd = stdWin95_GetWindow();
                             jonesConfig_ShowMessageDialog(hwnd, "JONES_STR_EXIT", aMsg, 141);

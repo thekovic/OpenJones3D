@@ -83,7 +83,7 @@ int J3DAPI stdConffile_OpenWrite(const char* pFilename)
     writeFile = std_g_pHS->pFileOpen(pFilename, "wb");
     if ( writeFile )
     {
-        stdUtil_StringCopy(stdConffile_aWriteFilename, sizeof(stdConffile_aWriteFilename), pFilename);
+        STD_STRCPY(stdConffile_aWriteFilename, pFilename);
         return 1;
     }
     else
@@ -108,9 +108,9 @@ int J3DAPI stdConffile_OpenMode(const char* pFilename, const char* openMode)
         openFile = std_g_pHS->pFileOpen(pFilename, openMode);
         if ( !openFile )
         {
-            #ifdef J3D_DEBUG
+        #ifdef J3D_DEBUG
             STDLOG_DEBUG("Conffile '%s' could not be opened (handle=%d)\n", pFilename, openFile);
-            #endif
+        #endif
 
             openFile = 0;
             if ( stdConffile_bOpen ) {
@@ -122,7 +122,7 @@ int J3DAPI stdConffile_OpenMode(const char* pFilename, const char* openMode)
     }
 
     stdConffile_g_aLine = (char*)STDMALLOC(STDCONFFILE_LINESIZE);
-    stdUtil_StringCopy(stdConffile_pFilename, sizeof(stdConffile_pFilename), pFilename);
+    STD_STRCPY(stdConffile_pFilename, pFilename);
 
     stdConffile_linenum = 0;
     stdConffile_bOpen   = true;
@@ -159,7 +159,7 @@ void stdConffile_CloseWrite(void)
     {
         std_g_pHS->pFileClose(writeFile);
         writeFile = 0;
-        stdUtil_StringCopy(stdConffile_aWriteFilename, sizeof(stdConffile_aWriteFilename), "NOT_OPEN");
+        STD_STRCPY(stdConffile_aWriteFilename, "NOT_OPEN");
     }
 }
 
@@ -363,7 +363,7 @@ void stdConffile_PopStack(void)
 {
     if ( stackLevel )
     {
-        stdUtil_StringCopy(stdConffile_pFilename, sizeof(stdConffile_pFilename), aFilenameStack[--stackLevel]);
+        STD_STRCPY(stdConffile_pFilename, aFilenameStack[--stackLevel]);
 
         stdConffile_linenum = linenumStack[stackLevel];
         openFile = openFileStack[stackLevel];

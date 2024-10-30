@@ -1862,8 +1862,8 @@ HRESULT CALLBACK std3D_D3DEnumDevicesCallback(GUID* lpGuid, LPSTR lpDeviceDescri
     Device3D* pD3DDriver = &std3D_aDevices[std3D_numDevices];
     pD3DDriver->duid = *lpGuid;
 
-    stdUtil_StringCopy(pD3DDriver->deviceDescription, sizeof(pD3DDriver->deviceDescription), lpDeviceDescription);
-    stdUtil_StringCopy(pD3DDriver->deviceName, sizeof(pD3DDriver->deviceName), lpDeviceName);
+    STD_STRCPY(pD3DDriver->deviceDescription, lpDeviceDescription);
+    STD_STRCPY(pD3DDriver->deviceName, lpDeviceName);
 
     pD3DDriver->bHAL = lpD3DHalDDesc->dwFlags != 0;
     if ( pD3DDriver->bHAL ) {

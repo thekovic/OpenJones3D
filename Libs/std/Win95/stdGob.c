@@ -77,7 +77,7 @@ Gob* J3DAPI stdGob_Load(const char* pFilename, int numFileHandles, int bMMapFile
 
 int J3DAPI stdGob_LoadEntry(Gob* pGob, const char* pFilename, int numFileHandles, int bMMapFile)
 {
-    stdUtil_StringCopy(pGob->aFilePath, STD_ARRAYLEN(pGob->aFilePath), pFilename);
+    STD_STRCPY(pGob->aFilePath, pFilename);
     pGob->numHandles = numFileHandles;
     pGob->pCurHandle = NULL;
 
@@ -223,7 +223,7 @@ GobFileHandle* J3DAPI stdGob_FileOpen(Gob* pGob, const char* aName)
     STD_ASSERTREL(pGob);
     STD_ASSERTREL(aName);
 
-    stdUtil_StringCopy(stdGob_aEntryNameBuff, STD_ARRAYLEN(stdGob_aEntryNameBuff), aName);
+    STD_STRCPY(stdGob_aEntryNameBuff, aName);
     stdUtil_ToLower(stdGob_aEntryNameBuff);
 
     pEntry = (tGobFileEntry*)stdHashtbl_Find(pGob->pDirHash, stdGob_aEntryNameBuff);

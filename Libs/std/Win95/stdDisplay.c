@@ -1056,8 +1056,8 @@ BOOL PASCAL stdDisplay_DDEnumCallback(GUID* lpGUID, LPSTR szDriverName, LPSTR sz
         pDevice->bGuidNotSet = 1;
     }
 
-    stdUtil_StringCopy(pDevice->aDriverName, sizeof(pDevice->aDriverName), szDriverName);
-    stdUtil_StringCopy(pDevice->aDeviceName, sizeof(pDevice->aDeviceName), szDriverDescription);
+    STD_STRCPY(pDevice->aDriverName, szDriverName);
+    STD_STRCPY(pDevice->aDeviceName, szDriverDescription);
 
     LPDIRECTDRAW lpDD = NULL;
     HRESULT ddres = DirectDrawCreate(lpGUID, &lpDD, 0);

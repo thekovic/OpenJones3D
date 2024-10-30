@@ -65,7 +65,7 @@ FindFileData* J3DAPI stdFileUtil_NewFind(const char* path, int mode, const char*
         pFilter++;
     }
 
-    stdUtil_Format(std_g_genBuffer, sizeof(std_g_genBuffer), "*.%s", pFilter);
+    STD_FORMAT(std_g_genBuffer, "*.%s", pFilter);
     stdFnames_MakePath(pData->aSearchFilter, sizeof(pData->aSearchFilter), path, std_g_genBuffer);
     return pData;
 }
@@ -105,7 +105,7 @@ int J3DAPI stdFileUtil_FindNext(FindFileData* ffData, tFoundFileInfo* pFileInfo)
         }
     }
 
-    stdUtil_StringCopy(pFileInfo->aName, sizeof(pFileInfo->aName), findData.cFileName);
+    STD_STRCPY(pFileInfo->aName, findData.cFileName);
 
     pFileInfo->lastChanged  = FileTimeToUnixTime(&findData.ftLastWriteTime); // TODO: After all code that uses find file functions is defined change the type of `lastChanged` to time_t
     pFileInfo->bIsDirectory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;

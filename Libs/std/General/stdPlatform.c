@@ -86,29 +86,23 @@ unsigned int stdPlatform_GetTimeMsec(void)
 
 J3DNORETURN void J3DAPI stdPlatform_Assert(const char* pErrorStr, const char* pFilename, int linenum)
 {
-    int fnpos;
-    int bFoundSep;
-    int pos;
-    char chr;
-    char aStr[512];
-
-    fnpos = 0;
-    bFoundSep = 0;
     if ( stdPlatform_bAssert )
     {
         DebugBreak();
         exit(1);
     }
-
     stdPlatform_bAssert = true;
 
-    pos = 0;
-    for ( chr = *pFilename; chr; ++pos )
+    size_t pos     = 0;
+    size_t fnpos   = 0;
+    bool bFoundSep = false;
+
+    for ( char chr = *pFilename; chr; ++pos )
     {
         if ( chr == '\\' )
         {
-            bFoundSep = 1;
-            fnpos = pos;
+            bFoundSep = true;
+            fnpos     = pos;
         }
 
         chr = pFilename[pos + 1];
@@ -119,9 +113,11 @@ J3DNORETURN void J3DAPI stdPlatform_Assert(const char* pErrorStr, const char* pF
         ++fnpos;
     }
 
-    stdUtil_Format(aStr, sizeof(aStr), "%s(%d):  %s\n", &pFilename[fnpos], linenum, pErrorStr);
-    std_g_pHS->pErrorPrint("ASSERT: %s", aStr);
-    MessageBoxA(NULL, aStr, "Assert Handler", MB_TASKMODAL);
+    char aText[512];
+    STD_FORMAT(aText, "%s(%d):  %s\n", &pFilename[fnpos], linenum, pErrorStr);
+    std_g_pHS->pErrorPrint("ASSERT: %s", aText);
+    MessageBoxA(NULL, aText, "Assert Handler", MB_TASKMODAL);
+
     DebugBreak();
     exit(1);
 }
