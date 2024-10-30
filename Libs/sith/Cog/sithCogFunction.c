@@ -1,6 +1,13 @@
 #include "sithCogFunction.h"
 #include <j3dcore/j3dhook.h>
+
+#include <sith/Cog/sithCog.h>
+#include <sith/Cog/sithCogExec.h>
+#include <sith/Devices/sithConsole.h>
+#include <sith/Gameplay/sithTime.h>
 #include <sith/RTI/symbols.h>
+
+#include <std/General/stdUtil.h>
 
 
 void sithCogFunction_InstallHooks(void)
@@ -15,7 +22,7 @@ void sithCogFunction_InstallHooks(void)
     // J3D_HOOKFUNC(sithCogFunction_GetSourceType);
     // J3D_HOOKFUNC(sithCogFunction_GetSysDate);
     // J3D_HOOKFUNC(sithCogFunction_GetSysTime);
-    // J3D_HOOKFUNC(sithCogFunction_Sleep);
+    J3D_HOOKFUNC(sithCogFunction_Sleep);
     // J3D_HOOKFUNC(sithCogFunction_Print);
     // J3D_HOOKFUNC(sithCogFunction_PrintVector);
     // J3D_HOOKFUNC(sithCogFunction_PrintFlex);
@@ -187,10 +194,10 @@ void J3DAPI sithCogFunction_GetSysTime(SithCog* pCog)
     J3D_TRAMPOLINE_CALL(sithCogFunction_GetSysTime, pCog);
 }
 
-void J3DAPI sithCogFunction_Sleep(SithCog* pCog)
-{
-    J3D_TRAMPOLINE_CALL(sithCogFunction_Sleep, pCog);
-}
+//void J3DAPI sithCogFunction_Sleep(SithCog* pCog)
+//{
+//    J3D_TRAMPOLINE_CALL(sithCogFunction_Sleep, pCog);
+//}
 
 void J3DAPI sithCogFunction_Print(SithCog* pCog)
 {
@@ -811,4 +818,23 @@ void J3DAPI sithCogFunction_FindNewSector(SithCog* pCog)
 void J3DAPI sithCogFunction_FindNewSectorFromThing(SithCog* pCog)
 {
     J3D_TRAMPOLINE_CALL(sithCogFunction_FindNewSectorFromThing, pCog);
+}
+
+void J3DAPI sithCogFunction_Sleep(SithCog* pCog)
+{
+    float secWait = sithCogExec_PopFlex(pCog);
+    if ( secWait <= 0.0f )
+    {
+        SITHLOG_ERROR("Cog %s: Wait time less than 0 in Sleep(); assuming .1 seconds\n", pCog->aName);
+        secWait = 0.1f;
+    }
+
+    if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
+    {
+        STD_FORMAT(std_g_genBuffer, "Cog %s: Sleeping for %f seconds.\n", pCog->aName, secWait);
+        sithConsole_PrintString(std_g_genBuffer);
+    }
+
+    pCog->status = SITHCOG_STATUS_SLEEPING;
+    pCog->statusParams[0] = (sithTime_g_msecGameTime + (uint32_t)(secWait * 1000.0f));
 }
