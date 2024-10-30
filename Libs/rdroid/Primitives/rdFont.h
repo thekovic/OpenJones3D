@@ -68,7 +68,7 @@ inline float rdFont_GetNormLineSpacing(const rdFont* pFont)
  *
  * @return A pointer to the end of the last word that fits within the width (640 * widthScale) or NULL if no valid line is found.
  */
-const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, float widthScale);
+const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const rdFont* pFont, float widthScale);
 
 /**
  * @brief Calculates the total width of the given text based on the provided font metrics.
@@ -81,7 +81,7 @@ const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, fl
  *
  * @return The total width of the text, in pixels.
  */
-size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont);
+size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFont);
 
 /**
  * @brief Draws a line of text to screen at a normalized screen position using the specified font, stopping when the screen width is exceeded.
@@ -97,7 +97,7 @@ size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont);
  * @param pFont - Pointer to the rdFont structure that defines the font for the text rendering.
  * @param alignFlags -  Flags for alignment, defining how the text should be aligned (RDFONT_ALIGN*).
  */
-void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
+void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
 
 /**
  * @brief Draws a line of text to screen at a normalized screen position with clipping based on Y-axis, stopping when the screen width is exceeded.
@@ -113,7 +113,7 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
  * @param pFont - Pointer to the rdFont structure that defines the font for the text rendering.
  * @param alignFlags - Flags for alignment, defining how the text should be aligned (RDFONT_ALIGN*).
  */
-void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
+void J3DAPI rdFont_DrawTextLineClipped(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
 
 // Helper hooking functions
 void rdFont_InstallHooks(void);

@@ -319,7 +319,7 @@ rdFontColor* rdFont_DuplicateFontColor(void)
     return aColor;
 }
 
-const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, float widthScale)
+const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const rdFont* pFont, float widthScale)
 {
     if ( !pFont || !pText )
     {
@@ -358,7 +358,7 @@ const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, fl
     return NULL;
 }
 
-size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont)
+size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFont)
 {
     if ( !pFont || !pText )
     {
@@ -382,7 +382,7 @@ size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont)
     return (size_t)textWidth;
 }
 
-void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
 {
     int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
     int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;
@@ -540,7 +540,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     rdCache_AddAlphaProcFace(pPoly->numVertices);
 }
 
-void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+void J3DAPI rdFont_DrawTextLineClipped(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
 {
     int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
     int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;

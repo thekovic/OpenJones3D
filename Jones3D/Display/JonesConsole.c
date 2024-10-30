@@ -159,13 +159,13 @@ void JonesConsole_FlushToDisplay(void)
         rdVector_Set4(&textColor[3], 1.0f, 1.0f, 0.0f, 1.0f);
         rdFont_SetFontColor(textColor);
 
-        char aPrintText[256] = { 0 };
+        unsigned char aPrintText[256] = { 0 };
         for ( size_t i = 0; i < JonesConsole_nextIndex && i < STD_ARRAYLEN(JonesConsole_aBuffers); ++i )
         {
-            const char* pText = JonesConsole_aBuffers[i].aLine;
+            const unsigned char* pText = (unsigned char*)JonesConsole_aBuffers[i].aLine;
             while ( pText )
             {
-                const char* pEnd = rdFont_GetWrapLine(pText, JonesConsole_pFont, /*widthScale=*/1.0f);
+                const unsigned char* pEnd = rdFont_GetWrapLine(pText, JonesConsole_pFont, /*widthScale=*/1.0f);
                 if ( pEnd == pText )
                 {
                     pEnd = NULL;
@@ -174,7 +174,7 @@ void JonesConsole_FlushToDisplay(void)
                 if ( pEnd )
                 {
                     memset(aPrintText, 0, sizeof(aPrintText));
-                    stdUtil_StringNumCopy(aPrintText, sizeof(aPrintText), pText, pEnd - pText);
+                    stdUtil_StringNumCopy((char*)aPrintText, sizeof(aPrintText), (const char*)pText, pEnd - pText);
                     rdFont_DrawTextLine(aPrintText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, JonesConsole_pFont, RDFONT_ALIGNLEFT);
                     pText = pEnd;
                 }
