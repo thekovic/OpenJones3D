@@ -15,7 +15,7 @@ void J3DAPI sithCogParse_FreeParseTree();
 int J3DAPI sithCogParse_Load(const char* pFilename, SithCogScript* pScript, int bParseDescription);
 signed int J3DAPI sithCogParse_ParseSectionCode(SithCogScript* pScript);
 SithCogSymbolTable* J3DAPI sithCogParse_DuplicateSymbolTable(const SithCogSymbolTable* pSource);
-SithCogSymbolTable* J3DAPI sithCogParse_AllocSymbolTable(int numElements);
+SithCogSymbolTable* J3DAPI sithCogParse_AllocSymbolTable(size_t numElements);
 int J3DAPI sithCogParse_FreeSymbolTable(SithCogSymbolTable* pTable);
 SithCogSymbol* J3DAPI sithCogParse_AddSymbol(SithCogSymbolTable* pTable, const char* pName);
 void J3DAPI sithCogParse_SetSymbolValue(SithCogSymbol* pSymbol, const SithCogSymbolValue* pValue);

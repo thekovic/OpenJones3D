@@ -476,7 +476,7 @@
 #define sithCogParse_Load_TYPE int (J3DAPI*)(const char*, SithCogScript*, int)
 #define sithCogParse_ParseSectionCode_TYPE signed int (J3DAPI*)(SithCogScript*)
 #define sithCogParse_DuplicateSymbolTable_TYPE SithCogSymbolTable* (J3DAPI*)(const SithCogSymbolTable*)
-#define sithCogParse_AllocSymbolTable_TYPE SithCogSymbolTable* (J3DAPI*)(int)
+#define sithCogParse_AllocSymbolTable_TYPE SithCogSymbolTable* (J3DAPI*)(size_t)
 #define sithCogParse_FreeSymbolTable_TYPE int (J3DAPI*)(SithCogSymbolTable*)
 #define sithCogParse_AddSymbol_TYPE SithCogSymbol* (J3DAPI*)(SithCogSymbolTable*, const char*)
 #define sithCogParse_SetSymbolValue_TYPE void (J3DAPI*)(SithCogSymbol*, const SithCogSymbolValue*)

@@ -88,7 +88,7 @@ SithCogSymbolTable* J3DAPI sithCogParse_DuplicateSymbolTable(const SithCogSymbol
     return J3D_TRAMPOLINE_CALL(sithCogParse_DuplicateSymbolTable, pSource);
 }
 
-SithCogSymbolTable* J3DAPI sithCogParse_AllocSymbolTable(int numElements)
+SithCogSymbolTable* J3DAPI sithCogParse_AllocSymbolTable(size_t numElements)
 {
     return J3D_TRAMPOLINE_CALL(sithCogParse_AllocSymbolTable, numElements);
 }
