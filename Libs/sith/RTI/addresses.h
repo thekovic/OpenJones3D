@@ -1880,9 +1880,9 @@
 #define sithItem_SetItemTaken_ADDR 0x004AEF10
 #define sithItem_Remove_ADDR 0x004AEFB0
 #define sithItem_ParseArg_ADDR 0x004AF0C0
-#define sithPVS_NDYReadPVSSection_ADDR 0x004B05E0
-#define sithPVS_CNDWritePVSSection_ADDR 0x004B07C0
-#define sithPVS_CNDReadPVSSection_ADDR 0x004B0830
+#define sithPVS_LoadText_ADDR 0x004B05E0
+#define sithPVS_WriteBinary_ADDR 0x004B07C0
+#define sithPVS_LoadBinary_ADDR 0x004B0830
 #define sithPVS_SetTable_ADDR 0x004B08B0
 
 // Variable addresses
