@@ -61,7 +61,7 @@ rdParticleLoaderFunc J3DAPI rdParticle_RegisterLoader(rdParticleLoaderFunc pFunc
     return pPrevFunc;
 }
 
-rdParticle* J3DAPI rdParticle_New(unsigned int num, float size, rdMaterial* pMat, rdLightMode lightMode)
+rdParticle* J3DAPI rdParticle_New(size_t num, float size, rdMaterial* pMat, rdLightMode lightMode)
 {
     rdParticle* pParticle;
 
@@ -83,7 +83,7 @@ rdParticle* J3DAPI rdParticle_New(unsigned int num, float size, rdMaterial* pMat
     return pParticle;
 }
 
-int J3DAPI rdParticle_NewEntry(rdParticle* pParticle, unsigned int num, float size, rdMaterial* pMaterial, rdLightMode lightMode)
+int J3DAPI rdParticle_NewEntry(rdParticle* pParticle, size_t num, float size, rdMaterial* pMaterial, rdLightMode lightMode)
 {
     RD_ASSERTREL(num <= RDPARTICLE_MAXVERTS);
 
