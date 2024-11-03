@@ -321,14 +321,14 @@ int sithRender_Open(void)
 
     if ( sithRenderSky_Open(sithWorld_g_pCurrentWorld->horizonDistance, sithWorld_g_pCurrentWorld->ceilingSkyHeight) )
     {
-        RDLOG_ERROR("Unable to Open sithRenderSky.\n");
+        RDLOG_ERROR("Unable to Open sithRenderSky.\n"); // TODO: Why using RDLOG
         return 1;
     }
 
     sithRender_aAdjoinTable = (uint8_t*)STDMALLOC(sithWorld_g_pCurrentWorld->numAdjoins + 1);
     if ( !sithRender_aAdjoinTable )
     {
-        RDLOG_ERROR("Unable to Alloc Adjoin Table.\n");
+        RDLOG_ERROR("Unable to Alloc Adjoin Table.\n"); // TODO: Why using RDLOG
         return 1;
     }
 
@@ -457,7 +457,7 @@ void sithRender_Draw(void)
     sithRender_BuildVisibleSectorsThingList();
     if ( sithRender_numVisibleThingSectors > STD_ARRAYLEN(sithRender_aThingSectors) )
     {
-        RDLOG_ERROR("Too many sectors with things in view %d of %d\n", STD_ARRAYLEN(sithRender_aThingSectors), sithRender_numVisibleThingSectors);
+        RDLOG_ERROR("Too many sectors with things in view %d of %d\n", STD_ARRAYLEN(sithRender_aThingSectors), sithRender_numVisibleThingSectors); // TODO: Why using RDLOG
     }
 
     if ( (sithRender_renderflags & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
@@ -1255,7 +1255,7 @@ void sithRender_RenderThings(void)
 
 int J3DAPI sithRender_RenderThing(SithThing* pThing)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
+    RD_ASSERTREL(pThing != ((void*)0)); // TODO: Why using RD_ASSERTREL
 
     if ( (pThing->flags & SITH_TF_SEEN) == 0 )
     {

@@ -1003,7 +1003,7 @@ int J3DAPI sithCog_LoadBinary(tFileHandle fh, SithWorld* pWorld)
     char (*aValues)[SITHCOG_SYMVALUESTRLEN] = NULL;
 
     uint32_t aSizes[2];
-    if ( sith_g_pHS->pFileRead(fh, aSizes, sizeof(aSizes)) != sizeof(aSizes) || sithCog_AllocWorldCogs(pWorld, pWorld->numCogs) )
+    if ( sith_g_pHS->pFileRead(fh, aSizes, sizeof(aSizes)) != sizeof(aSizes) || sithCog_AllocWorldCogs(pWorld, pWorld->numCogs) ) // TODO: Use sizeCogs when allocating cogs
     {
         static_assert(sizeof(aSizes) == 8, "sizeof((aSizes) == 8");
         goto error;
