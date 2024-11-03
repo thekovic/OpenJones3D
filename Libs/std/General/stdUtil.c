@@ -184,6 +184,13 @@ void J3DAPI stdUtil_ToLower(char* pStr)
     }
 }
 
+void J3DAPI stdUtil_ToUpper(char* pStr)
+{
+    for ( char* pCur = pStr; *pCur; ++pCur ) {
+        *pCur = (char)toupper(*pCur);
+    }
+}
+
 int J3DAPI stdUtil_StrCmp(const char* str1, const char* str2)
 {
     while ( 1 )

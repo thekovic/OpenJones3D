@@ -80,8 +80,8 @@ J3D_EXTERN_C_START
 */
 #define STD_WSTRCPY(dest, src)  \
     do {\
-        _Static_assert(STD_ISSTRARRAY(dest), "STDCOPYSTR requires an array type for 'dest'"); \
-        stdUtil_StringWCopy(dest, STD_ARRAYLEN(dest), src); \
+        _Static_assert(STD_ISWSTRARRAY(dest), "STDCOPYSTR requires an array type for 'dest'"); \
+        stdUtil_WStringCopy(dest, STD_ARRAYLEN(dest), src); \
     } while ( 0 )
 
 /**
@@ -119,11 +119,15 @@ int stdUtil_Format(char* pStr, size_t size, const char* format, ...);
 int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...); // Added
 char* J3DAPI stdUtil_StringSplit(const char* pSource, char* pDest, unsigned int destSize, char* pSeparators);
 char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, unsigned int destSize);
+
 int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, unsigned int maxChars);
 void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, unsigned int maxChars);
 wchar_t* J3DAPI stdUtil_ToWString(const char* pString);
 char* J3DAPI stdUtil_ToAString(wchar_t* pwString);
+
 void J3DAPI stdUtil_ToLower(char* pStr);
+void J3DAPI stdUtil_ToUpper(char* pStr); // Added
+
 int J3DAPI stdUtil_StrCmp(const char* str1, const char* str2);
 
 /**
