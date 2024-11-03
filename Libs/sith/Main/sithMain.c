@@ -79,8 +79,8 @@ void sithMain_ResetGlobals(void)
       { "SITHSTRING_STARTAET", "15_AET" },
       { "SITHSTRING_STARTPRU", "17_PRU" }
     };
-    memcpy((SithMainStartLevelNdsInfo *)&sithMain_aLevelNdsInfos, &sithMain_aLevelNdsInfos_tmp, sizeof(sithMain_aLevelNdsInfos));
-    
+    memcpy((SithMainStartLevelNdsInfo*)&sithMain_aLevelNdsInfos, &sithMain_aLevelNdsInfos_tmp, sizeof(sithMain_aLevelNdsInfos));
+
     memset(&sithMain_aLevelNdsFileNameBuf, 0, sizeof(sithMain_aLevelNdsFileNameBuf));
     memset(&sithMain_szScreenShotsFileName, 0, sizeof(sithMain_szScreenShotsFileName));
     memset(&sithMain_aNdsLevelFilenameBuf, 0, sizeof(sithMain_aNdsLevelFilenameBuf));
@@ -196,7 +196,7 @@ float J3DAPI sithGetCombatDamageScalar()
     return J3D_TRAMPOLINE_CALL(sithGetCombatDamageScalar);
 }
 
-double J3DAPI sithGetIMPDamageScalar()
+float sithGetIMPDamageScalar(void)
 {
     return J3D_TRAMPOLINE_CALL(sithGetIMPDamageScalar);
 }

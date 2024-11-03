@@ -22,7 +22,6 @@
 #define sithMulti_msecLastSyncScoreTime J3D_DECL_FAR_VAR(sithMulti_msecLastSyncScoreTime, int)
 #define sithMulti_msecWelcomeUpdateInterval J3D_DECL_FAR_VAR(sithMulti_msecWelcomeUpdateInterval, int)
 #define sithMulti_dword_17F10EC J3D_DECL_FAR_VAR(sithMulti_dword_17F10EC, int)
-#define sithMulti_aUnknown J3D_DECL_FAR_ARRAYVAR(sithMulti_aUnknown, SithMultiUnknown(*)[20])
 
 void sithMulti_InstallHooks(void)
 {
@@ -63,7 +62,7 @@ void sithMulti_ResetGlobals(void)
 {
     int sithMulti_tickRate_tmp = 70;
     memcpy(&sithMulti_tickRate, &sithMulti_tickRate_tmp, sizeof(sithMulti_tickRate));
-    
+
     memset(&sithMulti_numUpdatedSurfaces, 0, sizeof(sithMulti_numUpdatedSurfaces));
     memset(&sithMulti_lastUpdateIdx, 0, sizeof(sithMulti_lastUpdateIdx));
     memset(&sithMulti_playerWelcomeState, 0, sizeof(sithMulti_playerWelcomeState));
@@ -85,7 +84,6 @@ void sithMulti_ResetGlobals(void)
     memset(&sithMulti_g_serverId, 0, sizeof(sithMulti_g_serverId));
     memset(&sithMulti_dword_17F10EC, 0, sizeof(sithMulti_dword_17F10EC));
     memset(&sithMulti_g_message, 0, sizeof(sithMulti_g_message));
-    memset(&sithMulti_aUnknown, 0, sizeof(sithMulti_aUnknown));
 }
 
 void sithMulti_CloseGame()
@@ -193,7 +191,7 @@ int J3DAPI sithMulti_QuitGame(unsigned int msecTime, int state)
     return J3D_TRAMPOLINE_CALL(sithMulti_QuitGame, msecTime, state);
 }
 
-int J3DAPI sithMulti_Respawn(SithThing* pPlayer)
+size_t J3DAPI sithMulti_Respawn(SithThing* pPlayer)
 {
     return J3D_TRAMPOLINE_CALL(sithMulti_Respawn, pPlayer);
 }

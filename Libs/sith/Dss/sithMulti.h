@@ -36,7 +36,7 @@ void J3DAPI sithMulti_SyncScores();
 int J3DAPI sithMulti_GetPlayerNum(DPID idPlayer);
 void J3DAPI sithMulti_ProcessKilledPlayer(const SithPlayer* pPlayer, const SithThing* pPlayerThing, const SithThing* pKiller);
 int J3DAPI sithMulti_QuitGame(unsigned int msecTime, int state);
-int J3DAPI sithMulti_Respawn(SithThing* pPlayer);
+size_t J3DAPI sithMulti_Respawn(SithThing* pPlayer);
 void J3DAPI sithMulti_RemoveStaticThing(int guid);
 void J3DAPI sithMulti_UpdateSurfaces();
 void J3DAPI sithMulti_UpdateSectors();
