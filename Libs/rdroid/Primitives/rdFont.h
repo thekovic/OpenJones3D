@@ -56,19 +56,23 @@ inline float rdFont_GetNormLineSpacing(const rdFont* pFont)
 }
 
 /**
- * @brief Returns the pointer to the end of the last word in the text that can still fit within the specified screen width.
+ * @brief Returns the pointer to the end of the last word in the text that can still fit within the screen width.
  *
  * The function calculates the line's end by measuring the width of each character using the provided font.
- * It continues until the accumulated width plus the next character exceeds the screen width (calculated as 640 * widthScale).
+ * It continues until the accumulated width plus the next character exceeds the screen width (calculated as RD_REF_WIDTH * widthScale).
  * The pointer returned points to the end of the last word that still fits within these bounds.
  *
  * @param pText - Pointer to the input text string to be wrapped.
  * @param pFont - Pointer to the rdFont structure that provides the font metrics for character widths.
- * @param widthScale - Scaling factor applied to 640 pixels to determine the line's maximum width.
+ * @param widthScale - Scaling factor applied to RD_REF_WIDTH pixels to determine the line's maximum width.
  *
- * @return A pointer to the end of the last word that fits within the width (640 * widthScale) or NULL if no valid line is found.
+ *
+ * @return
+ * - A pointer to the end of the last word that fits within the width (RD_REF_WIDTH * widthScale).
+ * - `pText` if there is a single long word without spaces.
+ * - `NULL` if the input `pText` is of size 0 or the whole text can fit onto the screen width.
  */
-const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const rdFont* pFont, float widthScale);
+const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, float widthScale);
 
 /**
  * @brief Calculates the total width of the given text based on the provided font metrics.
@@ -81,7 +85,7 @@ const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const
  *
  * @return The total width of the text, in pixels.
  */
-size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFont);
+size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont);
 
 /**
  * @brief Draws a line of text to screen at a normalized screen position using the specified font, stopping when the screen width is exceeded.
@@ -97,7 +101,7 @@ size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFon
  * @param pFont - Pointer to the rdFont structure that defines the font for the text rendering.
  * @param alignFlags -  Flags for alignment, defining how the text should be aligned (RDFONT_ALIGN*).
  */
-void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
+void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
 
 /**
  * @brief Draws a line of text to screen at a normalized screen position with clipping based on Y-axis, stopping when the screen width is exceeded.
@@ -113,7 +117,7 @@ void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, fl
  * @param pFont - Pointer to the rdFont structure that defines the font for the text rendering.
  * @param alignFlags - Flags for alignment, defining how the text should be aligned (RDFONT_ALIGN*).
  */
-void J3DAPI rdFont_DrawTextLineClipped(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
+void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags);
 
 // Helper hooking functions
 void rdFont_InstallHooks(void);

@@ -100,13 +100,23 @@ int JonesConsole_Open(void)
         return 1;
     }
 
-    pFuncHashtbl = stdHashtbl_New(64);// ??? seems like this is created for no reason
+    pFuncHashtbl = stdHashtbl_New(64);
     STD_ASSERTREL(pFuncHashtbl);
 
     sithConsole_RegisterCommand(JonesConsole_PrintVersion, "version", 0);
     sithConsole_RegisterCommand(JonesConsole_PrintFramerate, "framerate", 0);
     sithConsole_RegisterCommand(JonesConsole_PrintPolys, "polys", 0);
     sithConsole_RegisterCommand(JonesConsole_ShowEndCredits, "endcredit", 0);
+
+    // sithConsole_RegisterCommand(JonesConsole_JumpLevel, "jumplevel", 0);
+    //sithConsole_RegisterCommand(JonesConsole_Radius, "radius", 0);
+    //sithConsole_RegisterCommand(JonesConsole_KatOn, "katon", 0);
+    //sithConsole_RegisterCommand(JonesConsole_KatOff, "katoff", 0);
+    //sithConsole_RegisterCommand(JonesConsole_PVS, "pvs", 0);
+    //sithConsole_RegisterCommand(JonesConsole_NextLevel, "nextlevel", 0);
+    //sithConsole_RegisterCommand(JonesConsole_EndLevel, "endlevel", 0);
+    //sithConsole_RegisterCommand(JonesConsole_Restart, "restart", 0);
+    //sithConsole_RegisterCommand(JonesConsole_Sounds, "sounds", 0);
 
     JonesConsole_nextIndex = 0;
 
@@ -159,13 +169,13 @@ void JonesConsole_FlushToDisplay(void)
         rdVector_Set4(&textColor[3], 1.0f, 1.0f, 0.0f, 1.0f);
         rdFont_SetFontColor(textColor);
 
-        unsigned char aPrintText[256] = { 0 };
+        char aPrintText[256] = { 0 };
         for ( size_t i = 0; i < JonesConsole_nextIndex && i < STD_ARRAYLEN(JonesConsole_aBuffers); ++i )
         {
-            const unsigned char* pText = (unsigned char*)JonesConsole_aBuffers[i].aLine;
+            const char* pText = JonesConsole_aBuffers[i].aLine;
             while ( pText )
             {
-                const unsigned char* pEnd = rdFont_GetWrapLine(pText, JonesConsole_pFont, /*widthScale=*/1.0f);
+                const char* pEnd = rdFont_GetWrapLine(pText, JonesConsole_pFont, /*widthScale=*/1.0f);
                 if ( pEnd == pText )
                 {
                     pEnd = NULL;
@@ -174,7 +184,7 @@ void JonesConsole_FlushToDisplay(void)
                 if ( pEnd )
                 {
                     memset(aPrintText, 0, sizeof(aPrintText));
-                    stdUtil_StringNumCopy((char*)aPrintText, sizeof(aPrintText), (const char*)pText, pEnd - pText);
+                    STD_STRNCPY(aPrintText, pText, pEnd - pText);
                     rdFont_DrawTextLine(aPrintText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, JonesConsole_pFont, RDFONT_ALIGNLEFT);
                     pText = pEnd;
                 }

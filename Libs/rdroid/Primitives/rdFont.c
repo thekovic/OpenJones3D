@@ -319,7 +319,7 @@ rdFontColor* rdFont_DuplicateFontColor(void)
     return aColor;
 }
 
-const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const rdFont* pFont, float widthScale)
+const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, float widthScale)
 {
     if ( !pFont || !pText )
     {
@@ -332,7 +332,7 @@ const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const
 
     for ( size_t i = 0; i < textLen; ++i )
     {
-        size_t curChar = pText[i];
+        size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
         if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
         {
             curChar = '?';
@@ -358,7 +358,7 @@ const unsigned char* J3DAPI rdFont_GetWrapLine(const unsigned char* pText, const
     return NULL;
 }
 
-size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFont)
+size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont)
 {
     if ( !pFont || !pText )
     {
@@ -370,7 +370,7 @@ size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFon
 
     for ( size_t i = 0; i < texLen; ++i )
     {
-        size_t curChar = pText[i];
+        size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
         if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
         {
             curChar = '?';
@@ -382,7 +382,7 @@ size_t J3DAPI rdFont_GetTextWidth(const unsigned char* pText, const rdFont* pFon
     return (size_t)textWidth;
 }
 
-void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
 {
     int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
     int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;
@@ -405,7 +405,7 @@ void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, fl
             double textWidth = 0.0f;
             for ( size_t i = 0; i < textLen; ++i )
             {
-                size_t curChar = pText[i];
+                size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
                 if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
                 {
                     curChar = '?';
@@ -424,7 +424,7 @@ void J3DAPI rdFont_DrawTextLine(const unsigned char* pText, float x, float y, fl
 
         for ( size_t i = 0; i < textLen; ++i )
         {
-            size_t curChar = pText[i];
+            size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
             if ( curChar == 160 ) // 160 - no-break space
             {
                 curChar = ' ';
@@ -540,7 +540,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     rdCache_AddAlphaProcFace(pPoly->numVertices);
 }
 
-void J3DAPI rdFont_DrawTextLineClipped(const unsigned char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
 {
     int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
     int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;
@@ -561,7 +561,7 @@ void J3DAPI rdFont_DrawTextLineClipped(const unsigned char* pText, float x, floa
             double textWidth = 0.0f;
             for ( size_t i = 0; i < textLen; ++i )
             {
-                size_t curChar = pText[i];
+                size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
                 if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
                 {
                     curChar = '?';
@@ -580,7 +580,7 @@ void J3DAPI rdFont_DrawTextLineClipped(const unsigned char* pText, float x, floa
 
         for ( size_t i = 0; i < textLen; ++i )
         {
-            size_t curChar = pText[i];
+            size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
             if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
             {
                 curChar = '?';
