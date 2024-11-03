@@ -2589,16 +2589,17 @@ typedef struct sCndAdjoin
 
 typedef struct sCndSurfaceInfo
 {
-    int matNum;
-    int surfflags;
-    int faceflags;
+    int32_t matNum;
+    int32_t surfflags;
+    int32_t faceflags;
     rdGeometryMode geoMode;
     rdLightMode lightMode;
-    int adjoinNum;
+    int32_t adjoinNum;
     rdVector4 color;
     rdVector3 normal;
-    int numVerts;
+    uint32_t numVerts;
 } CndSurfaceInfo;
+static_assert(sizeof(CndSurfaceInfo) == 56, "sizeof(CndSurfaceInfo) == 56");
 
 struct sSithCogSyntaxNode
 {

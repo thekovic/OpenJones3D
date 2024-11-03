@@ -83,8 +83,8 @@ void sithWorld_ResetGlobals(void)
       },
       {
         "sectors",
-        &sithSector_CNDReadSectorSection,
-        &sithSector_CNDWriteSectorSection
+        &sithSector_LoadBinary,
+        &sithSector_WriteBinary
       },
       {
         "aiclasses",

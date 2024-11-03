@@ -9,22 +9,33 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI sithSector_NDYReadSectorSection(SithWorld* pWorld, int bSkip);
-int J3DAPI sithSector_CNDWriteSectorSection(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithSector_CNDReadSectorSection(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSector_WriteText(const SithWorld* pWorld); // Added
+
+int J3DAPI sithSector_LoadText(SithWorld* pWorld, int bSkip);
+int J3DAPI sithSector_WriteBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSector_LoadBinary(tFileHandle fh, SithWorld* pWorld);
+
 int J3DAPI sithSector_ValidateSectorPointer(const SithWorld* pWorld, const SithSector* pSector);
-int J3DAPI sithSector_AllocWorldSectors(SithWorld* pWorld, int numSectors);
+
+int J3DAPI sithSector_AllocWorldSectors(SithWorld* pWorld, size_t numSectors);
 void J3DAPI sithSector_ResetAllSectors(SithWorld* pWorld);
 void J3DAPI sithSector_FreeWorldSectors(SithWorld* pWorld);
+
 SithSector* J3DAPI sithSector_FindSectorAtPos(const SithWorld* pWorld, const rdVector3* pos);
+
 void J3DAPI sithSector_HideSectorAdjoins(SithSector* pSector);
 void J3DAPI sithSector_ShowSectorAdjoins(SithSector* pSector);
+
 void J3DAPI sithSector_SetSectorFlags(SithSector* pSector, SithSectorFlag flags);
 void J3DAPI sithSector_ClearSectorFlags(SithSector* pSector, SithSectorFlag flags);
-int J3DAPI sithSector_GetSectorThingCount(const SithSector* pSector);
-int J3DAPI sithSector_GetSectorPlayerCount(const SithSector* pSector);
-unsigned int J3DAPI sithSector_SyncSector(SithSector* pSector, int flags);
-int J3DAPI sithSector_SyncSectors();
+
+size_t J3DAPI sithSector_GetSectorThingCount(const SithSector* pSector);
+size_t J3DAPI sithSector_GetSectorPlayerCount(const SithSector* pSector);
+size_t J3DAPI sithSector_GetAdjoinCount(const SithSector* pSector); // Added
+
+void J3DAPI sithSector_SyncSector(SithSector* pSector, int flags);
+size_t sithSector_SyncSectors(void);
+
 SithSector* J3DAPI sithSector_GetSectorEx(const SithWorld* pWorld, int idx);
 int J3DAPI sithSector_GetSectorIndexEx(const SithWorld* pWorld, const SithSector* pSector);
 int J3DAPI sithSector_GetSectorIndex(const SithSector* pSector);

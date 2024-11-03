@@ -1070,9 +1070,9 @@
 #define sithSurface_GetSurfaceEx_ADDR 0x0045FB70
 #define sithSurface_GetSurfaceIndex_ADDR 0x0045FBA0
 #define sithSurface_GetSurfaceIndexEx_ADDR 0x0045FBF0
-#define sithSector_NDYReadSectorSection_ADDR 0x0045FC30
-#define sithSector_CNDWriteSectorSection_ADDR 0x004601F0
-#define sithSector_CNDReadSectorSection_ADDR 0x00460540
+#define sithSector_LoadText_ADDR 0x0045FC30
+#define sithSector_WriteBinary_ADDR 0x004601F0
+#define sithSector_LoadBinary_ADDR 0x00460540
 #define sithSector_ValidateSectorPointer_ADDR 0x00460930
 #define sithSector_AllocWorldSectors_ADDR 0x00460970
 #define sithSector_ResetAllSectors_ADDR 0x00460A40
