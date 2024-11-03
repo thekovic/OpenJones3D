@@ -50,8 +50,8 @@ void sithSoundMixer_InstallHooks(void)
     J3D_HOOKFUNC(sithSoundMixer_GetChannelHandle);
     J3D_HOOKFUNC(sithSoundMixer_StopSoundThing);
     J3D_HOOKFUNC(sithSoundMixer_SetSectorAmbientSound);
-    J3D_HOOKFUNC(sithSoundMixer_Save);
-    J3D_HOOKFUNC(sithSoundMixer_Restore);
+    J3D_HOOKFUNC(sithSoundMixer_GameSave);
+    J3D_HOOKFUNC(sithSoundMixer_GameRestore);
     J3D_HOOKFUNC(sithSoundMixer_GetNextChannelGUID);
     J3D_HOOKFUNC(sithSoundMixer_PlayFlagsToChannelFlags);
     J3D_HOOKFUNC(sithSoundMixer_GetPlayPriority);
@@ -426,14 +426,14 @@ void J3DAPI sithSoundMixer_SetSectorAmbientSound(SithSector* pSector, tSoundHand
     }
 }
 
-int J3DAPI sithSoundMixer_Save(tFileHandle fh)
+int J3DAPI sithSoundMixer_GameSave(tFileHandle fh)
 {
     static_assert(sizeof(sithSoundMixer_hCurAmbientChannel) == 4, "sizeof(sithSoundMixer_hCurAmbientChannel) == 4");
     return sith_g_pHS->pFileWrite(fh, &sithSoundMixer_hCurAmbientChannel, sizeof(sithSoundMixer_hCurAmbientChannel)) != sizeof(sithSoundMixer_hCurAmbientChannel)
         || Sound_Save(fh) == 0;
 }
 
-int J3DAPI sithSoundMixer_Restore(tFileHandle fh)
+int J3DAPI sithSoundMixer_GameRestore(tFileHandle fh)
 {
     sithSoundMixer_StopAll();
 

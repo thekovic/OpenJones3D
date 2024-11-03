@@ -47,8 +47,8 @@ tSoundChannelHandle J3DAPI sithSoundMixer_GetChannelHandle(int guid);
 
 void J3DAPI sithSoundMixer_SetSectorAmbientSound(SithSector* pSector, tSoundHandle hSnd, float volume);
 
-int J3DAPI sithSoundMixer_Save(tFileHandle fh);
-signed int J3DAPI sithSoundMixer_Restore(tFileHandle fh);
+int J3DAPI sithSoundMixer_GameSave(tFileHandle fh);
+signed int J3DAPI sithSoundMixer_GameRestore(tFileHandle fh);
 
 // Helper hooking functions
 void sithSoundMixer_InstallHooks(void);
