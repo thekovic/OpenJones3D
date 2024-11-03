@@ -1033,7 +1033,7 @@ int J3DAPI sithWeapon_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pS
     }
 
     // Print debug info
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_PRINT_COLLISION_INFO) != 0 )
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_TRACKSHOTS) != 0 )
     {
         const char* pMatName = "none";
         if ( pSurf->face.pMaterial )

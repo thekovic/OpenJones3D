@@ -293,11 +293,12 @@ typedef enum eSithDebugModeFlag
 {
     SITHDEBUG_AIEVENTS_DISABLED          = 0x1,
     SITHDEBUG_PUPPETSYSTEM_DISABLED      = 0x2,
-    SITHDEBUG_PRINT_COLLISION_INFO       = 0x40,
+    SITHDEBUG_INVULNERABLE               = 0x8,
+    SITHDEBUG_TRACKSHOTS                 = 0x40,
     SITHDEBUG_AIDISABLED                 = 0x80,
     SITHDEBUG_INEDITOR                   = 0x100,
     SITHDEBUG_AILOOK_FOR_TARGET_DISABLED = 0x200,
-    SITHDEBUG_SLOWDOWNTIME               = 0x400,
+    SITHDEBUG_SLOWMODE                   = 0x400,
 } SithDebugModeFlag;
 
 typedef enum eSithWorldState
@@ -1796,6 +1797,7 @@ typedef struct sSithSectorLight
     float minRadius;
     float maxRadius;
 } SithSectorLight;
+static_assert(sizeof(SithSectorLight) == 36, "sizeof(SithSectorLight) == 36");
 
 struct sSithSector
 {
