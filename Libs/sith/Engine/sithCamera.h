@@ -9,7 +9,8 @@
 
 J3D_EXTERN_C_START
 
-#define SITHCAMERA_EXTCAMERANUM  1 // external camera 
+#define SITHCAMERA_INTCAMERANUM  0 // internal camera aka 1st person
+#define SITHCAMERA_EXTCAMERANUM  1 // external camera  aka 3rd person
 #define SITHCAMERA_IDLECAMERANUM 4 // idle camera
 
 #define sithCamera_g_pCurCamera J3D_DECL_FAR_VAR(sithCamera_g_pCurCamera, SithCamera*)

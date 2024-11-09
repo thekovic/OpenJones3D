@@ -9,6 +9,8 @@
 
 J3D_EXTERN_C_START
 
+#define SITHPLAYER_MAX_PLAYERS 24
+
 #define sithPlayer_g_bPlayerInPor J3D_DECL_FAR_VAR(sithPlayer_g_bPlayerInPor, int)
 // extern int sithPlayer_g_bPlayerInPor ;
 
@@ -42,27 +44,42 @@ J3D_EXTERN_C_START
 #define sithPlayer_g_bBonusMapBought J3D_DECL_FAR_VAR(sithPlayer_g_bBonusMapBought, int)
 // extern int sithPlayer_g_bBonusMapBought;
 
-#define sithPlayer_g_aPlayers J3D_DECL_FAR_ARRAYVAR(sithPlayer_g_aPlayers, SithPlayer(*)[24])
+#define sithPlayer_g_aPlayers J3D_DECL_FAR_ARRAYVAR(sithPlayer_g_aPlayers, SithPlayer(*)[SITHPLAYER_MAX_PLAYERS])
 // extern SithPlayer sithPlayer_g_aPlayers[24];
 
 #define sithPlayer_g_impState J3D_DECL_FAR_VAR(sithPlayer_g_impState, float)
 // extern float sithPlayer_g_impState;
 
 void J3DAPI sithPlayer_Open(const wchar_t* awName);
-void sithPlayer_Close();
-const wchar_t* J3DAPI sithPlayer_GetLocalPlayerName();
+void sithPlayer_Close(void);
+
+void J3DAPI sithPlayer_NewPlayer(SithThing* pPlayer);
+void J3DAPI sithPlayer_Reset(size_t playerNum);
+
 void J3DAPI sithPlayer_PlacePlayers(SithWorld* pWorld);
 void J3DAPI sithPlayer_HidePlayer(size_t playerNum);
 int J3DAPI sithPlayer_ShowPlayer(size_t playerNum, DPID id);
+
 void J3DAPI sithPlayer_SetLocalPlayer(size_t playerNum);
-void J3DAPI sithPlayer_Reset(size_t playerNum);
+const wchar_t* sithPlayer_GetLocalPlayerName(void);
+
 void J3DAPI sithPlayer_Update(SithPlayer* pPlayer, float secDetaTime);
-void J3DAPI sithPlayer_NewPlayer(SithThing* pPlayer);
+
+int J3DAPI sithPlayer_GetPlayerNumByName(wchar_t* pwName); // Added
 int J3DAPI sithPlayer_GetPlayerNum(DPID playerId);
+int J3DAPI sithPlayer_GetThingPlayerNum(const SithThing* pThing);
+int J3DAPI sithPlayer_GetThingPlayerNumByIndex(int thingIdx); // Added
+
 void J3DAPI sithPlayer_PlayerKilledAction(SithThing* pPlayerThing, const SithThing* pSrcThing);
 void J3DAPI sithPlayer_KillPlayer(SithThing* pPlayerThing);
-int J3DAPI sithPlayer_GetThingPlayerNum(const SithThing* pThing);
+
+float J3DAPI sithPlayer_GetInvItemAmount(size_t binIndex); // Added
+void J3DAPI sithPlayer_SetInvItemAmount(size_t binIndex, float amount); // Added
+void J3DAPI sithPlayer_SetInvItemAvailable(size_t binIndex, int bAvailable); // Added
+bool J3DAPI sithPlayer_IsInvItemAvailable(size_t binIndex); // Added
+
 int J3DAPI sithPlayer_ToggleGuybrush();
+
 void J3DAPI sithPlayer_IMPStartFiring(int fireType);
 void J3DAPI sithPlayer_IMPEndFiring(int fireType);
 
