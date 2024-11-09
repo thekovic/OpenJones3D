@@ -99,7 +99,7 @@
 #define Sound_SetPitchThing_TYPE void (J3DAPI*)(int, int, float)
 #define Sound_GetChannelFlags_TYPE tSoundChannelFlag (J3DAPI*)(tSoundChannelHandle)
 #define Sound_Update_TYPE void (J3DAPI*)(const rdVector3*, const rdVector3*, const rdVector3*, const rdVector3*)
-#define Sound_GenerateLipSync_TYPE int (J3DAPI*)(tSoundChannelHandle, int*, int*, int)
+#define Sound_GenerateLipSync_TYPE int (J3DAPI*)(tSoundChannelHandle, uint8_t*, uint8_t*, int)
 #define Sound_SetReverseSound_TYPE void (J3DAPI*)(int)
 #define Sound_GetNextHandle_TYPE tSoundHandle (J3DAPI*)()
 #define Sound_GetNextChannelHandle_TYPE tSoundChannelHandle (J3DAPI*)()

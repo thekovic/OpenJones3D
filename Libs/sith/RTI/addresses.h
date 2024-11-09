@@ -320,8 +320,8 @@
 #define sithVoice_SetVoiceParams_ADDR 0x00443560
 #define sithVoice_GetShowText_ADDR 0x00443590
 #define sithVoice_ShowText_ADDR 0x004435A0
-#define sithVoice_sub_4435B0_ADDR 0x004435B0
-#define sithVoice_sub_443AF0_ADDR 0x00443AF0
+#define sithVoice_AddSubtitle_ADDR 0x004435B0
+#define sithVoice_PurgeDrawnSubtitles_ADDR 0x00443AF0
 #define sithVoice_Draw_ADDR 0x00443C60
 #define sithVoice_SyncVoiceState_ADDR 0x00443E30
 #define sithVoice_ProcessVoiceState_ADDR 0x00443EA0

@@ -64,7 +64,7 @@ int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle); // Added 
 
 tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel);
 void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient);
-int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, int* pMouthPosX, int* pMouthPosY, int a4);
+int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPosX, uint8_t* pMouthPosY, int a4);
 void J3DAPI Sound_SetReverseSound(int bReverse);
 tSoundHandle J3DAPI Sound_GetNextHandle();
 tSoundChannelHandle J3DAPI Sound_GetNextChannelHandle();

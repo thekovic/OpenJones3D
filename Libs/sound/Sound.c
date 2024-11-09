@@ -421,7 +421,7 @@ tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel)
 //    J3D_TRAMPOLINE_CALL(Sound_Update, pPos, pVelocity, pTopOrient, pFrontOrient);
 //}
 
-int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, int* pMouthPosX, int* pMouthPosY, int a4)
+int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPosX, uint8_t* pMouthPosY, int a4)
 {
     return J3D_TRAMPOLINE_CALL(Sound_GenerateLipSync, hChannel, pMouthPosX, pMouthPosY, a4);
 }
