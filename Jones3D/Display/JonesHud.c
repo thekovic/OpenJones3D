@@ -3875,7 +3875,7 @@ int JonesHud_ShowLevelCompleted(void)
                 {
                     amount_1 = (float)(JonesHud_aStoreItems[i].unknown132 * (uint16_t)aItemsState[i]);
                     sithInventory_ChangeInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID_1]->inventoryID, amount_1);
-                    sithInventory_SetAvailable(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID_1]->inventoryID, 1);
+                    sithInventory_SetInventoryAvailable(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID_1]->inventoryID, 1);
                 }
             }
         }

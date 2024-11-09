@@ -36,6 +36,8 @@ J3D_EXTERN_C_START
 #define SITHGAMESAVE_SAVE    0x1
 #define SITHGAMESAVE_RESTORE 0x2
 
+#define SITHINVENTORY_MAXTYPES 200
+
 typedef enum eSithThingType
 {
     SITH_THING_FREE      = 0,
@@ -2004,7 +2006,7 @@ typedef struct sSithPlayer
     wchar_t awName[64];
     SithPlayerFlag flags;
     DPID playerNetId;
-    SithInventoryItem aItems[200];
+    SithInventoryItem aItems[SITHINVENTORY_MAXTYPES];
     int curItemID;
     int curWeaponID;
     int lastPistolID;
@@ -2016,6 +2018,7 @@ typedef struct sSithPlayer
     int respawnMask;
     unsigned int msecLastCommTime;
 } SithPlayer;
+static_assert(sizeof(SithPlayer) == 1820, "sizeof(SithPlayer) == 1820");
 
 typedef struct sSithActorInfo
 {
@@ -2125,9 +2128,10 @@ typedef struct sSithItemInfo
     SithSector* pInSector;
     float secRespawnInterval;
     unsigned int msecLastTouchTime;
-    int numItems;
+    size_t numItems;
     SithBackpackItem aBackpackItems[32];
 } SithItemInfo;
+static_assert(sizeof(SithItemInfo) == 288, "sizeof(SithItemInfo) == 288");
 
 typedef union sSithThingInfo
 {
@@ -3135,12 +3139,13 @@ typedef struct sSithAIWaypointDistance
     float distance;
 } SithAIWaypointDistance;
 
-typedef struct sSithMultiUnknown
+typedef struct sSithInventoryUnknown
 {
-    int unknown1;
+    int bEnabled;
     int unknown2;
     int unknown3;
-} SithMultiUnknown;
+} SithInventoryUnknown;
+static_assert(sizeof(SithInventoryUnknown) == 12, "sizeof(SithInventoryUnknown) == 12");
 
 J3D_EXTERN_C_END
 #endif //SITH_TYPES_H

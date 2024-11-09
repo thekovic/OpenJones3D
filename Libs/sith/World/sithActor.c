@@ -244,7 +244,7 @@ float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float d
 
     if ( pActor->type == SITH_THING_PLAYER )
     {
-        damage = sithInventory_SendMessage(pActor, SITHCOG_SYM_REF_THING, pThing->idx, SITHCOG_MSG_DAMAGED, SITHINVENTORY_TYPE_DAMAGEABLE, damage, damageType, 0, 0);
+        damage = sithInventory_BroadcastMessage(pActor, SITHCOG_SYM_REF_THING, pThing->idx, SITHCOG_MSG_DAMAGED, SITHINVENTORY_TYPE_DAMAGEABLE, damage, damageType, 0, 0);
         if ( damage == 0.0f )
         {
             return 0.0f;
@@ -311,7 +311,7 @@ float J3DAPI sithActor_DamageRaftActor(SithThing* pActor, SithThing* pPerpetrato
 
     if ( pActor->type == SITH_THING_PLAYER )
     {
-        damage = sithInventory_SendMessage(pActor, SITHCOG_SYM_REF_THING, pPerpetrator->idx, SITHCOG_MSG_DAMAGED, SITHINVENTORY_TYPE_DAMAGEABLE, damage, damageType, 0, 0);
+        damage = sithInventory_BroadcastMessage(pActor, SITHCOG_SYM_REF_THING, pPerpetrator->idx, SITHCOG_MSG_DAMAGED, SITHINVENTORY_TYPE_DAMAGEABLE, damage, damageType, 0, 0);
         if ( damage == 0.0f )
         {
             return 0.0f;

@@ -1841,14 +1841,14 @@ int J3DAPI sithWeapon_SelectNextWeapon(SithThing* pThing)
     if ( pThing->thingInfo.actorInfo.curWeaponID != SITHWEAPON_NO_WEAPON )
     {
         curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-        if ( curWeaponID > sithInventory_FindNextItem(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON) )
+        if ( curWeaponID > sithInventory_FindNextTypeID(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON) )
         {
             sithWeapon_DeselectWeapon(pThing);
             return 0;
         }
     }
 
-    int weaponID = sithInventory_FindNextItem(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON);
+    int weaponID = sithInventory_FindNextTypeID(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON);
     if ( weaponID == -1 )
     {
         return -1;
@@ -1866,7 +1866,7 @@ int J3DAPI sithWeapon_SelectPreviousWeapon(SithThing* pThing)
     if ( pThing->thingInfo.actorInfo.curWeaponID != SITHWEAPON_NO_WEAPON )
     {
         curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-        if ( curWeaponID < sithInventory_FindPreviousItem(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON) )
+        if ( curWeaponID < sithInventory_FindPreviousTypeID(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON) )
         {
             sithWeapon_DeselectWeapon(pThing);
             return 0;
@@ -1874,7 +1874,7 @@ int J3DAPI sithWeapon_SelectPreviousWeapon(SithThing* pThing)
     }
 
 
-    int weaponId = sithInventory_FindPreviousItem(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON);
+    int weaponId = sithInventory_FindPreviousTypeID(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON);
     if ( weaponId == -1 )
     {
         return -1;
