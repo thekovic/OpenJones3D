@@ -873,7 +873,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
 
                     if ( v44 != 0.0f )
                     {
-                        v19 = sithTime_g_secFrameTime * v44;
+                        v19 = sithTime_g_frameTimeFlex * v44;
                         pThing->vecUnknown1.x = pThing->moveInfo.physics.velocity.x * v19;
                         pThing->vecUnknown1.y = pThing->moveInfo.physics.velocity.y * v19;
                         pThing->vecUnknown1.z = pThing->moveInfo.physics.velocity.z * v19;
@@ -1336,14 +1336,14 @@ int J3DAPI sithCollision_HandleThingHitSurface(SithThing* pThing, SithSurface* p
             }
             else
             {
-                #ifdef J3D_DEBUG // Found in debug version
+            #ifdef J3D_DEBUG // Found in debug version
                 if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0 )
                 {
                     char aText[256];
                     STD_FORMAT(aText, "Falling Death Wall %f.", pThing->moveInfo.physics.velocity.z);
                     sithConsole_PrintString(aText);
                 }
-                #endif
+            #endif
 
                 if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
                 {
@@ -1535,7 +1535,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                 {
                     float hitDot = fabsf(rdVector_Dot3(&pHitThing->orient.lvec, &hitNorm));
                     float thrust = rdVector_Len3(&pHitThing->moveInfo.physics.thrust);
-                    totalImpactSpeed = thrust * sithTime_g_secFrameTime * hitDot;
+                    totalImpactSpeed = thrust * sithTime_g_frameTimeFlex * hitDot;
 
                     totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
 
@@ -1556,7 +1556,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                 {
                     float hitDot = fabsf(rdVector_Dot3(&pThing->orient.lvec, &hitNorm));
                     float thrust = rdVector_Len3(&pThing->moveInfo.physics.thrust);
-                    totalImpactSpeed = thrust * sithTime_g_secFrameTime * hitDot;
+                    totalImpactSpeed = thrust * sithTime_g_frameTimeFlex * hitDot;
 
                     totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
 
@@ -1739,7 +1739,7 @@ void J3DAPI sithCollision_VehicleCollisionHandler(SithThing* pThing, SithThing* 
                 dot = -dot;
             }
 
-            float totalImpactSpeed = rdVector_Len3(&pHitThing->moveInfo.physics.thrust) * sithTime_g_secFrameTime * dot;
+            float totalImpactSpeed = rdVector_Len3(&pHitThing->moveInfo.physics.thrust) * sithTime_g_frameTimeFlex * dot;
             totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
 
             pImpactForce->x = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNormal->x;
@@ -1882,7 +1882,7 @@ void J3DAPI sithCollision_VehicleCollisionHandler(SithThing* pThing, SithThing* 
                 dot = -dot;
             }
 
-            float totalImpactSpeed = (float)((double)rdVector_Len3(&pThing->moveInfo.physics.thrust) * sithTime_g_secFrameTime * dot);
+            float totalImpactSpeed = (float)((double)rdVector_Len3(&pThing->moveInfo.physics.thrust) * sithTime_g_frameTimeFlex * dot);
             totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
 
             pForce->x = pThing->moveInfo.physics.mass * totalImpactSpeed * impactDir.x;

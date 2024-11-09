@@ -1,25 +1,29 @@
 #include "sithTime.h"
 #include <j3dcore/j3dhook.h>
+
 #include <sith/RTI/symbols.h>
 
-#define sithTime_msecPauseStartTime J3D_DECL_FAR_VAR(sithTime_msecPauseStartTime, unsigned int)
+#include <std/General/stdMath.h>
+#include <std/General/stdPlatform.h>
+
+#define SITHTIME_MAXFRAMETIME 200 // 200ms
+
+static uint32_t sithTime_msecPauseStartTime;
 
 void sithTime_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(sithTime_Advance);
-    // J3D_HOOKFUNC(sithTime_Pause);
-    // J3D_HOOKFUNC(sithTime_Resume);
-    // J3D_HOOKFUNC(sithTime_Reset);
-    // J3D_HOOKFUNC(sithTime_SetGameTime);
-    // J3D_HOOKFUNC(sithTime_IsPaused);
+    J3D_HOOKFUNC(sithTime_Advance);
+    J3D_HOOKFUNC(sithTime_Pause);
+    J3D_HOOKFUNC(sithTime_Resume);
+    J3D_HOOKFUNC(sithTime_Reset);
+    J3D_HOOKFUNC(sithTime_SetGameTime);
+    J3D_HOOKFUNC(sithTime_IsPaused);
 }
 
 void sithTime_ResetGlobals(void)
 {
+    memset(&sithTime_g_frameTime, 0, sizeof(sithTime_g_frameTime));
     memset(&sithTime_g_frameTimeFlex, 0, sizeof(sithTime_g_frameTimeFlex));
-    memset(&sithTime_g_secFrameTime, 0, sizeof(sithTime_g_secFrameTime));
     memset(&sithTime_g_fps, 0, sizeof(sithTime_g_fps));
     memset(&sithTime_g_msecGameTime, 0, sizeof(sithTime_g_msecGameTime));
     memset(&sithTime_g_secGameTime, 0, sizeof(sithTime_g_secGameTime));
@@ -28,32 +32,97 @@ void sithTime_ResetGlobals(void)
     memset(&sithTime_msecPauseStartTime, 0, sizeof(sithTime_msecPauseStartTime));
 }
 
-int sithTime_Advance(void)
+void sithTime_Advance(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithTime_Advance);
+    if ( !sithTime_g_clockTime || sithTime_g_bPaused )
+    {
+        return;
+    }
+
+    uint32_t curTime = stdPlatform_GetTimeMsec();
+    if ( curTime >= sithTime_g_clockTime )
+    {
+        sithTime_g_frameTime = curTime - sithTime_g_clockTime;
+    }
+    else
+    {
+        SITHLOG_STATUS("Clock looped around.  Handling it.\n");
+        sithTime_g_frameTime = curTime - sithTime_g_clockTime - 1;
+    }
+
+    sithTime_g_frameTime = STDMATH_CLAMP(sithTime_g_frameTime, 1, SITHTIME_MAXFRAMETIME); // min 1ms
+    sithTime_g_clockTime = curTime;
+
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_SLOWMODE) != 0 )
+    {
+        sithTime_g_frameTime = rintf((float)sithTime_g_frameTime * 0.2f); // frameTime / 5.0f
+    }
+
+    sithTime_g_frameTimeFlex = (float)sithTime_g_frameTime * 0.001f;
+    if ( sithTime_g_frameTimeFlex <= 0.0f )
+    {
+        sithTime_g_frameTimeFlex = 1.0f / 10000.0f; // 0.000099999997f
+    }
+
+    sithTime_g_fps           = 1.0f / sithTime_g_frameTimeFlex;
+    sithTime_g_msecGameTime += sithTime_g_frameTime;
+    sithTime_g_secGameTime   = (float)sithTime_g_msecGameTime * 0.001f;
 }
 
 void sithTime_Pause(void)
 {
-    J3D_TRAMPOLINE_CALL(sithTime_Pause);
+    if ( !sithTime_g_bPaused )
+    {
+        sithTime_msecPauseStartTime = stdPlatform_GetTimeMsec();
+        sithTime_g_bPaused = 1;
+    }
 }
 
 void sithTime_Resume(void)
 {
-    J3D_TRAMPOLINE_CALL(sithTime_Resume);
+    if ( sithTime_g_bPaused )
+    {
+        sithTime_g_clockTime += stdPlatform_GetTimeMsec() - sithTime_msecPauseStartTime;
+        sithTime_g_bPaused = 0;
+    }
+}
+
+void J3DAPI sithTime_SetFrameTime(uint32_t frameTime)
+{
+    SITH_ASSERTREL(sithTime_g_clockTime != 0);
+    sithTime_g_frameTime = frameTime;
+    sithTime_g_clockTime = stdPlatform_GetTimeMsec();
+    sithTime_g_frameTime = sithTime_g_frameTime = STDMATH_CLAMP(sithTime_g_frameTime, 10, SITHTIME_MAXFRAMETIME); // min 10ms;
+
+    sithTime_g_frameTimeFlex = sithTime_g_frameTime * 0.001f;
+    SITH_ASSERTREL(sithTime_g_frameTimeFlex > ((float)0.0));
+
+    sithTime_g_fps           = 1.0f / sithTime_g_frameTimeFlex;
+    sithTime_g_msecGameTime += sithTime_g_frameTime;
+    sithTime_g_secGameTime   = (float)sithTime_g_msecGameTime * 0.001f;
 }
 
 void sithTime_Reset(void)
 {
-    J3D_TRAMPOLINE_CALL(sithTime_Reset);
+    sithTime_g_msecGameTime  = 0;
+    sithTime_g_secGameTime   = 0.0f;
+    sithTime_g_frameTime     = 0;
+    sithTime_g_frameTimeFlex = 0.0f;
+    sithTime_g_fps           = 0.0f;
+    sithTime_g_clockTime     = stdPlatform_GetTimeMsec();
 }
 
-void J3DAPI sithTime_SetGameTime(int msecTime)
+void J3DAPI sithTime_SetGameTime(uint32_t msecTime)
 {
-    J3D_TRAMPOLINE_CALL(sithTime_SetGameTime, msecTime);
+    sithTime_g_msecGameTime  = msecTime;
+    sithTime_g_secGameTime   = (float)msecTime * 0.001f;
+    sithTime_g_frameTime     = 0;
+    sithTime_g_frameTimeFlex = 0.0f;
+    sithTime_g_fps           = 0.0f;
+    sithTime_g_clockTime     = stdPlatform_GetTimeMsec();
 }
 
 int J3DAPI sithTime_IsPaused()
 {
-    return J3D_TRAMPOLINE_CALL(sithTime_IsPaused);
+    return sithTime_g_bPaused;
 }

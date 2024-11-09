@@ -2363,8 +2363,8 @@
 #define sithConsole_pfPrintString_ADDR 0x0056B6EC
 #define sithConsole_pfPrintWString_ADDR 0x0056B6F0
 #define sithConsole_pfFlush_ADDR 0x0056B6F4
-#define sithTime_g_frameTimeFlex_ADDR 0x0056B72C
-#define sithTime_g_secFrameTime_ADDR 0x0056B730
+#define sithTime_g_frameTime_ADDR 0x0056B72C
+#define sithTime_g_frameTimeFlex_ADDR 0x0056B730
 #define sithTime_g_fps_ADDR 0x0056B734
 #define sithTime_g_msecGameTime_ADDR 0x0056B738
 #define sithTime_g_secGameTime_ADDR 0x0056B73C
