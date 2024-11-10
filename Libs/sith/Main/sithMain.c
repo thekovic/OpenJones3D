@@ -1,257 +1,912 @@
 #include "sithMain.h"
+#include "sithString.h"
 #include <j3dcore/j3dhook.h>
-#include <sith/RTI/symbols.h>
 
-#define sithMain_aLevelNdsInfos J3D_DECL_FAR_ARRAYVAR(sithMain_aLevelNdsInfos, const SithMainStartLevelNdsInfo(*)[17])
-#define sithMain_aLevelNdsFileNameBuf J3D_DECL_FAR_ARRAYVAR(sithMain_aLevelNdsFileNameBuf, char(*)[512])
-#define sithMain_szScreenShotsFileName J3D_DECL_FAR_ARRAYVAR(sithMain_szScreenShotsFileName, char(*)[128])
-#define sithMain_aNdsLevelFilenameBuf J3D_DECL_FAR_ARRAYVAR(sithMain_aNdsLevelFilenameBuf, char(*)[512])
-#define sithMain_szTmpQuickSavePrefix J3D_DECL_FAR_ARRAYVAR(sithMain_szTmpQuickSavePrefix, char(*)[128])
-#define sithMain_szTmpSaveGameDirPath J3D_DECL_FAR_ARRAYVAR(sithMain_szTmpSaveGameDirPath, char(*)[128])
-#define sithMain_szTmpAutoSaveFilePrefix J3D_DECL_FAR_ARRAYVAR(sithMain_szTmpAutoSaveFilePrefix, char(*)[128])
-#define sithMain_szTmpScreenShotDirPath J3D_DECL_FAR_ARRAYVAR(sithMain_szTmpScreenShotDirPath, char(*)[128])
-#define sithMain_dword_56437C J3D_DECL_FAR_VAR(sithMain_dword_56437C, int)
-#define sithMain_bDrawPlayerMoveBounds J3D_DECL_FAR_VAR(sithMain_bDrawPlayerMoveBounds, int)
-#define sithMain_bDrawThingMoveBounds J3D_DECL_FAR_VAR(sithMain_bDrawThingMoveBounds, int)
-#define sithMain_bStartup J3D_DECL_FAR_VAR(sithMain_bStartup, int)
-#define sithMain_bOpen J3D_DECL_FAR_VAR(sithMain_bOpen, int)
-#define sithMain_performanceLevel J3D_DECL_FAR_VAR(sithMain_performanceLevel, int)
-#define sithMain_pfOpenCallback J3D_DECL_FAR_VAR(sithMain_pfOpenCallback, SithOpenCallback)
-#define sithMain_somePos2 J3D_DECL_FAR_VAR(sithMain_somePos2, rdVector3)
-#define sithMain_somePos J3D_DECL_FAR_VAR(sithMain_somePos, rdVector3)
-#define sithMain_flt_17FD1B0 J3D_DECL_FAR_VAR(sithMain_flt_17FD1B0, float)
-#define sithMain_flt_17FD1B4 J3D_DECL_FAR_VAR(sithMain_flt_17FD1B4, float)
+#include <sith/AI/sithAI.h>
+#include <sith/AI/sithAIAwareness.h>
+#include <sith/AI/sithAIUtil.h>
+#include <sith/AI/sithAIClass.h>
+#include <sith/Cog/sithCog.h>
+#include <sith/Devices/sithControl.h>
+#include <sith/Devices/sithComm.h>
+#include <sith/Devices/sithSoundMixer.h>
+#include <sith/Dss/sithGamesave.h>
+#include <sith/Dss/sithMulti.h>
+#include <sith/Engine/sithAnimate.h>
+#include <sith/Engine/sithCamera.h>
+#include <sith/Engine/sithCollision.h>
+#include <sith/Engine/sithParticle.h>
+#include <sith/Engine/sithPuppet.h>
+#include <sith/Engine/sithRender.h>
+#include <sith/Gameplay/sithEvent.h>
+#include <sith/Gameplay/sithFX.h>
+#include <sith/Gameplay/sithInventory.h>
+#include <sith/Gameplay/sithOverlayMap.h>
+#include <sith/Gameplay/sithPlayer.h>
+#include <sith/Gameplay/sithTime.h>
+#include <sith/RTI/symbols.h>
+#include <sith/World/sithActor.h>
+#include <sith/World/sithMaterial.h>
+#include <sith/World/sithModel.h>
+#include <sith/World/sithSprite.h>
+#include <sith/World/sithTemplate.h>
+#include <sith/World/sithThing.h>
+#include <sith/World/sithVoice.h>
+#include <sith/World/sithWeapon.h>
+#include <sith/World/sithWorld.h>
+
+#include <rdroid/Math/rdMatrix.h>
+#include <rdroid/Math/rdVector.h>
+#include <rdroid/Primitives/rdPrimit3.h>
+
+#include <std/General/stdFileUtil.h>
+#include <std/General/stdFnames.h>
+#include <std/General/stdMemory.h>
+#include <std/General/stdUtil.h>
+#include <std/Win95/stdComm.h>
+
+#include <w32util/wuRegistry.h>
+
+#define SITH_PATHSIZE 128
+
+static bool sith_bStartup = false; // Added: Init to false
+static bool sith_bOpen    = false; // Added: Init to false
+
+SithOpenCallback sith_pfOpenCallback = NULL; // Added: Init to nil
+
+static char sith_aLevelNdsFileNameBuf[512];
+static char sith_aScreenShotsFileName[SITH_PATHSIZE];
+static char sith_aNdsLevelFilenameBuf[512];
+static char sith_aTmpQuickSavePrefix[SITH_PATHSIZE];
+static char sith_aTmpSaveGameDirPath[SITH_PATHSIZE];
+static char sith_aTmpAutoSaveFilePrefix[SITH_PATHSIZE];
+static char sith_aTmpScreenShotDirPath[SITH_PATHSIZE];
+
+static int sith_bDrawUnknown;
+static int sith_bDrawPlayerMoveBounds;
+static int sith_bDrawThingMoveBounds;
+static int sith_performanceLevel;
+
+rdVector3 sith_unknownPos;
+rdVector3 sith_unknownPos2;
+
+float sith_unknownRadius;
+float sith_unknownRadius2;
+
+static const SithMainStartLevelNdsInfo sithMain_aLevelNdsInfos[17] =
+{
+    { "SITHSTRING_STARTCYN", "00_CYN" },
+    { "SITHSTRING_STARTBAB", "01_BAB" },
+    { "SITHSTRING_STARTRIV", "02_RIV" },
+    { "SITHSTRING_STARTSHS", "03_SHS" },
+    { "SITHSTRING_STARTLAG", "05_LAG" },
+    { "SITHSTRING_STARTVOL", "06_VOL" },
+    { "SITHSTRING_STARTTEM", "07_TEM" },
+    { "SITHSTRING_STARTJEP", "16_JEP" },
+    { "SITHSTRING_STARTTEO", "08_TEO" },
+    { "SITHSTRING_STARTOLV", "09_OLV" },
+    { "SITHSTRING_STARTSEA", "10_SEA" },
+    { "SITHSTRING_STARTPYR", "11_PYR" },
+    { "SITHSTRING_STARTSOL", "12_SOL" },
+    { "SITHSTRING_STARTNUB", "13_NUB" },
+    { "SITHSTRING_STARTINF", "14_INF" },
+    { "SITHSTRING_STARTAET", "15_AET" },
+    { "SITHSTRING_STARTPRU", "17_PRU" }
+};
+
+const char* J3DAPI sithGetPath(char* aOutPath, const char* pSithStrName, int bPrependInstallDirPath);
 
 void sithMain_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(sithSetServices);
-    // J3D_HOOKFUNC(sithClearServices);
-    // J3D_HOOKFUNC(sithStartup);
-    // J3D_HOOKFUNC(sithShutdown);
-    // J3D_HOOKFUNC(sithSetPerformanceLevel);
-    // J3D_HOOKFUNC(sithGetPerformanceLevel);
-    // J3D_HOOKFUNC(sithOpenStatic);
-    // J3D_HOOKFUNC(sithCloseStatic);
-    // J3D_HOOKFUNC(sithOpenNormal);
-    // J3D_HOOKFUNC(sithOpenPostProcess);
-    // J3D_HOOKFUNC(sithOpen);
-    // J3D_HOOKFUNC(sithClose);
-    // J3D_HOOKFUNC(sithUpdate);
-    // J3D_HOOKFUNC(sithDrawScene);
-    // J3D_HOOKFUNC(sithSetGameDifficulty);
-    // J3D_HOOKFUNC(sithGetGameDifficulty);
-    // J3D_HOOKFUNC(sithGetHitAccuarancyScalar);
-    // J3D_HOOKFUNC(sithGetCombatDamageScalar);
-    // J3D_HOOKFUNC(sithGetIMPDamageScalar);
-    // J3D_HOOKFUNC(sithAdvanceRenderTick);
-    // J3D_HOOKFUNC(sithMakeDirs);
-    // J3D_HOOKFUNC(sithGetAutoSaveFilePrefix);
-    // J3D_HOOKFUNC(sithGetPath);
-    // J3D_HOOKFUNC(sithGetSaveGamesDir);
-    // J3D_HOOKFUNC(sithGetQuickSaveFilePrefix);
-    // J3D_HOOKFUNC(sithGetScreenShotsDir);
-    // J3D_HOOKFUNC(sithGetScreenShotFileTemplate);
-    // J3D_HOOKFUNC(sithSetOpenCallback);
-    // J3D_HOOKFUNC(sithGetCurrentWorldSaveName);
-    // J3D_HOOKFUNC(sithGetLevelSaveFilename);
+    J3D_HOOKFUNC(sithSetServices);
+    J3D_HOOKFUNC(sithClearServices);
+    J3D_HOOKFUNC(sithStartup);
+    J3D_HOOKFUNC(sithShutdown);
+    J3D_HOOKFUNC(sithSetPerformanceLevel);
+    J3D_HOOKFUNC(sithGetPerformanceLevel);
+    J3D_HOOKFUNC(sithOpenStatic);
+    J3D_HOOKFUNC(sithCloseStatic);
+    J3D_HOOKFUNC(sithOpenNormal);
+    J3D_HOOKFUNC(sithOpenPostProcess);
+    J3D_HOOKFUNC(sithOpen);
+    J3D_HOOKFUNC(sithClose);
+    J3D_HOOKFUNC(sithUpdate);
+    J3D_HOOKFUNC(sithDrawScene);
+    J3D_HOOKFUNC(sithSetGameDifficulty);
+    J3D_HOOKFUNC(sithGetGameDifficulty);
+    J3D_HOOKFUNC(sithGetHitAccuarancyScalar);
+    J3D_HOOKFUNC(sithGetCombatDamageScalar);
+    J3D_HOOKFUNC(sithGetIMPDamageScalar);
+    J3D_HOOKFUNC(sithAdvanceRenderTick);
+    J3D_HOOKFUNC(sithMakeDirs);
+    J3D_HOOKFUNC(sithGetAutoSaveFilePrefix);
+    J3D_HOOKFUNC(sithGetPath);
+    J3D_HOOKFUNC(sithGetSaveGamesDir);
+    J3D_HOOKFUNC(sithGetQuickSaveFilePrefix);
+    J3D_HOOKFUNC(sithGetScreenShotsDir);
+    J3D_HOOKFUNC(sithGetScreenShotFileTemplate);
+    J3D_HOOKFUNC(sithSetOpenCallback);
+    J3D_HOOKFUNC(sithGetCurrentWorldSaveName);
+    J3D_HOOKFUNC(sithGetLevelSaveFilename);
 }
 
 void sithMain_ResetGlobals(void)
 {
-    const SithMainStartLevelNdsInfo sithMain_aLevelNdsInfos_tmp[17] = {
-      { "SITHSTRING_STARTCYN", "00_CYN" },
-      { "SITHSTRING_STARTBAB", "01_BAB" },
-      { "SITHSTRING_STARTRIV", "02_RIV" },
-      { "SITHSTRING_STARTSHS", "03_SHS" },
-      { "SITHSTRING_STARTLAG", "05_LAG" },
-      { "SITHSTRING_STARTVOL", "06_VOL" },
-      { "SITHSTRING_STARTTEM", "07_TEM" },
-      { "SITHSTRING_STARTJEP", "16_JEP" },
-      { "SITHSTRING_STARTTEO", "08_TEO" },
-      { "SITHSTRING_STARTOLV", "09_OLV" },
-      { "SITHSTRING_STARTSEA", "10_SEA" },
-      { "SITHSTRING_STARTPYR", "11_PYR" },
-      { "SITHSTRING_STARTSOL", "12_SOL" },
-      { "SITHSTRING_STARTNUB", "13_NUB" },
-      { "SITHSTRING_STARTINF", "14_INF" },
-      { "SITHSTRING_STARTAET", "15_AET" },
-      { "SITHSTRING_STARTPRU", "17_PRU" }
-    };
-    memcpy((SithMainStartLevelNdsInfo*)&sithMain_aLevelNdsInfos, &sithMain_aLevelNdsInfos_tmp, sizeof(sithMain_aLevelNdsInfos));
-
-    memset(&sithMain_aLevelNdsFileNameBuf, 0, sizeof(sithMain_aLevelNdsFileNameBuf));
-    memset(&sithMain_szScreenShotsFileName, 0, sizeof(sithMain_szScreenShotsFileName));
-    memset(&sithMain_aNdsLevelFilenameBuf, 0, sizeof(sithMain_aNdsLevelFilenameBuf));
-    memset(&sithMain_szTmpQuickSavePrefix, 0, sizeof(sithMain_szTmpQuickSavePrefix));
-    memset(&sithMain_szTmpSaveGameDirPath, 0, sizeof(sithMain_szTmpSaveGameDirPath));
-    memset(&sithMain_szTmpAutoSaveFilePrefix, 0, sizeof(sithMain_szTmpAutoSaveFilePrefix));
-    memset(&sithMain_szTmpScreenShotDirPath, 0, sizeof(sithMain_szTmpScreenShotDirPath));
     memset(&sith_g_pHS, 0, sizeof(sith_g_pHS));
-    memset(&sithMain_dword_56437C, 0, sizeof(sithMain_dword_56437C));
-    memset(&sithMain_bDrawPlayerMoveBounds, 0, sizeof(sithMain_bDrawPlayerMoveBounds));
-    memset(&sithMain_bDrawThingMoveBounds, 0, sizeof(sithMain_bDrawThingMoveBounds));
-    memset(&sithMain_bStartup, 0, sizeof(sithMain_bStartup));
-    memset(&sithMain_bOpen, 0, sizeof(sithMain_bOpen));
-    memset(&sithMain_performanceLevel, 0, sizeof(sithMain_performanceLevel));
-    memset(&sithMain_pfOpenCallback, 0, sizeof(sithMain_pfOpenCallback));
-    memset(&sithMain_somePos2, 0, sizeof(sithMain_somePos2));
-    memset(&sithMain_somePos, 0, sizeof(sithMain_somePos));
     memset(&sithMain_g_frameNumber, 0, sizeof(sithMain_g_frameNumber));
-    memset(&sithMain_flt_17FD1B0, 0, sizeof(sithMain_flt_17FD1B0));
-    memset(&sithMain_flt_17FD1B4, 0, sizeof(sithMain_flt_17FD1B4));
     memset(&sithMain_g_sith_mode, 0, sizeof(sithMain_g_sith_mode));
     memset(&sithMain_g_curRenderTick, 0, sizeof(sithMain_g_curRenderTick));
 }
 
 void J3DAPI sithSetServices(tHostServices* pHS)
 {
-    J3D_TRAMPOLINE_CALL(sithSetServices, pHS);
+    sith_g_pHS = pHS;
 }
 
 void sithClearServices(void)
 {
-    J3D_TRAMPOLINE_CALL(sithClearServices);
+    sith_g_pHS = NULL;
 }
 
-int J3DAPI sithStartup()
+int sithStartup(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithStartup);
+    //TODO: Add check for system already being started
+
+    sithGamesave_Startup();
+    int bSuccess = sithEvent_Startup() & 1;
+    bSuccess &= sithWorld_Startup();
+    bSuccess &= sithRender_Startup();
+    sithCollision_Startup();
+    bSuccess &= sithThing_Startup();
+    sithMessage_Startup();
+
+    if ( sithCog_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithAI_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithSprite_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithParticle_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithPuppet_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithAIClass_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithMaterial_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithTemplate_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    if ( sithModel_Startup() )
+    {
+        bSuccess = 0;
+    }
+
+    sithAnimate_Startup();
+    sithFX_Reset();
+
+    bSuccess &= sithVoice_Startup();
+
+    memset(&sithMain_g_sith_mode, 0, sizeof(sithMain_g_sith_mode));
+
+    int difficulty = wuRegistry_GetInt("Difficulty", 5);
+    sithSetGameDifficulty(difficulty);
+
+    memset(sith_aTmpAutoSaveFilePrefix, 0, sizeof(sith_aTmpAutoSaveFilePrefix));
+    memset(sith_aTmpSaveGameDirPath, 0, sizeof(sith_aTmpSaveGameDirPath));
+    memset(sith_aTmpQuickSavePrefix, 0, sizeof(sith_aTmpQuickSavePrefix));
+    memset(sith_aTmpScreenShotDirPath, 0, sizeof(sith_aTmpScreenShotDirPath));
+    memset(sith_aScreenShotsFileName, 0, sizeof(sith_aScreenShotsFileName));
+
+    if ( !bSuccess )
+    {
+        SITHLOG_ERROR("Sith startup failed.\n");
+        return 1;
+    }
+
+    sith_bStartup = true;
+    return 0;
 }
+
 
 void sithShutdown(void)
 {
-    J3D_TRAMPOLINE_CALL(sithShutdown);
+    if ( sith_bStartup )
+    {
+        // TODO: Shall we also try to close our module?
+
+        sithVoice_Shutdown();
+        sithAnimate_Shutdown();
+        sithModel_Shutdown();
+        sithTemplate_Shutdown();
+        sithMaterial_Shutdown();
+        sithAIClass_Shutdown();
+        sithPuppet_Shutdown();
+        sithParticle_Shutdown();
+        sithSprite_Shutdown();
+
+        sithAI_Shutdown();
+        sithCog_Shutdown();
+        sithMessage_Shutdown();
+        sithThing_Shutdown();
+        sithCollision_Shutdown();
+        sithRender_Shutdown();
+        sithWorld_Shutdown();
+        sithEvent_Shutdown();
+        sithGamesave_Shutdown();
+
+        memset(sith_aTmpAutoSaveFilePrefix, 0, sizeof(sith_aTmpAutoSaveFilePrefix));
+        memset(sith_aTmpSaveGameDirPath, 0, sizeof(sith_aTmpSaveGameDirPath));
+        memset(sith_aTmpQuickSavePrefix, 0, sizeof(sith_aTmpQuickSavePrefix));
+        memset(sith_aTmpScreenShotDirPath, 0, sizeof(sith_aTmpScreenShotDirPath));
+        memset(sith_aScreenShotsFileName, 0, sizeof(sith_aScreenShotsFileName));
+
+        sith_bStartup = false;
+    }
 }
 
-int J3DAPI sithSetPerformanceLevel(int level)
+void J3DAPI sithSetPerformanceLevel(size_t level)
 {
-    return J3D_TRAMPOLINE_CALL(sithSetPerformanceLevel, level);
+    sith_performanceLevel = level;
 }
 
 int sithGetPerformanceLevel(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetPerformanceLevel);
+    return sith_performanceLevel;
 }
 
 int J3DAPI sithOpenStatic(const char* pFilename)
 {
-    return J3D_TRAMPOLINE_CALL(sithOpenStatic, pFilename);
+    sithCloseStatic();
+
+    sithWorld_g_pStaticWorld = sithWorld_New();
+    if ( !sithWorld_g_pStaticWorld )
+    {
+        return 1;
+    }
+
+    sithWorld_g_pStaticWorld->state |= SITH_WORLD_STATE_STATIC;
+
+    // Load world from file
+    char aPath[128];
+    stdFnames_MakePath(aPath, STD_ARRAYLEN(aPath), "ndy", pFilename);
+    if ( !sithWorld_Load(sithWorld_g_pStaticWorld, aPath) )
+    {
+        // Success
+        return 0;
+    }
+
+    // Failed to load world from cwd path, try from another path
+    sithWorld_Free(sithWorld_g_pStaticWorld);
+    sithWorld_g_pStaticWorld = sithWorld_New();
+    if ( !sithWorld_g_pStaticWorld )
+    {
+        return 1;
+    }
+
+    sithWorld_g_pStaticWorld->state |= SITH_WORLD_STATE_STATIC; // Fixed: Added static flag
+
+    stdFnames_MakePath(aPath, STD_ARRAYLEN(aPath), "\\Jones3D\\Resource\\Ndy", pFilename);
+    if ( !sithWorld_Load(sithWorld_g_pStaticWorld, aPath) )
+    {
+        // Success
+        return 0;
+    }
+
+    sithWorld_Free(sithWorld_g_pStaticWorld);
+    sithWorld_g_pStaticWorld = NULL;
+    return 1;
 }
 
 void sithCloseStatic(void)
 {
-    J3D_TRAMPOLINE_CALL(sithCloseStatic);
+    if ( sithWorld_g_pStaticWorld )
+    {
+        sithWorld_Free(sithWorld_g_pStaticWorld);
+        sithWorld_g_pStaticWorld = NULL;
+    }
 }
 
-// NOTE: there is debug info that originally this function was named: sithOpenNormal
-int J3DAPI sithOpenNormal(char* pWorldName, const wchar_t* wszPlayerName)
+int J3DAPI sithOpenNormal(const char* pWorldName, const wchar_t* pwPlayerName)
 {
-    return J3D_TRAMPOLINE_CALL(sithOpenNormal, pWorldName, wszPlayerName);
+    sithWorld_g_pCurrentWorld = sithWorld_New();
+    if ( !sithWorld_g_pCurrentWorld )
+    {
+        return 1;
+    }
+
+    sithAIUtil_AIResetWaypoints();
+
+    char aPath[128];
+    stdFnames_MakePath(aPath, STD_ARRAYLEN(aPath), "ndy", pWorldName);
+    if ( sithWorld_Load(sithWorld_g_pCurrentWorld, aPath) || (sithWorld_InitPlayers(sithWorld_g_pCurrentWorld), sithOpen(pwPlayerName)) )
+    {
+        SITHLOG_ERROR("Error opening world: %s.\n", pWorldName);
+        if ( sithWorld_g_pCurrentWorld )
+        {
+            sithWorld_Free(sithWorld_g_pCurrentWorld);
+        }
+
+        sithWorld_g_pCurrentWorld = NULL;
+        return 1;
+    }
+
+    // Success
+    sithMain_g_sith_mode.masterMode = SITH_MODE_OPENED;
+    sithSetGameDifficulty(sithMain_g_sith_mode.difficulty);
+    return 0;
 }
 
-void J3DAPI sithOpenPostProcess()
+void sithOpenPostProcess(void)
 {
-    J3D_TRAMPOLINE_CALL(sithOpenPostProcess);
+    sithTime_Reset();
+    sithInventory_ResetInventory(sithPlayer_g_pLocalPlayerThing);
+    sithCog_BroadcastMessage(SITHCOG_MSG_STARTUP, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_NONE, 0);
+
+    // Send initialized & created message to every thing COG
+    for ( size_t i = 0; i < sithWorld_g_pCurrentWorld->numThings; ++i )
+    {
+        SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[i];
+        if ( pThing->pCog )
+        {
+            sithCog_SendMessage(pThing->pCog, SITHCOG_MSG_INITIALIZED, SITHCOG_SYM_REF_THING, pThing->idx, SITHCOG_SYM_REF_NONE, 0, 0);
+            sithCog_SendMessage(pThing->pCog, SITHCOG_MSG_CREATED, SITHCOG_SYM_REF_THING, pThing->idx, SITHCOG_SYM_REF_NONE, 0, 0);
+        }
+    }
+
+    if ( stdComm_IsGameActive() )
+    {
+        sithPlayer_NewPlayer(sithPlayer_g_pLocalPlayerThing);
+        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOALL);
+        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOALL); // TODO: Why same message sent twice
+    }
+    else if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
+    {
+        // Make savegame at the start of the level
+        const char* pWorldName = sithGetCurrentWorldSaveName();
+        const char* pSaveNamePrefix = sithGetAutoSaveFilePrefix();
+
+        char aFilename[128];
+        STD_FORMAT(aFilename, "%s%s", pSaveNamePrefix, pWorldName);
+        stdFnames_ChangeExt(aFilename, "nds");
+
+        const char* pSaveGameDir = sithGetSaveGamesDir();
+        char aFilepath[128];
+        stdFnames_MakePath(aFilepath, STD_ARRAYLEN(aFilepath), pSaveGameDir, aFilename);
+
+        sithGamesave_Save(aFilepath, 1);
+    }
+
+    sithTime_Reset(); // TODO: Why time is reset 2nd time?
+    sithFX_Reset();
 }
 
-int J3DAPI sithOpen(const wchar_t* wszPlayerName)
+int J3DAPI sithOpenMulti(const char* pFilename, const wchar_t* pwPlayerName)
 {
-    return J3D_TRAMPOLINE_CALL(sithOpen, wszPlayerName);
+    sithWorld_g_pCurrentWorld = sithWorld_New();
+    if ( !sithWorld_g_pCurrentWorld )
+    {
+        return 0;
+    }
+
+    char aPath[128];
+    stdFnames_MakePath(aPath, STD_ARRAYLEN(aPath), "ndy", pFilename);
+    if ( sithWorld_Load(sithWorld_g_pCurrentWorld, aPath) || sithOpen(pwPlayerName) )
+    {
+        SITHLOG_ERROR("Error opening multiplayer level %s.\n", pFilename);
+        if ( sithWorld_g_pCurrentWorld )
+        {
+            sithWorld_Free(sithWorld_g_pCurrentWorld);
+        }
+
+        sithWorld_g_pCurrentWorld = NULL;
+        return 1;
+    }
+
+    // Success
+    sithTime_Reset();
+    sithMulti_OpenGame();
+    sithMain_g_sith_mode.masterMode = SITH_MODE_OPENED;
+    return 0;
+}
+
+int J3DAPI sithOpen(const wchar_t* pwPlayerName)
+{
+    // TODO: Add check for the system already being open
+
+    if ( sith_pfOpenCallback )
+    {
+        sith_pfOpenCallback();
+    }
+
+    sithMain_g_frameNumber   = 0;
+    sithMain_g_curRenderTick = 1;
+    sithWorld_ResetRenderState(sithWorld_g_pCurrentWorld);
+
+    sithEvent_Open();
+
+    if ( sithAnimate_Open() )
+    {
+        return 1;
+    }
+
+    if ( !sithVoice_Open() )
+    {
+        return 1;
+    }
+
+    sithAI_Open();
+
+    if ( sithCog_Open(sithWorld_g_pCurrentWorld) )
+    {
+        return 1;
+    }
+
+    sithControl_Open();
+
+    if ( sithAIAwareness_Open() )
+    {
+        return 1;
+    }
+
+    if ( sithRender_Open() )
+    {
+        return 1;
+    }
+
+    sithPlayer_Open(pwPlayerName);
+    sithWeapon_Open();
+
+    if ( sithOverlayMap_Open(0) )
+    {
+        return 1;
+    }
+
+    sithGamesave_Open();
+
+    sith_bOpen = true;
+    return 0;
 }
 
 void sithClose(void)
 {
-    J3D_TRAMPOLINE_CALL(sithClose);
+    if ( sith_bStartup && sith_bOpen )
+    {
+        if ( (sithMain_g_sith_mode.subModeFlags & 1) != 0 )
+        {
+            sithMulti_CloseGame();
+        }
+
+        sithGamesave_Close();
+        sithOverlayMap_Close();
+        sithWeapon_Close();
+        sithPlayer_Close();
+        sithRender_Close();
+        sithAIAwareness_Close();
+
+        sithControl_Close();
+        sithCog_Close();
+
+        sithWorld_Close(sithWorld_g_pCurrentWorld);
+        sithWorld_g_pCurrentWorld = NULL;
+
+        sithAI_Close();
+        sithVoice_Close();
+        sithAnimate_Close();
+        sithEvent_Close();
+
+        if ( sithCamera_g_pCurCamera )
+        {
+            sithCamera_g_pCurCamera->pSector = NULL;
+            sithCamera_g_pCurCamera->pPrimaryFocusThing = NULL;
+            sithCamera_g_pCurCamera->pSecondaryFocusThing = NULL;
+        }
+
+        sithMain_g_sith_mode.masterMode   = SITH_MODE_CLOSED;
+        sithMain_g_sith_mode.subModeFlags = 0;
+
+        sith_bOpen = false;
+    }
 }
 
 void sithUpdate(void)
 {
-    J3D_TRAMPOLINE_CALL(sithUpdate);
+    SITH_ASSERTREL(sithMain_g_sith_mode.masterMode != SITH_MODE_CLOSED);
+    if ( (sithMain_g_sith_mode.subModeFlags & 8) != 0 ) // Game host?
+    {
+        sithTime_Advance();
+        sithMessage_ProcessMessages();
+        sithAnimate_Update(sithTime_g_frameTimeFlex);
+        sithThing_Update(sithTime_g_frameTimeFlex, sithTime_g_frameTime);
+    }
+    else
+    {
+        sithSoundMixer_Update();
+
+        if ( sithTime_IsPaused() )
+        {
+            if ( sithMain_g_sith_mode.masterMode != SITH_MODE_UNKNOWN_2 )
+            {
+                sithControl_Update(sithTime_g_frameTimeFlex, sithTime_g_frameTime);
+            }
+        }
+        else
+        {
+            ++sithMain_g_frameNumber;
+
+            sithAdvanceRenderTick();
+            sithTime_Advance();
+            sithEvent_ProcessEvents();
+
+            if ( sithMessage_g_inputstream )
+            {
+                sithMessage_ProcessMessages();
+            }
+
+            if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_AIEVENTS_DISABLED) == 0 )
+            {
+                sithAI_Process();
+            }
+
+            sithAnimate_Update(sithTime_g_frameTimeFlex);
+
+            if ( sithMain_g_sith_mode.masterMode != SITH_MODE_UNKNOWN_2 )
+            {
+                sithControl_Update(sithTime_g_frameTimeFlex, sithTime_g_frameTime);
+            }
+
+            sithThing_Update(sithTime_g_frameTimeFlex, sithTime_g_frameTime);
+            sithCog_ProcessCogs();
+            sithMulti_Update(sithTime_g_frameTime);
+        }
+    }
 }
 
 void sithDrawScene(void)
 {
-    J3D_TRAMPOLINE_CALL(sithDrawScene);
+    if ( (sithMain_g_sith_mode.subModeFlags & 8) == 0 )
+    {
+        // Render scene
+        sithAdvanceRenderTick();
+        sithCamera_Update(sithCamera_g_pCurCamera);
+        sithCamera_RenderScene();
+
+        // Draw debug stuff
+
+        if ( sith_bDrawPlayerMoveBounds && sithWorld_g_pCurrentWorld && sithPlayer_g_pLocalPlayerThing )
+        {
+            rdPrimit3_DrawClippedCircle(&sithPlayer_g_pLocalPlayerThing->pos, sithPlayer_g_pLocalPlayerThing->collide.movesize, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+        }
+
+        if ( sith_bDrawUnknown )
+        {
+            rdPrimit3_DrawClippedCircle(&sith_unknownPos, sith_unknownRadius, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+            rdPrimit3_DrawClippedCircle(&sith_unknownPos2, sith_unknownRadius2, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+        }
+
+        if ( sith_bDrawThingMoveBounds && sithWorld_g_pCurrentWorld )
+        {
+            for ( int thNum = 0; thNum <= sithWorld_g_pCurrentWorld->lastThingIdx; ++thNum )
+            {
+                SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[thNum];
+                if ( pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_WEAPON )
+                {
+                    rdPrimit3_DrawClippedCircle(&pThing->pos, pThing->collide.movesize, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+                }
+            }
+        }
+    }
 }
 
 void J3DAPI sithSetGameDifficulty(int difficulty)
 {
-    J3D_TRAMPOLINE_CALL(sithSetGameDifficulty, difficulty);
+    sithMain_g_sith_mode.difficulty = difficulty;
+    if ( sithWorld_g_pCurrentWorld )
+    {
+        for ( size_t i = 0; i < sithWorld_g_pCurrentWorld->numThings; ++i )
+        {
+            SithThing* pActor = &sithWorld_g_pCurrentWorld->aThings[i];
+            if ( pActor->type == SITH_THING_ACTOR )
+            {
+                sithActor_SetDifficulty(pActor);
+            }
+        }
+    }
 }
 
-int J3DAPI sithGetGameDifficulty()
+int sithGetGameDifficulty(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetGameDifficulty);
+    return sithMain_g_sith_mode.difficulty;
 }
 
-float J3DAPI sithGetHitAccuarancyScalar()
+float sithGetHitAccuarancyScalar(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetHitAccuarancyScalar);
+    float scalar = 1.0f;
+    switch ( sithMain_g_sith_mode.difficulty )
+    {
+        case 0:
+            scalar = 0.5f;
+            break;
+
+        case 1:
+            scalar = 0.67000002f;
+            break;
+
+        case 2:
+            scalar = 0.82999998f;
+            break;
+
+        case 3:
+            scalar = 1.0f;
+            break;
+
+        case 4:
+            scalar = 1.17f;
+            break;
+
+        case 5:
+            scalar = 1.33f;
+            break;
+
+        default:
+            return scalar;
+    }
+
+    return scalar;
 }
 
-float J3DAPI sithGetCombatDamageScalar()
+float sithGetCombatDamageScalar(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetCombatDamageScalar);
+    float scalar = 1.0f;
+    switch ( sithMain_g_sith_mode.difficulty )
+    {
+        case 0:
+            scalar = 1.5f;
+            break;
+
+        case 1:
+            scalar = 1.33f;
+            break;
+
+        case 2:
+            scalar = 1.17f;
+            break;
+
+        case 3:
+            scalar = 1.0f;
+            break;
+
+        case 4:
+            scalar = 0.82999998f;
+            break;
+
+        case 5:
+            scalar = 0.67000002f;
+            break;
+
+        default:
+            return scalar;
+    }
+
+    return scalar;
 }
 
 float sithGetIMPDamageScalar(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetIMPDamageScalar);
+    float scalar = 1.0f;
+    switch ( sithMain_g_sith_mode.difficulty )
+    {
+        case 0:
+            scalar = 0.5f;
+            break;
+
+        case 1:
+            scalar = 0.60000002f;
+            break;
+
+        case 2:
+            scalar = 0.69999999f;
+            break;
+
+        case 3:
+            scalar = 0.80000001f;
+            break;
+
+        case 4:
+            scalar = 0.89999998f;
+            break;
+
+        case 5:
+            scalar = 1.0f;
+            break;
+
+        default:
+            return scalar;
+    }
+
+    return scalar;
 }
 
-void J3DAPI sithAdvanceRenderTick()
+void sithAdvanceRenderTick(void)
 {
-    J3D_TRAMPOLINE_CALL(sithAdvanceRenderTick);
+    if ( !++sithMain_g_curRenderTick )
+    {
+        sithWorld_ResetRenderState(sithWorld_g_pCurrentWorld);
+        sithMain_g_curRenderTick = 1;
+    }
 }
 
 void sithMakeDirs(void)
 {
-    J3D_TRAMPOLINE_CALL(sithMakeDirs);
+    stdFileUtil_MkDir(sithGetSaveGamesDir());
+    stdFileUtil_MkDir(sithGetScreenShotsDir());
 }
 
-const char* J3DAPI sithGetAutoSaveFilePrefix()
+const char* sithGetAutoSaveFilePrefix(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetAutoSaveFilePrefix);
+    return sithGetPath(sith_aTmpAutoSaveFilePrefix, "SITHSTRING_AUTO", 0);
 }
 
-const char* J3DAPI sithGetPath(char* aOutPath, char* pKey, int bPrependInstallDirPath)
+const char* J3DAPI sithGetPath(char* aOutPath, const char* pSithStrName, int bPrependInstallDirPath)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetPath, aOutPath, pKey, bPrependInstallDirPath);
+    if ( strlen(aOutPath) != 0 ) // if not empty, i.e. inadvertently the string gets cached because the functions that call this functions use static global var to store path
+    {
+        return aOutPath;
+    }
+
+    const wchar_t* pwName = sithString_GetString(pSithStrName);
+    if ( !pwName )
+    {
+        return aOutPath;
+    }
+
+    char* pName = stdUtil_ToAString(pwName);
+
+    char aInstallPath[128] = { 0 };
+    wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
+
+    if ( strlen(pName) )
+    {
+        if ( strlen(aInstallPath) && bPrependInstallDirPath )
+        {
+            char* pFilename = pName;
+            char* pStripName = strchr(pName, '\\');
+            if ( pStripName )
+            {
+                pFilename = pStripName + 1;
+            }
+
+            while ( pFilename && *pFilename == '\\' )
+            {
+                ++pFilename;
+            }
+
+            stdFnames_MakePath(aOutPath, SITH_PATHSIZE, aInstallPath, pFilename);
+        }
+        else
+        {
+            stdUtil_StringCopy(aOutPath, SITH_PATHSIZE, pName);
+        }
+    }
+    else
+    {
+        stdUtil_StringCopy(aOutPath, SITH_PATHSIZE, pSithStrName);
+    }
+
+    if ( pName )
+    {
+        stdMemory_Free(pName);
+    }
+
+    return aOutPath;
 }
 
-const char* J3DAPI sithGetSaveGamesDir()
+const char* sithGetSaveGamesDir(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetSaveGamesDir);
+    return sithGetPath(sith_aTmpSaveGameDirPath, "SITHSTRING_SAVEGAMES", 1);
 }
 
-const char* J3DAPI sithGetQuickSaveFilePrefix()
+const char* sithGetQuickSaveFilePrefix(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetQuickSaveFilePrefix);
+    return sithGetPath(sith_aTmpQuickSavePrefix, "SITHSTRING_QUICK", 0);
 }
 
-const char* J3DAPI sithGetScreenShotsDir()
+const char* sithGetScreenShotsDir(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetScreenShotsDir);
+    return sithGetPath(sith_aTmpScreenShotDirPath, "SITHSTRING_SHOTS", 1);
 }
 
-const char* J3DAPI sithGetScreenShotFileTemplate()
+const char* sithGetScreenShotFileTemplate(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetScreenShotFileTemplate);
+    return sithGetPath(sith_aScreenShotsFileName, "SITHSTRING_JONES_SHOTS", 0);
 }
 
 void J3DAPI sithSetOpenCallback(SithOpenCallback pfCallback)
 {
-    J3D_TRAMPOLINE_CALL(sithSetOpenCallback, pfCallback);
+    sith_pfOpenCallback = pfCallback;
 }
 
-const char* J3DAPI sithGetCurrentWorldSaveName()
+const char* sithGetCurrentWorldSaveName(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetCurrentWorldSaveName);
+    if ( !sithWorld_g_pCurrentWorld )
+    {
+        return 0;
+    }
+
+    size_t i;
+    for ( i = 0; ; ++i )
+    {
+        if ( i >= 17 )
+        {
+            return sithWorld_g_pCurrentWorld->aName;
+        }
+
+        if ( !strncmpi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aLevelNamePrefix, 6u) )
+        {
+            break;
+        }
+    }
+
+    const wchar_t* pwName = sithString_GetString(sithMain_aLevelNdsInfos[i].aName);
+    if ( !pwName )
+    {
+        return sithWorld_g_pCurrentWorld->aName;
+    }
+
+    char* pName = stdUtil_ToAString(pwName);
+    if ( !pName )
+    {
+        return sithWorld_g_pCurrentWorld->aName;
+    }
+
+    STD_STRCPY(sith_aNdsLevelFilenameBuf, pName);
+    stdMemory_Free(pName);
+    return sith_aNdsLevelFilenameBuf;
 }
 
-const char* J3DAPI sithGetLevelSaveFilename(unsigned int levelNum)
+const char* J3DAPI sithGetLevelSaveFilename(size_t levelNum)
 {
-    return J3D_TRAMPOLINE_CALL(sithGetLevelSaveFilename, levelNum);
+    if ( levelNum >= 17 )
+    {
+        return 0;
+    }
+
+    const wchar_t* pwLevelName = sithString_GetString(sithMain_aLevelNdsInfos[levelNum].aName);
+    if ( !pwLevelName )
+    {
+        return 0;
+    }
+
+    char* pLevelName = stdUtil_ToAString(pwLevelName);
+    if ( !pLevelName )
+    {
+        return 0;
+    }
+
+    STD_STRCPY(sith_aLevelNdsFileNameBuf, pLevelName);
+    stdMemory_Free(pLevelName);
+    return sith_aLevelNdsFileNameBuf;
 }

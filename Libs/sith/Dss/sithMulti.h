@@ -15,6 +15,7 @@ J3D_EXTERN_C_START
 #define sithMulti_g_message J3D_DECL_FAR_VAR(sithMulti_g_message, SithMessage)
 // extern SithMessage sithMulti_g_message;
 
+void sithMulti_OpenGame(void); // Added
 void sithMulti_CloseGame();
 int J3DAPI sithMulti_CheckPlayers(int msecTime, SithEventParams* pParam);
 void J3DAPI sithMulti_ProcessPlayerLost(DPID idPlayer);

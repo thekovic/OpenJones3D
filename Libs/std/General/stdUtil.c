@@ -164,7 +164,7 @@ wchar_t* J3DAPI stdUtil_ToWString(const char* pString)
     return pwString;
 }
 
-char* J3DAPI stdUtil_ToAString(wchar_t* pwString)
+char* J3DAPI stdUtil_ToAString(const wchar_t* pwString)
 {
     STD_ASSERTREL(pwString != ((void*)0));
     size_t len = wcslen(pwString);

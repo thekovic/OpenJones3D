@@ -123,7 +123,7 @@ char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, unsigned int
 int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, unsigned int maxChars);
 void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, unsigned int maxChars);
 wchar_t* J3DAPI stdUtil_ToWString(const char* pString);
-char* J3DAPI stdUtil_ToAString(wchar_t* pwString);
+char* J3DAPI stdUtil_ToAString(const wchar_t* pwString);
 
 void J3DAPI stdUtil_ToLower(char* pStr);
 void J3DAPI stdUtil_ToUpper(char* pStr); // Added

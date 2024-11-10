@@ -586,6 +586,7 @@
 #define sithPuppet_GetModeTrack_ADDR 0x0045CA00
 #define sithPuppet_GetModeTrackImpl_ADDR 0x0045CA20
 #define sithPuppet_FreeEntry_ADDR 0x0045CA50
+#define sithAnimate_Startup_ADDR 0x461220
 #define sithAnimate_Open_ADDR 0x00461230
 #define sithAnimate_Close_ADDR 0x00461250
 #define sithAnimate_Stop_ADDR 0x00461270
@@ -1281,6 +1282,7 @@
 #define sithParticle_CacheFind_ADDR 0x004AEC90
 #define sithParticle_CacheAdd_ADDR 0x004AECF0
 #define sithParticle_CacheRemove_ADDR 0x004AED80
+#define sithAIAwareness_Open_ADDR 0x004B0960
 #define sithAIAwareness_Close_ADDR 0x004B0A30
 #define sithAIAwareness_CreateTransmittingEvent_ADDR 0x004B0A90
 #define sithAIAwareness_ProcessEvents_ADDR 0x004B0AE0
@@ -1932,12 +1934,12 @@
 #define sithWorld_bValidCopyright_ADDR 0x005624A4
 #define sithMain_aLevelNdsInfos_ADDR 0x00507298
 #define sithMain_aLevelNdsFileNameBuf_ADDR 0x00563CF8
-#define sithMain_szScreenShotsFileName_ADDR 0x00563EF8
+#define sithMain_aScreenShotsFileName_ADDR 0x00563EF8
 #define sithMain_aNdsLevelFilenameBuf_ADDR 0x00563F78
-#define sithMain_szTmpQuickSavePrefix_ADDR 0x00564178
-#define sithMain_szTmpSaveGameDirPath_ADDR 0x005641F8
-#define sithMain_szTmpAutoSaveFilePrefix_ADDR 0x00564278
-#define sithMain_szTmpScreenShotDirPath_ADDR 0x005642F8
+#define sithMain_aTmpQuickSavePrefix_ADDR 0x00564178
+#define sithMain_aTmpSaveGameDirPath_ADDR 0x005641F8
+#define sithMain_aTmpAutoSaveFilePrefix_ADDR 0x00564278
+#define sithMain_aTmpScreenShotDirPath_ADDR 0x005642F8
 #define sith_g_pHS_ADDR 0x00564378
 #define sithMain_dword_56437C_ADDR 0x0056437C
 #define sithMain_bDrawPlayerMoveBounds_ADDR 0x00564380

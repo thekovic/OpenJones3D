@@ -277,7 +277,7 @@
 #define stdUtil_ToWStringEx_TYPE int (J3DAPI*)(wchar_t*, const char*, unsigned int)
 #define stdUtil_ToAStringEx_TYPE void (J3DAPI*)(char*, const wchar_t*, unsigned int)
 #define stdUtil_ToWString_TYPE wchar_t* (J3DAPI*)(const char*)
-#define stdUtil_ToAString_TYPE char* (J3DAPI*)(wchar_t*)
+#define stdUtil_ToAString_TYPE char* (J3DAPI*)(const wchar_t*)
 #define stdUtil_ToLower_TYPE void (J3DAPI*)(char*)
 #define stdUtil_StrCmp_TYPE int (J3DAPI*)(const char*, const char*)
 #define stdFileUtil_NewFind_TYPE FindFileData* (J3DAPI*)(const char*, int, const char*)

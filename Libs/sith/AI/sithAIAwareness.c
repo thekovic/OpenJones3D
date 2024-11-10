@@ -30,6 +30,11 @@ void sithAIAwareness_ResetGlobals(void)
     memset(&sithAIAwareness_curProcessID, 0, sizeof(sithAIAwareness_curProcessID));
 }
 
+int sithAIAwareness_Open(void)
+{
+    return J3D_TRAMPOLINE_CALL(sithAIAwareness_Open);
+}
+
 void sithAIAwareness_Close()
 {
     J3D_TRAMPOLINE_CALL(sithAIAwareness_Close);

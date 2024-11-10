@@ -16,8 +16,7 @@
 
 void sithAnimate_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
+    // J3D_HOOKFUNC(sithAnimate_Startup);
     // J3D_HOOKFUNC(sithAnimate_Open);
     // J3D_HOOKFUNC(sithAnimate_Close);
     // J3D_HOOKFUNC(sithAnimate_Stop);
@@ -71,10 +70,10 @@ void sithAnimate_ResetGlobals(void)
 {
     int sithAnimate_lastPullItemAnimFrameIdx_tmp = 11;
     memcpy(&sithAnimate_lastPullItemAnimFrameIdx, &sithAnimate_lastPullItemAnimFrameIdx_tmp, sizeof(sithAnimate_lastPullItemAnimFrameIdx));
-    
+
     int sithAnimate_aPullItemAnimFrames_tmp[12] = { 0, 0, 29, 38, 54, 72, 110, 120, 128, 135, 155, 163 };
     memcpy(&sithAnimate_aPullItemAnimFrames, &sithAnimate_aPullItemAnimFrames_tmp, sizeof(sithAnimate_aPullItemAnimFrames));
-    
+
     rdVector2 sithAnimate_aPullItemDistances_tmp[11] = {
       { 0.0f, 0.0f },
       { 0.0f, -0.00190222f },
@@ -89,13 +88,13 @@ void sithAnimate_ResetGlobals(void)
       { -0.2f, 0.0f }
     };
     memcpy(&sithAnimate_aPullItemDistances, &sithAnimate_aPullItemDistances_tmp, sizeof(sithAnimate_aPullItemDistances));
-    
+
     int sithAnimate_lastPushItemAnimFrameIdx_tmp = 12;
     memcpy(&sithAnimate_lastPushItemAnimFrameIdx, &sithAnimate_lastPushItemAnimFrameIdx_tmp, sizeof(sithAnimate_lastPushItemAnimFrameIdx));
-    
+
     const unsigned int sithAnimate_aPushItemAnimFrames_tmp[13] = { 0u, 0u, 12u, 25u, 35u, 51u, 66u, 85u, 99u, 108u, 121u, 129u, 151u };
-    memcpy((unsigned int *)&sithAnimate_aPushItemAnimFrames, &sithAnimate_aPushItemAnimFrames_tmp, sizeof(sithAnimate_aPushItemAnimFrames));
-    
+    memcpy((unsigned int*)&sithAnimate_aPushItemAnimFrames, &sithAnimate_aPushItemAnimFrames_tmp, sizeof(sithAnimate_aPushItemAnimFrames));
+
     rdVector2 sithAnimate_aPushItemDistances_tmp[12] = {
       { 0.0f, 0.0f },
       { 0.0f, 0.00167f },
@@ -111,12 +110,17 @@ void sithAnimate_ResetGlobals(void)
       { 0.20100001f, 0.0f }
     };
     memcpy(&sithAnimate_aPushItemDistances, &sithAnimate_aPushItemDistances_tmp, sizeof(sithAnimate_aPushItemDistances));
-    
+
     memset(&sithAnimate_numFreeAnims, 0, sizeof(sithAnimate_numFreeAnims));
     memset(&sithAnimate_aFreeAnimNums, 0, sizeof(sithAnimate_aFreeAnimNums));
     memset(&sithAnimate_numUsedAnims, 0, sizeof(sithAnimate_numUsedAnims));
     memset(&sithAnimate_aAnims, 0, sizeof(sithAnimate_aAnims));
     memset(&sithAnimate_bOpen, 0, sizeof(sithAnimate_bOpen));
+}
+
+void sithAnimate_Startup(void)
+{
+    J3D_TRAMPOLINE_CALL(sithAnimate_Startup);
 }
 
 int J3DAPI sithAnimate_Open()
@@ -353,4 +357,10 @@ void J3DAPI sithAnimate_SendExitSurfaceMessage(const SithThing* pThing, const Si
 void J3DAPI sithAnimate_EnterFloorSurface(const SithThing* pSrcThing, const SithSurface* pSurf)
 {
     J3D_TRAMPOLINE_CALL(sithAnimate_EnterFloorSurface, pSrcThing, pSurf);
+}
+
+
+void sithAnimate_Shutdown(void)
+{
+
 }

@@ -9,8 +9,12 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI sithAnimate_Open();
-void J3DAPI sithAnimate_Close();
+void sithAnimate_Startup(void);
+void sithAnimate_Shutdown(void); // Added
+
+int sithAnimate_Open(void);
+void sithAnimate_Close(void);
+
 void J3DAPI sithAnimate_Stop(SithAnimationSlot* pAnim);
 int J3DAPI sithAnimate_GetSurfaceAnimIndex(const SithSurface* pSurf);
 // local variable allocation has failed, the output may be wrong!

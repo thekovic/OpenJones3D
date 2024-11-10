@@ -23,6 +23,7 @@
 #   define WIN32_LEAN_AND_MEAN
 #   include <Windows.h>
 #   define strcmpi _strcmpi
+#   define strncmpi _strnicmp
 #else
     // TODO: define J3D_DEBUG
     typedef int      BOOL;

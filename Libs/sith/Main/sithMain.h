@@ -40,6 +40,8 @@ J3D_EXTERN_C_START
 #define sith_g_pHS J3D_DECL_FAR_VAR(sith_g_pHS, tHostServices*)
 // extern tHostServices *sith_g_pHS;
 
+// TODO: Rename all to be prefixed only by 'sith'
+
 #define sithMain_g_frameNumber J3D_DECL_FAR_VAR(sithMain_g_frameNumber, int)
 // extern int sithMain_g_frameNumber;
 
@@ -51,35 +53,44 @@ J3D_EXTERN_C_START
 
 void J3DAPI sithSetServices(tHostServices* pHS);
 void sithClearServices(void);
-int J3DAPI sithStartup();
+
+int sithStartup(void);
 void sithShutdown(void);
-int J3DAPI sithSetPerformanceLevel(int level);
+
+void J3DAPI sithSetPerformanceLevel(size_t level);
 int sithGetPerformanceLevel(void);
+
 int J3DAPI sithOpenStatic(const char* pFilename);
 void sithCloseStatic(void);
-// NOTE: there is debug info that originally this function was named: sithOpenNormal
-int J3DAPI sithOpenNormal(char* pWorldName, const wchar_t* wszPlayerName);
+
+int J3DAPI sithOpenNormal(const char* pWorldName, const wchar_t* wszPlayerName);
 void J3DAPI sithOpenPostProcess();
+int J3DAPI sithOpenMulti(const char* pFilename, const wchar_t* pwPlayerName); // Added
+
 int J3DAPI sithOpen(const wchar_t* wszPlayerName);
 void sithClose(void);
+
 void sithUpdate(void);
 void sithDrawScene(void);
+void sithAdvanceRenderTick(void);
+
 void J3DAPI sithSetGameDifficulty(int difficulty);
 int sithGetGameDifficulty(void);
+
 float sithGetHitAccuarancyScalar(void);
 float sithGetCombatDamageScalar(void);
 float sithGetIMPDamageScalar(void);
-void sithAdvanceRenderTick(void);
+
 void sithMakeDirs(void);
-const char* J3DAPI sithGetAutoSaveFilePrefix();
-const char* J3DAPI sithGetPath(char* aOutPath, char* pKey, int bPrependInstallDirPath);
-const char* J3DAPI sithGetSaveGamesDir();
-const char* J3DAPI sithGetQuickSaveFilePrefix();
-const char* J3DAPI sithGetScreenShotsDir();
-const char* J3DAPI sithGetScreenShotFileTemplate();
+
+const char* sithGetAutoSaveFilePrefix(void);
+const char* sithGetSaveGamesDir(void);
+const char* sithGetQuickSaveFilePrefix(void);
+const char* sithGetScreenShotsDir(void);
+const char* sithGetScreenShotFileTemplate(void);
 void J3DAPI sithSetOpenCallback(SithOpenCallback pfCallback);
-const char* J3DAPI sithGetCurrentWorldSaveName();
-const char* J3DAPI sithGetLevelSaveFilename(unsigned int levelNum);
+const char* sithGetCurrentWorldSaveName(void);
+const char* J3DAPI sithGetLevelSaveFilename(size_t levelNum);
 
 // Helper hooking functions
 void sithMain_InstallHooks(void);

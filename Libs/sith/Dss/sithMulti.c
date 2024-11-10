@@ -230,3 +230,10 @@ void J3DAPI sithMulti_StopWelcomingPlayer(int bError)
 {
     J3D_TRAMPOLINE_CALL(sithMulti_StopWelcomingPlayer, bError);
 }
+
+
+void sithMulti_OpenGame(void)
+{
+    // TODO: Add implementation
+    SITH_ASSERT(0);
+}

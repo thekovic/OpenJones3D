@@ -12,7 +12,8 @@ J3D_EXTERN_C_START
 #define sithAIAwareness_g_aSectors J3D_DECL_FAR_VAR(sithAIAwareness_g_aSectors, SithAIAwarenessSector*)
 // extern SithAIAwarenessSector *sithAIAwareness_g_aSectors;
 
-void sithAIAwareness_Close();
+int sithAIAwareness_Open(void);
+void sithAIAwareness_Close(void);
 int J3DAPI sithAIAwareness_CreateTransmittingEvent(SithSector* pSector, const rdVector3* pos, int type, float transmittingLevel, SithThing* pThing);
 void J3DAPI sithAIAwareness_ProcessEvents();
 int J3DAPI sithAIAwareness_Update(int msecTime, SithEventParams* pParams);
