@@ -18,7 +18,7 @@ int J3DAPI JonesDialog_ShowDialog(LPCSTR lpTemplateName, HWND hWnd, DLGPROC lpDi
 void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowModeSupported);
 void J3DAPI JonesDialog_ResetGameState(JonesDialogGameState* pState, int bWindowModeSupported);
 int JonesDialog_DummyFlipGDI(void);
-INT_PTR CALLBACK JonesDialog_FullscreenDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK JonesDialog_SubclassDialogWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void J3DAPI JonesDialog_HandleWM_ERASEBKGND(HWND hwnd, WPARAM wParam, int bIconEraseBkgnd, JonesDialogData* pData);
 void J3DAPI JonesDialog_HandleWM_PAINT(HWND hWnd, JonesDialogData* lpData);

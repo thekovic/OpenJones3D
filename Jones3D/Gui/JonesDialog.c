@@ -39,7 +39,7 @@ void JonesDialog_InstallHooks(void)
     J3D_HOOKFUNC(JonesDialog_SetGameState);
     J3D_HOOKFUNC(JonesDialog_ResetGameState);
     J3D_HOOKFUNC(JonesDialog_DummyFlipGDI);
-    J3D_HOOKFUNC(JonesDialog_FullscreenDlgProc);
+    J3D_HOOKFUNC(JonesDialog_SubclassDialogProc);
     J3D_HOOKFUNC(JonesDialog_SubclassDialogWindowProc);
     J3D_HOOKFUNC(JonesDialog_HandleWM_ERASEBKGND);
     J3D_HOOKFUNC(JonesDialog_HandleWM_PAINT);
@@ -504,7 +504,7 @@ int J3DAPI JonesDialog_ShowDialog(LPCSTR lpTemplateName, HWND hWnd, DLGPROC lpDi
     }
     else
     {
-        v9 = DialogBoxParam(hInstance, lpTemplateName, hWnd, JonesDialog_FullscreenDlgProc, (LPARAM)&data);
+        v9 = DialogBoxParam(hInstance, lpTemplateName, hWnd, JonesDialog_SubclassDialogProc, (LPARAM)&data);
     }
 
     JonesDialog_ResetGameState(&state, bWindowModeSupported);
@@ -681,7 +681,7 @@ int JonesDialog_DummyFlipGDI(void)
     return 1;
 }
 
-INT_PTR CALLBACK JonesDialog_FullscreenDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     uint32_t height;
     int y;

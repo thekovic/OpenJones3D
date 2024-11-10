@@ -317,7 +317,7 @@
 #define JonesDialog_SetGameState_TYPE void (J3DAPI*)(JonesDialogGameState*, int)
 #define JonesDialog_ResetGameState_TYPE void (J3DAPI*)(JonesDialogGameState*, int)
 #define JonesDialog_DummyFlipGDI_TYPE int (*)(void)
-#define JonesDialog_FullscreenDlgProc_TYPE INT_PTR (__stdcall*)(HWND, UINT, WPARAM, LPARAM)
+#define JonesDialog_SubclassDialogProc_TYPE INT_PTR (__stdcall*)(HWND, UINT, WPARAM, LPARAM)
 #define JonesDialog_SubclassDialogWindowProc_TYPE LRESULT (__stdcall*)(HWND, UINT, WPARAM, LPARAM)
 #define JonesDialog_HandleWM_ERASEBKGND_TYPE void (J3DAPI*)(HWND, WPARAM, int, JonesDialogData*)
 #define JonesDialog_HandleWM_PAINT_TYPE void (J3DAPI*)(HWND, JonesDialogData*)

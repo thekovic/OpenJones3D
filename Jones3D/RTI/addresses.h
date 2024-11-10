@@ -327,7 +327,7 @@
 #define JonesDialog_SetGameState_ADDR 0x00410B50
 #define JonesDialog_ResetGameState_ADDR 0x00410E40
 #define JonesDialog_DummyFlipGDI_ADDR 0x00410F00
-#define JonesDialog_FullscreenDlgProc_ADDR 0x00410F10
+#define JonesDialog_SubclassDialogProc_ADDR 0x00410F10
 #define JonesDialog_SubclassDialogWindowProc_ADDR 0x00411200
 #define JonesDialog_HandleWM_ERASEBKGND_ADDR 0x00411A30
 #define JonesDialog_HandleWM_PAINT_ADDR 0x00411AF0
