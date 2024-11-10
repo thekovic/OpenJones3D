@@ -559,7 +559,7 @@ void sithUpdate(void)
 
             sithAdvanceRenderTick();
             sithTime_Advance();
-            sithEvent_ProcessEvents();
+            sithEvent_Process();
 
             if ( sithMessage_g_inputstream )
             {

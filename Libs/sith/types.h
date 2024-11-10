@@ -1413,10 +1413,11 @@ typedef struct sSithEventTask
 {
     SithEventProcess pfProcess;
     SithEventTaskMode startMode;
-    unsigned int msecFrequency;
-    unsigned int msecLastIntervalTime;
+    uint32_t msecFrequency;
+    uint32_t msecLastIntervalTime;
     int unknown10;
 } SithEventTask;
+static_assert(sizeof(SithEventTask) == 20, "sizeof(SithEventTask) == 20");
 
 struct sSithEventParams
 {
@@ -1425,6 +1426,7 @@ struct sSithEventParams
     int param2;
     int param3;
 };
+static_assert(sizeof(SithEventParams) == 16, "sizeof(SithEventParams) == 16");
 
 typedef struct sSithAIRegisteredInstinct
 {
@@ -2878,11 +2880,12 @@ typedef struct sSithAIWaypoint
 
 struct sSithEvent
 {
-    unsigned int msecEventTime;
+    uint32_t msecEventTime;
     int taskNum;
     SithEventParams params;
     SithEvent* pNextEvent;
 };
+static_assert(sizeof(SithEvent) == 28, "sizeof(SithEvent) == 28");
 
 typedef struct sCndSectorInfo
 {

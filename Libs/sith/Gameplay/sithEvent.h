@@ -13,17 +13,37 @@ J3D_EXTERN_C_START
 // extern SithEvent *sithEvent_g_pFirstQueuedEvent;
 
 int sithEvent_Startup(void);
-void J3DAPI sithEvent_Shutdown();
-int J3DAPI sithEvent_Open();
-void J3DAPI sithEvent_Close();
+void sithEvent_Shutdown(void);
+
+void sithEvent_Open(void);
+void sithEvent_Close(void);
+
 void sithEvent_Reset(void);
-int J3DAPI sithEvent_CreateEvent(unsigned int taskId, SithEventParams* params, int when);
-int J3DAPI sithEvent_FreeEvent(SithEvent* pEvent);
-int J3DAPI sithEvent_AddTask(unsigned int taskId, SithEventProcess pfProcess, int frequency, SithEventTaskMode startMode);
-void J3DAPI sithEvent_ProcessEvents();
-void J3DAPI sithEvent_ResetFreeBufferTable();
-SithEvent* J3DAPI sithEvent_Create();
-void J3DAPI sithEvent_AddEvent(SithEvent* pEvent);
+
+/**
+ * Registers new task for which events can be created.
+ * If task is already registered it will override it.
+ *
+ * @param taskId
+ * @param pfProcess - Function which processes the task event
+ * @param frequency - The interval frequency when `startMode` is SITHEVENT_TASKINTERVAL. Can be 0.
+ * @param startMode
+ * @return
+ */
+int J3DAPI sithEvent_RegisterTask(size_t taskId, SithEventProcess pfProcess, uint32_t frequency, SithEventTaskMode startMode);
+
+/**
+ * Creates new event for registered task.
+ * If the task is not registered it will assert in the `sithEvent_Process`
+ *
+ * @param taskId - Task ID for which the event is created
+ * @param params - Event parameters
+ * @param when   - MSec when the event should execute from current time.
+ */
+int J3DAPI sithEvent_CreateEvent(size_t taskId, SithEventParams* params, uint32_t when);
+void J3DAPI sithEvent_FreeEvent(SithEvent* pEvent);
+
+void sithEvent_Process(void);
 
 // Helper hooking functions
 void sithEvent_InstallHooks(void);

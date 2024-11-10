@@ -1007,8 +1007,8 @@
 #define sithEvent_Reset_ADDR 0x004525A0
 #define sithEvent_CreateEvent_ADDR 0x004525C0
 #define sithEvent_FreeEvent_ADDR 0x00452660
-#define sithEvent_AddTask_ADDR 0x00452710
-#define sithEvent_ProcessEvents_ADDR 0x004527D0
+#define sithEvent_RegisterTask_ADDR 0x00452710
+#define sithEvent_Process_ADDR 0x004527D0
 #define sithEvent_ResetFreeBufferTable_ADDR 0x00452880
 #define sithEvent_Create_ADDR 0x004528B0
 #define sithEvent_AddEvent_ADDR 0x00452900
