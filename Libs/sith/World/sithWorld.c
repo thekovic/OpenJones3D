@@ -91,7 +91,7 @@ void sithWorld_ResetGlobals(void)
         &sithAIClass_CNDReadAIClassSection,
         &sithAIClass_CNDWriteAIClassSection
       },
-      { "models", &sithModel_CNDReadModelSection, &sithModel_CNDWriteModelSection },
+      { "models", &sithModel_LoadModelsBinary, &sithModel_WriteModelsBinary },
       {
         "sprites",
         &sithSprite_CNDReadSpriteSection,

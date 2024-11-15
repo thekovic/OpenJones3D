@@ -961,9 +961,9 @@
 #define sithTime_IsPaused_ADDR 0x0044AB30
 #define sithModel_Startup_ADDR 0x0044C0C0
 #define sithModel_Shutdown_ADDR 0x0044C0E0
-#define sithModel_NDYReadModelSection_ADDR 0x0044C100
-#define sithModel_CNDWriteModelSection_ADDR 0x0044C3D0
-#define sithModel_CNDReadModelSection_ADDR 0x0044C470
+#define sithModel_LoadModelsText_ADDR 0x0044C100
+#define sithModel_WriteModelsBinary_ADDR 0x0044C3D0
+#define sithModel_LoadModelsBinary_ADDR 0x0044C470
 #define sithModel_FreeWorldModels_ADDR 0x0044C4F0
 #define sithModel_Load_ADDR 0x0044C5E0
 #define sithModel_GetModelMemUsage_ADDR 0x0044C810
@@ -2373,7 +2373,7 @@
 #define sithTime_g_clockTime_ADDR 0x0056B740
 #define sithTime_g_bPaused_ADDR 0x0056B744
 #define sithTime_msecPauseStartTime_ADDR 0x0056B748
-#define sithModel_g_pHashtable_ADDR 0x0056B758
+#define sithModel_pHashtable_ADDR 0x0056B758
 #define sithModel_bHiPoly_ADDR 0x0056B75C
 #define sithSound_bStartup_ADDR 0x0056B760
 #define sithSound_bSkipRestoringSounds_ADDR 0x0056B764
