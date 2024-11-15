@@ -181,7 +181,7 @@ HBITMAP J3DAPI stdBmp_Load(const char* pFilename)
                     if ( nRead != bmi.bmiHeader.biSizeImage ) {
                         STDLOG_ERROR("Unable to read all the data from your BMP file. It may be corrupted.\n");
                     }
-                    DeleteDC(hdc); // Fixed: Delete hdc in case of an error
+                    DeleteDC(hdc); // Fixed: Delete hdcThumbnail in case of an error
                 }
             }
             break;
