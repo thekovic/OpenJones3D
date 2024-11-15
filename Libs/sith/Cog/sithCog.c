@@ -1297,10 +1297,10 @@ SithCog* J3DAPI sithCog_Load(SithWorld* pWorld, const char* pName)
 SithCog* J3DAPI sithCog_GetCogByIndex(int idx)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( SITHWORLD_ISSTATICINDEX(idx) )
+    if ( SITHWORLD_IS_STATICINDEX(idx) )
     {
+        idx    = SITHWORLD_FROM_STATICINDEX(idx);
         pWorld = sithWorld_g_pStaticWorld;
-        SITHWORLD_CLEARSTATICINDEXMASK(idx);
     }
 
     if ( pWorld && idx >= 0 && idx < (signed int)pWorld->numCogs )

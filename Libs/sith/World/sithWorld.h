@@ -12,8 +12,8 @@ J3D_EXTERN_C_START
 // Added
 // The macro converts the resource index to static resource index (jones3Dstatic.cnd)
 #define SITHWORLD_STATICINDEX(idx) ((idx) | SITH_STATICRESOURCE_INDEXMASK)
-#define SITHWORLD_ISSTATICINDEX(idx) ((idx & SITH_STATICRESOURCE_INDEXMASK) != 0)
-#define SITHWORLD_CLEARSTATICINDEXMASK(idx) (idx &= ~SITH_STATICRESOURCE_INDEXMASK)
+#define SITHWORLD_FROM_STATICINDEX(idx) ((idx) & ~SITH_STATICRESOURCE_INDEXMASK)
+#define SITHWORLD_IS_STATICINDEX(idx) ((idx & SITH_STATICRESOURCE_INDEXMASK) != 0)
 
 
 #define sithWorld_g_pCurrentWorld J3D_DECL_FAR_VAR(sithWorld_g_pCurrentWorld, SithWorld*)

@@ -65,8 +65,7 @@ void sithCogExec_InstallHooks(void)
 }
 
 void sithCogExec_ResetGlobals(void)
-{
-}
+{}
 
 void J3DAPI sithCogExec_Execute(SithCog* pCog)
 {
@@ -308,11 +307,11 @@ SithCog* J3DAPI sithCogExec_PopCog(SithCog* pCog)
     }
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( SITHWORLD_ISSTATICINDEX(index) )
+    if ( SITHWORLD_IS_STATICINDEX(index) )
     {
         SITH_ASSERTREL(sithWorld_g_pStaticWorld); // Added: Added null check like in other cases 
         pWorld = sithWorld_g_pStaticWorld;
-        SITHWORLD_CLEARSTATICINDEXMASK(index);
+        index  = SITHWORLD_FROM_STATICINDEX(index);
     }
 
     if ( pWorld && index >= 0 && index < pWorld->numCogs )
@@ -370,11 +369,11 @@ SithThing* J3DAPI sithCogExec_PopTemplate(SithCog* pCog)
     }
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( SITHWORLD_ISSTATICINDEX(index) )
+    if ( SITHWORLD_IS_STATICINDEX(index) )
     {
         SITH_ASSERTREL(sithWorld_g_pStaticWorld);
         pWorld = sithWorld_g_pStaticWorld;
-        SITHWORLD_CLEARSTATICINDEXMASK(index);
+        index  = SITHWORLD_FROM_STATICINDEX(index);
     }
 
     if ( pWorld && index >= 0 && index < pWorld->numThingTemplates )
@@ -439,11 +438,11 @@ rdMaterial* J3DAPI sithCogExec_PopMaterial(SithCog* pCog)
     }
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( SITHWORLD_ISSTATICINDEX(index) )
+    if ( SITHWORLD_IS_STATICINDEX(index) )
     {
         SITH_ASSERTREL(sithWorld_g_pStaticWorld);
         pWorld = sithWorld_g_pStaticWorld;
-        SITHWORLD_CLEARSTATICINDEXMASK(index);
+        index  = SITHWORLD_FROM_STATICINDEX(index);
     }
 
     if ( pWorld && index >= 0 && index < pWorld->numMaterials && pWorld->aMaterials[index].aName[0] )
@@ -466,11 +465,11 @@ rdModel3* J3DAPI sithCogExec_PopModel3(SithCog* pCog)
     }
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( SITHWORLD_ISSTATICINDEX(index) )
+    if ( SITHWORLD_IS_STATICINDEX(index) )
     {
         SITH_ASSERTREL(sithWorld_g_pStaticWorld);
         pWorld = sithWorld_g_pStaticWorld;
-        SITHWORLD_CLEARSTATICINDEXMASK(index);
+        index  = SITHWORLD_FROM_STATICINDEX(index);
     }
 
     if ( pWorld && index >= 0 && index < pWorld->numModels )
@@ -493,11 +492,11 @@ rdKeyframe* J3DAPI sithCogExec_PopKeyframe(SithCog* pCog)
     }
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( SITHWORLD_ISSTATICINDEX(index) )
+    if ( SITHWORLD_IS_STATICINDEX(index) )
     {
         SITH_ASSERTREL(sithWorld_g_pStaticWorld);
         pWorld = sithWorld_g_pStaticWorld;
-        SITHWORLD_CLEARSTATICINDEXMASK(index);
+        index  = SITHWORLD_FROM_STATICINDEX(index);
     }
 
     if ( pWorld && index >= 0 && index < pWorld->numKeyframes )
