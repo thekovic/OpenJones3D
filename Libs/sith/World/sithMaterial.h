@@ -9,20 +9,20 @@
 
 J3D_EXTERN_C_START
 
-#define sithMaterial_g_pHashtable J3D_DECL_FAR_VAR(sithMaterial_g_pHashtable, tHashTable*)
-// extern tHashTable *sithMaterial_g_pHashtable;
-
 int sithMaterial_Startup(void);
-void J3DAPI sithMaterial_Shutdown();
+void sithMaterial_Shutdown(void);
+
+int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMaterials);
 void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld);
-int J3DAPI sithMaterial_CNDWriteMaterialSection(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithMaterial_CNDReadMaterialSection(tFileHandle fh, SithWorld* pWorld);
+
+int J3DAPI sithMaterial_WriteMaterialsText(const SithWorld* pWorld);// Added
+int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithMaterial_WriteMaterialsBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithMaterial_LoadMaterialsBinary(tFileHandle fh, SithWorld* pWorld);
+
 rdMaterial* J3DAPI sithMaterial_Load(const char* pName);
 rdMaterial* J3DAPI sithMaterial_GetMaterialByIndex(int idx);
-int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, int numMaterials);
-rdMaterial* J3DAPI sithMaterial_CacheFind(const char* pName);
-void J3DAPI sithMaterial_CacheAdd(rdMaterial* pMat);
-int J3DAPI sithMaterial_CacheRemove(const rdMaterial* pMat);
 
 // Helper hooking functions
 void sithMaterial_InstallHooks(void);

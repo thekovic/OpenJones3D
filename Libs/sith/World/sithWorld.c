@@ -63,8 +63,8 @@ void sithWorld_ResetGlobals(void)
       { "sounds", &sithSound_CNDReadSoundSection, &sithSound_CNDWriteSoundSection },
       {
         "materials",
-        &sithMaterial_CNDReadMaterialSection,
-        &sithMaterial_CNDWriteMaterialSection
+        &sithMaterial_LoadMaterialsBinary,
+        &sithMaterial_WriteMaterialsBinary
       },
       {
         "georesource",

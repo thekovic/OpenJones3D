@@ -1043,8 +1043,9 @@
 #define sithMaterial_Startup_ADDR 0x0045D530
 #define sithMaterial_Shutdown_ADDR 0x0045D550
 #define sithMaterial_FreeWorldMaterials_ADDR 0x0045D570
-#define sithMaterial_CNDWriteMaterialSection_ADDR 0x0045D900
-#define sithMaterial_CNDReadMaterialSection_ADDR 0x0045DC90
+#define sithMaterial_LoadMaterialsText_ADDR 0x0045D650
+#define sithMaterial_WriteMaterialsBinary_ADDR 0x0045D900
+#define sithMaterial_LoadMaterialsBinary_ADDR 0x0045DC90
 #define sithMaterial_Load_ADDR 0x0045E210
 #define sithMaterial_GetMaterialByIndex_ADDR 0x0045E3E0
 #define sithMaterial_AllocWorldMaterials_ADDR 0x0045E420
@@ -2398,7 +2399,7 @@
 #define sithTemplate_g_pHashtable_ADDR 0x0056F9C0
 #define sithTemplate_bMasterFileInitialized_ADDR 0x0056F9C4
 #define sithTemplate_pMasterFile_ADDR 0x0056F9C8
-#define sithMaterial_g_pHashtable_ADDR 0x0056FA10
+#define sithMaterial_pHashtable_ADDR 0x0056FA10
 #define sithSurface_apUnsyncedSurfaces_ADDR 0x0056FA18
 #define sithSurface_numUnsyncedSurfaces_ADDR 0x0056FA98
 #define sithSector_aModifiedSectors_ADDR 0x0056FAE0

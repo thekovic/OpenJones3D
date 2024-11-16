@@ -2506,7 +2506,7 @@ struct sSithWorld
     rdVector3* aVertices;
     rdVector3* aTransformedVertices;
     uint32_t* aVertexRenderTickIds;
-    int numTexVertices;
+    size_t numTexVertices;
     rdVector2* aTexVerticies;
     rdVector4* aVertDynamicLights;
     uint32_t* aVertDynamicLightsRenderTicks;
@@ -2560,12 +2560,13 @@ static_assert(sizeof(SithWorld) == 1588, "sizeof(SithWorld) == 1588");
 typedef struct sCndMaterialInfo
 {
     char aName[64];
-    int width;
-    int height;
-    int numCels;
-    int numMipLevels;
+    uint32_t width;
+    uint32_t height;
+    uint32_t numCels;
+    uint32_t numMipLevels;
     ColorInfo colorInfo;
 } CndMaterialInfo;
+static_assert(sizeof(CndMaterialInfo) == 136, "sizeof(CndMaterialInfo) == 136");
 
 typedef struct sCndKeyframeInfo
 {
