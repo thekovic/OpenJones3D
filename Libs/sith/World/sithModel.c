@@ -19,6 +19,11 @@
 static bool sithModel_bHiPoly;
 static tHashTable* sithModel_pHashtable = NULL; // Added: Init to null
 
+
+void J3DAPI sithModel_CacheRemove(const rdModel3* pModel);
+void J3DAPI sithModel_CacheAdd(rdModel3* pModel);
+rdModel3* J3DAPI sithModel_CacheFind(const char* pName);
+
 void sithModel_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithModel_Startup);
@@ -193,7 +198,7 @@ void J3DAPI sithModel_FreeWorldModels(SithWorld* pWorld)
 
 rdModel3* J3DAPI sithModel_Load(const char* pName, int bSkipDefault)
 {
-    SithWorld* pWorld= sithWorld_g_pLastLoadedWorld;
+    SithWorld* pWorld = sithWorld_g_pLastLoadedWorld;
 
     SITH_ASSERTREL(pWorld != ((void*)0));
     SITH_ASSERTREL(pWorld->aModels != ((void*)0));
@@ -379,9 +384,9 @@ void J3DAPI sithModel_EnableHiPoly(int bEnabled)
     sithModel_bHiPoly = bEnabled;
 }
 
-int sithModel_IsHiPolyEnabled(void)
+bool sithModel_IsHiPolyEnabled(void)
 {
-    return sithModel_bHiPoly;
+    return sithModel_bHiPoly != 0;
 }
 
 void J3DAPI sithModel_CacheRemove(const rdModel3* pModel)
