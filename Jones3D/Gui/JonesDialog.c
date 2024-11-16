@@ -5,6 +5,7 @@
 #include <Jones3D/RTI/symbols.h>
 
 #include <std/General/std.h>
+#include <std/General/stdUtil.h>
 #include <std/Win95/stdDisplay.h>
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdWin95.h>
@@ -706,7 +707,6 @@ INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wPa
             JonesDialog_TrackCursor(1);
         }
     }
-
     else if ( uMsg == WM_INITDIALOG )
     {
         SetWindowLong(hwnd, GWL_USERDATA, lParam);// TODO: cast lParam which is JonesDialogData  here
@@ -731,7 +731,7 @@ INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wPa
             GetWindowRect(hwnd, &lpData->rcWindow);
         }
 
-        if ( JonesDialog_cursorInfo.numHandels >= 10 )
+        if ( JonesDialog_cursorInfo.numHandels >= STD_ARRAYLEN(JonesDialog_cursorInfo.aHwnd) )
         {
             STDLOG_ERROR("JonesDialog_SubclassDialogProc: Too many dialogs displayed!\n");
         }
@@ -767,8 +767,7 @@ INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wPa
             KillTimer(hwnd, 1u);
         }
     }
-
-    else if ( uMsg == 3 && lpData && lpData->dwSize == sizeof(JonesDialogData) )
+    else if ( uMsg == WM_MOVE && lpData && lpData->dwSize == sizeof(JonesDialogData) )
     {
         GetWindowRect(hwnd, &lpData->rcWindow);
     }
@@ -1251,7 +1250,8 @@ int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hd
         {
             memset(&pInfo->bmpInfo, 0, sizeof(pInfo->bmpInfo));
 
-            pInfo->bmpInfo.bmiHeader.biSize   = 40;
+            static_assert(sizeof(pInfo->bmpInfo.bmiHeader) == 40, "sizeof(pInfo->bmpInfo.bmiHeader) == 40");
+            pInfo->bmpInfo.bmiHeader.biSize   = sizeof(pInfo->bmpInfo.bmiHeader);
             pInfo->bmpInfo.bmiHeader.biWidth  = pDisplayMode.rasterInfo.width;
             pInfo->bmpInfo.bmiHeader.biHeight = pDisplayMode.rasterInfo.height;
             pInfo->bmpInfo.bmiHeader.biPlanes = 1;
@@ -1269,12 +1269,13 @@ int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hd
                 * 4
                 * ((pDisplayMode.rasterInfo.width + 3) >> 2)
                 * pDisplayMode.rasterInfo.height;
+
             pInfo->hScreenDC = hdc;
-            pInfo->hBitmap = CreateDIBSection(pInfo->hScreenDC, &pInfo->bmpInfo, 0, (void**)&pInfo->pPixels, 0, 0);
+            pInfo->hBitmap   = CreateDIBSection(pInfo->hScreenDC, &pInfo->bmpInfo, 0, (void**)&pInfo->pPixels, 0, 0);
             if ( !pInfo->hBitmap )
             {
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer), 0);
                 STDLOG_ERROR("JonesDialog_AllocOffScreenGDISection: CreateDIBSection failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
@@ -1329,24 +1330,15 @@ int J3DAPI JonesDialog_AllocOffScreenDIBSection(int* pBSkipedAllocation)
 
     JonesDialog_GDIDIBSectionInfoOffScreen.bHasDC = 1;
     if ( !*pBSkipedAllocation
-      && !BitBlt(
-          JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC,
-          0,
-          0,
-          pDisplayMode.rasterInfo.width,
-          pDisplayMode.rasterInfo.height,
-          drawDC,
-          0,
-          0,
-          SRCCOPY) )
+      && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, pDisplayMode.rasterInfo.width, pDisplayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
     {
         LastError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, 0xFFu, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer), 0);
         STDLOG_ERROR("JonesDialog_AllocOffScreenDIBSection: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
     stdDisplay_ReleaseFrontBufferDC(drawDC);
-    JonesDialog_pfFlipPage(); // Added: Fixes rendering of game backgound when dialog is open.
+    JonesDialog_pfFlipPage(); // Added: Fixes rendering of game background when dialog is open.
     return JonesDialog_GDIDIBSectionInfoOffScreen.hBitmap == 0;
 }
 
@@ -1370,12 +1362,6 @@ int J3DAPI JonesDialog_FreeOffScreenDIBSection()
 
 BOOL J3DAPI JonesDialog_ShowFileSelectDialog(LPOPENFILENAMEA pofn, int bOpen)
 {
-    int bWindowModeSupported;
-    JonesDialogData extraData;
-    JonesDialogData dlgData;
-    JonesDialogGameState state;
-    BOOL bRes;
-
     if ( !JonesMain_IsOpen() )
     {
         return GetOpenFileName(pofn);
@@ -1386,31 +1372,31 @@ BOOL J3DAPI JonesDialog_ShowFileSelectDialog(LPOPENFILENAMEA pofn, int bOpen)
         return 0;
     }
 
-    bWindowModeSupported = stdDisplay_CanRenderWindowed();
+    int bWindowModeSupported = stdDisplay_CanRenderWindowed();
     if ( bWindowModeSupported == -1 )
     {
         return -1;
     }
 
-    pofn->Flags |= OFN_ENABLESIZING; // Added
-
     if ( !bWindowModeSupported )
     {
-        memset(&dlgData, 0, sizeof(dlgData));
-
-        dlgData.dwSize = sizeof(JonesDialogData);
-        dlgData.lpfnPrevHook = pofn->lpfnHook;
-        pofn->lpfnHook = JonesDialog_SubclassFileDialogProc;
+        JonesDialogData dlgData = { 0 };
+        dlgData.dwSize        = sizeof(JonesDialogData);
+        dlgData.lpfnPrevHook  = pofn->lpfnHook;
         dlgData.lPrevCustData = pofn->lCustData;
-        pofn->lCustData = (LPARAM)&dlgData;
 
-        memset(&extraData, 0, sizeof(extraData));
-        extraData.dwSize = sizeof(JonesDialogData);
+        pofn->lCustData = (LPARAM)&dlgData;
+        pofn->lpfnHook  = JonesDialog_SubclassFileDialogProc;
+
+        JonesDialogData extraData = { 0 };
+        extraData.dwSize   = sizeof(JonesDialogData);
         dlgData.pExtraData = &extraData;
     }
 
+    JonesDialogGameState state;
     JonesDialog_SetGameState(&state, bWindowModeSupported);
 
+    BOOL bRes;
     if ( bOpen )
     {
         bRes = GetOpenFileName(pofn);

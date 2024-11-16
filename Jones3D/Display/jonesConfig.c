@@ -1,29 +1,80 @@
 #include "jonesConfig.h"
 #include <j3dcore/j3dhook.h>
 
+#include <Jones3D/Gui/JonesDialog.h>
 #include <Jones3D/Main/JonesMain.h>
 #include <Jones3D/Main/jonesString.h>
 #include <Jones3D/RTI/symbols.h>
+
+#include <rdroid/Main/rdroid.h>
 
 #include <sith/Devices/sithControl.h>
 #include <sith/DSS/sithGamesave.h>
 #include <sith/Gameplay/sithPlayer.h>
 
 #include <std/General/std.h>
+#include <std/General/stdFnames.h>
 #include <std/General/stdUtil.h>
+#include <std/Win95/stdDisplay.h>
 #include <std/Win95/stdControl.h>
+
+#include <math.h>
+
+#define JONESCONFIG_NOFONTSCALEMASK 1119
+#define JONESCONFIG_NOFONTSCALE(dlgID) MAKELONG(dlgID, JONESCONFIG_NOFONTSCALEMASK)
 
 typedef struct sLoadGameDialogData
 {
-    HDC hdc;
+    HDC hdcThumbnail;
     char aFilePath[128];
     HBITMAP hThumbnail;
-    int pfWndProc;
+    int pfThubnailProc;
     int bFolderSel;
     int unknown36;
     int unknown37;
 } LoadGameDialogData;
 
+typedef struct sSaveGameDialogData
+{
+    HDC hdcThumbnail;
+    char aFilePath[128];
+    HBITMAP hThumbnail;
+    int pfThumbnailProc;
+    int bFolderSel;
+} SaveGameDialogData;
+
+typedef struct sJonesDialogFontScaleMetrics
+{
+    int dialogID;
+    int refWidth;
+    int refHeight;
+} JonesDialogSize;
+static_assert(sizeof(JonesDialogSize) == 12, "sizeof(JonesDialogSize) == 12");
+
+
+static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
+   { 164, 368, 232 },
+   { 112, 260, 224 },
+   { 111, 408, 218 },
+   { 116, 297, 95 },
+   { 115, 549, 367 },
+   { 117, 309, 103 },
+   { 120, 282, 152 },
+   { 114, 238, 285 },
+   { 148, 440, 393 },
+   { 113, 351, 206 },
+   { 211, 266, 103 },
+   { 163, 282, 90 },
+   { 214, 282, 90 },
+   { 121, 282, 90 },
+   { 150, 249, 100 },
+   { 233, 344, 180 },
+   { 190, 538, 297 },
+   { 212, 280, 74 },
+   { 159, 583, 250 },
+   { 154, 579, 252 },
+   { 167, 279, 75 }
+};
 
 #define jonesConfig_aStoreItems J3D_DECL_FAR_ARRAYVAR(jonesConfig_aStoreItems, tStoreItem(*)[14])
 #define jonesConfig_aNumberGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aNumberGlyphMetrics, StdRect(*)[10])
@@ -35,7 +86,7 @@ typedef struct sLoadGameDialogData
 #define jonesConfig_aDfltKeySets J3D_DECL_FAR_ARRAYVAR(jonesConfig_aDfltKeySets, int*(*)[3])
 #define jonesConfig_aDfltKeySetNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aDfltKeySetNames, const char*(*)[3])
 #define jonesConfig_aControlKeyStrings J3D_DECL_FAR_ARRAYVAR(jonesConfig_aControlKeyStrings, const char*(*)[223])
-#define jonesConfig_aFontScaleFactors J3D_DECL_FAR_ARRAYVAR(jonesConfig_aFontScaleFactors, tJonesDialogFontScaleMetrics(*)[21])
+// #define jonesConfig_aDialogSizes J3D_DECL_FAR_ARRAYVAR(jonesConfig_aDialogSizes, JonesDialogSize(*)[21])
 #define jonesConfig_dword_511954 J3D_DECL_FAR_VAR(jonesConfig_dword_511954, int)
 #define jonesConfig_dword_511958 J3D_DECL_FAR_VAR(jonesConfig_dword_511958, int)
 #define jonesConfig_perfLevel J3D_DECL_FAR_VAR(jonesConfig_perfLevel, int)
@@ -103,30 +154,30 @@ void jonesConfig_InstallHooks(void)
     // J3D_HOOKFUNC(jonesConfig_SetDefaultControlScheme);
     // J3D_HOOKFUNC(jonesConfig_BindControls);
     // J3D_HOOKFUNC(jonesConfig_BindJoystickControl);
-    // J3D_HOOKFUNC(jonesConfig_InitDialogText);
-    // J3D_HOOKFUNC(jonesConfig_CreateDialogFont);
-    // J3D_HOOKFUNC(jonesConfig_ResetDialogFont);
-    // J3D_HOOKFUNC(jonesConfig_SetWindowFontCallback);
-    // J3D_HOOKFUNC(jonesConfig_PositionAndSetTextCallback);
-    // J3D_HOOKFUNC(jonesConfig_sub_4045E0);
-    // J3D_HOOKFUNC(jonesConfig_GetWindowScreenRect);
-    // J3D_HOOKFUNC(jonesConfig_SetDialogTitleAndPosition);
+    J3D_HOOKFUNC(jonesConfig_InitDialog);
+    J3D_HOOKFUNC(jonesConfig_CreateDialogFont);
+    J3D_HOOKFUNC(jonesConfig_ResetDialogFont);
+    J3D_HOOKFUNC(jonesConfig_ResetWindowFontCallback);
+    J3D_HOOKFUNC(jonesConfig_SetPositionAndTextCallback);
+    J3D_HOOKFUNC(jonesConfig_SetWindowFontAndPosition);
+    J3D_HOOKFUNC(jonesConfig_GetWindowScreenRect);
+    J3D_HOOKFUNC(jonesConfig_SetDialogTitleAndPosition);
     // J3D_HOOKFUNC(jonesConfig_GetSaveGameFilePath);
-    // J3D_HOOKFUNC(jonesConfig_SaveGameDialogHookProc);
-    // J3D_HOOKFUNC(jonesConfig_SaveGameDialogInit);
-    // J3D_HOOKFUNC(jonesConfig_SaveGameThumbnailPaintProc);
+    J3D_HOOKFUNC(jonesConfig_SaveGameDialogHookProc);
+    J3D_HOOKFUNC(jonesConfig_SaveGameDialogInit);
+    J3D_HOOKFUNC(jonesConfig_SaveGameThumbnailPaintProc);
     // J3D_HOOKFUNC(jonesConfig_ShowOverwriteSaveGameDlg);
     // J3D_HOOKFUNC(jonesConfig_ShowExitGameDialog);
     // J3D_HOOKFUNC(jonesConfig_ExitGameDlgProc);
     // J3D_HOOKFUNC(jonesConfig_SaveGameMsgBoxProc);
     // J3D_HOOKFUNC(jonesConfig_GameSaveSetData);
     // J3D_HOOKFUNC(jonesConfig_MsgBoxDlg_HandleWM_COMMAND);
-    // J3D_HOOKFUNC(jonesConfig_GetLoadGameFilePath);
+    J3D_HOOKFUNC(jonesConfig_GetLoadGameFilePath);
     // J3D_HOOKFUNC(jonesConfig_sub_405F60);
     J3D_HOOKFUNC(jonesConfig_LoadGameDialogHookProc);
-    // J3D_HOOKFUNC(jonesConfig_ShowLoadGameDialog);
-    // J3D_HOOKFUNC(jonesConfig_LoadGameDialogInit);
-    // J3D_HOOKFUNC(jonesConfig_LoadGameThumbnailPaintProc);
+    // J3D_HOOKFUNC(jonesConfig_ShowLoadGameWarningMsgBox);
+    J3D_HOOKFUNC(jonesConfig_LoadGameDialogInit);
+    J3D_HOOKFUNC(jonesConfig_LoadGameThumbnailPaintProc);
     // J3D_HOOKFUNC(jonesConfig_ShowGamePlayOptions);
     // J3D_HOOKFUNC(jonesConfig_GamePlayOptionsProc);
     // J3D_HOOKFUNC(jonesConfig_sub_406A00);
@@ -395,7 +446,7 @@ void jonesConfig_ResetGlobals(void)
       "E",
       "R",
       "T",
-      "Y",
+      "posY",
       "U",
       "I",
       "O",
@@ -600,30 +651,30 @@ void jonesConfig_ResetGlobals(void)
     };
     memcpy((char**)&jonesConfig_aControlKeyStrings, &jonesConfig_aControlKeyStrings_tmp, sizeof(jonesConfig_aControlKeyStrings));
 
-    tJonesDialogFontScaleMetrics jonesConfig_aFontScaleFactors_tmp[21] = {
-      { 164, 368, 232 },
-      { 112, 260, 224 },
-      { 111, 408, 218 },
-      { 116, 297, 95 },
-      { 115, 549, 367 },
-      { 117, 309, 103 },
-      { 120, 282, 152 },
-      { 114, 238, 285 },
-      { 148, 440, 393 },
-      { 113, 351, 206 },
-      { 211, 266, 103 },
-      { 163, 282, 90 },
-      { 214, 282, 90 },
-      { 121, 282, 90 },
-      { 150, 249, 100 },
-      { 233, 344, 180 },
-      { 190, 538, 297 },
-      { 212, 280, 74 },
-      { 159, 583, 250 },
-      { 154, 579, 252 },
-      { 167, 279, 75 }
-    };
-    memcpy(&jonesConfig_aFontScaleFactors, &jonesConfig_aFontScaleFactors_tmp, sizeof(jonesConfig_aFontScaleFactors));
+    /*   JonesDialogSize jonesConfig_aFontScaleFactors_tmp[21] = {
+         { 164, 368, 232 },
+         { 112, 260, 224 },
+         { 111, 408, 218 },
+         { 116, 297, 95 },
+         { 115, 549, 367 },
+         { 117, 309, 103 },
+         { 120, 282, 152 },
+         { 114, 238, 285 },
+         { 148, 440, 393 },
+         { 113, 351, 206 },
+         { 211, 266, 103 },
+         { 163, 282, 90 },
+         { 214, 282, 90 },
+         { 121, 282, 90 },
+         { 150, 249, 100 },
+         { 233, 344, 180 },
+         { 190, 538, 297 },
+         { 212, 280, 74 },
+         { 159, 583, 250 },
+         { 154, 579, 252 },
+         { 167, 279, 75 }
+       };
+       memcpy(&jonesConfig_aDialogSizes, &jonesConfig_aFontScaleFactors_tmp, sizeof(jonesConfig_aDialogSizes));*/
 
     int jonesConfig_dword_511954_tmp = 1;
     memcpy(&jonesConfig_dword_511954, &jonesConfig_dword_511954_tmp, sizeof(jonesConfig_dword_511954));
@@ -739,7 +790,7 @@ int J3DAPI jonesConfig_ShowMessageDialog(HWND hWnd, const char* pTitle, const ch
     return J3D_TRAMPOLINE_CALL(jonesConfig_ShowMessageDialog, hWnd, pTitle, pText, iconID);
 }
 
-BOOL __stdcall jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM a4)
+BOOL CALLBACK jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM a4)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_MessageDialogProc, hwnd, uMsg, wParam, a4);
 }
@@ -804,67 +855,67 @@ void J3DAPI jonesConfig_BindJoystickControl(SithControlFunction functionId, int 
     J3D_TRAMPOLINE_CALL(jonesConfig_BindJoystickControl, functionId, controlId);
 }
 
-HFONT J3DAPI jonesConfig_InitDialogText(HWND hWnd, HFONT hFont, int dlgID)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_InitDialogText, hWnd, hFont, dlgID);
-}
+//HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitDialog, hWnd, hFont, dlgID);
+//}
 
-HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgResNum, float* pFontScale)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_CreateDialogFont, hWnd, bWindowMode, dlgResNum, pFontScale);
-}
-
-void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_ResetDialogFont, hWndParent, hFont);
-}
-
-int __stdcall jonesConfig_SetWindowFontCallback(HWND hWnd, LPARAM lparam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_SetWindowFontCallback, hWnd, lparam);
-}
-
-BOOL __stdcall jonesConfig_PositionAndSetTextCallback(HWND hwnd, JonesDialogFontInfo* lparam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_PositionAndSetTextCallback, hwnd, lparam);
-}
-
-void J3DAPI jonesConfig_sub_4045E0(HWND hwnd, JonesDialogFontInfo* pFontInfo)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_sub_4045E0, hwnd, pFontInfo);
-}
-
-void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_GetWindowScreenRect, hWnd, lpRect);
-}
-
-void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_SetDialogTitleAndPosition, hWnd, pDlgFontInfo);
-}
+//HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgResNum, float* pFontScale)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_CreateDialogFont, hWnd, bWindowMode, dlgResNum, pFontScale);
+//}
+//
+//void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_ResetDialogFont, hWndParent, hFont);
+//}
+//
+//int __stdcall jonesConfig_SetWindowFontCallback(HWND hWnd, LPARAM lparam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_SetWindowFontCallback, hWnd, lparam);
+//}
+//
+//BOOL __stdcall jonesConfig_SetPositionAndTextCallback(HWND hwnd, JonesDialogFontInfo* lparam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_SetPositionAndTextCallback, hwnd, lparam);
+//}
+//
+//void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo* pFontInfo)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_SetWindowFontAndPosition, hwnd, pFontInfo);
+//}
+//
+//void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_GetWindowScreenRect, hWnd, lpRect);
+//}
+//
+//void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_SetDialogTitleAndPosition, hWnd, pDlgFontInfo);
+//}
 
 int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_GetSaveGameFilePath, hWnd, pOutFilePath);
 }
 
-UINT_PTR __stdcall jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameDialogHookProc, hDlg, msg, wParam, lParam);
-}
+//UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameDialogHookProc, hDlg, msg, wParam, lParam);
+//}
+//
+//int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpOfn)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameDialogInit, hDlg, a2, lpOfn);
+//}
 
-int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpOfn)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameDialogInit, hDlg, a2, lpOfn);
-}
+//LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
+//}
 
-LRESULT __stdcall jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
-}
-
-int J3DAPI jonesConfig_ShowOverwriteSaveGameDlg(HWND hWnd, char* aFilePath)
+int J3DAPI jonesConfig_ShowOverwriteSaveGameDlg(HWND hWnd, const char* aFilePath)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_ShowOverwriteSaveGameDlg, hWnd, aFilePath);
 }
@@ -874,12 +925,12 @@ int J3DAPI jonesConfig_ShowExitGameDialog(HWND hWnd, char* pSaveGameFilePath)
     return J3D_TRAMPOLINE_CALL(jonesConfig_ShowExitGameDialog, hWnd, pSaveGameFilePath);
 }
 
-INT_PTR __stdcall jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_ExitGameDlgProc, hWnd, uMsg, wparam, lparam);
 }
 
-INT_PTR __stdcall jonesConfig_SaveGameMsgBoxProc(HWND hWnd, UINT umsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK jonesConfig_SaveGameMsgBoxProc(HWND hWnd, UINT umsg, WPARAM wParam, LPARAM lParam)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameMsgBoxProc, hWnd, umsg, wParam, lParam);
 }
@@ -894,10 +945,10 @@ void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult)
     J3D_TRAMPOLINE_CALL(jonesConfig_MsgBoxDlg_HandleWM_COMMAND, hWnd, nResult);
 }
 
-int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_GetLoadGameFilePath, hWnd, pDestNdsPath);
-}
+//int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_GetLoadGameFilePath, hWnd, pDestNdsPath);
+//}
 
 void* J3DAPI jonesConfig_sub_405F60(HWND hWnd)
 {
@@ -909,9 +960,9 @@ void* J3DAPI jonesConfig_sub_405F60(HWND hWnd)
 //    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameDialogHookProc, hDlg, uMsg, wParam, lparam);
 //}
 
-int J3DAPI jonesConfig_ShowLoadGameDialog(HWND hWnd)
+int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd)
 {
-    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowLoadGameDialog, hWnd);
+    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowLoadGameWarningMsgBox, hWnd);
 }
 
 //int J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn)
@@ -919,17 +970,17 @@ int J3DAPI jonesConfig_ShowLoadGameDialog(HWND hWnd)
 //    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameDialogInit, hDlg, a2, pofn);
 //}
 
-LRESULT __stdcall jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
-}
+//LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
+//}
 
 int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_ShowGamePlayOptions, hWnd);
 }
 
-INT_PTR __stdcall jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsProc, hWnd, msg, wparam, lparam);
 }
@@ -1429,354 +1480,1304 @@ int J3DAPI jonesConfig_InsertCD_HandleWM_COMMAND(HWND hWnd, int nResult)
     return J3D_TRAMPOLINE_CALL(jonesConfig_InsertCD_HandleWM_COMMAND, hWnd, nResult);
 }
 
-UINT_PTR __stdcall jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lparam)
+HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID)
 {
-    UINT_PTR v4;
-    HWND hThumbnail;
-    HWND hIcon;
-    LoadGameDialogData* pData;
-    HWND hBtn;
-    LPOPENFILENAMEA pOFN;
-    HWND hParent;
-    char* pStr;
-    const char* v17;
-    unsigned int strLen;
-    const char* pString;
-    const char* v21;
-    HWND hDlgItem;
-    int bValidFile;
-    LPSTR lpFilePart;
-    char aFilename[128];
-    CHAR aSearchPath[256];
-    CHAR aBuffer[128];
-    char aExtension[128];
+    JonesDialogFontInfo fontInfo;
+    fontInfo.bWindowMode = 0;
+    fontInfo.hFont       = hFont;
 
-    v4 = 0;
-
-    if ( uMsg > WM_PAINT )
+    JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
+    if ( pSettings )
     {
-        if ( uMsg > WM_NOTIFY )
+        fontInfo.bWindowMode = pSettings->windowMode;
+    }
+
+    static float curFontScale = 0; // Changed: Made variable static to preserve state for cases when hFont != NULL. (See jonesConfig_LoadGameDialogHookProc)
+    //                                         Note, original code somehow managed to preserve the state of this variable on the stack and retrieve the value from it on another call
+    if ( !hFont )
+    {
+        fontInfo.hFont = jonesConfig_CreateDialogFont(hWnd, fontInfo.bWindowMode, (uint16_t)dlgID, &curFontScale);
+    }
+
+    fontInfo.dialogID = HIWORD(dlgID);
+    if ( !fontInfo.dialogID )
+    {
+        fontInfo.dialogID = (uint16_t)dlgID;
+    }
+
+    fontInfo.hControlFont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+    fontInfo.fontScaleX = curFontScale;
+    fontInfo.fontScaleY = curFontScale;
+    jonesConfig_SetDialogTitleAndPosition(hWnd, &fontInfo);
+
+    fontInfo.dialogID = dlgID; // Use the original dlgID with potential NOFONTSCALE mask
+    EnumChildWindows(hWnd, jonesConfig_SetPositionAndTextCallback, (LPARAM)&fontInfo);
+    return fontInfo.hFont;
+}
+
+HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID, float* pFontScale)
+{
+    // Function creates dialog font and calculates scale
+    // Note the function was adjusted to account for screen DPI
+
+    if ( !hWnd )
+    {
+        return NULL;
+    }
+
+    RECT rect;
+    GetClientRect(hWnd, &rect);
+
+    LPCSTR pFontName = jonesString_GetString("JONES_STR_FONT");
+    if ( !pFontName )
+    {
+        STDLOG_ERROR("Error: Could not get font for dlg id:%d\n", dlgID); // Added log
+        return NULL;
+    }
+
+    LOGFONT lf;
+    HFONT hfont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+    GetObject(hfont, sizeof(LOGFONT), &lf);
+
+    // Get system DPI first
+    // Added: This was added
+    UINT systemDPI = GetDpiForWindow(hWnd);
+    float dpiScale = (float)systemDPI / USER_DEFAULT_SCREEN_DPI;
+
+    STDLOG_STATUS("height: %i, width:%i, dpi:%d dpiScale:%f\n", rect.bottom, rect.right, systemDPI, dpiScale);
+
+    double dialogRefHeight = 0;
+    for ( size_t i = 0; i < STD_ARRAYLEN(jonesConfig_aDialogSizes); ++i )
+    {
+        if ( jonesConfig_aDialogSizes[i].dialogID == dlgID )
         {
-            if ( uMsg == WM_INITDIALOG )
-            {
-                return jonesConfig_LoadGameDialogInit(hDlg, wParam, (LPOPENFILENAMEA)lparam);
-            }
+            dialogRefHeight = jonesConfig_aDialogSizes[i].refHeight * dpiScale;
+            break;
+        }
+    }
 
-            if ( uMsg != WM_COMMAND )
-            {
-                return v4;
-            }
+    double scale = 1.0; // Added: Init to 1.0
+    if ( dialogRefHeight > 0 )
+    {
+        scale = (dialogRefHeight / (double)rect.bottom) * dpiScale;
+    }
 
-            jonesConfig_sub_405F60(hDlg);
-            return 0;
+    int cHeight;
+    float cHeightf;
+    uint32_t scrwidth, scrheight;
+
+    // Adjust reference heights and widths for DPI
+    int scaledRefHeight = (int)(RD_REF_HEIGHT * dpiScale);
+    int scaledRefWidth  = (int)(RD_REF_WIDTH * dpiScale);
+
+    if ( bWindowMode || !JonesMain_IsOpen() )
+    {
+        cHeight = lf.lfHeight;
+        RECT rectDskt;
+        GetWindowRect(GetDesktopWindow(), &rectDskt);
+        scrwidth = rectDskt.right - rectDskt.left;
+        scrheight = rectDskt.bottom - rectDskt.top;
+
+        if ( (size_t)(rectDskt.bottom - rectDskt.top) < (size_t)scaledRefHeight )
+        {
+            SystemParametersInfo(SPI_GETWORKAREA, 0, &rectDskt, 0);
+            scrheight = rectDskt.bottom;
         }
 
-        if ( uMsg != WM_NOTIFY )
+        if ( scale > 1.0f )
         {
-            if ( uMsg != WM_CLOSE )
+            cHeightf = (float)lf.lfHeight;
+            float heightScale = (float)((double)scrheight / scaledRefHeight);
+            if ( lf.lfHeight <= (int)(int32_t)((double)lf.lfHeight * heightScale) )
             {
-                return v4;
+                cHeightf = (float)((double)lf.lfHeight * heightScale);
             }
+        }
+        else
+        {
+            if ( scrheight < scaledRefHeight && scrwidth < scaledRefWidth )
+            {
+                scale = (float)((double)scrheight / scaledRefHeight * scale);
+            }
+            cHeightf = (float)((double)lf.lfHeight * scale);
+        }
+    }
+    else
+    {
+        stdDisplay_GetBackBufferSize(&scrwidth, &scrheight);
 
-            DeleteObject(jonesConfig_hFontLoadGameDlg);
-            jonesConfig_hFontLoadGameDlg = 0;
-            return 0;
+        // Calculate base font size considering DPI
+        cHeight = -MulDiv(8, systemDPI, USER_DEFAULT_SCREEN_DPI);
+
+        if ( scrheight >= (size_t)scaledRefHeight || scrwidth >= (size_t)scaledRefWidth )
+        {
+            cHeightf = (float)((double)cHeight * scale);
+        }
+        else
+        {
+            if ( scale > 1.0f )
+            {
+                cHeightf = (float)((double)cHeight * ((double)scrheight / scaledRefHeight));
+            }
+            else
+            {
+                scale = (float)((double)scrheight / scaledRefHeight * scale);
+                cHeightf = (float)((double)cHeight * scale);
+            }
+        }
+    }
+
+    float cHeighRnd = floorf(cHeightf);
+    if ( fabsf(cHeighRnd - cHeightf) < 0.5f )
+    {
+        cHeightf = cHeighRnd;
+    }
+
+    if ( cHeight <= (int)cHeightf )
+    {
+        cHeight = (int)cHeightf;
+    }
+
+    // Adjust minimum height based on DPI
+    if ( cHeight > -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI) ) // Changed to 10 from 9
+    {
+        cHeight = -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI);
+    }
+
+    if ( bWindowMode || !JonesMain_IsOpen() )
+    {
+        *pFontScale = (float)scale;
+    }
+    else if ( scale > 1.0f
+        && (scrheight <= (size_t)(scaledRefHeight) || scrwidth <= (size_t)(scaledRefWidth)) )
+    {
+        *pFontScale = (float)((double)scrheight / (scaledRefHeight));
+    }
+    else
+    {
+        *pFontScale = (float)scale;
+    }
+
+    // Create DPI-aware font
+    LOGFONT lf2 = {
+        .lfHeight         = cHeight,
+        .lfWidth          = 0,
+        .lfEscapement     = 0,
+        .lfOrientation    = 0,
+        .lfWeight         = FW_REGULAR,
+        .lfItalic         = FALSE,
+        .lfUnderline      = FALSE,
+        .lfStrikeOut      = FALSE,
+        .lfCharSet        = DEFAULT_CHARSET,
+        .lfOutPrecision   = OUT_DEFAULT_PRECIS,
+        .lfClipPrecision  = CLIP_CHARACTER_PRECIS,
+        .lfQuality        = PROOF_QUALITY,
+        .lfPitchAndFamily = FF_DONTCARE
+    };
+    STD_STRCPY(lf2.lfFaceName, pFontName);
+
+    return CreateFontIndirect(&lf2);
+}
+
+void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont)
+{
+    JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
+    if ( hFont && (!pSettings || !pSettings->windowMode) )
+    {
+        EnumChildWindows(hWndParent, jonesConfig_ResetWindowFontCallback, 0);
+        DeleteObject((HGDIOBJ)hFont);
+    }
+}
+
+BOOL CALLBACK jonesConfig_ResetWindowFontCallback(HWND hWnd, LPARAM lparam)
+{
+    J3D_UNUSED(lparam);
+    HFONT hfont = (HFONT)GetWindowLong(hWnd, GWL_USERDATA);
+    SendMessage(hWnd, WM_SETFONT, (WPARAM)hfont, 0);  // 0 - don't repaint
+    return TRUE;
+}
+
+BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hwnd, LPARAM lparam)
+{
+    // Function changes all text of controls from JONES_STR_* to corresponding text
+
+    if ( !lparam ) { // Added: Added check for null
+        return TRUE;
+    }
+    JonesDialogFontInfo* pFontInfo = (JonesDialogFontInfo*)lparam;
+    if ( pFontInfo->hFont )
+    {
+        // Position hwnd based on font
+        jonesConfig_SetWindowFontAndPosition(hwnd, pFontInfo);
+    }
+
+    if ( pFontInfo->dialogID == 154 || pFontInfo->dialogID == 159 ) // Load/Save dialogs
+    {
+        return TRUE;
+    }
+
+    CHAR aClassName[256] = { 0 };
+    GetClassName(hwnd, aClassName, 256);
+
+    CHAR aText[256] = { 0 };
+    if ( strncmpi(aClassName, "BUTTON", STD_ARRAYLEN(aClassName)) == 0 )
+    {
+        GetWindowText(hwnd, aText, STD_ARRAYLEN(aText));
+        LPCSTR pText = jonesString_GetString(aText);
+        if ( pText )
+        {
+            SetWindowText(hwnd, pText);
         }
 
-        pData = (LoadGameDialogData*)GetWindowLong(hDlg, DWL_USER);
-
-        STDLOG_STATUS("code: %i\n", *(uint32_t*)(lparam + 8));
-
-        switch ( *(uint32_t*)(lparam + 8) )
+        return TRUE;
+    }
+    else if ( strncmpi(aClassName, "STATIC", STD_ARRAYLEN(aClassName)) == 0 )
+    {
+        GetWindowText(hwnd, aText, STD_ARRAYLEN(aText));
+        if ( strchr(aText, '%') )
         {
-            case CDN_FILEOK:
-                pOFN = *(LPOPENFILENAMEA*)(lparam + 12);// lparam is OFNOTIFYA struct here
-                bValidFile = 0;
-                if ( (int16_t)pOFN->nFileOffset > 0 )
+            return TRUE;
+        }
+
+        LPCSTR pText = jonesString_GetString(aText);
+        if ( pText )
+        {
+            SetWindowText(hwnd, pText);
+        }
+
+        return TRUE;
+
+    }
+
+    return TRUE;
+}
+
+void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo* pFontInfo)
+{
+    HWND hDlg = GetParent(hwnd);
+    // Set font
+    if ( pFontInfo->hFont )
+    {
+        SendMessage(hwnd, WM_SETFONT, (WPARAM)pFontInfo->hFont, 1); // 1 - repaint
+        if ( HIWORD(pFontInfo->dialogID) != JONESCONFIG_NOFONTSCALEMASK )
+        {
+            SetWindowLong(hwnd, GWL_USERDATA, (WPARAM)pFontInfo->hControlFont);
+        }
+    }
+
+    RECT rectDesktop;
+    HWND hwndDesktop  = GetDesktopWindow();
+    GetWindowRect(hwndDesktop, &rectDesktop);
+
+    int heightDesktop = rectDesktop.bottom - rectDesktop.top;
+    int widthDesktop  = rectDesktop.right - rectDesktop.left;
+
+    RECT rectWindow;
+    GetWindowRect(hwnd, &rectWindow);
+
+    RECT rectClient;
+    GetClientRect(hwnd, &rectClient);
+
+    RECT rectDlgWindow;
+    GetWindowRect(hDlg, &rectDlgWindow);
+
+    if ( !pFontInfo->bWindowMode || pFontInfo->fontScaleX < 1.0f || pFontInfo->fontScaleY < 1.0f )
+    {
+        int offsetY = 0;
+        if ( HIWORD(pFontInfo->dialogID) != JONESCONFIG_NOFONTSCALEMASK )
+        {
+        LABEL_17:
+            HICON hIcon = (HICON)SendMessage(hwnd, STM_GETICON, 0, 0);
+            HWND dlgItem = GetDlgItem(hDlg, 1182);
+            if ( dlgItem == hwnd )
+            {
+                hIcon = (HICON)dlgItem;
+            }
+
+            HWND hwndResumeBtn = NULL;
+            HWND hwndThumbnail = NULL;
+
+            if ( pFontInfo->dialogID == 159 || pFontInfo->dialogID == 154 )// Load/Save dialog
+            {
+                LONG dlgID = GetWindowLong(hwnd, GWL_USERDATA); // TODO: UNUSED
+                J3D_UNUSED(dlgID);
+
+                HWND hwndParent = GetParent(hDlg);
+                if ( hwndParent )
                 {
-                    memset(aBuffer, 0, sizeof(aBuffer));
-                    memset(aSearchPath, 0, 128u);
-                    memset(aExtension, 0, sizeof(aExtension));
-                    memset(aFilename, 0, sizeof(aFilename));
-
-                    //sprintf(aExtension, ".%s", pOFN->lpstrDefExt);
-                    STD_FORMAT(aExtension, ".%s", pOFN->lpstrDefExt);
-
-                    hParent = GetParent(hDlg);
-                    SendMessage(hParent, CDM_GETSPEC, 128u, (LPARAM)aFilename);// get selected filename
-                    pStr = strstr(*(const char**)(*(uint32_t*)(lparam + 12) + 28), aFilename);// pStr = strstr(pofn->lpOFN->lpstrFile, aFilename);
-                    v17 = *(const char**)(*(uint32_t*)(lparam + 12) + 28);// lpstrFile = pofn->lpOFN->lpstrFile;
-                    if ( pStr )
+                    HWND dlgItem1137 = GetDlgItem(hwndParent, 1137);
+                    if ( dlgItem1137 )
                     {
-                        strLen = pStr - v17;
-                    }
-                    else
-                    {
-                        strLen = strlen(*(const char**)(*(uint32_t*)(lparam + 12) + 28));// v18 = strlen(pofn->lpOFN->lpstrFile);
-                    }
-
-                    //strncpy(aSearchPath, v17, strLen);
-                    STD_STRNCPY(aSearchPath, v17, strLen);
-                    SearchPath(aSearchPath, aFilename, aExtension, 128u, aBuffer, &lpFilePart);
-                    if ( strlen(aBuffer) )
-                    {
-                        bValidFile = 1;
-                    }
-
-                    if ( strcspn(aFilename, "?*") != strlen(aFilename) )
-                    {
-                        bValidFile = 0;
+                        if ( dlgItem1137 != hwnd )
+                        {
+                            RECT rectDlgItem1137Window;
+                            GetWindowRect(dlgItem1137, &rectDlgItem1137Window);
+                            offsetY = (int)((double)(rectDlgItem1137Window.bottom - rectDlgItem1137Window.top) * (1.0f - pFontInfo->fontScaleX));
+                        }
                     }
                 }
 
-                if ( *(int16_t*)(*(uint32_t*)(lparam + 12) + 56) >= 0 && bValidFile )// if ( (lparam->lpOFN->nFileOffset & 0x8000u) == 0 && v24 )
+                if ( hwnd == GetDlgItem(hDlg, 1120) )
                 {
-                    if ( strlen(aBuffer) )
-                    {
-                        if ( !JonesMain_IsOpen()
-                          || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
-                          || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0
-                          || jonesConfig_ShowLoadGameDialog(hDlg) == 1 )
-                        {
-                            return 0;
-                        }
+                    hwndResumeBtn = hwnd;
+                }
+                if ( hwnd == GetDlgItem(hDlg, 1163) || hwnd == GetDlgItem(hDlg, 1125) )
+                {
+                    hwndThumbnail = hwnd; // Load / Save thumbnail
+                    offsetY = 0;
+                }
+            }
 
-                    LABEL_34:
-                        SetWindowLong(hDlg, 0, 1);
-                        return 1;
-                    }
+            if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail )
+            {
+                double fontScaleX = pFontInfo->fontScaleX;
+                if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
+                {
+                    fontScaleX = (double)heightDesktop / RD_REF_HEIGHT;
+                }
 
-                    pString = jonesString_GetString("JONES_STR_NOFILE");
-                    if ( !pString )
-                    {
-                        goto LABEL_34;
-                    }
+                rectWindow.bottom = (int32_t)((double)(rectWindow.bottom - rectWindow.top) * fontScaleX) + rectWindow.top;
+            }
+
+            if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail && !hwndResumeBtn )
+            {
+                double fontScaleY = pFontInfo->fontScaleY;
+                if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
+                {
+                    fontScaleY = (double)widthDesktop / RD_REF_WIDTH;
+                }
+
+                rectWindow.right = (int32_t)((double)(rectWindow.right - rectWindow.left) * fontScaleY) + rectWindow.left;
+            }
+
+            if ( !hDlg )
+            {
+                return;
+            }
+
+            GetWindowRect(hDlg, &rectDlgWindow);
+            jonesConfig_GetWindowScreenRect(hDlg, &rectClient);
+
+            int posX = (int)((double)(rectWindow.left - rectClient.left) * pFontInfo->fontScaleY);
+            int posY = (int)((double)(rectWindow.top - rectClient.top) * pFontInfo->fontScaleX);
+            if ( offsetY > 0 && !hwndThumbnail )
+            {
+                posY += offsetY;
+            }
+
+            // Set position
+            MoveWindow(hwnd, posX, posY, rectWindow.right - rectWindow.left, rectWindow.bottom - rectWindow.top, 1); // 1 - repaint
+
+            GetWindowRect(hwnd, &rectWindow);
+            GetClientRect(hwnd, &rectClient);
+            if ( rectWindow.bottom <= rectDlgWindow.bottom && rectWindow.right <= rectDlgWindow.right )
+            {
+                return;
+            }
+
+            int dDlgWinX = rectWindow.right - rectDlgWindow.right;
+            int dDlgWinY = rectWindow.bottom - rectDlgWindow.bottom;
+
+            int dlgWidth  = rectDlgWindow.right - rectDlgWindow.left;
+            int dlgHeight = rectDlgWindow.bottom - rectDlgWindow.top;
+
+            if ( rectWindow.bottom - rectDlgWindow.bottom <= 0 || dDlgWinX <= 0 )
+            {
+                if ( dDlgWinY <= 0 )
+                {
+                    MoveWindow(hDlg, rectDlgWindow.left, rectDlgWindow.top, dDlgWinX + dlgWidth, dlgHeight, 1);
                 }
                 else
                 {
-                    pString = jonesString_GetString("JONES_STR_INVALIDFILE");
-                    if ( !pString )
-                    {
-                        goto LABEL_34;
-                    }
+                    MoveWindow(hDlg, rectDlgWindow.left, rectDlgWindow.top, dlgWidth, dDlgWinY + dlgHeight, 1);
                 }
+            }
+            else
+            {
+                MoveWindow(hDlg, rectDlgWindow.left, rectDlgWindow.top, dDlgWinX + dlgWidth, dDlgWinY + dlgHeight, 1);
+            }
 
-                memset(aSearchPath, 0, sizeof(aSearchPath));
-                hParent = GetParent(hDlg);
-                SendMessage(hParent, CDM_GETSPEC, 128u, (LPARAM)aFilename);// get filename
-                //sprintf(aSearchPath, pString, aFilename);
-                STD_FORMAT(aSearchPath, pString, aFilename);
-                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_LOADGM", aSearchPath, 139);
-                goto LABEL_34;
-
-            case CDN_FOLDERCHANGE:
-                if ( !pData->hThumbnail )
-                {
-                    return 1;
-                }
-
-                hDlgItem = GetDlgItem(hDlg, 1163);
-                pData->bFolderSel = 1;
-                InvalidateRect(hDlgItem, 0, 1);
-
-            LABEL_46:
-                UpdateWindow(hDlg);
-                return 1;
-
-            case CDN_SELCHANGE:
-                hThumbnail = GetDlgItem(hDlg, 1163);
-                if ( !pData->bFolderSel )
-                {
-                    v21 = 0;
-                    hParent = GetParent(hDlg);
-                    SendMessage(hParent, CDM_GETFILEPATH, 128u, (LPARAM)pData->aFilePath);
-                    if ( strlen(pData->aFilePath) )
-                    {
-                        v21 = (char*)&pData->hdc + strlen(pData->aFilePath) + 1;// ??
-                    }
-
-                    if ( v21 && !strcmp(v21, "nds") )
-                    {
-                        if ( pData->hThumbnail )
-                        {
-                            DeleteObject(pData->hThumbnail);
-                            pData->hThumbnail = 0;
-                        }
-
-                        pData->hThumbnail = sithGamesave_LoadThumbnail(pData->aFilePath);
-                    }
-                }
-
-                InvalidateRect(hThumbnail, 0, 1);
-                goto LABEL_46;
-
-            case CDN_FIRST:
-                // CDN_INITDONE
-                hBtn = GetDlgItem(hDlg, 1120);
-                SetWindowLong(hBtn, GWL_USERDATA, 159);
-
-                hIcon = GetDlgItem(hDlg, 1117);
-                SetWindowLong(hIcon, GWL_USERDATA, 159);
-
-                hThumbnail = GetDlgItem(hDlg, 1163);
-                SetWindowLong(hThumbnail, GWL_USERDATA, 159);
-
-                hParent = GetParent(hDlg);
-                jonesConfig_hFontLoadGameDlg = jonesConfig_InitDialogText(hParent, 0, 0x45F009F);
-                jonesConfig_hFontLoadGameDlg = jonesConfig_InitDialogText(hDlg, jonesConfig_hFontLoadGameDlg, 159);
-                SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-                return 1;
-
-            default:
-                return v4;
+            return;
         }
-    }
 
-    if ( uMsg != WM_PAINT )
-    {
-        if ( uMsg != WM_DESTROY )
+        LONG dlgID = GetWindowLong(hwnd, GWL_USERDATA);
+        if ( dlgID == 159 || dlgID == 154 )     // load/save dialogs
         {
-            return v4;
+            SendMessage(hwnd, WM_SETFONT, (WPARAM)pFontInfo->hControlFont, 1);// 1 - marks redraw
+            return;
         }
 
-        pData = (LoadGameDialogData*)GetWindowLong(hDlg, DWL_USER);
-        DeleteDC(pData->hdc);
-        DeleteObject(pData->hThumbnail);
-        pData->hThumbnail = 0;
-        pData->hdc = 0;
-        return 0;
-    }
+        HWND dlgItem1137  = GetDlgItem(hDlg, 1137);
+        if ( dlgItem1137 ) // note dlg item with this ID in resources
+        {
+            CHAR aClassName[256] = { 0 };
+            memset(aClassName, 0, sizeof(aClassName));
+            GetClassName(hwnd, aClassName, 256);
+            if ( dlgItem1137 != hwnd && strcmp(aClassName, "ToolbarWindow32") )
+            {
+                RECT rectDlgItem1137Window;
+                GetWindowRect(dlgItem1137, &rectDlgItem1137Window);
+                offsetY = (int32_t)((double)(rectDlgItem1137Window.bottom - rectDlgItem1137Window.top) * (1.0f - pFontInfo->fontScaleX));
+            }
 
-    if ( !((LoadGameDialogData*)GetWindowLong(hDlg, DWL_USER))->bFolderSel )
-    {
-        hThumbnail = GetDlgItem(hDlg, 1163);
-        UpdateWindow(hThumbnail);
+            goto LABEL_17;
+        }
     }
-
-    hIcon = GetDlgItem(hDlg, 1117);
-    UpdateWindow(hIcon);
-    return 1;
 }
 
-int J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn)
+void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect)
+{
+    GetClientRect(hWnd, lpRect);
+
+    POINT point = { 0 };
+    ClientToScreen(hWnd, &point);
+    lpRect->top  = point.y;
+    lpRect->left = point.x;
+
+    point.x = lpRect->right;
+    point.y = lpRect->bottom;
+    ClientToScreen(hWnd, &point);
+
+    lpRect->right  = point.x;
+    lpRect->bottom = point.y;
+}
+
+void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo)
+{
+    if ( pDlgFontInfo->dialogID != 154 && pDlgFontInfo->dialogID != 159 && pDlgFontInfo->dialogID != JONESCONFIG_NOFONTSCALEMASK )// if not load/save dialogs
+    {
+        CHAR aTitleJS[256] = { 0 };
+        GetWindowText(hWnd, aTitleJS, STD_ARRAYLEN(aTitleJS));
+        if ( strlen(aTitleJS) )
+        {
+            LPCSTR pTitle = jonesString_GetString(aTitleJS);
+            if ( pTitle )
+            {
+                SetWindowText(hWnd, pTitle);
+            }
+        }
+    }
+
+    RECT rectDeskto;
+    HWND hswnDesktop = GetDesktopWindow();
+    GetWindowRect(hswnDesktop, &rectDeskto);
+
+    uint32_t width, height;
+    height = rectDeskto.bottom - rectDeskto.top;
+    width  = rectDeskto.right - rectDeskto.left;
+
+    if ( !pDlgFontInfo->bWindowMode || pDlgFontInfo->fontScaleX < 1.0f || pDlgFontInfo->fontScaleY < 1.0f )
+    {
+        RECT rectWindow;
+        GetWindowRect(hWnd, &rectWindow);
+
+        RECT rectClient;
+        GetClientRect(hWnd, &rectClient);
+
+        if ( !pDlgFontInfo->bWindowMode && JonesMain_IsOpen() )
+        {
+            stdDisplay_GetBackBufferSize(&width, &height);
+        }
+
+        if ( pDlgFontInfo->dialogID == 154 || pDlgFontInfo->dialogID == 159 )// load/save dialogs
+        {
+            int32_t scaledClientWidth = (int32_t)((1.0f - pDlgFontInfo->fontScaleY) * (float)SITHSAVEGAME_THUMB_WIDTH) + rectClient.right;
+            int32_t offsetY = (int32_t)((1.0f - pDlgFontInfo->fontScaleX) * (float)SITHSAVEGAME_THUMB_HEIGHT);
+            //int32_t scaledClientHeight = offsetY + rectClient.bottom; // TODO: Unused
+
+            LONG winWidth  = rectWindow.right - rectWindow.left - (rectClient.right - scaledClientWidth);
+            LONG winHeight = rectWindow.bottom - rectWindow.top + offsetY;
+
+            RECT rectParent;
+            jonesConfig_GetWindowScreenRect(GetParent(hWnd), &rectParent);
+
+            RECT rectClientScreen;
+            jonesConfig_GetWindowScreenRect(hWnd, &rectClientScreen);
+
+            rectWindow.top    = rectClientScreen.top - rectParent.top;
+            rectWindow.left   = rectClientScreen.left - rectParent.left;
+            rectWindow.bottom = winHeight + rectClientScreen.top - rectParent.top;
+            rectWindow.right  = winWidth + rectClientScreen.left - rectParent.left;
+        }
+        else
+        {
+            int32_t scaledClientWidth  = (int32_t)((double)rectClient.right * pDlgFontInfo->fontScaleY);
+            int32_t scaledClientHeight = (int32_t)((double)rectClient.bottom * pDlgFontInfo->fontScaleX);
+            if ( pDlgFontInfo->dialogID == JONESCONFIG_NOFONTSCALEMASK )
+            {
+                scaledClientWidth += (int32_t)((1.0f - pDlgFontInfo->fontScaleY) * (float)SITHSAVEGAME_THUMB_WIDTH);
+                scaledClientHeight += (int32_t)((1.0f - pDlgFontInfo->fontScaleX) * (float)SITHSAVEGAME_THUMB_HEIGHT);
+            }
+
+            LONG winWidth  = rectWindow.right - rectWindow.left - (rectClient.right - scaledClientWidth);
+            LONG winHeight = rectWindow.bottom - rectWindow.top - (rectClient.bottom - scaledClientHeight);
+
+            rectWindow.top    = (LONG)(height - winHeight) / 2;
+            rectWindow.left   = (LONG)(width - winWidth) / 2;
+            rectWindow.bottom = winHeight + rectWindow.top;
+            rectWindow.right  = winWidth + rectWindow.left;
+        }
+
+        MoveWindow(hWnd, rectWindow.left, rectWindow.top, rectWindow.right - rectWindow.left, rectWindow.bottom - rectWindow.top, 1);
+    }
+}
+
+UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_INITDIALOG:
+        {
+            return jonesConfig_SaveGameDialogInit(hDlg, wParam, (LPOPENFILENAMEA)lParam);
+        }
+        case WM_COMMAND:
+        {
+            jonesConfig_sub_405F60(hDlg);
+            return 0;
+        }
+        case WM_CLOSE:
+        {
+            DeleteObject((HGDIOBJ)jonesConfig_hFontSaveGameDlg);
+            jonesConfig_hFontSaveGameDlg = NULL;
+            return 0;
+        }
+        case WM_DESTROY:
+        {
+            HDC* hdc = (HDC*)GetWindowLong(hDlg, DWL_USER);
+            DeleteDC(*hdc);
+            *hdc = NULL;
+            return 1;
+        }
+        case WM_PAINT:
+        {
+            // Fixed: Added full paint logic.
+            //        This should fixed painting the file list on windows 11
+
+            PAINTSTRUCT ps;
+            /*HDC hdcThumbnail =*/ BeginPaint(hDlg, &ps);
+
+            //LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+            HWND hThumbnail = GetDlgItem(hDlg, 1125);
+            InvalidateRect(hThumbnail, NULL, TRUE);  // Mark for repaint
+            UpdateWindow(hThumbnail);
+
+            HWND hIcon = GetDlgItem(hDlg, 1115);
+            InvalidateRect(hIcon, NULL, TRUE);  // Mark for repaint
+            UpdateWindow(hIcon);
+
+            // End painting
+            EndPaint(hDlg, &ps);
+            return 1;
+        }
+        case WM_NOTIFY:
+        {
+            SaveGameDialogData* pData  = (SaveGameDialogData*)GetWindowLong(hDlg, DWL_USER);
+            NMHDR* pNmHdr = (NMHDR*)lParam;
+
+            switch ( pNmHdr->code )
+            {
+                case CDN_FILEOK:
+                {
+                    OFNOTIFY* pOfNotify = (OFNOTIFY*)lParam;
+                    bool bValidFile     = false;
+                    CHAR aPath[128]     = { 0 };
+                    char aFilename[128] = { 0 };
+
+                    if ( pOfNotify->lpOFN->nFileOffset < 0x8000 )
+                    {
+                        CHAR aExtension[128] = { 0 };
+                        STD_FORMAT(aExtension, ".%s", pOfNotify->lpOFN->lpstrDefExt);
+
+                        CHAR aSearchPath[128] = { 0 };
+                        CommDlg_OpenSave_GetSpec(GetParent(hDlg), aFilename, STD_ARRAYLEN(aFilename));
+
+                        size_t nFileOffset = 0;
+                        char* pFilename = strstr(pOfNotify->lpOFN->lpstrFile, aFilename);
+                        if ( pFilename )
+                        {
+                            nFileOffset = pFilename - pOfNotify->lpOFN->lpstrFile;
+                        }
+                        else
+                        {
+                            nFileOffset = strlen(pOfNotify->lpOFN->lpstrFile);
+                        }
+
+                        STD_STRNCPY(aSearchPath, pOfNotify->lpOFN->lpstrFile, nFileOffset);
+
+                        LPCSTR pFilePart; // TODO: this might be used for file name instead of searching for it below?
+                        SearchPath(aSearchPath, aFilename, aExtension, STD_ARRAYLEN(aPath), aPath, &pFilePart);
+
+                        CHAR aCurDir[128] = { 0 };
+                        STD_STRCPY(aCurDir, aSearchPath);
+
+                        pFilename = strrchr(pOfNotify->lpOFN->lpstrFile, '\\');
+                        if ( pFilename )
+                        {
+                            nFileOffset = pFilename - pOfNotify->lpOFN->lpstrFile;
+                        }
+                        else
+                        {
+                            nFileOffset = strlen(pOfNotify->lpOFN->lpstrFile);
+                        }
+
+                        STD_STRNCPY(aSearchPath, pOfNotify->lpOFN->lpstrFile, nFileOffset);
+
+                        if ( pOfNotify->lpOFN->nFileExtension )
+                        {
+                            pFilename = &pOfNotify->lpOFN->lpstrFile[pOfNotify->lpOFN->nFileExtension];
+                            if ( !*pFilename )
+                            {
+                                pFilename = NULL;
+                            }
+                        }
+                        else
+                        {
+                            pFilename = NULL;
+                        }
+
+                        if ( (SetCurrentDirectory(aSearchPath) || strlen(aPath)) && (!pFilename || strcmp(pFilename, pOfNotify->lpOFN->lpstrDefExt) == 0) )
+                        {
+                            SetCurrentDirectory(aCurDir);
+                            bValidFile = true;
+                        }
+
+                        size_t nOccurrence = strcspn(aFilename, "?*");
+                        if ( nOccurrence != strlen(aFilename) )
+                        {
+                            bValidFile = false;
+                        }
+
+                        // TODO: Replace const 17 with macro or with some STD_ARRAYLEN(aLevels)
+                        for ( size_t levelNum = 0; levelNum < 17u; ++levelNum )
+                        {
+                            const char* pSaveName = sithGetLevelSaveFilename(levelNum);
+                            if ( pSaveName )
+                            {
+                                char aAutoSaveFilename[128] = { 0 };
+                                const char* pAutoSavePrefix = sithGetAutoSaveFilePrefix();
+                                STD_FORMAT(aAutoSaveFilename, "%s%s", pAutoSavePrefix, pSaveName);
+                                if ( !strcmpi(aFilename, aAutoSaveFilename) )
+                                {
+                                    bValidFile = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        char aQuckSaveFilename[128] = { 0 };
+                        const char* pQuickSavePrefix = sithGetQuickSaveFilePrefix();
+                        STD_FORMAT(aQuckSaveFilename, "%s.%s", pQuickSavePrefix, pOfNotify->lpOFN->lpstrDefExt);
+
+                        stdFnames_ChangeExt(aFilename, pOfNotify->lpOFN->lpstrDefExt); // Fixed: Added .nds extension to filename here to make sure filename "QUICKSAVE" without ".nds" extension doesn't slip over
+                        if ( strcmpi(aFilename, aQuckSaveFilename) == 0 )
+                        {
+                            bValidFile = false;
+                        }
+                    }
+
+                    if ( pOfNotify->lpOFN->nFileOffset < 0x8000 && bValidFile )
+                    {
+                        if ( strlen(aPath) )
+                        {
+                            STD_STRCPY(pData->aFilePath, aFilename);
+                            stdFnames_ChangeExt(pData->aFilePath, pOfNotify->lpOFN->lpstrDefExt);
+
+                            if ( jonesConfig_ShowOverwriteSaveGameDlg(hDlg, pData->aFilePath) == 1 )
+                            {
+                                return 0;
+                            }
+                            else
+                            {
+                                SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                                return 1;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        char* pFormat = (char*)jonesString_GetString("JONES_STR_INVALIDFILE");
+                        if ( pFormat )
+                        {
+                            memset(aFilename, 0, sizeof(aFilename));
+                            CommDlg_OpenSave_GetSpec(GetParent(hDlg), aFilename, STD_ARRAYLEN(aFilename));
+
+                            char aErrorText[256] = { 0 };
+                            STD_FORMAT(aErrorText, pFormat, aFilename);
+
+                            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_SAVEGM", aErrorText, 141);
+                        }
+
+                        SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                        return 1;
+                    }
+                }
+                case CDN_INITDONE:
+                {
+                    HWND hThumbnail = GetDlgItem(hDlg, 1125);
+                    SetWindowLong(hThumbnail, GWL_USERDATA, 154);
+
+                    HWND hIcon = GetDlgItem(hDlg, 1115);
+                    SetWindowLong(hIcon, GWL_USERDATA, 154);
+
+                    jonesConfig_hFontSaveGameDlg = jonesConfig_InitDialog(GetParent(hDlg), NULL, JONESCONFIG_NOFONTSCALE(154));
+                    jonesConfig_hFontSaveGameDlg = jonesConfig_InitDialog(hDlg, jonesConfig_hFontSaveGameDlg, 154);
+                    SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+                    return 1;
+                }
+            };
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpOfn)
 {
     J3D_UNUSED(a2);
 
-    LoadGameDialogData* pData;
-    HDC dc;
-    HWND hThumbnail;
-    int thmbWidth;
-    int thmbHeight;
-    int width;
+    SaveGameDialogData* pData = (SaveGameDialogData*)lpOfn->lCustData;
+    pData->hThumbnail = sithGamesave_GetScreenShotBitmap();
+
+    HWND hThumbnail = GetDlgItem(hDlg, 1125);
+    pData->hdcThumbnail = CreateCompatibleDC(GetDC(hThumbnail));
+
+    hThumbnail = GetDlgItem(hDlg, 1125); // ??
+    pData->pfThumbnailProc = GetWindowLong(hThumbnail, GWL_WNDPROC);
+    SetWindowLongPtr(hThumbnail, GWL_WNDPROC, (LONG)jonesConfig_SaveGameThumbnailPaintProc);
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pData);
+
     RECT dlgRect;
-    RECT dlgWinRect;
-    HWND hButton;
-    RECT thumbWinRect;
-    RECT thumbRect;
-    RECT btnRect;
-    RECT iconRect;
-    RECT iconWinRect;
-    char aPath[128];
-
-    pData = (LoadGameDialogData*)pofn->lCustData;
-    hButton = GetDlgItem(hDlg, 1120); // load last saved game button
-    GetWindowRect(hButton, &btnRect);
-
-    hThumbnail = GetDlgItem(hDlg, 1163);
-    dc = GetDC(hThumbnail);
-    pData->hdc = CreateCompatibleDC(dc);
-
-    hThumbnail = GetDlgItem(hDlg, 1163);
-    pData->pfWndProc = GetWindowLong(hThumbnail, GWL_WNDPROC);
-
-    HWND hIcon = GetDlgItem(hDlg, 1117);
-
-    SetWindowLong(hThumbnail, GWL_WNDPROC, (LONG)jonesConfig_LoadGameThumbnailPaintProc);
-    SetWindowLong(hDlg, DWL_USER, (LONG)pData);
-
-    GetWindowRect(hDlg, &dlgWinRect);
     GetWindowRect(hDlg, &dlgRect);
-    GetWindowRect(hThumbnail, &thumbWinRect);
+
+    RECT thumbWndRect, thumbRect;;
+    GetWindowRect(hThumbnail, &thumbWndRect);
     GetClientRect(hThumbnail, &thumbRect);
-    GetWindowRect(hIcon, &iconWinRect);
-    GetClientRect(hIcon, &iconRect);
 
-    int dlgWidth  = dlgWinRect.right - dlgWinRect.left;
-    int dlgHeight = dlgWinRect.bottom - dlgWinRect.top;
+    // Changed: Added scale the thumb size to DPI
+    UINT systemDPI = GetDpiForWindow(hDlg);
+    double dpiScale = (double)systemDPI / USER_DEFAULT_SCREEN_DPI;
+    LONG tbImageWidth  = (LONG)ceil((double)SITHSAVEGAME_THUMB_WIDTH * dpiScale);
+    LONG tbImageHeight = (LONG)ceil((double)SITHSAVEGAME_THUMB_HEIGHT * dpiScale);
 
-    // Changed: Doubled the thumbnail size
-    int tbImageWidth  = SITHSAVEGAME_THUMB_WIDTH * 2;
-    int tbImageHeight = SITHSAVEGAME_THUMB_HEIGHT * 2;
+    LONG thumbWidth  = tbImageWidth - (thumbRect.right - thumbRect.left);
+    LONG thumbHeight = tbImageHeight - (thumbRect.bottom - thumbRect.top);
 
-    thmbWidth = thumbRect.left - thumbRect.right + tbImageWidth;
-    thmbHeight = thumbRect.top - thumbRect.bottom + tbImageHeight;
+    if ( thumbWidth != 0 || thumbHeight != 0 )
+    {
+        MoveWindow(hDlg, dlgRect.left, dlgRect.top, thumbWidth + dlgRect.right - dlgRect.left, dlgRect.bottom - dlgRect.top, 1);
+        MoveWindow(
+            hThumbnail,
+            thumbWndRect.left - dlgRect.left,
+            thumbWndRect.top - dlgRect.top,
+            thumbWidth + thumbWndRect.right - thumbWndRect.left,
+            thumbHeight + thumbWndRect.bottom - thumbWndRect.top,
+            1
+        );
+    }
 
-    int thumbPosX = thumbWinRect.left - dlgWinRect.left;
-    int thumbPosY = thumbWinRect.top - dlgWinRect.top;
+    HWND h1152 = GetDlgItem(GetParent(hDlg), 1152);  // some other dlgItem
+    SendMessage(h1152, EM_LIMITTEXT, 60u, 0);
+    return 1;
+}
 
-    int thumbWinWidth  = thumbWinRect.right - thumbWinRect.left;
-    int thumbWinHeight = thumbWinRect.bottom - thumbWinRect.top;
+LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    HWND hwndParent = (HWND)GetWindowLong(hWnd, GWL_HWNDPARENT);
+    SaveGameDialogData* pData = (SaveGameDialogData*)GetWindowLong(hwndParent, DWL_USER);
+    if ( uMsg != WM_PAINT || !pData || !pData->hThumbnail )
+    {
+        if ( !pData ) {
+            return 1;
+        }
+        return CallWindowProc((WNDPROC)pData->pfThumbnailProc, hWnd, uMsg, wParam, lParam);
+    }
 
-    int thumbTotalWidth = thmbWidth + thumbWinWidth;
-    int thumbTotalHeight = thmbHeight + thumbWinHeight;
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hWnd, (LPPAINTSTRUCT)&ps);
+    SetStretchBltMode(hdc, STRETCH_HALFTONE);
+    jonesConfig_DrawImageOnDialogItem(hwndParent, pData->hdcThumbnail, hdc, 1125, pData->hThumbnail, NULL);
+    EndPaint(hWnd, &ps);
+    return 0;
+}
 
-    if ( thumbRect.left - thumbRect.right == -tbImageWidth && thumbRect.top - thumbRect.bottom == -tbImageHeight )
+int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
+{
+    char aFilterFormatStr[512] = { 0 };
+    const char* pFilterStr = jonesString_GetString("JONES_STR_FILTER");
+    if ( pFilterStr )
+    {
+        STD_STRCPY(aFilterFormatStr, pFilterStr);
+    }
+
+    char aLoadGameStr[512] = { 0 };
+    const char* pLoadGameStr = jonesString_GetString("JONES_STR_LOADGM");
+    if ( pLoadGameStr )
+    {
+        STD_STRCPY(aLoadGameStr, pLoadGameStr);
+    }
+
+    if ( !aFilterFormatStr[0] || !aLoadGameStr[0] )
+    {
+        return 2;
+    }
+
+    char aCwd[128] = { 0 };
+    GetCurrentDirectory(STD_ARRAYLEN(aCwd), aCwd);
+
+    LoadGameDialogData data = { 0 };
+    data.hThumbnail = 0;
+
+    char aFilterStr[128] = { 0 };
+    STD_FORMAT(aFilterStr, aFilterFormatStr, " (.nds)");
+    STD_FORMAT(aFilterStr, "%s%c%s%c", aFilterStr, '\0', "*.nds", '\0'); // Fixed: filtering only by .nds files. Note, 2 terminal nulls are required, that's way null at the end
+
+    OPENFILENAME ofn = { 0 };
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.hwndOwner   = hWnd;
+    ofn.hInstance   = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
+    ofn.lpstrFilter = aFilterStr;
+    //memset(&ofn.lpstrCustomFilter, 0, 12); // ??
+    ofn.lpstrCustomFilter = NULL;
+
+    char aLastFile[128] = { 0 };
+    const char* pLastFile = sithGamesave_GetLastFilename();
+    if ( pLastFile )
+    {
+        STD_STRCPY(aLastFile, pLastFile);
+    }
+
+    ofn.nMaxFile  = STD_ARRAYLEN(aLastFile);
+    ofn.lpstrFile = aLastFile;
+    if ( strlen(aLastFile) == 0 )
+    {
+        aLastFile[0] = 0;
+    }
+
+    char szFileTitle[128] = { 0 };
+    ofn.lpstrFileTitle  = szFileTitle;
+    ofn.nMaxFileTitle   = STD_ARRAYLEN(szFileTitle);
+
+    ofn.lpstrInitialDir = sithGetSaveGamesDir();
+    ofn.lpstrTitle      = aLoadGameStr;
+    ofn.Flags           = OFN_EXPLORER | OFN_NONETWORKBUTTON | OFN_NOVALIDATE | OFN_ENABLETEMPLATE | OFN_ENABLEHOOK | OFN_HIDEREADONLY | OFN_READONLY | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    ofn.nFileOffset     = 0;
+    ofn.lpstrDefExt     = "nds";
+    ofn.lCustData       = (LPARAM)&data;
+    ofn.lpfnHook        = jonesConfig_LoadGameDialogHookProc;
+    ofn.lpTemplateName  = MAKEINTRESOURCE(159);
+
+    uint32_t width, height;
+    JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
+    if ( pSettings && pSettings->windowMode || !JonesMain_IsOpen() )
+    {
+        HWND hwndDesktop = GetDesktopWindow();
+        RECT rect;
+        GetWindowRect(hwndDesktop, &rect);
+        height = rect.bottom - rect.top;
+        width = rect.right - rect.left;
+    }
+    else
+    {
+        stdDisplay_GetBackBufferSize(&width, &height);
+    }
+
+    BOOL bHasFilePath = JonesDialog_ShowFileSelectDialog((LPOPENFILENAMEA)&ofn, 1);
+    SetCurrentDirectory(aCwd);
+    if ( !bHasFilePath && !data.unknown36 || !pDestNdsPath )
+    {
+        return 2;
+    }
+
+    if ( bHasFilePath )
+    {
+        stdFnames_ChangeExt(ofn.lpstrFile, "nds");
+        stdUtil_StringCopy(pDestNdsPath, 128, ofn.lpstrFile);
+    }
+    else
+    {
+        stdFnames_ChangeExt(data.aFilePath, "nds");
+        stdUtil_StringCopy(pDestNdsPath, 128, data.aFilePath);
+    }
+
+    return 1;
+}
+
+UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_INITDIALOG:
+        {
+            return jonesConfig_LoadGameDialogInit(hDlg, wParam, (LPOPENFILENAMEA)lParam);
+        }
+        case WM_COMMAND:
+        {
+            jonesConfig_sub_405F60(hDlg);
+            return FALSE;
+        }
+        case WM_CLOSE:
+        {
+            DeleteObject(jonesConfig_hFontLoadGameDlg);
+            jonesConfig_hFontLoadGameDlg = NULL;
+            return FALSE;
+        }
+        case WM_DESTROY:
+        {
+            LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+            DeleteDC(pData->hdcThumbnail);
+            DeleteObject(pData->hThumbnail);
+            pData->hThumbnail   = NULL;
+            pData->hdcThumbnail = NULL;
+            return FALSE;
+        }
+        case WM_PAINT:
+        {
+            // Fixed: Added full paint logic.
+            //       This should fixed painting the file list on windows 11
+
+            PAINTSTRUCT ps;
+            /*HDC hdcThumbnail =*/ BeginPaint(hDlg, &ps);
+
+            LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+
+            if ( pData && !pData->bFolderSel )
+            {
+                HWND hThumbnail = GetDlgItem(hDlg, 1163);
+                if ( hThumbnail )
+                {
+                    InvalidateRect(hThumbnail, NULL, TRUE);  // Mark for repaint
+                    UpdateWindow(hThumbnail);  // Force immediate repaint
+                }
+            }
+
+            HWND hIcon = GetDlgItem(hDlg, 1117);
+            if ( hIcon )
+            {
+                InvalidateRect(hIcon, NULL, TRUE);  // Mark for repaint
+                UpdateWindow(hIcon);  // Force immediate repaint
+            }
+
+            // End painting
+            EndPaint(hDlg, &ps);
+            return TRUE;
+        }
+        case WM_NOTIFY:
+        {
+            LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+            NMHDR* pNmHdr = (NMHDR*)lParam;
+            STDLOG_STATUS("code: %i\n", pNmHdr->code);
+
+            switch ( pNmHdr->code )
+            {
+                case CDN_FILEOK:
+                {
+                    OFNOTIFY* pOfNotify = (OFNOTIFY*)lParam;
+
+                    bool bValidFile = false;
+                    CHAR aPath[128] = { 0 };
+                    LPOPENFILENAMEA pofn = pOfNotify->lpOFN;
+                    if ( pofn->nFileOffset < 0x8000 )
+                    {
+
+                        char aExtension[128] = { 0 };
+                        STD_FORMAT(aExtension, ".%s", pofn->lpstrDefExt);
+
+                        char aFilename[128] = { 0 };
+                        SendMessage(GetParent(hDlg), CDM_GETSPEC, STD_ARRAYLEN(aFilename), (LPARAM)aFilename); // get selected filename
+
+                        char* pStr = strstr(pofn->lpstrFile, aFilename);
+                        size_t strLen;
+                        if ( pStr )
+                        {
+                            strLen = pStr - pofn->lpstrFile;
+                        }
+                        else
+                        {
+                            strLen = strlen(pofn->lpstrFile);
+                        }
+
+                        CHAR aSearchPath[128] = { 0 };
+                        STD_STRNCPY(aSearchPath, pofn->lpstrFile, strLen);
+
+                        LPSTR lpFilePart;
+                        SearchPath(aSearchPath, aFilename, aExtension, STD_ARRAYLEN(aPath), aPath, &lpFilePart);
+                        if ( strlen(aPath) )
+                        {
+                            bValidFile = true;
+                        }
+
+                        if ( strcspn(aFilename, "?*") != strlen(aFilename) )
+                        {
+                            bValidFile = false;
+                        }
+                    }
+
+                    const char* pErrorString = NULL;
+                    if ( (pofn->nFileOffset < 0x8000) && bValidFile )
+                    {
+                        if ( strlen(aPath) )
+                        {
+                            if ( !JonesMain_IsOpen()
+                              || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
+                              || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0
+                              || jonesConfig_ShowLoadGameWarningMsgBox(hDlg) == 1 )
+                            {
+                                return FALSE;
+                            }
+
+                            SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                            return TRUE;
+                        }
+
+                        pErrorString = jonesString_GetString("JONES_STR_NOFILE");
+                        if ( !pErrorString )
+                        {
+                            SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                            return TRUE;
+                        }
+                    }
+                    else
+                    {
+                        pErrorString = jonesString_GetString("JONES_STR_INVALIDFILE");
+                        if ( !pErrorString )
+                        {
+                            SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                            return TRUE;
+                        }
+                    }
+
+                    // Get selected filename
+                    CHAR aMessage[256]  = { 0 };
+                    char aFilename[128] = { 0 };
+                    SendMessage(GetParent(hDlg), CDM_GETSPEC, STD_ARRAYLEN(aFilename), (LPARAM)aFilename);
+                    STD_FORMAT(aMessage, pErrorString, aFilename);
+
+                    jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_LOADGM", aMessage, 139);
+                    SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                    return TRUE;
+                }
+                case CDN_FOLDERCHANGE:
+                {
+                    if ( !pData->hThumbnail )
+                    {
+                        return TRUE;
+                    }
+
+                    HWND hDlgItem = GetDlgItem(hDlg, 1163);
+                    pData->bFolderSel = 1;
+
+                    InvalidateRect(hDlgItem, NULL, TRUE);
+                    UpdateWindow(hDlg);
+                    return TRUE;
+                }
+                case CDN_SELCHANGE:
+                {
+                    HWND hThumbnail = GetDlgItem(hDlg, 1163);
+                    if ( !pData->bFolderSel )
+                    {
+                        const char* pExt = NULL;
+                        SendMessage(GetParent(hDlg), CDM_GETFILEPATH, STD_ARRAYLEN(pData->aFilePath), (LPARAM)pData->aFilePath);
+                        if ( strlen(pData->aFilePath) )
+                        {
+                            pExt = pData->aFilePath + strlen(pData->aFilePath) - 3;
+                        }
+
+                        if ( pExt && strcmp(pExt, "nds") == 0 )
+                        {
+                            // Load thumbnail of newly selected nds file
+                            if ( pData->hThumbnail )
+                            {
+                                DeleteObject(pData->hThumbnail);
+                                pData->hThumbnail = NULL;
+                            }
+
+                            pData->hThumbnail = sithGamesave_LoadThumbnail(pData->aFilePath);
+                        }
+                    }
+
+                    InvalidateRect(hThumbnail, NULL, TRUE);
+                    UpdateWindow(hDlg);
+                    return TRUE;
+                }
+                case CDN_INITDONE:
+                {
+                    HWND hBtn = GetDlgItem(hDlg, 1120);
+                    SetWindowLong(hBtn, GWL_USERDATA, 159);
+
+                    HWND hIcon = GetDlgItem(hDlg, 1117);
+                    SetWindowLong(hIcon, GWL_USERDATA, 159);
+
+                    HWND hThumbnail = GetDlgItem(hDlg, 1163);
+                    SetWindowLong(hThumbnail, GWL_USERDATA, 159);
+                    InvalidateRect(hThumbnail, NULL, TRUE);
+
+                    static_assert(JONESCONFIG_NOFONTSCALE(159) == 0x45F009F, "");
+                    jonesConfig_hFontLoadGameDlg = jonesConfig_InitDialog(GetParent(hDlg), NULL, JONESCONFIG_NOFONTSCALE(159));
+                    jonesConfig_hFontLoadGameDlg = jonesConfig_InitDialog(hDlg, jonesConfig_hFontLoadGameDlg, 159);
+                    SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+                    return TRUE;
+                }
+
+                default:
+                    return FALSE;
+            }
+        }
+    };
+
+    return FALSE;
+}
+
+LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    HWND hwndParent = (HWND)GetWindowLong(hWnd, GWL_HWNDPARENT);
+    LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hwndParent, DWL_USER);
+    if ( !pData ) // Fixed: Moved null check to the top
     {
         return 1;
     }
 
-    //int iconWidth = iconRect.right - iconRect.left;
-    //int iconHeight = iconRect.bottom - iconRect.top;
+    if ( uMsg != WM_PAINT )
+    {
+        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam);
+    }
+
+    if ( !pData->hThumbnail )
+    {
+        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+    }
+
+    if ( !pData->bFolderSel )
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, (LPPAINTSTRUCT)&ps);
+        SetStretchBltMode(hdc, STRETCH_HALFTONE);
+        jonesConfig_DrawImageOnDialogItem(hwndParent, pData->hdcThumbnail, hdc, 1163, pData->hThumbnail, NULL);// 1163 - thumbnail picture edit control
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
+
+    pData->bFolderSel = 0;
+
+    // TODO: useless scope, found only in debug version
+#ifdef J3D_DEBUG
+    if ( !pData->hThumbnail )
+    {
+        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+    }
+#endif
+
+    DeleteObject((HGDIOBJ)pData->hThumbnail);
+    pData->hThumbnail = NULL;
+    return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+}
+
+BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn)
+{
+    J3D_UNUSED(a2);
+
+    LoadGameDialogData* pData = (LoadGameDialogData*)pofn->lCustData;
+
+    RECT btnRect;
+    HWND hButton = GetDlgItem(hDlg, 1120); // load last saved game button 
+    GetWindowRect(hButton, &btnRect);
+
+    HWND hThumbnail = GetDlgItem(hDlg, 1163);
+    HDC dc = GetDC(hThumbnail);
+    pData->hdcThumbnail = CreateCompatibleDC(dc);
+
+    hThumbnail = GetDlgItem(hDlg, 1163); // ??
+    pData->pfThubnailProc = GetWindowLongPtr(hThumbnail, GWL_WNDPROC);
+
+    HWND hIcon = GetDlgItem(hDlg, 1117);
+
+    SetWindowLongPtr(hThumbnail, GWL_WNDPROC, (LONG_PTR)jonesConfig_LoadGameThumbnailPaintProc);
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+
+    RECT dlgWinRect;
+    GetWindowRect(hDlg, &dlgWinRect);
+
+    RECT thumbWinRect;
+    GetWindowRect(hThumbnail, &thumbWinRect);
+
+    RECT thumbRect;
+    GetClientRect(hThumbnail, &thumbRect);
+
+    RECT iconWinRect;
+    GetWindowRect(hIcon, &iconWinRect);
+
+    RECT iconRect;
+    GetClientRect(hIcon, &iconRect);
+
+    // LONG dlgWidth  = dlgWinRect.right - dlgWinRect.left;
+    // LONG dlgHeight = dlgWinRect.bottom - dlgWinRect.top;
+
+     // Changed: Scale the thumb size to DPI
+    UINT systemDPI = GetDpiForWindow(hDlg);
+    double dpiScale = (double)systemDPI / USER_DEFAULT_SCREEN_DPI;
+    LONG tbImageWidth  = (LONG)ceil((double)SITHSAVEGAME_THUMB_WIDTH * dpiScale);
+    LONG tbImageHeight = (LONG)ceil((double)SITHSAVEGAME_THUMB_HEIGHT * dpiScale);
+
+    LONG thmbWidth  = thumbRect.left - thumbRect.right + tbImageWidth;
+    LONG thmbHeight = thumbRect.top - thumbRect.bottom + tbImageHeight;
+
+    //LONG thumbPosX = thumbWinRect.left - dlgWinRect.left;
+    //LONG thumbPosY = thumbWinRect.top - dlgWinRect.top;
+
+    //LONG thumbWinWidth  = thumbWinRect.right - thumbWinRect.left;
+    //LONG thumbWinHeight = thumbWinRect.bottom - thumbWinRect.top;
+
+    //LONG thumbTotalWidth = thmbWidth + thumbWinWidth;
+    //LONG thumbTotalHeight = thmbHeight + thumbWinHeight;
+
+    if ( thumbRect.left - thumbRect.right == -tbImageWidth && thumbRect.top - thumbRect.bottom == -tbImageHeight )
+    {
+        return TRUE;
+    }
+
+    if ( thumbRect.left - thumbRect.right == -SITHSAVEGAME_THUMB_WIDTH && thumbRect.top - thumbRect.bottom == -SITHSAVEGAME_THUMB_HEIGHT )
+    {
+        return 1;
+    }
 
     MoveWindow(
         hDlg,
         dlgWinRect.left,
         dlgWinRect.top,
-        //thmbWidth + dlgWidth,
-        thumbTotalWidth + dlgWidth,
-        dlgHeight,
+        thmbWidth + dlgWinRect.right - dlgWinRect.left,
+        dlgWinRect.bottom - dlgWinRect.top,
         1
     );
 
     MoveWindow(
         hThumbnail,
-        thumbPosX,
-        thumbPosY,
-        thumbTotalWidth,
-        thumbTotalHeight,
+        thumbWinRect.left - dlgWinRect.left,
+        thumbWinRect.top - dlgWinRect.top,
+        thmbWidth + thumbWinRect.right - thumbWinRect.left,
+        thmbHeight + thumbWinRect.bottom - thumbWinRect.top,
         1
     );
 
+    LONG width = thumbWinRect.right + thmbWidth - thumbWinRect.left;
+    MoveWindow(
+        hButton,
+        thumbWinRect.left - dlgWinRect.left,
+        btnRect.top + thmbHeight - dlgWinRect.top,
+        width,
+        btnRect.bottom - btnRect.top,
+        1
+    );
 
-
-    width = thumbWinRect.right + thmbWidth - thumbWinRect.left;
-    //MoveWindow(
-    //    hButton,
-    //    thumbWinRect.left - dlgWinRect.left,
-    //    btnRect.top + thmbHeight - dlgWinRect.top,
-    //    width,
-    //    btnRect.bottom - btnRect.top,
-    //    1
-    //);
-
-    //MoveWindow(
-    //    hIcon,
-    //    thumbWinRect.left - dlgWinRect.left,
-    //    thumbWinRect.top + thumbTotalHeight - dlgWinRect.top,
-    //    thumbWinRect.right - thumbWinRect.left,
-    //    thumbWinRect.bottom - thumbWinRect.top,
-    //    1
-    //);
-
-
-    memset(aPath, 0, sizeof(aPath));
+    // TODO: dead code as the button is not hooked to any code
+    char aPath[128] = { 0 };
     jonesConfig_LoadGameGetLastSavedGamePath(aPath, sizeof(aPath));
     if ( !strlen(aPath) )
     {
         EnableWindow(hButton, 0); // close window if no game was saved yet
     }
 
-    return 1;
+    return TRUE;
 }
 
 void J3DAPI jonesConfig_EnableMouseControl(int bEnable)

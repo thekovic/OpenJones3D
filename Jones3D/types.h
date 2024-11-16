@@ -306,15 +306,6 @@ typedef struct sJonesControlAction
     int aUnknown1[8];
 } JonesControlAction;
 
-typedef struct sSaveGameDialogData
-{
-    HDC hdc;
-    char aFilePath[128];
-    HBITMAP hThumbnail;
-    int pfWndProc;
-    int bFolderSel;
-} SaveGameDialogData;
-
 typedef struct sJonesControlsConfig
 {
     void* unknown0;
@@ -334,13 +325,6 @@ typedef struct sStoreItem
     int cost;
     int unknown132;
 } tStoreItem;
-
-typedef struct sJonesDialogFontScaleMetrics
-{
-    int unknown0;
-    int unknown1;
-    int unknown2;
-} tJonesDialogFontScaleMetrics;
 
 typedef struct sStoreCartState
 {
@@ -403,12 +387,13 @@ typedef struct sJonesHudRect
 typedef struct sJonesDialogFontInfo
 {
     HFONT hFont;
-    int hWndFont;
+    HFONT hControlFont;
     int bWindowMode;
     float fontScaleX;
     float fontScaleY;
     int dialogID;
 } JonesDialogFontInfo;
+static_assert(sizeof(JonesDialogFontInfo) == 24, "sizeof(JonesDialogFontInfo) == 24");
 
 typedef struct sGameSaveMsgBoxData
 {

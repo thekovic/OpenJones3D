@@ -193,12 +193,12 @@
 #define jonesConfig_SetDefaultControlScheme_ADDR 0x00403900
 #define jonesConfig_BindControls_ADDR 0x00403A00
 #define jonesConfig_BindJoystickControl_ADDR 0x00403F00
-#define jonesConfig_InitDialogText_ADDR 0x00404040
+#define jonesConfig_InitDialog_ADDR 0x00404040
 #define jonesConfig_CreateDialogFont_ADDR 0x004040F0
 #define jonesConfig_ResetDialogFont_ADDR 0x00404450
-#define jonesConfig_SetWindowFontCallback_ADDR 0x00404490
-#define jonesConfig_PositionAndSetTextCallback_ADDR 0x004044C0
-#define jonesConfig_sub_4045E0_ADDR 0x004045E0
+#define jonesConfig_ResetWindowFontCallback_ADDR 0x00404490
+#define jonesConfig_SetPositionAndTextCallback_ADDR 0x004044C0
+#define jonesConfig_SetWindowFontAndPosition_ADDR 0x004045E0
 #define jonesConfig_GetWindowScreenRect_ADDR 0x00404A80
 #define jonesConfig_SetDialogTitleAndPosition_ADDR 0x00404AF0
 #define jonesConfig_GetSaveGameFilePath_ADDR 0x00404D60
@@ -214,7 +214,7 @@
 #define jonesConfig_GetLoadGameFilePath_ADDR 0x00405C50
 #define jonesConfig_sub_405F60_ADDR 0x00405F60
 #define jonesConfig_LoadGameDialogHookProc_ADDR 0x00405F70
-#define jonesConfig_ShowLoadGameDialog_ADDR 0x00406580
+#define jonesConfig_ShowLoadGameWarningMsgBox_ADDR 0x00406580
 #define jonesConfig_LoadGameDialogInit_ADDR 0x004065C0
 #define jonesConfig_LoadGameThumbnailPaintProc_ADDR 0x00406760
 #define jonesConfig_ShowGamePlayOptions_ADDR 0x00406840
@@ -583,7 +583,7 @@
 #define jonesConfig_aDfltKeySets_ADDR 0x005114B8
 #define jonesConfig_aDfltKeySetNames_ADDR 0x005114C8
 #define jonesConfig_aControlKeyStrings_ADDR 0x005114D8
-#define jonesConfig_aFontScaleFactors_ADDR 0x00511858
+#define jonesConfig_aDialogSizes_ADDR 0x00511858
 #define jonesConfig_dword_511954_ADDR 0x00511954
 #define jonesConfig_dword_511958_ADDR 0x00511958
 #define jonesConfig_perfLevel_ADDR 0x0051195C
