@@ -7,6 +7,9 @@
 
 J3D_EXTERN_C_START
 
+#define RDCAMERA_FOVMIN   5.0f
+#define RDCAMERA_FOVMAX 179.0f
+
 #define rdCamera_g_camPYR J3D_DECL_FAR_VAR(rdCamera_g_camPYR, rdVector3)
 // extern rdVector3 rdCamera_g_camPYR;
 

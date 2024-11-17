@@ -57,7 +57,7 @@ void rdCamera_ResetGlobals(void)
 
 inline float rdCamera_ClampFOV(float fov)
 {
-    return STDMATH_CLAMP(fov, 5.0f, 179.0f);
+    return STDMATH_CLAMP(fov, RDCAMERA_FOVMIN, RDCAMERA_FOVMAX);
 }
 
 rdCamera* J3DAPI rdCamera_New(float fov, int bFarClip, float nearPlane, float farPlane, float aspectRatio)
