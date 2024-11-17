@@ -2229,12 +2229,14 @@ typedef struct sSithAttach
     rdVector3 vecUnknownMaybeLocalPositionOnTheAttachedThing;
     SithAttachStructure attachedToStructure;
 } SithAttach;
+static_assert(sizeof(SithAttach) == 40, "sizeof(SithAttach) == 40");
 
 typedef struct sSithAIControlInfo
 {
     SithAIClass* pClass;
     SithAIControlBlock* pLocal;
 } SithAIControlInfo;
+static_assert(sizeof(SithAIControlInfo) == 8, "sizeof(SithAIControlInfo) == 8");
 
 typedef union sSithControlInfo
 {
@@ -2320,6 +2322,7 @@ typedef struct sSithPhysicsInfo
     rdVector3 deltaVelocity;
     float physicsRolloverFrames;
 } SithPhysicsInfo;
+static_assert(sizeof(SithPhysicsInfo) == 116, "sizeof(SithPhysicsInfo) == 116");
 
 typedef union sSithMoveInfo
 {
@@ -2334,6 +2337,7 @@ typedef struct sSithThingLight
     float minRadius;
     float maxRadius;
 } SithThingLight;
+static_assert(sizeof(SithThingLight) == 40, "sizeof(SithThingLight) == 40");
 
 struct sSithPuppetTrack
 {
@@ -2396,7 +2400,7 @@ struct sSithThing
     SithMoveInfo moveInfo;
     int moveFrame;
     float distanceMoved;
-    rdVector3 vecUnknown1;
+    rdVector3 moveDir;
     SithControlInfo controlInfo;
     char aName[64];
     SithCog* pCog;
@@ -2410,6 +2414,7 @@ struct sSithThing
     int perfLevel;
     SithUserBlockUnion userblock;
 };
+static_assert(sizeof(SithThing) == 928, "sizeof(SithThing) == 928");
 
 struct sSithAIControlBlock
 {
@@ -2467,6 +2472,7 @@ struct sSithAIControlBlock
     rdVector3 vecUnknown;
     float maxHomeDist;
 };
+static_assert(sizeof(SithAIControlBlock) == 728, "sizeof(SithAIControlBlock) == 728");
 
 struct sSithMessage
 {
@@ -2475,6 +2481,7 @@ struct sSithMessage
     uint16_t type;
     uint8_t data[3072];
 };
+static_assert(sizeof(SithMessage) == 3084, "sizeof(SithMessage) == 3084");
 
 typedef struct sSithWorldFog
 {
@@ -2483,6 +2490,7 @@ typedef struct sSithWorldFog
     float startDepth;
     float endDepth;
 } SithWorldFog;
+static_assert(sizeof(SithWorldFog) == 28, "sizeof(SithWorldFog) == 28");
 
 struct sSithWorld
 {

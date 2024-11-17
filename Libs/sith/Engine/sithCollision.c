@@ -802,13 +802,13 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
 
                     if ( distance >= moveDist )
                     {
-                        memset(&pThing->vecUnknown1, 0, sizeof(pThing->vecUnknown1));
+                        memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
                     }
                     else
                     {
-                        pThing->vecUnknown1.x = (moveDist - distance) * dest.x;
-                        pThing->vecUnknown1.y = (moveDist - distance) * dest.y;
-                        pThing->vecUnknown1.z = (moveDist - distance) * dest.z;
+                        pThing->moveDir.x = (moveDist - distance) * dest.x;
+                        pThing->moveDir.y = (moveDist - distance) * dest.y;
+                        pThing->moveDir.z = (moveDist - distance) * dest.z;
                         if ( pThing->moveType == SITH_MT_PHYSICS
                             && (pThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) != 0
                             && (pThing->moveInfo.physics.gravityForce.x != 0.0f
@@ -874,9 +874,9 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                     if ( v44 != 0.0f )
                     {
                         v19 = sithTime_g_frameTimeFlex * v44;
-                        pThing->vecUnknown1.x = pThing->moveInfo.physics.velocity.x * v19;
-                        pThing->vecUnknown1.y = pThing->moveInfo.physics.velocity.y * v19;
-                        pThing->vecUnknown1.z = pThing->moveInfo.physics.velocity.z * v19;
+                        pThing->moveDir.x = pThing->moveInfo.physics.velocity.x * v19;
+                        pThing->moveDir.y = pThing->moveInfo.physics.velocity.y * v19;
+                        pThing->moveDir.z = pThing->moveInfo.physics.velocity.z * v19;
                         v44 = 0.0f;
                     }
                 }
@@ -885,13 +885,13 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                 if ( bCollided )
                 {
                     v46 = v46 + distance;
-                    if ( pThing->vecUnknown1.x == 0.0f && pThing->vecUnknown1.y == 0.0f && pThing->vecUnknown1.z == 0.0f )
+                    if ( pThing->moveDir.x == 0.0f && pThing->moveDir.y == 0.0f && pThing->moveDir.z == 0.0f )
                     {
                         moveDist = 0.0f;
                     }
                     else
                     {
-                        moveDist = stdMath_ClipNearZero(rdVector_Normalize3(&dest, &pThing->vecUnknown1));
+                        moveDist = stdMath_ClipNearZero(rdVector_Normalize3(&dest, &pThing->moveDir));
                     }
 
                     ++v49;
@@ -902,7 +902,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                     pThing->pos.y = dest.y * moveDist + prevPos.y;
                     pThing->pos.z = dest.z * moveDist + prevPos.z;
 
-                    memset(&pThing->vecUnknown1, 0, sizeof(pThing->vecUnknown1));
+                    memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
                     v46 = v46 + moveDist;
                     moveDist = 0.0f;
                 }
@@ -1690,7 +1690,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
     }
     else
     {
-        float hitDot = stdMath_ClipNearZero(rdVector_Dot3(&pThing->vecUnknown1, &hitNorm));
+        float hitDot = stdMath_ClipNearZero(rdVector_Dot3(&pThing->moveDir, &hitNorm));
         if ( hitDot >= 0.0f )
         {
             return 0;
@@ -1715,7 +1715,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                 sithThing_DamageThing(pHitThing, pThing, crushDamge, SITH_DAMAGE_IMPACT);
             }
 
-            memset(&pThing->vecUnknown1, 0, sizeof(pThing->vecUnknown1));
+            memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
             return 1;
         }
     }
@@ -2029,7 +2029,7 @@ int J3DAPI sithCollision_sub_4AA1A0(SithThing* pThing, const rdVector3* pHitNorm
     }
 
     pMoveInfo = &pThing->moveInfo;
-    hitDot = -rdVector_Dot3(&pThing->vecUnknown1, pHitNorm);
+    hitDot = -rdVector_Dot3(&pThing->moveDir, pHitNorm);
     hitDot = stdMath_ClipNearZero(hitDot);
     if ( hitDot <= 0.0f )
     {
@@ -2047,15 +2047,15 @@ int J3DAPI sithCollision_sub_4AA1A0(SithThing* pThing, const rdVector3* pHitNorm
 
     if ( colDistance == 0.0f && sithCollision_dword_17F1090 )
     {
-        hitDot = -rdVector_Dot3(&pThing->vecUnknown1, pHitNorm);
+        hitDot = -rdVector_Dot3(&pThing->moveDir, pHitNorm);
         if ( hitDot <= 0.0f )
         {
             return 0;
         }
 
-        pThing->vecUnknown1.x = pHitNorm->x * hitDot + pThing->vecUnknown1.x;
-        pThing->vecUnknown1.y = pHitNorm->y * hitDot + pThing->vecUnknown1.y;
-        pThing->vecUnknown1.z = pHitNorm->z * hitDot + pThing->vecUnknown1.z;
+        pThing->moveDir.x = pHitNorm->x * hitDot + pThing->moveDir.x;
+        pThing->moveDir.y = pHitNorm->y * hitDot + pThing->moveDir.y;
+        pThing->moveDir.z = pHitNorm->z * hitDot + pThing->moveDir.z;
         impactDot = -(rdVector_Dot3(&pMoveInfo->physics.velocity, pHitNorm));
 
         if ( (pMoveInfo->physics.flags & SITH_PF_RAFT) != 0 && pHitSurf && (pHitSurf->flags & SITH_SURFACE_WATER) != 0 )
@@ -2102,15 +2102,15 @@ int J3DAPI sithCollision_sub_4AA1A0(SithThing* pThing, const rdVector3* pHitNorm
         pMoveInfo->physics.velocity.y = sithCollision_vec17F10A0.y * impactDot + pMoveInfo->physics.velocity.y;
         pMoveInfo->physics.velocity.z = sithCollision_vec17F10A0.z * impactDot + pMoveInfo->physics.velocity.z;
 
-        hitDot = -rdVector_Dot3(&pThing->vecUnknown1, &sithCollision_vec17F10A0);
+        hitDot = -rdVector_Dot3(&pThing->moveDir, &sithCollision_vec17F10A0);
         if ( hitDot <= 0.0f )
         {
             return 1;
         }
 
-        pThing->vecUnknown1.x = sithCollision_vec17F10A0.x * hitDot + pThing->vecUnknown1.x;
-        pThing->vecUnknown1.y = sithCollision_vec17F10A0.y * hitDot + pThing->vecUnknown1.y;
-        pThing->vecUnknown1.z = sithCollision_vec17F10A0.z * hitDot + pThing->vecUnknown1.z;
+        pThing->moveDir.x = sithCollision_vec17F10A0.x * hitDot + pThing->moveDir.x;
+        pThing->moveDir.y = sithCollision_vec17F10A0.y * hitDot + pThing->moveDir.y;
+        pThing->moveDir.z = sithCollision_vec17F10A0.z * hitDot + pThing->moveDir.z;
     }
 
     rdVector_Copy3(&sithCollision_vec17F10A0, pHitNorm);
@@ -2152,9 +2152,9 @@ int J3DAPI sithCollision_sub_4AA1A0(SithThing* pThing, const rdVector3* pHitNorm
     }
 
     scaledImpact = hitDot * impactScale;
-    pThing->vecUnknown1.x = pHitNorm->x * scaledImpact + pThing->vecUnknown1.x;
-    pThing->vecUnknown1.y = pHitNorm->y * scaledImpact + pThing->vecUnknown1.y;
-    pThing->vecUnknown1.z = pHitNorm->z * scaledImpact + pThing->vecUnknown1.z;
+    pThing->moveDir.x = pHitNorm->x * scaledImpact + pThing->moveDir.x;
+    pThing->moveDir.y = pHitNorm->y * scaledImpact + pThing->moveDir.y;
+    pThing->moveDir.z = pHitNorm->z * scaledImpact + pThing->moveDir.z;
     return 1;
 }
 

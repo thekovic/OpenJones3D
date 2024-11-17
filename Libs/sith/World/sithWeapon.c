@@ -122,8 +122,7 @@ void sithWeapon_InstallHooks(void)
 }
 
 void sithWeapon_ResetGlobals(void)
-{
-}
+{}
 
 void sithWeapon_Open(void)
 {
@@ -131,8 +130,7 @@ void sithWeapon_Open(void)
 }
 
 void sithWeapon_Close(void)
-{
-}
+{}
 
 void J3DAPI sithWeapon_InitalizeActor(SithThing* pThing)
 {
@@ -853,7 +851,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                         sithSoundMixer_PlaySoundThing(hSnd, pReboundProjectile, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
                     }
 
-                    memset(&pWeapon->vecUnknown1, 0, sizeof(pWeapon->vecUnknown1));
+                    memset(&pWeapon->moveDir, 0, sizeof(pWeapon->moveDir));
                     sithThing_DestroyThing(pWeapon);
                     return 1;
                 }
