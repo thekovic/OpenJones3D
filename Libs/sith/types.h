@@ -1045,11 +1045,11 @@ typedef enum eSithCameraType J3D_ENUM_TYPE(int32_t)
 {
     SITHCAMERA_INTERNAL    = 0x1,
         SITHCAMERA_EXTERNAL    = 0x4,
-        SITHCAMERA_UNKNOWN_8   = 0x8,
+        SITHCAMERA_CINEMATIC   = 0x8,
         SITHCAMERA_UNKNOWN_10  = 0x10,
-        SITHCAMERA_UNKNOWN_20  = 0x20,
+        SITHCAMERA_IDLE        = 0x20,
         SITHCAMERA_UNKNOWN_40  = 0x40,
-        SITHCAMERA_UNKNOWN_80  = 0x80,
+        SITHCAMERA_ORBITAL     = 0x80,
         SITHCAMERA_UNKNOWN_100 = 0x100,
 } SithCameraType;
 
@@ -2689,7 +2689,7 @@ typedef struct sCndThingInfo
 typedef struct sSithCamera
 {
     SithCameraType type;
-    int unknown1;
+    uint32_t unknown1;
     float fov;
     float aspectRatio;
     SithThing* pPrimaryFocusThing;
@@ -2714,6 +2714,7 @@ typedef struct sSithCamera
     int bLookInterp;
     float interpSpeed;
 } SithCamera;
+static_assert(sizeof(SithCamera) == 2364, "sizeof(SithCamera) == 2364");
 
 typedef struct sSithInventoryType
 {

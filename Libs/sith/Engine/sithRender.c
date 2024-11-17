@@ -1141,7 +1141,7 @@ void sithRender_RenderThings(void)
         for ( SithThing* pCurThing = pSector->pFirstThingInSector; pCurThing; pCurThing = pCurThing->pNextThingInSector )
         {
             if ( (pCurThing->flags & (SITH_TF_DISABLED | SITH_TF_INVISIBLE | SITH_TF_DESTROYED)) == 0
-              && ((sithCamera_g_pCurCamera->type & (SITHCAMERA_UNKNOWN_80 | SITHCAMERA_UNKNOWN_40 | SITHCAMERA_UNKNOWN_20 | SITHCAMERA_UNKNOWN_10 | SITHCAMERA_UNKNOWN_8 | SITHCAMERA_EXTERNAL)) != 0
+              && ((sithCamera_g_pCurCamera->type & (SITHCAMERA_ORBITAL | SITHCAMERA_UNKNOWN_40 | SITHCAMERA_IDLE | SITHCAMERA_UNKNOWN_10 | SITHCAMERA_CINEMATIC | SITHCAMERA_EXTERNAL)) != 0
                   || pCurThing != sithCamera_g_pCurCamera->pPrimaryFocusThing) )
             {
                 // Transform thing pos to camera orient

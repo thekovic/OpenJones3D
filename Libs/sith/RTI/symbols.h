@@ -233,7 +233,7 @@
 #define sithCamera_Open_TYPE int (J3DAPI*)(rdCanvas*, float)
 #define sithCamera_Close_TYPE void (J3DAPI*)()
 #define sithCamera_ResetAllCameras_TYPE void (*)(void)
-#define sithCamera_NewEntry_TYPE int (J3DAPI*)(SithCamera*, int, SithCameraType, float, float, rdCanvas*, SithThing*, SithThing*)
+#define sithCamera_NewEntry_TYPE int (J3DAPI*)(SithCamera*, uint32_t, SithCameraType, float, float, rdCanvas*, SithThing*, SithThing*)
 #define sithCamera_FreeEntry_TYPE void (J3DAPI*)(SithCamera*)
 #define sithCamera_SetCameraCanvas_TYPE void (J3DAPI*)(SithCamera*, float, rdCanvas*)
 #define sithCamera_SetCurrentCamera_TYPE int (J3DAPI*)(SithCamera*)

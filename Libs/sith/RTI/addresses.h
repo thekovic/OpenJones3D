@@ -2067,9 +2067,9 @@
 #define sithCamera_vecCameraOffsetSlideBackward_ADDR 0x0052A178
 #define sithCamera_vecCameraOffsetJumpRollback_ADDR 0x0052A188
 #define sithCamera_vecOffsetCamType40_ADDR 0x0052A198
-#define sithCamera_vecOffsetCamType20_ADDR 0x0052A1A8
+#define sithCamera_idleCamOffset_ADDR 0x0052A1A8
 #define sithCamera_vecExtCameraPrevLookOffset_ADDR 0x005612C0
-#define sithCamera_orientCamType20_ADDR 0x005612D0
+#define sithCamera_idleCamOrient_ADDR 0x005612D0
 #define sithCamera_g_pCurCamera_ADDR 0x0056131C
 #define sithCamera_g_bExtCameraLookMode_ADDR 0x00561320
 #define sithCamera_secFocusThingFadeInTime_ADDR 0x00561324
@@ -2087,7 +2087,7 @@
 #define sithCamera_g_vecCameraAngleOffset_ADDR 0x018012D8
 #define sithCamera_g_cameraPosDelta_ADDR 0x018012E4
 #define sithCamera_g_cameraAngleDelta_ADDR 0x018012E8
-#define sithCamera_g_orientCamType80_ADDR 0x01801300
+#define sithCamera_g_orbCamOrient_ADDR 0x01801300
 #define sithCamera_g_camLookSpot_ADDR 0x01801330
 #define sithControl_aFunctionNames_ADDR 0x0052AB70
 #define sithControl_numControlCallbacks_ADDR 0x005624D0
