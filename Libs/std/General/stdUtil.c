@@ -20,8 +20,7 @@ void stdUtil_InstallHooks(void)
 }
 
 void stdUtil_ResetGlobals(void)
-{
-}
+{}
 
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...)
 {
@@ -217,4 +216,14 @@ int J3DAPI stdUtil_StrCmp(const char* str1, const char* str2)
     }
 
     return 1;
+}
+
+bool J3DAPI stdUtil_FileExists(const char* pFilename)
+{
+    tFileHandle fh = std_g_pHS->pFileOpen(pFilename, "r");
+    if ( !fh ) {
+        return false;
+    }
+    std_g_pHS->pFileClose(fh);
+    return true;
 }

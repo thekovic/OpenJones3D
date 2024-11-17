@@ -130,6 +130,8 @@ void J3DAPI stdUtil_ToUpper(char* pStr); // Added
 
 int J3DAPI stdUtil_StrCmp(const char* str1, const char* str2);
 
+bool J3DAPI stdUtil_FileExists(const char* pFilename); // Added
+
 /**
  * @brief Safely copies a string to a destination buffer with null-termination.
  *
