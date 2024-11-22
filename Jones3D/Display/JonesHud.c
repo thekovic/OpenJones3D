@@ -258,7 +258,7 @@ void JonesHud_InstallHooks(void)
     J3D_HOOKFUNC(JonesHud_sub_419B50);
     J3D_HOOKFUNC(JonesHud_InventoryItemChanged);
     J3D_HOOKFUNC(JonesHud_RenderInventoryItemChange);
-    J3D_HOOKFUNC(JonesHud_DrawMenuItemIcon);
+    J3D_HOOKFUNC(JonesHud_RenderChangedItem);
     J3D_HOOKFUNC(JonesHud_ShowLevelCompleted);
     J3D_HOOKFUNC(JonesHud_OpenHelp);
     J3D_HOOKFUNC(JonesHud_ShowGameOverDialog);
@@ -362,7 +362,7 @@ void JonesHud_Shutdown(void)
     JonesHud_bStartup          = false;
 }
 
-int J3DAPI JonesHud_Open()
+int JonesHud_Open(void)
 {
     if ( JonesHud_bOpen )
     {
@@ -577,7 +577,7 @@ void JonesHud_Close(void)
     }
 }
 
-void J3DAPI JonesHud_ToggleMenu()
+void JonesHud_ToggleMenu(void)
 {
     if ( sithPlayer_g_pLocalPlayerThing
       && ((sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
@@ -627,12 +627,12 @@ void J3DAPI JonesHud_EnableMenu(int bEnable)
     JonesHud_bMenuEnabled = bEnable;
 }
 
-int J3DAPI JonesHud_IsMenuEnabled()
+int JonesHud_IsMenuEnabled(void)
 {
     return JonesHud_bMenuEnabled;
 }
 
-void J3DAPI JonesHud_Render() // maybe this function should be called something eles??
+void JonesHud_Render(void) // maybe this function should be called something eles??
 {
     if ( sithPlayer_g_pLocalPlayerThing )
     {
@@ -898,7 +898,7 @@ int J3DAPI JonesHud_SetCanvasSize(int width, int height)
     return 1;
 }
 
-void J3DAPI JonesHud_UpdateSinCosTable()
+void JonesHud_UpdateSinCosTable(void)
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aCosSinTableScaled); ++i ) // was fixed to 24
     {
@@ -1717,7 +1717,7 @@ void J3DAPI JonesHud_Draw(const rdMaterial* pMaterial, const JonesHudRect* rect,
     }
 }
 
-void J3DAPI JonesHud_ProcessMenuItems()
+void JonesHud_ProcessMenuItems(void)
 {
     int bActivateKeyPressed;
     int v2;
@@ -1772,7 +1772,7 @@ void J3DAPI JonesHud_ProcessMenuItems()
     JonesHud_RenderMenuItems(JonesHud_pMenuItemLinkedList);
 }
 
-void J3DAPI JonesHud_MenuMoveLeft()
+void JonesHud_MenuMoveLeft(void)
 {
     JonesHudMenuItem* pLeftItem;
     JonesHudMenuItem* pCurItem;
@@ -1808,7 +1808,7 @@ void J3DAPI JonesHud_MenuMoveLeft()
     }
 }
 
-void J3DAPI JonesHud_MenuMoveRight()
+void JonesHud_MenuMoveRight(void)
 {
     JonesHudMenuItem* pRightItem;
     JonesHudMenuItem* pCurItem;
@@ -1853,7 +1853,6 @@ void J3DAPI JonesHud_MenuMoveRight()
 
 void J3DAPI JonesHud_MenuMoveDown()
 {
-    //int flags;
     JonesHudMenuItem* pCurItem;
     JonesHudMenuItem* pDownItem;
 
@@ -1963,7 +1962,7 @@ void J3DAPI JonesHud_SetSelectedMenuItem(int menuId, JonesHudMenuItem* pItem)
     }
 }
 
-void J3DAPI JonesHud_MenuMoveUp()
+void JonesHud_MenuMoveUp(void)
 {
     //int flags;
     //int v1;
@@ -3542,7 +3541,7 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
     }
 }
 
-void J3DAPI JonesHud_RenderInventoryItemChange()
+void JonesHud_RenderInventoryItemChange(void)
 {
     // Rotate icon for the duration time
     if ( !JonesHud_HasTimeElapsed(JonesHud_pCurInvChangedItem->msecMoveDuration, JonesHud_pCurInvChangedItem->msecMoveEndTime, JonesHud_msecTime) )
@@ -3661,18 +3660,18 @@ void J3DAPI JonesHud_RenderInventoryItemChange()
 
     if ( JonesHud_pCurInvChangedItem->pos.x == JonesHud_pCurInvChangedItem->endMovePos.x )
     {
-        JonesHud_DrawMenuItemIcon(JonesHud_pCurInvChangedItem, 0.0f);
+        JonesHud_RenderChangedItem(JonesHud_pCurInvChangedItem, 0.0f);
     }
     else
     {
         float dx  = JonesHud_pCurInvChangedItem->endMovePos.x - JonesHud_pCurInvChangedItem->pos.x;
         float desx = JonesHud_pCurInvChangedItem->endMovePos.x - JonesHud_pCurInvChangedItem->startMovePos.x;
-        JonesHud_DrawMenuItemIcon(JonesHud_pCurInvChangedItem, dx / desx);
+        JonesHud_RenderChangedItem(JonesHud_pCurInvChangedItem, dx / desx);
     }
 
 }
 
-void J3DAPI JonesHud_DrawMenuItemIcon(const JonesHudMenuItem* pItem, float scale)
+void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scale)
 {
     float v5;
     float v6;
@@ -4012,7 +4011,7 @@ void J3DAPI JonesHud_ShowGameOverDialog(int bPlayDiedMusic)
     JonesMain_CloseWindow();
 }
 
-float J3DAPI JonesHud_GetHealthBarAlpha()
+float JonesHud_GetHealthBarAlpha(void)
 {
     return JonesHud_healthIndAlpha;
 }
@@ -4036,8 +4035,7 @@ int J3DAPI JonesHud_EnableInterface(int bEnable)
     return result;
 }
 
-
-void J3DAPI JonesHud_InitializeGameStatistics()
+void JonesHud_InitializeGameStatistics(void)
 {
     float amount;
     SithGameStatistics* pStatistics;
@@ -4086,12 +4084,12 @@ void J3DAPI JonesHud_InitializeGameStatistics()
     jonesInventory_ResetStatisticsGameTime();
 }
 
-void J3DAPI JonesHud_RestoreGameStatistics()
+void JonesHud_RestoreGameStatistics(void)
 {
     JonesHud_bRestoreGameStatistics = 1;
 }
 
-void J3DAPI JonesHud_RestoreTreasuresStatistics()
+void JonesHud_RestoreTreasuresStatistics(void)
 {
     SithGameStatistics* pStatistics;
 

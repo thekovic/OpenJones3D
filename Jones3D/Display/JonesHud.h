@@ -11,21 +11,21 @@ J3D_EXTERN_C_START
 
 int JonesHud_Startup(void);
 void JonesHud_Shutdown(void);
-int J3DAPI JonesHud_Open();
+int JonesHud_Open(void);
 void JonesHud_Close(void);
 // TODO: Add function that will discard current state i.e. current item change animation, when loading game
 
-void J3DAPI JonesHud_ToggleMenu();
+void JonesHud_ToggleMenu(void);
 void J3DAPI JonesHud_EnableMenu(int bEnable);
-int J3DAPI JonesHud_IsMenuEnabled();
+int JonesHud_IsMenuEnabled(void);
 
-void J3DAPI JonesHud_Render();
+void JonesHud_Render(void);
 void J3DAPI JonesHud_Update(const SithWorld* pWorld);
 int J3DAPI JonesHud_SetCanvasSize(int width, int height);
-void J3DAPI JonesHud_UpdateSinCosTable();
+void JonesHud_UpdateSinCosTable(void);
 void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height);
 
-void J3DAPI JonesHud_MenuOpen();
+void JonesHud_MenuOpen(void);
 void JonesHud_MenuClose(void);
 
 void J3DAPI JonesHud_StartItemTranslation(JonesHudMenuItem* pItem, uint32_t msecDuration, float moveRate, int bMoveUp);
@@ -43,12 +43,12 @@ void J3DAPI JonesHud_DrawHealthIndicatorBar(float health, float alpha, float z, 
 void J3DAPI JonesHud_DrawIndicatorBar(const rdVector4* pPos, float scale, const rdVector4* pColor, float angle, int bArc); // Note, pos is in screen coords
 void J3DAPI JonesHud_Draw(const rdMaterial* pMaterial, const JonesHudRect* rect, float z, float rhw, const rdVector4* pColor, int celNum, int bAlpha);
 
-void J3DAPI JonesHud_ProcessMenuItems();
-void J3DAPI JonesHud_MenuMoveLeft();
-void J3DAPI JonesHud_MenuMoveRight();
-void J3DAPI JonesHud_MenuMoveDown();
+void JonesHud_ProcessMenuItems(void);
+void JonesHud_MenuMoveLeft(void);
+void JonesHud_MenuMoveRight(void);
+void JonesHud_MenuMoveDown(void);
 void J3DAPI JonesHud_SetSelectedMenuItem(int menuId, JonesHudMenuItem* pItem);
-void J3DAPI JonesHud_MenuMoveUp();
+void JonesHud_MenuMoveUp(void);
 
 void J3DAPI JonesHud_BindActivateControlKeys(int* aKeyIds, int numKeys);
 int J3DAPI JonesHud_GetKey(unsigned int keyId);
@@ -68,15 +68,15 @@ void J3DAPI JonesHud_SetDownUpItems(JonesHudMenuItem* pItem1, JonesHudMenuItem* 
 void J3DAPI JonesHud_sub_4198E0(JonesHudMenuItem* pItem);
 void J3DAPI JonesHud_sub_419B50(JonesHudMenuItem* pItem);
 void J3DAPI JonesHud_InventoryItemChanged(int typeId);
-void J3DAPI JonesHud_RenderInventoryItemChange();
-void J3DAPI JonesHud_DrawMenuItemIcon(const JonesHudMenuItem* pItem, float scale);
+void JonesHud_RenderInventoryItemChange(void);
+void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scale);
 
 // Returns 1 when bonus map was bought
 int JonesHud_ShowLevelCompleted(void);
 HANDLE J3DAPI JonesHud_OpenHelp(HANDLE process);
 void J3DAPI JonesHud_ShowGameOverDialog(int bPlayDiedMusic);
 
-float J3DAPI JonesHud_GetHealthBarAlpha();
+float JonesHud_GetHealthBarAlpha(void);
 void J3DAPI JonesHud_SetHealthBarAlpha(float a1);
 
 void J3DAPI JonesHud_CutsceneStart(int a1);
@@ -84,9 +84,9 @@ int J3DAPI JonesHud_EnableInterface(int bEnable);
 
 int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel);
 
-void J3DAPI JonesHud_InitializeGameStatistics();
-void J3DAPI JonesHud_RestoreGameStatistics();
-void J3DAPI JonesHud_RestoreTreasuresStatistics();
+void JonesHud_InitializeGameStatistics(void);
+void JonesHud_RestoreGameStatistics(void);
+void JonesHud_RestoreTreasuresStatistics(void);
 
 // Helper hooking functions
 void JonesHud_InstallHooks(void);

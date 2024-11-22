@@ -84,7 +84,7 @@
 #define JonesHud_sub_419B50_ADDR 0x00419B50
 #define JonesHud_InventoryItemChanged_ADDR 0x00419DE0
 #define JonesHud_RenderInventoryItemChange_ADDR 0x0041A190
-#define JonesHud_DrawMenuItemIcon_ADDR 0x0041A630
+#define JonesHud_RenderChangedItem_ADDR 0x0041A630
 #define JonesHud_ShowLevelCompleted_ADDR 0x0041A810
 #define JonesHud_OpenHelp_ADDR 0x0041AD20
 #define JonesHud_ShowGameOverDialog_ADDR 0x0041AE30
