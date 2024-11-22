@@ -453,10 +453,10 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
 
 void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont* pFont)
 {
-    float gwidth = pFont->aGlyphs[chr].bottom - pFont->aGlyphs[chr].top;
+    float gwidth = pFont->aGlyphs[chr].right - pFont->aGlyphs[chr].left;
     gwidth *= 256.0f;
 
-    float gheight = pFont->aGlyphs[chr].right - pFont->aGlyphs[chr].left;
+    float gheight = pFont->aGlyphs[chr].bottom - pFont->aGlyphs[chr].top;
     gheight *= 256.0f;
 
     rdCacheProcEntry* pPoly = rdCache_GetAlphaProcEntry();
@@ -487,7 +487,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->tv  = pFont->aGlyphs[chr].top;
     ++pCurVert;
 
-    pCurVert->sx  = gheight * swidth + x;
+    pCurVert->sx  = gwidth * swidth + x;
     pCurVert->sy  = y;
     pCurVert->sz  = z;
     pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
@@ -495,8 +495,8 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->tv  = pFont->aGlyphs[chr].top;
     ++pCurVert;
 
-    pCurVert->sx  = gheight * swidth + x;
-    pCurVert->sy  = gwidth * sheight + y;
+    pCurVert->sx  = gwidth * swidth + x;
+    pCurVert->sy  = gheight * sheight + y;
     pCurVert->sz  = z;
     pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
     pCurVert->tu  = pFont->aGlyphs[chr].right;
@@ -504,7 +504,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     ++pCurVert;
 
     pCurVert->sx  = x;
-    pCurVert->sy  = gwidth * sheight + y;
+    pCurVert->sy  = gheight * sheight + y;
     pCurVert->sz  = z;
     pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
     pCurVert->tu  = pFont->aGlyphs[chr].left;
