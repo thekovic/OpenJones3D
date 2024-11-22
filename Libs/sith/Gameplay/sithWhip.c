@@ -417,8 +417,10 @@ void sithWhip_Reset(void)
 {
     sithWhip_pWhipSwingThing = NULL;
     sithWhip_pWhipClimbThing = NULL;
-    sithCamera_RestoreExtCamera(); // TODO: [BUG] when JonesMain closes sithCamera before closing sith system resulting in sithCamera_g_pCurCamera = NULL here
-    //                                      Add check for sithCamera being opened.
+
+    if ( sithCamera_IsOpen() ) { // Added Check for sithCamera system to be opened. Reason: JonesMain closes sithCamera before closing sith system resulting in sithCamera_g_pCurCamera = NULL here
+        sithCamera_RestoreExtCamera();
+    }
 }
 
 int J3DAPI sithWhip_Save(DPID idTo, uint32_t outstream)
