@@ -227,3 +227,15 @@ bool J3DAPI stdUtil_FileExists(const char* pFilename)
     std_g_pHS->pFileClose(fh);
     return true;
 }
+
+uint32_t J3DAPI stdUtil_CalcChecksum(const uint8_t* pData, size_t dataSize, uint32_t seed)
+{
+    while ( dataSize )
+    {
+        seed = *pData ^ ((seed >> 31) + 2 * seed);
+        --dataSize;
+        ++pData;
+    }
+
+    return seed;
+}

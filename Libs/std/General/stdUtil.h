@@ -132,6 +132,9 @@ int J3DAPI stdUtil_StrCmp(const char* str1, const char* str2);
 
 bool J3DAPI stdUtil_FileExists(const char* pFilename); // Added
 
+uint32_t J3DAPI stdUtil_CalcChecksum(const uint8_t* pData, size_t dataSize, uint32_t seed); // Added
+
+
 /**
  * @brief Safely copies a string to a destination buffer with null-termination.
  *
