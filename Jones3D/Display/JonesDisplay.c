@@ -80,7 +80,7 @@ int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings)
     }
 
     JonesDisplay_UpdateDualScreenWindowSize(pSettings);
-    if ( pSettings->windowMode )
+    if ( pSettings->bWindowMode )
     {
         JonesDisplay_bDualMonitor = 0;
     }
@@ -92,7 +92,7 @@ int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings)
         return 1;
     }
 
-    if ( pSettings->windowMode ) {
+    if ( pSettings->bWindowMode ) {
         wkernel_SetWindowStyle(WS_VISIBLE | WS_OVERLAPPEDWINDOW); // 0x10CF0000
     }
     else {
@@ -102,7 +102,7 @@ int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings)
     JonesDisplay_primaryDisplayNum = pSettings->displayDeviceNum;
     stdDisplay_SetDefaultResolution(pSettings->width, pSettings->height);
 
-    if ( stdDisplay_SetMode(pSettings->videoModeNum, pSettings->windowMode == 0, /*numBackBuffers*/pSettings->bBuffering ? 2u : 1u) )
+    if ( stdDisplay_SetMode(pSettings->videoModeNum, pSettings->bWindowMode == 0, /*numBackBuffers*/pSettings->bBuffering ? 2u : 1u) )
     {
         STDLOG_ERROR("Error setting display mode.\n");
         JonesDisplay_Shutdown();
@@ -191,8 +191,8 @@ int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings)
 
 void J3DAPI JonesDisplay_UpdateCur3DDevice(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings)
 {
-    pDisplaySettings->windowMode  = 0;
-    pDisplaySettings->dualMonitor = 0;
+    pDisplaySettings->bWindowMode  = 0;
+    pDisplaySettings->bDualMonitor = 0;
     pDisplaySettings->bBuffering  = 0;
     pDisplaySettings->bFog        = 1;
     pDisplaySettings->filter      = STD3D_MIPMAPFILTER_BILINEAR;
@@ -242,8 +242,8 @@ void J3DAPI JonesDisplay_UpdateCur3DDevice(const StdDisplayEnvironment* pEnv, Jo
             wuRegistry_SaveInt("Height", pDisplaySettings->height);
             wuRegistry_SaveInt("BPP", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].rasterInfo.colorInfo.bpp);
             wuRegistry_SaveInt("Filter", pDisplaySettings->filter);
-            wuRegistry_SaveIntEx("InWindow", pDisplaySettings->windowMode);
-            wuRegistry_SaveIntEx("Dual Monitor", pDisplaySettings->dualMonitor);
+            wuRegistry_SaveIntEx("InWindow", pDisplaySettings->bWindowMode);
+            wuRegistry_SaveIntEx("Dual Monitor", pDisplaySettings->bDualMonitor);
             wuRegistry_SaveInt("Geometry Mode", pDisplaySettings->geoMode);
             wuRegistry_SaveInt("Lighting Mode", pDisplaySettings->lightMode);
         }
@@ -308,7 +308,7 @@ void J3DAPI JonesDisplay_EnableDualMonitor(int bEnable)
 
 int J3DAPI JonesDisplay_UpdateDualScreenWindowSize(const JonesDisplaySettings* pSettings)
 {
-    if ( !pSettings->windowMode || !JonesDisplay_bDualMonitor || !JonesDisplay_primaryDisplayNum )
+    if ( !pSettings->bWindowMode || !JonesDisplay_bDualMonitor || !JonesDisplay_primaryDisplayNum )
     {
         return 0;
     }

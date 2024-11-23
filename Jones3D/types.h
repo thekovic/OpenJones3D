@@ -205,9 +205,9 @@ typedef struct sJonesHudMenuItem
 
 typedef struct sJonesDisplaySettings
 {
-    int windowMode;
-    int dualMonitor;
-    int displayDeviceNum;
+    int bWindowMode;
+    int bDualMonitor;
+    size_t displayDeviceNum;
     size_t videoModeNum;
     size_t device3DNum;
     Std3DMipmapFilterType filter;

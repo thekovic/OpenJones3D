@@ -1489,7 +1489,7 @@ HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID)
     JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
     if ( pSettings )
     {
-        fontInfo.bWindowMode = pSettings->windowMode;
+        fontInfo.bWindowMode = pSettings->bWindowMode;
     }
 
     static float curFontScale = 0; // Changed: Made variable static to preserve state for cases when hFont != NULL. (See jonesConfig_LoadGameDialogHookProc)
@@ -1682,7 +1682,7 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
 void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont)
 {
     JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
-    if ( hFont && (!pSettings || !pSettings->windowMode) )
+    if ( hFont && (!pSettings || !pSettings->bWindowMode) )
     {
         EnumChildWindows(hWndParent, jonesConfig_ResetWindowFontCallback, 0);
         DeleteObject((HGDIOBJ)hFont);
@@ -2370,7 +2370,7 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
 
     uint32_t width, height;
     JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
-    if ( pSettings && pSettings->windowMode || !JonesMain_IsOpen() )
+    if ( pSettings && pSettings->bWindowMode || !JonesMain_IsOpen() )
     {
         HWND hwndDesktop = GetDesktopWindow();
         RECT rect;
@@ -2789,7 +2789,7 @@ void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
         sithControl_RegisterMouseBindings();
     }
 
-    else if ( pSettings->windowMode )
+    else if ( pSettings->bWindowMode )
     {
         stdControl_EnableMouse(0);
     }

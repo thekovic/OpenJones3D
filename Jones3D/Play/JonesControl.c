@@ -50,7 +50,7 @@ int JonesControl_Startup(void)
     sithControl_RegisterJoystickBindings();
     // Note, sithControl_RegisterMouseBindings() is not called probably because jonesconfig would unbind it anyway
 
-    if ( !pSettings->windowMode || bMouseControl )
+    if ( !pSettings->bWindowMode || bMouseControl )
     {
         stdControl_EnableMouse(1);
     }
@@ -73,7 +73,7 @@ int JonesControl_Startup(void)
 
     wuRegistry_SaveIntEx("Joystick Control", bJoystickControl);
 
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 && (!pSettings->windowMode || bMouseControl) )
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 && (!pSettings->bWindowMode || bMouseControl) )
     {
         sithControl_UnbindMouseAxes();
     }
