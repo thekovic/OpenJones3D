@@ -11,8 +11,9 @@
 
 J3D_EXTERN_C_START
 
-#define RD_REF_WIDTH  640.0f
-#define RD_REF_HEIGHT 480.0f
+#define RD_REF_WIDTH       640.0f
+#define RD_REF_HEIGHT      480.0f
+#define RD_REF_APECTRATIO (RD_REF_WIDTH / RD_REF_HEIGHT) // Original aspect ratio (4:3)
 
 // Guessed macro: Older GPUs, particularly those in the DirectX 6 era, often used fixed - point math instead of floating - point for performance reasons.
 // The rhw value was frequently packed into a 16 - bit or 32 - bit fixed - point format, and 32767.5f is the middle value for a signed 16 - bit integer range(-32768 to 32767).

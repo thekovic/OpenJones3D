@@ -12,6 +12,8 @@
 #include <std/General/stdUtil.h>
 #include <std/General/stdMemory.h>
 
+#include <std/Win95/stdDisplay.h>
+
 bool rdCamera_dword_5E10E8 = false;
 
 void J3DAPI rdCamera_BuildFOV(rdCamera* pCamera);
@@ -258,10 +260,14 @@ void J3DAPI rdCamera_BuildFOV(rdCamera* pCamera)
         }
         else if ( pCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
         {
-            float hwidth = (pCamera->pCanvas->rect.right - pCamera->pCanvas->rect.left) / 2.0f;
+            float hwidth  = (pCamera->pCanvas->rect.right - pCamera->pCanvas->rect.left) / 2.0f;
             float hheight = (pCamera->pCanvas->rect.bottom - pCamera->pCanvas->rect.top) / 2.0f;
 
-            pCamera->focalLength = hwidth / stdMath_Tan(pCamera->fov / 2.0f);// distance from cam to near plane
+            pCamera->focalLength = hwidth / stdMath_Tan(pCamera->fov / 2.0f); // distance from cam to near plane
+
+            // Added: Adjust focal length for canvas aspect ratio
+            float fscale         = RD_REF_APECTRATIO / (hwidth / hheight);
+            pCamera->focalLength = pCamera->focalLength * fscale;
 
             if ( rdCamera_dword_5E10E8 )
             {
@@ -272,14 +278,14 @@ void J3DAPI rdCamera_BuildFOV(rdCamera* pCamera)
             {
                 pCamera->invNearClipPlane = 1.0f / pCamera->pFrustum->nearPlane;
                 pCamera->invFarClipPlane  = 1.0f / (1.0f / pCamera->pFrustum->farPlane - pCamera->invNearClipPlane) * 0.89999998f;// Used for converting vertex to screen cords; 0.89999f - 1/1.111f
-                pCamera->invNearClipPlane = 0.1f / (0.89999998f * pCamera->invFarClipPlane) + pCamera->invNearClipPlane;// Used for converting vertex to screen cords
+                pCamera->invNearClipPlane = 0.1f / (0.89999998f * pCamera->invFarClipPlane) + pCamera->invNearClipPlane; // Used for converting vertex to screen cords
             }
 
             // Setup frustum planes
-            pCamera->pFrustum->topPlane    = (hheight / pCamera->focalLength) / pCamera->aspectRatio;
+            pCamera->pFrustum->topPlane    =  (hheight / pCamera->focalLength) / pCamera->aspectRatio;
             pCamera->pFrustum->bottomPlane = -(hheight / pCamera->focalLength) / pCamera->aspectRatio;
             pCamera->pFrustum->leftPlane   = -(hwidth / pCamera->focalLength) / pCamera->aspectRatio;
-            pCamera->pFrustum->rightPlane  = (hwidth / pCamera->focalLength) / pCamera->aspectRatio;
+            pCamera->pFrustum->rightPlane  =  (hwidth / pCamera->focalLength) / pCamera->aspectRatio;
 
             float height = hheight * 2.0f;
             float width  = hwidth * 2.0f;
@@ -323,10 +329,10 @@ int J3DAPI rdCamera_SetFrustrum(rdCamera* pCamera, rdClipFrustum* pFrustrum, int
     float tsize = pCanvas->center.y - (top - 0.5f);
     float bsize = bottom - 0.5f - pCanvas->center.y;
 
-    pFrustrum->topPlane    = tsize / pCamera->focalLength / pCamera->aspectRatio;
+    pFrustrum->topPlane    =  tsize / pCamera->focalLength / pCamera->aspectRatio;
     pFrustrum->leftPlane   = -lsize / pCamera->focalLength / pCamera->aspectRatio;
     pFrustrum->bottomPlane = -bsize / pCamera->focalLength / pCamera->aspectRatio;
-    pFrustrum->rightPlane  = rsize / pCamera->focalLength / pCamera->aspectRatio;
+    pFrustrum->rightPlane  =  rsize / pCamera->focalLength / pCamera->aspectRatio;
 
     pFrustrum->bClipFar    = pCamera->pFrustum->bClipFar;
     pFrustrum->nearPlane   = pCamera->pFrustum->nearPlane;
