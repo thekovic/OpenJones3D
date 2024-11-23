@@ -14,7 +14,7 @@ void sithParticle_InstallHooks(void)
     // J3D_HOOKFUNC(sithParticle_ParseArg);
     // J3D_HOOKFUNC(sithParticle_Update);
     // J3D_HOOKFUNC(sithParticle_Initalize);
-    // J3D_HOOKFUNC(sithParticle_Remove);
+    // J3D_HOOKFUNC(sithParticle_DestroyParticle);
     // J3D_HOOKFUNC(sithParticle_Free);
     // J3D_HOOKFUNC(sithParticle_FreeWorldParticles);
     // J3D_HOOKFUNC(sithParticle_CacheFind);
@@ -62,9 +62,9 @@ void J3DAPI sithParticle_Initalize(SithThing* pThing)
     J3D_TRAMPOLINE_CALL(sithParticle_Initalize, pThing);
 }
 
-void J3DAPI sithParticle_Remove(SithThing* pThing)
+void J3DAPI sithParticle_DestroyParticle(SithThing* pThing)
 {
-    J3D_TRAMPOLINE_CALL(sithParticle_Remove, pThing);
+    J3D_TRAMPOLINE_CALL(sithParticle_DestroyParticle, pThing);
 }
 
 void J3DAPI sithParticle_Free(SithThing* pThing)

@@ -249,9 +249,9 @@ typedef enum eSithCollisionType
 
 typedef enum eSithCollideType
 {
-    SITH_COLLIDE_NONE   = 0x0,
-    SITH_COLLIDE_SPHERE = 0x1,
-    SITH_COLLIDE_FACE   = 0x3,
+    SITH_COLLIDE_NONE   = 0,
+    SITH_COLLIDE_SPHERE = 1,
+    SITH_COLLIDE_FACE   = 3,
 } SithCollideType;
 
 typedef enum eSithAnimateFlags J3D_ENUM_TYPE(uint32_t)
@@ -2354,7 +2354,7 @@ typedef struct sSithPuppetState
     int majorMode;
     SithPuppetSubMode submode;
     SithPuppetTrack* pFirstTrack;
-    unsigned int msecLastFidgetStillMoveTime;
+    uint32_t msecLastFidgetStillMoveTime;
 } SithPuppetState;
 
 struct sSithThing
@@ -2367,10 +2367,10 @@ struct sSithThing
     SithControlType controlType;
     SithThingMoveStatus moveStatus;
     int unknown1;
-    unsigned int msecLifeLeft;
-    unsigned int msecTimerTime;
-    unsigned int msecNextPulseTime;
-    unsigned int msecPulseInterval;
+    uint32_t msecLifeLeft;
+    uint32_t msecTimerTime;
+    uint32_t msecNextPulseTime;
+    uint32_t msecPulseInterval;
     SithCollide collide;
     SithAttach attach;
     SithSector* pInSector;
@@ -2379,11 +2379,11 @@ struct sSithThing
     SithThing* pAttachedThing;
     SithThing* pNextAttachedThing;
     SithThing* pPrevAttachedThing;
-    int signature;
+    uint32_t signature;
     const SithThing* pTemplate;
     SithThing* pCreateThingTemplate;
     SithThing* pParent;
-    int parentSignature;
+    uint32_t parentSignature;
     rdMatrix34 orient;
     rdVector3 pos;
     rdVector3 forceMoveStartPos;
@@ -2409,7 +2409,7 @@ struct sSithThing
     int unknownFlags;
     float alpha;
     float userval;
-    int numSwapEntries;
+    uint32_t numSwapEntries;
     SithThingSwapEntry* pSwapList;
     int perfLevel;
     SithUserBlockUnion userblock;

@@ -42,9 +42,9 @@ float J3DAPI sithExplosion_GetDeltaValue(float min, float max, float maxTime, fl
     return J3D_TRAMPOLINE_CALL(sithExplosion_GetDeltaValue, min, max, maxTime, deltaTime);
 }
 
-void J3DAPI sithExplosion_Update(SithThing* pThing)
+void J3DAPI sithExplosion_Update(SithThing* pThing, float secDeltaTime)
 {
-    J3D_TRAMPOLINE_CALL(sithExplosion_Update, pThing);
+    J3D_TRAMPOLINE_CALL(sithExplosion_Update, pThing, secDeltaTime);
 }
 
 void J3DAPI sithExplosion_MakeBlast(SithThing* pThing)

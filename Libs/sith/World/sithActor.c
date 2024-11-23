@@ -47,14 +47,13 @@ void sithActor_InstallHooks(void)
     J3D_HOOKFUNC(sithActor_SurfaceCollisionHandler);
     J3D_HOOKFUNC(sithActor_ActorCollisionHandler);
     J3D_HOOKFUNC(sithActor_SetHeadPYR);
-    J3D_HOOKFUNC(sithActor_Destroy);
-    J3D_HOOKFUNC(sithActor_Remove);
+    J3D_HOOKFUNC(sithActor_DestroyActor);
+    J3D_HOOKFUNC(sithActor_DestroyCorpse);
     J3D_HOOKFUNC(sithActor_ParseArg);
 }
 
 void sithActor_ResetGlobals(void)
-{
-}
+{}
 
 void J3DAPI sithActor_SetDifficulty(SithThing* pActor)
 {
@@ -116,13 +115,13 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
         if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
         {
 
-            #ifdef J3D_DEBUG 
+        #ifdef J3D_DEBUG 
             // Note, found in debug version of Indy3D
             if ( (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
             {
                 sithConsole_PrintString("Uh Oh. Raft underwater.");
             }
-            #endif
+        #endif
 
             pThing->thingInfo.actorInfo.endurance.msecUnderwater += msecDeltaTime;
             if ( pThing->thingInfo.actorInfo.endurance.msecUnderwater >= SITHACTOR_MAX_UNDERWATER_MSEC )
@@ -186,7 +185,7 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
 
             rdVector_Copy3(&pThing->pos, &meshOrient.dvec);
             rdMatrix_Copy34(&pThing->orient, &meshOrient);
-            sithThing_MoveToSector(pThing, pThingMeshAttached->pInSector, 1);
+            sithThing_SetSector(pThing, pThingMeshAttached->pInSector, 1);
         }
 
         sithVoice_UpdateLipSync(pThing);
@@ -627,7 +626,7 @@ void J3DAPI sithActor_KillActor(SithThing* pThing, SithThing* pSrcThing, SithDam
 
             if ( (pThing->moveInfo.physics.flags & SITH_PF_FLY) != 0 )
             {
-                sithActor_Destroy(pThing);
+                sithActor_DestroyActor(pThing);
             }
             else
             {
@@ -756,7 +755,7 @@ void J3DAPI sithActor_UpdateAimJoints(SithThing* pThing)
     }
 }
 
-void J3DAPI sithActor_Destroy(SithThing* pActor)
+void J3DAPI sithActor_DestroyActor(SithThing* pActor)
 {
     /*flags = pActor->flags;
     flags = pActor->flags | SITH_TF_DYING;
@@ -774,9 +773,9 @@ void J3DAPI sithActor_Destroy(SithThing* pActor)
     sithPhysics_FindFloor(pActor, 0);
 }
 
-void J3DAPI sithActor_Remove(SithThing* pThing)
+void J3DAPI sithActor_DestroyCorpse(SithThing* pThing)
 {
-    // Thing should be of a type SITH_THING_CORPSE, set in sithActor_Destroy
+    // Thing should be of a type SITH_THING_CORPSE, set in sithActor_DestroyActor
     // Fyi, here we can make the actor corpse to not disappear
     if ( pThing->renderFrame + 1 == sithMain_g_frameNumber )
     {
@@ -795,6 +794,7 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
     switch ( adjNum )
     {
         case SITHTHING_ARG_TYPEFLAGS:
+        {
             SithActorFlag actorflags;
             if ( sscanf_s(pArg->argValue, "%x", &actorflags) != 1 )
             {
@@ -803,9 +803,10 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
 
             pActorInfo->flags = actorflags;
             return 1;
-
+        }
         case SITHTHING_ARG_HEALTH:
-            float health = strtof(pArg->argValue, NULL);
+        {
+            float health = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( health < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
             {
                 goto error;
@@ -818,83 +819,93 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
                 pActorInfo->maxHealth = health;
             }
             return 1;
-
+        }
         case SITHTHING_ARG_MAXTHRUST:
-            float maxthrust = strtof(pArg->argValue, NULL);
-            if ( maxthrust < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
+        {
+            float maxthrust = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
+            if ( maxthrust < 0.0f || (errno == ERANGE) )    // Added: Conversion range error check
             {
                 goto error;
             }
 
             pActorInfo->maxThrust = maxthrust;
             return 1;
-
+        }
         case SITHTHING_ARG_MAXROTTHRUST:
-            float maxrotthrust = strtof(pArg->argValue, NULL);
-            if ( maxrotthrust < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
+        {
+            float maxrotthrust = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
+            if ( maxrotthrust < 0.0f || (errno == ERANGE) )    // Added: Conversion range error check
             {
                 goto error;
             }
 
             pActorInfo->maxRotVelocity = maxrotthrust;
             return 1;
-
+        }
         case SITHTHING_ARG_MAXHEADVEL:
-            float maxheadvel = strtof(pArg->argValue, NULL);
-            if ( maxheadvel < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
+        {
+            float maxheadvel = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
+            if ( maxheadvel < 0.0f || (errno == ERANGE) )    // Added: Conversion range error check
             {
                 goto error;
             }
 
             pActorInfo->maxHeadVelocity = maxheadvel;
             return 1;
-
+        }
         case SITHTHING_ARG_MAXHEADYAW:
-            float maxheadyaw = strtof(pArg->argValue, NULL);
-            if ( maxheadyaw < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
+        {
+            float maxheadyaw = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
+            if ( maxheadyaw < 0.0f || (errno == ERANGE) )    // Added: Conversion range error check
             {
                 goto error;
             }
 
             pActorInfo->maxHeadYaw = maxheadyaw;
             return 1;
-
+        }
         case SITHTHING_ARG_JUMPSPEED:
-            float jumpspeed = strtof(pArg->argValue, NULL);
-            if ( jumpspeed < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
+        {
+            float jumpspeed = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
+            if ( jumpspeed < 0.0f || (errno == ERANGE) )    // Added: Conversion range error check
             {
                 goto error;
             }
 
             pActorInfo->jumpSpeed = jumpspeed;
             return 1;
-
+        }
         case SITHTHING_ARG_WEAPON:
+        {
             pActorInfo->pWeaponTemplate = sithTemplate_GetTemplate(pArg->argValue);
             return 1;
-
+        }
         case SITHTHING_ARG_EXPLODE:
+        {
             pActorInfo->pExplodeTemplate = sithTemplate_GetTemplate(pArg->argValue);
             return 1;
-
+        }
         case SITHTHING_ARG_MAXHEALTH:
-            float maxhealth = strtof(pArg->argValue, NULL);
-            if ( maxhealth < 0.0f || (errno == ERANGE) ) // Added: Conversion range error check
+        {
+            float maxhealth = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
+            if ( maxhealth < 0.0f || (errno == ERANGE) )    // Added: Conversion range error check
             {
                 goto error;
             }
 
             pActorInfo->maxHealth = maxhealth;
             return 1;
-
+        }
         case SITHTHING_ARG_EYEOFFSET:
+        {
             if ( sscanf_s(pArg->argValue, "(%f/%f/%f)", &pActorInfo->eyeOffset.x, &pActorInfo->eyeOffset.y, &pActorInfo->eyeOffset.z) != 3 )
             {
                 goto error;
             }
             return 1;
-
+        }
         case SITHTHING_ARG_MINHEADPITCH:
+        {
             float minpitch;
             if ( sscanf_s(pArg->argValue, "%f", &minpitch) != 1 )
             {
@@ -903,8 +914,9 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
 
             pActorInfo->minHeadPitch = minpitch;
             return 1;
-
+        }
         case SITHTHING_ARG_MAXHEADPITCH:
+        {
             float maxpitch;
             if ( sscanf_s(pArg->argValue, "%f", &maxpitch) != 1 )
             {
@@ -913,15 +925,17 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
 
             pActorInfo->maxHeadPitch = maxpitch;
             return 1;
-
+        }
         case SITHTHING_ARG_FIREOFFSET:
+        {
             if ( sscanf_s(pArg->argValue, "(%f/%f/%f)", &pActorInfo->fireOffset.x, &pActorInfo->fireOffset.y, &pActorInfo->fireOffset.z) != 3 )
             {
                 goto error;
             }
             return 1;
-
+        }
         case SITHTHING_ARG_LIGHTOFFSET:
+        {
             if ( sscanf_s(pArg->argValue, "(%f/%f/%f)", &pActorInfo->lightOffset.x, &pActorInfo->lightOffset.y, &pActorInfo->lightOffset.z) != 3 )
             {
                 goto error;
@@ -929,8 +943,9 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
 
             pThing->flags |= SITH_TF_EMITLIGHT;
             return 1;
-
+        }
         case SITHTHING_ARG_LIGHTINTENSITY:
+        {
             rdVector4 headLight = { 0 }; // Added: Init to 0
             if ( sscanf_s(pArg->argValue, "(%f/%f/%f)", &headLight.red, &headLight.green, &headLight.blue) != 3 )
             {
@@ -941,8 +956,9 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
             rdVector_Copy4(&pActorInfo->headLightIntensity, &headLight);
             pThing->flags |= SITH_TF_EMITLIGHT;
             return 1;
-
+        }
         case SITHTHING_ARG_VOICECOLOR:
+        {
             if ( sscanf_s(
                 pArg->argValue,
                 "(%f/%f/%f/%f/%f/%f/%f/%f/%f/%f/%f/%f/%f/%f/%f/%f)",
@@ -966,7 +982,7 @@ int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNu
                 goto error;
             }
             return 1;
-
+        }
         default:
             return 0;
     }

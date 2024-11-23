@@ -68,6 +68,8 @@ static int sithWeapon_playerBackHolsterSwapRefNum;
 static SithControlFunction sithWeapon_bufferedWaponKeyId;
 static SithWeaponActorKilledCallback sithWeapon_pfActorKilledCallback;
 
+void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon);
+int sithWeapon_IsLocalPlayerUnableToUseWeapon(void);
 
 void sithWeapon_InstallHooks(void)
 {
@@ -83,7 +85,7 @@ void sithWeapon_InstallHooks(void)
     J3D_HOOKFUNC(sithWeapon_DamageWeapon);
     J3D_HOOKFUNC(sithWeapon_ThingCollisionHandler);
     J3D_HOOKFUNC(sithWeapon_SurfaceCollisionHandler);
-    J3D_HOOKFUNC(sithWeapon_Destroy);
+    J3D_HOOKFUNC(sithWeapon_DestroyWeapon);
     J3D_HOOKFUNC(sithWeapon_CreateWeaponExplosion);
     J3D_HOOKFUNC(sithWeapon_GetMountWait);
     J3D_HOOKFUNC(sithWeapon_SetMountWait);
@@ -347,7 +349,7 @@ int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId)
     return 1;
 }
 
-int J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
+void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
 {
     SithWeaponInfo* pWeaponInfo = &pWeapon->thingInfo.weaponInfo;
     float damage = pWeapon->thingInfo.actorInfo.maxHealth;
@@ -439,7 +441,7 @@ int J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
         sithCog_ThingSendMessage(pWeapon, NULL, SITHCOG_MSG_REMOVED);
     }
 
-    return sithThing_RemoveThing(sithWorld_g_pCurrentWorld, pWeapon);
+    sithThing_RemoveThing(sithWorld_g_pCurrentWorld, pWeapon);
 }
 
 int J3DAPI sithWeapon_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
@@ -447,61 +449,69 @@ int J3DAPI sithWeapon_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjN
     switch ( adjNum )
     {
         case SITHTHING_ARG_TYPEFLAGS:
+        {
             if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.weaponInfo.flags) != 1 ) {
                 goto syntax_error;
             }
             return 1;
-
+        }
         case SITHTHING_ARG_DAMAGE:
-            float damage = strtof(pArg->argValue, NULL);
+        {
+            float damage = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( errno == ERANGE ) { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.damage = damage;
             return 1;
-
+        }
         case SITHTHING_ARG_MINDAMAGE:
-            float minDamage = strtof(pArg->argValue, NULL);
+        {
+            float minDamage = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( errno == ERANGE ) { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.minDamage = minDamage;
             return 1;
-
+        }
         case SITHTHING_ARG_DAMAGECLASS:
+        {
             if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.weaponInfo.damageType) != 1 ) {
                 goto syntax_error;
             }
             return 1;
-
+        }
         case SITHTHING_ARG_EXPLODE:
+        {
             pThing->thingInfo.weaponInfo.pExplosionTemplate = sithTemplate_GetTemplate(pArg->argValue);
             return 1;
-
+        }
         case SITHTHING_ARG_FORCE:
-            float force = strtof(pArg->argValue, NULL);
+        {
+            float force = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( errno == ERANGE ) { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.force = force;
             return 1;
-
+        }
         case SITHTHING_ARG_RANGE:
-            float range = strtof(pArg->argValue, NULL);
+        {
+            float range = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( errno == ERANGE ) { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.range = range;
             return 1;
-
+        }
         case SITHTHING_ARG_RATE:
-            float rate = strtof(pArg->argValue, NULL);
+        {
+            float rate = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( errno == ERANGE ) { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.rate = rate;
             return 1;
-
+        }
         default:
             return 0;
     }
@@ -1106,7 +1116,7 @@ int J3DAPI sithWeapon_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pS
     return sithCollision_HandleThingHitSurface(pThing, pSurf, pStack);
 }
 
-void J3DAPI sithWeapon_Destroy(SithThing* pWeapon)
+void J3DAPI sithWeapon_DestroyWeapon(SithThing* pWeapon)
 {
     SITH_ASSERTREL(pWeapon && (pWeapon->type == SITH_THING_WEAPON));
 
@@ -1979,7 +1989,10 @@ void J3DAPI sithWeapon_SendMessageAim(SithThing* pThing, int bAim)
 
     if ( pThing->type == SITH_THING_PLAYER )
     {
-        if ( !sithWeapon_IsMountingWeapon(pThing) && !sithWeapon_IsLocalPlayerUnableToUseWeapon() )
+        // Fixed: Added sithPlayer_g_pLocalPlayerThing null check. 
+        // This is just quick & dirty fix for sithWeapon_IsLocalPlayerUnableToUseWeapon, 
+        // required when system is closing and indy is still aiming with the whip at whippable thing
+        if ( !sithWeapon_IsMountingWeapon(pThing) && sithPlayer_g_pLocalPlayerThing && !sithWeapon_IsLocalPlayerUnableToUseWeapon() )
         {
             if ( bAim )
             {
@@ -2198,8 +2211,9 @@ float J3DAPI sithWeapon_GetWeaponCollideSize(SithWeaponId typeId)
     return 0.0f;
 }
 
-int J3DAPI sithWeapon_IsLocalPlayerUnableToUseWeapon()
+int sithWeapon_IsLocalPlayerUnableToUseWeapon(void)
 {
+    // TODO: Why sithPlayer_g_pLocalPlayerThing is used? Verify if player thing could be passed instead to this function
     SITH_ASSERTREL(sithPlayer_g_pLocalPlayerThing);
     if ( sithPuppet_IsModeOnTrack(sithPlayer_g_pLocalPlayerThing, SITHPUPPETSUBMODE_PUSHPULLREADY) )
     {

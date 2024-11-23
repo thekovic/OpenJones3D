@@ -140,7 +140,7 @@ void J3DAPI sithFX_DestroyFairyDustDeluxe(SithThing* pThing)
         {
             if ( pFairydust->aDusts[i] && pFairydust->aDusts[i]->type != SITH_THING_FREE && (pFairydust->aDusts[i]->flags & SITH_TF_DESTROYED) == 0 )
             {
-                sithParticle_Remove(pFairydust->aDusts[i]);
+                sithParticle_DestroyParticle(pFairydust->aDusts[i]);
             }
 
             pFairydust->aDusts[i] = NULL;

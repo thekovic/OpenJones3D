@@ -19,13 +19,12 @@ void sithItem_InstallHooks(void)
     J3D_HOOKFUNC(sithItem_PlayerCollisionHandler);
     J3D_HOOKFUNC(sithItem_Initialize);
     J3D_HOOKFUNC(sithItem_SetItemTaken);
-    J3D_HOOKFUNC(sithItem_Remove);
+    J3D_HOOKFUNC(sithItem_DestroyItem);
     J3D_HOOKFUNC(sithItem_ParseArg);
 }
 
 void sithItem_ResetGlobals(void)
-{
-}
+{}
 
 int J3DAPI sithItem_PlayerCollisionHandler(SithThing* pItem, SithThing* pPlayer, SithCollision* pCollision, int a5)
 {
@@ -78,7 +77,7 @@ void J3DAPI sithItem_SetItemTaken(SithThing* pItem, const SithThing* pSrcThing, 
       || (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_MP) != 0 && stdComm_IsGameActive() )
     {
         // Re-spawn enabled, hide item for the time of respawn interval
-        // Fyi, re-spawning handled in sithItem_Remove
+        // Fyi, re-spawning handled in sithItem_DestroyItem
         pItem->flags |= SITH_TF_DISABLED; // hide item
         pItem->msecLifeLeft = (uint32_t)(pItem->thingInfo.itemInfo.secRespawnInterval * 1000.0f);
     }
@@ -88,10 +87,9 @@ void J3DAPI sithItem_SetItemTaken(SithThing* pItem, const SithThing* pSrcThing, 
     }
 }
 
-void J3DAPI sithItem_Remove(SithThing* pItem)
+void J3DAPI sithItem_DestroyItem(SithThing* pItem)
 {
     if ( stdComm_IsGameActive() && !stdComm_IsGameHost() )
-
     {
         pItem->msecLifeLeft = 0;
         return;
@@ -109,7 +107,7 @@ void J3DAPI sithItem_Remove(SithThing* pItem)
 
         sithThing_ExitSector(pItem);
         sithThing_SetPositionAndOrient(pItem, &pItem->thingInfo.itemInfo.pos, &pItem->orient);
-        sithThing_MoveToSector(pItem, pItem->thingInfo.itemInfo.pInSector, 1);
+        sithThing_SetSector(pItem, pItem->thingInfo.itemInfo.pInSector, 1);
 
         pItem->flags &= ~SITH_TF_DISABLED;
         pItem->msecLifeLeft = 0;
@@ -138,20 +136,24 @@ int J3DAPI sithItem_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum
     switch ( adjNum )
     {
         case SITHTHING_ARG_TYPEFLAGS:
+        {
             SithItemFlag iflags;
             if ( sscanf_s(pArg->argValue, "%x", &iflags) != 1 ) {
                 return 0; // error
             }
             pThing->thingInfo.itemInfo.flags = iflags;
             return 1;
+        }
 
         case SITHTHING_ARG_RESPAWN:
-            float spawnInterval = strtof(pArg->argValue, NULL);
+        {
+            float spawnInterval = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
             if ( errno == ERANGE ) { // Added
                 return 0; // error
             }
             pThing->thingInfo.itemInfo.secRespawnInterval = spawnInterval;
             return 1;
+        }
     };
 
     return 0; // error

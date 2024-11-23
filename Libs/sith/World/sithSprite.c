@@ -16,6 +16,7 @@ void sithSprite_InstallHooks(void)
     // J3D_HOOKFUNC(sithSprite_CNDWriteSpriteSection);
     // J3D_HOOKFUNC(sithSprite_CNDReadSpriteSection);
     // J3D_HOOKFUNC(sithSprite_FreeWorldSprites);
+    // J3D_HOOKFUNC(sithSprite_Load);
     // J3D_HOOKFUNC(sithSprite_AllocWorldSprites);
     // J3D_HOOKFUNC(sithSprite_Initialize);
     // J3D_HOOKFUNC(sithSprite_CacheFind);
@@ -38,9 +39,9 @@ void J3DAPI sithSprite_Shutdown()
     J3D_TRAMPOLINE_CALL(sithSprite_Shutdown);
 }
 
-void J3DAPI sithSprite_Update(SithThing* pThing)
+void J3DAPI sithSprite_Update(SithThing* pThing, uint32_t msecDeltaTime)
 {
-    J3D_TRAMPOLINE_CALL(sithSprite_Update, pThing);
+    J3D_TRAMPOLINE_CALL(sithSprite_Update, pThing, msecDeltaTime);
 }
 
 int J3DAPI sithSprite_Draw(SithThing* pThing)
@@ -71,6 +72,11 @@ int J3DAPI sithSprite_CNDReadSpriteSection(tFileHandle fh, SithWorld* pWorld)
 void J3DAPI sithSprite_FreeWorldSprites(SithWorld* pWorld)
 {
     J3D_TRAMPOLINE_CALL(sithSprite_FreeWorldSprites, pWorld);
+}
+
+rdSprite3* J3DAPI sithSprite_Load(SithWorld* pWorld, const char* pName)
+{
+    return J3D_TRAMPOLINE_CALL(sithSprite_Load, pWorld, pName);
 }
 
 int J3DAPI sithSprite_AllocWorldSprites(SithWorld* pWorld, int size)

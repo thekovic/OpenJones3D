@@ -853,7 +853,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                             sithCog_SurfaceSendMessage(pCollision->pSurfaceCollided, pThing, 8);
                         }
 
-                        sithThing_MoveToSector(pThing, pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector, 0);
+                        sithThing_SetSector(pThing, pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector, 0);
                         bCollided = memcmp(&curthPos, &pThing->pos, sizeof(curthPos)) != 0;
                     }
                     else
@@ -939,7 +939,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
 
                 rdVector_Copy3(&pThing->pos, &prevPos);
                 rdVector_Copy3(&dest, &v40);
-                sithThing_MoveToSector(pThing, pPrevSector, 0);
+                sithThing_SetSector(pThing, pPrevSector, 0);
             }
 
             for ( pAttached = pThing->pAttachedThing; pAttached; pAttached = pAttached->pNextAttachedThing )
@@ -954,7 +954,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
 
                     if ( pAttached->pInSector != pThing->pInSector )
                     {
-                        sithThing_MoveToSector(pAttached, pThing->pInSector, 0);
+                        sithThing_SetSector(pAttached, pThing->pInSector, 0);
                     }
                 }
             }

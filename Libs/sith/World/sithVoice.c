@@ -94,8 +94,7 @@ void sithVoice_InstallHooks(void)
 }
 
 void sithVoice_ResetGlobals(void)
-{
-}
+{}
 
 int sithVoice_Startup(void)
 {
@@ -642,6 +641,8 @@ void sithVoice_Draw(void)
          && (curTime > sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecShowEndTime) )
     {
         ++sithVoice_curSubtitleInfoNum;
+
+        // Fixed: Added bounds check and loop break, which fixes potential out of bounds read/write
         if ( sithVoice_curSubtitleInfoNum >= STD_ARRAYLEN(sithVoice_aSubtitleInfos) )
         {
             sithVoice_curSubtitleInfoNum = STD_ARRAYLEN(sithVoice_aSubtitleInfos) - 1;

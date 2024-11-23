@@ -28,8 +28,8 @@ int J3DAPI sithActor_ActorCollisionHandler(SithThing* pSrcThing, SithThing* pThi
 void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles);
 void J3DAPI sithActor_UpdateAimJoints(SithThing* pThing); // Added
 
-void J3DAPI sithActor_Destroy(SithThing* pActor);
-void J3DAPI sithActor_Remove(SithThing* pThing);
+void J3DAPI sithActor_DestroyActor(SithThing* pActor);
+void J3DAPI sithActor_DestroyCorpse(SithThing* pThing);
 int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
 
 // Helper hooking functions
