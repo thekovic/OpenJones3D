@@ -51,7 +51,7 @@ static const int JonesHud_aSoundFxIdxs[13] = { -1, 52, 54, 53, -1, 57, 56, 59, 6
 
 static const rdVector3 JonesHud_vecSelectedMenuItemScale = { 1.25f , 1.25f , 1.25f };
 
-static const tMenuItemOrientInfo JonesHud_aDfltMenuItemsOrients[JONESHUD_MAX_MENU_ITEMS] =
+static const tMenuItemOrientInfo JonesHud_aDfltMenuItemOrients[JONESHUD_MAX_MENU_ITEMS] =
 {
     { 1.1f, { { 0.0f }, { 270.0f }, { 0.0f } } },
     { 1.0f, { { 0.0f }, { 135.0f }, { 0.0f } } },

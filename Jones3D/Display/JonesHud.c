@@ -91,8 +91,10 @@ static const float JonesHud_invMenuDefaultZ = -0.102f;
 static float JonesHud_invMenuMinZ           = 0.0f;
 static float JonesHud_invMenuMaxZ           = 0.0f;
 
-static float JonesHud_screenHeightScalar = 0.0f;
-static float JonesHud_screenWidthScalar  = 0.0f;
+static float JonesHud_aspectRatioScale       = 0.0f; // Added
+static float JonesHud_heightAspectRatioScale = 0.0f;
+static float JonesHud_widthAspectRatioScale  = 0.0f;
+
 
 static int JonesHud_selectedWeaponID            = -1;
 static int JonesHud_selectedWeaponMenuItemID    = -1;
@@ -344,8 +346,8 @@ void JonesHud_Shutdown(void)
     JonesHud_pCloseMenuItem       = NULL;
     JonesHud_pCurInvChangedItem   = NULL;
 
-    JonesHud_screenWidthScalar    = 0.0f;
-    JonesHud_screenHeightScalar   = 0.0f;
+    JonesHud_widthAspectRatioScale    = 0.0f;
+    JonesHud_heightAspectRatioScale   = 0.0f;
     JonesHud_hCurSndChannel       = 0;
 
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_apMenuItems); ++i ) {
@@ -818,17 +820,19 @@ void JonesHud_Render(void) // maybe this function should be called something ele
 
 void J3DAPI JonesHud_Update(const SithWorld* pWorld)
 {
-    float prevWidthScalar = JonesHud_screenWidthScalar;
-    float prevHeighScalar = JonesHud_screenHeightScalar;
+    float prevWidthScalar = JonesHud_widthAspectRatioScale;
+    float prevHeighScalar = JonesHud_heightAspectRatioScale;
 
     uint32_t width, height;
     stdDisplay_GetBackBufferSize(&width, &height);
 
-    float wratio = (float)width / 640.0f; // NOTE: fixed screen height 640
-    JonesHud_screenWidthScalar = wratio;
+    float wratio = (float)width / RD_REF_WIDTH; // NOTE: fixed screen height 640
+    JonesHud_widthAspectRatioScale = wratio;
 
-    float hratio = (float)height / 480.0f; // NOTE: fixed screen height 480
-    JonesHud_screenHeightScalar = hratio;
+    float hratio = (float)height / RD_REF_HEIGHT; // NOTE: fixed screen height 480
+    JonesHud_heightAspectRatioScale = hratio;
+
+    JonesHud_aspectRatioScale = JonesHud_widthAspectRatioScale / JonesHud_heightAspectRatioScale;
 
     size_t curTime = stdPlatform_GetTimeMsec();
     int bCanvasUpdated = 0;
@@ -859,7 +863,7 @@ void J3DAPI JonesHud_Update(const SithWorld* pWorld)
     }
 
     JonesHud_msecTime = curTime;
-    if ( prevWidthScalar != JonesHud_screenWidthScalar || prevHeighScalar != JonesHud_screenHeightScalar )
+    if ( prevWidthScalar != JonesHud_widthAspectRatioScale || prevHeighScalar != JonesHud_heightAspectRatioScale )
     {
         JonesHud_UpdateHUDLayout(width, height);
         JonesHud_UpdateSinCosTable();
@@ -911,12 +915,12 @@ void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height)
 {
     JonesHud_healthIndAlpha = 1.0f;
 
-    // Fixed: Fixed HUD scaling of indicator by using only JonesHud_screenWidthScalar
+    // Fixed: Fixed HUD scaling of indicator by using only JonesHud_widthAspectRatioScale
     // These coords are all in screen size
-    JonesHud_healthIndRect.x      = JonesHud_screenWidthScalar * 24.0f;
-    JonesHud_healthIndRect.y      = (float)height - JonesHud_healthIndRect.x - JonesHud_screenWidthScalar * 60.0f; // Changed: Was using JonesHud_screenHeightScalar
-    JonesHud_healthIndRect.width  = JonesHud_screenWidthScalar * 60.0f;
-    JonesHud_healthIndRect.height = JonesHud_screenWidthScalar * 60.0f; // Changed: Was using JonesHud_screenHeightScalar
+    JonesHud_healthIndRect.x      = JonesHud_widthAspectRatioScale * 24.0f;
+    JonesHud_healthIndRect.y      = (float)height - JonesHud_healthIndRect.x - JonesHud_widthAspectRatioScale * 60.0f; // Changed: Was using JonesHud_heightAspectRatioScale
+    JonesHud_healthIndRect.width  = JonesHud_widthAspectRatioScale * 60.0f;
+    JonesHud_healthIndRect.height = JonesHud_widthAspectRatioScale * 60.0f; // Changed: Was using JonesHud_heightAspectRatioScale
 
     JonesHud_healthIndBarPos.x = JonesHud_healthIndRect.x + JonesHud_healthIndRect.width / 2.0f;
     JonesHud_healthIndBarPos.y = JonesHud_healthIndRect.y + JonesHud_healthIndRect.height / 2.0f;
@@ -934,28 +938,28 @@ void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height)
     JonesHud_enduranceIndBarPos.w = 0.0f;
 
     float hheight = (JonesHud_healthIndRect.height - 2.0f) / 2.0f;
-    JonesHud_healthIndScale = hheight - 7.0f * JonesHud_screenWidthScalar;
+    JonesHud_healthIndScale = hheight - 7.0f * JonesHud_widthAspectRatioScale;
 
-    JonesHud_enduranceIndScale = ((JonesHud_enduranceRect.height - 2.0f) / 2.0f) - 7.0f * JonesHud_screenWidthScalar; // Added
+    JonesHud_enduranceIndScale = ((JonesHud_enduranceRect.height - 2.0f) / 2.0f) - 7.0f * JonesHud_widthAspectRatioScale; // Added
 
     // Unused stuff
-    JonesHud_flt_55503C = 16.0f * JonesHud_screenHeightScalar;
-    JonesHud_flt_555038 = 16.0f * JonesHud_screenWidthScalar;
+    JonesHud_flt_55503C = 16.0f * JonesHud_heightAspectRatioScale;
+    JonesHud_flt_555038 = 16.0f * JonesHud_widthAspectRatioScale;
     JonesHud_flt_555034 = -JonesHud_flt_55503C;
 
     JonesHud_dword_554FDC = 0;
 
-    JonesHud_flt_554FE4 = 16.0f * JonesHud_screenHeightScalar;
-    JonesHud_flt_554FE0 = 16.0f * JonesHud_screenWidthScalar;
+    JonesHud_flt_554FE4 = 16.0f * JonesHud_heightAspectRatioScale;
+    JonesHud_flt_554FE0 = 16.0f * JonesHud_widthAspectRatioScale;
 
     // Fixed: Adjusted inventory menu position for wide screen resolutions. OG: invMenuBottomOffset was set to invMenuDefaultOffset
-    float adjustedAspect = ((float)height * (4.0f / 3.0f)) / (float)width;
+    float adjustedAspect = ((float)height * RD_REF_APECTRATIO) / (float)width;
     float adjustedZ      = JonesHud_invMenuDefaultZ * adjustedAspect;
-    float offset         = 0.05f * (1 - adjustedAspect); // Add a small offset to move it slightly up
-    JonesHud_invMenuMinZ =  adjustedZ + offset;
+    float offset         = -0.05f * (1 - adjustedAspect); // Add a small offset to move it slightly up
+    JonesHud_invMenuMinZ = adjustedZ + offset;
 }
 
-void J3DAPI JonesHud_MenuOpen()
+void JonesHud_MenuOpen(void)
 {
     if ( sithPlayer_g_pLocalPlayerThing && (!JonesHud_pMenuItemLinkedList || (JonesHud_hudState & 1) == 0) )
     {
@@ -972,7 +976,7 @@ void J3DAPI JonesHud_MenuOpen()
 
         JonesHud_selectedTreasuresMenuItemID = JONESHUD_MENU_TREASURE_CHEST;
         JonesHud_selectedItemsMenuItemID     = JONESHUD_MENU_INVITEM_ZIPPO;
-        JonesHud_selectedSystemMenuItemID   = JONESHUD_MENU_IQ;
+        JonesHud_selectedSystemMenuItemID    = JONESHUD_MENU_IQ;
         JonesHud_pCurSelectedMenuItem        = NULL;
         JonesHud_pMenuItemLinkedList         = NULL;
 
@@ -1791,7 +1795,7 @@ void JonesHud_MenuMoveLeft(void)
         if ( JonesHud_apMenuItems[pCurItem->nextLeftItemId] )
         {
             pLeftItem = JonesHud_apMenuItems[pCurItem->nextLeftItemId];
-            if ( (pLeftItem->flags & 1) != 0
+            if ( (pLeftItem->flags & 0x01) != 0
               && (pLeftItem->flags & 0x80) == 0
               && pLeftItem->pos.x == pLeftItem->endMovePos.x )
             {
@@ -1821,7 +1825,7 @@ void JonesHud_MenuMoveRight(void)
             if ( JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextRightItemId] )
             {
                 pRightItem = JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextRightItemId];
-                if ( (pRightItem->flags & 1) != 0
+                if ( (pRightItem->flags & 0x01) != 0
                   && (pRightItem->flags & 0x80) == 0
                   && pRightItem->pos.x == pRightItem->endMovePos.x )
                 {
@@ -1837,7 +1841,7 @@ void JonesHud_MenuMoveRight(void)
         }
     }
 
-    else if ( (JonesHud_pMenuItemLinkedList->flags & 1) != 0
+    else if ( (JonesHud_pMenuItemLinkedList->flags & 0x01) != 0
            && (JonesHud_pMenuItemLinkedList->flags & 0x80) == 0
            && JonesHud_pMenuItemLinkedList->pos.x == JonesHud_pMenuItemLinkedList->endMovePos.x )
     {
@@ -1851,7 +1855,7 @@ void JonesHud_MenuMoveRight(void)
     }
 }
 
-void J3DAPI JonesHud_MenuMoveDown()
+void JonesHud_MenuMoveDown(void)
 {
     JonesHudMenuItem* pCurItem;
     JonesHudMenuItem* pDownItem;
@@ -1871,14 +1875,14 @@ void J3DAPI JonesHud_MenuMoveDown()
 
         JonesHud_SetSelectedMenuItem(pCurItem->id, pDownItem);
 
-        pDownItem->flags |= 0xAu;
-        pCurItem->flags &= ~2u;
+        pDownItem->flags |= 0x0A;
+        pCurItem->flags &= ~0x02;
 
         pDownItem->nextLeftItemId = pCurItem->nextLeftItemId;
         pDownItem->nextRightItemId = pCurItem->nextRightItemId;
 
         pCurItem->nextRightItemId = -1;
-        pCurItem->nextLeftItemId = -1;
+        pCurItem->nextLeftItemId  = -1;
         if ( pDownItem->nextLeftItemId != -1 && JonesHud_apMenuItems[pDownItem->nextLeftItemId] )
         {
             JonesHud_apMenuItems[pDownItem->nextLeftItemId]->nextRightItemId = pCurItem->nextDownItemId;
@@ -1909,14 +1913,14 @@ void J3DAPI JonesHud_MenuMoveDown()
             pDownItem->flags |= 0x8;
 
             JonesHud_StartItemTranslation(pDownItem, JonesHud_msecMenuItemMoveDuration, 0.064999998f, 1);// 0.064999998f - 1 / 15.384f
-            if ( (JonesHud_apMenuItems[pDownItem->nextUpItemId]->flags & 1) == 0
+            if ( (JonesHud_apMenuItems[pDownItem->nextUpItemId]->flags & 0x01) == 0
               || pDownItem->id == JonesHud_selectedWeaponMenuItemID
               || pDownItem->id == JonesHud_selectedItemsMenuItemID
               || pDownItem->id == JonesHud_selectedSystemMenuItemID
               || pDownItem->id == JonesHud_selectedTreasuresMenuItemID )
             {
-                pDownItem->flags |= 8u;
-                pDownItem->flags &= ~1u;
+                pDownItem->flags |=  0x08;
+                pDownItem->flags &= ~0x01;
                 break;
             }
         }
@@ -1928,8 +1932,8 @@ void J3DAPI JonesHud_MenuMoveDown()
         JonesHud_pCurSelectedMenuItem->pos.z = JonesHud_pCurSelectedMenuItem->pos.z - 0.064999998f;
 
         JonesHud_StartItemTranslation(JonesHud_pCurSelectedMenuItem, JonesHud_msecMenuItemMoveDuration, 0.064999998f, 1);
-        JonesHud_pCurSelectedMenuItem->flags &= ~1u;// dont rotate anim
-        JonesHud_hudState |= 8u;
+        JonesHud_pCurSelectedMenuItem->flags &= ~0x01;// dont rotate anim
+        JonesHud_hudState |= 0x08;
     }
 }
 
@@ -2067,9 +2071,9 @@ void JonesHud_MenuMoveUp(void)
             pCurItem->endMovePos.y = pDownItemPos->y;
             pCurItem->endMovePos.z = pDownItemPos->z;
 
-            pCurItem->pyr.pitch = JonesHud_aDfltMenuItemsOrients[pCurItem->id].pyr.pitch;
-            pCurItem->pyr.roll  = JonesHud_aDfltMenuItemsOrients[pCurItem->id].pyr.roll;
-            pCurItem->pyr.yaw   = JonesHud_aDfltMenuItemsOrients[pCurItem->id].pyr.yaw;
+            pCurItem->pyr.pitch = JonesHud_aDfltMenuItemOrients[pCurItem->id].pyr.pitch;
+            pCurItem->pyr.roll  = JonesHud_aDfltMenuItemOrients[pCurItem->id].pyr.roll;
+            pCurItem->pyr.yaw   = JonesHud_aDfltMenuItemOrients[pCurItem->id].pyr.yaw;
         }
         else
         {
@@ -2082,9 +2086,9 @@ void JonesHud_MenuMoveUp(void)
             pCurItem->endMovePos.z = pCurItem->pos.z;
             pCurItem->endMovePos.z = pCurItem->endMovePos.z - 0.064999998f;
 
-            pUpItem->pyr.pitch = JonesHud_aDfltMenuItemsOrients[pUpItem->id].pyr.x;
-            pUpItem->pyr.roll  = JonesHud_aDfltMenuItemsOrients[pUpItem->id].pyr.roll;
-            pUpItem->pyr.yaw   = JonesHud_aDfltMenuItemsOrients[pUpItem->id].pyr.yaw;
+            pUpItem->pyr.pitch = JonesHud_aDfltMenuItemOrients[pUpItem->id].pyr.x;
+            pUpItem->pyr.roll  = JonesHud_aDfltMenuItemOrients[pUpItem->id].pyr.roll;
+            pUpItem->pyr.yaw   = JonesHud_aDfltMenuItemOrients[pUpItem->id].pyr.yaw;
             pUpItem->flags &= ~0x01;
         }
 
@@ -2176,11 +2180,6 @@ int J3DAPI JonesHud_GetKey(unsigned int keyId)
 
 int JonesHud_InitializeMenu(void)
 {
-    JonesHudMenuItem* pItem;
-    int typeId;
-    rdModel3* pItemIcon3;
-
-
     if ( JonesHud_pMenuItemLinkedList )
     {
         STDLOG_ERROR("Menu already initialized.\n");
@@ -2191,7 +2190,7 @@ int JonesHud_InitializeMenu(void)
     {
         if ( !JonesHud_apMenuItems[i] && JonesHud_apMenuIconModelNames[i] )
         {
-            pItemIcon3 = sithModel_GetModel(JonesHud_apMenuIconModelNames[i]);
+            rdModel3* pItemIcon3 = sithModel_GetModel(JonesHud_apMenuIconModelNames[i]);
             if ( pItemIcon3 )
             {
                 JonesHud_apMenuItems[i] = JonesHud_NewMenuItem(pItemIcon3);
@@ -2214,8 +2213,8 @@ int JonesHud_InitializeMenu(void)
     // Initialize inventory menu items
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_apMenuItems); ++i )
     {
-        pItem = JonesHud_apMenuItems[i];
-        for ( typeId = 0; pItem && pItem->inventoryID == -1 && typeId < 200; ++typeId )
+        JonesHudMenuItem* pItem = JonesHud_apMenuItems[i];
+        for ( size_t typeId = 0; pItem && pItem->inventoryID == -1 && typeId < STD_ARRAYLEN(sithInventory_g_aTypes); ++typeId )
         {
             if ( sithInventory_g_aTypes[typeId].pInvIconModel == pItem->prdIcon->data.pModel3 )
             {
@@ -2226,7 +2225,6 @@ int JonesHud_InitializeMenu(void)
     }
 
     return 1;
-
 }
 
 void JonesHud_InitializeMenuSounds(void)
@@ -2309,10 +2307,10 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                   : (v9 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED),
                   v9) )
             {
-                if ( JonesHud_aDfltMenuItemsOrients[pItem->id].pyr.yaw != pItem->pyr.yaw )
+                if ( JonesHud_aDfltMenuItemOrients[pItem->id].pyr.yaw != pItem->pyr.yaw )
                 {
                     float fyaw = fmodf(pItem->pyr.yaw, 360.0f);
-                    float dyaw = fyaw - JonesHud_aDfltMenuItemsOrients[pItem->id].pyr.yaw;
+                    float dyaw = fyaw - JonesHud_aDfltMenuItemOrients[pItem->id].pyr.yaw;
                     if ( dyaw < 0.0f )
                     {
                         dyaw = dyaw + 360.0f;
@@ -2324,7 +2322,7 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                     }
                     else
                     {
-                        pItem->pyr.yaw = JonesHud_aDfltMenuItemsOrients[pItem->id].pyr.yaw;
+                        pItem->pyr.yaw = JonesHud_aDfltMenuItemOrients[pItem->id].pyr.yaw;
                     }
                 }
             }
@@ -2549,7 +2547,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
         rdMatrix_PostScale34(&placement, &vecIconRadiusScale);
 
         rdVector3 vecScale;
-        vecScale.z = JonesHud_aDfltMenuItemsOrients[pItem->id].scale;
+        vecScale.z = JonesHud_aDfltMenuItemOrients[pItem->id].scale * JonesHud_aspectRatioScale; // Added: Multiply scale by aspect ratio scale
         vecScale.y = vecScale.z;
         vecScale.x = vecScale.z;
         rdMatrix_PostScale34(&placement, &vecScale);
@@ -2560,7 +2558,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
             {
                 // Scope draws selected item text 
                 // 
-                //float v26 = 20.0f * JonesHud_screenHeightScalar; // Unused
+                //float v26 = 20.0f * JonesHud_heightAspectRatioScale; // Unused
 
                 rdVector3 pos;
                 rdVector_Copy3(&pos, &pItem->pos);
@@ -2588,6 +2586,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                 const char* pItemName = bDisabled
                     ? jonesString_GetString("JONES_STR_INV_NOUSE")
                     : jonesString_GetString(JonesHud_apItemNames[pItem->id]);
+
                 if ( pItemName )
                 {
                     char aItemName[512] = { 0 };
@@ -2644,9 +2643,9 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                     }
 
                     float textX = pos.x;
-                    float textY = (float)((int32_t)pos.y - (int32_t)(70.0f * JonesHud_screenWidthScalar)); // Changed: Was multiplying with JonesHud_screenHeighthScalar. Note, might need further adjustments
-                    textX /= (JonesHud_screenWidthScalar * RD_REF_WIDTH);
-                    textY /= (JonesHud_screenHeightScalar * RD_REF_HEIGHT);
+                    float textY = pos.y - (70.0f * JonesHud_heightAspectRatioScale);
+                    textX /= (JonesHud_widthAspectRatioScale * RD_REF_WIDTH);
+                    textY /= (JonesHud_heightAspectRatioScale * RD_REF_HEIGHT);
                     rdFont_DrawTextLineClipped(aItemText, textX, textY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pMenuFont, RDFONT_ALIGNCENTER);
                 }
             }
@@ -2664,16 +2663,17 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
             }
         }
 
+        // Rotate itme matrix by RPY
         rdVector3 pyrOrient = { 0 };
-        pyrOrient.z = pItem->pyr.z;
+        pyrOrient.roll = pItem->pyr.roll;
         rdMatrix_PostRotate34(&placement, &pyrOrient);
 
         memset(&pyrOrient, 0, sizeof(pyrOrient));
-        pyrOrient.x = pItem->pyr.x;
+        pyrOrient.pitch = pItem->pyr.pitch;
         rdMatrix_PostRotate34(&placement, &pyrOrient);
 
         memset(&pyrOrient, 0, sizeof(pyrOrient));
-        pyrOrient.y = pItem->pyr.y;
+        pyrOrient.yaw = pItem->pyr.yaw;
         rdMatrix_PostRotate34(&placement, &pyrOrient);
 
         rdVector_Copy3(&placement.dvec, &pItem->pos);
@@ -2779,7 +2779,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
         rdModel3_Draw(pItem->prdIcon, &placement);
 
         pItem->alpha = color.alpha;
-        color.alpha = oalpha;
+        color.alpha  = oalpha;
         rdModel3_SetThingColor(pItem->prdIcon, &color);
     }
 }
@@ -2836,10 +2836,7 @@ void J3DAPI JonesHud_MenuActivateItem()
             }
             else
             {
-                sithWeapon_SelectWeapon(
-                    sithPlayer_g_pLocalPlayerThing,
-                    (SithWeaponId)JonesHud_pCurSelectedMenuItem->inventoryID);
-
+                sithWeapon_SelectWeapon(sithPlayer_g_pLocalPlayerThing, (SithWeaponId)JonesHud_pCurSelectedMenuItem->inventoryID);
                 JonesHud_selectedWeaponID = -1;
             }
         }
@@ -3082,9 +3079,7 @@ void J3DAPI JonesHud_ResetMenuItems()
             JonesHud_apMenuItems[i]->nextUpItemId     = -1;
             JonesHud_apMenuItems[i]->nextLeftItemId   = -1;
 
-            JonesHud_apMenuItems[i]->pyr.x = JonesHud_aDfltMenuItemsOrients[JonesHud_apMenuItems[i]->id].pyr.x;
-            JonesHud_apMenuItems[i]->pyr.y = JonesHud_aDfltMenuItemsOrients[JonesHud_apMenuItems[i]->id].pyr.y;
-            JonesHud_apMenuItems[i]->pyr.z = JonesHud_aDfltMenuItemsOrients[JonesHud_apMenuItems[i]->id].pyr.z;
+            rdVector_Copy3(&JonesHud_apMenuItems[i]->pyr, &JonesHud_aDfltMenuItemOrients[JonesHud_apMenuItems[i]->id].pyr);
 
             JonesHud_apMenuItems[i]->startMovePos.x = 0.0f;
             JonesHud_apMenuItems[i]->startMovePos.y = 0.0f;
@@ -3420,7 +3415,7 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
         if ( JonesHud_pCurInvChangedItem )
         {
             JonesHud_FreeMenuItem(JonesHud_pCurInvChangedItem);
-            JonesHud_pCurInvChangedItem = 0;
+            JonesHud_pCurInvChangedItem = NULL;
         }
 
         for ( itemID = 0; itemID < STD_ARRAYLEN(JonesHud_apMenuItems); ++itemID )
@@ -3484,22 +3479,20 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
             // TODO: make global vars for below assignment of constant values
 
             JonesHud_pCurInvChangedItem->endMovePos.x = -0.167f;
-            JonesHud_pCurInvChangedItem->endMovePos.y = 0.0099999998f;
+            JonesHud_pCurInvChangedItem->endMovePos.y = 0.0099999998f * JonesHud_aspectRatioScale;
             JonesHud_pCurInvChangedItem->endMovePos.z = JonesHud_invMenuMinZ; // Changed: from fixed constant -0.102f
 
-            JonesHud_pCurInvChangedItem->endMovePos.x = -0.15800001f;// ?? few lines up was set to -0.167f
+            JonesHud_pCurInvChangedItem->endMovePos.x = -0.15800001f * JonesHud_aspectRatioScale;// ?? few lines up was set to -0.167f // Changed: Fix end position by multiplying it with aspect scale
 
-            JonesHud_pCurInvChangedItem->pos.x = -0.167f;
+            JonesHud_pCurInvChangedItem->pos.x = -0.167f;      // Note not really necessary to init x here as it's assigned few lines lower
             JonesHud_pCurInvChangedItem->pos.y = 0.0099999998f;
             JonesHud_pCurInvChangedItem->pos.z = JonesHud_invMenuMinZ; // Changed: from fixed constant -0.102f
 
-            JonesHud_pCurInvChangedItem->startMovePos.x = -0.167f;
+            JonesHud_pCurInvChangedItem->startMovePos.x = -0.167f;     // Note not really necessary to init x here as it's assigned few lines lower
             JonesHud_pCurInvChangedItem->startMovePos.y = 0.0099999998f;
             JonesHud_pCurInvChangedItem->startMovePos.z = JonesHud_invMenuMinZ; // Changed: from fixed constant -0.102f
 
-            JonesHud_pCurInvChangedItem->pyr.pitch = JonesHud_aDfltMenuItemsOrients[JonesHud_pCurInvChangedItem->id].pyr.pitch;
-            JonesHud_pCurInvChangedItem->pyr.yaw   = JonesHud_aDfltMenuItemsOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw;
-            JonesHud_pCurInvChangedItem->pyr.roll  = JonesHud_aDfltMenuItemsOrients[JonesHud_pCurInvChangedItem->id].pyr.roll;
+            rdVector_Copy3(&JonesHud_pCurInvChangedItem->pyr, &JonesHud_aDfltMenuItemOrients[JonesHud_pCurInvChangedItem->id].pyr);
 
             if ( JonesHud_pCurInvChangedItem->id >= JONESHUD_MENU_TREASURE_COINS_GOLD
               && JonesHud_pCurInvChangedItem->id <= JONESHUD_MENU_TREASURE_CASHBOX )
@@ -3513,13 +3506,13 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
               && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0
               || JonesHud_bIMPState )
             {
-                JonesHud_pCurInvChangedItem->pos.x = 0.1026f;
-                JonesHud_pCurInvChangedItem->startMovePos.x = 0.1026f;
+                JonesHud_pCurInvChangedItem->pos.x = 0.1026f * JonesHud_aspectRatioScale; // Changed: Fix current position by multiplying it with aspect scale
+                JonesHud_pCurInvChangedItem->startMovePos.x = 0.1026f * JonesHud_aspectRatioScale; // Changed: Fix start position by multiplying with aspect scale
             }
             else
             {
-                JonesHud_pCurInvChangedItem->pos.x = 0.15260001f;
-                JonesHud_pCurInvChangedItem->startMovePos.x = 0.15260001f;
+                JonesHud_pCurInvChangedItem->pos.x = 0.15260001f * JonesHud_aspectRatioScale; // Changed: Fix current position by multiplying it with aspect scale
+                JonesHud_pCurInvChangedItem->startMovePos.x = 0.15260001f * JonesHud_aspectRatioScale; // Changed: Fix start position by multiplying with aspect scale
             }
 
             if ( JonesHud_pCurInvChangedItem->id >= JONESHUD_MENU_TREASURE_COINS_GOLD
@@ -3549,14 +3542,14 @@ void JonesHud_RenderInventoryItemChange(void)
         JonesHud_pCurInvChangedItem->pyr.yaw += (float)JonesHud_msecDeltaTime * 16.0f / 50.0f;
 
     draw_icon:
-        JonesHud_DrawMenuItemIcon(JonesHud_pCurInvChangedItem, 1.0f);
+        JonesHud_RenderChangedItem(JonesHud_pCurInvChangedItem, 1.0f);
         return;
     }
 
     // Rotate item to final orientation
     if ( (JonesHud_pCurInvChangedItem->flags & 0x40) == 0 )
     {
-        if ( JonesHud_aDfltMenuItemsOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw == JonesHud_pCurInvChangedItem->pyr.yaw ) // Is it at final orientation
+        if ( JonesHud_aDfltMenuItemOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw == JonesHud_pCurInvChangedItem->pyr.yaw ) // Is it at final orientation
         {
             JonesHud_pCurInvChangedItem->flags |= 0x40u;
             JonesHud_pCurInvChangedItem->msecMoveDelta = 0;
@@ -3564,7 +3557,7 @@ void JonesHud_RenderInventoryItemChange(void)
         else
         {
             float fyaw = fmodf(JonesHud_pCurInvChangedItem->pyr.yaw, 360.0f);
-            float dyaw = fyaw - JonesHud_aDfltMenuItemsOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw;
+            float dyaw = fyaw - JonesHud_aDfltMenuItemOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw;
             if ( dyaw < 0.0f )
             {
                 dyaw = dyaw + 360.0f;
@@ -3583,7 +3576,7 @@ void JonesHud_RenderInventoryItemChange(void)
             }
             else
             {
-                JonesHud_pCurInvChangedItem->pyr.yaw       = JonesHud_aDfltMenuItemsOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw;
+                JonesHud_pCurInvChangedItem->pyr.yaw       = JonesHud_aDfltMenuItemOrients[JonesHud_pCurInvChangedItem->id].pyr.yaw;
                 JonesHud_pCurInvChangedItem->msecMoveDelta = 0;
 
                 /*  flags = JonesHud_pCurInvChangedItem->flags;
@@ -3611,7 +3604,6 @@ void JonesHud_RenderInventoryItemChange(void)
         JonesHud_pCurInvChangedItem = NULL;
         return;
     }
-
 
     JonesHud_pCurInvChangedItem->msecMoveDelta += JonesHud_msecDeltaTime;
     JonesHud_pCurInvChangedItem->msecMoveDelta *= 3;// ??
@@ -3681,25 +3673,22 @@ void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scal
         return;
     }
 
-    rdVector3 pos;
-    memset(&pos, 0, sizeof(pos));
+    rdMatrix34 placement = rdroid_g_identMatrix34;
+    //memcpy(&placement, &rdroid_g_identMatrix34, sizeof(placement));
 
-    rdMatrix34 placement;
-    memcpy(&placement, &rdroid_g_identMatrix34, sizeof(placement));
-
-    rdVector3 vecScale;
-    vecScale.z = 0.018204151f / pItem->prdIcon->data.pModel3->size;// 0.018204151f - 1 / 54.9325261f
-    vecScale.y = vecScale.z;
-    vecScale.x = vecScale.z;
-    rdMatrix_PostScale34(&placement, &vecScale);
+    rdVector3 svec;
+    svec.z = 0.018204151f / pItem->prdIcon->data.pModel3->size;// 0.018204151f - 1 / 54.9325261f
+    svec.y = svec.z;
+    svec.x = svec.z;
+    rdMatrix_PostScale34(&placement, &svec);
     rdMatrix_PostScale34(&placement, &JonesHud_vecSelectedMenuItemScale);
 
-    vecScale.z = JonesHud_aDfltMenuItemsOrients[pItem->id].scale;
-    vecScale.y = vecScale.z;
-    vecScale.x = vecScale.z;
-    rdMatrix_PostScale34(&placement, &vecScale);
+    svec.z = JonesHud_aDfltMenuItemOrients[pItem->id].scale * JonesHud_aspectRatioScale; // Added: Multiply scale by aspect ratio scale
+    svec.y = svec.z;
+    svec.x = svec.z;
+    rdMatrix_PostScale34(&placement, &svec);
 
-    v7 = 0.018204151f * 1.25f * vecScale.x;
+    v7 = 0.018204151f * 1.25f * svec.x;
     if ( v7 > 0.0154452f )
     {
         v5 = (v7 - 0.0154452f) * scale;
@@ -3714,26 +3703,27 @@ void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scal
         rdMatrix_PostScale34(&placement, &vec);
     }
 
-    memset(&pos, 0, sizeof(pos));
-    pos.z = pItem->pyr.z;
-    rdMatrix_PostRotate34(&placement, &pos);
+    // RPY rotate
+    rdVector3 tvec;
+    memset(&tvec, 0, sizeof(tvec));
+    tvec.roll = pItem->pyr.roll;
+    rdMatrix_PostRotate34(&placement, &tvec);
 
-    memset(&pos, 0, sizeof(pos));
-    pos.x = pItem->pyr.x;
-    rdMatrix_PostRotate34(&placement, &pos);
+    memset(&tvec, 0, sizeof(tvec));
+    tvec.pitch = pItem->pyr.pitch;
+    rdMatrix_PostRotate34(&placement, &tvec);
 
-    memset(&pos, 0, sizeof(pos));
-    pos.y = pItem->pyr.y;
-    rdMatrix_PostRotate34(&placement, &pos);
+    memset(&tvec, 0, sizeof(tvec));
+    tvec.yaw = pItem->pyr.yaw;
+    rdMatrix_PostRotate34(&placement, &tvec);
 
-    memset(&pos, 0, sizeof(pos));
-    rdVector_Copy3(&pos, &pItem->pos);
+    memset(&tvec, 0, sizeof(tvec));
+    rdVector_Copy3(&tvec, &pItem->pos);
 
-    pos.x = pos.x - (vecScale.x - 1.0f) * 0.75f * 0.0242722f;
-
-    placement.dvec.x = pos.x;
-    placement.dvec.y = pos.y;
-    placement.dvec.z = pos.z;
+    tvec.x = tvec.x - (svec.x - 1.0f) * 0.75f * 0.0242722f;
+    placement.dvec.x = tvec.x;
+    placement.dvec.y = tvec.y;
+    placement.dvec.z = tvec.z;
     rdModel3_Draw(pItem->prdIcon, &placement);
 }
 
@@ -4276,7 +4266,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                         break;
 
                     case 4: // icon image 
-                        if ( JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] < (-64.0f * JonesHud_screenWidthScalar) )
+                        if ( JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] < (-64.0f * JonesHud_widthAspectRatioScale) )
                         {
                             ++JonesHud_creditsCurIdx;
                         }
@@ -4526,8 +4516,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 {
                     JonesHudRect rect;
                     rect.y = JonesHud_aCreditsCurPosY[i];
-                    rect.width  = 64.0f * JonesHud_screenWidthScalar;
-                    rect.height = 64.0f * JonesHud_screenWidthScalar;
+                    rect.width  = 64.0f * JonesHud_widthAspectRatioScale;
+                    rect.height = 64.0f * JonesHud_widthAspectRatioScale;
                     if ( i == JonesHud_creditsCurMatIdx + 1 && JonesHud_creditsCurMatIdx > 0 )
                     {
                         rect.x = (float)((JonesHud_creditsCanvasWidth - rect.height) / 2 + rect.height);
