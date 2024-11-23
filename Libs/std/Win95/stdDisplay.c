@@ -376,7 +376,7 @@ void stdDisplay_Close(void)
 {
     if ( !stdDisplay_bStartup )
     {
-        STDLOG_ERROR("stdDisplay_Close when not started.");
+        STDLOG_ERROR("stdDisplay_Close when not started.\n");
         return;
     }
 
