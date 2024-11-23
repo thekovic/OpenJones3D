@@ -4,6 +4,7 @@
 #include <rdroid/Engine/rdMaterial.h>
 
 #include <sith/RTI/symbols.h>
+#include <sith/World/sithModel.h>
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdConffile.h>
@@ -14,8 +15,9 @@
 #include <std/Win95/std3D.h>
 #include <std/Win95/stdDisplay.h>
 
-#define SITHMATERIAL_TABLESIZE       1024u
-#define SITHMATERIAL_EXTRABUFFERSIZE 64u
+#define SITHMATERIAL_TABLESIZE               1024u
+#define SITHMATERIAL_EXTRABUFFERSIZE          64u
+#define SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS 32u // Added
 
 static tHashTable* sithMaterial_pHashtable = NULL; // Added: Init to 0
 
@@ -44,14 +46,14 @@ void sithMaterial_ResetGlobals(void)
 
 int sithMaterial_Startup(void)
 {
-    // TODO: maybe add check for system already started
+    // TODO: maybe add check for system already being started
     sithMaterial_pHashtable = stdHashtbl_New(SITHMATERIAL_TABLESIZE);
     return sithMaterial_pHashtable == NULL;
 }
 
 void sithMaterial_Shutdown(void)
 {
-    // TODO: maybe add check for system already shut down 
+    // TODO: maybe add check for system already being shut down 
 
     if ( sithMaterial_pHashtable )
     {
@@ -159,7 +161,7 @@ int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    size_t  curMatNum = 0;
+    size_t curMatNum = 0;
     while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         rdMaterial* pMat = sithMaterial_Load(stdConffile_g_entry.aArgs[1].argValue);
@@ -174,7 +176,8 @@ int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
         sithWorld_UpdateLoadProgress(progress);
     }
 
-    if ( pWorld->sizeMaterials != (curMatNum + SITHMATERIAL_EXTRABUFFERSIZE) && pWorld->sizeMaterials != curMatNum )// TODO: remove this buffer size limitation
+    const size_t extraBuf = SITHMATERIAL_EXTRABUFFERSIZE + ((numMaterials < pWorld->sizeMaterials) ? SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS : 0); // Changed: Adds SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS if allocated size > requested size
+    if ( pWorld->sizeMaterials != (curMatNum + extraBuf) && pWorld->sizeMaterials != curMatNum )// TODO: remove this buffer size limitation
     {
         return 1;
     }
@@ -387,7 +390,6 @@ int J3DAPI sithMaterial_LoadMaterialsBinary(tFileHandle fh, SithWorld* pWorld)
         goto error;
     }
 
-
     // Now construct materials form mat infos and pixeldata
 
     size_t worldMatIdx = 0;
@@ -591,6 +593,12 @@ rdMaterial* J3DAPI sithMaterial_GetMaterialByIndex(int index)
 int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMaterials)
 {
     SITH_ASSERTREL(pWorld->aMaterials == ((void*)0));
+
+    // Added: Make sure the material buffer is enough big to load in extra textures of original HD models.
+    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 && sithModel_IsHiPolyEnabled() )
+    {
+        numMaterials += SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS;
+    }
 
     pWorld->aMaterials = (rdMaterial*)STDMALLOC(sizeof(rdMaterial) * numMaterials);
     if ( !pWorld->aMaterials )
