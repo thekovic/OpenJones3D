@@ -668,6 +668,8 @@ void J3DAPI sithCamera_SetPOVShake(const rdVector3* posOffset, const rdVector3* 
 
 SithSector* J3DAPI sithCamera_SearchSectorInRadius(int a1, SithSector* pSector, const rdVector3* startPos, rdVector3* endPos, float unused, int flags)
 {
+    /* Function searches for collision that blocks camera movement */
+
     J3D_UNUSED(a1);
     J3D_UNUSED(unused);
 
@@ -701,9 +703,10 @@ SithSector* J3DAPI sithCamera_SearchSectorInRadius(int a1, SithSector* pSector, 
             && pCollision->pThingCollided->type != SITH_THING_WEAPON)
                && ((pCollision->type & SITHCOLLISION_THING) == 0 || pCollision->pThingCollided != sithPlayer_g_pLocalPlayerThing) )
         {
-            endPos->x = pCollision->distance * moveNorm.x + startPos->x;
+            /*endPos->x = pCollision->distance * moveNorm.x + startPos->x;
             endPos->y = pCollision->distance * moveNorm.y + startPos->y;
-            endPos->z = pCollision->distance * moveNorm.z + startPos->z;
+            endPos->z = pCollision->distance * moveNorm.z + startPos->z;*/
+            rdVector_ScaleAdd3(endPos, &moveNorm, pCollision->distance, startPos);
             break;
         }
     }

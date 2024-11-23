@@ -703,7 +703,7 @@ void J3DAPI sithCogExec_FunctionCallOp(SithCog* pCog)
       && value.type == SITHCOG_VALUE_SYMBOLID
       && (pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, value.val.intValue)) != 0
       && pSymbol->val.type == SITHCOG_VALUE_POINTER
-      && (pfCogFunction = (SithCogFunctionType)pSymbol->val.val.pointerValue) != 0 )
+      && (pfCogFunction = (SithCogFunctionType)pSymbol->val.val.pointerValue) != NULL )
     {
         pfCogFunction(pCog);
     }
