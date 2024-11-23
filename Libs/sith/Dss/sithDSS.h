@@ -98,6 +98,7 @@ typedef enum eSithDSSType
     SITHDSS_UNKNOWN_44          = 44,
     SITHDSS_VOICESTATE          = 45,
     SITHDSS_VEHICLECONTROLSTATE = 46,
+    SITHDSS_HUDSTATE            = 47,
     SITHDSS_SYNCWPNT            = 48,
     SITHDSS_SYNCSEENSECTORS     = 49,
 } SithDSSType;

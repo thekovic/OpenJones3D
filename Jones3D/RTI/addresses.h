@@ -145,7 +145,7 @@
 #define JonesMain_IntroMovieBlt32_ADDR 0x0041F900
 #define JonesMain_Assert_ADDR 0x0041FA30
 #define JonesMain_BindInventoryControlKeys_ADDR 0x0041FAF0
-#define JonesMain_ResetHUD_ADDR 0x0041FB20
+#define JonesMain_InitializeHUD_ADDR 0x0041FB20
 #define JonesMain_SaveHUD_ADDR 0x0041FB50
 #define JonesMain_RestoreHUD_ADDR 0x0041FBA0
 #define JonesMain_GetCurrentLevelNum_ADDR 0x0041FC00

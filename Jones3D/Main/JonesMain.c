@@ -2,23 +2,32 @@
 #include <j3dcore/j3dhook.h>
 
 #include <Jones3D/Display/JonesHud.h>
+#include <Jones3D/Main/jonesString.h>
+#include <Jones3D/Play/jonesCog.h>
 #include <Jones3D/RTI/symbols.h>
 
 #include <rdroid/Raster/rdCache.h>
 
+#include <sith/DSS/sithDSS.h>
 #include <sith/DSS/sithGamesave.h>
+#include <sith/Devices/sithComm.h>
 #include <sith/Devices/sithSoundMixer.h>
+#include <sith/Engine/sithRender.h>
+#include <sith/World/sithModel.h>
 #include <sith/World/sithWorld.h>
 
 #include <sound/Sound.h>
 
 #include <std/General/std.h>
+#include <std/General/stdFileUtil.h>
+#include <std/General/stdMath.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/std3D.h>
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
 
 #include <wkernel/wkernel.h>
+#include <w32util/wuRegistry.h>
 
 #define JonesMain_curGamesaveState J3D_DECL_FAR_VAR(JonesMain_curGamesaveState, int)
 #define JonesMain_aOpenMenuKeyIds J3D_DECL_FAR_ARRAYVAR(JonesMain_aOpenMenuKeyIds, int(*)[8])
@@ -63,11 +72,18 @@
 #define JonesMain_pfProcess J3D_DECL_FAR_VAR(JonesMain_pfProcess, JonesMainProcessFunc)
 
 
-#define JonesMain_curLevelNum J3D_DECL_FAR_VAR(JonesMain_curLevelNum, int)
+#define JonesMain_curLevelNum J3D_DECL_FAR_VAR(JonesMain_curLevelNum, size_t)
 
 
 #define JonesMain_state J3D_DECL_FAR_VAR(JonesMain_state, JonesState)
 
+
+INT_PTR CALLBACK JonesMain_DevDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig);
+void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam);
+void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig);
+void J3DAPI JonesMain_DevDialogUpdateRadioButtons(HWND hDlg, const JonesState* pState);
+bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSettings, size_t bpp);
 
 void JonesMain_InstallHooks(void)
 {
@@ -122,20 +138,20 @@ void JonesMain_InstallHooks(void)
     // J3D_HOOKFUNC(JonesMain_IntroMovieBlt32);
     // J3D_HOOKFUNC(JonesMain_Assert);
     // J3D_HOOKFUNC(JonesMain_BindInventoryControlKeys);
-    // J3D_HOOKFUNC(JonesMain_ResetHUD);
-    // J3D_HOOKFUNC(JonesMain_SaveHUD);
-    // J3D_HOOKFUNC(JonesMain_RestoreHUD);
-    // J3D_HOOKFUNC(JonesMain_GetCurrentLevelNum);
-    // J3D_HOOKFUNC(JonesMain_LogErrorToFile);
-    // J3D_HOOKFUNC(JonesMain_LoadSettings);
-    // J3D_HOOKFUNC(JonesMain_ShowDevDialog);
-    // J3D_HOOKFUNC(JonesMain_DevDialogProc);
-    // J3D_HOOKFUNC(JonesMain_InitDevDialog);
-    // J3D_HOOKFUNC(JonesMain_DevDialogHandleCommand);
-    // J3D_HOOKFUNC(JonesMain_DevDialogInitDisplayDevices);
-    // J3D_HOOKFUNC(JonesMain_DevDialogUpdateRadioButtons);
-    // J3D_HOOKFUNC(JonesMain_FindClosestVideoMode);
-    // J3D_HOOKFUNC(JonesMain_CurDisplaySupportsBPP);
+    J3D_HOOKFUNC(JonesMain_InitializeHUD);
+    J3D_HOOKFUNC(JonesMain_SaveHUD);
+    J3D_HOOKFUNC(JonesMain_RestoreHUD);
+    J3D_HOOKFUNC(JonesMain_GetCurrentLevelNum);
+    J3D_HOOKFUNC(JonesMain_LogErrorToFile);
+    J3D_HOOKFUNC(JonesMain_LoadSettings);
+    J3D_HOOKFUNC(JonesMain_ShowDevDialog);
+    J3D_HOOKFUNC(JonesMain_DevDialogProc);
+    J3D_HOOKFUNC(JonesMain_InitDevDialog);
+    J3D_HOOKFUNC(JonesMain_DevDialogHandleCommand);
+    J3D_HOOKFUNC(JonesMain_DevDialogInitDisplayDevices);
+    J3D_HOOKFUNC(JonesMain_DevDialogUpdateRadioButtons);
+    J3D_HOOKFUNC(JonesMain_FindClosestVideoMode);
+    J3D_HOOKFUNC(JonesMain_CurDisplaySupportsBPP);
 }
 
 void JonesMain_ResetGlobals(void)
@@ -712,76 +728,76 @@ void J3DAPI JonesMain_BindInventoryControlKeys(const int* a1, int numKeys)
 {
     J3D_TRAMPOLINE_CALL(JonesMain_BindInventoryControlKeys, a1, numKeys);
 }
+//
+//void J3DAPI JonesMain_InitializeHUD()
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_InitializeHUD);
+//}
+//
+//int J3DAPI JonesMain_SaveHUD(DPID idTo, unsigned int outstream)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_SaveHUD, idTo, outstream);
+//}
+//
+//int J3DAPI JonesMain_RestoreHUD(const SithMessage* pMsg)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_RestoreHUD, pMsg);
+//}
+//
+//int J3DAPI JonesMain_GetCurrentLevelNum()
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_GetCurrentLevelNum);
+//}
+//
+//void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_LogErrorToFile, pErrorText);
+//}
+//
+//void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesState* pConfig)
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_LoadSettings, pDisplayEnv, pConfig);
+//}
+//
+//int J3DAPI JonesMain_ShowDevDialog(HWND hWnd, JonesState* pConfig)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_ShowDevDialog, hWnd, pConfig);
+//}
+//
+//LRESULT __stdcall JonesMain_DevDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_DevDialogProc, hDlg, uMsg, wParam, lParam);
+//}
+//
+//int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_InitDevDialog, hDlg, wParam, pConfig);
+//}
+//
+//void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam)
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_DevDialogHandleCommand, hWnd, controlId, lParam, hiWParam);
+//}
+//
+//void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig)
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_DevDialogInitDisplayDevices, hDlg, pConfig);
+//}
+//
+//void J3DAPI JonesMain_DevDialogUpdateRadioButtons(HWND hDlg, JonesState* pState)
+//{
+//    J3D_TRAMPOLINE_CALL(JonesMain_DevDialogUpdateRadioButtons, hDlg, pState);
+//}
 
-void J3DAPI JonesMain_ResetHUD()
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_ResetHUD);
-}
-
-int J3DAPI JonesMain_SaveHUD(DPID idTo, unsigned int outstream)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_SaveHUD, idTo, outstream);
-}
-
-int J3DAPI JonesMain_RestoreHUD(const SithMessage* pMsg)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_RestoreHUD, pMsg);
-}
-
-int J3DAPI JonesMain_GetCurrentLevelNum()
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_GetCurrentLevelNum);
-}
-
-void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_LogErrorToFile, pErrorText);
-}
-
-void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesState* pConfig)
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_LoadSettings, pDisplayEnv, pConfig);
-}
-
-int J3DAPI JonesMain_ShowDevDialog(HWND hWnd, JonesState* pConfig)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_ShowDevDialog, hWnd, pConfig);
-}
-
-LRESULT __stdcall JonesMain_DevDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_DevDialogProc, hDlg, uMsg, wParam, lParam);
-}
-
-int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_InitDevDialog, hDlg, wParam, pConfig);
-}
-
-void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam)
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_DevDialogHandleCommand, hWnd, controlId, lParam, hiWParam);
-}
-
-void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig)
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_DevDialogInitDisplayDevices, hDlg, pConfig);
-}
-
-void J3DAPI JonesMain_DevDialogUpdateRadioButtons(HWND hDlg, JonesState* pState)
-{
-    J3D_TRAMPOLINE_CALL(JonesMain_DevDialogUpdateRadioButtons, hDlg, pState);
-}
-
-int J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList, StdVideoMode* pVideoMOde, size_t deviceNum)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_FindClosestVideoMode, pList, pVideoMOde, deviceNum);
-}
-
-int J3DAPI JonesMain_CurDisplaySupportsBPP(JonesDisplaySettings* pSettings, int bpp)
-{
-    return J3D_TRAMPOLINE_CALL(JonesMain_CurDisplaySupportsBPP, pSettings, bpp);
-}
+//int J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList, StdVideoMode* pVideoMOde, size_t deviceNum)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_FindClosestVideoMode, pList, pVideoMOde, deviceNum);
+//}
+//
+//int J3DAPI JonesMain_CurDisplaySupportsBPP(JonesDisplaySettings* pSettings, int bpp)
+//{
+//    return J3D_TRAMPOLINE_CALL(JonesMain_CurDisplaySupportsBPP, pSettings, bpp);
+//}
 
 void JonesMain_NextLevel(void)
 {
@@ -874,4 +890,756 @@ int JonesMain_Credits(void)
     JonesMain_bEndCredits   = 0;
     JonesHud_ShowGameOverDialog(0);
     return wkernel_PeekProcessEvents();
+}
+
+void JonesMain_InitializeHUD(void)
+{
+    JonesHud_EnableMenu(0);
+    JonesHud_SetHealthBarAlpha(0.0f);
+    jonesCog_g_bShowHealthHUD  = 0;
+    jonesCog_g_bEnableGamesave = 1;
+}
+
+int J3DAPI JonesMain_SaveHUD(DPID idTo, unsigned int outstream)
+{
+    SITHDSS_STARTOUT(SITHDSS_HUDSTATE);
+    SITHDSS_PUSHUINT8(JonesHud_IsMenuEnabled());
+    SITHDSS_PUSHUINT8(jonesCog_g_bShowHealthHUD);
+    SITHDSS_PUSHFLOAT(JonesHud_GetHealthBarAlpha());
+    SITHDSS_ENDOUT;
+    STD_ASSERT(sithMulti_g_message.length == 6);
+
+    //sithMulti_g_message.data[0] = JonesHud_IsMenuEnabled();
+    //sithMulti_g_message.data[1] = jonesCog_g_bShowHealthHUD;
+    //*(float*)&sithMulti_g_message.data[2] = JonesHud_GetHealthBarAlpha();
+    //sithMulti_g_message.type = 47;
+    //sithMulti_g_message.length = 6;
+
+    return sithMessage_SendMessage(&sithMulti_g_message, idTo, outstream, 0x01);
+}
+
+int J3DAPI JonesMain_RestoreHUD(const SithMessage* pMsg)
+{
+    STD_ASSERTREL(pMsg);
+    SITHDSS_STARTIN(pMsg);
+
+    JonesHud_EnableMenu(SITHDSS_POPUINT8());
+    jonesCog_g_bShowHealthHUD = SITHDSS_POPUINT8();
+    JonesHud_SetHealthBarAlpha(SITHDSS_POPFLOAT());
+    SITHDSS_ENDIN;
+
+    /*  JonesHud_EnableMenu(pMsg->data[0]);
+      jonesCog_g_bShowHealthHUD = pMsg->data[1];
+      JonesHud_SetHealthBarAlpha(*(float*)&pMsg->data[2]);*/
+    return 1;
+}
+
+size_t JonesMain_GetCurrentLevelNum(void)
+{
+    return JonesMain_curLevelNum;
+}
+
+void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
+{
+    char aFilePath[128] = { 0 };
+
+    const char* pFilename = jonesString_GetString("JONES_STR_ERRORFILE");
+    if ( pFilename )
+    {
+        char aInstallPath[128] ={ 0 };
+        wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
+        size_t pathLen = strlen(aInstallPath);
+        if ( pathLen )
+        {
+            if ( aFilePath[pathLen + 127] == '\\' ) // TODO: [BUG] reading out of buffer
+            {
+                STD_FORMAT(aFilePath, "%s%s", aInstallPath, pFilename);
+            }
+            else
+            {
+                STD_FORMAT(aFilePath, "%s\\%s", aInstallPath, pFilename);
+            }
+        }
+        else
+        {
+            STD_FORMAT(aFilePath, ".\\\\%s", pFilename);
+        }
+    }
+    else
+    {
+        STD_FORMAT(aFilePath, ".\\\\%s", "JonesError.txt");
+    }
+
+    if ( pErrorText && strlen(pErrorText) )
+    {
+        FILE* fp = fopen(aFilePath, "wt+");
+        if ( fp )
+        {
+            fprintf(fp, pErrorText);
+            fprintf(fp, "\n");
+            fclose(fp);
+        }
+    }
+}
+
+void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesState* pConfig)
+{
+    DWORD nSize = STD_ARRAYLEN(pConfig->waPlayerName);
+    CHAR aText[128] = { 0 }; // Added: Init to 0
+    if ( GetComputerName(aText, &nSize) )
+    {
+        stdUtil_ToWStringEx(pConfig->waPlayerName, aText, STD_ARRAYLEN(pConfig->waPlayerName) - 1);
+    }
+    else
+    {
+        stdUtil_ToWStringEx(pConfig->waPlayerName, "NoName", STD_ARRAYLEN(pConfig->waPlayerName) - 1);
+    }
+
+    pConfig->waPlayerName[STD_ARRAYLEN(pConfig->waPlayerName) - 1] = 0;
+
+    // Removed: rdModel3K module not supported 
+    //if ( wuRegistry_GetIntEx("Katmai", 1) && rdModel3K_sub_4E2ED0() )
+    //{
+    //    rdModel3K_sub_4E2F00(1);
+    //    rdModel3K_sub_4E1DA0();
+    //    rdModel3K_sub_4E2F00(0);
+    //}
+
+    // Make sure sith has all required dirs set
+    sithMakeDirs();
+
+    wuRegistry_GetStr("StartLevel", pConfig->aCurLevelFilename, STD_ARRAYLEN(pConfig->aCurLevelFilename), "");
+
+    pConfig->displaySettings.bWindowMode  = wuRegistry_GetIntEx("InWindow", 0);
+    pConfig->displaySettings.bDualMonitor = wuRegistry_GetIntEx("Dual Monitor", 0);
+    pConfig->displaySettings.bBuffering   = wuRegistry_GetIntEx("Buffering", 0);
+    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", 1); // bilinear
+
+    pConfig->displaySettings.bFog = wuRegistry_GetIntEx("Fog", 1);
+    pConfig->fogDensity           = wuRegistry_GetFloat("Fog Density", 1.0f);
+    std3D_EnableFog(pConfig->displaySettings.bFog, pConfig->fogDensity);
+
+    sithRender_g_fogDensity = pConfig->fogDensity * 100.0f;
+
+    pConfig->devMode   = wuRegistry_GetIntEx("DevMode", 0);
+    pConfig->startMode = wuRegistry_GetInt("Start Mode", 2);
+    pConfig->startMode = STDMATH_CLAMP(pConfig->startMode, 0, 4);
+
+    pConfig->debugMode = wuRegistry_GetInt("Debug Mode", 0);
+    pConfig->logLevel  = wuRegistry_GetInt("Verbosity", 1);
+    pConfig->performanceLevel = wuRegistry_GetInt("Performance Level", 4);
+
+    pConfig->displaySettings.geoMode   = wuRegistry_GetInt("Geometry Mode", RD_GEOMETRY_FULL);
+    pConfig->displaySettings.lightMode = wuRegistry_GetInt("Lighting Mode", RD_LIGHTING_GOURAUD);
+
+    int bHiPoly = wuRegistry_GetIntEx("HiPoly", 0);
+    sithModel_EnableHiPoly(bHiPoly);
+
+    JonesMain_pStartupDisplayEnv = pDisplayEnv;
+
+    wuRegistry_GetStr("Display", aText, STD_ARRAYLEN(aText), "");
+
+    for ( size_t i = 0; i < JonesMain_pStartupDisplayEnv->numInfos; ++i )
+    {
+        if ( JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL )
+        {
+            pConfig->displaySettings.displayDeviceNum = i;
+        }
+
+        if ( strcmp(JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName, aText) == 0 )
+        {
+            pConfig->displaySettings.displayDeviceNum = i;
+            break;
+        }
+    }
+
+    StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum];
+    for ( size_t i = 0; i < pDisplay->numDevices; ++i )
+    {
+        if ( strstr(pDisplay->aDevices[i].deviceDescription, "HAL") ) // contains "HAL" word
+        {
+            pConfig->displaySettings.device3DNum = i;
+            break;
+        }
+    }
+
+    wuRegistry_GetStr("3D Device", aText, STD_ARRAYLEN(aText), "");
+    for ( size_t i = 0; i < pDisplay->numDevices; ++i )
+    {
+        if ( !strcmp(pDisplay->aDevices[i].deviceDescription, aText) )
+        {
+            pConfig->displaySettings.device3DNum = i;
+            break;
+        }
+    }
+
+    JonesMain_curVideoMode.aspectRatio                    = 1.0f;
+    JonesMain_curVideoMode.rasterInfo.width               = wuRegistry_GetInt("Width", 640);
+    JonesMain_curVideoMode.rasterInfo.height              = wuRegistry_GetInt("Height", 480);
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 16); // Change to 32 bpp
+    JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
+
+    pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
+
+    memcpy(&JonesMain_curVideoMode, &pDisplay->aModes[pConfig->displaySettings.videoModeNum], sizeof(JonesMain_curVideoMode));
+
+    pConfig->displaySettings.width  = JonesMain_curVideoMode.rasterInfo.width;
+    pConfig->displaySettings.height = JonesMain_curVideoMode.rasterInfo.height;
+    pConfig->displaySettings.bClearBackBuffer = 0;
+
+    pConfig->bSound3D      = wuRegistry_GetIntEx("Sound 3D", 0);
+    pConfig->bReverseSound = wuRegistry_GetIntEx("ReverseSound", 0);
+}
+
+
+int J3DAPI JonesMain_ShowDevDialog(HWND hWnd, JonesState* pConfig)
+{
+    HINSTANCE hInstance = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    return DialogBoxParam(hInstance, (LPCSTR)101, hWnd, JonesMain_DevDialogProc, (LPARAM)pConfig);
+}
+
+int J3DAPI JonesMain_ShowDisplayOptions(HWND hWnd, JonesState* pState)
+{
+    HINSTANCE hInstance = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    return DialogBoxParam(hInstance, (LPCSTR)106, hWnd, JonesMain_DevDialogProc, (LPARAM)pState);
+}
+
+INT_PTR CALLBACK JonesMain_DevDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_INITDIALOG:
+            return JonesMain_InitDevDialog(hDlg, wParam, (JonesState*)lParam);
+
+        case WM_COMMAND:
+            JonesMain_DevDialogHandleCommand(hDlg, (uint16_t)wParam, lParam, HIWORD(wParam));
+            return 1;
+    };
+
+    return 0;
+}
+
+int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig)
+{
+    J3D_UNUSED(wParam);
+
+    // Populate display driver combo box list
+    HWND hDlgItem = GetDlgItem(hDlg, 1030); // Display driver
+    for ( size_t i = 0; i < JonesMain_pStartupDisplayEnv->numInfos; ++i )
+    {
+        if ( JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL == 1 )
+        {
+            STD_FORMAT(std_g_genBuffer, "%s", JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName);
+            int itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)std_g_genBuffer);
+            SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, i);
+
+            // Select diver if matches the one in settings
+            if ( i == pConfig->displaySettings.displayDeviceNum )
+            {
+                SendMessage(hDlgItem, CB_SETCURSEL, itemIdx, 0);
+            }
+        }
+    }
+
+    // Init CB GeometryMOde
+    hDlgItem = GetDlgItem(hDlg, 1008);
+    int itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Vertex Only");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 1);
+
+    int selectedItemIdx = itemIdx;
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Wire Frame");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+    if ( pConfig->displaySettings.geoMode == RD_GEOMETRY_WIREFRAME )
+    {
+        selectedItemIdx = itemIdx;
+    }
+
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Solid");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 3);
+    if ( pConfig->displaySettings.geoMode == RD_GEOMETRY_SOLID )
+    {
+        selectedItemIdx = itemIdx;
+    }
+
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Texture");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 4);
+    if ( pConfig->displaySettings.geoMode == RD_GEOMETRY_FULL )
+    {
+        selectedItemIdx = itemIdx;
+    }
+
+    SendMessage(hDlgItem, CB_SETCURSEL, selectedItemIdx, 0);
+
+    // Init CB Lighting Mode
+    hDlgItem = GetDlgItem(hDlg, 1009);
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"None");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 1);
+
+    selectedItemIdx = itemIdx;
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Lit");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 0);
+    if ( pConfig->displaySettings.lightMode == RD_LIGHTING_NONE )
+    {
+        selectedItemIdx = itemIdx;
+    }
+
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Diffuse");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+    if ( pConfig->displaySettings.lightMode == RD_LIGHTING_DIFFUSE )
+    {
+        selectedItemIdx = itemIdx;
+    }
+
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Gouraud");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 3);
+    if ( pConfig->displaySettings.lightMode == RD_LIGHTING_GOURAUD )
+    {
+        selectedItemIdx = itemIdx;
+    }
+
+    SendMessage(hDlgItem, CB_SETCURSEL, selectedItemIdx, 0);
+
+    // Init CB MIp Filter
+    hDlgItem = GetDlgItem(hDlg, 1012);
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"None");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 0);
+
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Bilinear");
+    SendMessage(hDlgItem, CB_SETCURSEL, itemIdx, 0);// Select bilinear as defult
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 1);
+
+    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Trilinear");
+    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+
+    // Setup Display related controls
+    JonesMain_DevDialogInitDisplayDevices(hDlg, pConfig);
+
+    // Populate level List box
+    hDlgItem = GetDlgItem(hDlg, 1001);
+    if ( hDlgItem )
+    {
+        tFoundFileInfo fileInfo;
+        FindFileData* pFileData = stdFileUtil_NewFind("ndy", 3, "ndy");
+        while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
+        {
+            itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
+        }
+
+        stdFileUtil_DisposeFind(pFileData);
+        pFileData = stdFileUtil_NewFind("ndy", 3, "cnd");
+        while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
+        {
+            itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
+        }
+
+        stdFileUtil_DisposeFind(pFileData);
+
+        // Select cur level from config
+        int numLevels = SendMessage(hDlgItem, LB_GETCOUNT, 0, 0);
+        for ( itemIdx = 0; itemIdx < numLevels; ++itemIdx )
+        {
+            char aLevelName[128] = { 0 }; // Fixed: Increased string len to 128 from 64
+            SendMessage(hDlgItem, LB_GETTEXT, itemIdx, (LPARAM)aLevelName);
+            if ( strcmp(aLevelName, pConfig->aCurLevelFilename) == 0 )
+            {
+                SendMessage(hDlgItem, LB_SETCURSEL, itemIdx, 0);
+                break;
+            }
+        }
+
+        if ( itemIdx == numLevels )
+        {
+            // Non selected, select level in the middle of the list
+            SendMessage(hDlgItem, LB_SETCURSEL, numLevels / 2, 0);
+        }
+    }
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pConfig); // Set config to dialog handle
+
+    CheckDlgButton(hDlg, 1007, pConfig->devMode);// Dev mode
+
+    JonesMain_DevDialogUpdateRadioButtons(hDlg, pConfig);
+    return 1;
+}
+
+void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam)
+{
+    J3D_UNUSED(lParam);
+
+    JonesState* pState = (JonesState*)GetWindowLongPtr(hWnd, DWL_USER);
+    if ( controlId > 1001 )
+    {
+        switch ( controlId )
+        {
+            case 1013:                          // error output normal
+                pState->debugMode = 0;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1014:                          // error output console
+                pState->debugMode = 1;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1015:                          // error output file
+                pState->debugMode = 2;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1016:                          // debug output normal
+                pState->logLevel = 1;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1017:                          // debug output verbose
+                pState->logLevel = 2;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1018:                          // debug output quiet
+                pState->logLevel = 0;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1029:                          // display mode
+                if ( hiWParam == 1 )
+                {
+                    HWND hCBDisplayMode = GetDlgItem(hWnd, 1029);
+                    int curSelIdx = SendMessage(hCBDisplayMode, CB_GETCURSEL, 0, 0);
+                    pState->displaySettings.videoModeNum = SendMessage(hCBDisplayMode, CB_GETITEMDATA, curSelIdx, 0);
+                }
+                break;
+
+            case 1030:                          // Display settings
+                if ( hiWParam == 1 )
+                {
+                    HWND CBDisplayDriver = GetDlgItem(hWnd, 1030);
+                    int curSelIdx = SendMessage(CBDisplayDriver, CB_GETCURSEL, 0, 0);
+                    pState->displaySettings.displayDeviceNum = SendMessage(CBDisplayDriver, CB_GETITEMDATA, curSelIdx, 0);
+                    JonesMain_DevDialogInitDisplayDevices(hWnd, pState);
+                }
+                break;
+
+            case 1031:                          // 3D Driver
+                if ( hiWParam == 1 )
+                {
+                    HWND hCB3DDriver = GetDlgItem(hWnd, 1031);
+                    int curSelIdx = SendMessage(hCB3DDriver, CB_GETCURSEL, 0, 0);
+                    pState->displaySettings.device3DNum = SendMessage(hCB3DDriver, CB_GETITEMDATA, curSelIdx, 0);
+                    JonesMain_DevDialogInitDisplayDevices(hWnd, pState);
+                }
+                break;
+
+            case 1176:                          // performance level 0
+                pState->performanceLevel = 0;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1177:                          // performance level 1
+                pState->performanceLevel = 1;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1178:                          // performance level 2
+                pState->performanceLevel = 2;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1179:                          // performance level 3
+                pState->performanceLevel = 3;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            case 1180:                          // performance level 4
+                pState->performanceLevel = 4;
+                JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
+                break;
+
+            default:
+                return;
+        }
+    }
+    else
+    {
+        switch ( controlId )
+        {
+            case 1001:                          // select level list
+                if ( hiWParam != 2 )
+                {
+                    return;
+                }
+
+                controlId = 1;                  // start game
+                break;
+
+            case 1:                             // start the game
+                break;
+
+            case 2:                             // exit
+                EndDialog(hWnd, controlId);
+                return;
+
+            default:
+                return;
+        }
+
+        // Start game logic
+
+        // Get 3D driver
+        HWND hCB3DDriver = GetDlgItem(hWnd, 1031);
+        int curSelIdx = SendMessage(hCB3DDriver, CB_GETCURSEL, 0, 0);
+        pState->displaySettings.device3DNum = SendMessage(hCB3DDriver, CB_GETITEMDATA, curSelIdx, 0);
+
+        // Get Display mode
+        HWND hCBDisplayMode = GetDlgItem(hWnd, 1029);
+        curSelIdx = SendMessage(hCBDisplayMode, CB_GETCURSEL, 0, 0);
+        pState->displaySettings.videoModeNum = SendMessage(hCBDisplayMode, CB_GETITEMDATA, curSelIdx, 0);
+
+        // Geometry mode
+        HWND hCBGeometryMode = GetDlgItem(hWnd, 1008);
+        curSelIdx = SendMessage(hCBGeometryMode, CB_GETCURSEL, 0, 0);
+        pState->displaySettings.geoMode = SendMessage(hCBGeometryMode, CB_GETITEMDATA, curSelIdx, 0);
+
+        if ( pState->displaySettings.geoMode == RD_GEOMETRY_WIREFRAME || pState->displaySettings.geoMode == RD_GEOMETRY_VERTEX )
+        {
+            pState->displaySettings.bClearBackBuffer = 1;
+        }
+
+        // Light mode
+        HWND hCBLightMode = GetDlgItem(hWnd, 1009);
+        curSelIdx = SendMessage(hCBLightMode, CB_GETCURSEL, 0, 0);
+        pState->displaySettings.lightMode = SendMessage(hCBLightMode, CB_GETITEMDATA, curSelIdx, 0);
+
+        // Filter mode
+        HWND hCBFilterMode = GetDlgItem(hWnd, 1012);
+        curSelIdx = SendMessage(hCBFilterMode, CB_GETCURSEL, 0, 0);
+        pState->displaySettings.filter = SendMessage(hCBFilterMode, CB_GETITEMDATA, curSelIdx, 0);
+
+        pState->displaySettings.bWindowMode = IsDlgButtonChecked(hWnd, 1002) == 1;// window mode
+        pState->devMode = IsDlgButtonChecked(hWnd, 1007) == 1;// devmode
+
+        pState->displaySettings.width = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.width;
+        pState->displaySettings.height = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.height;
+
+        // Get selected level & Save settings
+        HWND hCBLevelList = GetDlgItem(hWnd, 1001);
+        curSelIdx = SendMessage(hCBLevelList, LB_GETCURSEL, 0, 0);
+        if ( SendMessage(hCBLevelList, LB_GETTEXT, curSelIdx, (LPARAM)pState->aCurLevelFilename) != -1 )
+        {
+            wuRegistry_SaveStr("Display", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].displayDevice.aDriverName);
+            wuRegistry_SaveStr("3D Device", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aDevices[pState->displaySettings.device3DNum].deviceDescription);
+            wuRegistry_SaveInt("Width", pState->displaySettings.width);
+            wuRegistry_SaveInt("Height", pState->displaySettings.height);
+            wuRegistry_SaveInt("BPP", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.colorInfo.bpp);
+            wuRegistry_SaveInt("Filter", pState->displaySettings.filter);
+
+            wuRegistry_SaveStr("StartLevel", pState->aCurLevelFilename);
+
+            wuRegistry_SaveIntEx("InWindow", pState->displaySettings.bWindowMode);
+            wuRegistry_SaveIntEx("Dual Monitor", pState->displaySettings.bDualMonitor);
+
+            wuRegistry_SaveIntEx("DevMode", pState->devMode);
+
+            wuRegistry_SaveIntEx("Sound 3D", pState->bSound3D);
+
+            wuRegistry_SaveInt("Debug Mode", pState->debugMode);
+            wuRegistry_SaveInt("Verbosity", pState->logLevel);
+
+            wuRegistry_SaveStr("User Path", pState->aInstallPath);
+            wuRegistry_SaveInt("Performance Level", pState->performanceLevel);
+
+            wuRegistry_SaveInt("Geometry Mode", pState->displaySettings.geoMode);
+            wuRegistry_SaveInt("Lighting Mode", pState->displaySettings.lightMode);
+
+            EndDialog(hWnd, controlId); // Close dialog
+        }
+    }
+}
+
+void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig)
+{
+    HWND hBTNStart      = GetDlgItem(hDlg, 1);
+    HWND hCBWindowMode  = GetDlgItem(hDlg, 1002);
+    HWND hCB3DDriver    = GetDlgItem(hDlg, 1031);
+
+    HWND hCBDisplayMode = GetDlgItem(hDlg, 1029);
+    SendMessage(hCBDisplayMode, CB_RESETCONTENT, 0, 0);
+
+    StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum];
+    if ( !pDisplay->displayDevice.bHAL )
+    {
+        EnableWindow(hBTNStart, 0);
+        EnableWindow(hCBWindowMode, 0);
+        EnableWindow(hCBDisplayMode, 0);
+        EnableWindow(hCB3DDriver, 0);
+        return;
+    }
+
+    EnableWindow(hBTNStart, 1);
+    EnableWindow(hCBWindowMode, pDisplay->displayDevice.bWindowRenderNotSupported == 0);
+
+    if ( pDisplay->displayDevice.bWindowRenderNotSupported )
+    {
+        pConfig->displaySettings.bWindowMode = 0;
+    }
+
+    EnableWindow(hCBDisplayMode, 1);
+    EnableWindow(hCB3DDriver, 1);
+    CheckDlgButton(hDlg, 1002, pConfig->displaySettings.bWindowMode);// CB window mode
+
+    // Init 3D driver combo box list
+    bool bDriverSet = false;
+
+    CHAR aDriverName[128] = { 0 };
+    GetWindowText(hCB3DDriver, aDriverName, STD_ARRAYLEN(aDriverName));
+
+    SendMessage(hCB3DDriver, CB_RESETCONTENT, 0, 0);
+    for ( size_t deviceNum = 0; deviceNum < pDisplay->numDevices; ++deviceNum )
+    {
+        STD_FORMAT(std_g_genBuffer, "%s", pDisplay->aDevices[deviceNum].deviceDescription);
+
+        int itemIdx = SendMessage(hCB3DDriver, CB_ADDSTRING, 0, (LPARAM)std_g_genBuffer);
+        SendMessage(hCB3DDriver, CB_SETITEMDATA, itemIdx, deviceNum);
+
+        // Select item in cb list
+        if ( strcmp(aDriverName, std_g_genBuffer) == 0 || pConfig->displaySettings.device3DNum == deviceNum )
+        {
+            SendMessage(hCB3DDriver, CB_SETCURSEL, itemIdx, 0);
+            pConfig->displaySettings.device3DNum = deviceNum;
+            bDriverSet = true;
+        }
+    }
+
+    if ( !bDriverSet )
+    {
+        pConfig->displaySettings.device3DNum = 0;
+        SendMessage(hCB3DDriver, CB_SETCURSEL, 0, 0);
+    }
+
+    // Populate display mode combo box list (resolutions) and select 
+
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp = 16; // TODO: Should be 32 bpp, probably just remove this line since bpp from stored settings in registry should be used anyway
+
+    bDriverSet = 0;
+    for ( size_t modeNum = 0; modeNum < JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum].numModes; ++modeNum )
+    {
+        if ( pDisplay->aModes[modeNum].aspectRatio == 1.0f
+          && pDisplay->aModes[modeNum].rasterInfo.width >= 512
+          && pDisplay->aModes[modeNum].rasterInfo.height >= 384 )
+        {
+            if ( JonesMain_CurDisplaySupportsBPP(&pConfig->displaySettings, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp) )
+            {
+                STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp);  // Changed: Moved in this scope
+                int itemIdx = SendMessage(hCBDisplayMode, CB_ADDSTRING, 0, (LPARAM)std_g_genBuffer);
+                SendMessage(hCBDisplayMode, CB_SETITEMDATA, itemIdx, modeNum);
+
+                // Select mode
+                if ( pDisplay->aModes[modeNum].rasterInfo.width == JonesMain_curVideoMode.rasterInfo.width
+                  && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
+                  && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
+                {
+                    SendMessage(hCBDisplayMode, CB_SETCURSEL, itemIdx, 0);
+                    bDriverSet = 1;
+                }
+            }
+        }
+    }
+
+    if ( !bDriverSet )
+    {
+        SendMessage(hCBDisplayMode, CB_SETCURSEL, 0, 0);
+    }
+}
+
+void J3DAPI JonesMain_DevDialogUpdateRadioButtons(HWND hDlg, const JonesState* pState)
+{
+    switch ( pState->debugMode )
+    {
+        case 0:
+            CheckRadioButton(hDlg, 1013, 1015, 1013); // Normal
+            break;
+        case 1:
+            CheckRadioButton(hDlg, 1013, 1015, 1014); // Console
+            break;
+        case 2:
+            CheckRadioButton(hDlg, 1013, 1015, 1015); // Log file
+            break;
+    };
+
+    switch ( pState->logLevel )
+    {
+        case 0:
+            CheckRadioButton(hDlg, 1016, 1018, 1018); // Quite
+            break;
+        case 1:
+            CheckRadioButton(hDlg, 1016, 1018, 1016); // Normal
+            break;
+        case 2:
+            CheckRadioButton(hDlg, 1016, 1018, 1017); // Verbose
+            break;
+    };
+
+    switch ( pState->performanceLevel )
+    {
+        case 0:
+            CheckRadioButton(hDlg, 1176, 1180, 1176);
+            break;
+
+        case 1:
+            CheckRadioButton(hDlg, 1176, 1180, 1177);
+            break;
+
+        case 2:
+            CheckRadioButton(hDlg, 1176, 1180, 1178);
+            break;
+
+        case 3:
+            CheckRadioButton(hDlg, 1176, 1180, 1179);
+            break;
+
+        case 4:
+            CheckRadioButton(hDlg, 1176, 1180, 1180);
+            break;
+
+        default:
+            return;
+    }
+}
+
+size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList, const StdVideoMode* pVideoMode, size_t deviceNum)
+{
+    size_t videoMode = 0;
+    StdDisplayInfo* pDisplay = &pList->aDisplayInfos[deviceNum];
+    for ( size_t i = 0; i < pList->aDisplayInfos[deviceNum].numModes; ++i )
+    {
+        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == 16 )
+        {
+            if ( pDisplay->aModes[i].rasterInfo.width == pVideoMode->rasterInfo.width && pDisplay->aModes[i].rasterInfo.height == pVideoMode->rasterInfo.height )
+            {
+                return i; // exact
+            }
+
+            videoMode = i; // closest
+        }
+    }
+
+    return videoMode;
+}
+
+bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSettings, size_t bpp)
+{
+    StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum];
+    switch ( bpp )
+    {
+        case 8:
+            return(pDisplay->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_8) != 0;
+        case 16:
+            return (pDisplay->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_16) != 0;
+        case 24:
+            return (pDisplay->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_24) != 0;
+        case 32:
+            return (pDisplay->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_32) != 0;
+    }
+
+    return false;
 }

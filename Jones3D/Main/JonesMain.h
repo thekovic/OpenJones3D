@@ -62,10 +62,14 @@ int JonesMain_Credits(void);
 
 StdDisplayEnvironment* JonesMain_GetDisplayEnvironment(void);
 JonesDisplaySettings* JonesMain_GetDisplaySettings(void);
+
 int J3DAPI JonesMain_CloseWindow();
+
 int JonesMain_FilePrintf(const char* pFormat, ...);
 int JonesMain_Printf(const char* pFormat, ...);
+
 void JonesMain_RefreshDisplayDevice(void);
+
 int J3DAPI JonesMain_PlayIntro();
 int J3DAPI JonesMain_IntroWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void J3DAPI JonesMain_HandleWMLButtonUp();
@@ -73,22 +77,22 @@ void J3DAPI JonesMain_IntroHandleKeydown(HWND hwnd, int wParam);
 signed int J3DAPI JonesMain_IntroMovieBll565(void* a1);
 signed int J3DAPI JonesMain_IntroMovieBlt555(void* a1);
 int J3DAPI JonesMain_IntroMovieBlt32(void* a1);
+
 J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSrcFile, int line);
 void J3DAPI JonesMain_BindInventoryControlKeys(const int* a1, int numKeys);
-void J3DAPI JonesMain_ResetHUD();
+
+void JonesMain_InitializeHUD(void);
 int J3DAPI JonesMain_SaveHUD(DPID idTo, unsigned int outstream);
 int J3DAPI JonesMain_RestoreHUD(const SithMessage* pMsg);
-int J3DAPI JonesMain_GetCurrentLevelNum();
+
+size_t JonesMain_GetCurrentLevelNum(void);
+
 void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText);
 void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesState* pConfig);
 int J3DAPI JonesMain_ShowDevDialog(HWND hWnd, JonesState* pConfig);
-LRESULT __stdcall JonesMain_DevDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig);
-void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam);
-void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig);
-void J3DAPI JonesMain_DevDialogUpdateRadioButtons(HWND hDlg, JonesState* pState);
-int J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList, StdVideoMode* pVideoMOde, size_t deviceNum);
-int J3DAPI JonesMain_CurDisplaySupportsBPP(JonesDisplaySettings* pSettings, int bpp);
+int J3DAPI JonesMain_ShowDisplayOptions(HWND hWnd, JonesState* pState); // Added
+
+size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList, const StdVideoMode* pVideoMode, size_t deviceNum);
 
 // Helper hooking functions
 void JonesMain_InstallHooks(void);
