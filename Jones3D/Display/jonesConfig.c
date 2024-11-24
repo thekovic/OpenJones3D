@@ -56,10 +56,9 @@ typedef struct sJonesDialogFontScaleMetrics
 } JonesDialogSize;
 static_assert(sizeof(JonesDialogSize) == 12, "sizeof(JonesDialogSize) == 12");
 
-
 static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
    { 164, 368, 232 },
-   { 112, 260, 224 },
+   { 112, 260, 252 },
    { 111, 408, 218 },
    { 116, 297, 95 },
    { 115, 549, 367 },
@@ -80,6 +79,8 @@ static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
    { 154, 579, 252 },
    { 167, 279, 75 }
 };
+
+HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
 
 #define jonesConfig_aStoreItems J3D_DECL_FAR_ARRAYVAR(jonesConfig_aStoreItems, tStoreItem(*)[14])
 #define jonesConfig_aNumberGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aNumberGlyphMetrics, StdRect(*)[10])
@@ -116,7 +117,7 @@ static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
 #define jonesConfig_hFontExitDlg J3D_DECL_FAR_VAR(jonesConfig_hFontExitDlg, HFONT)
 #define jonesConfig_hFontGameSaveMsgBox J3D_DECL_FAR_VAR(jonesConfig_hFontGameSaveMsgBox, HFONT)
 #define jonesConfig_hFontLoadGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontLoadGameDlg, HFONT)
-#define jonesConfig_hFontGamePlayOptionsDlg J3D_DECL_FAR_VAR(jonesConfig_hFontGamePlayOptionsDlg, HFONT)
+//#define jonesConfig_hFontGamePlayOptionsDlg J3D_DECL_FAR_VAR(jonesConfig_hFontGamePlayOptionsDlg, HFONT)
 #define jonesConfig_hFontControlOptions J3D_DECL_FAR_VAR(jonesConfig_hFontControlOptions, HFONT)
 #define jonesConfig_dword_551DEC J3D_DECL_FAR_VAR(jonesConfig_dword_551DEC, void*)
 #define jonesConfig_hFontCreateControlSchemeDlg J3D_DECL_FAR_VAR(jonesConfig_hFontCreateControlSchemeDlg, HFONT)
@@ -743,7 +744,7 @@ void jonesConfig_ResetGlobals(void)
     memset(&jonesConfig_hFontExitDlg, 0, sizeof(jonesConfig_hFontExitDlg));
     memset(&jonesConfig_hFontGameSaveMsgBox, 0, sizeof(jonesConfig_hFontGameSaveMsgBox));
     memset(&jonesConfig_hFontLoadGameDlg, 0, sizeof(jonesConfig_hFontLoadGameDlg));
-    memset(&jonesConfig_hFontGamePlayOptionsDlg, 0, sizeof(jonesConfig_hFontGamePlayOptionsDlg));
+    //memset(&jonesConfig_hFontGamePlayOptionsDlg, 0, sizeof(jonesConfig_hFontGamePlayOptionsDlg));
     memset(&jonesConfig_hFontControlOptions, 0, sizeof(jonesConfig_hFontControlOptions));
     memset(&jonesConfig_dword_551DEC, 0, sizeof(jonesConfig_dword_551DEC));
     memset(&jonesConfig_hFontCreateControlSchemeDlg, 0, sizeof(jonesConfig_hFontCreateControlSchemeDlg));
@@ -2855,8 +2856,10 @@ INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT uMsg, WPARAM wP
 
     if ( uMsg == WM_INITDIALOG )
     {
-        jonesConfig_hFontGamePlayOptionsDlg = jonesConfig_InitDialog(hWnd, NULL, 112);
+        // Changed: Change the order of initialization, to first init dialog 
+        //          and then do general dialog init which scales the fonts and inits dialog text
         bProcessed = jonesConfig_GamePlayOptionsInitDlg(hWnd);
+        jonesConfig_hFontGamePlayOptionsDlg = jonesConfig_InitDialog(hWnd, NULL, 112);
         SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
     }
     else
@@ -2907,20 +2910,55 @@ void J3DAPI jonesConfig_HandleWM_HSCROLL(HWND hDlg, HWND hWnd, uint16_t sbValue)
 
 int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
 {
+    // Shot Text option
     HWND hCBShowText = GetDlgItem(hDlg, 1052);
     int bShowText = sithVoice_GetShowText();
     SendMessageA(hCBShowText, BM_SETCHECK, bShowText, 0);
 
+    // Show Hints option
     HWND hCBShowHints = GetDlgItem(hDlg, 1051);
     int bShowHints = sithOverlayMap_GetShowHints();
     SendMessageA(hCBShowHints, BM_SETCHECK, bShowHints, 0);
 
+    // RotateMap option
     HWND hCBRotateMap = GetDlgItem(hDlg, 1204);
     int  bRotateMap = sithOverlayMap_GetMapRotation();
     SendMessageA(hCBRotateMap, BM_SETCHECK, bRotateMap, 0);
 
+    // Default to Run option
     CheckDlgButton(hDlg, 1202, jonesConfig_bDefaultRun);// CB default run
 
+    // Added: Check box "High Poly Objects"
+    // Get the position of the base checkbox
+    RECT rectCBShowText;
+    GetWindowRect(hCBShowText, &rectCBShowText);
+
+    // Convert screen coordinates to client coordinates
+    POINT pt = { rectCBShowText.left, rectCBShowText.top };
+    ScreenToClient(hDlg, &pt);
+
+    // Calculate the position for the new checkbox
+    int x = pt.x;
+    int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + 14;
+
+    // Create the checkbox
+    HWND hCBHiPoly = CreateWindow(
+        "BUTTON",               // Class name for button/checkbox
+        "JONES_STR_HIPOLY",     // Text displayed on the checkbox
+        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+        x,
+        y,
+        150,                   // Width
+        20,                    // Height
+        hDlg,                  // Parent window handle (the dialog)
+        (HMENU)1053,           // Control ID
+        GetModuleHandle(NULL), // Instance handle
+        NULL                   // Additional creation data
+    );
+
+    CheckDlgButton(hDlg, 1053, sithModel_IsHiPolyEnabled());
+
+    // Difficulty slider and text
     HWND hDifSlider = GetDlgItem(hDlg, 1050); // Difficulty slider control
 
     size_t maxDifficulty = jonesInventory_GetMaxDifficultyLevel();
@@ -2966,9 +3004,30 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
 
     if ( pDifficultyStr )
     {
-        HWND  hDifText = GetDlgItem(hDlg, 1215);          // Difficulty text control
+        HWND  hDifText = GetDlgItem(hDlg, 1215); // Difficulty text control
         SetWindowTextA(hDifText, pDifficultyStr);
     }
+
+
+    // Added: Resize dialog to fit in new check box
+    RECT rectDlg;
+    GetWindowRect(hDlg, &rectDlg);
+    SetWindowPos(hDlg, NULL, 0, 0, rectDlg.right - rectDlg.left, (rectDlg.bottom - rectDlg.top) + 28, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+
+    // Added: Move OK & Cancel buttons down
+    HWND hBtnOk     = GetDlgItem(hDlg, 1);
+    RECT rectBtnOk;
+    GetWindowRect(hBtnOk, &rectBtnOk);
+    POINT ptBtnOk = { rectBtnOk.left, rectBtnOk.top + (rectBtnOk.bottom - rectBtnOk.top) / 2 + 14 };
+    ScreenToClient(hDlg, &ptBtnOk);
+    SetWindowPos(hBtnOk, NULL, ptBtnOk.x, ptBtnOk.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    HWND hBtnCancel = GetDlgItem(hDlg, 2);
+    RECT rectBtnCancel;
+    GetWindowRect(hBtnCancel, &rectBtnCancel);
+    POINT ptBtnCancel = { rectBtnCancel.left, rectBtnCancel.top + (rectBtnCancel.bottom - rectBtnCancel.top) / 2 + 14 };
+    ScreenToClient(hDlg, &ptBtnCancel);
+    SetWindowPos(hBtnCancel, NULL, ptBtnCancel.x, ptBtnCancel.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
     return 1;
 }
@@ -3021,6 +3080,24 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
             sithControl_g_controlOptions &= ~0x02;
         }
 
+        // Added
+        // Get & save HiPoly option
+        int bCurBHiPoly = sithModel_IsHiPolyEnabled();
+
+        int bHiPoly = IsDlgButtonChecked(hDlg, 1053);
+        sithModel_EnableHiPoly(bHiPoly);
+        wuRegistry_SaveIntEx("HiPoly", bHiPoly);
+
+        if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
+        {
+            const char* pNoteStr = jonesString_GetString("JONES_STR_HIPOLYGO");
+            if ( pNoteStr ) {
+                pNoteStr = "You must quit and restart the game for the high poly option to take effect.";
+            }
+            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_GMPLY_OPTS", pNoteStr, 137);
+        }
+
+        // Close dialog
         EndDialog(hDlg, controlID);
     }
 
