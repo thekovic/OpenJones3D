@@ -951,7 +951,7 @@ void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
         size_t pathLen = strlen(aInstallPath);
         if ( pathLen )
         {
-            if ( aFilePath[pathLen + 127] == '\\' ) // TODO: [BUG] reading out of buffer
+            if ( aInstallPath[pathLen] == '\\' ) // Fixed: before: aFilePath[pathLen + 127] == '\\'
             {
                 STD_FORMAT(aFilePath, "%s%s", aInstallPath, pFilename);
             }
