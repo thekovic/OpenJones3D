@@ -1032,7 +1032,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.geoMode   = wuRegistry_GetInt("Geometry Mode", RD_GEOMETRY_FULL);
     pConfig->displaySettings.lightMode = wuRegistry_GetInt("Lighting Mode", RD_LIGHTING_GOURAUD);
 
-    int bHiPoly = wuRegistry_GetIntEx("HiPoly", 0);
+    int bHiPoly = wuRegistry_GetIntEx("HiPoly", 1); // Changed: Enable by default, was disabled
     sithModel_EnableHiPoly(bHiPoly);
 
     JonesMain_pStartupDisplayEnv = pDisplayEnv;
@@ -1199,7 +1199,7 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
 
     SendMessage(hDlgItem, CB_SETCURSEL, selectedItemIdx, 0);
 
-    // Init CB MIp Filter
+    // Init CB MimpMap Filter
     hDlgItem = GetDlgItem(hDlg, 1012);
     itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"None");
     SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 0);
@@ -1210,6 +1210,13 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
 
     itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Trilinear");
     SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+
+    // Added
+    // Enable and init  HiPoly check button
+    hDlgItem = GetDlgItem(hDlg, 1051);
+    EnableWindow(hDlgItem, 1);
+    ShowWindow(hDlgItem, 1);
+    CheckDlgButton(hDlg, 1051, sithModel_IsHiPolyEnabled());
 
     // Setup Display related controls
     JonesMain_DevDialogInitDisplayDevices(hDlg, pConfig);
@@ -1415,6 +1422,9 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
         curSelIdx = SendMessage(hCBFilterMode, CB_GETCURSEL, 0, 0);
         pState->displaySettings.filter = SendMessage(hCBFilterMode, CB_GETITEMDATA, curSelIdx, 0);
 
+        // Added: Enable/Disable HiPoly
+        sithModel_EnableHiPoly(IsDlgButtonChecked(hWnd, 1051) == 1);
+
         pState->displaySettings.bWindowMode = IsDlgButtonChecked(hWnd, 1002) == 1;// window mode
         pState->devMode = IsDlgButtonChecked(hWnd, 1007) == 1;// devmode
 
@@ -1447,6 +1457,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
 
             wuRegistry_SaveStr("User Path", pState->aInstallPath);
             wuRegistry_SaveInt("Performance Level", pState->performanceLevel);
+            wuRegistry_SaveInt("HiPoly", sithModel_IsHiPolyEnabled()); // Added
 
             wuRegistry_SaveInt("Geometry Mode", pState->displaySettings.geoMode);
             wuRegistry_SaveInt("Lighting Mode", pState->displaySettings.lightMode);
