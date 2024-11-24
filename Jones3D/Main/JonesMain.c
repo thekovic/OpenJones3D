@@ -1076,7 +1076,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     JonesMain_curVideoMode.aspectRatio                    = 1.0f;
     JonesMain_curVideoMode.rasterInfo.width               = wuRegistry_GetInt("Width", 640);
     JonesMain_curVideoMode.rasterInfo.height              = wuRegistry_GetInt("Height", 480);
-    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 16); // Change to 32 bpp
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32);
     JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
 
     pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
@@ -1271,37 +1271,37 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
     {
         switch ( controlId )
         {
-            case 1013:                          // error output normal
+            case 1013: // error output normal
                 pState->debugMode = 0;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1014:                          // error output console
+            case 1014: // error output console
                 pState->debugMode = 1;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1015:                          // error output file
+            case 1015: // error output file
                 pState->debugMode = 2;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1016:                          // debug output normal
+            case 1016: // debug output normal
                 pState->logLevel = 1;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1017:                          // debug output verbose
+            case 1017: // debug output verbose
                 pState->logLevel = 2;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1018:                          // debug output quiet
+            case 1018: // debug output quiet
                 pState->logLevel = 0;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1029:                          // display mode
+            case 1029: // display mode
                 if ( hiWParam == 1 )
                 {
                     HWND hCBDisplayMode = GetDlgItem(hWnd, 1029);
@@ -1310,7 +1310,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
                 }
                 break;
 
-            case 1030:                          // Display settings
+            case 1030: // Display settings
                 if ( hiWParam == 1 )
                 {
                     HWND CBDisplayDriver = GetDlgItem(hWnd, 1030);
@@ -1320,7 +1320,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
                 }
                 break;
 
-            case 1031:                          // 3D Driver
+            case 1031: // 3D Driver
                 if ( hiWParam == 1 )
                 {
                     HWND hCB3DDriver = GetDlgItem(hWnd, 1031);
@@ -1330,27 +1330,27 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
                 }
                 break;
 
-            case 1176:                          // performance level 0
+            case 1176: // performance level 0
                 pState->performanceLevel = 0;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1177:                          // performance level 1
+            case 1177: // performance level 1
                 pState->performanceLevel = 1;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1178:                          // performance level 2
+            case 1178: // performance level 2
                 pState->performanceLevel = 2;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1179:                          // performance level 3
+            case 1179: // performance level 3
                 pState->performanceLevel = 3;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
 
-            case 1180:                          // performance level 4
+            case 1180: // performance level 4
                 pState->performanceLevel = 4;
                 JonesMain_DevDialogUpdateRadioButtons(hWnd, pState);
                 break;
@@ -1363,19 +1363,19 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
     {
         switch ( controlId )
         {
-            case 1001:                          // select level list
+            case 1001: // select level list
                 if ( hiWParam != 2 )
                 {
                     return;
                 }
 
-                controlId = 1;                  // start game
+                controlId = 1; // start game
                 break;
 
-            case 1:                             // start the game
+            case 1: // start the game
                 break;
 
-            case 2:                             // exit
+            case 2: // exit
                 EndDialog(hWnd, controlId);
                 return;
 
@@ -1518,9 +1518,9 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
 
     // Populate display mode combo box list (resolutions) and select 
 
-    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp = 16; // TODO: Should be 32 bpp, probably just remove this line since bpp from stored settings in registry should be used anyway
+    // JonesMain_curVideoMode.rasterInfo.colorInfo.bpp = 16; // Removed: This prevents getting stored 32 BPP resolution from config
 
-    bDriverSet = 0;
+    bDriverSet = false;
     for ( size_t modeNum = 0; modeNum < JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum].numModes; ++modeNum )
     {
         if ( pDisplay->aModes[modeNum].aspectRatio == 1.0f
@@ -1539,7 +1539,7 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
                   && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
                 {
                     SendMessage(hCBDisplayMode, CB_SETCURSEL, itemIdx, 0);
-                    bDriverSet = 1;
+                    bDriverSet = true;
                 }
             }
         }
@@ -1612,7 +1612,7 @@ size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList,
     StdDisplayInfo* pDisplay = &pList->aDisplayInfos[deviceNum];
     for ( size_t i = 0; i < pList->aDisplayInfos[deviceNum].numModes; ++i )
     {
-        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == 16 )
+        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == pVideoMode->rasterInfo.colorInfo.bpp ) // Fixed: Changed hardcoded 16 BPP check to pVideoMode BPP compare
         {
             if ( pDisplay->aModes[i].rasterInfo.width == pVideoMode->rasterInfo.width && pDisplay->aModes[i].rasterInfo.height == pVideoMode->rasterInfo.height )
             {
