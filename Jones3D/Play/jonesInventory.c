@@ -122,8 +122,7 @@ int J3DAPI jonesInventory_Load(const char* pFilename)
 }
 
 void J3DAPI jonesInventory_Close()
-{
-}
+{}
 
 int J3DAPI jonesInventory_ActivateItem(SithThing* pThing, int typeId)
 {
@@ -170,7 +169,7 @@ int J3DAPI jonesInventory_ResetGameStatistics()
     return 0;
 }
 
-int J3DAPI jonesInventory_GetMaxDifficultyLevel()
+size_t jonesInventory_GetMaxDifficultyLevel(void)
 {
     return 5;
 }

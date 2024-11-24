@@ -4,19 +4,24 @@
 #include <Jones3D/Gui/JonesDialog.h>
 #include <Jones3D/Main/JonesMain.h>
 #include <Jones3D/Main/jonesString.h>
+#include <Jones3D/Play/jonesInventory.h>
 #include <Jones3D/RTI/symbols.h>
 
 #include <rdroid/Main/rdroid.h>
 
 #include <sith/Devices/sithControl.h>
 #include <sith/DSS/sithGamesave.h>
+#include <sith/Gameplay/sithOverlayMap.h>
 #include <sith/Gameplay/sithPlayer.h>
+#include <sith/World/sithVoice.h>
 
 #include <std/General/std.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdDisplay.h>
 #include <std/Win95/stdControl.h>
+
+#include <w32util/wuRegistry.h>
 
 #include <math.h>
 
@@ -178,11 +183,11 @@ void jonesConfig_InstallHooks(void)
     // J3D_HOOKFUNC(jonesConfig_ShowLoadGameWarningMsgBox);
     J3D_HOOKFUNC(jonesConfig_LoadGameDialogInit);
     J3D_HOOKFUNC(jonesConfig_LoadGameThumbnailPaintProc);
-    // J3D_HOOKFUNC(jonesConfig_ShowGamePlayOptions);
-    // J3D_HOOKFUNC(jonesConfig_GamePlayOptionsProc);
-    // J3D_HOOKFUNC(jonesConfig_sub_406A00);
-    // J3D_HOOKFUNC(jonesConfig_GamePlayOptionsInitDlg);
-    // J3D_HOOKFUNC(jonesConfig_GamePlayOptions_HandleWM_COMMAND);
+    J3D_HOOKFUNC(jonesConfig_ShowGamePlayOptions);
+    J3D_HOOKFUNC(jonesConfig_GamePlayOptionsProc);
+    J3D_HOOKFUNC(jonesConfig_HandleWM_HSCROLL);
+    J3D_HOOKFUNC(jonesConfig_GamePlayOptionsInitDlg);
+    J3D_HOOKFUNC(jonesConfig_GamePlayOptions_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_EnableMouseControl);
     // J3D_HOOKFUNC(jonesConfig_FreeControlScheme);
     // J3D_HOOKFUNC(jonesConfig_FreeControlConfigEntry);
@@ -975,30 +980,30 @@ int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd)
 //    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
 //}
 
-int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowGamePlayOptions, hWnd);
-}
-
-INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsProc, hWnd, msg, wparam, lparam);
-}
-
-LRESULT J3DAPI jonesConfig_sub_406A00(HWND hDlg, HWND hWnd, int a3)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_sub_406A00, hDlg, hWnd, a3);
-}
-
-int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsInitDlg, hDlg);
-}
-
-int J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, int nResult)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptions_HandleWM_COMMAND, hDlg, nResult);
-}
+//int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowGamePlayOptions, hWnd);
+//}
+//
+//INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsProc, hWnd, msg, wparam, lparam);
+//}
+//
+//LRESULT J3DAPI jonesConfig_HandleWM_HSCROLL(HWND hDlg, HWND hWnd, int a3)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_HandleWM_HSCROLL, hDlg, hWnd, a3);
+//}
+//
+//int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsInitDlg, hDlg);
+//}
+//
+//int J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, int nResult)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptions_HandleWM_COMMAND, hDlg, nResult);
+//}
 
 //void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
 //{
@@ -2778,6 +2783,251 @@ BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA po
     }
 
     return TRUE;
+}
+
+int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd)
+{
+    GetWindowLongA(hWnd, GWL_HINSTANCE); // TODO: useless
+    return JonesDialog_ShowDialog((LPCSTR)112, hWnd, jonesConfig_GamePlayOptionsProc, 0);
+}
+
+INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    int bProcessed = 1;
+    if ( uMsg > WM_INITDIALOG )
+    {
+        if ( uMsg == WM_COMMAND )
+        {
+            jonesConfig_GamePlayOptions_HandleWM_COMMAND(hWnd, LOWORD(wParam));
+            return 0;
+        }
+
+        if ( uMsg != WM_HSCROLL )
+        {
+            return 0;
+        }
+
+
+        jonesConfig_HandleWM_HSCROLL(hWnd, (HWND)lParam, LOWORD(wParam));
+
+        HWND hDifSlideer = GetDlgItem(hWnd, 1050);   // Difficulty slider control
+
+        const char* pDifficultyStr = NULL;
+        int difficulty = SendMessageA(hDifSlideer, TBM_GETPOS, 0, 0);
+        switch ( difficulty )
+        {
+            case 0:
+                pDifficultyStr = jonesString_GetString("JONES_STR_HARD0");
+                break;
+
+            case 1:
+                pDifficultyStr = jonesString_GetString("JONES_STR_HARD1");
+                break;
+
+            case 2:
+                pDifficultyStr = jonesString_GetString("JONES_STR_HARD2");
+                break;
+
+            case 3:
+                pDifficultyStr = jonesString_GetString("JONES_STR_HARD3");
+                break;
+
+            case 4:
+                pDifficultyStr = jonesString_GetString("JONES_STR_HARD4");
+                break;
+
+            case 5:
+                pDifficultyStr = jonesString_GetString("JONES_STR_HARD5");
+                break;
+
+            default:
+                break;
+        }
+
+        if ( pDifficultyStr )
+        {
+            HWND hDifText = GetDlgItem(hWnd, 1215); // Difficulty text control
+            SetWindowTextA(hDifText, pDifficultyStr);
+        }
+
+        return 1;
+    }
+
+    if ( uMsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontGamePlayOptionsDlg = jonesConfig_InitDialog(hWnd, NULL, 112);
+        bProcessed = jonesConfig_GamePlayOptionsInitDlg(hWnd);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+    }
+    else
+    {
+        if ( uMsg != WM_DESTROY )
+        {
+            return 0;
+        }
+
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontGamePlayOptionsDlg);
+    }
+
+    return bProcessed;
+}
+
+void J3DAPI jonesConfig_HandleWM_HSCROLL(HWND hDlg, HWND hWnd, uint16_t sbValue)
+{
+    const int maxPos = SendMessageA(hWnd, TBM_GETRANGEMAX, 0, 0);
+    const int minPos = SendMessageA(hWnd, TBM_GETRANGEMIN, 0, 0);
+    const int curPos = SendMessageA(hWnd, TBM_GETPOS, 0, 0);
+    SendMessageA(hWnd, TBM_GETPAGESIZE, 0, 0);  // ???
+
+    int newPos = -1;
+    switch ( sbValue )
+    {
+        case SB_THUMBPOSITION:
+        case SB_THUMBTRACK:
+            newPos = curPos;
+            break;
+
+        case SB_LEFT:
+            newPos = minPos;
+            break;
+
+        case SB_RIGHT:
+            newPos = maxPos;
+            break;
+
+        default:
+            break;
+    }
+
+    if ( newPos >= 0 )
+    {
+        SendMessageA(hWnd, TBM_SETPOS, /*redraw=*/1u, newPos);
+    }
+}
+
+int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
+{
+    HWND hCBShowText = GetDlgItem(hDlg, 1052);
+    int bShowText = sithVoice_GetShowText();
+    SendMessageA(hCBShowText, BM_SETCHECK, bShowText, 0);
+
+    HWND hCBShowHints = GetDlgItem(hDlg, 1051);
+    int bShowHints = sithOverlayMap_GetShowHints();
+    SendMessageA(hCBShowHints, BM_SETCHECK, bShowHints, 0);
+
+    HWND hCBRotateMap = GetDlgItem(hDlg, 1204);
+    int  bRotateMap = sithOverlayMap_GetMapRotation();
+    SendMessageA(hCBRotateMap, BM_SETCHECK, bRotateMap, 0);
+
+    CheckDlgButton(hDlg, 1202, jonesConfig_bDefaultRun);// CB default run
+
+    HWND hDifSlider = GetDlgItem(hDlg, 1050); // Difficulty slider control
+
+    size_t maxDifficulty = jonesInventory_GetMaxDifficultyLevel();
+    SendMessageA(hDifSlider, TBM_SETRANGE, 1u, (uint16_t)maxDifficulty << 16);// LWORD is min and HIWORD is max range
+
+    int curDifficulty = sithGetGameDifficulty();
+    SendMessageA(hDifSlider, TBM_SETPOS, 1u, curDifficulty);
+
+    SendMessageA(hDifSlider, TBM_SETTICFREQ, 1u, 0);
+    SendMessageA(hDifSlider, TBM_SETPAGESIZE, 0, 1);
+
+
+    const char* pDifficultyStr = NULL;
+    switch ( sithGetGameDifficulty() )
+    {
+        case 0:
+            pDifficultyStr = jonesString_GetString("JONES_STR_HARD0");
+            break;
+
+        case 1:
+            pDifficultyStr = jonesString_GetString("JONES_STR_HARD1");
+            break;
+
+        case 2:
+            pDifficultyStr = jonesString_GetString("JONES_STR_HARD2");
+            break;
+
+        case 3:
+            pDifficultyStr = jonesString_GetString("JONES_STR_HARD3");
+            break;
+
+        case 4:
+            pDifficultyStr = jonesString_GetString("JONES_STR_HARD4");
+            break;
+
+        case 5:
+            pDifficultyStr = jonesString_GetString("JONES_STR_HARD5");
+            break;
+
+        default:
+            break;
+    }
+
+    if ( pDifficultyStr )
+    {
+        HWND  hDifText = GetDlgItem(hDlg, 1215);          // Difficulty text control
+        SetWindowTextA(hDifText, pDifficultyStr);
+    }
+
+    return 1;
+}
+
+void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t controlID)
+{
+    if ( controlID == 1 ) // OK
+    {
+        // Get & save show text option
+        HWND hCBShowText = GetDlgItem(hDlg, 1052);
+        int bShowText = SendMessageA(hCBShowText, BM_GETSTATE, 0, 0);
+        sithVoice_ShowText(bShowText);
+
+        bShowText = sithVoice_GetShowText();
+        wuRegistry_SaveIntEx("Show Text", bShowText);
+
+        // Get & save map rotation option
+        HWND hCBMapRotate = GetDlgItem(hDlg, 1204);
+        int bRotateMap = SendMessageA(hCBMapRotate, BM_GETSTATE, 0, 0);
+        sithOverlayMap_EnableMapRotation(bRotateMap);
+
+        bRotateMap = sithOverlayMap_GetMapRotation();
+        wuRegistry_SaveIntEx("Map Rotation", bRotateMap);
+        // Get & save show hint option
+        HWND hCBShowHints = GetDlgItem(hDlg, 1051);
+        int bShowHints = SendMessageA(hCBShowHints, BM_GETSTATE, 0, 0);
+        sithOverlayMap_SetShowHints(bShowHints);
+
+        bShowHints = sithOverlayMap_GetShowHints();
+        wuRegistry_SaveIntEx("Show Hints", bShowHints);
+        // Get & save difficulty
+        HWND hDifSlideer = GetDlgItem(hDlg, 1050);
+        int difficulty = SendMessageA(hDifSlideer, TBM_GETPOS, 0, 0);
+        sithSetGameDifficulty(difficulty);
+
+        difficulty = sithGetGameDifficulty();
+        wuRegistry_SaveInt("Difficulty", difficulty);
+
+        // Get & save default to run option
+        HWND hCBRun = GetDlgItem(hDlg, 1202);
+        jonesConfig_bDefaultRun = SendMessageA(hCBRun, BM_GETCHECK, 0, 0);
+        wuRegistry_SaveIntEx("Default Run", jonesConfig_bDefaultRun);
+
+        if ( jonesConfig_bDefaultRun )
+        {
+            sithControl_g_controlOptions |= 0x02;
+        }
+        else
+        {
+            sithControl_g_controlOptions &= ~0x02;
+        }
+
+        EndDialog(hDlg, controlID);
+    }
+
+    if ( controlID == 2 ) //  CANCEL
+    {
+        EndDialog(hDlg, controlID);
+    }
 }
 
 void J3DAPI jonesConfig_EnableMouseControl(int bEnable)

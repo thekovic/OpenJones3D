@@ -219,7 +219,7 @@
 #define jonesConfig_LoadGameThumbnailPaintProc_ADDR 0x00406760
 #define jonesConfig_ShowGamePlayOptions_ADDR 0x00406840
 #define jonesConfig_GamePlayOptionsProc_ADDR 0x00406870
-#define jonesConfig_sub_406A00_ADDR 0x00406A00
+#define jonesConfig_HandleWM_HSCROLL_ADDR 0x00406A00
 #define jonesConfig_GamePlayOptionsInitDlg_ADDR 0x00406AA0
 #define jonesConfig_GamePlayOptions_HandleWM_COMMAND_ADDR 0x00406BF0
 #define jonesConfig_EnableMouseControl_ADDR 0x00406D40

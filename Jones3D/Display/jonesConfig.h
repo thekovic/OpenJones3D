@@ -54,11 +54,13 @@ UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
 int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd);
 BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn);
 LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd);
 INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam);
-LRESULT J3DAPI jonesConfig_sub_406A00(HWND hDlg, HWND hWnd, int a3);
+void J3DAPI jonesConfig_HandleWM_HSCROLL(HWND hDlg, HWND hWnd, uint16_t sbValue);
 int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg);
-int J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, int nResult);
+void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t controlID);
+
 void J3DAPI jonesConfig_EnableMouseControl(int bEnable);
 void J3DAPI jonesConfig_FreeControlScheme(JonesControlsScheme* pConfig);
 void J3DAPI jonesConfig_FreeControlConfigEntry(JonesControlsConfig* pConfig);
