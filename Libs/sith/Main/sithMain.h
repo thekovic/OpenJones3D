@@ -64,7 +64,7 @@ int J3DAPI sithOpenStatic(const char* pFilename);
 void sithCloseStatic(void);
 
 int J3DAPI sithOpenNormal(const char* pWorldName, const wchar_t* wszPlayerName);
-void J3DAPI sithOpenPostProcess();
+void sithOpenPostProcess(void);
 int J3DAPI sithOpenMulti(const char* pFilename, const wchar_t* pwPlayerName); // Added
 
 int J3DAPI sithOpen(const wchar_t* wszPlayerName);
