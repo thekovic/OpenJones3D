@@ -117,13 +117,7 @@ void J3DAPI stdPrintf(tPrintfFunc pfPrint, const char* pFilePath, unsigned int l
         int fnSize = _snprintf(aPrintBuffer, sizeof(aPrintBuffer), &pFilePath[fnIdx]);
         size_t remain = sizeof(aPrintBuffer) - fnSize;
         int nWritten = _snprintf(&aPrintBuffer[fnSize], remain, "(%d): ", linenum);
-        vsnprintf_s(
-            &aPrintBuffer[nWritten + fnSize],
-            STD_ARRAYLEN(aPrintBuffer) - (nWritten + fnSize),
-            remain - nWritten,
-            format,
-            args
-        );
+        vsnprintf_s(&aPrintBuffer[nWritten + fnSize], STD_ARRAYLEN(aPrintBuffer) - (nWritten + fnSize), remain - nWritten, format, args);
         va_end(args);
 
         // Write to output function
@@ -131,30 +125,26 @@ void J3DAPI stdPrintf(tPrintfFunc pfPrint, const char* pFilePath, unsigned int l
     }
 }
 
-signed int stdConsolePrintf(const char* pFormat, ...)
+int stdConsolePrintf(const char* pFormat, ...)
 {
     va_list args;
     va_start(args, pFormat);
-    vsnprintf_s(std_g_genBuffer, sizeof(std_g_genBuffer), sizeof(std_g_genBuffer) - 1, pFormat, args);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
     va_end(args);
 
-    stdConsole_WriteConsole(std_g_genBuffer, 7u);
+    stdConsole_WriteConsole(std_g_genBuffer, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
     return sizeof(std_g_genBuffer);
 }
 
 const char* J3DAPI stdFileFromPath(const char* pPath)
 {
-    char* pFilename;
-
-    pFilename = strrchr(pPath, '\\');
+    char* pFilename = strrchr(pPath, '\\');
     if ( pFilename )
     {
         return pFilename + 1;
     }
-    else
-    {
-        return pPath;
-    }
+
+    return pPath;
 }
 
 int J3DAPI stdCalcBitPos(int bit)
@@ -169,7 +159,7 @@ int J3DAPI stdCalcBitPos(int bit)
     return pos;
 }
 
-// TODO: Below functions might all be needed to move to stdPlatform
+// TODO: Functions below might all needed to be move to stdPlatform
 
 tFileHandle J3DAPI stdFileOpen(const char* pFilename, const char* mode)
 {
