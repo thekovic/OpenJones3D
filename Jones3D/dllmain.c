@@ -203,7 +203,7 @@ int Startup(const char* aCmd)
 // Indy3D.exe entry point
 int WINAPI Indy3D_WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-    JonesMain_g_mainMutex = CreateMutexA(0, 1, "INDY3D");
+    JonesMain_g_mainMutex = CreateMutex(NULL, /*CreateMutex=*/TRUE, "INDY3D");
     if ( GetLastError() != ERROR_ALREADY_EXISTS )
     {
         wkernel_SetProcessProc(JonesMain_Process);
