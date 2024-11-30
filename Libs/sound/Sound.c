@@ -624,18 +624,20 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
     // Was changed to function call
     Sound_UpdateFades();
 
-    // Fixed: Fixed negating orient by not modifying th original pointer var
-    rdVector3 orient;
+    // Fixed: Fixed negating orient by not modifying the original pointer var
+    rdVector3 topOrient;
     if ( pTopOrient && !Sound_bReverseSound )
     {
-        rdVector_Neg3(&orient, pTopOrient);
-        pTopOrient = &orient;
+        rdVector_Neg3(&topOrient, pTopOrient);
+        pTopOrient = &topOrient;
     }
 
+    // Fixed: Fixed negating orient by not modifying the original pointer var
+    rdVector3 frontOrient;
     if ( pFrontOrient && !Sound_bReverseSound )
     {
-        rdVector_Neg3(&orient, pFrontOrient);
-        pFrontOrient = &orient;
+        rdVector_Neg3(&frontOrient, pFrontOrient);
+        pFrontOrient = &frontOrient;
     }
 
     if ( pPos )
