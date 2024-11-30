@@ -21,6 +21,7 @@
 #include <std/General/stdPlatform.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/std3D.h>
+#include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
 
 #include <w32util/wuRegistry.h>
@@ -56,7 +57,7 @@ void JonesDisplay_InstallHooks(void)
     J3D_HOOKFUNC(JonesDisplay_Startup);
     J3D_HOOKFUNC(JonesDisplay_Shutdown);
     J3D_HOOKFUNC(JonesDisplay_Restart);
-    J3D_HOOKFUNC(JonesDisplay_UpdateCur3DDevice);
+    J3D_HOOKFUNC(JonesDisplay_SetDefaultVideoMode);
     J3D_HOOKFUNC(JonesDisplay_Open);
     J3D_HOOKFUNC(JonesDisplay_Close);
     J3D_HOOKFUNC(JonesDisplay_EnableDualMonitor);
@@ -82,7 +83,7 @@ int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings)
     JonesDisplay_UpdateDualScreenWindowSize(pSettings);
     if ( pSettings->bWindowMode )
     {
-        JonesDisplay_bDualMonitor = 0;
+        JonesDisplay_bDualMonitor = false;
     }
 
     if ( !stdDisplay_Open(pSettings->displayDeviceNum) )
@@ -189,15 +190,15 @@ int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings)
     }
 }
 
-void J3DAPI JonesDisplay_UpdateCur3DDevice(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings)
+void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings)
 {
     pDisplaySettings->bWindowMode  = 0;
     pDisplaySettings->bDualMonitor = 0;
-    pDisplaySettings->bBuffering  = 0;
-    pDisplaySettings->bFog        = 1;
-    pDisplaySettings->filter      = STD3D_MIPMAPFILTER_BILINEAR;
-    pDisplaySettings->geoMode     = RD_GEOMETRY_FULL;
-    pDisplaySettings->lightMode   = RD_LIGHTING_GOURAUD;
+    pDisplaySettings->bBuffering   = 0;
+    pDisplaySettings->bFog         = 1;
+    pDisplaySettings->filter       = STD3D_MIPMAPFILTER_BILINEAR;
+    pDisplaySettings->geoMode      = RD_GEOMETRY_FULL;
+    pDisplaySettings->lightMode    = RD_LIGHTING_GOURAUD;
 
     size_t i = 0;
     for ( ; i < pEnv->numInfos; ++i )
@@ -224,7 +225,7 @@ void J3DAPI JonesDisplay_UpdateCur3DDevice(const StdDisplayEnvironment* pEnv, Jo
             }
 
             StdVideoMode videoMode;
-            videoMode.aspectRatio                    = 1.0; // TODO: make 16:9 aspect
+            videoMode.aspectRatio                    = 1.0;
             videoMode.rasterInfo.width               = 640; // TODO: make 16:9 res
             videoMode.rasterInfo.height              = 480;
             videoMode.rasterInfo.colorInfo.bpp       = 16;  // TODO: make it 24/32 BPP
@@ -319,7 +320,7 @@ int J3DAPI JonesDisplay_UpdateDualScreenWindowSize(const JonesDisplaySettings* p
 
 void J3DAPI JonesDisplay_OpenLoadScreen(const char* pMatFilePath, float wlStartX, float wlStartY, float wlEndX, float wlEndY, int bPrimaryMusicTheme)
 {
-    if ( JonesDisplay_openLoadScreenCounter > 2 )// ???
+    if ( JonesDisplay_openLoadScreenCounter > 2 ) // Greater than 2 is when loading saved game within existing game
     {
         sithSoundMixer_StopAll();
     }
@@ -360,19 +361,21 @@ void J3DAPI JonesDisplay_UpdateLoadProgress(float progress)
     sithTime_Advance();
     sithSoundMixer_Update();
 
-    if ( JonesDisplay_openLoadScreenCounter == 1 )
+    if ( JonesDisplay_openLoadScreenCounter == 1 ) // loading static world
     {
         progress = progress / 2.0f;
     }
-    else if ( JonesDisplay_openLoadScreenCounter == 2 )
+    else if ( JonesDisplay_openLoadScreenCounter == 2 ) // loading normal world
     {
         progress = progress / 2.0f + 50.0f;
     }
 
     if ( std3D_StartScene() )
     {
+        // Error starting scene
         std3D_EndScene();
         stdDisplay_Update();
+        return;
     }
 
     // Play loading music
@@ -492,6 +495,8 @@ void J3DAPI JonesDisplay_UpdateLoadProgress(float progress)
         rdCache_Flush();
         rdCache_FlushAlpha();
         stdDisplay_Update();
-        JonesDisplay_UpdateLoadProgress(100.0f); // Update to should background image in load completed state
+        JonesDisplay_UpdateLoadProgress(100.0f); // Update to show background image in load completed state
+    }
+}
     }
 }

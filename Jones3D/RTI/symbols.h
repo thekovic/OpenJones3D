@@ -332,7 +332,7 @@
 #define JonesDisplay_Startup_TYPE int (J3DAPI*)(JonesDisplaySettings*)
 #define JonesDisplay_Shutdown_TYPE void (*)(void)
 #define JonesDisplay_Restart_TYPE int (J3DAPI*)(JonesDisplaySettings*)
-#define JonesDisplay_UpdateCur3DDevice_TYPE void (J3DAPI*)(const StdDisplayEnvironment*, JonesDisplaySettings*)
+#define JonesDisplay_SetDefaultVideoMode_TYPE void (J3DAPI*)(const StdDisplayEnvironment*, JonesDisplaySettings*)
 #define JonesDisplay_Open_TYPE int (J3DAPI*)(JonesDisplaySettings*)
 #define JonesDisplay_Close_TYPE void (*)(void)
 #define JonesDisplay_EnableDualMonitor_TYPE void (J3DAPI*)(int)

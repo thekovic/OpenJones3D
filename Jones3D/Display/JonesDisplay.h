@@ -18,6 +18,7 @@ void JonesDisplay_Close(void);
 
 int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings);
 void J3DAPI JonesDisplay_UpdateCur3DDevice(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings);
+void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings);
 
 void J3DAPI JonesDisplay_EnableDualMonitor(int bEnable);
 int J3DAPI JonesDisplay_UpdateDualScreenWindowSize(const JonesDisplaySettings* pSettings);

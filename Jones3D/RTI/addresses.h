@@ -342,7 +342,7 @@
 #define JonesDisplay_Startup_ADDR 0x00412490
 #define JonesDisplay_Shutdown_ADDR 0x004126F0
 #define JonesDisplay_Restart_ADDR 0x00412720
-#define JonesDisplay_UpdateCur3DDevice_ADDR 0x00412750
+#define JonesDisplay_SetDefaultVideoMode_ADDR 0x00412750
 #define JonesDisplay_Open_ADDR 0x004129C0
 #define JonesDisplay_Close_ADDR 0x00412A80
 #define JonesDisplay_EnableDualMonitor_ADDR 0x00412AB0
