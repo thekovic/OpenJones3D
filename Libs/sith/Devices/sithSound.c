@@ -31,14 +31,29 @@ int J3DAPI sithSound_InitializeSound(tHostServices* pHS)
     return J3D_TRAMPOLINE_CALL(sithSound_InitializeSound, pHS);
 }
 
+void sithSound_UninitializeSound(void)
+{
+    J3D_TRAMPOLINE_CALL(sithSound_UninitializeSound);
+}
+
 int J3DAPI sithSound_Startup(int bSound3D)
 {
     return J3D_TRAMPOLINE_CALL(sithSound_Startup, bSound3D);
 }
 
+int sithSound_StartupSound(void)
+{
+    return J3D_TRAMPOLINE_CALL(sithSound_StartupSound);
+}
+
 void sithSound_Shutdown(void)
 {
     J3D_TRAMPOLINE_CALL(sithSound_Shutdown);
+}
+
+void sithSound_ShutdownSound(void)
+{
+    J3D_TRAMPOLINE_CALL(sithSound_ShutdownSound);
 }
 
 int J3DAPI sithSound_NDYReadSoundSection(SithWorld* pWorld, int bSkip)

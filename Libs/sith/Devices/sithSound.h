@@ -10,8 +10,14 @@
 J3D_EXTERN_C_START
 
 int J3DAPI sithSound_InitializeSound(tHostServices* pHS);
+void sithSound_UninitializeSound(void);
+
 int J3DAPI sithSound_Startup(int bSound3D);
+int sithSound_StartupSound(void);
+
 void sithSound_Shutdown(void);
+void sithSound_ShutdownSound(void);
+
 int J3DAPI sithSound_NDYReadSoundSection(SithWorld* pWorld, int bSkip);
 int J3DAPI sithSound_CNDWriteSoundSection(tFileHandle fh, SithWorld* pWorld);
 int J3DAPI sithSound_CNDReadSoundSection(tFileHandle fh, SithWorld* pWorld);

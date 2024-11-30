@@ -977,8 +977,11 @@
 #define sithModel_CacheAdd_ADDR 0x0044CBF0
 #define sithModel_CacheFind_ADDR 0x0044CC80
 #define sithSound_InitializeSound_ADDR 0x0044CCE0
+#define sithSound_UninitializeSound_ADDR 0x0044CCF0
 #define sithSound_Startup_ADDR 0x0044CD20
+#define sithSound_StartupSound_ADDR 0x0044CD00
 #define sithSound_Shutdown_ADDR 0x0044CE00
+#define sithSound_ShutdownSound_ADDR 0x0044CD10
 #define sithSound_NDYReadSoundSection_ADDR 0x0044CE20
 #define sithSound_CNDWriteSoundSection_ADDR 0x0044D040
 #define sithSound_CNDReadSoundSection_ADDR 0x0044D080
