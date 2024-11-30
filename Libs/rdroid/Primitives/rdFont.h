@@ -14,9 +14,6 @@ J3D_EXTERN_C_START
 #define RDFONT_ALIGNLEFT   2
 #define RDFONT_ALIGNRIGHT  4
 
-#define RD_REF_WIDTH  640.0f
-#define RD_REF_HEIGHT 480.0f
-
 typedef rdVector4 rdFontColor[4];
 
 void rdFont_Startup(void);
