@@ -260,6 +260,7 @@
 #define stdEffect_SetFadeFactor_ADDR 0x004C2030
 #define stdEffect_GetFadeFactor_ADDR 0x004C2050
 #define stdConsole_Startup_ADDR 0x004C2270
+#define stdConsole_Shutdown_ADDR 0x004C2350
 #define stdConsole_SetAttributes_ADDR 0x004C2360
 #define stdConsole_SetConsoleTextAttribute_ADDR 0x004C2380
 #define stdConsole_InitOutputConsole_ADDR 0x004C23A0

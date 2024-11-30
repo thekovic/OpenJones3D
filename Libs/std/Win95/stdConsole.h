@@ -7,9 +7,11 @@
 J3D_EXTERN_C_START
 
 int J3DAPI stdConsole_Startup(const char* pTitleText, int attributes, int bShowMinimized);
+void stdConsole_Shutdown(void);
+
 int J3DAPI stdConsole_SetAttributes(WORD wAttributes);
 int J3DAPI stdConsole_SetConsoleTextAttribute(WORD wAttributes);
-int J3DAPI stdConsole_InitOutputConsole();
+int stdConsole_InitOutputConsole(void);
 int J3DAPI stdConsole_WriteConsole(const char* pText, uint32_t textAttribute);
 
 // Helper hooking functions
