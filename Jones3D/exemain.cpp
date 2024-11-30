@@ -19,7 +19,7 @@ bool iequals(const std::string_view& lhs, const std::string_view& rhs)
     return std::ranges::equal(lhs | to_lower, rhs | to_lower);
 }
 
-std::optional<std::string> CalcFileSha256(const fs::path& filepath)
+static std::optional<std::string> CalcFileSha256(const fs::path& filepath)
 {
     std::ifstream file(filepath, std::ios::in | std::ios::binary);
     if ( !file.is_open() ) {
@@ -35,7 +35,7 @@ std::optional<std::string> CalcFileSha256(const fs::path& filepath)
     return hasher.hash();
 }
 
-bool IsValidFile(const fs::path& filepath, const std::string_view fileSha256)
+static bool IsValidFile(const fs::path& filepath, const std::string_view fileSha256)
 {
     auto hash = CalcFileSha256(filepath);
     if ( !hash ) {
@@ -44,12 +44,21 @@ bool IsValidFile(const fs::path& filepath, const std::string_view fileSha256)
     return iequals(hash.value(), fileSha256);
 }
 
-int main(int argc, char** argv)
+int wmain(int argc, wchar_t* argv[])
 {
     // Execute Indy3D.exe in suspended mode.
     fs::path exePath = "Indy3D.exe";
-    if ( argc > 1 ) {
-        exePath = argv[1];
+    std::wstring args;
+    if ( argc > 1 )
+    {
+        exePath = argv[1]; // should be path to Indy3D.exe
+        std::wstringstream sargs;
+        for ( int i = 2; i < argc; ++i )
+        {
+            if ( i > 2 ) sargs << L" ";
+            sargs << argv[i];
+        }
+        args = sargs.str();
     }
 
     if ( !fs::exists(exePath) )
@@ -80,7 +89,8 @@ int main(int argc, char** argv)
     STARTUPINFO si = { 0 };
     si.cb = sizeof(STARTUPINFO);
     PROCESS_INFORMATION pi = { 0 };
-    if ( !CreateProcess(exePath.native().c_str(), NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi) )
+    std::wstring cmd = exePath.native() + L" " + args;
+    if ( !CreateProcess(NULL, cmd.data(), NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi) )
     {
         std::fprintf(stderr, "CreateProcess(\"%ls\") failed; error code = 0x%08X\n", exePath.c_str(), GetLastError());
         const wchar_t* pError = L"Failed to start Indy3D.exe!";
