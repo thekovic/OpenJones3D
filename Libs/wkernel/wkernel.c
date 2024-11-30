@@ -31,7 +31,7 @@ static int wkernel_wndBorderWidth   = 0;
 static int wkernel_wndMenuBarHeight = 0;
 
 static inline int J3DAPI wkernel_CreateWindow(HINSTANCE hInstance, int nShowCmd, LPCSTR lpWindowName);
-static LRESULT CALLBACK wkernel_MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK wkernel_MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 void wkernel_InstallHooks(void)
 {
@@ -46,8 +46,7 @@ void wkernel_InstallHooks(void)
 }
 
 void wkernel_ResetGlobals(void)
-{
-}
+{}
 
 int J3DAPI wkernel_Run(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd, LPCSTR lpWindowName)
 {
@@ -300,31 +299,30 @@ int J3DAPI wkernel_CreateWindow(HINSTANCE hInstance, int nShowCmd, LPCSTR lpWind
     return 0;
 }
 
-LRESULT CALLBACK wkernel_MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK wkernel_MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    int bProcess;
+    bool bProcess = true;
 
-    bProcess = 1;
-    if ( Msg == WM_DESTROY )
+    if ( uMsg == WM_DESTROY )
     {
         PostQuitMessage(0);
-        bProcess = 0;
+        bProcess = false;
     }
 
-    if ( Msg == WM_CLOSE )
+    if ( uMsg == WM_CLOSE )
     {
         if ( wkernel_pfOnShutdown ) {
             wkernel_pfOnShutdown();
         }
-        bProcess = 0;
+        bProcess = false;
     }
 
-    if ( bProcess && wkernel_pfWndProc && wkernel_pfWndProc(hWnd, Msg, wParam, lParam) )
+    int retValue;
+    if ( bProcess && wkernel_pfWndProc && wkernel_pfWndProc(hWnd, uMsg, wParam, lParam, &retValue) )
     {
-        return Msg;
+        return retValue;
     }
-    else
-    {
-        return DefWindowProc(hWnd, Msg, wParam, lParam);
-    }
+
+    // Fallback to default window process
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
