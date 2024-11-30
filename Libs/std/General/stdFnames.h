@@ -4,7 +4,15 @@
 #include <std/types.h>
 #include <std/RTI/addresses.h>
 
+#include "stdUtil.h"
+
 J3D_EXTERN_C_START
+
+#define STD_MAKEPATH(outPath, path1, path2) \
+    do {\
+        _Static_assert(STD_ISSTRARRAY(outPath), "STD_MAKEPATH requires an array type for 'outPath'"); \
+        stdFnames_MakePath(outPath, STD_ARRAYLEN(outPath), path1, path2); \
+    } while ( 0 )
 
 const char* J3DAPI stdFnames_FindMedName(const char* pFilePath);
 char* J3DAPI stdFnames_FindExt(const char* pFilePath);
