@@ -292,9 +292,7 @@ int JonesHud_Startup(void)
     JonesHud_bRestoreActivated      = 0;
     JonesHud_bRestoreGameStatistics = 0;
 
-    // TODO: init to 0 all ids
-    JonesHud_aActivateKeyIds[0]     = 0;
-    JonesHud_aActivateKeyIds[1]     = 0;
+    memset(JonesHud_aActivateKeyIds, 0, sizeof(JonesHud_aActivateKeyIds)); // Fixed: 0 all elements pf array
 
     memset(JonesHud_aCosSinTableScaled, 0, sizeof(JonesHud_aCosSinTableScaled));
     memset(JonesHud_aCosSinTable, 0, sizeof(JonesHud_aCosSinTable));
@@ -2104,8 +2102,7 @@ void JonesHud_MenuMoveUp(void)
 
 void J3DAPI JonesHud_BindActivateControlKeys(int* aKeyIds, int numKeys)
 {
-    JonesHud_aActivateKeyIds[0] = 0;
-    JonesHud_aActivateKeyIds[1] = 0;
+    memset(JonesHud_aActivateKeyIds, 0, sizeof(JonesHud_aActivateKeyIds)); // Fixed: 0 all elements pf array
     for ( int i = 0; i < numKeys; ++i )
     {
         JonesHud_aActivateKeyIds[i] = aKeyIds[i];
@@ -2126,19 +2123,19 @@ int J3DAPI JonesHud_GetKey(unsigned int keyId)
     JonesHud_bKeyStateUpdated = 0;
     switch ( keyId )
     {
-        case 200u:
+        case DIK_UP:
             bKeyPressed = sithControl_GetKey(SITHCONTROL_FORWARD, &numPressed);
             break;
 
-        case 203u:
+        case DIK_LEFT:
             bKeyPressed = sithControl_GetKey(SITHCONTROL_TURNLEFT, &numPressed);
             break;
 
-        case 205u:
+        case DIK_RIGHT:
             bKeyPressed = sithControl_GetKey(SITHCONTROL_TURNRIGHT, &numPressed);
             break;
 
-        case 208u:
+        case DIK_DOWN:
             bKeyPressed = sithControl_GetKey(SITHCONTROL_BACK, &numPressed);
             break;
 
