@@ -206,9 +206,9 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
         }
     }
     pModel3->numMaterials = numMats; // TODO [BUG]: Note, assigning numMats here makes sure that materials are not getting freed in case of mat load error.
-    //                                              But this might also be cause of bug because from here on in any case of an error the materials are getting freed. 
-    //                                              Since materials are cached in sithMaterial module all freed materials will be invalidated in cache.
-    //                                              And any part of the code that is referencing cached materials will access freed pointer! 
+                                     //             But this might also be cause of bug because from here on in any case of an error the materials are getting freed. 
+                                     //             Since materials are cached in sithMaterial module all freed materials will be invalidated in cache.
+                                     //             And any part of the code that is referencing cached materials will access freed pointer! 
 
     if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 ) {
         goto syntax_error;
