@@ -53,6 +53,7 @@
 #include <math.h>
 #include <stdbool.h>
 
+#define JONESHUD_CREDITS_SPEEDFACTOR 0.5f // default 1.5
 
 static bool JonesHud_bStartup = false;
 static bool JonesHud_bOpen    = false;
@@ -180,8 +181,6 @@ static int JonesHud_msecCreditsFadeStart;
 float JonesHud_creditsAspectRatio;
 float JonesHud_creditsIconPosOffset;
 static float JonesHud_creditsSomeHeightRatio;
-
-#define JONESHUD_CREDITS_SPEEDFACTOR 1.5f // default 1.5
 
 static size_t JonesHud_creditsCurIdx;
 static size_t JonesHud_creditsCurMatIdx;
@@ -4114,8 +4113,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             stdDisplay_GetBackBufferSize(&JonesHud_creditsCanvasWidth, &JonesHud_creditsCanvasHeight);
 
             JonesHud_creditsSomeHeightRatio = (float)(int)JonesHud_creditsCanvasHeight / 8000.0f;
-            JonesHud_creditsAspectRatio   = ((float)JonesHud_creditsCanvasHeight * (4.0f / 3.0f)) / (float)JonesHud_creditsCanvasWidth;
-            JonesHud_creditsIconPosOffset = 48.0f / JonesHud_creditsAspectRatio;
+            JonesHud_creditsAspectRatio     = ((float)JonesHud_creditsCanvasHeight * (4.0f / 3.0f)) / (float)JonesHud_creditsCanvasWidth;
+            JonesHud_creditsIconPosOffset   = 48.0f / JonesHud_creditsAspectRatio;
 
             JonesHud_pCreditsFont1 = rdFont_Load("mat\\jonesComic Sans MS14.gcf");
             JonesHud_pCreditsFont2 = rdFont_Load("mat\\jonesCalisto MT20.gcf");
@@ -4134,10 +4133,10 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                         {
                             JonesHud_creditsCurMatIdx = i;
                             JonesHud_creditTextHeight =
-                                (float)JonesHud_pCreditsFont2->lineSpacing
-                                + 48.0f
+                                ((float)JonesHud_pCreditsFont2->lineSpacing
+                                + 48.0f / JonesHud_creditsAspectRatio
                                 + (float)JonesHud_pCreditsFont1->lineSpacing
-                                + (float)(2 * JonesHud_pCreditsFont1->fontSize);
+                                + (float)(2 * JonesHud_pCreditsFont1->fontSize)) * lineScalar;
                         }
 
                         JonesHud_apCreditsMats[i] = (rdMaterial*)STDMALLOC(sizeof(rdMaterial));
@@ -4211,7 +4210,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
         for ( size_t j = JonesHud_creditsCurIdx; j < STD_ARRAYLEN(JonesHud_aCredits) && j <= JonesHud_creditsCurEndIdx; ++j )
         {
             int v30 = JonesHud_aCredits[JonesHud_creditsCurIdx].flags & 0x08;
-            JonesHud_aCreditsCurPosY[j] -= rdFont_GetNormY((float)JonesHud_creditsCanvasHeight) * JONESHUD_CREDITS_SPEEDFACTOR; // Here we define the speed of moving credit text, default scale is 1.5
+            JonesHud_aCreditsCurPosY[j] -= lineScalar * JONESHUD_CREDITS_SPEEDFACTOR; // Here we move text up
 
             if ( j >= JonesHud_creditsCurMatIdx
               && JonesHud_creditsCurMatIdx > 0
@@ -4219,18 +4218,19 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
               && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx + 1] > 0.0f
               && ((float)(int)JonesHud_creditsCanvasHeight - JonesHud_creditTextHeight) / 2.0f >= JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] )
             {
+                // At the end credits, stop LEC logo and copy right at the center
                 switch ( j - JonesHud_creditsCurMatIdx )
                 {
                     case 0:
-                    case 1:
+                    case 1: // LEC icon
                         JonesHud_aCreditsCurPosY[j] = ((float)(int)JonesHud_creditsCanvasHeight - JonesHud_creditTextHeight) / 2.0f;
                         break;
 
-                    case 2:
-                        JonesHud_aCreditsCurPosY[j] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f) * lineScalar + JonesHud_aCreditsCurPosY[j - 1];
+                    case 2: //LEC  text
+                        JonesHud_aCreditsCurPosY[j] = ((float)JonesHud_pCreditsFont1->lineSpacing + 48.0f / JonesHud_creditsAspectRatio) * lineScalar + JonesHud_aCreditsCurPosY[j - 1]; // Fixed: position by applying lineScalar and aspect ration
                         break;
 
-                    case 3:
+                    case 3: // Copy right text
                         JonesHud_aCreditsCurPosY[j] = (float)JonesHud_pCreditsFont1->lineSpacing * lineScalar + JonesHud_aCreditsCurPosY[j - 1];
                         break;
 
@@ -4243,8 +4243,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             {
                 switch ( v30 ^ JonesHud_aCredits[JonesHud_creditsCurIdx].flags )
                 {
-                    case 1:
-                        // TODO: font size should be multiply by 2.5 in order for the text to smoothly disappear at the top
+                    case 0x01:
                         if ( (double)-(JonesHud_pCreditsFont2->fontSize * lineScalar) > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
                         {
                             ++JonesHud_creditsCurIdx;
@@ -4252,9 +4251,8 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
 
                         break;
 
-                    case 2:
+                    case 0x02:
                     case 0x10:
-                        // TODO: font size should be multiply by 2.5 in order for the text to smoothly disappear at the top
                         if ( (double)-(JonesHud_pCreditsFont1->fontSize * lineScalar) > JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] )
                         {
                             ++JonesHud_creditsCurIdx;
@@ -4262,7 +4260,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
 
                         break;
 
-                    case 4: // icon image 
+                    case 0x04: // icon image 
                         if ( JonesHud_aCreditsCurPosY[JonesHud_creditsCurIdx] < (-64.0f * JonesHud_widthAspectRatioScale) )
                         {
                             ++JonesHud_creditsCurIdx;
@@ -4274,7 +4272,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                               && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] )
                             {
 
-                                if ( !JonesHud_msecCreditsFadeStart )
+                                if ( JonesHud_msecCreditsFadeStart == 0 )
                                 {
                                     JonesHud_msecCreditsFadeStart = msecCurTime;
                                 }
@@ -4294,7 +4292,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                                 if ( JonesHud_curCelNum == JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]->numCels
                                   && !JonesHud_bSkipUpdateCredits )
                                 {
-                                    JonesHud_bSkipUpdateCredits = true;
+                                    JonesHud_bSkipUpdateCredits   = true;
                                     JonesHud_msecCreditsFadeStart = msecCurTime;
                                 }
                             }
@@ -4379,7 +4377,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
 
     // Credit draw section
 
-    // Fixed: Changed order so the i is first compared to len and some idx  before indexing into array
+    // Fixed: Changed order so the i is first compared to len and JonesHud_creditsCurEndIdx  before indexing into array
     for ( size_t i = JonesHud_creditsCurIdx;
           i < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
        && i <= JonesHud_creditsCurEndIdx
