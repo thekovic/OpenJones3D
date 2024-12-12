@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(OpenJones3D VERSION 0.1.0)
+project(OpenJones3D VERSION 0.2.0)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -18,7 +18,7 @@ configure_file(
 )
 
 # Set global property for MSVC runtime library (CMake 3.15+)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Release>:MultiThreaded>$<$<CONFIG:Debug>:MultiThreadedDebug>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Release>:MultiThreaded>$<$<CONFIG:MinSizeRel>:MultiThreaded>")
 
 if (MSVC)
     add_compile_definitions("__BASE_FILE__=\"%(Filename)%(Extension)\"")
