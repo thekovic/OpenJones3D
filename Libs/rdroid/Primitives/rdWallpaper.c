@@ -28,8 +28,7 @@ void rdWallpaper_InstallHooks(void)
 }
 
 void rdWallpaper_ResetGlobals(void)
-{
-}
+{}
 
 rdWallpaper* J3DAPI rdWallpaper_New(const char* pName)
 {
@@ -347,8 +346,8 @@ rdWallLine* J3DAPI rdWallpaper_NewWallLine(float startX, float startY, float end
 
     pWallLine->startX = startX;
     pWallLine->startY = startY;
-    pWallLine->width  = endX - startX;
-    pWallLine->height = endY - startY;
+    pWallLine->deltaX = endX - startX;
+    pWallLine->deltaY = endY - startY;
     rdVector_Copy4(&pWallLine->color, pColor);
     return pWallLine;
 }
@@ -393,23 +392,32 @@ void J3DAPI rdWallpaper_DrawWallLine(const rdWallLine* pLine, float progress)
     float sheight   = (float)height / RD_REF_HEIGHT;
     float thickness = RDWALLPAPER_LINE_THICKNESS * swidth;
 
-    float endY, endX = ceilf(pLine->width * progress / 100.0f);
-    if ( endX == 0.0f ) {
-        endY = pLine->height * progress / 100.0f;
-    }
-    else
+    // Calculate end point based on progress
+    float endY = 0.0f, endX = ceilf(pLine->deltaX * progress / 100.0f);
+
+    // Changed: Added handing of case for when pLine->deltaY == 0, i.e.: horizontal line
+    float deltaRatio = 0.0; // Horizontal line case
+    if ( pLine->deltaY != 0.0f )
     {
-        double laspect = pLine->height / pLine->width;
-        double startY = pLine->startY - laspect * pLine->startX;
-        endY = (float)((pLine->startX + endX) * laspect + startY - pLine->startY);
+        // Non-horizontal line calculations
+        double lineAspect = pLine->deltaY / pLine->deltaX;
+        double startY = pLine->startY - lineAspect * pLine->startX;
+
+        if ( endX == 0.0f ) {
+            endY = pLine->deltaY * progress / 100.0f;
+        }
+        else {
+            endY = (float)((pLine->startX + endX) * lineAspect + startY - pLine->startY);
+        }
+
+        deltaRatio = pLine->deltaX / pLine->deltaY;
     }
 
-    float widthHeightRatio = pLine->width / pLine->height;
-    double offsetY = pLine->startY - widthHeightRatio * pLine->startX;
-    double coeff1 = 2.0 * -pLine->startX;
-    double coeff2 = 2.0 * widthHeightRatio * (offsetY - pLine->startY);
+    double offsetY = pLine->startY - deltaRatio * pLine->startX;
+    double coeff1  = 2.0 * -pLine->startX;
+    double coeff2  = 2.0 * deltaRatio * (offsetY - pLine->startY);
 
-    double a = pow(widthHeightRatio, 2.0) + 1.0f;
+    double a = pow(deltaRatio, 2.0) + 1.0f;
     double b = coeff1 + coeff2;
     double c = pow(pLine->startX, 2.0) + pow(offsetY - pLine->startY, 2.0) - pow(thickness, 2.0);
 
@@ -434,15 +442,20 @@ void J3DAPI rdWallpaper_DrawWallLine(const rdWallLine* pLine, float progress)
         }
 
         // Final position calculations based on the valid root
-        float adjustedX = (float)root;
-        float adjustedY = widthHeightRatio * adjustedX + (float)offsetY;
-        float deltaX = adjustedX - pLine->startX;
-        float deltaY = adjustedY - pLine->startY;
+        // Changed: Added handing of case for when pLine->deltaY == 0, i.e.: horizontal line
+        float deltaX = 0.0f, deltaY = thickness;
+        if ( pLine->deltaY != 0.0f )
+        {
+            deltaX = (float)root;
+            deltaY = deltaRatio * deltaX + (float)offsetY;
+            deltaX -= pLine->startX;
+            deltaY -= pLine->startY;
+        }
 
         // Set vertices positions for drawing the line
         LPD3DTLVERTEX pCurVert = pPoly->aVertices;
 
-        // top right
+        // top left
         pCurVert->sx  = pLine->startX * swidth + deltaX;
         pCurVert->sy  = pLine->startY * sheight - deltaY;
         pCurVert->sz  = 0.0f;
@@ -451,7 +464,7 @@ void J3DAPI rdWallpaper_DrawWallLine(const rdWallLine* pLine, float progress)
         pCurVert->tv  = 0.0f;
         ++pCurVert;
 
-        // top left
+        // top right
         pCurVert->sx  = (pLine->startX + endX) * swidth + deltaX;
         pCurVert->sy  = (pLine->startY + endY) * sheight - deltaY;
         pCurVert->sz  = 0.0f;

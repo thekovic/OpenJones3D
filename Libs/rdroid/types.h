@@ -588,8 +588,8 @@ typedef struct srdWallLine
 {
     float startX;
     float startY;
-    float width;
-    float height;
+    float deltaX;
+    float deltaY;
     int unknown4;
     rdMaterial* pMaterial;
     rdVector4 color;
