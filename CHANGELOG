@@ -1,6 +1,18 @@
 # v0.2
 General:
+  - Fixed various bugs
   - Fixed floating point precision bug in `rdVector` & `rdMatrix34` functions (03b800ad)
+  - Made OpenJones3D binaries portable by adding absolute resource dir path to JonesFile VFS (0fca6ef2)
+    This change allows binaries to be placed in any arbitrary location, eliminating the requirement for a Resource folder.
+  - Fixed typo in framerate output text (047537aa)
+  - Fixed initializing and clearing resource array on `JonesFile_Close` (047537aa)
+  - Fixed the invocation of `jonesString_GetString("JONES_STR_LOADERROR")` on every call to `JonesMain_ProcessGamesaveState` when there is no load error or the game is not being restored (047537aa)
+  - Fixed error text when it was cached by `jonesString_GetString` in call to `JonesMain_LogErrorToFile` (0485d553)
+  - Changed the location of `JonesError.txt` to be always written in current working directory instead of installed path (0485d553)  
+    This change resolves a potential fatal error that could occur when writing the error log due to the registry system failing to startup.
+
+Game play:
+  - Changed to play higher resolution intro movie (800x600) by default (0ffa2e9d)
 
 HUD:
   - Fixed drawing of horizontal wall line (08046835)
