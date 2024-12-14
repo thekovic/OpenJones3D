@@ -708,7 +708,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
 
         case JONES_OUTPUTMODE_LOGFILE:
         {
-            fopen_s(&JonesMain_pLogFile, "JonesLog.txt", "w+"); // TODO: Add check for case whe fopen fails
+            fopen_s(&JonesMain_pLogFile, "JonesLog.txt", "w+"); // TODO: Add check for case when fopen fails
             switch ( JonesMain_state.logLevel )
             {
                 case JONES_LOGLEVEL_ERROR:
@@ -2195,7 +2195,7 @@ int JonesMain_PlayIntroMovie(void)
     }
     else if ( videoMode.rasterInfo.width != 640 )
     {
-        STD_STRCPY(aFilename, aJonesopn_640x480); // TODO: use aJonesopn_800x600 by default
+        STD_STRCPY(aFilename, aJonesopn_800x600); // Changed: Changed to use aJonesopn_800x600 by default, was aJonesopn_640x480
         if ( videoMode.rasterInfo.width == 800 )
         {
             if ( JonesMain_state.performanceLevel < 3 )
