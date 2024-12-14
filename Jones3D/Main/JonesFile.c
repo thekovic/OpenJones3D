@@ -1,18 +1,23 @@
+#include <Jones3D/types.h> // Note, don't move as it requires including windows.h without WIN32_LEAN_AND_MEAN  being defined 
+
 #include "JonesFile.h"
 #include <j3dcore/j3dhook.h>
+
+#include <Jones3D/RTI/addresses.h>
 #include <Jones3D/RTI/symbols.h>
 
 #include <std/General/std.h>
-#include <std/General/stdFnames.h>
 #include <std/General/stdFileUtil.h>
+#include <std/General/stdFnames.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdGob.h>
 
 #define JF_MAX_HANDLES 32
 
-#define JF_RES_INSTALL 0
-#define JF_RES_CWD     1
-#define JF_RES_CD      2
+#define JF_RES_INSTALL  0
+#define JF_RES_CWD      1
+#define JF_RES_CD       2
+#define JF_RES_RESOURCE 3 // Added
 
 #define JF_ISVALID_FH(fh) (((fh) >= (1)) ? (((fh) <= (32 - 1)) ? 1 : 0) : 0)
 
@@ -24,10 +29,27 @@ tHostServices* JonesFile_pHS;
 tHostServices JonesFile_sysHS;
 tHostServices* JonesFile_pSysEnv;
 
-JonesResource JonesFile_aResources[3];
+JonesResource JonesFile_aResources[4]; // Changed: Expand array for resource path
 
 char JonesFile_aPathBuf[128]; // Fixed: increased buffer size to 128, was 48
 JonesFileHandle JonesFile_aFileHandles[JF_MAX_HANDLES];
+
+void JonesFile_InitServices(void);
+void JonesFile_ResetServices(void);
+
+void J3DAPI JonesFile_OpenResource(JonesResource* pRsource, const char* pPath);
+void J3DAPI JonesFile_CloseResource(JonesResource* pResource);
+
+tFileHandle J3DAPI JonesFile_OpenFile(const char* pFilename, const char* mode);
+int J3DAPI JonesFile_CloseFile(tFileHandle fh);
+size_t J3DAPI JonesFile_FileRead(tFileHandle fh, void* pDst, size_t size);
+size_t J3DAPI JonesFile_FileWrite(tFileHandle fh, const void* pData, size_t size);
+char* J3DAPI JonesFile_FileGets(tFileHandle fh, char* pStr, size_t size);
+int J3DAPI JonesFile_FileEOF(tFileHandle fh);
+int J3DAPI JonesFile_FileTell(tFileHandle fh);
+int J3DAPI JonesFile_FileSeek(tFileHandle fh, int offset, int origin);
+size_t J3DAPI JonesFile_FileSize(const char* pFilename);
+int JonesFile_FilePrintf(tFileHandle fh, const char* aFormat, ...);
 
 
 void JonesFile_InstallHooks(void)
@@ -38,11 +60,11 @@ void JonesFile_InstallHooks(void)
     J3D_HOOKFUNC(JonesFile_Close);
     J3D_HOOKFUNC(JonesFile_GetCurrentCDNum);
     J3D_HOOKFUNC(JonesFile_FileExists);
-    J3D_HOOKFUNC(JonesFile_AddInstallPath);
-    J3D_HOOKFUNC(JonesFile_AddCDPath);
+    J3D_HOOKFUNC(JonesFile_SetInstallPath);
+    J3D_HOOKFUNC(JonesFile_SetCDPath);
     J3D_HOOKFUNC(JonesFile_InitServices);
     J3D_HOOKFUNC(JonesFile_ResetServices);
-    J3D_HOOKFUNC(JonesFile_AddResourcePath);
+    J3D_HOOKFUNC(JonesFile_OpenResource);
     J3D_HOOKFUNC(JonesFile_CloseResource);
     J3D_HOOKFUNC(JonesFile_OpenFile);
     J3D_HOOKFUNC(JonesFile_CloseFile);
@@ -105,18 +127,19 @@ int J3DAPI JonesFile_Open(tHostServices* pEnv, const char* pInstallPath, const c
         // 0 - install path
         // 1 - current work dir
         // 2 - CD path
+        // 3 - resource dir
         memset(JonesFile_aResources, 0, sizeof(JonesFile_aResources));
 
         if ( pInstallPath ) {
-            JonesFile_AddInstallPath(pInstallPath);
+            JonesFile_SetInstallPath(pInstallPath);
         }
 
         if ( pPathCD ) {
-            JonesFile_AddCDPath(pPathCD);
+            JonesFile_SetCDPath(pPathCD);
         }
 
         // Add path to current working dir
-        JonesFile_AddResourcePath(&JonesFile_aResources[JF_RES_CWD], ".");
+        JonesFile_OpenResource(&JonesFile_aResources[JF_RES_CWD], ".");
 
         memset(JonesFile_aFileHandles, 0, sizeof(JonesFile_aFileHandles));
 
@@ -125,7 +148,7 @@ int J3DAPI JonesFile_Open(tHostServices* pEnv, const char* pInstallPath, const c
     }
 }
 
-void J3DAPI JonesFile_Close()
+void JonesFile_Close(void)
 {
     if ( !JonesFile_bOpened )
 
@@ -147,19 +170,20 @@ void J3DAPI JonesFile_Close()
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_INSTALL]);
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_CD]);
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_CWD]);
+    JonesFile_CloseResource(&JonesFile_aResources[JF_RES_RESOURCE]); // Added
     JonesFile_bOpened = false;
 }
 
-int J3DAPI JonesFile_GetCurrentCDNum()
+int JonesFile_GetCurrentCDNum(void)
 {
     char aPath[128];
-    stdFnames_MakePath(aPath, sizeof(aPath), JonesFile_aResources[JF_RES_CD].dirPath, "CD1.GOB");
+    stdFnames_MakePath(aPath, sizeof(aPath), JonesFile_aResources[JF_RES_CD].aPath, "CD1.GOB");
     if ( std_g_pHS->pFileSize(aPath) )
     {
         return 1;
     }
 
-    stdFnames_MakePath(aPath, sizeof(aPath), JonesFile_aResources[JF_RES_CD].dirPath, "CD2.GOB");
+    stdFnames_MakePath(aPath, sizeof(aPath), JonesFile_aResources[JF_RES_CD].aPath, "CD2.GOB");
     if ( std_g_pHS->pFileSize(aPath) )
     {
         return 2;
@@ -179,15 +203,31 @@ int J3DAPI JonesFile_FileExists(const char* pFilename)
     return 1;
 }
 
-void J3DAPI JonesFile_AddInstallPath(const char* pPath)
+void J3DAPI JonesFile_SetInstallPath(const char* pPath)
 {
+    JonesFile_CloseResource(&JonesFile_aResources[JF_RES_RESOURCE]); // Added
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_INSTALL]);
-    if ( *pPath ) {
-        JonesFile_AddResourcePath(&JonesFile_aResources[JF_RES_INSTALL], pPath);
+    if ( *pPath )
+    {
+        JonesFile_OpenResource(&JonesFile_aResources[JF_RES_INSTALL], pPath);
+
+        // Added: Add resource dir path
+        STD_MAKEPATH(JonesFile_aPathBuf, pPath, "resource");
+        JonesFile_OpenResource(&JonesFile_aResources[JF_RES_RESOURCE], JonesFile_aPathBuf);
     }
 }
 
-void J3DAPI JonesFile_AddCDPath(const char* pPath)
+const char* JonesFile_GetInstallPath(void)
+{
+    return JonesFile_aResources[JF_RES_INSTALL].aPath;
+}
+
+const char* JonesFile_GetResourcePath(void)
+{
+    return JonesFile_aResources[JF_RES_RESOURCE].aPath;
+}
+
+void J3DAPI JonesFile_SetCDPath(const char* pPath)
 {
 
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_CD]);
@@ -195,12 +235,17 @@ void J3DAPI JonesFile_AddCDPath(const char* pPath)
     {
         char aPath[128];
         STD_FORMAT(aPath, "%sresource", pPath);
-        JonesFile_AddResourcePath(&JonesFile_aResources[JF_RES_CD], aPath);
+        JonesFile_OpenResource(&JonesFile_aResources[JF_RES_CD], aPath);
     }
     else
     {
         STDLOG_WARNING("Empty CD path specified.\n");
     }
+}
+
+const char* JonesFile_GetCDPath(void)
+{
+    return JonesFile_aResources[JF_RES_CD].aPath;
 }
 
 void JonesFile_InitServices(void)
@@ -240,20 +285,21 @@ void JonesFile_ResetServices(void)
     }
 }
 
-void J3DAPI JonesFile_AddResourcePath(JonesResource* pRsource, const char* pPath)
+void J3DAPI JonesFile_OpenResource(JonesResource* pRsource, const char* pPath)
 {
-    STD_STRCPY(pRsource->dirPath, pPath);
+    STD_STRCPY(pRsource->aPath, pPath);
     JonesFile_ResetServices();
 
     // Now find all *.gob files in dir
     pRsource->numGobFiles = 0;
+
+    tFoundFileInfo fileInfo;
     FindFileData* pFileData = stdFileUtil_NewFind(pPath, /*mode=*/3, "gob");
-    tFoundFileInfo pFile;
-    while ( stdFileUtil_FindNext(pFileData, &pFile) )
+    while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
     {
-        if ( pFile.aName[0] != '.' )
+        if ( fileInfo.aName[0] != '.' )
         {
-            stdFnames_MakePath(JonesFile_aPathBuf, sizeof(JonesFile_aPathBuf), pPath, pFile.aName);
+            stdFnames_MakePath(JonesFile_aPathBuf, sizeof(JonesFile_aPathBuf), pPath, fileInfo.aName);
             pRsource->aGobFiles[pRsource->numGobFiles] = stdGob_Load(JonesFile_aPathBuf, /*numFileHandles*/16, /*bMapFile*/0); // TODO: After file mapping is fixed in stdGob enable file mapping here
             if ( !pRsource->aGobFiles[pRsource->numGobFiles] )
             {
@@ -313,11 +359,11 @@ tFileHandle J3DAPI JonesFile_OpenFile(const char* pFilename, const char* mode)
         JonesResource* pCurRes = JonesFile_aResources;
         for ( size_t resNum = 0; resNum < STD_ARRAYLEN(JonesFile_aResources) && !bFileFound; ++resNum )
         {
-            if ( pCurRes->dirPath[0] )
+            if ( pCurRes->aPath[0] )
             {
                 if ( pCurRes != &JonesFile_aResources[JF_RES_CD] )// If not CD resource
                 {
-                    stdFnames_MakePath(JonesFile_aPathBuf, sizeof(JonesFile_aPathBuf), pCurRes->dirPath, pFilename);
+                    stdFnames_MakePath(JonesFile_aPathBuf, sizeof(JonesFile_aPathBuf), pCurRes->aPath, pFilename);
                     fh = JonesFile_pHS->pFileOpen(JonesFile_aPathBuf, mode);
                     if ( fh )
                     {

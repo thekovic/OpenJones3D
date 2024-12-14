@@ -1,4 +1,11 @@
-v0.1
+# v0.2
+General:
+  - Fixed floating point precision bug in `rdVector` & `rdMatrix34` functions (03b800ad)
+
+HUD:
+  - Fixed drawing of horizontal wall line (08046835)
+
+# v0.1
 General:
   - Fixed minor bugs
   - Improve game loading times by disabling VSync and blt frame buffers instead of flip.
@@ -15,7 +22,6 @@ General:
   - (`JonesFile`) Fixed path buffer size to 128 chars, was 48 chars
   - (`JonesFile`) Fixed writing to file by using correct file write function in `JonesFile_FilePrintf`
   - Added bounds check for number of animating joints when loading keyframe from *.key file
-  - Made save/load dialogs resizable
   - Fixed a bug in sound compression where clipping of the audio waveform occurred
   - Fixed infinitive loop bug when voice subtitle contains too long word (`sithVoice_AddSubtitle`)
 

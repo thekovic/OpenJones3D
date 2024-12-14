@@ -563,7 +563,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
         return 1;
     }
 
-    wuRegistry_GetStr("User Path", JonesMain_state.aInstallPath, STD_ARRAYLEN(JonesMain_state.aInstallPath), "");
+    wuRegistry_GetStr("Install Path", JonesMain_state.aInstallPath, STD_ARRAYLEN(JonesMain_state.aInstallPath), "");
     wuRegistry_GetStr("Source Dir", JonesMain_state.aCDPath, STD_ARRAYLEN(JonesMain_state.aCDPath), "");
 
     std3D_SetFindAllDevices(wuRegistry_GetIntEx("AllDevices", 0));
@@ -2219,16 +2219,23 @@ int JonesMain_PlayIntroMovie(void)
     }
     else
     {
-        char aResDir[128];
-        wuRegistry_GetStr("Source Dir", aPath, STD_ARRAYLEN(aPath), "");
-        STD_FORMAT(aResDir, "%sresource", aPath);
-        STD_MAKEPATH(aPath, aResDir, aFilename);
-    }
+        // Added: Check if video exists in full resource path
+        STD_MAKEPATH(aPath, JonesFile_GetResourcePath(), aFilename);
+        if ( !stdFileUtil_FileExists(aPath) )
+        {
+            // Fallback to CD
+            char aResDir[128];
+            wuRegistry_GetStr("Source Dir", aPath, STD_ARRAYLEN(aPath), "");
+            STD_FORMAT(aResDir, "%sresource", aPath);
+            STD_MAKEPATH(aPath, aResDir, aFilename);
 
-    if ( !stdFileUtil_FileExists(aPath) )
-    {
-        wkernel_SetWindowProc(JonesMain_GameWndProc);
-        return wkernel_PeekProcessEvents();
+            if ( !stdFileUtil_FileExists(aPath) )
+            {
+                // Failed to locate game videos, return
+                wkernel_SetWindowProc(JonesMain_GameWndProc);
+                return wkernel_PeekProcessEvents();
+            }
+        }
     }
 
     Sleep(100u);
@@ -2716,7 +2723,7 @@ void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
     if ( pFilename )
     {
         char aInstallPath[128] ={ 0 };
-        wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
+        wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), ""); // Changed: Changed setting key from 'User Path' to 'Install Path' 
         size_t pathLen = strlen(aInstallPath);
         if ( pathLen )
         {
@@ -2994,15 +3001,18 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     hDlgItem = GetDlgItem(hDlg, 1001);
     if ( hDlgItem )
     {
+        char aNdyDir[128];
+        STD_MAKEPATH(aNdyDir, JonesFile_GetResourcePath(), "ndy"); // Changed: Use absolute resource path to search for level files
+
         tFoundFileInfo fileInfo;
-        FindFileData* pFileData = stdFileUtil_NewFind("ndy", 3, "ndy");
+        FindFileData* pFileData = stdFileUtil_NewFind(aNdyDir, 3, "ndy");
         while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
         {
             itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
         }
-
         stdFileUtil_DisposeFind(pFileData);
-        pFileData = stdFileUtil_NewFind("ndy", 3, "cnd");
+
+        pFileData = stdFileUtil_NewFind(aNdyDir, 3, "cnd");
         while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
         {
             itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
@@ -3224,7 +3234,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             wuRegistry_SaveInt("Debug Mode", pState->outputMode);
             wuRegistry_SaveInt("Verbosity", pState->logLevel);
 
-            wuRegistry_SaveStr("User Path", pState->aInstallPath);
+            wuRegistry_SaveStr("Install Path", pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path' 
             wuRegistry_SaveInt("Performance Level", pState->performanceLevel);
             wuRegistry_SaveInt("HiPoly", sithModel_IsHiPolyEnabled()); // Added
 
@@ -3304,8 +3314,8 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
     for ( size_t modeNum = 0; modeNum < JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum].numModes; ++modeNum )
     {
         if ( pDisplay->aModes[modeNum].aspectRatio == 1.0f
-          && pDisplay->aModes[modeNum].rasterInfo.width >= 512
-          && pDisplay->aModes[modeNum].rasterInfo.height >= 384 )
+            && pDisplay->aModes[modeNum].rasterInfo.width >= 512
+            && pDisplay->aModes[modeNum].rasterInfo.height >= 384 )
         {
             if ( JonesMain_CurDisplaySupportsBPP(&pConfig->displaySettings, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp) )
             {
@@ -3315,8 +3325,8 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
 
                 // Select mode
                 if ( pDisplay->aModes[modeNum].rasterInfo.width == JonesMain_curVideoMode.rasterInfo.width
-                  && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
-                  && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
+                    && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
+                    && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
                 {
                     SendMessage(hCBDisplayMode, CB_SETCURSEL, itemIdx, 0);
                     bDriverSet = true;
