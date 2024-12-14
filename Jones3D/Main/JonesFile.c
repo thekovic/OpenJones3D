@@ -225,6 +225,11 @@ const char* JonesFile_GetResourcePath(void)
     return JonesFile_aResources[JF_RES_RESOURCE].aPath;
 }
 
+const char* JonesFile_GetWorkingDirPath(void)
+{
+    return JonesFile_aResources[JF_RES_CWD].aPath;
+}
+
 void J3DAPI JonesFile_SetCDPath(const char* pPath)
 {
 

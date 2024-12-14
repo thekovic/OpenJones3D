@@ -18,6 +18,8 @@ void J3DAPI JonesFile_SetInstallPath(const char* pPath);
 const char* JonesFile_GetInstallPath(void);
 const char* JonesFile_GetResourcePath(void);
 
+const char* JonesFile_GetWorkingDirPath(void);
+
 void J3DAPI JonesFile_SetCDPath(const char* pPath);
 const char* JonesFile_GetCDPath(void);
 

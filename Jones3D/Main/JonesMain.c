@@ -553,6 +553,9 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     sithSetServices(&JonesMain_hs);
     sithSound_InitializeSound(&JonesMain_hs);
 
+    // Fixed: Move initialization of JonesMain_circBuf here in case there is engine error and exiting happens sooner
+    stdCircBuf_New(&JonesMain_circBuf, 4, 128);
+
     JonesDisplay_UpdateDualScreenWindowSize(&JonesMain_state.displaySettings);
     JonesFile_Startup(&JonesMain_hs);
 
@@ -752,8 +755,6 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
 
     // Set assert handler
     JonesMain_hs.pAssert = JonesMain_Assert;
-
-    stdCircBuf_New(&JonesMain_circBuf, 4, 128);
 
     // Startup modules and load level
 
@@ -2202,11 +2203,6 @@ int JonesMain_PlayIntroMovie(void)
             {
                 STD_STRCPY(aFilename, aJonesopn_400x300);
             }
-            else
-            {
-                STD_STRCPY(aFilename, aJonesopn_800x600);
-            }
-
         }
     }
     else // 640 x 480
@@ -2723,24 +2719,32 @@ size_t JonesMain_GetCurrentLevelNum(void)
 
 void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
 {
-    char aFilePath[128] = { 0 };
+    // Fixed: cache pErrorText, this prevents accidental override of pErrorText when it's cached in jonesString_GetString
+    char* pErrorStr = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pErrorStr )
+    {
+        stdUtil_StringCopy(pErrorStr, 128, pErrorText);
+        pErrorText = pErrorStr;
     }
 
-    const char* pFilename = jonesString_GetString("JONES_STR_ERRORFILE"); // TODO: pErrorText could be internally cached injonesString which will get overridden here. Best solution would be to use circ buffer by jonesString_GetString 
+    char aFilePath[128] = { 0 };
+    const char* pFilename = jonesString_GetString("JONES_STR_ERRORFILE");
     if ( pFilename )
     {
-        char aInstallPath[128] ={ 0 };
-        wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), ""); // Changed: Changed setting key from 'User Path' to 'Install Path' 
-        size_t pathLen = strlen(aInstallPath);
+        // Changed: Use cwd path instead of install path from registry.
+        //          This subsequently fixes also fatal error where there was registry startup error 
+        //          and accidentally trying to access shutdown registry system here to retrieve install path, which would result in assert.
+        const char* pCwdPath = JonesFile_GetWorkingDirPath();
+        size_t pathLen = strlen(pCwdPath);
         if ( pathLen )
         {
-            if ( aInstallPath[pathLen - 1] == '\\' ) // Fixed: before: aFilePath[pathLen + 127] == '\\'
+            if ( pCwdPath[pathLen - 1] == '\\' ) // Fixed: before: aFilePath[pathLen + 127] == '\\'
             {
-                STD_FORMAT(aFilePath, "%s%s", aInstallPath, pFilename);
+                STD_FORMAT(aFilePath, "%s%s", pCwdPath, pFilename);
             }
             else
             {
-                STD_FORMAT(aFilePath, "%s\\%s", aInstallPath, pFilename);
+                STD_FORMAT(aFilePath, "%s\\%s", pCwdPath, pFilename);
             }
         }
         else
