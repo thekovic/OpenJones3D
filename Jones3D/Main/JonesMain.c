@@ -539,7 +539,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     JonesMain_curLevelNum     = 0;
 
     memset(&JonesMain_circBuf, 0, sizeof(JonesMain_circBuf));
-    memset(JonesMain_aToggleMenuKeyIds, 0, 8u); // TODO: [BUG]
+    memset(JonesMain_aToggleMenuKeyIds, 0, sizeof(JonesMain_aToggleMenuKeyIds)); // Fixed: Fixed the size
 
     // Setup process routines
     JonesMain_pfProcess = JonesMain_ProcessGame;
@@ -1396,7 +1396,9 @@ void JonesMain_Shutdown(void)
 
     else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
     {
-        fclose(JonesMain_pLogFile); // TODO: BUG JonesMain_pLogFile could be NULL
+        if ( JonesMain_pLogFile ) { // Fixed: Add null check
+            fclose(JonesMain_pLogFile);
+        }
     }
 
     sithSound_Shutdown();
