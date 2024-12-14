@@ -520,11 +520,11 @@ void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum
                 rdPrimit3_ClipFace(pFrustrum, RD_GEOMETRY_WIREFRAME, RD_LIGHTING_LIT, &sithRender_faceView, &sithRender_clipFaceView, &pSurface->face.texVertOffset);
 
                 if ( (sithRender_clipFaceView.numVertices >= 3 || (rdClip_g_faceStatus & 0x40) != 0)
-                  && ((rdClip_g_faceStatus & 0x41) != 0
-                      || (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0
-                      && (!pSurface->face.pMaterial || pSurface->face.geometryMode == RD_GEOMETRY_NONE
-                          || (pSurface->face.flags & RD_FF_TEX_TRANSLUCENT) != 0
-                          || pSurface->face.pMaterial->formatType != STDCOLOR_FORMAT_RGB)) )
+                    && ((rdClip_g_faceStatus & 0x41) != 0
+                        || (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0
+                        && (!pSurface->face.pMaterial || pSurface->face.geometryMode == RD_GEOMETRY_NONE
+                            || (pSurface->face.flags & RD_FF_TEX_TRANSLUCENT) != 0
+                            || pSurface->face.pMaterial->formatType != STDCOLOR_FORMAT_RGB)) )
                 {
                     rdCamera_g_pCurCamera->pfProjectList(sithRender_aTransformedClipVertices, sithRender_aClipVertices, sithRender_clipFaceView.numVertices);
                     if ( (rdClip_g_faceStatus & 0x41) != 0 )
@@ -660,10 +660,10 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
                 //numVertices = sithRender_clipFaceView.numVertices;
 
                 if ( (sithRender_clipFaceView.numVertices || (rdClip_g_faceStatus & 1) != 0)
-                  && (!pSurface->face.pMaterial || pSurface->face.pMaterial->formatType != STDCOLOR_FORMAT_RGB
-                      || (pSurface->face.flags & RD_FF_TEX_TRANSLUCENT) != 0
-                      || pSurface->face.geometryMode == RD_GEOMETRY_NONE)
-                  && (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
+                    && (!pSurface->face.pMaterial || pSurface->face.pMaterial->formatType != STDCOLOR_FORMAT_RGB
+                        || (pSurface->face.flags & RD_FF_TEX_TRANSLUCENT) != 0
+                        || pSurface->face.geometryMode == RD_GEOMETRY_NONE)
+                    && (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
                 {
                     // Project vertices to camera space
                     rdCamera_g_pCurCamera->pfProjectList(sithRender_aTransformedClipVertices, sithRender_aClipVertices, sithRender_clipFaceView.numVertices);
@@ -782,7 +782,7 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
         {
             // Collect Thing's light if light range is > 0.01f
             if ( (pThing->light.color.red > 0.0f || pThing->light.color.green > 0.0f || pThing->light.color.blue > 0.0f)
-              && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
+                && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
             {
                 rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->light.color);
 
@@ -795,11 +795,11 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
 
             // Collect actor's head light
             if ( (pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER)
-              && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
-              && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
-              && (pThing->thingInfo.actorInfo.headLightIntensity.red > 0.0f
-                  || pThing->thingInfo.actorInfo.headLightIntensity.green > 0.0f
-                  || pThing->thingInfo.actorInfo.headLightIntensity.blue > 0.0f) )
+                && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
+                && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
+                && (pThing->thingInfo.actorInfo.headLightIntensity.red > 0.0f
+                    || pThing->thingInfo.actorInfo.headLightIntensity.green > 0.0f
+                    || pThing->thingInfo.actorInfo.headLightIntensity.blue > 0.0f) )
             {
                 rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->thingInfo.actorInfo.headLightIntensity);
 
@@ -994,13 +994,13 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
                 //       Verify that collecting them here is really necessary
 
                 if ( sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
-                  && (pThing->flags & SITH_TF_EMITLIGHT) != 0
-                  && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) == 0 )
+                    && (pThing->flags & SITH_TF_EMITLIGHT) != 0
+                    && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) == 0 )
                 {
                     // Collect thing light if range is > 0.01f
                     if ( pThing->light.color.red > 0.0f
-                      || pThing->light.color.green > 0.0f
-                      || pThing->light.color.blue > 0.0f && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
+                        || pThing->light.color.green > 0.0f
+                        || pThing->light.color.blue > 0.0f && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
                     {
                         rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->light.color);
 
@@ -1013,11 +1013,11 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
 
                     // Collect actor head light
                     if ( (pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER)
-                      && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
-                      && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
-                      && (pThing->thingInfo.actorInfo.headLightIntensity.x > 0.0f
-                          || pThing->thingInfo.actorInfo.headLightIntensity.y > 0.0f
-                          || pThing->thingInfo.actorInfo.headLightIntensity.z > 0.0f) )
+                        && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
+                        && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
+                        && (pThing->thingInfo.actorInfo.headLightIntensity.x > 0.0f
+                            || pThing->thingInfo.actorInfo.headLightIntensity.y > 0.0f
+                            || pThing->thingInfo.actorInfo.headLightIntensity.z > 0.0f) )
                     {
                         rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->thingInfo.actorInfo.headLightIntensity);
 
@@ -1141,8 +1141,8 @@ void sithRender_RenderThings(void)
         for ( SithThing* pCurThing = pSector->pFirstThingInSector; pCurThing; pCurThing = pCurThing->pNextThingInSector )
         {
             if ( (pCurThing->flags & (SITH_TF_DISABLED | SITH_TF_INVISIBLE | SITH_TF_DESTROYED)) == 0
-              && ((sithCamera_g_pCurCamera->type & (SITHCAMERA_ORBITAL | SITHCAMERA_UNKNOWN_40 | SITHCAMERA_IDLE | SITHCAMERA_UNKNOWN_10 | SITHCAMERA_CINEMATIC | SITHCAMERA_EXTERNAL)) != 0
-                  || pCurThing != sithCamera_g_pCurCamera->pPrimaryFocusThing) )
+                && ((sithCamera_g_pCurCamera->type & (SITHCAMERA_ORBITAL | SITHCAMERA_UNKNOWN_40 | SITHCAMERA_IDLE | SITHCAMERA_UNKNOWN_10 | SITHCAMERA_CINEMATIC | SITHCAMERA_EXTERNAL)) != 0
+                    || pCurThing != sithCamera_g_pCurCamera->pPrimaryFocusThing) )
             {
                 // Transform thing pos to camera orient
                 rdMatrix_TransformPoint34(&pCurThing->transformedPos, &pCurThing->pos, &rdCamera_g_pCurCamera->orient);
@@ -1218,8 +1218,8 @@ void sithRender_RenderThings(void)
                 {
                     // Collect thing flat light
                     if ( (pCurThing->flags & SITH_TF_EMITLIGHT) != 0
-                      && (pCurThing->light.color.red > 0.0f || pCurThing->light.color.green > 0.0f || pCurThing->light.color.blue > 0.0f)
-                      && SITHRENDER_ISFLATLIGHT(pCurThing->light.color.alpha) )// if light range is <= 0.01f
+                        && (pCurThing->light.color.red > 0.0f || pCurThing->light.color.green > 0.0f || pCurThing->light.color.blue > 0.0f)
+                        && SITHRENDER_ISFLATLIGHT(pCurThing->light.color.alpha) )// if light range is <= 0.01f
                     {
                         rdVector4 ambientLight;
                         rdVector_Add4(&ambientLight, &sectorAmbientLight, &pCurThing->light.color);

@@ -15,7 +15,7 @@
 #define JF_MAX_HANDLES 32
 
 #define JF_RES_INSTALL  0
-#define JF_RES_CWD      1
+#define JF_RES_CWD      1 // current working dir
 #define JF_RES_CD       2
 #define JF_RES_RESOURCE 3 // Added
 
@@ -29,7 +29,7 @@ tHostServices* JonesFile_pHS;
 tHostServices JonesFile_sysHS;
 tHostServices* JonesFile_pSysEnv;
 
-JonesResource JonesFile_aResources[4]; // Changed: Expand array for resource path
+JonesResource JonesFile_aResources[4] = { 0 }; // Changed: Expand array for resource path; Added: Init to 0
 
 char JonesFile_aPathBuf[128]; // Fixed: increased buffer size to 128, was 48
 JonesFileHandle JonesFile_aFileHandles[JF_MAX_HANDLES];
@@ -105,8 +105,7 @@ void JonesFile_Shutdown(void)
 
 int J3DAPI JonesFile_Open(tHostServices* pEnv, const char* pInstallPath, const char* pPathCD)
 {
-    if ( !JonesFile_bStartup )
-    {
+    if ( !JonesFile_bStartup ) {
         return 1;
     }
 
@@ -115,37 +114,35 @@ int J3DAPI JonesFile_Open(tHostServices* pEnv, const char* pInstallPath, const c
         STDLOG_ERROR("Warning: System already open!\n");
         return 1;
     }
-    else
-    {
-        memcpy(&JonesFile_sysHS, pEnv, sizeof(JonesFile_sysHS));
-        JonesFile_pHS     = &JonesFile_sysHS;
-        JonesFile_pSysEnv = pEnv;
 
-        JonesFile_InitServices(); // This will override current pEnv
+    memcpy(&JonesFile_sysHS, pEnv, sizeof(JonesFile_sysHS));
+    JonesFile_pHS     = &JonesFile_sysHS;
+    JonesFile_pSysEnv = pEnv;
 
-        // Add resource paths:
-        // 0 - install path
-        // 1 - current work dir
-        // 2 - CD path
-        // 3 - resource dir
-        memset(JonesFile_aResources, 0, sizeof(JonesFile_aResources));
+    JonesFile_InitServices(); // This will override current pEnv
 
-        if ( pInstallPath ) {
-            JonesFile_SetInstallPath(pInstallPath);
-        }
+    // Add resource paths:
+    // 0 - install path
+    // 1 - current work dir
+    // 2 - CD path
+    // 3 - resource dir
+    memset(JonesFile_aResources, 0, sizeof(JonesFile_aResources));
 
-        if ( pPathCD ) {
-            JonesFile_SetCDPath(pPathCD);
-        }
-
-        // Add path to current working dir
-        JonesFile_OpenResource(&JonesFile_aResources[JF_RES_CWD], ".");
-
-        memset(JonesFile_aFileHandles, 0, sizeof(JonesFile_aFileHandles));
-
-        JonesFile_bOpened = true;
-        return 0;
+    if ( pInstallPath ) {
+        JonesFile_SetInstallPath(pInstallPath);
     }
+
+    if ( pPathCD ) {
+        JonesFile_SetCDPath(pPathCD);
+    }
+
+    // Add path to current working dir
+    JonesFile_OpenResource(&JonesFile_aResources[JF_RES_CWD], ".");
+
+    memset(JonesFile_aFileHandles, 0, sizeof(JonesFile_aFileHandles));
+
+    JonesFile_bOpened = true;
+    return 0;
 }
 
 void JonesFile_Close(void)
@@ -171,6 +168,7 @@ void JonesFile_Close(void)
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_CD]);
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_CWD]);
     JonesFile_CloseResource(&JonesFile_aResources[JF_RES_RESOURCE]); // Added
+    memset(JonesFile_aResources, 0, sizeof(JonesFile_aResources)); // Added: clear
     JonesFile_bOpened = false;
 }
 

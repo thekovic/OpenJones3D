@@ -483,6 +483,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
         &std3D_pDDPalette,
         NULL
     );
+
     if ( dres != DD_OK )
     {
         STDLOG_ERROR("Error %s creating palette.\n", std3D_D3DGetStatus(dres));
@@ -496,6 +497,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
         &std3D_pD3Device,
         NULL
     );
+
     if ( dres != D3D_OK )
     {
         STDLOG_ERROR("Error %s creating Direct3D device.\n", std3D_D3DGetStatus(dres));
@@ -850,7 +852,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         if ( (std3D_renderState & STD3D_RS_TEXFILTER_ANISOTROPIC) != (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) )
         {
             if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0
-              && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
             {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_ANISOTROPIC);
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFG_ANISOTROPIC);
@@ -869,7 +871,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         else if ( (std3D_renderState & STD3D_RS_TEXFILTER_BILINEAR) != (rdflags & STD3D_RS_TEXFILTER_BILINEAR) )
         {
             if ( (rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0
-              && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
+                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
             {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR);
@@ -1327,9 +1329,9 @@ size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
                     }
 
                     if ( pFormat->ci.redBPP == pMatch->redBPP
-                      && pFormat->ci.greenBPP == pMatch->greenBPP
-                      && pFormat->ci.blueBPP == pMatch->blueBPP
-                      && pFormat->ci.alphaBPP == pMatch->alphaBPP )
+                        && pFormat->ci.greenBPP == pMatch->greenBPP
+                        && pFormat->ci.blueBPP == pMatch->blueBPP
+                        && pFormat->ci.alphaBPP == pMatch->alphaBPP )
                     {
                         return i;
                     }
@@ -1440,8 +1442,8 @@ int std3D_InitRenderState(void)
     }
 
     if ( (std3D_pCurDevice->d3dDesc.dwTextureOpCaps & D3DTEXOPCAPS_MODULATE) != 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwSrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwDestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwSrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwDestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0 )
     {
         if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ALPHABLENDENABLE, TRUE) != D3D_OK )
         {
@@ -1513,7 +1515,7 @@ int std3D_InitRenderState(void)
 
     if ( (std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].bColorKey
         || std3D_aTextureFormats[std3D_RGBATextureFormat].bColorKey)
-      && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_COLORKEYENABLE, TRUE) != D3D_OK )
+        && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_COLORKEYENABLE, TRUE) != D3D_OK )
     {
         return 0;
     }
@@ -1547,7 +1549,7 @@ int std3D_InitRenderState(void)
     }
 
     if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_FOGTABLE) == 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_FOGVERTEX) == 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_FOGVERTEX) == 0 )
     {
         std3D_bRenderFog = 0;
     }
@@ -1578,15 +1580,15 @@ int J3DAPI std3D_SetMipmapFilter(Std3DMipmapFilterType filter)
 {
     int d3dres = 0;
     if ( filter == STD3D_MIPMAPFILTER_TRILINEAR
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFLINEAR) == 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_LINEARMIPLINEAR) == 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFLINEAR) == 0
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_LINEARMIPLINEAR) == 0 )
     {
         filter = STD3D_MIPMAPFILTER_BILINEAR;
     }
 
     if ( filter == STD3D_MIPMAPFILTER_BILINEAR
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFPOINT) == 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPLINEAR) == 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFPOINT) == 0
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPLINEAR) == 0 )
     {
         filter = STD3D_MIPMAPFILTER_NONE;
     }
@@ -1672,7 +1674,7 @@ void J3DAPI std3D_SetFog(float red, float green, float blue, float startDepth, f
         {
             endDepth = (2.0f - std3D_g_fogDensity) * endDepth;
             if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLESTART, *(DWORD*)(&startDepth)) == D3D_OK
-              && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLEEND, *(DWORD*)(&endDepth)) == D3D_OK )
+                && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLEEND, *(DWORD*)(&endDepth)) == D3D_OK )
             {
                 std3D_fogStartDepth  = startDepth;
                 std3D_fogEndDepth    = endDepth;

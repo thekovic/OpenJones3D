@@ -96,13 +96,14 @@ int J3DAPI stdBmp_WriteVBuffer(const char* pFilename, tVBuffer* pVBuffer)
     for ( int rowIdx = pVBuffer->rasterInfo.height - 1; rowIdx >= 0; rowIdx-- )
     {
         stdColor_ColorConvertOneRow(
-                pRow,
-                &ciBmp,
-                &pVBuffer->pPixels[pVBuffer->rasterInfo.rowSize * rowIdx],
-                &pVBuffer->rasterInfo.colorInfo,
-                pVBuffer->rasterInfo.width,
-                0,
-                0);
+            pRow,
+            &ciBmp,
+            &pVBuffer->pPixels[pVBuffer->rasterInfo.rowSize * rowIdx],
+            &pVBuffer->rasterInfo.colorInfo,
+            pVBuffer->rasterInfo.width,
+            0,
+            0
+        );
 
         size_t nWritten = std_g_pHS->pFileWrite(fh, pRow, stride);
         if ( nWritten != stride )

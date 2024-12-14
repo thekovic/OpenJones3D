@@ -412,7 +412,7 @@ static const JonesLevelInfo JonesMain_aNdyLevelLoadInfos[18] =
 int J3DAPI JonesMain_GameWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, int* pReturnVal);
 void J3DAPI JonesMain_HandleWMGetMinMaxInfo(HWND hwnd, LPMINMAXINFO pMinMaxInfo);
 void J3DAPI JonesMain_HandleWMPaint(HWND hWnd);
-int J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID);
+void J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID);
 void J3DAPI JonesMain_HandleWMKeydown(HWND hWnd, WPARAM vk, int a3, uint16_t repreatCount, uint16_t exkeyflags);
 void JonesMain_PrintQuickSave(void);
 int J3DAPI JonesMain_HandleWMActivateApp(HWND hWnd, WPARAM wParam, LPARAM lParam);
@@ -569,6 +569,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     std3D_SetFindAllDevices(wuRegistry_GetIntEx("AllDevices", 0));
 
     JonesFile_Open(&JonesMain_hs, JonesMain_state.aInstallPath, JonesMain_state.aCDPath);
+
     if ( jonesString_Startup() )
     {
         JonesMain_LogErrorToFile("Could not open game text.");
@@ -1079,13 +1080,14 @@ void J3DAPI JonesMain_HandleWMPaint(HWND hWnd)
     }
 }
 
-int J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID)
+void J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID)
 {
-    J3D_UNUSED(timerID);
-
-    // TODO: Check if timerID is same as JONES_QUICKSAVE_TEXTSHOWTIMERID
-    JonesMain_bPrintQuickSave = false;
-    return KillTimer(hWnd, JONES_QUICKSAVE_TEXTSHOWTIMERID);
+    if ( timerID == JONES_QUICKSAVE_TEXTSHOWTIMERID ) // Added: Added timedID check
+    {
+        // TODO: If JonesMain_bWndMsgProcessed will be used by main wnd proc than it should be set to true here
+        JonesMain_bPrintQuickSave = false;
+        KillTimer(hWnd, JONES_QUICKSAVE_TEXTSHOWTIMERID);
+    }
 }
 
 void J3DAPI JonesMain_HandleWMKeydown(HWND hWnd, WPARAM vk, int a3, uint16_t repreatCount, uint16_t exkeyflags)
@@ -1612,7 +1614,7 @@ void JonesMain_PrintFramerate(void)
 
             STD_FORMAT(
                 std_g_genBuffer,
-                "%02.2fHz A:%d S:%d P:%d Z:%d", //TODO: 'Z' in format is probably typo and instead 'T' letter should be there
+                "%02.2fHz A:%d S:%d P:%d T:%d", // Changed: Fixed typo 'Z' -> 'T'
                 JonesMain_frameRate,
                 sithRender_g_numVisibleAdjoins,
                 sithRender_g_numVisibleSectors,
@@ -1697,7 +1699,7 @@ int JonesMain_Open(void)
             }
 
             JonesMain_CloseWindow(); // Note this will exit process
-            // TODO: should we still return error here?
+            return 1; // Added: Return 1, tho this code won't be executed as JonesMain_CloseWindow will end process
         }
         else
         {
@@ -1731,7 +1733,7 @@ int JonesMain_Open(void)
             }
 
             JonesMain_CloseWindow(); // Note this will exit process
-            // TODO: should we still return error here?
+            return 1; // Added: Return 1, tho this code won't be executed as JonesMain_CloseWindow will end process
         }
 
         if ( JonesDisplay_Open(&JonesMain_state.displaySettings) )
@@ -1836,14 +1838,6 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath)
 
 int JonesMain_ProcessGamesaveState(void)
 {
-    // TODO: this part should be moved in the load game scope
-    char aLoadLerrorStr[512] = { 0 };
-    const char* pLoadErrStr = jonesString_GetString("JONES_STR_LOADERROR");
-    if ( pLoadErrStr )
-    {
-        STD_STRCPY(aLoadLerrorStr, pLoadErrStr);
-    }
-
     char* pNdsFilename;
     JonesMain_curGamesaveState = sithGamesave_GetState(&pNdsFilename);
 
@@ -1875,6 +1869,16 @@ int JonesMain_ProcessGamesaveState(void)
             if ( JonesMain_Restore(pNdsFilename) || sithGamesave_Process() )
             {
                 // Error
+
+                // Changed: Moved retrieving error string down here.
+                //          Originally was at the start of the functions scope and was executed on every function call
+                char aLoadLerrorStr[512] = { 0 };
+                const char* pLoadErrStr = jonesString_GetString("JONES_STR_LOADERROR");
+                if ( pLoadErrStr )
+                {
+                    STD_STRCPY(aLoadLerrorStr, pLoadErrStr);
+                }
+
                 if ( aLoadLerrorStr[0] )
                 {
                     char aErrorText[128] = { 0 };
@@ -2663,7 +2667,7 @@ J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSr
 
 void J3DAPI JonesMain_BindToggleMenuControlKeys(const int* paKeyIds, int numKeys)
 {
-    memset(JonesMain_aToggleMenuKeyIds, 0, 8u); // TODO: bug zero all elements
+    memset(JonesMain_aToggleMenuKeyIds, 0, sizeof(JonesMain_aToggleMenuKeyIds)); // Fixed: Fixed size
     for ( size_t i = 0; i < numKeys; ++i )
     {
         JonesMain_aToggleMenuKeyIds[i] = paKeyIds[i];
@@ -2720,6 +2724,7 @@ size_t JonesMain_GetCurrentLevelNum(void)
 void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
 {
     char aFilePath[128] = { 0 };
+    }
 
     const char* pFilename = jonesString_GetString("JONES_STR_ERRORFILE"); // TODO: pErrorText could be internally cached injonesString which will get overridden here. Best solution would be to use circ buffer by jonesString_GetString 
     if ( pFilename )

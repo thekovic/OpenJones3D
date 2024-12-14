@@ -90,7 +90,7 @@
 #define JonesMain_GameWndProc_TYPE int (J3DAPI*)(HWND, UINT, WPARAM, LPARAM, int*)
 #define JonesMain_HandleWMGetMinMaxInfo_TYPE void (J3DAPI*)(HWND, LPMINMAXINFO)
 #define JonesMain_HandleWMPaint_TYPE void (J3DAPI*)(HWND)
-#define JonesMain_HandleWMTimer_TYPE int (J3DAPI*)(HWND, WPARAM)
+#define JonesMain_HandleWMTimer_TYPE void (J3DAPI*)(HWND, WPARAM)
 #define JonesMain_HandleWMKeydown_TYPE void (J3DAPI*)(HWND, WPARAM, int, uint16_t, uint16_t)
 #define JonesMain_PrintQuickSave_TYPE void (*)(void)
 #define JonesMain_HandleWMActivateApp_TYPE int (J3DAPI*)(HWND, WPARAM, LPARAM)
