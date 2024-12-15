@@ -98,9 +98,9 @@ void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
 int J3DAPI sithMaterial_WriteMaterialsText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("##### Material information #####\n")
-      || stdConffile_WriteLine("SECTION: MATERIALS\n\n")
-      || stdConffile_Printf("World materials %d\n\n", pWorld->numMaterials + 64)
-      || stdConffile_WriteLine("#num:\tmat:\n") )
+        || stdConffile_WriteLine("SECTION: MATERIALS\n\n")
+        || stdConffile_Printf("World materials %d\n\n", pWorld->numMaterials + 64)
+        || stdConffile_WriteLine("#num:\tmat:\n") )
     {
         return 1;
     }
@@ -176,11 +176,7 @@ int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
         sithWorld_UpdateLoadProgress(progress);
     }
 
-    const size_t extraBuf = SITHMATERIAL_EXTRABUFFERSIZE + ((numMaterials < pWorld->sizeMaterials) ? SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS : 0); // Changed: Adds SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS if allocated size > requested size
-    if ( pWorld->sizeMaterials != (curMatNum + extraBuf) && pWorld->sizeMaterials != curMatNum )// TODO: remove this buffer size limitation
-    {
-        return 1;
-    }
+    // Removed: The SITHMATERIAL_EXTRABUFFERSIZE constraint was removed
 
     // Success
     sithWorld_UpdateLoadProgress(50.0f);
