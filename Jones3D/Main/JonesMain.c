@@ -2130,6 +2130,7 @@ int JonesMain_CloseWindow(void)
 
 int J3DAPI JonesMain_Log(int textColor, const char* ptext)
 {
+    OutputDebugString(ptext); // Added
     if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_CONSOLE )
     {
         stdConsole_WriteConsole(ptext, textColor);
