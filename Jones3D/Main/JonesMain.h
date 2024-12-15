@@ -52,9 +52,6 @@ int JonesMain_PlayIntroMovie(void);
 
 void J3DAPI JonesMain_BindToggleMenuControlKeys(const int* paKeyIds, int numKeys);
 
-int J3DAPI JonesMain_Log(const char* pFormat, ...);
-void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText);
-J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSrcFile, int line);
 J3DNORETURN void JonesMain_FatalErrorUnknown(void); // Added
 
 int J3DAPI JonesMain_ShowDevDialog(HWND hWnd, JonesState* pConfig);

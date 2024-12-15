@@ -124,7 +124,7 @@
 #define JonesMain_GetDisplaySettings_TYPE JonesDisplaySettings* (*)(void)
 #define JonesMain_CloseWindow_TYPE int (*)(void)
 #define JonesMain_FilePrintf_TYPE int (J3DAPI*)(const char*, ...)
-#define JonesMain_Log_TYPE int (J3DAPI*)(const char*, ...)
+#define JonesMain_LogError_TYPE int (J3DAPI*)(const char*, ...)
 #define JonesMain_RefreshDisplayDevice_TYPE void (*)(void)
 #define JonesMain_PlayIntroMovie_TYPE int (*)(void)
 #define JonesMain_IntroWndProc_TYPE int (J3DAPI*)(HWND, UINT, WPARAM, LPARAM, int*)

@@ -134,7 +134,7 @@
 #define JonesMain_GetDisplaySettings_ADDR 0x0041EC30
 #define JonesMain_CloseWindow_ADDR 0x0041EC40
 #define JonesMain_FilePrintf_ADDR 0x0041EC60
-#define JonesMain_Log_ADDR 0x0041ECB0
+#define JonesMain_LogError_ADDR 0x0041ECB0
 #define JonesMain_RefreshDisplayDevice_ADDR 0x0041ED50
 #define JonesMain_PlayIntroMovie_ADDR 0x0041ED60
 #define JonesMain_IntroWndProc_ADDR 0x0041F4D0

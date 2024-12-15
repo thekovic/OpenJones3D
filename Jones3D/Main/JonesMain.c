@@ -65,6 +65,11 @@
 #define JONES_FPSPRINT_CONSOLEID 102u
 #define JONES_FPSPRINT_INTERVAL  2000u // 2 sec
 
+#define JONES_LOGCONSOLE_ERRORCOLOR    FOREGROUND_RED | FOREGROUND_INTENSITY
+#define JONES_LOGCONSOLE_WARNINGRCOLOR FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
+#define JONES_LOGCONSOLE_STATUSCOLOR   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define JONES_LOGCONSOLE_DEBUGCOLOR    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+
 static bool JonesMain_bStartup = false; // Added: Init to false
 
 static JonesMainProcessFunc JonesMain_pfCurProcess = NULL; // Added: Init. to NULL
@@ -81,7 +86,7 @@ static StdDisplayEnvironment* JonesMain_pDisplayEnv        = NULL; // Added: Ini
 static StdDisplayEnvironment* JonesMain_pStartupDisplayEnv = NULL; // Added: Init. to NULL
 
 static tCircularBuffer JonesMain_circBuf;
-static FILE* JonesMain_pLogFile = NULL; // Added: Init. to NULL
+static FILE* JonesMain_pLogFile   = NULL; // Added: Init. to NULL
 
 static bool JonesMain_bGamePaused      = false; // Added: Init to false
 static bool JonesMain_bAssertTriggered = false; // Added: Init to false
@@ -434,8 +439,16 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath);
 int JonesMain_ProcessStartGame(void);
 int JonesMain_ProcessCredits(void);
 
-int J3DAPI JonesMain_FilePrintf(const char* pFormat, ...);
+int J3DAPI JonesMain_Log(int textColor, const char* pText);
+int J3DAPI JonesMain_LogError(const char* pFormat, ...);
+int J3DAPI JonesMain_LogWarning(const char* pFormat, ...);
+int J3DAPI JonesMain_LogStatus(const char* pFormat, ...);
+int J3DAPI JonesMain_LogDebug(const char* pFormat, ...);
 int J3DAPI JonesMain_NoLog(const char* pFormat, ...); // Added
+int J3DAPI JonesMain_FilePrintf(const char* pFormat, ...);
+
+void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText);
+J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSrcFile, int line);
 
 int J3DAPI JonesMain_IntroWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, int* pRetValue);
 void J3DAPI JonesMain_IntroHandleWMLButtonUp(HWND hwnd, uint16_t curPosX, uint16_t curPosY, WPARAM mvk);
@@ -498,7 +511,7 @@ void JonesMain_InstallHooks(void)
     J3D_HOOKFUNC(JonesMain_GetDisplaySettings);
     J3D_HOOKFUNC(JonesMain_CloseWindow);
     J3D_HOOKFUNC(JonesMain_FilePrintf);
-    J3D_HOOKFUNC(JonesMain_Log);
+    J3D_HOOKFUNC(JonesMain_LogError);
     J3D_HOOKFUNC(JonesMain_RefreshDisplayDevice);
     J3D_HOOKFUNC(JonesMain_PlayIntroMovie);
     J3D_HOOKFUNC(JonesMain_IntroWndProc);
@@ -691,22 +704,26 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
             switch ( JonesMain_state.logLevel )
             {
                 case JONES_LOGLEVEL_ERROR:
-                    JonesMain_hs.pErrorPrint = JonesMain_Log;
+                    JonesMain_hs.pErrorPrint = JonesMain_LogError;
                     break;
                 case JONES_LOGLEVEL_NORMAL:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = stdConsolePrintf;
+                    JonesMain_hs.pErrorPrint   = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint  = JonesMain_LogStatus;  // Changed: OG stdConsolePrintf
                     break;
                 case JONES_LOGLEVEL_VERBOSE:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = stdConsolePrintf;
-                    JonesMain_hs.pDebugPrint  = stdConsolePrintf;
+                    JonesMain_hs.pErrorPrint   = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint  = JonesMain_LogStatus;  // Changed: OG stdConsolePrintf
+                    JonesMain_hs.pDebugPrint   = JonesMain_LogDebug;   // Changed: OG stdConsolePrintf
                     break;
                 default:
                     break; // No logging
             };
 
+            // Startup console
             stdConsole_Startup("Debug", FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN, /*bShowMinimized=*/0); // White text
+
         } break;
 
         case JONES_OUTPUTMODE_LOGFILE:
@@ -715,16 +732,18 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
             switch ( JonesMain_state.logLevel )
             {
                 case JONES_LOGLEVEL_ERROR:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
+                    JonesMain_hs.pErrorPrint  = JonesMain_LogError;
                     break;
                 case JONES_LOGLEVEL_NORMAL:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = JonesMain_FilePrintf;
+                    JonesMain_hs.pErrorPrint  = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint = JonesMain_LogStatus;   // Changed: OG JonesMain_FilePrintf
                     break;
                 case JONES_LOGLEVEL_VERBOSE:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = JonesMain_FilePrintf;
-                    JonesMain_hs.pDebugPrint  = JonesMain_FilePrintf;
+                    JonesMain_hs.pErrorPrint  = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint = JonesMain_LogStatus;   // Changed: OG JonesMain_FilePrintf
+                    JonesMain_hs.pDebugPrint  = JonesMain_LogDebug;    // Changed: OG JonesMain_FilePrintf
                     break;
                 default:
                     break; // No logging
@@ -745,7 +764,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
                     JonesMain_hs.pStatusPrint  = JonesMain_NoLog;
                     JonesMain_hs.pWarningPrint = JonesMain_NoLog;
                     JonesMain_hs.pDebugPrint   = JonesMain_NoLog;
-                    JonesMain_hs.pErrorPrint   = JonesMain_Log;
+                    JonesMain_hs.pErrorPrint   = JonesMain_LogError;
                     break;
                 default:
                     break; // No logging
@@ -2109,6 +2128,20 @@ int JonesMain_CloseWindow(void)
     return PostMessage(stdWin95_GetWindow(), WM_CLOSE, 0, 0);
 }
 
+int J3DAPI JonesMain_Log(int textColor, const char* ptext)
+{
+    if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_CONSOLE )
+    {
+        stdConsole_WriteConsole(ptext, textColor);
+    }
+    else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
+    {
+        JonesMain_FilePrintf(ptext);
+    }
+
+    return strlen(ptext);
+}
+
 int JonesMain_FilePrintf(const char* pFormat, ...)
 {
     // TODO: Check if file is open? Tho, the startup should take care of that
@@ -2122,7 +2155,7 @@ int JonesMain_FilePrintf(const char* pFormat, ...)
     return STD_ARRAYLEN(std_g_genBuffer);
 }
 
-int JonesMain_Log(const char* pFormat, ...)
+int JonesMain_LogError(const char* pFormat, ...)
 {
     va_list args;
     va_start(args, pFormat);
@@ -2136,17 +2169,58 @@ int JonesMain_Log(const char* pFormat, ...)
         stdUtil_StringCopy(pString, 128, std_g_genBuffer);
     }
 
-    if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_CONSOLE )
+    return JonesMain_Log(JONES_LOGCONSOLE_ERRORCOLOR, std_g_genBuffer);
+}
+
+int J3DAPI JonesMain_LogWarning(const char* pFormat, ...)
+{
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args); // Fixed: Add missing call to va_end
+
+    // TODO: What's the point of using circbuf??
+    char* pString = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pString )
     {
-        stdConsole_WriteConsole(std_g_genBuffer, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        stdUtil_StringCopy(pString, 128, std_g_genBuffer);
     }
 
-    else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
+    return JonesMain_Log(JONES_LOGCONSOLE_WARNINGRCOLOR, std_g_genBuffer);
+}
+
+int J3DAPI JonesMain_LogStatus(const char* pFormat, ...)
+{
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args); // Fixed: Add missing call to va_end
+
+    // TODO: What's the point of using circbuf??
+    char* pString = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pString )
     {
-        JonesMain_FilePrintf(std_g_genBuffer);
+        stdUtil_StringCopy(pString, 128, std_g_genBuffer);
     }
 
-    return strlen(std_g_genBuffer);
+    return JonesMain_Log(JONES_LOGCONSOLE_STATUSCOLOR, std_g_genBuffer);
+}
+
+int J3DAPI JonesMain_LogDebug(const char* pFormat, ...)
+{
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args); // Fixed: Add missing call to va_end
+
+    // TODO: What's the point of using circbuf??
+    char* pString = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pString )
+    {
+        stdUtil_StringCopy(pString, 128, std_g_genBuffer);
+    }
+
+    return JonesMain_Log(JONES_LOGCONSOLE_DEBUGCOLOR, std_g_genBuffer);
 }
 
 int JonesMain_NoLog(const char* pFormat, ...)
