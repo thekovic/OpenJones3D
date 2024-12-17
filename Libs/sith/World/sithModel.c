@@ -18,6 +18,7 @@
 #define SITHMODEL_DEFAULTMODEL    "dflt.3do"
 #define SITHMODEL_EXTRABUFFERSIZE 32
 
+static bool sithModel_bModelStartup = false; // Added
 static bool sithModel_bHiPoly;
 static tHashTable* sithModel_pHashtable = NULL; // Added: Init to null
 
@@ -60,17 +61,39 @@ void sithModel_ResetGlobals(void)
 
 int sithModel_Startup(void)
 {
+    // Added
+    if ( sithModel_bModelStartup )
+    {
+        SITHLOG_ERROR("Multiple startup on model system.\n");
+        return 1;
+    }
+
     sithModel_pHashtable = stdHashtbl_New(256u);
-    return sithModel_pHashtable == NULL;
+    if ( !sithModel_pHashtable ) // Added
+    {
+        SITHLOG_ERROR("Could not allocate model hashtable.\n");
+        return 1;
+    }
+
+    sithModel_bModelStartup = true;
+    return 0;
 }
 
 void sithModel_Shutdown(void)
 {
+    if ( !sithModel_bModelStartup )
+    {
+        SITHLOG_ERROR("Material system not started.\n");
+        return;
+    }
+
     if ( sithModel_pHashtable )
     {
         stdHashtbl_Free(sithModel_pHashtable);
         sithModel_pHashtable = NULL;
     }
+
+    sithModel_bModelStartup = false;
 }
 
 int J3DAPI sithModel_WriteModelsText(const SithWorld* pWorld)

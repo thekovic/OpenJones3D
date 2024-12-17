@@ -19,6 +19,7 @@
 #define SITHMATERIAL_EXTRABUFFERSIZE          64u
 #define SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS 32u // Added
 
+static bool sithMaterial_bMaterialStartup     = false; // Added
 static tHashTable* sithMaterial_pHashtable = NULL; // Added: Init to 0
 
 rdMaterial* J3DAPI sithMaterial_CacheFind(const char* pName);
@@ -46,21 +47,40 @@ void sithMaterial_ResetGlobals(void)
 
 int sithMaterial_Startup(void)
 {
-    // TODO: maybe add check for system already being started
+    // Added
+    if ( sithMaterial_bMaterialStartup )
+    {
+        SITHLOG_ERROR("Multiple startup on material system.\n");
+        return 1;
+    }
+
     sithMaterial_pHashtable = stdHashtbl_New(SITHMATERIAL_TABLESIZE);
-    return sithMaterial_pHashtable == NULL;
+    if ( !sithMaterial_pHashtable ) // Added
+    {
+        SITHLOG_ERROR("Could not allocate material hashtable.\n");
+        return 1;
+    }
+
+    sithMaterial_bMaterialStartup = true;
+    return 0;
 }
 
 void sithMaterial_Shutdown(void)
 {
-    // TODO: maybe add check for system already being shut down 
+    // Added
+    if ( !sithMaterial_bMaterialStartup )
+    {
+        SITHLOG_ERROR("Material system not started.\n");
+        return;
+    }
 
     if ( sithMaterial_pHashtable )
     {
         stdHashtbl_Free(sithMaterial_pHashtable);
+        sithMaterial_pHashtable = NULL;
     }
 
-    sithMaterial_pHashtable = NULL;
+    sithMaterial_bMaterialStartup = false;
 }
 
 void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
