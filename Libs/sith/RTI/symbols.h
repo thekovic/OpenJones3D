@@ -966,7 +966,7 @@
 #define sithModel_Load_TYPE rdModel3* (J3DAPI*)(const char*, int)
 #define sithModel_GetModelMemUsage_TYPE size_t (J3DAPI*)(const rdModel3*)
 #define sithModel_AllocWorldModels_TYPE int (J3DAPI*)(SithWorld*, size_t)
-#define sithModel_GetModelByIndex_TYPE rdModel3* (J3DAPI*)(size_t)
+#define sithModel_GetModelByIndex_TYPE rdModel3* (J3DAPI*)(uint16_t)
 #define sithModel_GetModelIndex_TYPE int16_t (J3DAPI*)(const rdModel3*)
 #define sithModel_GetModel_TYPE rdModel3* (J3DAPI*)(const char*)
 #define sithModel_GetMeshIndex_TYPE int (J3DAPI*)(const rdModel3*, const char*)
