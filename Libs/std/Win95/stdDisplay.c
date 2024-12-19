@@ -806,6 +806,8 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
         }
     }
 
+    // Convert pixel data
+
     STD_ASSERTREL(pSrc->pPixels != ((void*)0));
     STD_ASSERTREL(pDest->pPixels != ((void*)0));
 
@@ -826,13 +828,16 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
             &pSrc->rasterInfo.colorInfo,
             pDest->rasterInfo.width,
             bColorKey,
-            pColorKey);
+            pColorKey
+        );
     }
 
     STD_ASSERTREL(pDestRow <= pDest->pPixels + pDest->rasterInfo.size);
     STD_ASSERTREL(pSrcRow <= pSrc->pPixels + pSrc->rasterInfo.size);
     stdDisplay_VBufferUnlock(pSrc);
     stdDisplay_VBufferUnlock(pDest);
+
+    // Copy color format
     memcpy(&pDest->rasterInfo.colorInfo, pDesiredColorFormat, sizeof(pDest->rasterInfo.colorInfo));
 
     if ( pDest != pSrc ) {

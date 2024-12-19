@@ -30,7 +30,7 @@ void stdPlatform_ResetGlobals(void)
     //memset(&stdPlatform_bAssert, 0, sizeof(stdPlatform_bAssert));
 }
 
-// TODO: stdFile* functions should be moved her to stdPlatform
+// TODO: stdFile* functions should be moved here to stdPlatform
 
 int J3DAPI stdPlatform_InitServices(tHostServices* pHS)
 {
@@ -129,7 +129,7 @@ int stdPlatform_Printf(const char* format, ...)
     vsnprintf(std_g_genBuffer, sizeof(std_g_genBuffer), format, args);
     va_end(args);
 
-    OutputDebugStringA(std_g_genBuffer);        // TODO: write also to printf
+    OutputDebugStringA(std_g_genBuffer); // TODO: write also to printf
     return 1;
 }
 
