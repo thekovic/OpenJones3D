@@ -309,62 +309,9 @@ void std3D_InstallHooks(void)
 
 void std3D_ResetGlobals(void)
 {
-    /*const ColorInfo std3D_cfRGB565_tmp = { STDCOLOR_RGB, 16, 5, 6, 5, 11, 5, 0, 3, 2, 3, 0, 0, 0 };
-    memcpy((ColorInfo*)&std3D_cfRGB565, &std3D_cfRGB565_tmp, sizeof(std3D_cfRGB565));
-
-    const ColorInfo std3D_cfRGB5551_tmp = { STDCOLOR_RGBA, 16, 5, 5, 5, 11, 6, 1, 3, 3, 3, 1, 0, 7 };
-    memcpy((ColorInfo*)&std3D_cfRGB5551, &std3D_cfRGB5551_tmp, sizeof(std3D_cfRGB5551));
-
-    const ColorInfo std3D_cfRGB4444_tmp = { STDCOLOR_RGBA, 16, 4, 4, 4, 12, 8, 4, 4, 4, 4, 4, 0, 4 };
-    memcpy((ColorInfo*)&std3D_cfRGB4444, &std3D_cfRGB4444_tmp, sizeof(std3D_cfRGB4444));
-
-    const DXStatus std3D_aD3DStatusTbl_tmp[186] = {
-
-    memcpy((DXStatus*)&std3D_aD3DStatusTbl, &std3D_aD3DStatusTbl_tmp, sizeof(std3D_aD3DStatusTbl));*/
-
     float std3D_g_fogDensity_tmp = 1.0f;
     memcpy(&std3D_g_fogDensity, &std3D_g_fogDensity_tmp, sizeof(std3D_g_fogDensity));
-
-    /*int std3D_texFilterMode_tmp = -1;
-    memcpy(&std3D_mipmapFilter, &std3D_texFilterMode_tmp, sizeof(std3D_mipmapFilter));
-
-    int std3D_bRenderFog_tmp = 1;
-    memcpy(&std3D_bRenderFog, &std3D_bRenderFog_tmp, sizeof(std3D_bRenderFog));
-
-    int std3D_frameCount_tmp = 1;
-    memcpy(&std3D_frameCount, &std3D_frameCount_tmp, sizeof(std3D_frameCount));
-
-    memset(&std3D_curDevice, 0, sizeof(std3D_curDevice));
-    memset(&std3D_RGBATextureFormat, 0, sizeof(std3D_RGBATextureFormat));
-    memset(&std3D_zDepth, 0, sizeof(std3D_zDepth));
-    memset(&std3D_RGBTextureFormat, 0, sizeof(std3D_RGBTextureFormat));
-    memset(&std3D_RGBAKeyTextureFormat, 0, sizeof(std3D_RGBAKeyTextureFormat));
-    memset(&std3D_fogStartDepth, 0, sizeof(std3D_fogStartDepth));
-    memset(&std3D_numDevices, 0, sizeof(std3D_numDevices));
-    memset(&std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
-    memset(&std3D_fogDepthFactor, 0, sizeof(std3D_fogDepthFactor));
-    memset(&std3D_aDevices, 0, sizeof(std3D_aDevices));
-    memset(&std3D_renderState, 0, sizeof(std3D_renderState));
-    memset(&std3D_activeRect, 0, sizeof(std3D_activeRect));
-    memset(&std3D_fogEndDepth, 0, sizeof(std3D_fogEndDepth));
-    memset(&std3D_pCurDevice, 0, sizeof(std3D_pCurDevice));
-    memset(&std3D_numTextureFormats, 0, sizeof(std3D_numTextureFormats));
-    memset(&std3D_bHasRGBTextureFormat, 0, sizeof(std3D_bHasRGBTextureFormat));
-    memset(&std3D_bFogTable, 0, sizeof(std3D_bFogTable));*/
-
-    /* memset(&std3D_g_maxVertices, 0, sizeof(std3D_g_maxVertices));
-     memset(&std3D_pD3DTex, 0, sizeof(std3D_pD3DTex));
-     memset(&std3D_bFindAllD3Devices, 0, sizeof(std3D_bFindAllD3Devices));
-     memset(&std3D_numCachedTextures, 0, sizeof(std3D_numCachedTextures));
-     memset(&std3D_pFirstTexCache, 0, sizeof(std3D_pFirstTexCache));
-     memset(&std3D_pLastTexCache, 0, sizeof(std3D_pLastTexCache));
-     memset(&std3D_lpDD, 0, sizeof(std3D_lpDD));
-     memset(&std3D_pDDPalette, 0, sizeof(std3D_pDDPalette));
-     memset(&std3D_pDirect3D, 0, sizeof(std3D_pDirect3D));
-     memset(&std3D_pD3Device, 0, sizeof(std3D_pD3Device));
-     memset(&std3D_lpD3DViewPort, 0, sizeof(std3D_lpD3DViewPort));
-     memset(&std3D_bStartup, 0, sizeof(std3D_bStartup));
-     memset(&std3D_bOpen, 0, sizeof(std3D_bOpen));*/
+    memset(&std3D_g_maxVertices, 0, sizeof(std3D_g_maxVertices));
 }
 
 int std3D_Startup(void)
