@@ -484,14 +484,10 @@ int J3DAPI std3D_Open(size_t deviceNum)
     std3D_pLastTexCache     = NULL;
 
     // Get color formats for RGB, RGBA and RGBA key formats
-    std3D_RGBTextureFormat     = std3D_FindClosestFormat(&std3D_cfRGB565);
-    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&std3D_cfRGB5551);
-    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&std3D_cfRGB4444);
-
-    //TODO: can be changed to 32 bit after fixing bug 16npp texture bug in sithMaterial_LoadMaterialsBinary
-  /*  std3D_RGBTextureFormat     = std3D_FindClosestFormat(&std3D_cfRGB888);
-    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&std3D_cfRGBA8888);
-    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&std3D_cfRGBA8888);*/
+    // Changed: Use 32 bit formats; was using 16 bit
+    std3D_RGBTextureFormat     = std3D_FindClosestFormat(&stdColor_cfBGR8888);
+    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
+    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
 
     if ( std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ci.alphaBPP == 0
         && std3D_pCurDevice->bColorkeyTextureSupported )
