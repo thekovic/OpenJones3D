@@ -79,7 +79,7 @@ int J3DAPI stdStrTable_Load(tStringTable* pStrTable, const char* pFilename)
     for ( int i = 0; bSuccess && (i < numMsgs); i++ )
     {
         bSuccess = stdStrTable_ReadLine(fh, aLine, sizeof(aLine) - 1);
-        if ( !_strnicmp(aLine, "end", 3u) )
+        if ( strncmpi(aLine, "end", 3u) == 0 ) // hit end
         {
             bSuccess = 0;
             pStrTable->nMsgs = i;
@@ -229,34 +229,29 @@ wchar_t* J3DAPI stdStrTable_GetValueOrKey(const tStringTable* pStrTable, const c
 
 int J3DAPI stdStrTable_ReadLine(tFileHandle fh, char* pStr, int size)
 {
-    char* pch;
-    int curch;
-    int bEndLine;
-    char aBuf[64];
-
-    bEndLine = 0;
-    do
+    bool bFinish = false;
+    while ( !bFinish )
     {
-        std_g_pHS->pFileGets(fh, pStr, size);
-        if ( !strchr(pStr, '\n') )
+        size_t nRead = std_g_pHS->pFileGets(fh, pStr, size);
+        if ( nRead != 0 && !strchr(pStr, '\n') ) // Added: Added check for no data read from file
         {
-            do
-            {
-                std_g_pHS->pFileGets(fh, aBuf, sizeof(aBuf));
-            } while ( !strchr(aBuf, '\n') );
+            char aBuf[64] = { 0 };
+            do {
+                nRead = std_g_pHS->pFileGets(fh, aBuf, sizeof(aBuf));
+            } while ( nRead != 0 && !strchr(aBuf, '\n') ); // Fixed: Added check for no data read from file. This fixes potential infinitive loop bug when there is no line break at the end of the file
         }
 
-        for ( pch = pStr; isspace(*pch); ++pch )
-        {
+        // Skip spaces
+        char* pch = pStr;
+        for ( ; isspace(*pch); ++pch ) {
             ;
         }
 
-        curch = (uint8_t)*pch;
-        if ( *pch != '#' && (uint8_t)curch && (uint8_t)curch != '\r' && (uint8_t)curch != '\n' )
+        if ( nRead == 0 || (*pch != '#' && *pch && *pch != '\r' && *pch != '\n') ) // Fixed: Added check for no data read from file to prevent potential infinitive loop bug
         {
-            bEndLine = 1;
+            bFinish = true;
         }
-    } while ( !bEndLine );
+    };
 
     return 1;
 }
