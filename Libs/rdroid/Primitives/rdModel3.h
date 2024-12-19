@@ -1,16 +1,17 @@
 #ifndef RDROID_RDMODEL3_H
 #define RDROID_RDMODEL3_H
 #include <j3dcore/j3d.h>
+#include <rdroid/Raster/rdCache.h>
 #include <rdroid/types.h>
 #include <rdroid/RTI/addresses.h>
-#include <std/types.h>
 
 J3D_EXTERN_C_START
 
-#define RDMODEL3_MAX_FACE_VERTICES 64
-#define RDMODEL3_MAX_TEXVRTICES    768
-#define RDMODEL3_MAX_VERTICES      1024
-#define RDMODEL3_MAX_FACES         1528
+#define RDMODEL3_MAX_VERTICES      RDCACHE_MAXVERTICES / 2                              // Changed: Was fixed 1024, now is bound to RDCACHE_MAXVERTICES
+#define RDMODEL3_MAX_TEXVRTICES    RDMODEL3_MAX_VERTICES + (RDMODEL3_MAX_VERTICES / 2)  // Changed: Was fixed to 768, now is calculated based on RDMODEL3_MAX_VERTICES
+
+#define RDMODEL3_MAX_FACES         16384 // Changed: Was 1528
+#define RDMODEL3_MAX_FACE_VERTICES RDCACHE_MAXFACEVERTICES 
 
 #define rdModel3_g_numDrawnFaces J3D_DECL_FAR_VAR(rdModel3_g_numDrawnFaces, int)
 // extern int rdModel3_g_numDrawnFaces;
