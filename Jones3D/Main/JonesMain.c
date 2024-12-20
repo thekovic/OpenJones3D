@@ -3088,7 +3088,12 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     if ( hDlgItem )
     {
         char aNdyDir[128];
-        STD_MAKEPATH(aNdyDir, JonesFile_GetResourcePath(), "ndy"); // Changed: Use absolute resource path to search for level files
+        STD_MAKEPATH(aNdyDir, JonesFile_GetWorkingDirPath(), "ndy");
+
+        // Added
+        if ( !stdUtil_DirExists(aNdyDir) ) {
+            STD_MAKEPATH(aNdyDir, JonesFile_GetResourcePath(), "ndy"); // Use absolute resource path to search for level files
+        }
 
         tFoundFileInfo fileInfo;
         FindFileData* pFileData = stdFileUtil_NewFind(aNdyDir, 3, "ndy");

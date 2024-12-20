@@ -2,6 +2,7 @@
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
 #include <std/General/stdMemory.h>
+#include <std/General/stdPlatform.h>
 #include <std/RTI/symbols.h>
 
 #include <wchar.h>
@@ -216,6 +217,11 @@ int J3DAPI stdUtil_StrCmp(const char* str1, const char* str2)
     }
 
     return 1;
+}
+
+bool J3DAPI stdUtil_DirExists(const char* pPath)
+{
+    return stdPlatform_DirExists(pPath);
 }
 
 bool J3DAPI stdUtil_FileExists(const char* pFilename)

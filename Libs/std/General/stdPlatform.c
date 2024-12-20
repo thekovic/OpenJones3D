@@ -157,3 +157,10 @@ void J3DAPI stdPlatform_UnlockHandle()
 {
 
 }
+
+bool J3DAPI stdPlatform_DirExists(const char* pPath)
+{
+    DWORD dwAttrib = GetFileAttributes(pPath);
+
+    return (dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
