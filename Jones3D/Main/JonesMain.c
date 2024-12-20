@@ -447,7 +447,6 @@ int J3DAPI JonesMain_LogDebug(const char* pFormat, ...);
 int J3DAPI JonesMain_NoLog(const char* pFormat, ...); // Added
 int J3DAPI JonesMain_FilePrintf(const char* pFormat, ...);
 
-void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText);
 J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSrcFile, int line);
 
 int J3DAPI JonesMain_IntroWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, int* pRetValue);
@@ -1050,6 +1049,7 @@ int J3DAPI JonesMain_GameWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
     return JonesMain_bWndMsgProcessed;
 #else
+    J3D_UNUSED(pReturnVal);
     return 0;
 #endif
 }
@@ -2439,6 +2439,7 @@ int J3DAPI JonesMain_IntroWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     return JonesMain_bWndMsgProcessed;
 #else
+    J3D_UNUSED(pRetValue);
     return 0;
 #endif
 }
