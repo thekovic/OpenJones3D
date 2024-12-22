@@ -4,6 +4,8 @@
 #include <wkernel/types.h>
 #include <wkernel/RTI/addresses.h>
 
+// TODO: move module to std
+
 J3D_EXTERN_C_START
 
 int J3DAPI wkernel_Run(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd, LPCSTR lpWindowName); // Note, process proc must be set before

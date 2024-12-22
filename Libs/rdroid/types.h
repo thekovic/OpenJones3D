@@ -210,7 +210,7 @@ typedef struct srdFont
 } rdFont;
 static_assert(sizeof(rdFont) == 20, "sizeof(rdFont) == 20");
 
-typedef struct srdMatHeader
+typedef struct srdMatHeader // Originally was probably named tMaterialHeader
 {
     char magic[4];
     int version;
