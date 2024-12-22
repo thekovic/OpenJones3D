@@ -3,9 +3,9 @@
 
 #include <rdroid/Engine/rdCamera.h>
 #include <rdroid/Engine/rdClip.h>
+#include <rdroid/Engine/rdKeyframe.h>
 #include <rdroid/Engine/rdLight.h>
 #include <rdroid/Engine/rdMaterial.h>
-#include <rdroid/Engine/rdKeyframe.h>
 #include <rdroid/Engine/rdPuppet.h>
 #include <rdroid/Math/rdMath.h>
 #include <rdroid/Math/rdMatrix.h>
@@ -32,8 +32,8 @@
 #include <sith/World/sithWorld.h>
 
 #include  <std/General/stdEffect.h>
-#include  <std/General/stdFnames.h>
 #include  <std/General/stdFileUtil.h>
+#include  <std/General/stdFnames.h>
 #include  <std/General/stdMath.h>
 #include  <std/General/stdMemory.h>
 #include  <std/General/stdUtil.h>
@@ -41,6 +41,7 @@
 #include  <std/Win95/stdDisplay.h>
 
 #include <math.h>
+#include <stdint.h>
 
 #define SITHRENDER_MAXTHINGLIGHTS  RDCAMERA_MAX_LIGHTS / 2 // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS-1
 #define SITHRENDER_MAXSECTORLIGHTS (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
@@ -99,47 +100,6 @@ static size_t sithRender_numSpritesToDraw;
 static size_t sithRender_numThingLights;
 static rdLight sithRender_aThingLights[SITHRENDER_MAXTHINGLIGHTS];
 
-
-
-////#define sithRender_bPVSClipEnabled J3D_DECL_FAR_VAR(sithRender_bPVSClipEnabled, int)
-////
-//#define sithRender_aVisibleSectors J3D_DECL_FAR_ARRAYVAR(sithRender_aVisibleSectors, SithSector*(*)[SITHRENDER_MAX_VISIBLE_SECTORS])
-//
-//#define sithRender_aClipVertices J3D_DECL_FAR_ARRAYVAR(sithRender_aClipVertices, rdVector3(*)[MAX_CLIP_VERTICIES])
-//// 
-////#define sithRender_lastPVSIndex J3D_DECL_FAR_VAR(sithRender_lastPVSIndex, int)
-//// 
-//#define sithRender_clipFaceView J3D_DECL_FAR_VAR(sithRender_clipFaceView, rdPrimit3)
-//// 
-//#define sithRender_aVisibleAdjoins J3D_DECL_FAR_ARRAYVAR(sithRender_aVisibleAdjoins, SithSurfaceAdjoin*(*)[SITHRENDER_MAX_VISIBLE_SECTORS])
-//// 
-//
-//#define sithRender_curPVSIndex J3D_DECL_FAR_VAR(sithRender_curPVSIndex, int)
-//// 
-////#define sithRender_renderflags J3D_DECL_FAR_VAR(sithRender_renderflags, int)
-////#define sithRender_numSectorPointLights J3D_DECL_FAR_VAR(sithRender_numSectorPointLights, int)
-////#define sithRender_numSpritesToDraw J3D_DECL_FAR_VAR(sithRender_numSpritesToDraw, int)
-////#define sithRender_numAlphaAdjoins J3D_DECL_FAR_VAR(sithRender_numAlphaAdjoins, int)
-//#define sithRender_aTransformedClipVertices J3D_DECL_FAR_ARRAYVAR(sithRender_aTransformedClipVertices, rdVector3(*)[MAX_CLIP_VERTICIES])
-////#define sithRender_numThingSectors J3D_DECL_FAR_VAR(sithRender_numThingSectors, int)
-//#define sithRender_faceView J3D_DECL_FAR_VAR(sithRender_faceView, rdPrimit3)
-////#define sithRender_aSectorPointLights J3D_DECL_FAR_ARRAYVAR(sithRender_aSectorPointLights, rdLight(*)[64])
-////#define sithRender_aThingLights J3D_DECL_FAR_ARRAYVAR(sithRender_aThingLights, rdLight(*)[64])
-////#define sithRender_aThingSectors J3D_DECL_FAR_ARRAYVAR(sithRender_aThingSectors, SithSector*(*)[256])
-////#define sithRender_numSecorFrustrums J3D_DECL_FAR_VAR(sithRender_numSecorFrustrums, int)
-////#define sithRender_aSectorFrustrums J3D_DECL_FAR_ARRAYVAR(sithRender_aSectorFrustrums, rdClipFrustum(*)[128])
-////#define sithRender_curCamSectorIdx J3D_DECL_FAR_VAR(sithRender_curCamSectorIdx, int)
-////#define sithRender_aAlphaAdjoins J3D_DECL_FAR_ARRAYVAR(sithRender_aAlphaAdjoins, SithSurface*(*)[64])
-//#define sithRender_aSurfaceTransformedVertices J3D_DECL_FAR_ARRAYVAR(sithRender_aSurfaceTransformedVertices, rdVector3(*)[MAX_CLIP_VERTICIES])
-////#define sithRender_numThingLights J3D_DECL_FAR_VAR(sithRender_numThingLights, int)
-////#define sithRender_numRenderedSectors J3D_DECL_FAR_VAR(sithRender_numRenderedSectors, int)
-//#define sithRender_numVisibleThingSectors J3D_DECL_FAR_VAR(sithRender_numVisibleThingSectors, int)
-////#define sithRender_bResetCameraAspect J3D_DECL_FAR_VAR(sithRender_bResetCameraAspect, int)
-////#define sithRender_pfUnknownFunc J3D_DECL_FAR_VAR(sithRender_pfUnknownFunc, SithRenderUnknownFunc)
-//// 
-// 
-#define sithRender_aAdjoinTable J3D_DECL_FAR_VAR(sithRender_aAdjoinTable, uint8_t*)
-
 void sithRender_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithRender_Startup);
@@ -178,124 +138,8 @@ void sithRender_ResetGlobals(void)
     memset(&sithRender_g_numAlphaThingPoly, 0, sizeof(sithRender_g_numAlphaThingPoly));
     memset(&sithRender_g_numVisibleAdjoins, 0, sizeof(sithRender_g_numVisibleAdjoins));
 
-    //memset(&sithRender_numVisibleThingSectors, 0, sizeof(sithRender_numVisibleThingSectors));
-    //memset(&sithRender_bResetCameraAspect, 0, sizeof(sithRender_bResetCameraAspect));
-    //memset(&sithRender_pfUnknownFunc, 0, sizeof(sithRender_pfUnknownFunc));
-    //memset(&sithRender_aAdjoinTable, 0, sizeof(sithRender_aAdjoinTable));
-
-    //memset(&sithRender_lightMode, 0, sizeof(sithRender_lightMode));
     memset(&sithRender_g_numVisibleSectors, 0, sizeof(sithRender_g_numVisibleSectors));
 }
-
-//int sithRender_Startup(void)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithRender_Startup);
-//}
-//
-//int J3DAPI sithRender_Open()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithRender_Open);
-//}
-//
-//void J3DAPI sithRender_Close()
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_Close);
-//}
-//
-//void sithRender_Shutdown(void)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_Shutdown);
-//}
-//
-//void J3DAPI sithRender_SetRenderFlags(int flags)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_SetRenderFlags, flags);
-//}
-//
-//int J3DAPI sithRender_GetRenderFlags()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithRender_GetRenderFlags);
-//}
-//
-//void J3DAPI sithRender_SetLightingMode(rdLightMode mode)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_SetLightingMode, mode);
-//}
-//
-//void sithRender_Draw(void)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_Draw);
-//}
-//
-//void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pFrustrum)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildVisibleSectorList, pSector, pFrustrum);
-//}
-//
-//void J3DAPI sithRender_BuildVisibleSurface(SithSurface* pSurface)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildVisibleSurface, pSurface);
-//}
-//
-//void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, int numVertices, float orthLeft, float orthTop, float orthRight, float orthBottom)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildClipFrustrum, pFrustrum, numVertices, orthLeft, orthTop, orthRight, orthBottom);
-//}
-//
-//void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pClipFrustum)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_PVSBuildVisibleSectorList, pSector, pClipFrustum);
-//}
-//
-//void J3DAPI sithRender_PVSBuildVisibleSector(SithSector* pSector)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_PVSBuildVisibleSector, pSector);
-//}
-//
-//void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrustum* pFrustrum)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildVisibleSector, pSector, pFrustrum);
-//}
-//
-//void J3DAPI sithRender_RenderSectors()
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_RenderSectors);
-//}
-//
-//void sithRender_BuildVisibleSectorsThingList(void)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildVisibleSectorsThingList);
-//}
-//
-//void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float a2, float distance)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildSectorThingList, pSector, a2, distance);
-//}
-//
-//void sithRender_BuildDynamicLights(void)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_BuildDynamicLights);
-//}
-//
-//void sithRender_RenderThings(void)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_RenderThings);
-//}
-//
-//int J3DAPI sithRender_RenderThing(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithRender_RenderThing, pThing);
-//}
-//
-//void sithRender_RenderAlphaAdjoins(void)
-//{
-//    J3D_TRAMPOLINE_CALL(sithRender_RenderAlphaAdjoins);
-//}
-//
-//int sithRender_MakeScreenShot(void)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithRender_MakeScreenShot);
-//}
 
 int sithRender_Startup(void)
 {
