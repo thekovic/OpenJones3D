@@ -8,7 +8,7 @@
 #include <std/types.h>
 
 J3D_EXTERN_C_START
-#define SITHRENDER_MAX_VISIBLE_SECTORS     1024 // Changed: Was 128
+#define SITHRENDER_MAX_VISIBLE_SECTORS     4096 // Changed: Was 128
 #define SITHRENDER_MAX_SECTORS_WITH_THINGS SITHRENDER_MAX_VISIBLE_SECTORS * 2 // Changed: Was 256
 
 #define sithRender_g_fogDensity J3D_DECL_FAR_VAR(sithRender_g_fogDensity, float)
