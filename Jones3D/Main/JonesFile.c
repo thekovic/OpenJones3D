@@ -210,7 +210,7 @@ void J3DAPI JonesFile_SetInstallPath(const char* pPath)
         JonesFile_OpenResource(&JonesFile_aResources[JF_RES_INSTALL], pPath);
 
         // Added: Add resource dir path
-        STD_MAKEPATH(JonesFile_aPathBuf, pPath, "resource");
+        STD_MAKEPATH(JonesFile_aPathBuf, pPath, "Resource");
         JonesFile_OpenResource(&JonesFile_aResources[JF_RES_RESOURCE], JonesFile_aPathBuf);
     }
 }

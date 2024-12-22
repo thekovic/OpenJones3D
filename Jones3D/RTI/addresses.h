@@ -120,7 +120,7 @@
 #define JonesMain_PrintFramerate_ADDR 0x0041E1E0
 #define JonesMain_TogglePrintFramerate_ADDR 0x0041E300
 #define JonesMain_Open_ADDR 0x0041E320
-#define JonesMain_EnsureFile_ADDR 0x0041E520
+#define JonesMain_EnsureLevelFile_ADDR 0x0041E520
 #define JonesMain_Close_ADDR 0x0041E5B0
 #define JonesMain_Restore_ADDR 0x0041E5C0
 #define JonesMain_ProcessGamesaveState_ADDR 0x0041E730

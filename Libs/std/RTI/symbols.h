@@ -267,7 +267,7 @@
 #define stdBmp_WriteVBuffer_TYPE int (J3DAPI*)(const char*, tVBuffer*)
 #define stdBmp_Load_TYPE HBITMAP (J3DAPI*)(const char*)
 #define stdFnames_FindMedName_TYPE const char* (J3DAPI*)(const char*)
-#define stdFnames_FindExt_TYPE char* (J3DAPI*)(const char*)
+#define stdFnames_FindExt_TYPE const char* (J3DAPI*)(const char*)
 #define stdFnames_StripExtAndDot_TYPE void (J3DAPI*)(char*)
 #define stdFnames_ChangeExt_TYPE void (J3DAPI*)(char*, const char*)
 #define stdFnames_Concat_TYPE void (J3DAPI*)(char*, const char*, size_t)

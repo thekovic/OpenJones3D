@@ -433,7 +433,8 @@ void JonesMain_ProcessMenu(void);
 
 void J3DAPI JonesMain_PrintFramerate();
 
-int J3DAPI JonesMain_EnsureFile(const char* pFilename);
+int J3DAPI JonesMain_EnsureLevelFile(const char* pFilename);
+int J3DAPI JonesMain_EnsureLevelFileEx(const char* pFilename, bool bFindAll, char* pFoundFilename, size_t filenameSize);
 int J3DAPI JonesMain_Restore(const char* pNdsFilePath);
 
 int JonesMain_ProcessStartGame(void);
@@ -496,7 +497,7 @@ void JonesMain_InstallHooks(void)
     J3D_HOOKFUNC(JonesMain_PrintFramerate);
     J3D_HOOKFUNC(JonesMain_TogglePrintFramerate);
     J3D_HOOKFUNC(JonesMain_Open);
-    J3D_HOOKFUNC(JonesMain_EnsureFile);
+    J3D_HOOKFUNC(JonesMain_EnsureLevelFile);
     J3D_HOOKFUNC(JonesMain_Close);
     J3D_HOOKFUNC(JonesMain_Restore);
     J3D_HOOKFUNC(JonesMain_ProcessGamesaveState);
@@ -1674,7 +1675,8 @@ void JonesMain_TogglePrintFramerate(void)
 
 int JonesMain_Open(void)
 {
-    if ( JonesMain_EnsureFile(JonesMain_state.aCurLevelFilename) )
+    // Changed: Look for both versions of level formats (cnd and ndy). This make sure that level progress can find ndy level file 
+    if ( JonesMain_EnsureLevelFileEx(JonesMain_state.aCurLevelFilename, /*bFindAll=*/true, JonesMain_state.aCurLevelFilename, STD_ARRAYLEN(JonesMain_state.aCurLevelFilename)) )
     {
         return 1;
     }
@@ -1768,8 +1770,16 @@ int JonesMain_Open(void)
     return 0;
 }
 
-int J3DAPI JonesMain_EnsureFile(const char* pFilename)
+int J3DAPI JonesMain_EnsureLevelFile(const char* pFilename)
 {
+    // Changed
+    return JonesMain_EnsureLevelFileEx(pFilename, /*bFindAll*/false, NULL, 0);
+}
+
+int J3DAPI JonesMain_EnsureLevelFileEx(const char* pFilename, bool bFindAll, char* pFoundFilename, size_t filenameSize)
+{
+    // Added overload function which searches for both cnd and ndy file in case one is not found.
+    // 
     // TODO: there is an issue when loading level from different CD*.gob file than current
     //       the insert CD dialog can be shown even if file exists on disk
 
@@ -1780,6 +1790,27 @@ int J3DAPI JonesMain_EnsureFile(const char* pFilename)
         // File found
         return 0;
     }
+
+    // Try looking for different format
+    if ( bFindAll && pFoundFilename )
+    {
+        const char* pCurExt = stdFnames_FindExt(aPath);
+        if ( strcmpi(pCurExt, "cnd") == 0 ) {
+            stdFnames_ChangeExt(aPath, "ndy");
+        }
+        else {
+            stdFnames_ChangeExt(aPath, "cnd");
+        }
+
+        if ( JonesFile_FileExists(aPath) )
+        {
+            // File found
+            stdUtil_StringCopy(pFoundFilename, filenameSize, stdFnames_FindMedName(aPath));
+            return 0;
+        }
+    }
+
+    // No level file was found
 
     JonesFile_Close();
 
@@ -1811,7 +1842,7 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath)
         return 1;
     }
 
-    if ( JonesMain_EnsureFile(JonesMain_state.aCurLevelFilename) )
+    if ( JonesMain_EnsureLevelFile(JonesMain_state.aCurLevelFilename) )
     {
         return 1;
     }

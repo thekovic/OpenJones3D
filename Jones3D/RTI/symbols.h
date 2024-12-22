@@ -110,7 +110,7 @@
 #define JonesMain_PrintFramerate_TYPE void (J3DAPI*)()
 #define JonesMain_TogglePrintFramerate_TYPE void (*)(void)
 #define JonesMain_Open_TYPE int (*)(void)
-#define JonesMain_EnsureFile_TYPE int (J3DAPI*)(const char*)
+#define JonesMain_EnsureLevelFile_TYPE int (J3DAPI*)(const char*)
 #define JonesMain_Close_TYPE int (*)(void)
 #define JonesMain_Restore_TYPE int (J3DAPI*)(const char*)
 #define JonesMain_ProcessGamesaveState_TYPE int (*)(void)
