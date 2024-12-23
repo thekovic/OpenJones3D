@@ -45,8 +45,8 @@ void sithModel_InstallHooks(void)
     J3D_HOOKFUNC(sithModel_Load);
     J3D_HOOKFUNC(sithModel_GetModelMemUsage);
     J3D_HOOKFUNC(sithModel_AllocWorldModels);
-    //J3D_HOOKFUNC(sithModel_GetModelByIndex);
-    J3DHookFunction(sithModel_GetModelByIndex_ADDR, (void*)sithModel_GetModelByIndexWrap);
+
+    J3DHookFunction(sithModel_GetModelByIndex_ADDR, (void*)sithModel_GetModelByIndexWrap);  //J3D_HOOKFUNC(sithModel_GetModelByIndex);
     J3D_HOOKFUNC(sithModel_GetModelIndex);
     J3D_HOOKFUNC(sithModel_GetModel);
     J3D_HOOKFUNC(sithModel_GetMeshIndex);
