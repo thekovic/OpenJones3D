@@ -1084,6 +1084,11 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
         return 1;
     }
 
+    // Added: Allow only true colors
+    if ( lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount < 24 ) {
+        return 1;
+    }
+
     StdVideoMode* pMode       = &stdDisplay_aVideoModes[stdDisplay_numVideoModes];
     pMode->rasterInfo.width   = lpDDSurfaceDesc->dwWidth;
     pMode->rasterInfo.height  = lpDDSurfaceDesc->dwHeight;
@@ -1150,13 +1155,13 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
         return 1;
     }
 
-    if ( pMode->rasterInfo.width <= 640 && pMode->rasterInfo.height <= 480 && pMode->rasterInfo.colorInfo.bpp == 16 )
+    if ( pMode->rasterInfo.width <= 640 && pMode->rasterInfo.height <= 480 && pMode->rasterInfo.colorInfo.bpp == 32 )
     {
         if ( totalTexMem < 0x200000 ) {
-            STDLOG_STATUS("Not enough video memory, allowing <= 640x480x16 anyway...\n");
+            STDLOG_STATUS("Not enough video memory, allowing <= 640x480x32 anyway...\n");
         }
         else {
-            STDLOG_STATUS("Allowing <= 640x480x16 with 2MB texture mem.\n");
+            STDLOG_STATUS("Allowing <= 640x480x32 with 2MB texture mem.\n");
         }
 
         ++stdDisplay_numVideoModes;
