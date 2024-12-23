@@ -1,8 +1,8 @@
 #ifndef JONES3D_TYPES_H
 #define JONES3D_TYPES_H
-#include <stdint.h>
 #include <Windows.h>
 #include <CommCtrl.h>
+#include <stdint.h>
 
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
@@ -181,7 +181,7 @@ typedef int (*JonesDialogFlipPageFunc)(void);
 
 typedef struct sJonesResource
 {
-    char dirPath[128];
+    char aPath[128];
     size_t numGobFiles;
     Gob* aGobFiles[32];
 } JonesResource;

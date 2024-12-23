@@ -230,31 +230,6 @@ void stdDisplay_InstallHooks(void)
 
 void stdDisplay_ResetGlobals(void)
 {
-    /* const DXStatus stdDisplay_aDDStatusTbl_tmp[111] = {
-     memcpy((DXStatus*)&stdDisplay_aDDStatusTbl, &stdDisplay_aDDStatusTbl_tmp, sizeof(stdDisplay_aDDStatusTbl));
-
-     int stdDisplay_coopLevelFlags_tmp = 8;
-     memcpy(&stdDisplay_coopLevelFlags, &stdDisplay_coopLevelFlags_tmp, sizeof(stdDisplay_coopLevelFlags));
-     memset(&stdDisplay_hFont, 0, sizeof(stdDisplay_hFont));
-     memset(&stdDisplay_curDevice, 0, sizeof(stdDisplay_curDevice));
-     memset(&stdDisplay_primaryVideoMode, 0, sizeof(stdDisplay_primaryVideoMode));
-     memset(&stdDisplay_dword_5D73D8, 0, sizeof(stdDisplay_dword_5D73D8));
-     memset(&stdDisplay_dword_5D73DC, 0, sizeof(stdDisplay_dword_5D73DC));
-     memset(&stdDisplay_backbufWidth, 0, sizeof(stdDisplay_backbufWidth));
-     memset(&stdDisplay_backbufHeight, 0, sizeof(stdDisplay_backbufHeight));
-     memset(&stdDisplay_zBuffer, 0, sizeof(stdDisplay_zBuffer));
-     memset(&stdDisplay_aVideoModes, 0, sizeof(stdDisplay_aVideoModes));
-     memset(&stdDisplay_aDisplayDevices, 0, sizeof(stdDisplay_aDisplayDevices));
-     memset(&stdDisplay_bStartup, 0, sizeof(stdDisplay_bStartup));
-     memset(&stdDisplay_bOpen, 0, sizeof(stdDisplay_bOpen));
-     memset(&stdDisplay_bModeSet, 0, sizeof(stdDisplay_bModeSet));
-     memset(&stdDisplay_numDevices, 0, sizeof(stdDisplay_numDevices));
-     memset(&stdDisplay_pCurDevice, 0, sizeof(stdDisplay_pCurDevice));
-     memset(&stdDisplay_numVideoModes, 0, sizeof(stdDisplay_numVideoModes));
-     memset(&stdDisplay_pCurVideoMode, 0, sizeof(stdDisplay_pCurVideoMode));
-     memset(&stdDisplay_lpDD, 0, sizeof(stdDisplay_lpDD));
-     memset(&stdDisplay_bFullscreen, 0, sizeof(stdDisplay_bFullscreen));*/
-
     memset(&stdDisplay_g_frontBuffer, 0, sizeof(stdDisplay_g_frontBuffer));
     memset(&stdDisplay_g_backBuffer, 0, sizeof(stdDisplay_g_backBuffer));
 }
@@ -659,7 +634,7 @@ int J3DAPI stdDisplay_VBufferLock(tVBuffer* pVBuffer)
         if ( pVBuffer->lockRefCount == 1 )
         {
             if ( (pVBuffer->surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER) != 0
-               && (pVBuffer->surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_MODEX) != 0 ) {
+                && (pVBuffer->surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_MODEX) != 0 ) {
                 return 0;
             }
 
@@ -831,6 +806,8 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
         }
     }
 
+    // Convert pixel data
+
     STD_ASSERTREL(pSrc->pPixels != ((void*)0));
     STD_ASSERTREL(pDest->pPixels != ((void*)0));
 
@@ -851,13 +828,16 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
             &pSrc->rasterInfo.colorInfo,
             pDest->rasterInfo.width,
             bColorKey,
-            pColorKey);
+            pColorKey
+        );
     }
 
     STD_ASSERTREL(pDestRow <= pDest->pPixels + pDest->rasterInfo.size);
     STD_ASSERTREL(pSrcRow <= pSrc->pPixels + pSrc->rasterInfo.size);
     stdDisplay_VBufferUnlock(pSrc);
     stdDisplay_VBufferUnlock(pDest);
+
+    // Copy color format
     memcpy(&pDest->rasterInfo.colorInfo, pDesiredColorFormat, sizeof(pDest->rasterInfo.colorInfo));
 
     if ( pDest != pSrc ) {
@@ -1104,6 +1084,11 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
         return 1;
     }
 
+    // Added: Allow only true colors
+    if ( lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount < 24 ) {
+        return 1;
+    }
+
     StdVideoMode* pMode       = &stdDisplay_aVideoModes[stdDisplay_numVideoModes];
     pMode->rasterInfo.width   = lpDDSurfaceDesc->dwWidth;
     pMode->rasterInfo.height  = lpDDSurfaceDesc->dwHeight;
@@ -1170,13 +1155,13 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
         return 1;
     }
 
-    if ( pMode->rasterInfo.width <= 640 && pMode->rasterInfo.height <= 480 && pMode->rasterInfo.colorInfo.bpp == 16 )
+    if ( pMode->rasterInfo.width <= 640 && pMode->rasterInfo.height <= 480 && pMode->rasterInfo.colorInfo.bpp == 32 )
     {
         if ( totalTexMem < 0x200000 ) {
-            STDLOG_STATUS("Not enough video memory, allowing <= 640x480x16 anyway...\n");
+            STDLOG_STATUS("Not enough video memory, allowing <= 640x480x32 anyway...\n");
         }
         else {
-            STDLOG_STATUS("Allowing <= 640x480x16 with 2MB texture mem.\n");
+            STDLOG_STATUS("Allowing <= 640x480x32 with 2MB texture mem.\n");
         }
 
         ++stdDisplay_numVideoModes;
@@ -1973,11 +1958,11 @@ int J3DAPI stdDisplay_LockBackBuffer(void** pSurface, uint32_t* pWidth, uint32_t
     {
         stdDisplay_Refresh(1);
         ddres = IDirectDrawSurface4_Lock(
-           stdDisplay_g_backBuffer.surface.pDDSurf,
-           NULL,
-           &dddesc,
-           DDLOCK_NOSYSLOCK | DDLOCK_WRITEONLY | DDLOCK_WAIT,
-           NULL
+            stdDisplay_g_backBuffer.surface.pDDSurf,
+            NULL,
+            &dddesc,
+            DDLOCK_NOSYSLOCK | DDLOCK_WRITEONLY | DDLOCK_WAIT,
+            NULL
         );
 
     }

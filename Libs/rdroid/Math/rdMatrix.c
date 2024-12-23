@@ -50,16 +50,11 @@ void rdMatrix_ResetGlobals(void)
 
 void J3DAPI rdMatrix_Build34(rdMatrix34* res, const rdVector3* pyr, const rdVector3* pos)
 {
-    float yCos;
-    float zSin;
-    float xSin;
-    float zCos;
-    float xCos;
-    float ySin;
-
-    stdMath_SinCos(pyr->x, &xSin, &xCos);
-    stdMath_SinCos(pyr->y, &ySin, &yCos);
-    stdMath_SinCos(pyr->z, &zSin, &zCos);
+    float xSin, ySin, zSin;
+    float xCos, yCos, zCos;
+    stdMath_SinCos(pyr->pitch, &xSin, &xCos);
+    stdMath_SinCos(pyr->yaw, &ySin, &yCos);
+    stdMath_SinCos(pyr->roll, &zSin, &zCos);
 
     float yzCos = yCos * zCos;
     float yzSin = ySin * zSin;
@@ -78,13 +73,13 @@ void J3DAPI rdMatrix_Build34(rdMatrix34* res, const rdVector3* pyr, const rdVect
     res->uvec.y = -xSin * yzCos + yzSin;
     res->uvec.z = zCos * xCos;
 
-    memcpy(&res->dvec, pos, sizeof(res->dvec));
+    res->dvec = *pos;
 }
 
 void J3DAPI rdMatrix_BuildFromLook34(rdMatrix34* mat, const rdVector3* look)
 {
     RD_ASSERTREL(mat && look);
-    memcpy(&mat->lvec, look, sizeof(mat->lvec));
+    mat->lvec = *look;
 
     //mat->rvec.x = mat->lvec.y * 1.0f - mat->lvec.z * 0.0f;
     //mat->rvec.y = mat->lvec.z * 0.0f - mat->lvec.x * 1.0f;
@@ -116,10 +111,6 @@ void J3DAPI rdMatrix_BuildFromLook34(rdMatrix34* mat, const rdVector3* look)
 
 void J3DAPI rdMatrix_InvertOrtho34(rdMatrix34* dest, const rdMatrix34* src)
 {
-    float z;
-    float y;
-    float x;
-
     dest->rvec.x = src->rvec.x;
     dest->rvec.y = src->lvec.x;
     dest->rvec.z = src->uvec.x;
@@ -132,9 +123,10 @@ void J3DAPI rdMatrix_InvertOrtho34(rdMatrix34* dest, const rdMatrix34* src)
     dest->uvec.y = src->lvec.z;
     dest->uvec.z = src->uvec.z;
 
-    x = src->dvec.x;
-    y = src->dvec.y;
-    z = src->dvec.z;
+    float x = src->dvec.x;
+    float y = src->dvec.y;
+    float z = src->dvec.z;
+
     dest->dvec.x = -(x * src->rvec.x + src->rvec.y * y + src->rvec.z * z);
     dest->dvec.y = -(src->lvec.x * x + src->lvec.y * y + src->lvec.z * z);
     dest->dvec.z = -(src->uvec.x * x + src->uvec.y * y + src->uvec.z * z);
@@ -142,25 +134,16 @@ void J3DAPI rdMatrix_InvertOrtho34(rdMatrix34* dest, const rdMatrix34* src)
 
 void J3DAPI rdMatrix_BuildRotate34(rdMatrix34* mat, const rdVector3* pyr)
 {
-    float yCos;
-    float zSin;
-    float xSin;
-    float yzSin;
-    float v6;
-    float v7;
-    float yzCos;
-    float zCos;
-    float xCos;
-    float ySin;
-
+    float xSin, ySin, zSin;
+    float xCos, yCos, zCos;
     stdMath_SinCos(pyr->x, &xSin, &xCos);
     stdMath_SinCos(pyr->y, &ySin, &yCos);
     stdMath_SinCos(pyr->z, &zSin, &zCos);
 
-    yzCos = yCos * zCos;
-    yzSin = ySin * zSin;
-    v6 = yCos * zSin;
-    v7 = ySin * zCos;
+    float yzCos = yCos * zCos;
+    float yzSin = ySin * zSin;
+    float v6 = yCos * zSin;
+    float v7 = ySin * zCos;
 
     mat->rvec.x = -yzSin * xSin + yzCos;
     mat->rvec.y = v6 * xSin + v7;
@@ -179,8 +162,8 @@ void J3DAPI rdMatrix_BuildRotate34(rdMatrix34* mat, const rdVector3* pyr)
 
 void J3DAPI rdMatrix_BuildTranslate34(rdMatrix34* mat, const rdVector3* vec)
 {
-    memcpy(mat, &rdroid_g_identMatrix34, sizeof(rdMatrix34));
-    memcpy(&mat->dvec, vec, sizeof(mat->dvec));
+    *mat      = rdroid_g_identMatrix34;
+    mat->dvec = *vec;
 }
 
 void J3DAPI rdMatrix_BuildScale34(rdMatrix34* mat, const rdVector3* scale)
@@ -200,94 +183,6 @@ void J3DAPI rdMatrix_BuildScale34(rdMatrix34* mat, const rdVector3* scale)
     memset(&mat->dvec, 0, sizeof(mat->dvec));
 }
 
-// TODO: test throughly rdMatrix_BuildFromVectorAngle34 function before removing this function
-void J3DAPI rdMatrix_BuildFromVectorAngle34_old(rdMatrix34* mat, const rdVector3* vec, float angle)
-{
-    float v3;
-    float v4;
-    float v5;
-    float v6;
-    float v7;
-    float v8;
-    float v9;
-    float v10;
-    float v11;
-    float v12;
-    float zy;
-    float angCos;
-    float zx;
-    float angSin;
-    float v17;
-    float v18;
-    float yx;
-
-    stdMath_SinCos(angle, &angSin, &angCos);
-    if ( vec->z < 1.0f )
-    {
-        if ( vec->z > -1.0f )
-        {
-            v17 = 1.0f - angCos; // 2*sin(angle/2)^2
-
-            yx = vec->y * vec->x;
-            zy = vec->z * vec->y;
-            zx = vec->z * vec->x;
-
-            v7 = angSin * vec->x;
-            v6 = vec->y * angSin;
-            v4 = vec->z * angSin;
-            v11 = vec->x * vec->x;
-            v5 = vec->y * vec->y;
-            v18 = 1.0f - v11 - v5;
-            v12 = 1.0f - v18;
-            v9 = angCos * v11;
-            v3 = angCos * v5;
-            v10 = v17 * zx;
-            v8 = v17 * zy;
-            mat->rvec.x = (v9 * v18 + v3) / v12 + v11;
-            mat->lvec.y = (v3 * v18 + v9) / v12 + v5;
-            mat->uvec.z = v18 + v9 + v3;
-            mat->rvec.y = v17 * yx + v4;
-            mat->lvec.x = v17 * yx - v4;
-            mat->rvec.z = v10 - v6;
-            mat->lvec.z = v8 + v7;
-            mat->uvec.x = v10 + v6;
-            mat->uvec.y = v8 - v7;
-        }
-        else
-        {
-            mat->rvec.x = angCos;
-            mat->rvec.y = -angSin;
-            mat->rvec.z = 0.0f;
-
-            mat->lvec.x = angSin;
-            mat->lvec.y = angCos;
-            mat->lvec.z = 0.0f;
-
-            mat->uvec.x = 0.0f;
-            mat->uvec.y = 0.0f;
-            mat->uvec.z = 1.0f;
-        }
-    }
-    else
-    {
-        mat->rvec.x = angCos;
-        mat->rvec.y = angSin;
-        mat->rvec.z = 0.0f;
-
-        mat->lvec.x = -angSin;
-        mat->lvec.y = angCos;
-        mat->lvec.z = 0.0f;
-
-        mat->uvec.x = 0.0f;
-        mat->uvec.y = 0.0f;
-        mat->uvec.z = 1.0f;
-    }
-
-    mat->dvec.x = 0.0f;
-    mat->dvec.y = 0.0f;
-    mat->dvec.z = 0.0f;
-}
-
 void J3DAPI rdMatrix_BuildFromVectorAngle34(rdMatrix34* mat, const rdVector3* vec, float angle)
 {
     float sinAngle, cosAngle;
@@ -305,10 +200,10 @@ void J3DAPI rdMatrix_BuildFromVectorAngle34(rdMatrix34* mat, const rdVector3* ve
         float xs = vec->x * sinAngle;
         float ys = vec->y * sinAngle;
         float zs = vec->z * sinAngle;
-        float invZZ = 1.0f / (1.0f - zz);
 
-        mat->rvec.x = (cosAngle * xx * zz + cosAngle * yy) * invZZ + xx;
-        mat->lvec.y = (cosAngle * yy * zz + cosAngle * xx) * invZZ + yy;
+        double invZZ = 1.0 / (1.0 - (double)zz);
+        mat->rvec.x = (float)((cosAngle * xx * zz + cosAngle * yy) * invZZ) + xx;
+        mat->lvec.y = (float)((cosAngle * yy * zz + cosAngle * xx) * invZZ) + yy;
         mat->uvec.z = zz + cosAngle * xx + cosAngle * yy;
 
         mat->rvec.y = oneMinusCos * xy + zs;
@@ -377,116 +272,6 @@ void J3DAPI rdMatrix_LookAt(rdMatrix34* mat, const rdVector3* eyePos, const rdVe
     //memcpy(&mat->dvec, eyePos, sizeof(mat->dvec));
 }
 
-void J3DAPI rdMatrix_ExtractAngles34_old(const rdMatrix34* mat, rdVector3* pyr)
-{
-    double v2;
-    double v3;
-    double v4;
-    float v5;
-    float v6;
-    float v7;
-    float v8;
-    float v9;
-    float v10;
-    float v11;
-    float v12;
-    float v13;
-    float v14;
-    float v15;
-    rdVector3 v16;
-    float v17;
-    float v18;
-    float v19;
-    float v20;
-    float v21;
-
-    rdVector_Copy3(&v16, &mat->lvec);
-    v9 = -mat->rvec.x;
-    v10 = -mat->rvec.y;
-    v11 = -mat->rvec.z;
-
-    v5 = v16.x * v16.x + v16.y * v16.y + 0.0f * 0.0f;
-    v2 = sqrtf(v5);
-    v15 = v2;
-    if ( v2 >= 0.001f )
-    {
-        v7 = v16.y / v15;
-        v18 = 90.0f - stdMath_ArcSin3(v7);
-        if ( v16.x > 0.0f )
-        {
-            v18 = -v18;
-        }
-
-        pyr->y = v18;
-    }
-    else
-    {
-        v6 = -v9;
-        v17 = 90.0f - stdMath_ArcSin3(v6);
-        if ( v10 > 0.0f && v16.z > 0.0f || v10 < 0.0f && v16.z < 0.0f )
-        {
-            v17 = -v17;
-        }
-
-        pyr->z = v17;
-        pyr->y = 0.0f;
-    }
-
-    if ( v15 >= 0.001f )
-    {
-        v3 = (v16.x * v16.x + v16.y * v16.y + 0.0f * v16.z) / v15;
-        if ( v3 < 1.0f )
-        {
-            v12 = v3;
-            v19 = 90.0f - stdMath_ArcSin3(v12);
-            pyr->x = v19;
-        }
-        else
-        {
-            pyr->x = 0.0f;
-        }
-    }
-    else
-    {
-        pyr->x = 90.0f;
-    }
-
-    if ( v16.z < 0.0f )
-    {
-        pyr->x = -pyr->x;
-    }
-
-    v21 = -v16.y;
-    v8 = v21 * v21 + v16.x * v16.x + 0.0f * 0.0f;
-    v14 = sqrtf(v8);
-    if ( v15 >= 0.001f )
-    {
-        v4 = (v21 * v9 + v16.x * v10 + 0.0f * v11) / v14;
-        v13 = v4;
-        if ( v4 < 1.0f )
-        {
-            if ( v13 > -1.0f )
-            {
-                v20 = 90.0f - stdMath_ArcSin3(v13);
-                pyr->z = v20;
-            }
-            else
-            {
-                pyr->z = 180.0f;
-            }
-        }
-        else
-        {
-            pyr->z = 0.0f;
-        }
-
-        if ( v11 < 0.0f )
-        {
-            pyr->z = -pyr->z;
-        }
-    }
-}
-
 void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
 {
     float negRightX = -mat->rvec.x;
@@ -495,12 +280,12 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
 
     rdVector3 vecFwd;
     rdVector_Copy3(&vecFwd, &mat->lvec);
-    float fwdLenXY = sqrtf(vecFwd.x * vecFwd.x + vecFwd.y * vecFwd.y);
+    double fwdLenXY = sqrt(vecFwd.x * vecFwd.x + vecFwd.y * vecFwd.y);
 
     // Calculate Yaw (Y)
-    if ( fwdLenXY >= 0.001f )
+    if ( fwdLenXY >= 0.001 )
     {
-        float sinYaw = vecFwd.y / fwdLenXY;
+        float sinYaw = (float)(vecFwd.y / fwdLenXY);
         pyr->yaw = 90.0f - stdMath_ArcSin3(sinYaw);
         if ( vecFwd.x > 0.0f ) {
             pyr->yaw = -pyr->yaw;
@@ -518,9 +303,9 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
 
     // Calculate Pitch (X)
     pyr->pitch = 90.0f;
-    if ( fwdLenXY >= 0.001f )
+    if ( fwdLenXY >= 0.001 )
     {
-        float sinPitch = (vecFwd.x * vecFwd.x + vecFwd.y * vecFwd.y) / fwdLenXY;
+        float sinPitch = (float)((vecFwd.x * vecFwd.x + vecFwd.y * vecFwd.y) / fwdLenXY);
         if ( sinPitch < 1.0f ) {
             pyr->pitch = 90.0f - stdMath_ArcSin3(sinPitch);
         }
@@ -535,12 +320,12 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
 
     // Calculate Roll (Z)
     float negUpY = -vecFwd.y;
-    float upXYLen = sqrtf(negUpY * negUpY + vecFwd.x * vecFwd.x);
+    double upXYLen = sqrt(negUpY * negUpY + vecFwd.x * vecFwd.x);
 
-    if ( fwdLenXY >= 0.001f )
+    if ( fwdLenXY >= 0.001 )
     {
         pyr->roll = 0.0f;
-        float sinRoll = (negUpY * negRightX + vecFwd.x * negRightY) / upXYLen;
+        float sinRoll = (float)((negUpY * negRightX + vecFwd.x * negRightY) / upXYLen);
         if ( sinRoll < 1.0f )
         {
             if ( sinRoll > -1.0f ) {
@@ -555,22 +340,6 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
             pyr->roll = -pyr->roll;
         }
     }
-
-    // TEST scope
-    // TODO: Remove
-    #ifdef J3D_DEBUG
-    rdVector3 pyr2;
-    rdMatrix_ExtractAngles34_old(mat, &pyr2);
-    if ( ((pyr2.x != pyr->x) && (!isnan(pyr2.x) || !isnan(pyr->x)))
-      || ((pyr2.y != pyr->y) && (!isnan(pyr2.y) || !isnan(pyr->y)))
-      || ((pyr2.z != pyr->z) && (!isnan(pyr2.z) || !isnan(pyr->z)))
-        )
-    {
-        RDLOG_ERROR("PYR p=%.f y%.f r=%.f op=%.f oy=%.f or=%.f\n", pyr2.x, pyr2.y, pyr2.z, pyr->x, pyr->y, pyr->z);
-        //RDLOG_FATAL("pyr2.x == pyr->x && pyr2.y == pyr->y && pyr2.z == pyr->z");
-    }
-    #endif
-    // TEST scope remove 
 }
 
 void J3DAPI rdMatrix_Normalize34(rdMatrix34* mat)
@@ -578,8 +347,8 @@ void J3DAPI rdMatrix_Normalize34(rdMatrix34* mat)
     mat->uvec.x = mat->rvec.y * mat->lvec.z - mat->rvec.z * mat->lvec.y;
     mat->uvec.y = mat->rvec.z * mat->lvec.x - mat->lvec.z * mat->rvec.x;
     mat->uvec.z = mat->rvec.x * mat->lvec.y - mat->rvec.y * mat->lvec.x;
-    rdVector_Normalize3Acc(&mat->lvec);
 
+    rdVector_Normalize3Acc(&mat->lvec);
     rdVector_Normalize3Acc(&mat->uvec);
 
     mat->rvec.x = mat->lvec.y * mat->uvec.z - mat->lvec.z * mat->uvec.y;
@@ -587,7 +356,7 @@ void J3DAPI rdMatrix_Normalize34(rdMatrix34* mat)
     mat->rvec.z = mat->lvec.x * mat->uvec.y - mat->lvec.y * mat->uvec.x;
 }
 
-void __cdecl rdMatrix_Multiply34(rdMatrix34* dest, const rdMatrix34* a, const rdMatrix34* b)
+void J3DAPI rdMatrix_Multiply34(rdMatrix34* dest, const rdMatrix34* a, const rdMatrix34* b)
 {
     RD_ASSERTREL(((dest != a) && (dest != b)));
 
@@ -610,8 +379,8 @@ void __cdecl rdMatrix_Multiply34(rdMatrix34* dest, const rdMatrix34* a, const rd
 
 void J3DAPI rdMatrix_PreMultiply34(rdMatrix34* a, const rdMatrix34* b)
 {
-    rdMatrix34 acpy = { 0 };
-    memcpy(&acpy, a, sizeof(acpy));
+    rdMatrix34 acpy = *a;
+
     a->rvec.x = acpy.rvec.x * b->rvec.x + b->rvec.y * acpy.lvec.x + b->rvec.z * acpy.uvec.x;
     a->rvec.y = acpy.rvec.y * b->rvec.x + b->rvec.y * acpy.lvec.y + b->rvec.z * acpy.uvec.y;
     a->rvec.z = acpy.rvec.z * b->rvec.x + b->rvec.y * acpy.lvec.z + b->rvec.z * acpy.uvec.z;
@@ -631,8 +400,7 @@ void J3DAPI rdMatrix_PreMultiply34(rdMatrix34* a, const rdMatrix34* b)
 
 void J3DAPI rdMatrix_PostMultiply34(rdMatrix34* a, const rdMatrix34* b)
 {
-    rdMatrix34 acpy;
-    memcpy(&acpy, a, sizeof(acpy));
+    rdMatrix34 acpy = *a;
 
     a->rvec.x = b->rvec.x * acpy.rvec.x + b->lvec.x * acpy.rvec.y + b->uvec.x * acpy.rvec.z;
     a->rvec.y = b->rvec.y * acpy.rvec.x + b->lvec.y * acpy.rvec.y + b->uvec.y * acpy.rvec.z;
@@ -713,7 +481,7 @@ void J3DAPI rdMatrix_TransformVector34Acc(rdVector3* dest, const rdMatrix34* mat
     vec.x = mat->rvec.x * dest->x + mat->lvec.x * dest->y + mat->uvec.x * dest->z;
     vec.y = mat->rvec.y * dest->x + mat->lvec.y * dest->y + mat->uvec.y * dest->z;
     vec.z = mat->rvec.z * dest->x + mat->lvec.z * dest->y + mat->uvec.z * dest->z;
-    memcpy(dest, &vec, sizeof(rdVector3));
+    rdVector_Copy3(dest, &vec);
 }
 
 void J3DAPI rdMatrix_TransformPoint34(rdVector3* dest, const rdVector3* src, const rdMatrix34* mat)

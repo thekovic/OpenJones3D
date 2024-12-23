@@ -514,28 +514,28 @@ int JonesDisplay_ShowSplashDemo(void)
         int numPressed;
         stdControl_ReadControls();
         if ( stdControl_ReadKey(DIK_ESCAPE, &numPressed)
-          || stdControl_ReadKey(DIK_SPACE, &numPressed)
-          || stdControl_ReadKey(DIK_F1, &numPressed)
-          || stdControl_ReadKey(DIK_F2, &numPressed)
-          || stdControl_ReadKey(DIK_F3, &numPressed)
-          || stdControl_ReadKey(DIK_F4, &numPressed)
-          || stdControl_ReadKey(DIK_F5, &numPressed)
-          || stdControl_ReadKey(DIK_F6, &numPressed)
-          || stdControl_ReadKey(DIK_F7, &numPressed)
-          || stdControl_ReadKey(DIK_F8, &numPressed)
-          || stdControl_ReadKey(DIK_F9, &numPressed)
-          || stdControl_ReadKey(DIK_F10, &numPressed)
-          || stdControl_ReadKey(DIK_F11, &numPressed)
-          || stdControl_ReadKey(DIK_F12, &numPressed)
-          || stdControl_ReadKey(DIK_RETURN, &numPressed)
-          || stdControl_ReadKey(DIK_NUMPADENTER, &numPressed)
-          || stdControl_ReadKey(DIK_RCONTROL, &numPressed)
-          || stdControl_ReadKey(DIK_LCONTROL, &numPressed)
-          || stdControl_ReadKey(DIK_RMENU, &numPressed)
-          || stdControl_ReadKey(DIK_LMENU, &numPressed)
-          || stdControl_ReadKey(DIK_Q, &numPressed)
-          || stdControl_ReadKey(DIK_X, &numPressed)
-          || stdControl_ReadKey(DIK_W, &numPressed) )
+            || stdControl_ReadKey(DIK_SPACE, &numPressed)
+            || stdControl_ReadKey(DIK_F1, &numPressed)
+            || stdControl_ReadKey(DIK_F2, &numPressed)
+            || stdControl_ReadKey(DIK_F3, &numPressed)
+            || stdControl_ReadKey(DIK_F4, &numPressed)
+            || stdControl_ReadKey(DIK_F5, &numPressed)
+            || stdControl_ReadKey(DIK_F6, &numPressed)
+            || stdControl_ReadKey(DIK_F7, &numPressed)
+            || stdControl_ReadKey(DIK_F8, &numPressed)
+            || stdControl_ReadKey(DIK_F9, &numPressed)
+            || stdControl_ReadKey(DIK_F10, &numPressed)
+            //|| stdControl_ReadKey(DIK_F11, &numPressed)
+            || stdControl_ReadKey(DIK_F12, &numPressed)
+            || stdControl_ReadKey(DIK_RETURN, &numPressed)
+            || stdControl_ReadKey(DIK_NUMPADENTER, &numPressed)
+            || stdControl_ReadKey(DIK_RCONTROL, &numPressed)
+            || stdControl_ReadKey(DIK_LCONTROL, &numPressed)
+            || stdControl_ReadKey(DIK_RMENU, &numPressed)
+            || stdControl_ReadKey(DIK_LMENU, &numPressed)
+            || stdControl_ReadKey(DIK_Q, &numPressed)
+            || stdControl_ReadKey(DIK_X, &numPressed)
+            || stdControl_ReadKey(DIK_W, &numPressed) )
         {
             bFinish = 1;
         }
@@ -549,7 +549,7 @@ int JonesDisplay_ShowSplashDemo(void)
             }
 
             rdWallpaper_Free(pWallpaper);
-            pWallpaper = 0;
+            pWallpaper = NULL;
             return 0;
         }
 

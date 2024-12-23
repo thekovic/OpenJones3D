@@ -191,18 +191,18 @@ inline void J3DAPI rdVector_Scale3Acc(rdVector3* v, float scalar)
 
 inline void J3DAPI rdVector_InvScale3(rdVector3* dest, const rdVector3* src, float scalar)
 {
-    float invScalar = 1.0f / scalar;
-    dest->x = src->x * invScalar;
-    dest->y = src->y * invScalar;
-    dest->z = src->z * invScalar;
+    double invScalar = 1.0 / scalar;
+    dest->x = (float)(src->x * invScalar);
+    dest->y = (float)(src->y * invScalar);
+    dest->z = (float)(src->z * invScalar);
 }
 
 inline void J3DAPI rdVector_InvScale3Acc(rdVector3* v, float scalar)
 {
-    float inv = 1.0f / scalar;
-    v->x = v->x * inv;
-    v->y = v->y * inv;
-    v->z = v->z * inv;
+    double inv = 1.0 / scalar;
+    v->x = (float)(v->x * inv);
+    v->y = (float)(v->y * inv);
+    v->z = (float)(v->z * inv);
 }
 
 inline void J3DAPI rdVector_ScaleAdd3(rdVector3* dest, const rdVector3* src, float scalar, const rdVector3* add)
@@ -249,7 +249,6 @@ inline void J3DAPI rdVector_Cross3Acc(rdVector3* dest, const rdVector3* v2)
     res.y = dest->z * v2->x - dest->x * v2->z;
     res.z = dest->x * v2->y - dest->y * v2->x;
     *dest = res;
-    // memcpy(dest, &res, sizeof(rdVector3));
 }
 
 inline float J3DAPI rdVector_CrossDot3(const rdVector3* a, const rdVector3* b, const rdVector3* c)

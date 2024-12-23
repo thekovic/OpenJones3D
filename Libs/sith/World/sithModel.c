@@ -6,16 +6,19 @@
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithWorld.h>
 
-#include <std/types.h>
 #include <std/General/stdConffile.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
+#include <std/types.h>
+
+#include <string.h>
 
 #define SITHMODEL_DEFAULTMODEL    "dflt.3do"
 #define SITHMODEL_EXTRABUFFERSIZE 32
 
+static bool sithModel_bModelStartup = false; // Added
 static bool sithModel_bHiPoly;
 static tHashTable* sithModel_pHashtable = NULL; // Added: Init to null
 
@@ -23,6 +26,13 @@ static tHashTable* sithModel_pHashtable = NULL; // Added: Init to null
 void J3DAPI sithModel_CacheRemove(const rdModel3* pModel);
 void J3DAPI sithModel_CacheAdd(rdModel3* pModel);
 rdModel3* J3DAPI sithModel_CacheFind(const char* pName);
+
+// TODO: this is just temp wrapper for sithModel_GetModelByIndex with uint16_t modelIdx.
+//       Can be removed after all DSS functions that calls sithModel_GetModelByIndex are implemented
+rdModel3* J3DAPI sithModel_GetModelByIndexWrap(uint16_t modelIdx)
+{
+    return sithModel_GetModelByIndex(modelIdx);
+}
 
 void sithModel_InstallHooks(void)
 {
@@ -35,7 +45,8 @@ void sithModel_InstallHooks(void)
     J3D_HOOKFUNC(sithModel_Load);
     J3D_HOOKFUNC(sithModel_GetModelMemUsage);
     J3D_HOOKFUNC(sithModel_AllocWorldModels);
-    J3D_HOOKFUNC(sithModel_GetModelByIndex);
+
+    J3DHookFunction(sithModel_GetModelByIndex_ADDR, (void*)sithModel_GetModelByIndexWrap);  //J3D_HOOKFUNC(sithModel_GetModelByIndex);
     J3D_HOOKFUNC(sithModel_GetModelIndex);
     J3D_HOOKFUNC(sithModel_GetModel);
     J3D_HOOKFUNC(sithModel_GetMeshIndex);
@@ -50,24 +61,46 @@ void sithModel_ResetGlobals(void)
 
 int sithModel_Startup(void)
 {
+    // Added
+    if ( sithModel_bModelStartup )
+    {
+        SITHLOG_ERROR("Multiple startup on model system.\n");
+        return 1;
+    }
+
     sithModel_pHashtable = stdHashtbl_New(256u);
-    return sithModel_pHashtable == NULL;
+    if ( !sithModel_pHashtable ) // Added
+    {
+        SITHLOG_ERROR("Could not allocate model hashtable.\n");
+        return 1;
+    }
+
+    sithModel_bModelStartup = true;
+    return 0;
 }
 
 void sithModel_Shutdown(void)
 {
+    if ( !sithModel_bModelStartup )
+    {
+        SITHLOG_ERROR("Material system not started.\n");
+        return;
+    }
+
     if ( sithModel_pHashtable )
     {
         stdHashtbl_Free(sithModel_pHashtable);
         sithModel_pHashtable = NULL;
     }
+
+    sithModel_bModelStartup = false;
 }
 
 int J3DAPI sithModel_WriteModelsText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("###### Models information ######\n")
-      || stdConffile_WriteLine("Section: MODELS\n\n")
-      || stdConffile_Printf("World models %d\n\n", pWorld->numModels + SITHMODEL_EXTRABUFFERSIZE) )
+        || stdConffile_WriteLine("Section: MODELS\n\n")
+        || stdConffile_Printf("World models %d\n\n", pWorld->numModels + SITHMODEL_EXTRABUFFERSIZE) )
     {
         return 1;
     }
@@ -320,7 +353,7 @@ rdModel3* J3DAPI sithModel_GetModelByIndex(size_t modelIdx)
         modelIdx = SITHWORLD_FROM_STATICINDEX(modelIdx);
     }
 
-    if ( pWorld && !SITHWORLD_IS_STATICINDEX(modelIdx) && modelIdx < pWorld->numModels ) // "TOD: What's the point of !SITHWORLD_IS_STATICINDEX(modelIdx) check?
+    if ( pWorld && !SITHWORLD_IS_STATICINDEX(modelIdx) && modelIdx < pWorld->numModels ) // "TODO: What's the point of !SITHWORLD_IS_STATICINDEX(modelIdx) check?
     {
         return &pWorld->aModels[modelIdx];
     }

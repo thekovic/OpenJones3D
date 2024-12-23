@@ -7,7 +7,12 @@
 
 J3D_EXTERN_C_START
 
-void J3DAPI rdCache_Startup();
+#define RDCACHE_MAXFACEVERTICES 64 // Max vertices per face
+                                   // Note, some clipping functions, such as rdClip_FaceToPlane can handle at max 144 vertices. So be conservative when raising this number
+
+#define RDCACHE_MAXVERTICES 32768 // Changed: Was 2048
+
+    void J3DAPI rdCache_Startup();
 void rdCache_AdvanceFrame(void);
 int  rdCache_GetFrameNum(void);
 

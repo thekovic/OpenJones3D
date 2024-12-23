@@ -11,30 +11,29 @@
 
 #include <stdlib.h>
 
-#define RDCACHE_MAXVERTICES 2048 * 64 // TODO: This number was found in the engine but could be mistake (engine bug?) and the actual size could be 2*2048 (maybe 64 represents 2 * sizeof(D3DTLVERTEX) ?).
-// This high number of vertices might be an issue for rdCache_aVertIndices buffer if total verts grows over 2^16-1 size
+#define RDCACHE_VERTBUFFERSIZE RDCACHE_MAXVERTICES * RDCACHE_MAXFACEVERTICES
 
 static size_t rdCache_numProcFaces              = 0;
 static rdCacheProcEntry rdCache_aProcFaces[128] = { 0 };
 
 static size_t rdCache_numUsedVertices = 0;
-static D3DTLVERTEX rdCache_aVertices[RDCACHE_MAXVERTICES]      = { 0 };
-static rdVector4 rdCache_aVertIntensities[RDCACHE_MAXVERTICES] = { 0 }; // Added: Changed to match size of rdCache_aVertices, was 8192
+static D3DTLVERTEX rdCache_aVertices[RDCACHE_VERTBUFFERSIZE]      = { 0 };
+static rdVector4 rdCache_aVertIntensities[RDCACHE_VERTBUFFERSIZE] = { 0 }; // Fixed: Changed to match size of rdCache_aVertices, was 8192
 
 
 static size_t rdCache_numAlphaProcFaces               = 0;
 static rdCacheProcEntry rdCache_aAlphaProcFaces[2048] = { 0 };
 
 static size_t rdCache_numUsedAlphaVertices = 0;
-static D3DTLVERTEX rdCache_aAlphaVertices[RDCACHE_MAXVERTICES]      = { 0 };
-static rdVector4 rdCache_aAlphaVertIntensities[RDCACHE_MAXVERTICES] = { 0 };
+static D3DTLVERTEX rdCache_aAlphaVertices[RDCACHE_VERTBUFFERSIZE]      = { 0 };
+static rdVector4 rdCache_aAlphaVertIntensities[RDCACHE_VERTBUFFERSIZE] = { 0 };
 
 static size_t rdCache_totalVerts             = 0;
 static LPD3DTLVERTEX rdCache_pCurInVert      = NULL;
 static LPD3DTLVERTEX rdCache_pCurCacheVertex = NULL;
 
-static D3DTLVERTEX rdCache_aHWVertices[RDCACHE_MAXVERTICES]     = { 0 };
-static uint16_t rdCache_aVertIndices[RDCACHE_MAXVERTICES * 3]   = { 0 };
+static D3DTLVERTEX rdCache_aHWVertices[RDCACHE_VERTBUFFERSIZE]     = { 0 };
+static uint16_t rdCache_aVertIndices[RDCACHE_VERTBUFFERSIZE * 3]   = { 0 };
 
 static size_t rdCache_drawnFaces = 0;
 static size_t rdCache_frameNum   = 0;
@@ -100,6 +99,12 @@ rdCacheProcEntry* rdCache_GetProcEntry(void)
         procNum = rdCache_numProcFaces;
     }
 
+     // Added: Check if the vertex buffer is large enough to hold all face vertices.
+    //        Note, taken from grimengine / OpenJKDF2
+    if ( RDCACHE_VERTBUFFERSIZE - rdCache_numUsedVertices < RDCACHE_MAXFACEVERTICES ) {
+        return NULL;
+    }
+
     // TODO: add bound check for cached verts
     pProcEntry                   = &rdCache_aProcFaces[procNum];
     pProcEntry->aVertices        = &rdCache_aVertices[rdCache_numUsedVertices];
@@ -118,6 +123,12 @@ rdCacheProcEntry* rdCache_GetAlphaProcEntry(void)
         rdCache_Flush();
         rdCache_FlushAlpha();
         entryNum = rdCache_numAlphaProcFaces;
+    }
+
+    // Added: Check if the vertex buffer is large enough to hold all face vertices.
+    //        Note, taken from grimengine / OpenJKDF2
+    if ( RDCACHE_VERTBUFFERSIZE - rdCache_numUsedAlphaVertices < RDCACHE_MAXFACEVERTICES ) {
+        return NULL;
     }
 
     // TODO: add bound check for verts
@@ -402,13 +413,12 @@ LABEL_4:
             ++polyNum;
 
             if ( 3 * (pCurPoly->numVertices - 2) + totalIndices >= std3D_g_maxVertices // i.e. totalIndices + num required triangle indices for next poly >= std3D_g_maxVertices
-              || polyNum >= numPolys
-              || pCurMat != pCurPoly->pMaterial
-              || curMatCelNum != pCurPoly->matCelNum
-              || fflags != pCurPoly->flags )
+                || polyNum >= numPolys
+                || pCurMat != pCurPoly->pMaterial
+                || curMatCelNum != pCurPoly->matCelNum
+                || fflags != pCurPoly->flags )
             {
-                //RD_ASSERTREL(totalVerts < (2048 * 64));
-                RD_ASSERTREL(rdCache_totalVerts < RDCACHE_MAXVERTICES);
+                RD_ASSERTREL(rdCache_totalVerts < RDCACHE_VERTBUFFERSIZE);
                 std3D_DrawRenderList(pD3DCachedTex, rdflags, rdCache_aHWVertices, rdCache_totalVerts, rdCache_aVertIndices, totalIndices);
                 goto LABEL_4;
             }

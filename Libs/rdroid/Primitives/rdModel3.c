@@ -34,8 +34,7 @@ static float maxGeoRadius = 0.0;
 // Vars used for drawing model 
 static rdModel3DrawFaceFunc pfDrawFace = &rdModel3_DrawFace;
 
-static const rdThing* pCurThing        = NULL;
-
+static const rdThing* pCurThing    = NULL;
 static rdLightMode curLightingMode = RD_LIGHTING_NONE;
 
 static size_t numGeoLights = 0;
@@ -361,7 +360,7 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 {
                     float red, green, blue, alpha = 1.0f;
                     if ( sscanf_s(stdConffile_g_aLine, " %d: %f %f %f %f %f %f %f", &entryNum, &x, &y, &z, &red, &green, &blue, &alpha) != 8
-                      && sscanf_s(stdConffile_g_aLine, " %d: %f %f %f %f %f %f", &entryNum, &x, &y, &z, &red, &green, &blue) != 7 )
+                        && sscanf_s(stdConffile_g_aLine, " %d: %f %f %f %f %f %f", &entryNum, &x, &y, &z, &red, &green, &blue) != 7 )
                     {
                         goto syntax_error;
                     }
@@ -526,7 +525,7 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                     float red, green, blue, alpha = 1.0f;
                     const char* aRGB = strtok_r(NULL, " \t", &pntok);
                     if ( sscanf_s(aRGB, "(%f/%f/%f/%f)", &red, &green, &blue, &alpha) != 4
-                      && sscanf_s(aRGB, "(%f/%f/%f)", &red, &green, &blue) != 3 ) {
+                        && sscanf_s(aRGB, "(%f/%f/%f)", &red, &green, &blue) != 3 ) {
                         goto syntax_error;
                     }
 
@@ -1736,34 +1735,7 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
             if ( bIsBackFace )
             {
                 rdVector_Neg3Acc(&faceNormal);
-
-                /* pNormal.x = -pFace->normal.x;
-                 pNormal.y = -pFace->normal.y;
-                 pNormal.z = -pFace->normal.z;
-                 rdLight_CalcFaceIntensity(
-                     rdCamera_g_pCurCamera->aLights,
-                     aLocalLightPos,
-                     rdCamera_g_pCurCamera->numLights,
-                     pFace,
-                     &pNormal,
-                     pCurMesh->apVertices,
-                     rdCamera_g_pCurCamera->attenuationMin,
-                     &faceIntensity
-                 );*/
             }
-            /*else
-            {
-                rdLight_CalcFaceIntensity(
-                    rdCamera_g_pCurCamera->aLights,
-                    aLocalLightPos,
-                    rdCamera_g_pCurCamera->numLights,
-                    pFace,
-                    &pFace->normal,
-                    pCurMesh->apVertices,
-                    rdCamera_g_pCurCamera->attenuationMin,
-                    &faceIntensity
-                );
-            }*/
 
             rdVector4 faceIntensity = { 0 };
             rdLight_CalcFaceIntensity(

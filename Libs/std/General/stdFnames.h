@@ -15,7 +15,7 @@ J3D_EXTERN_C_START
     } while ( 0 )
 
 const char* J3DAPI stdFnames_FindMedName(const char* pFilePath);
-char* J3DAPI stdFnames_FindExt(const char* pFilePath);
+const char* J3DAPI stdFnames_FindExt(const char* pFilePath);
 void J3DAPI stdFnames_StripExtAndDot(char* pPath);
 void J3DAPI stdFnames_ChangeExt(char* pPath, const char* pExt);
 void J3DAPI stdFnames_Concat(char* dst, const char* src, size_t size);

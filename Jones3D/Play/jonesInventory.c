@@ -15,6 +15,8 @@
 #include <std/General/stdConffile.h>
 #include <std/General/stdUtil.h>
 
+#include <stdio.h>
+
 static SithGameStatistics* jonesInventory_pGameStatistics;
 static size_t jonesInventory_msecStatisticsGameTime;
 

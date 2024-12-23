@@ -309,62 +309,9 @@ void std3D_InstallHooks(void)
 
 void std3D_ResetGlobals(void)
 {
-    /*const ColorInfo std3D_cfRGB565_tmp = { STDCOLOR_RGB, 16, 5, 6, 5, 11, 5, 0, 3, 2, 3, 0, 0, 0 };
-    memcpy((ColorInfo*)&std3D_cfRGB565, &std3D_cfRGB565_tmp, sizeof(std3D_cfRGB565));
-
-    const ColorInfo std3D_cfRGB5551_tmp = { STDCOLOR_RGBA, 16, 5, 5, 5, 11, 6, 1, 3, 3, 3, 1, 0, 7 };
-    memcpy((ColorInfo*)&std3D_cfRGB5551, &std3D_cfRGB5551_tmp, sizeof(std3D_cfRGB5551));
-
-    const ColorInfo std3D_cfRGB4444_tmp = { STDCOLOR_RGBA, 16, 4, 4, 4, 12, 8, 4, 4, 4, 4, 4, 0, 4 };
-    memcpy((ColorInfo*)&std3D_cfRGB4444, &std3D_cfRGB4444_tmp, sizeof(std3D_cfRGB4444));
-
-    const DXStatus std3D_aD3DStatusTbl_tmp[186] = {
-
-    memcpy((DXStatus*)&std3D_aD3DStatusTbl, &std3D_aD3DStatusTbl_tmp, sizeof(std3D_aD3DStatusTbl));*/
-
     float std3D_g_fogDensity_tmp = 1.0f;
     memcpy(&std3D_g_fogDensity, &std3D_g_fogDensity_tmp, sizeof(std3D_g_fogDensity));
-
-    /*int std3D_texFilterMode_tmp = -1;
-    memcpy(&std3D_mipmapFilter, &std3D_texFilterMode_tmp, sizeof(std3D_mipmapFilter));
-
-    int std3D_bRenderFog_tmp = 1;
-    memcpy(&std3D_bRenderFog, &std3D_bRenderFog_tmp, sizeof(std3D_bRenderFog));
-
-    int std3D_frameCount_tmp = 1;
-    memcpy(&std3D_frameCount, &std3D_frameCount_tmp, sizeof(std3D_frameCount));
-
-    memset(&std3D_curDevice, 0, sizeof(std3D_curDevice));
-    memset(&std3D_RGBATextureFormat, 0, sizeof(std3D_RGBATextureFormat));
-    memset(&std3D_zDepth, 0, sizeof(std3D_zDepth));
-    memset(&std3D_RGBTextureFormat, 0, sizeof(std3D_RGBTextureFormat));
-    memset(&std3D_RGBAKeyTextureFormat, 0, sizeof(std3D_RGBAKeyTextureFormat));
-    memset(&std3D_fogStartDepth, 0, sizeof(std3D_fogStartDepth));
-    memset(&std3D_numDevices, 0, sizeof(std3D_numDevices));
-    memset(&std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
-    memset(&std3D_fogDepthFactor, 0, sizeof(std3D_fogDepthFactor));
-    memset(&std3D_aDevices, 0, sizeof(std3D_aDevices));
-    memset(&std3D_renderState, 0, sizeof(std3D_renderState));
-    memset(&std3D_activeRect, 0, sizeof(std3D_activeRect));
-    memset(&std3D_fogEndDepth, 0, sizeof(std3D_fogEndDepth));
-    memset(&std3D_pCurDevice, 0, sizeof(std3D_pCurDevice));
-    memset(&std3D_numTextureFormats, 0, sizeof(std3D_numTextureFormats));
-    memset(&std3D_bHasRGBTextureFormat, 0, sizeof(std3D_bHasRGBTextureFormat));
-    memset(&std3D_bFogTable, 0, sizeof(std3D_bFogTable));*/
-
-    /* memset(&std3D_g_maxVertices, 0, sizeof(std3D_g_maxVertices));
-     memset(&std3D_pD3DTex, 0, sizeof(std3D_pD3DTex));
-     memset(&std3D_bFindAllD3Devices, 0, sizeof(std3D_bFindAllD3Devices));
-     memset(&std3D_numCachedTextures, 0, sizeof(std3D_numCachedTextures));
-     memset(&std3D_pFirstTexCache, 0, sizeof(std3D_pFirstTexCache));
-     memset(&std3D_pLastTexCache, 0, sizeof(std3D_pLastTexCache));
-     memset(&std3D_lpDD, 0, sizeof(std3D_lpDD));
-     memset(&std3D_pDDPalette, 0, sizeof(std3D_pDDPalette));
-     memset(&std3D_pDirect3D, 0, sizeof(std3D_pDirect3D));
-     memset(&std3D_pD3Device, 0, sizeof(std3D_pD3Device));
-     memset(&std3D_lpD3DViewPort, 0, sizeof(std3D_lpD3DViewPort));
-     memset(&std3D_bStartup, 0, sizeof(std3D_bStartup));
-     memset(&std3D_bOpen, 0, sizeof(std3D_bOpen));*/
+    memset(&std3D_g_maxVertices, 0, sizeof(std3D_g_maxVertices));
 }
 
 int std3D_Startup(void)
@@ -483,6 +430,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
         &std3D_pDDPalette,
         NULL
     );
+
     if ( dres != DD_OK )
     {
         STDLOG_ERROR("Error %s creating palette.\n", std3D_D3DGetStatus(dres));
@@ -496,6 +444,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
         &std3D_pD3Device,
         NULL
     );
+
     if ( dres != D3D_OK )
     {
         STDLOG_ERROR("Error %s creating Direct3D device.\n", std3D_D3DGetStatus(dres));
@@ -535,14 +484,10 @@ int J3DAPI std3D_Open(size_t deviceNum)
     std3D_pLastTexCache     = NULL;
 
     // Get color formats for RGB, RGBA and RGBA key formats
-    std3D_RGBTextureFormat     = std3D_FindClosestFormat(&std3D_cfRGB565);
-    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&std3D_cfRGB5551);
-    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&std3D_cfRGB4444);
-
-    //TODO: can be changed to 32 bit after fixing bug 16npp texture bug in sithMaterial_LoadMaterialsBinary
-  /*  std3D_RGBTextureFormat     = std3D_FindClosestFormat(&std3D_cfRGB888);
-    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&std3D_cfRGBA8888);
-    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&std3D_cfRGBA8888);*/
+    // Changed: Use 32 bit formats; was using 16 bit
+    std3D_RGBTextureFormat     = std3D_FindClosestFormat(&stdColor_cfBGR8888);
+    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
+    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
 
     if ( std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ci.alphaBPP == 0
         && std3D_pCurDevice->bColorkeyTextureSupported )
@@ -850,7 +795,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         if ( (std3D_renderState & STD3D_RS_TEXFILTER_ANISOTROPIC) != (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) )
         {
             if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0
-              && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
             {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_ANISOTROPIC);
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFG_ANISOTROPIC);
@@ -869,7 +814,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         else if ( (std3D_renderState & STD3D_RS_TEXFILTER_BILINEAR) != (rdflags & STD3D_RS_TEXFILTER_BILINEAR) )
         {
             if ( (rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0
-              && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
+                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
             {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR);
@@ -1327,9 +1272,9 @@ size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
                     }
 
                     if ( pFormat->ci.redBPP == pMatch->redBPP
-                      && pFormat->ci.greenBPP == pMatch->greenBPP
-                      && pFormat->ci.blueBPP == pMatch->blueBPP
-                      && pFormat->ci.alphaBPP == pMatch->alphaBPP )
+                        && pFormat->ci.greenBPP == pMatch->greenBPP
+                        && pFormat->ci.blueBPP == pMatch->blueBPP
+                        && pFormat->ci.alphaBPP == pMatch->alphaBPP )
                     {
                         return i;
                     }
@@ -1440,8 +1385,8 @@ int std3D_InitRenderState(void)
     }
 
     if ( (std3D_pCurDevice->d3dDesc.dwTextureOpCaps & D3DTEXOPCAPS_MODULATE) != 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwSrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwDestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwSrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwDestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0 )
     {
         if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ALPHABLENDENABLE, TRUE) != D3D_OK )
         {
@@ -1513,7 +1458,7 @@ int std3D_InitRenderState(void)
 
     if ( (std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].bColorKey
         || std3D_aTextureFormats[std3D_RGBATextureFormat].bColorKey)
-      && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_COLORKEYENABLE, TRUE) != D3D_OK )
+        && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_COLORKEYENABLE, TRUE) != D3D_OK )
     {
         return 0;
     }
@@ -1547,7 +1492,7 @@ int std3D_InitRenderState(void)
     }
 
     if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_FOGTABLE) == 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_FOGVERTEX) == 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_FOGVERTEX) == 0 )
     {
         std3D_bRenderFog = 0;
     }
@@ -1578,15 +1523,15 @@ int J3DAPI std3D_SetMipmapFilter(Std3DMipmapFilterType filter)
 {
     int d3dres = 0;
     if ( filter == STD3D_MIPMAPFILTER_TRILINEAR
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFLINEAR) == 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_LINEARMIPLINEAR) == 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFLINEAR) == 0
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_LINEARMIPLINEAR) == 0 )
     {
         filter = STD3D_MIPMAPFILTER_BILINEAR;
     }
 
     if ( filter == STD3D_MIPMAPFILTER_BILINEAR
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFPOINT) == 0
-      && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPLINEAR) == 0 )
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPFPOINT) == 0
+        && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MIPLINEAR) == 0 )
     {
         filter = STD3D_MIPMAPFILTER_NONE;
     }
@@ -1672,7 +1617,7 @@ void J3DAPI std3D_SetFog(float red, float green, float blue, float startDepth, f
         {
             endDepth = (2.0f - std3D_g_fogDensity) * endDepth;
             if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLESTART, *(DWORD*)(&startDepth)) == D3D_OK
-              && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLEEND, *(DWORD*)(&endDepth)) == D3D_OK )
+                && IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLEEND, *(DWORD*)(&endDepth)) == D3D_OK )
             {
                 std3D_fogStartDepth  = startDepth;
                 std3D_fogEndDepth    = endDepth;

@@ -194,6 +194,23 @@ void J3DAPI stdColor_HSVtoRGB(float hue, float saturation, float value, float* r
     }
 }
 
+uint32_t J3DAPI stdColor_ScaleColorComponent(uint32_t cc, int srcBPP, int deltaBPP)
+{
+    if ( deltaBPP <= 0 ) // Upscale
+    {
+        // Fixed: Fixed scaling to get correct value from lower bpp.
+        //        Original was calculated only "cc >> -deltaBPP" which resulted in dimmer colors
+        int dsrcBPP = srcBPP + deltaBPP;
+        return (cc << -deltaBPP)
+            | (dsrcBPP >= 0
+                ? (cc >> dsrcBPP)
+                : (cc * ((1 << -deltaBPP) - 1))); // Note: works for 1 bit, but might fail for 2 bit & 3 bit
+    }
+
+    // Downscale
+    return cc >> deltaBPP;
+}
+
 void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDestInfo, const uint8_t* pSrcRow, const ColorInfo* pSrcInfo, int width, int bColorKey, LPDDCOLORKEY pColorKey)
 {
     unsigned int redMask       = 0xFFFFFFFF >> (32 - (pSrcInfo->redBPP & 0xFF));
@@ -201,6 +218,7 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
     unsigned int blueMask      = 0xFFFFFFFF >> (32 - (pSrcInfo->blueBPP & 0xFF));
     unsigned int alphaMask     = 0; // Added: Zero init
     unsigned int maxAlphaValue = 0; // Added: Zero init
+
     if ( pSrcInfo->alphaBPP )
     {
         alphaMask = 0xFFFFFFFF >> (32 - (pSrcInfo->alphaBPP & 0xFF));
@@ -222,7 +240,6 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
     {
         alphaDelta = pSrcInfo->alphaBPP - pDestInfo->alphaBPP;
     }
-
 
     for ( int i = 0; i < width; ++i )
     {
@@ -252,35 +269,18 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
                 break;
         }
 
-        unsigned int r = redMask & (pixel >> pSrcInfo->redPosShift);
-        unsigned int g = greenMask & (pixel >> pSrcInfo->greenPosShift);
-        unsigned int b = blueMask & (pixel >> pSrcInfo->bluePosShift);
-        unsigned int a = 0; // Added: Zero init
+        uint32_t r = redMask & (pixel >> pSrcInfo->redPosShift);
+        uint32_t g = greenMask & (pixel >> pSrcInfo->greenPosShift);
+        uint32_t b = blueMask & (pixel >> pSrcInfo->bluePosShift);
+        uint32_t a = 0; // Added: Zero init
         if ( pSrcInfo->alphaBPP )
         {
             a = alphaMask & (pixel >> pSrcInfo->alphaPosShift);
         }
 
-        if ( redDelta <= 0 ) {
-            r <<= -(char)redDelta;
-        }
-        else {
-            r >>= redDelta;
-        }
-
-        if ( greenDelta <= 0 ) {
-            g <<= -(char)greenDelta;
-        }
-        else {
-            g >>= greenDelta;
-        }
-
-        if ( redDelta <= 0 ) {
-            b <<= -(char)blueDelta;
-        }
-        else {
-            b >>= blueDelta;
-        }
+        r = stdColor_ScaleColorComponent(r, pSrcInfo->redBPP, redDelta);
+        g = stdColor_ScaleColorComponent(g, pSrcInfo->greenBPP, greenDelta);
+        b = stdColor_ScaleColorComponent(b, pSrcInfo->blueBPP, blueDelta);
 
         pixel = (b << pDestInfo->bluePosShift) | (g << pDestInfo->greenPosShift) | (r << pDestInfo->redPosShift);
         if ( pSrcInfo->alphaBPP )
@@ -288,18 +288,12 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
             if ( bColorKey )
             {
                 if ( a < maxAlphaValue ) {
-                    pixel = (unsigned int)pColorKey;
+                    pixel = pColorKey->dwColorSpaceLowValue;
                 }
             }
             else
             {
-                if ( alphaDelta <= 0 ) {
-                    a <<= -(char)alphaDelta;
-                }
-                else {
-                    a >>= alphaDelta;
-                }
-
+                a = stdColor_ScaleColorComponent(a, pSrcInfo->alphaBPP, alphaDelta);
                 pixel |= a << pDestInfo->alphaPosShift;
             }
         }

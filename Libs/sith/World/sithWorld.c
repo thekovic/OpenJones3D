@@ -73,13 +73,13 @@ void sithWorld_ResetGlobals(void)
       },
       {
         "adjoins",
-        &sithSurface_CNDReadAdjoinSection,
-        &sithSurface_CNDWriteAdjoinSection
+        &sithSurface_LoadAdjoinsBinary,
+        &sithSurface_WriteAdjoinsBinary
       },
       {
         "surfaces",
-        &sithSurface_CNDReadSurfaceSection,
-        &sithSurface_CNDWriteSurfaceSection
+        &sithSurface_LoadSurfacesBinary,
+        &sithSurface_WriteSurfacesBinary
       },
       {
         "sectors",

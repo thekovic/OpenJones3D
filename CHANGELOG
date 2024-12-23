@@ -1,4 +1,45 @@
-v0.1
+# v0.2
+General:
+  - Fixed various bugs
+  - Fixed floating point precision bug in `rdVector` & `rdMatrix34` functions (3b800ad)
+  - Made OpenJones3D binaries portable by adding absolute resource dir path to JonesFile VFS (fca6ef2)
+    This change allows binaries to be placed in any arbitrary location, eliminating the requirement for a Resource folder.
+  - Fixed typo in framerate output text (47537aa)
+  - Fixed initializing and clearing resource array on `JonesFile_Close` (47537aa)
+  - Fixed the invocation of `jonesString_GetString("JONES_STR_LOADERROR")` on every call to `JonesMain_ProcessGamesaveState` when there is no load error or the game is not being restored (47537aa)
+  - Fixed error text when it was cached by `jonesString_GetString` in call to `JonesMain_LogErrorToFile` (485d553)
+  - Changed the location of `JonesError.txt` to be always written in current working directory instead of installed path (485d553)  
+    This change resolves a potential fatal error that could occur when writing the error log due to the registry system failing to startup.
+  - Changed warning log to output to console or file (dcd3015)
+  - Made console log output colorized (dcd3015)
+  - Added debugger log output (dcd3015)
+  - Removed material buffer size constraint when loading material section form NDY level file in `sithMaterial_LoadMaterialsText` (dcd3015) 
+  - Fixed potential infinitive loop bug when .uni file is missing line break at the end of file (6b71793)
+  - Implemented `sithSurface` module (b448041)
+
+Display & Render:
+  - Fixed scaling of color component when converting pixel data row in `stdColor_ColorConvertOneRow` (9e6ba77)
+  - Changed default engine texture format to 32 bit from 16 bit (249a416)
+  - Removed support for 16 bpp textures (3152496)
+  - Increased `rdCache` vertex buffer size to 32768 * 64 (25ceaba)
+  - Increased `rdModel3` (.3DO) mesh constraints based on `rdCache` constraints (a008386)
+  - Increased max no. of sectors in camera view to 4096 (b448041)
+  - Increased max no. of thing with sectors to 8192 (b448041)
+
+Game play:
+  - Changed to by default play the higher resolution intro movie (800x600) (ffa2e9d)
+  - Fixed retrieving model by index number when loading savegame (669904d)
+    This change adds temporary wrapper function `sithModel_GetModelByIndexWrap`.
+  - Added support for 24/32 bit textures to CND cnd file format  (91d0a87)
+  - Changed how developer dialog discovers level files (30630d1)
+    Now dialog first looks for ndy folder in current working directory, and if found searches for level files in that folder. If ndy folder is not found the dialog checks for level files in `Install Path\Resource\ndy`.
+  - Fixed searching for ndy level file when corresponding cnd file is not found (5e64e5b)
+    When game progresses to the next level this enables using ndy file for original levels when the corresponding cnd file is not found 
+
+HUD:
+  - Fixed drawing of horizontal wall line (8046835)
+
+# v0.1
 General:
   - Fixed minor bugs
   - Improve game loading times by disabling VSync and blt frame buffers instead of flip.
@@ -15,7 +56,6 @@ General:
   - (`JonesFile`) Fixed path buffer size to 128 chars, was 48 chars
   - (`JonesFile`) Fixed writing to file by using correct file write function in `JonesFile_FilePrintf`
   - Added bounds check for number of animating joints when loading keyframe from *.key file
-  - Made save/load dialogs resizable
   - Fixed a bug in sound compression where clipping of the audio waveform occurred
   - Fixed infinitive loop bug when voice subtitle contains too long word (`sithVoice_AddSubtitle`)
 

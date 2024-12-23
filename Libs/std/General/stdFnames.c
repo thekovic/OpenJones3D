@@ -39,15 +39,11 @@ const char* J3DAPI stdFnames_FindMedName(const char* pFilePath)
     return pName;
 }
 
-char* J3DAPI stdFnames_FindExt(const char* pFilePath)
+const char* J3DAPI stdFnames_FindExt(const char* pFilePath)
 {
-    const char* pFile;
-    char* pExt;
-
-    pFile = stdFnames_FindMedName(pFilePath);
-    pExt = strrchr(pFile, '.');
-    if ( pExt )
-    {
+    const char* pFile = stdFnames_FindMedName(pFilePath);
+    const char* pExt = strrchr(pFile, '.');
+    if ( pExt ) {
         ++pExt;
     }
 
@@ -56,7 +52,7 @@ char* J3DAPI stdFnames_FindExt(const char* pFilePath)
 
 void J3DAPI stdFnames_StripExtAndDot(char* pPath)
 {
-    char* pExt = stdFnames_FindExt(pPath);
+    char* pExt = (char*)stdFnames_FindExt(pPath);
     if ( pExt )
     {
         *(pExt - 1) = 0;

@@ -120,7 +120,7 @@
 #define JonesMain_PrintFramerate_ADDR 0x0041E1E0
 #define JonesMain_TogglePrintFramerate_ADDR 0x0041E300
 #define JonesMain_Open_ADDR 0x0041E320
-#define JonesMain_EnsureFile_ADDR 0x0041E520
+#define JonesMain_EnsureLevelFile_ADDR 0x0041E520
 #define JonesMain_Close_ADDR 0x0041E5B0
 #define JonesMain_Restore_ADDR 0x0041E5C0
 #define JonesMain_ProcessGamesaveState_ADDR 0x0041E730
@@ -134,7 +134,7 @@
 #define JonesMain_GetDisplaySettings_ADDR 0x0041EC30
 #define JonesMain_CloseWindow_ADDR 0x0041EC40
 #define JonesMain_FilePrintf_ADDR 0x0041EC60
-#define JonesMain_Log_ADDR 0x0041ECB0
+#define JonesMain_LogError_ADDR 0x0041ECB0
 #define JonesMain_RefreshDisplayDevice_ADDR 0x0041ED50
 #define JonesMain_PlayIntroMovie_ADDR 0x0041ED60
 #define JonesMain_IntroWndProc_ADDR 0x0041F4D0
@@ -360,11 +360,11 @@
 #define JonesFile_Close_ADDR 0x00412FA0
 #define JonesFile_GetCurrentCDNum_ADDR 0x00413060
 #define JonesFile_FileExists_ADDR 0x004130E0
-#define JonesFile_AddInstallPath_ADDR 0x00413110
-#define JonesFile_AddCDPath_ADDR 0x00413140
+#define JonesFile_SetInstallPath_ADDR 0x00413110
+#define JonesFile_SetCDPath_ADDR 0x00413140
 #define JonesFile_InitServices_ADDR 0x004131C0
 #define JonesFile_ResetServices_ADDR 0x00413250
-#define JonesFile_AddResourcePath_ADDR 0x00413300
+#define JonesFile_OpenResource_ADDR 0x00413300
 #define JonesFile_CloseResource_ADDR 0x00413410
 #define JonesFile_OpenFile_ADDR 0x00413450
 #define JonesFile_CloseFile_ADDR 0x00413660

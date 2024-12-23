@@ -5,7 +5,6 @@
 #include <rdroid/Main/rdroid.h>
 #include <rdroid/RTI/symbols.h>
 
-#include <math.h>
 
 void rdVector_InstallHooks(void)
 {
@@ -42,26 +41,26 @@ void rdVector_ResetGlobals(void)
 float J3DAPI rdVector_Normalize2(rdVector2* dest, const rdVector2* src)
 {
     RD_ASSERTREL(dest != src);
-    float len = sqrtf(src->x * src->x + src->y * src->y);
-    if ( len == 0.0f )
+    double len = sqrt(src->x * src->x + src->y * src->y);
+    if ( len == 0.0 )
     {
         dest->x = src->x;
         dest->y = src->y;
     }
     else
     {
-        dest->x = src->x / len;
-        dest->y = src->y / len;
+        dest->x = (float)(src->x / len);
+        dest->y = (float)(src->y / len);
     }
 
-    return len;
+    return (float)len;
 }
 
 float J3DAPI rdVector_Normalize3(rdVector3* dest, const rdVector3* src)
 {
     RD_ASSERTREL(dest != src);
-    float len = sqrtf(src->x * src->x + src->y * src->y + src->z * src->z);
-    if ( len == 0.0f )
+    double len = sqrt(src->x * src->x + src->y * src->y + src->z * src->z);
+    if ( len == 0.0 )
     {
         dest->x = src->x;
         dest->y = src->y;
@@ -69,19 +68,19 @@ float J3DAPI rdVector_Normalize3(rdVector3* dest, const rdVector3* src)
     }
     else
     {
-        dest->x = src->x / len;
-        dest->y = src->y / len;
-        dest->z = src->z / len;
+        dest->x = (float)(src->x / len);
+        dest->y = (float)(src->y / len);
+        dest->z = (float)(src->z / len);
     }
 
-    return len;
+    return (float)len;
 }
 
 float J3DAPI rdVector_Normalize4(rdVector4* dest, const rdVector4* src)
 {
     RD_ASSERTREL(dest != src);
-    float len = sqrtf(src->x * src->x + src->y * src->y + src->z * src->z + src->w * src->w);
-    if ( len == 0.0f )
+    double len = sqrt(src->x * src->x + src->y * src->y + src->z * src->z + src->w * src->w);
+    if ( len == 0.0 )
     {
         dest->x = src->x;
         dest->y = src->y;
@@ -90,55 +89,45 @@ float J3DAPI rdVector_Normalize4(rdVector4* dest, const rdVector4* src)
     }
     else
     {
-        dest->x = src->x / len;
-        dest->y = src->y / len;
-        dest->z = src->z / len;
-        dest->w = src->w / len;
+        dest->x = (float)(src->x / len);
+        dest->y = (float)(src->y / len);
+        dest->z = (float)(src->z / len);
+        dest->w = (float)(src->w / len);
     }
 
-    return len;
+    return (float)len;
 }
-
 
 float J3DAPI rdVector_Normalize2Acc(rdVector2* vec)
 {
-    float magnitude = sqrtf(vec->y * vec->y + vec->x * vec->x);
-    if ( magnitude == 0.0f )
-    {
-        return magnitude;
+    double magnitude = sqrt(vec->y * vec->y + vec->x * vec->x);
+    if ( magnitude == 0.0 ) {
+        return 0.0f;
     }
 
-    vec->x = vec->x / magnitude;
-    vec->y = vec->y / magnitude;
-    return magnitude;
+    vec->x = (float)(vec->x / magnitude);
+    vec->y = (float)(vec->y / magnitude);
+    return (float)magnitude;
 }
 
 float J3DAPI rdVector_Normalize3Acc(rdVector3* vec)
 {
-    float len = sqrtf(vec->y * vec->y + vec->z * vec->z + vec->x * vec->x);
-    if ( len == 0.0f ) {
-        return len;
+    double len = sqrt(vec->y * vec->y + vec->z * vec->z + vec->x * vec->x);
+    if ( len == 0.0 ) {
+        return 0.0f;
     }
 
-    float invLen = 1.0f / len;
-    vec->x = vec->x * invLen;
-    vec->y = vec->y * invLen;
-    vec->z = vec->z * invLen;
-    return len;
+    double invLen = 1.0 / len;
+    vec->x = (float)(vec->x * invLen);
+    vec->y = (float)(vec->y * invLen);
+    vec->z = (float)(vec->z * invLen);
+    return (float)len;
 }
 
 float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src)
 {
-    float z;
-    float y;
-    float x;
-    float min;
-    float v6;
-    float v7;
-    float max;
-    float med;
-
-    if ( src->x >= 0.0f )
+    double x;
+    if ( src->x >= 0.0 )
     {
         x = src->x;
     }
@@ -147,8 +136,9 @@ float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src)
         x = -src->x;
     }
 
-    max = x;
-    if ( src->y >= 0.0f )
+    double max = x;
+    double y;
+    if ( src->y >= 0.0 )
     {
         y = src->y;
     }
@@ -157,8 +147,9 @@ float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src)
         y = -src->y;
     }
 
-    med = y;
-    if ( src->z >= 0.0f )
+    double med = y;
+    double z;
+    if ( src->z >= 0.0 )
     {
         z = src->z;
     }
@@ -167,7 +158,7 @@ float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src)
         z = -src->z;
     }
 
-    min = z;
+    double min = z;
     if ( z <= y )
     {
         if ( x < y )
@@ -198,27 +189,27 @@ float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src)
     }
 
     RD_ASSERTREL((min <= med) && (med <= max));
-    v6 = 0.34375f * med + 0.25f * min + max;
-    v7 = 1.0f / v6;
-    src->x = src->x * v7;
-    src->y = src->y * v7;
-    src->z = src->z * v7;
-    return v6;
+    double len = 0.34375 * med + 0.25 * min + max;
+    double invLen = 1.0 / len;
+    src->x = (float)(src->x * invLen);
+    src->y = (float)(src->y * invLen);
+    src->z = (float)(src->z * invLen);
+    return (float)len;
 }
 
 float J3DAPI rdVector_Normalize4Acc(rdVector4* vec)
 {
-    float len = sqrtf(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z + vec->w * vec->w);
-    if ( len == 0.0f ) {
-        return len;
+    double len = sqrt(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z + vec->w * vec->w);
+    if ( len == 0.0 ) {
+        return 0.0f;
     }
 
-    float invLen = 1.0f / len;
-    vec->x = vec->x * invLen;
-    vec->y = vec->y * invLen;
-    vec->z = vec->z * invLen;
-    vec->w = vec->w * invLen;
-    return len;
+    double invLen = 1.0 / len;
+    vec->x = (float)(vec->x * invLen);
+    vec->y = (float)(vec->y * invLen);
+    vec->z = (float)(vec->z * invLen);
+    vec->w = (float)(vec->w * invLen);
+    return (float)len;
 }
 
 void J3DAPI rdVector_Rotate3(rdVector3* vec, const rdVector3* pivot, const rdVector3* pyr)
@@ -234,4 +225,3 @@ void J3DAPI rdVector_Rotate3Acc(rdVector3* vec, const rdVector3* pyr)
     rdMatrix_BuildRotate34(&mat, pyr);
     rdMatrix_TransformVector34Acc(vec, &mat);
 }
-

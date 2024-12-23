@@ -65,6 +65,11 @@
 #define JONES_FPSPRINT_CONSOLEID 102u
 #define JONES_FPSPRINT_INTERVAL  2000u // 2 sec
 
+#define JONES_LOGCONSOLE_ERRORCOLOR    FOREGROUND_RED | FOREGROUND_INTENSITY
+#define JONES_LOGCONSOLE_WARNINGRCOLOR FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
+#define JONES_LOGCONSOLE_STATUSCOLOR   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define JONES_LOGCONSOLE_DEBUGCOLOR    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+
 static bool JonesMain_bStartup = false; // Added: Init to false
 
 static JonesMainProcessFunc JonesMain_pfCurProcess = NULL; // Added: Init. to NULL
@@ -81,7 +86,7 @@ static StdDisplayEnvironment* JonesMain_pDisplayEnv        = NULL; // Added: Ini
 static StdDisplayEnvironment* JonesMain_pStartupDisplayEnv = NULL; // Added: Init. to NULL
 
 static tCircularBuffer JonesMain_circBuf;
-static FILE* JonesMain_pLogFile = NULL; // Added: Init. to NULL
+static FILE* JonesMain_pLogFile   = NULL; // Added: Init. to NULL
 
 static bool JonesMain_bGamePaused      = false; // Added: Init to false
 static bool JonesMain_bAssertTriggered = false; // Added: Init to false
@@ -412,7 +417,7 @@ static const JonesLevelInfo JonesMain_aNdyLevelLoadInfos[18] =
 int J3DAPI JonesMain_GameWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, int* pReturnVal);
 void J3DAPI JonesMain_HandleWMGetMinMaxInfo(HWND hwnd, LPMINMAXINFO pMinMaxInfo);
 void J3DAPI JonesMain_HandleWMPaint(HWND hWnd);
-int J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID);
+void J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID);
 void J3DAPI JonesMain_HandleWMKeydown(HWND hWnd, WPARAM vk, int a3, uint16_t repreatCount, uint16_t exkeyflags);
 void JonesMain_PrintQuickSave(void);
 int J3DAPI JonesMain_HandleWMActivateApp(HWND hWnd, WPARAM wParam, LPARAM lParam);
@@ -428,14 +433,22 @@ void JonesMain_ProcessMenu(void);
 
 void J3DAPI JonesMain_PrintFramerate();
 
-int J3DAPI JonesMain_EnsureFile(const char* pFilename);
+int J3DAPI JonesMain_EnsureLevelFile(const char* pFilename);
+int J3DAPI JonesMain_EnsureLevelFileEx(const char* pFilename, bool bFindAll, char* pFoundFilename, size_t filenameSize);
 int J3DAPI JonesMain_Restore(const char* pNdsFilePath);
 
 int JonesMain_ProcessStartGame(void);
 int JonesMain_ProcessCredits(void);
 
-int J3DAPI JonesMain_FilePrintf(const char* pFormat, ...);
+int J3DAPI JonesMain_Log(int textColor, const char* pText);
+int J3DAPI JonesMain_LogError(const char* pFormat, ...);
+int J3DAPI JonesMain_LogWarning(const char* pFormat, ...);
+int J3DAPI JonesMain_LogStatus(const char* pFormat, ...);
+int J3DAPI JonesMain_LogDebug(const char* pFormat, ...);
 int J3DAPI JonesMain_NoLog(const char* pFormat, ...); // Added
+int J3DAPI JonesMain_FilePrintf(const char* pFormat, ...);
+
+J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSrcFile, int line);
 
 int J3DAPI JonesMain_IntroWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, int* pRetValue);
 void J3DAPI JonesMain_IntroHandleWMLButtonUp(HWND hwnd, uint16_t curPosX, uint16_t curPosY, WPARAM mvk);
@@ -484,7 +497,7 @@ void JonesMain_InstallHooks(void)
     J3D_HOOKFUNC(JonesMain_PrintFramerate);
     J3D_HOOKFUNC(JonesMain_TogglePrintFramerate);
     J3D_HOOKFUNC(JonesMain_Open);
-    J3D_HOOKFUNC(JonesMain_EnsureFile);
+    J3D_HOOKFUNC(JonesMain_EnsureLevelFile);
     J3D_HOOKFUNC(JonesMain_Close);
     J3D_HOOKFUNC(JonesMain_Restore);
     J3D_HOOKFUNC(JonesMain_ProcessGamesaveState);
@@ -498,7 +511,7 @@ void JonesMain_InstallHooks(void)
     J3D_HOOKFUNC(JonesMain_GetDisplaySettings);
     J3D_HOOKFUNC(JonesMain_CloseWindow);
     J3D_HOOKFUNC(JonesMain_FilePrintf);
-    J3D_HOOKFUNC(JonesMain_Log);
+    J3D_HOOKFUNC(JonesMain_LogError);
     J3D_HOOKFUNC(JonesMain_RefreshDisplayDevice);
     J3D_HOOKFUNC(JonesMain_PlayIntroMovie);
     J3D_HOOKFUNC(JonesMain_IntroWndProc);
@@ -539,7 +552,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     JonesMain_curLevelNum     = 0;
 
     memset(&JonesMain_circBuf, 0, sizeof(JonesMain_circBuf));
-    memset(JonesMain_aToggleMenuKeyIds, 0, 8u); // TODO: [BUG]
+    memset(JonesMain_aToggleMenuKeyIds, 0, sizeof(JonesMain_aToggleMenuKeyIds)); // Fixed: Fixed the size
 
     // Setup process routines
     JonesMain_pfProcess = JonesMain_ProcessGame;
@@ -553,6 +566,9 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     sithSetServices(&JonesMain_hs);
     sithSound_InitializeSound(&JonesMain_hs);
 
+    // Fixed: Move initialization of JonesMain_circBuf here in case there is engine error and exiting happens sooner
+    stdCircBuf_New(&JonesMain_circBuf, 4, 128);
+
     JonesDisplay_UpdateDualScreenWindowSize(&JonesMain_state.displaySettings);
     JonesFile_Startup(&JonesMain_hs);
 
@@ -563,12 +579,13 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
         return 1;
     }
 
-    wuRegistry_GetStr("User Path", JonesMain_state.aInstallPath, STD_ARRAYLEN(JonesMain_state.aInstallPath), "");
+    wuRegistry_GetStr("Install Path", JonesMain_state.aInstallPath, STD_ARRAYLEN(JonesMain_state.aInstallPath), "");
     wuRegistry_GetStr("Source Dir", JonesMain_state.aCDPath, STD_ARRAYLEN(JonesMain_state.aCDPath), "");
 
     std3D_SetFindAllDevices(wuRegistry_GetIntEx("AllDevices", 0));
 
     JonesFile_Open(&JonesMain_hs, JonesMain_state.aInstallPath, JonesMain_state.aCDPath);
+
     if ( jonesString_Startup() )
     {
         JonesMain_LogErrorToFile("Could not open game text.");
@@ -687,40 +704,46 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
             switch ( JonesMain_state.logLevel )
             {
                 case JONES_LOGLEVEL_ERROR:
-                    JonesMain_hs.pErrorPrint = JonesMain_Log;
+                    JonesMain_hs.pErrorPrint = JonesMain_LogError;
                     break;
                 case JONES_LOGLEVEL_NORMAL:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = stdConsolePrintf;
+                    JonesMain_hs.pErrorPrint   = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint  = JonesMain_LogStatus;  // Changed: OG stdConsolePrintf
                     break;
                 case JONES_LOGLEVEL_VERBOSE:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = stdConsolePrintf;
-                    JonesMain_hs.pDebugPrint  = stdConsolePrintf;
+                    JonesMain_hs.pErrorPrint   = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint  = JonesMain_LogStatus;  // Changed: OG stdConsolePrintf
+                    JonesMain_hs.pDebugPrint   = JonesMain_LogDebug;   // Changed: OG stdConsolePrintf
                     break;
                 default:
                     break; // No logging
             };
 
+            // Startup console
             stdConsole_Startup("Debug", FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN, /*bShowMinimized=*/0); // White text
+
         } break;
 
         case JONES_OUTPUTMODE_LOGFILE:
         {
-            fopen_s(&JonesMain_pLogFile, "JonesLog.txt", "w+"); // TODO: Add check for case whe fopen fails
+            fopen_s(&JonesMain_pLogFile, "JonesLog.txt", "w+"); // TODO: Add check for case when fopen fails
             switch ( JonesMain_state.logLevel )
             {
                 case JONES_LOGLEVEL_ERROR:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
+                    JonesMain_hs.pErrorPrint  = JonesMain_LogError;
                     break;
                 case JONES_LOGLEVEL_NORMAL:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = JonesMain_FilePrintf;
+                    JonesMain_hs.pErrorPrint  = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint = JonesMain_LogStatus;   // Changed: OG JonesMain_FilePrintf
                     break;
                 case JONES_LOGLEVEL_VERBOSE:
-                    JonesMain_hs.pErrorPrint  = JonesMain_Log;
-                    JonesMain_hs.pStatusPrint = JonesMain_FilePrintf;
-                    JonesMain_hs.pDebugPrint  = JonesMain_FilePrintf;
+                    JonesMain_hs.pErrorPrint  = JonesMain_LogError;
+                    JonesMain_hs.pWarningPrint = JonesMain_LogWarning; // Added
+                    JonesMain_hs.pStatusPrint = JonesMain_LogStatus;   // Changed: OG JonesMain_FilePrintf
+                    JonesMain_hs.pDebugPrint  = JonesMain_LogDebug;    // Changed: OG JonesMain_FilePrintf
                     break;
                 default:
                     break; // No logging
@@ -741,7 +764,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
                     JonesMain_hs.pStatusPrint  = JonesMain_NoLog;
                     JonesMain_hs.pWarningPrint = JonesMain_NoLog;
                     JonesMain_hs.pDebugPrint   = JonesMain_NoLog;
-                    JonesMain_hs.pErrorPrint   = JonesMain_Log;
+                    JonesMain_hs.pErrorPrint   = JonesMain_LogError;
                     break;
                 default:
                     break; // No logging
@@ -751,8 +774,6 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
 
     // Set assert handler
     JonesMain_hs.pAssert = JonesMain_Assert;
-
-    stdCircBuf_New(&JonesMain_circBuf, 4, 128);
 
     // Startup modules and load level
 
@@ -1029,6 +1050,7 @@ int J3DAPI JonesMain_GameWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
     return JonesMain_bWndMsgProcessed;
 #else
+    J3D_UNUSED(pReturnVal);
     return 0;
 #endif
 }
@@ -1079,13 +1101,14 @@ void J3DAPI JonesMain_HandleWMPaint(HWND hWnd)
     }
 }
 
-int J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID)
+void J3DAPI JonesMain_HandleWMTimer(HWND hWnd, WPARAM timerID)
 {
-    J3D_UNUSED(timerID);
-
-    // TODO: Check if timerID is same as JONES_QUICKSAVE_TEXTSHOWTIMERID
-    JonesMain_bPrintQuickSave = false;
-    return KillTimer(hWnd, JONES_QUICKSAVE_TEXTSHOWTIMERID);
+    if ( timerID == JONES_QUICKSAVE_TEXTSHOWTIMERID ) // Added: Added timedID check
+    {
+        // TODO: If JonesMain_bWndMsgProcessed will be used by main wnd proc than it should be set to true here
+        JonesMain_bPrintQuickSave = false;
+        KillTimer(hWnd, JONES_QUICKSAVE_TEXTSHOWTIMERID);
+    }
 }
 
 void J3DAPI JonesMain_HandleWMKeydown(HWND hWnd, WPARAM vk, int a3, uint16_t repreatCount, uint16_t exkeyflags)
@@ -1396,7 +1419,9 @@ void JonesMain_Shutdown(void)
 
     else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
     {
-        fclose(JonesMain_pLogFile); // TODO: BUG JonesMain_pLogFile could be NULL
+        if ( JonesMain_pLogFile ) { // Fixed: Add null check
+            fclose(JonesMain_pLogFile);
+        }
     }
 
     sithSound_Shutdown();
@@ -1610,7 +1635,7 @@ void JonesMain_PrintFramerate(void)
 
             STD_FORMAT(
                 std_g_genBuffer,
-                "%02.2fHz A:%d S:%d P:%d Z:%d", //TODO: 'Z' in format is probably typo and instead 'T' letter should be there
+                "%02.2fHz A:%d S:%d P:%d T:%d", // Changed: Fixed typo 'Z' -> 'T'
                 JonesMain_frameRate,
                 sithRender_g_numVisibleAdjoins,
                 sithRender_g_numVisibleSectors,
@@ -1650,7 +1675,8 @@ void JonesMain_TogglePrintFramerate(void)
 
 int JonesMain_Open(void)
 {
-    if ( JonesMain_EnsureFile(JonesMain_state.aCurLevelFilename) )
+    // Changed: Look for both versions of level formats (cnd and ndy). This make sure that level progress can find ndy level file 
+    if ( JonesMain_EnsureLevelFileEx(JonesMain_state.aCurLevelFilename, /*bFindAll=*/true, JonesMain_state.aCurLevelFilename, STD_ARRAYLEN(JonesMain_state.aCurLevelFilename)) )
     {
         return 1;
     }
@@ -1695,7 +1721,7 @@ int JonesMain_Open(void)
             }
 
             JonesMain_CloseWindow(); // Note this will exit process
-            // TODO: should we still return error here?
+            return 1; // Added: Return 1, tho this code won't be executed as JonesMain_CloseWindow will end process
         }
         else
         {
@@ -1729,7 +1755,7 @@ int JonesMain_Open(void)
             }
 
             JonesMain_CloseWindow(); // Note this will exit process
-            // TODO: should we still return error here?
+            return 1; // Added: Return 1, tho this code won't be executed as JonesMain_CloseWindow will end process
         }
 
         if ( JonesDisplay_Open(&JonesMain_state.displaySettings) )
@@ -1744,8 +1770,16 @@ int JonesMain_Open(void)
     return 0;
 }
 
-int J3DAPI JonesMain_EnsureFile(const char* pFilename)
+int J3DAPI JonesMain_EnsureLevelFile(const char* pFilename)
 {
+    // Changed
+    return JonesMain_EnsureLevelFileEx(pFilename, /*bFindAll*/false, NULL, 0);
+}
+
+int J3DAPI JonesMain_EnsureLevelFileEx(const char* pFilename, bool bFindAll, char* pFoundFilename, size_t filenameSize)
+{
+    // Added overload function which searches for both cnd and ndy file in case one is not found.
+    // 
     // TODO: there is an issue when loading level from different CD*.gob file than current
     //       the insert CD dialog can be shown even if file exists on disk
 
@@ -1756,6 +1790,27 @@ int J3DAPI JonesMain_EnsureFile(const char* pFilename)
         // File found
         return 0;
     }
+
+    // Try looking for different format
+    if ( bFindAll && pFoundFilename )
+    {
+        const char* pCurExt = stdFnames_FindExt(aPath);
+        if ( strcmpi(pCurExt, "cnd") == 0 ) {
+            stdFnames_ChangeExt(aPath, "ndy");
+        }
+        else {
+            stdFnames_ChangeExt(aPath, "cnd");
+        }
+
+        if ( JonesFile_FileExists(aPath) )
+        {
+            // File found
+            stdUtil_StringCopy(pFoundFilename, filenameSize, stdFnames_FindMedName(aPath));
+            return 0;
+        }
+    }
+
+    // No level file was found
 
     JonesFile_Close();
 
@@ -1787,7 +1842,7 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath)
         return 1;
     }
 
-    if ( JonesMain_EnsureFile(JonesMain_state.aCurLevelFilename) )
+    if ( JonesMain_EnsureLevelFile(JonesMain_state.aCurLevelFilename) )
     {
         return 1;
     }
@@ -1834,14 +1889,6 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath)
 
 int JonesMain_ProcessGamesaveState(void)
 {
-    // TODO: this part should be moved in the load game scope
-    char aLoadLerrorStr[512] = { 0 };
-    const char* pLoadErrStr = jonesString_GetString("JONES_STR_LOADERROR");
-    if ( pLoadErrStr )
-    {
-        STD_STRCPY(aLoadLerrorStr, pLoadErrStr);
-    }
-
     char* pNdsFilename;
     JonesMain_curGamesaveState = sithGamesave_GetState(&pNdsFilename);
 
@@ -1873,6 +1920,16 @@ int JonesMain_ProcessGamesaveState(void)
             if ( JonesMain_Restore(pNdsFilename) || sithGamesave_Process() )
             {
                 // Error
+
+                // Changed: Moved retrieving error string down here.
+                //          Originally was at the start of the functions scope and was executed on every function call
+                char aLoadLerrorStr[512] = { 0 };
+                const char* pLoadErrStr = jonesString_GetString("JONES_STR_LOADERROR");
+                if ( pLoadErrStr )
+                {
+                    STD_STRCPY(aLoadLerrorStr, pLoadErrStr);
+                }
+
                 if ( aLoadLerrorStr[0] )
                 {
                     char aErrorText[128] = { 0 };
@@ -2102,6 +2159,21 @@ int JonesMain_CloseWindow(void)
     return PostMessage(stdWin95_GetWindow(), WM_CLOSE, 0, 0);
 }
 
+int J3DAPI JonesMain_Log(int textColor, const char* ptext)
+{
+    OutputDebugString(ptext); // Added
+    if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_CONSOLE )
+    {
+        stdConsole_WriteConsole(ptext, textColor);
+    }
+    else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
+    {
+        JonesMain_FilePrintf(ptext);
+    }
+
+    return strlen(ptext);
+}
+
 int JonesMain_FilePrintf(const char* pFormat, ...)
 {
     // TODO: Check if file is open? Tho, the startup should take care of that
@@ -2115,7 +2187,7 @@ int JonesMain_FilePrintf(const char* pFormat, ...)
     return STD_ARRAYLEN(std_g_genBuffer);
 }
 
-int JonesMain_Log(const char* pFormat, ...)
+int JonesMain_LogError(const char* pFormat, ...)
 {
     va_list args;
     va_start(args, pFormat);
@@ -2129,17 +2201,58 @@ int JonesMain_Log(const char* pFormat, ...)
         stdUtil_StringCopy(pString, 128, std_g_genBuffer);
     }
 
-    if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_CONSOLE )
+    return JonesMain_Log(JONES_LOGCONSOLE_ERRORCOLOR, std_g_genBuffer);
+}
+
+int J3DAPI JonesMain_LogWarning(const char* pFormat, ...)
+{
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args); // Fixed: Add missing call to va_end
+
+    // TODO: What's the point of using circbuf??
+    char* pString = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pString )
     {
-        stdConsole_WriteConsole(std_g_genBuffer, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        stdUtil_StringCopy(pString, 128, std_g_genBuffer);
     }
 
-    else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
+    return JonesMain_Log(JONES_LOGCONSOLE_WARNINGRCOLOR, std_g_genBuffer);
+}
+
+int J3DAPI JonesMain_LogStatus(const char* pFormat, ...)
+{
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args); // Fixed: Add missing call to va_end
+
+    // TODO: What's the point of using circbuf??
+    char* pString = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pString )
     {
-        JonesMain_FilePrintf(std_g_genBuffer);
+        stdUtil_StringCopy(pString, 128, std_g_genBuffer);
     }
 
-    return strlen(std_g_genBuffer);
+    return JonesMain_Log(JONES_LOGCONSOLE_STATUSCOLOR, std_g_genBuffer);
+}
+
+int J3DAPI JonesMain_LogDebug(const char* pFormat, ...)
+{
+    va_list args;
+    va_start(args, pFormat);
+    vsnprintf_s(std_g_genBuffer, STD_ARRAYLEN(std_g_genBuffer), STD_ARRAYLEN(std_g_genBuffer) - 1, pFormat, args);
+    va_end(args); // Fixed: Add missing call to va_end
+
+    // TODO: What's the point of using circbuf??
+    char* pString = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pString )
+    {
+        stdUtil_StringCopy(pString, 128, std_g_genBuffer);
+    }
+
+    return JonesMain_Log(JONES_LOGCONSOLE_DEBUGCOLOR, std_g_genBuffer);
 }
 
 int JonesMain_NoLog(const char* pFormat, ...)
@@ -2189,18 +2302,13 @@ int JonesMain_PlayIntroMovie(void)
     }
     else if ( videoMode.rasterInfo.width != 640 )
     {
-        STD_STRCPY(aFilename, aJonesopn_640x480); // TODO: use aJonesopn_800x600 by default
+        STD_STRCPY(aFilename, aJonesopn_800x600); // Changed: Changed to use aJonesopn_800x600 by default, was aJonesopn_640x480
         if ( videoMode.rasterInfo.width == 800 )
         {
             if ( JonesMain_state.performanceLevel < 3 )
             {
                 STD_STRCPY(aFilename, aJonesopn_400x300);
             }
-            else
-            {
-                STD_STRCPY(aFilename, aJonesopn_800x600);
-            }
-
         }
     }
     else // 640 x 480
@@ -2219,16 +2327,23 @@ int JonesMain_PlayIntroMovie(void)
     }
     else
     {
-        char aResDir[128];
-        wuRegistry_GetStr("Source Dir", aPath, STD_ARRAYLEN(aPath), "");
-        STD_FORMAT(aResDir, "%sresource", aPath);
-        STD_MAKEPATH(aPath, aResDir, aFilename);
-    }
+        // Added: Check if video exists in full resource path
+        STD_MAKEPATH(aPath, JonesFile_GetResourcePath(), aFilename);
+        if ( !stdFileUtil_FileExists(aPath) )
+        {
+            // Fallback to CD
+            char aResDir[128];
+            wuRegistry_GetStr("Source Dir", aPath, STD_ARRAYLEN(aPath), "");
+            STD_FORMAT(aResDir, "%sresource", aPath);
+            STD_MAKEPATH(aPath, aResDir, aFilename);
 
-    if ( !stdFileUtil_FileExists(aPath) )
-    {
-        wkernel_SetWindowProc(JonesMain_GameWndProc);
-        return wkernel_PeekProcessEvents();
+            if ( !stdFileUtil_FileExists(aPath) )
+            {
+                // Failed to locate game videos, return
+                wkernel_SetWindowProc(JonesMain_GameWndProc);
+                return wkernel_PeekProcessEvents();
+            }
+        }
     }
 
     Sleep(100u);
@@ -2355,6 +2470,7 @@ int J3DAPI JonesMain_IntroWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     return JonesMain_bWndMsgProcessed;
 #else
+    J3D_UNUSED(pRetValue);
     return 0;
 #endif
 }
@@ -2654,7 +2770,7 @@ J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSr
 
 void J3DAPI JonesMain_BindToggleMenuControlKeys(const int* paKeyIds, int numKeys)
 {
-    memset(JonesMain_aToggleMenuKeyIds, 0, 8u); // TODO: bug zero all elements
+    memset(JonesMain_aToggleMenuKeyIds, 0, sizeof(JonesMain_aToggleMenuKeyIds)); // Fixed: Fixed size
     for ( size_t i = 0; i < numKeys; ++i )
     {
         JonesMain_aToggleMenuKeyIds[i] = paKeyIds[i];
@@ -2710,23 +2826,32 @@ size_t JonesMain_GetCurrentLevelNum(void)
 
 void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
 {
-    char aFilePath[128] = { 0 };
+    // Fixed: cache pErrorText, this prevents accidental override of pErrorText when it's cached in jonesString_GetString
+    char* pErrorStr = (char*)stdCircBuf_GetNextElement(&JonesMain_circBuf);
+    if ( pErrorStr )
+    {
+        stdUtil_StringCopy(pErrorStr, 128, pErrorText);
+        pErrorText = pErrorStr;
+    }
 
-    const char* pFilename = jonesString_GetString("JONES_STR_ERRORFILE"); // TODO: pErrorText could be internally cached injonesString which will get overridden here. Best solution would be to use circ buffer by jonesString_GetString 
+    char aFilePath[128] = { 0 };
+    const char* pFilename = jonesString_GetString("JONES_STR_ERRORFILE");
     if ( pFilename )
     {
-        char aInstallPath[128] ={ 0 };
-        wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
-        size_t pathLen = strlen(aInstallPath);
+        // Changed: Use cwd path instead of install path from registry.
+        //          This subsequently fixes also fatal error where there was registry startup error 
+        //          and accidentally trying to access shutdown registry system here to retrieve install path, which would result in assert.
+        const char* pCwdPath = JonesFile_GetWorkingDirPath();
+        size_t pathLen = strlen(pCwdPath);
         if ( pathLen )
         {
-            if ( aInstallPath[pathLen - 1] == '\\' ) // Fixed: before: aFilePath[pathLen + 127] == '\\'
+            if ( pCwdPath[pathLen - 1] == '\\' ) // Fixed: before: aFilePath[pathLen + 127] == '\\'
             {
-                STD_FORMAT(aFilePath, "%s%s", aInstallPath, pFilename);
+                STD_FORMAT(aFilePath, "%s%s", pCwdPath, pFilename);
             }
             else
             {
-                STD_FORMAT(aFilePath, "%s\\%s", aInstallPath, pFilename);
+                STD_FORMAT(aFilePath, "%s\\%s", pCwdPath, pFilename);
             }
         }
         else
@@ -2994,15 +3119,23 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     hDlgItem = GetDlgItem(hDlg, 1001);
     if ( hDlgItem )
     {
+        char aNdyDir[128];
+        STD_MAKEPATH(aNdyDir, JonesFile_GetWorkingDirPath(), "ndy");
+
+        // Added
+        if ( !stdUtil_DirExists(aNdyDir) ) {
+            STD_MAKEPATH(aNdyDir, JonesFile_GetResourcePath(), "ndy"); // Use absolute resource path to search for level files
+        }
+
         tFoundFileInfo fileInfo;
-        FindFileData* pFileData = stdFileUtil_NewFind("ndy", 3, "ndy");
+        FindFileData* pFileData = stdFileUtil_NewFind(aNdyDir, 3, "ndy");
         while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
         {
             itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
         }
-
         stdFileUtil_DisposeFind(pFileData);
-        pFileData = stdFileUtil_NewFind("ndy", 3, "cnd");
+
+        pFileData = stdFileUtil_NewFind(aNdyDir, 3, "cnd");
         while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
         {
             itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
@@ -3224,7 +3357,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             wuRegistry_SaveInt("Debug Mode", pState->outputMode);
             wuRegistry_SaveInt("Verbosity", pState->logLevel);
 
-            wuRegistry_SaveStr("User Path", pState->aInstallPath);
+            wuRegistry_SaveStr("Install Path", pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path' 
             wuRegistry_SaveInt("Performance Level", pState->performanceLevel);
             wuRegistry_SaveInt("HiPoly", sithModel_IsHiPolyEnabled()); // Added
 
@@ -3304,8 +3437,8 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
     for ( size_t modeNum = 0; modeNum < JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum].numModes; ++modeNum )
     {
         if ( pDisplay->aModes[modeNum].aspectRatio == 1.0f
-          && pDisplay->aModes[modeNum].rasterInfo.width >= 512
-          && pDisplay->aModes[modeNum].rasterInfo.height >= 384 )
+            && pDisplay->aModes[modeNum].rasterInfo.width >= 512
+            && pDisplay->aModes[modeNum].rasterInfo.height >= 384 )
         {
             if ( JonesMain_CurDisplaySupportsBPP(&pConfig->displaySettings, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp) )
             {
@@ -3315,8 +3448,8 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
 
                 // Select mode
                 if ( pDisplay->aModes[modeNum].rasterInfo.width == JonesMain_curVideoMode.rasterInfo.width
-                  && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
-                  && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
+                    && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
+                    && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
                 {
                     SendMessage(hCBDisplayMode, CB_SETCURSEL, itemIdx, 0);
                     bDriverSet = true;

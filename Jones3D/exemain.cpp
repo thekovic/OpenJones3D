@@ -60,6 +60,11 @@ int wmain(int argc, wchar_t* argv[])
         }
         args = sargs.str();
     }
+    else if ( !fs::exists(exePath) )
+    {
+        // Try locating exe in resource folder
+        exePath = "Resource/Indy3D.exe";
+    }
 
     if ( !fs::exists(exePath) )
     {
