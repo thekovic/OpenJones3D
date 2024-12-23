@@ -275,7 +275,7 @@ int J3DAPI sithSurface_WriteSurfacesBinary(tFileHandle fh, SithWorld* pWorld)
         }
 
         int numMaterials;
-        if ( SITHWORLD_IS_STATICINDEX(matIdx) )
+        if ( matIdx != -1 && SITHWORLD_IS_STATICINDEX(matIdx) ) // Added: Check for matIdx != -1
         {
             numMaterials = SITHWORLD_STATICINDEX(sithWorld_g_pStaticWorld->numMaterials);
         }
@@ -284,7 +284,7 @@ int J3DAPI sithSurface_WriteSurfacesBinary(tFileHandle fh, SithWorld* pWorld)
             numMaterials = pWorld->numMaterials;
         }
 
-        if ( matIdx > numMaterials )
+        if ( matIdx != -1 && matIdx > numMaterials ) // Added: Check for matIdx != -1
         {
             matIdx = -1;
             SITHLOG_ERROR("Surface Material %s not in world.\n", pSurf->face.pMaterial->aName);
@@ -510,16 +510,16 @@ int J3DAPI sithSurface_WriteSurfacesText(const SithWorld* pWorld)
         }
 
         int numMaterials = pWorld->numMaterials;
-        if ( SITHWORLD_IS_STATICINDEX(matIdx) )
+        if ( matIdx != -1 && SITHWORLD_IS_STATICINDEX(matIdx) ) // Added: Check for matIdx != -1
         {
             numMaterials = SITHWORLD_STATICINDEX(sithWorld_g_pStaticWorld->numMaterials);
         }
 
-        if ( matIdx > numMaterials )
+        if ( matIdx != -1 && matIdx > numMaterials ) // Added: Check for matIdx != -1
         {
             SITHLOG_ERROR("Surface Material %s not in world.\n", pSurf->face.pMaterial->aName);
 
-            pSurf->face.pMaterial = NULL; // TODO: why set to NULL?
+            pSurf->face.pMaterial = NULL; // TODO: why set to NULL here?
             matIdx = -1;
         }
 
@@ -646,7 +646,7 @@ int J3DAPI sithSurface_LoadSurfacesText(SithWorld* pWorld)
         }
 
         pAdjoin->pMirrorAdjoin = &pWorld->aAdjoins[mirrorIdx];
-        pAdjoin->distance      = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
+        pAdjoin->distance      = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
     }
 
     // Parse surface
@@ -727,7 +727,8 @@ int J3DAPI sithSurface_LoadSurfacesText(SithWorld* pWorld)
         }
 
         // Skip tex mode
-        atoi(stdConffile_g_entry.aArgs[curArg++].argValue);
+        // Removed: atoi(stdConffile_g_entry.aArgs[curArg++].argValue);
+        curArg++;
 
         // Adjoin
         pSurf->pAdjoin = NULL;
@@ -747,10 +748,10 @@ int J3DAPI sithSurface_LoadSurfacesText(SithWorld* pWorld)
         }
 
         // Extra light
-        pFace->extraLight.red   = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
-        pFace->extraLight.green = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
-        pFace->extraLight.blue  = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
-        pFace->extraLight.alpha = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
+        pFace->extraLight.red   = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
+        pFace->extraLight.green = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
+        pFace->extraLight.blue  = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
+        pFace->extraLight.alpha = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
 
         // num verts
         size_t numVerts = atoi(stdConffile_g_entry.aArgs[curArg++].argValue);
@@ -800,9 +801,9 @@ int J3DAPI sithSurface_LoadSurfacesText(SithWorld* pWorld)
         for ( size_t j = 0; j < numVerts; ++j )
         {
 
-            pSurf->aIntensities[j].red   = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
-            pSurf->aIntensities[j].green = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
-            pSurf->aIntensities[j].blue  = atof(stdConffile_g_entry.aArgs[curArg++].argValue);
+            pSurf->aIntensities[j].red   = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
+            pSurf->aIntensities[j].green = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
+            pSurf->aIntensities[j].blue  = strtof(stdConffile_g_entry.aArgs[curArg++].argValue, NULL);
             pSurf->aIntensities[j].alpha = pFace->extraLight.alpha;
         }
 
@@ -879,7 +880,8 @@ int J3DAPI sithSurface_ValidateWorldSurfaces(const SithWorld* pWorld)
 
 void J3DAPI sithSurface_HandleThingImpact(SithSurface* pSurf, SithThing* pThing, float damage, int damageType)
 {
-    if ( !stdComm_IsGameActive() || !pThing || (pThing->flags & SITH_TF_REMOTE) == 0 ) // TODO: fix bug !pThing, should be pThing && 
+    // Fixed: Fixed check for not null pThing
+    if ( pThing && (!stdComm_IsGameActive() || (pThing->flags & SITH_TF_REMOTE) == 0) )
     {
         if ( pThing->type == SITH_THING_WEAPON && (pThing->thingInfo.weaponInfo.flags & SITH_WF_IMPACTSOUND) != 0 )
         {
