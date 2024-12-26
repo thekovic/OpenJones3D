@@ -140,7 +140,7 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
                 if ( (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 0xF) != 0 )
                 {
                     if ( pThing->thingInfo.actorInfo.endurance.msecUnderwater > (SITHACTOR_MAX_UNDERWATER_MSEC / 2) // TODO: ???, verify this if statement
-                      && (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 )
+                        && (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 )
                     {
                         sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_BREATH);
                     }
@@ -158,11 +158,11 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
             }
         }
         else if ( pThing->thingInfo.actorInfo.endurance.raftLeakDamage
-               && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARD_START
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_BOARDING )
+            && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARD_START
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_BOARDING )
         {
             // Update Raft damage
 
@@ -198,15 +198,15 @@ float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float d
     SITH_ASSERTREL(pActor->type == SITH_THING_ACTOR || pActor->type == SITH_THING_PLAYER);
 
     if ( pActor->type == SITH_THING_PLAYER
-      && (pActor->moveStatus == SITHPLAYERMOVE_RAFT_BOARDING
-          || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
-          || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
-          || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARD_START
-          || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_BOARDING
-          || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_LEFT
-          || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_RIGHT
-          || pActor->moveStatus == SITHPLAYERMOVE_JEEP_BOARDING
-          || pActor->moveStatus == SITHPLAYERMOVE_JEEP_UNBOARDING) )
+        && (pActor->moveStatus == SITHPLAYERMOVE_RAFT_BOARDING
+            || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
+            || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
+            || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARD_START
+            || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_BOARDING
+            || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_LEFT
+            || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_RIGHT
+            || pActor->moveStatus == SITHPLAYERMOVE_JEEP_BOARDING
+            || pActor->moveStatus == SITHPLAYERMOVE_JEEP_UNBOARDING) )
     {
         return 0.0f;
     }
@@ -590,7 +590,7 @@ void J3DAPI sithActor_KillActor(SithThing* pThing, SithThing* pSrcThing, SithDam
         {
             if ( damageType == SITH_DAMAGE_COLD_WATER )
             {
-                pThing->pPuppetState->majorMode = pThing->pPuppetState->armedMode + 8;
+                pThing->pPuppetState->majorMode = pThing->pPuppetState->armedMode + 8; // Unarmed swimming
                 curHealth = -31.0f;
             }
 

@@ -1180,8 +1180,8 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
     }
 
     if ( pThing->attach.flags
-      && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
-      && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_SCROLLING) != 0 )
+        && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
+        && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_SCROLLING) != 0 )
     {
         SithSurface* pSurface = pThing->attach.attachedToStructure.pSurfaceAttached;
         SITH_ASSERTREL(pSurface);
@@ -1198,9 +1198,9 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
     if ( pThing->moveDir.x == 0.0f && pThing->moveDir.y == 0.0f && pThing->moveDir.z == 0.0f )
     {
         if ( pThing->moveType == SITH_MT_PHYSICS
-          && (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0
-          && pThing->attach.attachedToStructure.pThingAttached->moveType == SITH_MT_PATH
-          && pThing->moveStatus != SITHPLAYERMOVE_HANGING )
+            && (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0
+            && pThing->attach.attachedToStructure.pThingAttached->moveType == SITH_MT_PATH
+            && pThing->moveStatus != SITHPLAYERMOVE_HANGING )
         {
             sithPhysics_FindFloor(pThing, 0);
         }
@@ -1218,8 +1218,8 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         }
 
         if ( (pThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0
-          && pThing->moveStatus != SITHPLAYERMOVE_UNKNOWN_83
-          && pThing->moveStatus != SITHPLAYERMOVE_JEEP_IMPACT )
+            && pThing->moveStatus != SITHPLAYERMOVE_UNKNOWN_83
+            && pThing->moveStatus != SITHPLAYERMOVE_JEEP_IMPACT )
         {
             // Update Jeep move 
 
@@ -1500,7 +1500,7 @@ float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pPurpetra
             case SITH_THING_PLAYER:
             {
                 if ( ((hitType & SITH_DAMAGE_RAZOR_ROCK) != 0 || (hitType & SITH_DAMAGE_RAFT_LEAK) != 0)
-                  && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
+                    && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
                 {
                     retDamage = retDamage - sithActor_DamageRaftActor(pThing, (SithThing*)pPurpetrator, retDamage, hitType);
                 }
@@ -1591,8 +1591,8 @@ float J3DAPI sithThing_ScaleCombatDamage(const SithThing* pThing, SithThing* pHi
     {
         // Fixed: Use cached damage type instead of pointer to pThing->thingInfo which wasn't initialized for explosion thing
         if ( damageType != SITH_DAMAGE_DROWN
-          && damageType != SITH_DAMAGE_CRUSH
-          && (pParent->thingInfo.actorInfo.flags & SITH_AF_FULLDAMAGE) == 0 )
+            && damageType != SITH_DAMAGE_CRUSH
+            && (pParent->thingInfo.actorInfo.flags & SITH_AF_FULLDAMAGE) == 0 )
         {
             return damage * 0.5f;
         }
@@ -1873,9 +1873,9 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
         case SITH_THING_ACTOR:
         {
             if ( pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.red == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
             {
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
@@ -1897,9 +1897,9 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
         case SITH_THING_PLAYER:
         {
             if ( pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.red == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
             {
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
@@ -2146,8 +2146,8 @@ void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash)
             pThing->moveInfo.physics.velocity.z *=  0.25f; // Slowdown fall
 
             if ( pThing->type == SITH_THING_WEAPON
-              && (pThing->moveInfo.physics.flags & SITH_PF_USEGRAVITY) == 0
-              && (pThing->thingInfo.weaponInfo.damageType & SITH_DAMAGE_IMPACT) != 0 )
+                && (pThing->moveInfo.physics.flags & SITH_PF_USEGRAVITY) == 0
+                && (pThing->thingInfo.weaponInfo.damageType & SITH_DAMAGE_IMPACT) != 0 )
             {
                 rdVector_Scale3Acc(&pThing->moveInfo.physics.velocity, 0.5f); // Slowdown weapon
                 /*    pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x * 0.5f;
@@ -2164,9 +2164,9 @@ void J3DAPI sithThing_ExitWater(SithThing* pThing, int bNoSplash)
 
     int bFalling = 0;
     if ( pThing == sithPlayer_g_pLocalPlayerThing
-      && pThing->moveStatus == SITHPLAYERMOVE_SWIMIDLE
-      && !pThing->thingInfo.actorInfo.bForceMovePlay
-      && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 )
+        && pThing->moveStatus == SITHPLAYERMOVE_SWIMIDLE
+        && !pThing->thingInfo.actorInfo.bForceMovePlay
+        && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 )
     {
         bFalling = 1;
         pThing->moveStatus = SITHPLAYERMOVE_FALLING;
@@ -2452,9 +2452,9 @@ SithThing* J3DAPI sithThing_CreateThing(const SithThing* pTemplate, SithThing* p
     }
 
     if ( pNewThing->moveType == SITH_MT_PATH
-      && pMarker->moveType == SITH_MT_PATH
-      && pMarker->moveInfo.pathMovement.aFrames
-      && !pNewThing->moveInfo.pathMovement.aFrames )
+        && pMarker->moveType == SITH_MT_PATH
+        && pMarker->moveInfo.pathMovement.aFrames
+        && !pNewThing->moveInfo.pathMovement.aFrames )
     {
         sithPathMove_Create(pNewThing, pMarker, &offset);
     }
@@ -2483,7 +2483,7 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
     if ( (pSurface->flags & SITH_SURFACE_LAVA) != 0 )
     {
         if ( pThing->type == SITH_THING_PLAYER && (sithPuppet_g_bPlayerLeapForward == 1 || pThing->moveStatus == SITHPLAYERMOVE_LEAPFWD)
-          || (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
+            || (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
         {
             goto update_attachment;
         }
@@ -2494,10 +2494,10 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
         }
 
         if ( pThing->type != SITH_THING_PLAYER && pThing->type != SITH_THING_ACTOR
-          || (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0
-          || pThing->type == SITH_THING_ACTOR
-          && pThing->controlInfo.aiControl.pLocal
-          && (pThing->controlInfo.aiControl.pLocal->allowedSurfaceTypes & SITH_SURFACE_LAVA) != 0 )
+            || (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0
+            || pThing->type == SITH_THING_ACTOR
+            && pThing->controlInfo.aiControl.pLocal
+            && (pThing->controlInfo.aiControl.pLocal->allowedSurfaceTypes & SITH_SURFACE_LAVA) != 0 )
         {
             goto update_attachment;
         }
@@ -2532,7 +2532,7 @@ update_attachment:
     pThing->attach.pFace = &pSurface->face;
     pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
 
-    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED; // 0x100 - SITH_PF_ALIGNED
+    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED;
 
     if ( (pSurface->flags & SITH_SURFACE_SCROLLING) != 0 && pThing->moveType == SITH_MT_PHYSICS )
     {
@@ -2618,7 +2618,7 @@ update_attachment:
                 if ( impactForce >= 1.65f )
                 {
                     if ( (pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR)
-                      && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
+                        && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
                     {
                         sithActor_KillActor(pThing, pThing, SITH_DAMAGE_IMPACT);
                     }
@@ -2691,10 +2691,10 @@ update_attachment:
             }
 
             if ( (pThing->flags & SITH_TF_DYING) == 0
-              && (pThing->flags & SITH_TF_DESTROYED) == 0
-              && pThing->pPuppetClass
-              && pThing->moveType == SITH_MT_PHYSICS
-              && pThing->moveStatus != SITHPLAYERMOVE_CRAWL_STILL )
+                && (pThing->flags & SITH_TF_DESTROYED) == 0
+                && pThing->pPuppetClass
+                && pThing->moveType == SITH_MT_PHYSICS
+                && pThing->moveStatus != SITHPLAYERMOVE_CRAWL_STILL )
             {
                 if ( pThing->moveStatus == SITHPLAYERMOVE_FALLING || pThing->moveInfo.physics.deltaVelocity.z < -0.15000001f )
                 {
@@ -2860,8 +2860,8 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     if ( pThing->attach.flags )
     {
         if ( (pThing->attach.flags & SITH_TF_DESTROYED) != 0
-          && pThing->attach.attachedToStructure.pThingAttached == pAttachThing
-          && pThing->attach.pFace == pFace )
+            && pThing->attach.attachedToStructure.pThingAttached == pAttachThing
+            && pThing->attach.pFace == pFace )
         {
             return;
         }
@@ -2925,7 +2925,7 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
         {
             if ( impactForce >= 1.65f )
             {
-                if ( (pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR) && (pThing->thingInfo.actorInfo.flags & 8) == 0 )
+                if ( (pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR) && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
                 {
                     sithActor_KillActor(pThing, pThing, SITH_DAMAGE_IMPACT);
                 }
@@ -3112,9 +3112,9 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
         }
 
         if ( pThing->type == SITH_THING_PLAYER
-          && (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0
-          && (pThing->attach.pFace->flags & RD_FF_3DO_WHIP_AIM) != 0
-          && (sithWhip_GetWhipSwingThing() || sithWhip_GetWhipClimbThing()) )
+            && (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0
+            && (pThing->attach.pFace->flags & RD_FF_3DO_WHIP_AIM) != 0
+            && (sithWhip_GetWhipSwingThing() || sithWhip_GetWhipClimbThing()) )
         {
             sithWhip_Reset();
             sithWeapon_SendMessageAim(pThing, 0);

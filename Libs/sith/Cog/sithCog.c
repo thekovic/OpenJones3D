@@ -443,10 +443,10 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     }
 
     if ( messageType != SITHCOG_MSG_STARTUP
-          && messageType != SITHCOG_MSG_SHUTDOWN
-          && stdComm_IsGameActive()
-          && !stdComm_IsGameHost()
-          && (pCog->flags & SITHCOG_LOCAL) == 0 )
+        && messageType != SITHCOG_MSG_SHUTDOWN
+        && stdComm_IsGameActive()
+        && !stdComm_IsGameHost()
+        && (pCog->flags & SITHCOG_LOCAL) == 0 )
     {
         // Send message over net
         if ( messageType != SITHCOG_MSG_PULSE && messageType != SITHCOG_MSG_TIMER )
@@ -549,10 +549,10 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
     }
 
     if ( messageType != SITHCOG_MSG_STARTUP
-          && messageType != SITHCOG_MSG_SHUTDOWN
-          && stdComm_IsGameActive()
-          && !stdComm_IsGameHost()
-          && (pCog->flags & SITHCOG_LOCAL) == 0 )
+        && messageType != SITHCOG_MSG_SHUTDOWN
+        && stdComm_IsGameActive()
+        && !stdComm_IsGameHost()
+        && (pCog->flags & SITHCOG_LOCAL) == 0 )
     {
         // Send over net
         if ( messageType == SITHCOG_MSG_PULSE || messageType == SITHCOG_MSG_TIMER )
@@ -628,9 +628,9 @@ int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs)
 int J3DAPI sithCog_WriteText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("######### COG placement ########\n")
-      || stdConffile_WriteLine("Section: cogs\n")
-      || stdConffile_Printf("World cogs %d\n", pWorld->numCogs)
-      || stdConffile_WriteLine("#Num\tScript          Symbol values\n") )
+        || stdConffile_WriteLine("Section: cogs\n")
+        || stdConffile_Printf("World cogs %d\n", pWorld->numCogs)
+        || stdConffile_WriteLine("#Num\tScript          Symbol values\n") )
     {
         return 1;
     }
@@ -976,7 +976,7 @@ int J3DAPI sithCog_WriteBinary(tFileHandle fh, SithWorld* pWorld)
     }
 
     if ( (sith_g_pHS->pFileWrite(fh, aNames, sizeNames) == sizeNames)
-      && (sith_g_pHS->pFileWrite(fh, aValues, sizeValues) == sizeValues) )
+        && (sith_g_pHS->pFileWrite(fh, aValues, sizeValues) == sizeValues) )
     {
         stdMemory_Free(aNames);
         stdMemory_Free(aValues);
@@ -1029,7 +1029,7 @@ int J3DAPI sithCog_LoadBinary(tFileHandle fh, SithWorld* pWorld)
     }
 
     if ( (sith_g_pHS->pFileRead(fh, aNames, sizeCogs) == sizeCogs)
-      && (sith_g_pHS->pFileRead(fh, aValues, sizeValues) == sizeValues) )
+        && (sith_g_pHS->pFileRead(fh, aValues, sizeValues) == sizeValues) )
     {
         const char (*pCurValue)[SITHCOG_SYMVALUESTRLEN] = aValues;
         for ( size_t i = 0; i < aSizes[0]; ++i )
@@ -1634,8 +1634,8 @@ int J3DAPI sithCog_SurfaceSendMessageEx(const SithSurface* pSurf, const SithThin
 int J3DAPI sithCog_WriteCogScriptsText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("########## COG scripts #########\n")
-      || stdConffile_WriteLine("Section: cogscripts\n")
-      || stdConffile_Printf("World scripts %d\n", pWorld->numCogScripts) )
+        || stdConffile_WriteLine("Section: cogscripts\n")
+        || stdConffile_Printf("World scripts %d\n", pWorld->numCogScripts) )
     {
         return 1;
     }
@@ -1951,7 +1951,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
         case SITHCOG_STATUS_WAITING_ACTOR_WEAPON_DESELECT_FINISH:
         {
             if ( sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].thingInfo.actorInfo.deselectedWeaponID != -1
-              || sithWeapon_GetMountWait() > (double)sithTime_g_secGameTime )
+                || sithWeapon_GetMountWait() > (double)sithTime_g_secGameTime )
             {
                 // Weapon still not deselected
                 return;
@@ -2087,11 +2087,11 @@ void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
     size_t index;
     SithCog* pCog;
     if ( !pWorld
-      || !pArg
-      || sscanf_s(pArg, "%d", &index) != 1
-      || index > pWorld->numCogs
-      || (pCog = &pWorld->aCogs[index], !pCog->pScript)
-      || !pCog->pSymbolTable )
+        || !pArg
+        || sscanf_s(pArg, "%d", &index) != 1
+        || index > pWorld->numCogs
+        || (pCog = &pWorld->aCogs[index], !pCog->pScript)
+        || !pCog->pSymbolTable )
     {
         sithConsole_PrintString("Error, bad parameters.\n");
         return;

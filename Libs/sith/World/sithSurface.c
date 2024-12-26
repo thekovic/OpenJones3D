@@ -419,7 +419,7 @@ int J3DAPI sithSurface_LoadSurfacesBinary(tFileHandle fh, SithWorld* pWorld)
     }
 
     // Free apMatArray
-    // TODO: why is this freed
+    // TODO: why is array is freed?
     if ( pWorld->apMatArray ) {
         stdMemory_Free(pWorld->apMatArray);
     }

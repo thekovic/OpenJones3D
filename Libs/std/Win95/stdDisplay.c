@@ -762,7 +762,7 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
 tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredColorFormat, tVBuffer* pSrc, int bColorKey, LPDDCOLORKEY pColorKey)
 {
     STD_ASSERTREL(pSrc != ((void*)0));
-    if ( !memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) ) {
+    if ( memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) == 0 ) {
         return pSrc;
     }
 
@@ -802,7 +802,7 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
         if ( !pDest )
         {
             STDLOG_ERROR("Unable to allocate memory for new tVBuffer", 0, 0, 0, 0);
-            return 0;
+            return NULL;
         }
     }
 

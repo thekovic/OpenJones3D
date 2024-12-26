@@ -579,8 +579,8 @@ void JonesHud_Close(void)
 void JonesHud_ToggleMenu(void)
 {
     if ( sithPlayer_g_pLocalPlayerThing
-      && ((sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
-          || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0) )
+        && ((sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
+            || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0) )
     {
         jonesCog_g_bShowHealthHUD  = 0;
         jonesCog_g_bMenuVisible    = 0;
@@ -639,8 +639,8 @@ void JonesHud_Render(void) // maybe this function should be called something ele
         JonesHud_Update(sithWorld_g_pCurrentWorld);
 
         if ( sithPlayer_g_pLocalPlayerThing->type
-          && ((sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
-              || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0) )
+            && ((sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
+                || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0) )
         {
             // Player died, wait 5 sec before then play anchor music then  show game over dialog
 
@@ -733,7 +733,7 @@ void JonesHud_Render(void) // maybe this function should be called something ele
 
                 // DRAW endurance indicator
                 if ( sithPlayer_g_pLocalPlayerThing->pInSector
-                  && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
+                    && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
                 {
                     float breathState = (float)(100 * sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.endurance.msecUnderwater / SITHACTOR_MAX_UNDERWATER_MSEC);
                     JonesHud_RenderEnduranceIndicator(breathState);
@@ -882,9 +882,9 @@ int J3DAPI JonesHud_SetCanvasSize(int width, int height)
     if ( JonesHud_pHudCanvas )
     {
         rdCanvas_Free(JonesHud_pHudCanvas);
-        JonesHud_pHudCanvas = 0;
+        JonesHud_pHudCanvas = NULL;
         JonesHud_pHudCanvas = rdCanvas_New(
-            0, // 0 here makrks that back bufer size should be used and the provided rect sizes are not used
+            0, // 0 here marks that back buffer size should be used and the provided rect sizes are not used
             &stdDisplay_g_backBuffer,
             64,
             (int32_t)JonesHud_healthIndRect.y,
@@ -964,7 +964,7 @@ void JonesHud_MenuOpen(void)
         for ( size_t i = 0; i <= 11; ++i ) // 11 - num player weapons TODO: make constant or use existing one
         {
             if ( JonesHud_apMenuItems[i]
-              && JonesHud_apMenuItems[i]->inventoryID == sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->curWeaponID )
+                && JonesHud_apMenuItems[i]->inventoryID == sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->curWeaponID )
             {
                 JonesHud_selectedWeaponMenuItemID = i;
                 break;
@@ -1013,9 +1013,9 @@ void JonesHud_MenuClose(void)
     for ( size_t i = 0; i < 4; ++i ) // I think it collapses up to 4 items 
     {
         if ( pItem->nextUpItemId != -1
-          && JonesHud_apMenuItems[pItem->nextUpItemId]
-          && ((JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 1) != 0
-              || (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x20) != 0) )
+            && JonesHud_apMenuItems[pItem->nextUpItemId]
+            && ((JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 1) != 0
+                || (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x20) != 0) )
         {
             //(JonesHud_item_flag_state_55514C & 0xFF) = (1 << i) | JonesHud_item_flag_state_55514C;
             JonesHud_item_flag_state_55514C = (JonesHud_item_flag_state_55514C & ~0xFF) | (1 << i);
@@ -1029,9 +1029,9 @@ void JonesHud_MenuClose(void)
 
         pItem->flags |= i << 10;
         if ( pItem->nextRightItemId == -1
-          || !JonesHud_apMenuItems[pItem->nextRightItemId]
-          || JonesHud_apMenuItems[pItem->nextRightItemId]->id == JonesHud_rootMenuItemId
-          || (JonesHud_apMenuItems[pItem->nextRightItemId]->flags & 1) == 0 )
+            || !JonesHud_apMenuItems[pItem->nextRightItemId]
+            || JonesHud_apMenuItems[pItem->nextRightItemId]->id == JonesHud_rootMenuItemId
+            || (JonesHud_apMenuItems[pItem->nextRightItemId]->flags & 1) == 0 )
         {
             break;
         }
@@ -1136,8 +1136,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
         if ( JonesHud_curEnduranceState == enduranceState )
         {
             if ( JonesHud_curEnduranceIndAlpha > 0.2f
-              && JonesHud_curEnduranceState == enduranceState
-              && JonesHud_HasTimeElapsed(3000u, JonesHud_msecRaftIndicatorFadeTime + 3000, JonesHud_msecTime) )
+                && JonesHud_curEnduranceState == enduranceState
+                && JonesHud_HasTimeElapsed(3000u, JonesHud_msecRaftIndicatorFadeTime + 3000, JonesHud_msecTime) )
             {
                 JonesHud_curEnduranceIndAlpha -= (float)JonesHud_msecDeltaTime * 0.80000001f / 3000.0f;
                 if ( JonesHud_curEnduranceIndAlpha < 0.2f )
@@ -1225,7 +1225,7 @@ void J3DAPI JonesHud_DrawEnduranceIndicator(float state, float alpha)
         barColor = JonesHud_colorYellow;
     }
     else if ( sithPlayer_g_pLocalPlayerThing->pInSector
-           && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
+        && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
     {
         rdVector_Copy4(&barColor, &JonesHud_skyBlue);
     }
@@ -1329,7 +1329,7 @@ int J3DAPI JonesHud_RenderFadeHealthIndicator(int bFade)
     }
 
     float healthState = (float)((int)(300 * (int32_t)sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.health)
-                        / (int32_t)sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.maxHealth);
+        / (int32_t)sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.maxHealth);
     JonesHud_DrawHealthIndicator(0.0f, healthState, JonesHud_healthIndAlpha);
     return 1;
 }
@@ -1408,17 +1408,17 @@ void J3DAPI JonesHud_RenderHealthIndicator(float healthState)
 
         float health = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.health;
         if ( JonesHud_pCurInvChangedItem && JonesHud_pCurInvChangedItem->pos.x <= -0.13f
-          || (JonesHud_hudState & 1) != 0
-          || health == 0.0f
-          || JonesHud_curHealth != health )
+            || (JonesHud_hudState & 1) != 0
+            || health == 0.0f
+            || JonesHud_curHealth != health )
         {
             JonesHud_healthIndAlpha = 1.0f;
             JonesHud_msecHealthIndLastFadeUpdate = JonesHud_msecTime;
         }
 
         else if ( JonesHud_healthIndAlpha > 0.2f
-               && JonesHud_curHealth == health
-               && JonesHud_HasTimeElapsed(3000u, JonesHud_msecHealthIndLastFadeUpdate + 3000, JonesHud_msecTime) )
+            && JonesHud_curHealth == health
+            && JonesHud_HasTimeElapsed(3000u, JonesHud_msecHealthIndLastFadeUpdate + 3000, JonesHud_msecTime) )
         {
             JonesHud_healthIndAlpha -= (float)JonesHud_msecDeltaTime * 0.80000001f / 3000.0f;
             if ( JonesHud_healthIndAlpha < 0.2f )
@@ -1793,8 +1793,8 @@ void JonesHud_MenuMoveLeft(void)
         {
             pLeftItem = JonesHud_apMenuItems[pCurItem->nextLeftItemId];
             if ( (pLeftItem->flags & 0x01) != 0
-              && (pLeftItem->flags & 0x80) == 0
-              && pLeftItem->pos.x == pLeftItem->endMovePos.x )
+                && (pLeftItem->flags & 0x80) == 0
+                && pLeftItem->pos.x == pLeftItem->endMovePos.x )
             {
                 JonesHud_pCurSelectedMenuItem = JonesHud_apMenuItems[pLeftItem->id];
                 JonesHud_sub_4198E0(JonesHud_apMenuItems[pLeftItem->id]);
@@ -1823,8 +1823,8 @@ void JonesHud_MenuMoveRight(void)
             {
                 pRightItem = JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextRightItemId];
                 if ( (pRightItem->flags & 0x01) != 0
-                  && (pRightItem->flags & 0x80) == 0
-                  && pRightItem->pos.x == pRightItem->endMovePos.x )
+                    && (pRightItem->flags & 0x80) == 0
+                    && pRightItem->pos.x == pRightItem->endMovePos.x )
                 {
                     JonesHud_pCurSelectedMenuItem = JonesHud_apMenuItems[pRightItem->id];
                     JonesHud_sub_4198E0(JonesHud_apMenuItems[pRightItem->id]);
@@ -1839,8 +1839,8 @@ void JonesHud_MenuMoveRight(void)
     }
 
     else if ( (JonesHud_pMenuItemLinkedList->flags & 0x01) != 0
-           && (JonesHud_pMenuItemLinkedList->flags & 0x80) == 0
-           && JonesHud_pMenuItemLinkedList->pos.x == JonesHud_pMenuItemLinkedList->endMovePos.x )
+        && (JonesHud_pMenuItemLinkedList->flags & 0x80) == 0
+        && JonesHud_pMenuItemLinkedList->pos.x == JonesHud_pMenuItemLinkedList->endMovePos.x )
     {
         JonesHud_pCurSelectedMenuItem = JonesHud_pMenuItemLinkedList;
         JonesHud_sub_4198E0(JonesHud_pMenuItemLinkedList);
@@ -1858,8 +1858,8 @@ void JonesHud_MenuMoveDown(void)
     JonesHudMenuItem* pDownItem;
 
     if ( JonesHud_pCurSelectedMenuItem
-      && JonesHud_pCurSelectedMenuItem->nextDownItemId != -1
-      && JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextDownItemId] )
+        && JonesHud_pCurSelectedMenuItem->nextDownItemId != -1
+        && JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextDownItemId] )
     {
         pCurItem = JonesHud_pCurSelectedMenuItem;
         pDownItem = JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextDownItemId];
@@ -1891,7 +1891,7 @@ void JonesHud_MenuMoveDown(void)
         }
 
         while ( JonesHud_apMenuItems[pDownItem->nextUpItemId]->pos.z <= JonesHud_invMenuMaxZ
-             && JonesHud_pCurSelectedMenuItem != JonesHud_apMenuItems[pDownItem->nextUpItemId] )
+            && JonesHud_pCurSelectedMenuItem != JonesHud_apMenuItems[pDownItem->nextUpItemId] )
         {
             pDownItem = JonesHud_apMenuItems[pDownItem->nextUpItemId];
 
@@ -1911,10 +1911,10 @@ void JonesHud_MenuMoveDown(void)
 
             JonesHud_StartItemTranslation(pDownItem, JonesHud_msecMenuItemMoveDuration, 0.064999998f, 1);// 0.064999998f - 1 / 15.384f
             if ( (JonesHud_apMenuItems[pDownItem->nextUpItemId]->flags & 0x01) == 0
-              || pDownItem->id == JonesHud_selectedWeaponMenuItemID
-              || pDownItem->id == JonesHud_selectedItemsMenuItemID
-              || pDownItem->id == JonesHud_selectedSystemMenuItemID
-              || pDownItem->id == JonesHud_selectedTreasuresMenuItemID )
+                || pDownItem->id == JonesHud_selectedWeaponMenuItemID
+                || pDownItem->id == JonesHud_selectedItemsMenuItemID
+                || pDownItem->id == JonesHud_selectedSystemMenuItemID
+                || pDownItem->id == JonesHud_selectedTreasuresMenuItemID )
             {
                 pDownItem->flags |=  0x08;
                 pDownItem->flags &= ~0x01;
@@ -1976,8 +1976,8 @@ void JonesHud_MenuMoveUp(void)
     JonesHudMenuItem* pUpItem;
 
     if ( JonesHud_pCurSelectedMenuItem
-      && JonesHud_pCurSelectedMenuItem->nextUpItemId != -1
-      && JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextUpItemId] )
+        && JonesHud_pCurSelectedMenuItem->nextUpItemId != -1
+        && JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextUpItemId] )
     {
         pUpItem = JonesHud_apMenuItems[JonesHud_pCurSelectedMenuItem->nextUpItemId];
         pCurItem = JonesHud_pCurSelectedMenuItem;
@@ -2114,7 +2114,7 @@ int J3DAPI JonesHud_GetKey(unsigned int keyId)
 
     int numPressed = 0;
     if ( JonesHud_bKeyStateUpdated
-      && !JonesHud_HasTimeElapsed(JonesHud_msecMenuItemMoveDuration, JonesHud_msecMenuItemMoveDuration + JonesHud_msecLastKeyPressTime, JonesHud_msecTime) )
+        && !JonesHud_HasTimeElapsed(JonesHud_msecMenuItemMoveDuration, JonesHud_msecMenuItemMoveDuration + JonesHud_msecLastKeyPressTime, JonesHud_msecTime) )
     {
         return 0;
     }
@@ -2153,7 +2153,7 @@ int J3DAPI JonesHud_GetKey(unsigned int keyId)
     if ( keyId == JonesHud_curKeyId )
     {
         if ( JonesHud_msecMenuItemMoveDuration < 250
-          && JonesHud_HasTimeElapsed(250u, JonesHud_msecLastKeyPressTime + 250, JonesHud_msecTime) )
+            && JonesHud_HasTimeElapsed(250u, JonesHud_msecLastKeyPressTime + 250, JonesHud_msecTime) )
         {
             JonesHud_msecMenuItemMoveDuration = 250;
         }
@@ -2298,10 +2298,10 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
         if ( (pItem->flags & 1) != 0 )          // Update rotation anim
         {
             if ( pItem != JonesHud_pCurSelectedMenuItem
-              || ((sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) == 0
-                  ? (v9 = 0)
-                  : (v9 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED),
-                  v9) )
+                || ((sithInventory_g_aTypes[pItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) == 0
+                    ? (v9 = 0)
+                    : (v9 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[pItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED),
+                    v9) )
             {
                 if ( JonesHud_aDfltMenuItemOrients[pItem->id].pyr.yaw != pItem->pyr.yaw )
                 {
@@ -2333,10 +2333,10 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
         }
 
         if ( (pItem->flags & 8) != 0
-          || (pItem->flags & 0x10) != 0
-          || (pItem->flags & 0x20) != 0
-          || (pItem->flags & 0x80) != 0
-          || (pItem->flags & 0x40) != 0 )
+            || (pItem->flags & 0x10) != 0
+            || (pItem->flags & 0x20) != 0
+            || (pItem->flags & 0x80) != 0
+            || (pItem->flags & 0x40) != 0 )
         {
             if ( JonesHud_HasTimeElapsed(pItem->msecMoveDuration, pItem->msecMoveEndTime, JonesHud_msecTime) )
             {
@@ -2356,16 +2356,16 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                         if ( !v20 && !v17 )
                         {
                             if ( pItem->id == JonesHud_selectedWeaponMenuItemID
-                              || pItem->id == JonesHud_selectedItemsMenuItemID
-                              || pItem->id == JonesHud_selectedSystemMenuItemID
-                              || pItem->id == JonesHud_selectedTreasuresMenuItemID
-                              || pItem->pos.z == JonesHud_invMenuMaxZ
-                              || (JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedWeaponMenuItemID
-                                  || JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedItemsMenuItemID
-                                  || JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedSystemMenuItemID
-                                  || JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedTreasuresMenuItemID)
-                              && pItem->pos.z <= JonesHud_invMenuMaxZ
-                              && pItem->pos.z >= JonesHud_invMenuMinZ ) // Changed: from fixed constant -0.102f
+                                || pItem->id == JonesHud_selectedItemsMenuItemID
+                                || pItem->id == JonesHud_selectedSystemMenuItemID
+                                || pItem->id == JonesHud_selectedTreasuresMenuItemID
+                                || pItem->pos.z == JonesHud_invMenuMaxZ
+                                || (JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedWeaponMenuItemID
+                                    || JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedItemsMenuItemID
+                                    || JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedSystemMenuItemID
+                                    || JonesHud_apMenuItems[pItem->nextUpItemId]->id == JonesHud_selectedTreasuresMenuItemID)
+                                && pItem->pos.z <= JonesHud_invMenuMaxZ
+                                && pItem->pos.z >= JonesHud_invMenuMinZ ) // Changed: from fixed constant -0.102f
                             {
                                 /*flags = pItem->flags;
                                 (flags & 0xFF) = flags | 1;
@@ -2396,8 +2396,8 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                     case 0x40:
                         pItem->flags &= ~0x41u;
                         if ( pItem->nextLeftItemId == -1
-                          || !JonesHud_apMenuItems[pItem->nextLeftItemId]
-                          || pItem->id == JonesHud_rootMenuItemId )
+                            || !JonesHud_apMenuItems[pItem->nextLeftItemId]
+                            || pItem->id == JonesHud_rootMenuItemId )
                         {
                             JonesHud_hudState = 0;
                             jonesCog_g_bMenuVisible = 0;
@@ -2442,9 +2442,9 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                         pItem->flags &= ~0x80;
                         pItem->flags |= 2u;
                         if ( (JonesHud_hudState & 4) == 0
-                          && pItem->nextRightItemId != -1
-                          && JonesHud_apMenuItems[pItem->nextRightItemId]
-                          && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
+                            && pItem->nextRightItemId != -1
+                            && JonesHud_apMenuItems[pItem->nextRightItemId]
+                            && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
                         {
                             pRightItem = JonesHud_apMenuItems[pItem->nextRightItemId];
                             rdVector_Copy3(&pRightItem->startMovePos, &pItem->endMovePos);
@@ -2487,18 +2487,18 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
         }
 
         if ( pItem->nextRightItemId != -1
-          && JonesHud_apMenuItems[pItem->nextRightItemId]
-          && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
+            && JonesHud_apMenuItems[pItem->nextRightItemId]
+            && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
         {
             JonesHud_UpdateItem(JonesHud_apMenuItems[pItem->nextRightItemId]);
         }
 
         if ( pItem->nextUpItemId != -1
-          && JonesHud_apMenuItems[pItem->nextUpItemId]
-          && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedWeaponMenuItemID
-          && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedItemsMenuItemID
-          && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedSystemMenuItemID
-          && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedTreasuresMenuItemID )
+            && JonesHud_apMenuItems[pItem->nextUpItemId]
+            && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedWeaponMenuItemID
+            && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedItemsMenuItemID
+            && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedSystemMenuItemID
+            && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedTreasuresMenuItemID )
         {
             JonesHud_UpdateItem(JonesHud_apMenuItems[pItem->nextUpItemId]);
         }
@@ -2513,18 +2513,18 @@ void J3DAPI JonesHud_RenderMenuItems(JonesHudMenuItem* pItem)
     }
 
     if ( pItem->nextRightItemId != -1
-      && JonesHud_apMenuItems[pItem->nextRightItemId]
-      && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
+        && JonesHud_apMenuItems[pItem->nextRightItemId]
+        && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
     {
         JonesHud_RenderMenuItems(JonesHud_apMenuItems[pItem->nextRightItemId]);
     }
 
     if ( pItem->nextUpItemId != -1
-      && JonesHud_apMenuItems[pItem->nextUpItemId]
-      && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedWeaponMenuItemID
-      && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedItemsMenuItemID
-      && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedSystemMenuItemID
-      && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedTreasuresMenuItemID )
+        && JonesHud_apMenuItems[pItem->nextUpItemId]
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedWeaponMenuItemID
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedItemsMenuItemID
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedSystemMenuItemID
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedTreasuresMenuItemID )
     {
         JonesHud_RenderMenuItems(JonesHud_apMenuItems[pItem->nextUpItemId]);
     }
@@ -2680,10 +2680,10 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
         color.alpha  = pItem->alpha;
 
         if ( (pItem->flags & 8) == 0
-          && ((pItem->flags & 0x10) != 0
-              || (pItem->flags & 0x20) != 0
-              || (pItem->flags & 0x80) != 0
-              || (pItem->flags & 0x40) != 0) )
+            && ((pItem->flags & 0x10) != 0
+                || (pItem->flags & 0x20) != 0
+                || (pItem->flags & 0x80) != 0
+                || (pItem->flags & 0x40) != 0) )
         {
             float v14 = 1.0f, v15 = 1.0f;// Added Init to 1
             switch ( ((((pItem->flags >> 10) & 3) << 10) | pItem->flags & 0x302) ^ pItem->flags & 1 ^ pItem->flags )
@@ -2818,13 +2818,13 @@ void J3DAPI JonesHud_MenuActivateItem()
     }
 
     if ( JonesHud_pCurSelectedMenuItem->inventoryID != -1 // i.e.: if system menu is activated. Note the system menus don't have inventory ID (e.g. settings, load/save, exit etc..)
-      && JonesHud_pCurSelectedMenuItem->id != JONESHUD_MENU_TREASURE_CHEST )
+        && JonesHud_pCurSelectedMenuItem->id != JONESHUD_MENU_TREASURE_CHEST )
     {
         if ( JonesHud_pCurSelectedMenuItem->id <= JONESHUD_MENU_WEAP_BAZOOKA
-          || JonesHud_pCurSelectedMenuItem->id == JONESHUD_MENU_INVITEM_WEAP_MIRROR
-          || JonesHud_pCurSelectedMenuItem->id == JONESHUD_MENU_INVITEM_ZIPPO
-          || JonesHud_pCurSelectedMenuItem->id >= JONESHUD_MENU_INVITEM_IMP1
-          && JonesHud_pCurSelectedMenuItem->id <= JONESHUD_MENU_INVITEM_IMP5 )
+            || JonesHud_pCurSelectedMenuItem->id == JONESHUD_MENU_INVITEM_WEAP_MIRROR
+            || JonesHud_pCurSelectedMenuItem->id == JONESHUD_MENU_INVITEM_ZIPPO
+            || JonesHud_pCurSelectedMenuItem->id >= JONESHUD_MENU_INVITEM_IMP1
+            && JonesHud_pCurSelectedMenuItem->id <= JONESHUD_MENU_INVITEM_IMP5 )
         {
             if ( sithWeapon_IsMountingWeapon(sithPlayer_g_pLocalPlayerThing) )
             {
@@ -2841,16 +2841,16 @@ void J3DAPI JonesHud_MenuActivateItem()
             sithInventory_SetCurrentItem(sithPlayer_g_pLocalPlayerThing, JonesHud_pCurSelectedMenuItem->inventoryID);
 
             if ( JonesHud_pCurSelectedMenuItem->id >= JONESHUD_MENU_HEALTH_SMALL
-              && JonesHud_pCurSelectedMenuItem->id <= JONESHUD_MENU_HEALTH_POISONKIT
-              && sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.health < (double)sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.maxHealth )
+                && JonesHud_pCurSelectedMenuItem->id <= JONESHUD_MENU_HEALTH_POISONKIT
+                && sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.health < (double)sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.maxHealth )
             {
                 // Sends cog msg user0 to health items and poison kit
                 jonesInventory_UseItem(sithPlayer_g_pLocalPlayerThing, JonesHud_pCurSelectedMenuItem->inventoryID);
             }
 
             else if ( jonesInventory_ActivateItem(sithPlayer_g_pLocalPlayerThing, JonesHud_pCurSelectedMenuItem->inventoryID)
-                   || !sithPlayer_g_pLocalPlayerThing->pInSector
-                   || (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 ) // This last 2 sector & underwater checks should be moved to else scope
+                || !sithPlayer_g_pLocalPlayerThing->pInSector
+                || (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 ) // This last 2 sector & underwater checks should be moved to else scope
             {
                 if ( JonesHud_pCurSelectedMenuItem->id == JONESHUD_MENU_INVITEM_PATCHKIT )
                 {
@@ -3153,7 +3153,7 @@ void J3DAPI JonesHud_ResetMenuItems()
         else if ( i == 1 ) // Treasury menu
         {
             if ( JonesHud_selectedTreasuresMenuItemID == -1
-              || !JonesHud_apMenuItems[JonesHud_selectedTreasuresMenuItemID] )
+                || !JonesHud_apMenuItems[JonesHud_selectedTreasuresMenuItemID] )
             {
                 continue;
             }
@@ -3191,12 +3191,12 @@ void J3DAPI JonesHud_ResetMenuItems()
 
                 int32_t v5;
                 if ( (int32_t)amount
-                  || curItemId == JONESHUD_MENU_TREASURE_CHEST
-                  || JonesHud_apMenuItems[curItemId]->id <= 11 // 11 - is num player weapons TODO: make global constant or use existing one
-                  && ((sithInventory_g_aTypes[JonesHud_apMenuItems[curItemId]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) == 0
-                      ? (v5 = 0)
-                      : (v5 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[curItemId]->inventoryID].status & SITHINVENTORY_ITEM_FOUND),
-                      v5) )
+                    || curItemId == JONESHUD_MENU_TREASURE_CHEST
+                    || JonesHud_apMenuItems[curItemId]->id <= 11 // 11 - is num player weapons TODO: make global constant or use existing one
+                    && ((sithInventory_g_aTypes[JonesHud_apMenuItems[curItemId]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) == 0
+                        ? (v5 = 0)
+                        : (v5 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[curItemId]->inventoryID].status & SITHINVENTORY_ITEM_FOUND),
+                        v5) )
                 {
                     JonesHud_SetDownUpItems(JonesHud_apMenuItems[curItemId], pCurItem);
                     pCurItem = JonesHud_apMenuItems[curItemId];
@@ -3282,27 +3282,27 @@ void J3DAPI JonesHud_sub_4198E0(JonesHudMenuItem* pItem)
     JonesHudMenuItem* pUpItem;
 
     if ( pItem->nextUpItemId != -1
-      && JonesHud_apMenuItems[pItem->nextUpItemId]
-      && JonesHud_apMenuItems[pItem->nextUpItemId] != pItem )
+        && JonesHud_apMenuItems[pItem->nextUpItemId]
+        && JonesHud_apMenuItems[pItem->nextUpItemId] != pItem )
     {
         /*hudstate = JonesHud_hudState;
         (hudstate & 0xFF) = JonesHud_hudState | 2;
         JonesHud_hudState = hudstate;*/
         JonesHud_hudState |= 2;
         while ( pItem->nextUpItemId != -1
-             && JonesHud_apMenuItems[pItem->nextUpItemId]
-             && pItem->pos.z < JonesHud_invMenuMaxZ
-             && (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x01) != 0
-             && pItem->pos.z < JonesHud_apMenuItems[pItem->nextUpItemId]->pos.z )
+            && JonesHud_apMenuItems[pItem->nextUpItemId]
+            && pItem->pos.z < JonesHud_invMenuMaxZ
+            && (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x01) != 0
+            && pItem->pos.z < JonesHud_apMenuItems[pItem->nextUpItemId]->pos.z )
         {
             pItem = JonesHud_apMenuItems[pItem->nextUpItemId];
         }
 
         if ( (pItem->flags & 8) != 0
-          || (pItem->flags & 0x10) != 0
-          || (pItem->flags & 0x20) != 0
-          || (pItem->flags & 0x80) != 0
-          || (pItem->flags & 0x40) != 0 )
+            || (pItem->flags & 0x10) != 0
+            || (pItem->flags & 0x20) != 0
+            || (pItem->flags & 0x80) != 0
+            || (pItem->flags & 0x40) != 0 )
         {
             rdVector_Copy3(&pItem->startMovePos, &pItem->pos);
             pItem->endMovePos.z = pItem->endMovePos.z + 0.064999998f;
@@ -3312,9 +3312,9 @@ void J3DAPI JonesHud_sub_4198E0(JonesHudMenuItem* pItem)
         }
 
         else if ( pItem->nextUpItemId == -1
-               || !JonesHud_apMenuItems[pItem->nextUpItemId]
-               || pItem->pos.z >= JonesHud_invMenuMaxZ
-               || (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x01) != 0 )
+            || !JonesHud_apMenuItems[pItem->nextUpItemId]
+            || pItem->pos.z >= JonesHud_invMenuMaxZ
+            || (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x01) != 0 )
         {
             /*v3 = JonesHud_hudState;
             (v3 & 0xFF) = JonesHud_hudState & 0xFD;
@@ -3341,14 +3341,14 @@ void J3DAPI JonesHud_sub_4198E0(JonesHudMenuItem* pItem)
 void J3DAPI JonesHud_sub_419B50(JonesHudMenuItem* pItem)
 {
     while ( pItem->nextUpItemId != -1
-         && JonesHud_apMenuItems[pItem->nextUpItemId]
-         && pItem->pos.z < JonesHud_invMenuMaxZ
-         && (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x01) != 0 // update rotation anim
-         && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedWeaponMenuItemID
-         && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedItemsMenuItemID
-         && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedSystemMenuItemID
-         && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedTreasuresMenuItemID
-         && pItem->pos.z <= JonesHud_apMenuItems[pItem->nextUpItemId]->pos.z )
+        && JonesHud_apMenuItems[pItem->nextUpItemId]
+        && pItem->pos.z < JonesHud_invMenuMaxZ
+        && (JonesHud_apMenuItems[pItem->nextUpItemId]->flags & 0x01) != 0 // update rotation anim
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedWeaponMenuItemID
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedItemsMenuItemID
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedSystemMenuItemID
+        && JonesHud_apMenuItems[pItem->nextUpItemId]->id != JonesHud_selectedTreasuresMenuItemID
+        && pItem->pos.z <= JonesHud_apMenuItems[pItem->nextUpItemId]->pos.z )
     {
         pItem = JonesHud_apMenuItems[pItem->nextUpItemId];
     }
@@ -3491,7 +3491,7 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
             rdVector_Copy3(&JonesHud_pCurInvChangedItem->pyr, &JonesHud_aDfltMenuItemOrients[JonesHud_pCurInvChangedItem->id].pyr);
 
             if ( JonesHud_pCurInvChangedItem->id >= JONESHUD_MENU_TREASURE_COINS_GOLD
-              && JonesHud_pCurInvChangedItem->id <= JONESHUD_MENU_TREASURE_CASHBOX )
+                && JonesHud_pCurInvChangedItem->id <= JONESHUD_MENU_TREASURE_CASHBOX )
             {
                 // Found Treasure
                 jonesInventory_AdvanceFoundTreasuresStatistics();
@@ -3499,8 +3499,8 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
             }
 
             if ( sithPlayer_g_pLocalPlayerThing->pInSector
-              && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0
-              || JonesHud_bIMPState )
+                && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0
+                || JonesHud_bIMPState )
             {
                 JonesHud_pCurInvChangedItem->pos.x = 0.1026f * JonesHud_aspectRatioScale; // Changed: Fix current position by multiplying it with aspect scale
                 JonesHud_pCurInvChangedItem->startMovePos.x = 0.1026f * JonesHud_aspectRatioScale; // Changed: Fix start position by multiplying with aspect scale
@@ -3512,7 +3512,7 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId)
             }
 
             if ( JonesHud_pCurInvChangedItem->id >= JONESHUD_MENU_TREASURE_COINS_GOLD
-              && JonesHud_pCurInvChangedItem->id <= JONESHUD_MENU_TREASURE_CASHBOX )
+                && JonesHud_pCurInvChangedItem->id <= JONESHUD_MENU_TREASURE_CASHBOX )
             {
                 if ( JonesHud_aSoundFxHandles[12] )// inv_treasure.wav
                 {
@@ -3780,12 +3780,12 @@ int JonesHud_ShowLevelCompleted(void)
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aStoreItems); ++i )
     {
         if ( JonesHud_aStoreItems[i].menuID == JONESHUD_MENU_INVITEM_BONUSMAP
-          && !sithPlayer_g_bBonusMapBought
-          && JonesMain_GetCurrentLevelNum() != 17
-          && JonesMain_GetCurrentLevelNum() != 10
-          && JonesMain_GetCurrentLevelNum() != 15
-          || JonesHud_aStoreItems[i].menuID >= JONESHUD_MENU_HEALTH_SMALL
-          && JonesHud_aStoreItems[i].menuID <= JONESHUD_MENU_HEALTH_POISONKIT )
+            && !sithPlayer_g_bBonusMapBought
+            && JonesMain_GetCurrentLevelNum() != 17
+            && JonesMain_GetCurrentLevelNum() != 10
+            && JonesMain_GetCurrentLevelNum() != 15
+            || JonesHud_aStoreItems[i].menuID >= JONESHUD_MENU_HEALTH_SMALL
+            && JonesHud_aStoreItems[i].menuID <= JONESHUD_MENU_HEALTH_POISONKIT )
         {
             if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
             {
@@ -3805,8 +3805,8 @@ int JonesHud_ShowLevelCompleted(void)
             if ( JonesHud_apMenuItems[menuID] )
             {
                 if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[menuID]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0
-                   ? sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[menuID]->inventoryID].status & SITHINVENTORY_ITEM_FOUND
-                   : 0 )
+                    ? sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[menuID]->inventoryID].status & SITHINVENTORY_ITEM_FOUND
+                    : 0 )
                 {
                     bItemAvailable = 1;
                 }
@@ -4134,9 +4134,9 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                             JonesHud_creditsCurMatIdx = i;
                             JonesHud_creditTextHeight =
                                 ((float)JonesHud_pCreditsFont2->lineSpacing
-                                + 48.0f / JonesHud_creditsAspectRatio
-                                + (float)JonesHud_pCreditsFont1->lineSpacing
-                                + (float)(2 * JonesHud_pCreditsFont1->fontSize)) * lineScalar;
+                                    + 48.0f / JonesHud_creditsAspectRatio
+                                    + (float)JonesHud_pCreditsFont1->lineSpacing
+                                    + (float)(2 * JonesHud_pCreditsFont1->fontSize)) * lineScalar;
                         }
 
                         JonesHud_apCreditsMats[i] = (rdMaterial*)STDMALLOC(sizeof(rdMaterial));
@@ -4213,10 +4213,10 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
             JonesHud_aCreditsCurPosY[j] -= lineScalar * JONESHUD_CREDITS_SPEEDFACTOR; // Here we move text up
 
             if ( j >= JonesHud_creditsCurMatIdx
-              && JonesHud_creditsCurMatIdx > 0
-              && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] > 0.0f
-              && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx + 1] > 0.0f
-              && ((float)(int)JonesHud_creditsCanvasHeight - JonesHud_creditTextHeight) / 2.0f >= JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] )
+                && JonesHud_creditsCurMatIdx > 0
+                && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] > 0.0f
+                && JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx + 1] > 0.0f
+                && ((float)(int)JonesHud_creditsCanvasHeight - JonesHud_creditTextHeight) / 2.0f >= JonesHud_aCreditsCurPosY[JonesHud_creditsCurMatIdx] )
             {
                 // At the end credits, stop LEC logo and copy right at the center
                 switch ( j - JonesHud_creditsCurMatIdx )
@@ -4269,7 +4269,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                         if ( JonesHud_creditsCurIdx == JonesHud_creditsCurMatIdx && JonesHud_creditsCurMatIdx > 0 )
                         {
                             if ( JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
-                              && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] )
+                                && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1] )
                             {
 
                                 if ( JonesHud_msecCreditsFadeStart == 0 )
@@ -4290,7 +4290,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                                 }
 
                                 if ( JonesHud_curCelNum == JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]->numCels
-                                  && !JonesHud_bSkipUpdateCredits )
+                                    && !JonesHud_bSkipUpdateCredits )
                                 {
                                     JonesHud_bSkipUpdateCredits   = true;
                                     JonesHud_msecCreditsFadeStart = msecCurTime;
@@ -4323,12 +4323,12 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
         JonesHud_bEndingCredits       = true;
     }
     else if ( JonesHud_bSkipUpdateCredits // At credits end
-      && !JonesHud_bEndingCredits
-      && (!JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
-          || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
-          || JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
-          && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
-          && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
+        && !JonesHud_bEndingCredits
+        && (!JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
+            || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
+            || JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
+            && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
+            && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
     {
         if ( hSndChannel )
         {
@@ -4379,9 +4379,9 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
 
     // Fixed: Changed order so the i is first compared to len and JonesHud_creditsCurEndIdx  before indexing into array
     for ( size_t i = JonesHud_creditsCurIdx;
-          i < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
-       && i <= JonesHud_creditsCurEndIdx
-       && ((double)(JonesHud_creditsCanvasHeight + 64) >= JonesHud_aCreditsCurPosY[i]); ++i )
+        i < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
+        && i <= JonesHud_creditsCurEndIdx
+        && ((double)(JonesHud_creditsCanvasHeight + 64) >= JonesHud_aCreditsCurPosY[i]); ++i )
     {
         int v27 = JonesHud_aCredits[i].flags & 0x08;
         switch ( v27 ^ JonesHud_aCredits[i].flags )
@@ -4400,9 +4400,9 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont2, RDFONT_ALIGNCENTER);
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
-                  && !bEndCredits
-                  && i + 1 > JonesHud_creditsCurEndIdx
-                  && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
+                    && !bEndCredits
+                    && i + 1 > JonesHud_creditsCurEndIdx
+                    && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
                 {
                     int v11 = JonesHud_aCredits[i + 1].flags & 0x08 ^ JonesHud_aCredits[i + 1].flags;
                     if ( v11 == 0x04 )
@@ -4463,9 +4463,9 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 }
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
-                  && i + 1 > JonesHud_creditsCurEndIdx
-                  && !bEndCredits
-                  && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
+                    && i + 1 > JonesHud_creditsCurEndIdx
+                    && !bEndCredits
+                    && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
                 {
                     if ( JonesHud_aCredits[i].flags == 0x10 )
                     {
@@ -4534,9 +4534,9 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 }
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
-                  && i + 1 > JonesHud_creditsCurEndIdx
-                  && !bEndCredits
-                  && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
+                    && i + 1 > JonesHud_creditsCurEndIdx
+                    && !bEndCredits
+                    && JonesHud_aCreditsCurPosY[i + 1] == 0.0f )
                 {
                     if ( i == JonesHud_creditsCurMatIdx && JonesHud_creditsCurMatIdx > 0 )
                     {
