@@ -2527,10 +2527,13 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
     }
 
 update_attachment:
-    pThing->attach.flags = SITH_ATTACH_SURFACE;
-    rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices]);
-    pThing->attach.pFace = &pSurface->face;
-    pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
+    if ( (pThing->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) == 0 || (pSurface->flags & SITH_SURFACE_LAVA) == 0 ) // Added: Fixes not attaching dead player to lava surface
+    {
+        pThing->attach.flags = SITH_ATTACH_SURFACE;
+        rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices]);
+        pThing->attach.pFace = &pSurface->face;
+        pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
+    }
 
     pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED;
 
