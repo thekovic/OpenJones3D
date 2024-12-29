@@ -10,7 +10,6 @@
 #include <sith/AI/sithAI.h>
 #include <sith/Cog/sithCog.h>
 #include <sith/Cog/sithCogExec.h>
-#include <sith/Devices/sithConsole.h>
 #include <sith/Devices/sithSoundMixer.h>
 #include <sith/Engine/sithCamera.h>
 #include <sith/Gameplay/sithOverlayMap.h>
@@ -26,7 +25,6 @@ static int jonesCog_curCutsceneType     = -1;
 static int jonesCog_bInterfaceEnabled   = -1;
 static bool jonesCog_bOverlayMapVisible = false;
 static bool jonesCog_bStartup           = false;
-
 
 int J3DAPI jonesCog_RegisterFunctions();
 void J3DAPI jonesCog_HideHealthDisplay(SithCog* pCog);
@@ -196,9 +194,13 @@ void J3DAPI jonesCog_StartCutsceneFunc(SithCog* pCog)
     }
 
     jonesCog_bOverlayMapVisible = sithOverlayMap_IsMapVisible();
-    if ( jonesCog_bOverlayMapVisible )
-    {
+    if ( jonesCog_bOverlayMapVisible ) {
         sithOverlayMap_ToggleMap();
+    }
+
+    // Added
+    if ( JonesConsole_g_bVisible ) {
+        JonesConsole_HideConsole();
     }
 
     if ( type )
@@ -279,9 +281,6 @@ void J3DAPI jonesCog_EndCutscene(SithCog* pCog)
         }
     }
 
-    //cameraState = sithCamera_g_stateFlags;  
-    //(cameraState & 0xFF) = sithCamera_g_stateFlags & ~SITHCAMERA_STATE_CUTSCENE;
-    //sithCamera_g_stateFlags = cameraState;
     sithCamera_g_stateFlags &= ~SITHCAMERA_STATE_CUTSCENE;
     sithPlayerControls_g_bCutsceneMode = 0;
 }
