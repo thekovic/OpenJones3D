@@ -1369,7 +1369,7 @@ typedef void (J3DAPI* SithRenderUnknownFunc)(SithThing* pThing);
 typedef void (J3DAPI* SithThingUnknownFunc)(SithThing*);
 typedef void (J3DAPI* SithConsoleWriteTextFunc)(const char* pText);
 typedef void (J3DAPI* SithConsoleWriteWideTextFunc)(const wchar_t* pWText);
-typedef void (*SithConsoleFlush)(void);
+typedef void (*SithConsoleFlushFunc)(void);
 typedef void (*SithMultiNewPlayerJoinedCallback)(void);
 
 typedef union sSithCogValue

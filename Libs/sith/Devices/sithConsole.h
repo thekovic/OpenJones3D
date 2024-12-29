@@ -12,7 +12,7 @@ J3D_EXTERN_C_START
 int sithConsole_Startup(void);
 void sithConsole_Shutdown(void);
 
-int J3DAPI sithConsole_Open(size_t bufSize, size_t numCommands);
+int J3DAPI sithConsole_Open(size_t numLines, size_t numCommands);
 void sithConsole_Close(void);
 
 void J3DAPI sithConsole_PrintString(const char* pString);
@@ -21,7 +21,7 @@ int J3DAPI sithConsole_ExeCommand(const char* pLine);
 void sithConsole_Flush(void);
 
 int J3DAPI sithConsole_RegisterCommand(SithConsoleFunction pfFunc, const char* pName, int flags);
-void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlush pfFlush);
+void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlushFunc pfFlush);
 
 int J3DAPI sithCommand_Help(const SithConsoleCommand* pFunc, const char* pArg); // Added
 

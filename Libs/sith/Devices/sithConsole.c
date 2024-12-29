@@ -10,12 +10,13 @@
 
 #include <string.h>
 
-#define sithCommand_LINELEN 128
+#define sithCommand_MAXLINES 32
+#define sithCommand_LINELEN  128
 
 static bool bOpen;
 static bool bStarted;
 
-static char aBuffers[32][128];
+static char aBuffers[sithCommand_MAXLINES][sithCommand_LINELEN];
 static size_t bufferSize;
 static size_t curFlushIndex;
 static size_t endPrintIndex;
@@ -28,7 +29,7 @@ static size_t numRegistredCommands;
 
 static SithConsoleWriteTextFunc pfPrintString;
 static SithConsoleWriteWideTextFunc pfPrintWString;
-static SithConsoleFlush pfFlush;
+static SithConsoleFlushFunc pfFlushFunc;
 
 int J3DAPI sithConsole_CreateCommandTable(size_t size);
 void sithConsole_FreeCommandTable(void);
@@ -62,7 +63,7 @@ int sithConsole_Startup(void)
 
     pfPrintString  = NULL;
     pfPrintWString = NULL;
-    pfFlush        = NULL;
+    pfFlushFunc    = NULL;
 
     bStarted = true;
     return 0;
@@ -76,7 +77,7 @@ void sithConsole_Shutdown(void)
 
     pfPrintString  = NULL;
     pfPrintWString = NULL;
-    pfFlush        = NULL;
+    pfFlushFunc    = NULL;
 
     if ( bOpen ) {
         sithConsole_Close();
@@ -95,7 +96,13 @@ int J3DAPI sithConsole_Open(size_t numLines, size_t numCommands)
         return 1;
     }
 
-    // TODO: Add bound check
+    // Added: bound check
+    if ( numLines > sithCommand_MAXLINES )
+    {
+        SITHLOG_ERROR("Failed to create console. Requested too big print buffer size! max=%d\n", sithCommand_MAXLINES);
+        return 1;
+    }
+
     memset(aBuffers, 0, numLines * sithCommand_LINELEN);
     bufferSize = numLines;
 
@@ -176,9 +183,8 @@ int J3DAPI sithConsole_ExeCommand(const char* pLine)
     //_strlwr_s((char*)pLine);
     stdUtil_ToLower((char*)pLine);
 
-    const char* pCmdName = strtok((char*)pLine, ", \t\n\r");
-    if ( !pCmdName )
-    {
+    const char* pCmdName = strtok(aLine, ", \t\n\r");
+    if ( !pCmdName ) {
         return 0;
     }
 
@@ -198,9 +204,9 @@ int J3DAPI sithConsole_ExeCommand(const char* pLine)
 
 void sithConsole_Flush(void)
 {
-    if ( pfFlush )
+    if ( pfFlushFunc )
     {
-        pfFlush();
+        pfFlushFunc();
     }
     else
     {
@@ -248,11 +254,11 @@ int J3DAPI sithConsole_RegisterCommand(SithConsoleFunction pfFunc, const char* p
     return 1;
 }
 
-void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlush pfFlush)
+void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlushFunc pfFlush)
 {
-    pfPrintString = pfWriteText;
+    pfPrintString  = pfWriteText;
     pfPrintWString = pfWriteWText;
-    pfFlush = pfFlush;
+    pfFlushFunc    = pfFlush;
 }
 
 int J3DAPI sithCommand_Help(const SithConsoleCommand* pFunc, const char* pArg)
@@ -263,7 +269,7 @@ int J3DAPI sithCommand_Help(const SithConsoleCommand* pFunc, const char* pArg)
     char aLine[56] = { 0 }; // Added: Init to 0
 
     // Removed
-    //*(uint16_t*)aLine = word_5FA420;              // ???
+    //*(uint16_t*)aLine = word_5FA420; // ???
     //memset(&aLine[2], 0, 54);
 
     size_t curPos = 0;

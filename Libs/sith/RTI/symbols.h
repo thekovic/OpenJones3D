@@ -948,7 +948,7 @@
 #define sithConsole_ExeCommand_TYPE int (J3DAPI*)(const char*)
 #define sithConsole_Flush_TYPE void (*)(void)
 #define sithConsole_RegisterCommand_TYPE int (J3DAPI*)(SithConsoleFunction, const char*, int)
-#define sithConsole_RegisterPrintFunctions_TYPE void (J3DAPI*)(SithConsoleWriteTextFunc, SithConsoleWriteWideTextFunc, SithConsoleFlush)
+#define sithConsole_RegisterPrintFunctions_TYPE void (J3DAPI*)(SithConsoleWriteTextFunc, SithConsoleWriteWideTextFunc, SithConsoleFlushFunc)
 #define sithConsole_CreateCommandTable_TYPE int (J3DAPI*)(size_t)
 #define sithConsole_FreeCommandTable_TYPE void (*)(void)
 #define sithTime_Advance_TYPE void (*)(void)
