@@ -179,9 +179,10 @@ int J3DAPI sithConsole_ExeCommand(const char* pLine)
     SITH_ASSERTREL(bOpen);
     SITH_ASSERTREL(pLine);
 
-    // TODO: copy to buffer before strlwr
-    //_strlwr_s((char*)pLine);
-    stdUtil_ToLower((char*)pLine);
+    // Fixed: Copy line to buffer before convert to lower str
+    char aLine[128];
+    STD_STRCPY(aLine, pLine);
+    stdUtil_ToLower(aLine);// Note, was calling _strlwr((char*)pLine);
 
     const char* pCmdName = strtok(aLine, ", \t\n\r");
     if ( !pCmdName ) {
