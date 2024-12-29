@@ -25,9 +25,9 @@ void sithCommand_ResetGlobals(void)
     memset(&sithCommand_aBuf, 0, sizeof(sithCommand_aBuf));
 }
 
-void J3DAPI sithCommand_Init()
+void sithCommand_RegisterCommands(void)
 {
-    J3D_TRAMPOLINE_CALL(sithCommand_Init);
+    J3D_TRAMPOLINE_CALL(sithCommand_RegisterCommands);
 }
 
 int J3DAPI sithCommand_HandleDebugCommand(const SithConsoleCommand* pFunc, const char* pArg)

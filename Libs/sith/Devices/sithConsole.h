@@ -9,18 +9,21 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI sithConsole_Startup();
-void J3DAPI sithConsole_Shutdown();
-int J3DAPI sithConsole_Open(int bufSize, int numCommands);
-void sithConsole_Close();
+int sithConsole_Startup(void);
+void sithConsole_Shutdown(void);
+
+int J3DAPI sithConsole_Open(size_t bufSize, size_t numCommands);
+void sithConsole_Close(void);
+
 void J3DAPI sithConsole_PrintString(const char* pString);
-void J3DAPI sithConsole_PrintWString(wchar_t* pwString);
+void J3DAPI sithConsole_PrintWString(const wchar_t* pwString);
 int J3DAPI sithConsole_ExeCommand(const char* pLine);
 void sithConsole_Flush(void);
+
 int J3DAPI sithConsole_RegisterCommand(SithConsoleFunction pfFunc, const char* pName, int flags);
 void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlush pfFlush);
-int J3DAPI sithConsole_CreateCommandTable(int size);
-void J3DAPI sithConsole_FreeCommandTable();
+
+int J3DAPI sithCommand_Help(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 // Helper hooking functions
 void sithConsole_InstallHooks(void);

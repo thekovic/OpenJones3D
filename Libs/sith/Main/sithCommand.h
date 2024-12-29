@@ -9,7 +9,7 @@
 
 J3D_EXTERN_C_START
 
-void J3DAPI sithCommand_Init();
+void sithCommand_RegisterCommands(void);
 int J3DAPI sithCommand_HandleDebugCommand(const SithConsoleCommand* pFunc, const char* pArg);
 int J3DAPI sithCommand_UrgonElsa(const SithConsoleCommand* pFunc, const char* pArg);
 int J3DAPI sithCommand_Fixme(const SithConsoleCommand* pFunc, const char* pArg);

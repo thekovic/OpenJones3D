@@ -1296,7 +1296,7 @@
 #define sithAIAwareness_ProcessEvent_ADDR 0x004B0CC0
 #define sithAIAwareness_CheckAdjoinDistance_ADDR 0x004B0E30
 #define sithAIAwareness_CreateEvent_ADDR 0x004B1010
-#define sithCommand_Init_ADDR 0x004B4600
+#define sithCommand_RegisterCommands_ADDR 0x004B4600
 #define sithCommand_HandleDebugCommand_ADDR 0x004B46D0
 #define sithCommand_UrgonElsa_ADDR 0x004B48B0
 #define sithCommand_Fixme_ADDR 0x004B48F0
@@ -2356,10 +2356,10 @@
 #define sithString_sithStringsTbl_ADDR 0x005624A8
 #define sithString_voiceStringsTbl_ADDR 0x005624B8
 #define sithString_bStartup_ADDR 0x005624C8
-#define sithConsole_startIndex_ADDR 0x0056A6BC
-#define sithConsole_endIndex2_ADDR 0x0056A6C0
+#define sithConsole_curFlushIndex_ADDR 0x0056A6BC
+#define sithConsole_endPrintIndex_ADDR 0x0056A6C0
 #define sithConsole_apCommands_ADDR 0x0056A6C4
-#define sithConsole_endIndex_ADDR 0x0056A6C8
+#define sithConsole_curPrintIndex_ADDR 0x0056A6C8
 #define sithConsole_aBuffers_ADDR 0x0056A6D0
 #define sithConsole_pTable_ADDR 0x0056B6D0
 #define sithConsole_bOpen_ADDR 0x0056B6D4
