@@ -13,12 +13,20 @@ J3D_EXTERN_C_START
 */
 #define STD_ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 
+/**
+* @brief Macro verifies array is of type char
+* @param var - The array to verify
+*/
 #define STD_ISSTRARRAY(var) \
        _Generic(&(var), \
         char(*)[sizeof(var)/sizeof((var)[0])]: 1, \
         const char(*)[sizeof(var)/sizeof((var)[0])]: 1, \
         default: 0)
 
+/**
+* @brief Macro verifies array is of type wchar_t
+* @param var - The array to verify
+*/
 #define STD_ISWSTRARRAY(var) \
        _Generic(&(var), \
         wchar_t(*)[sizeof(var)/sizeof((var)[0])]: 1, \
@@ -55,14 +63,13 @@ J3D_EXTERN_C_START
         stdUtil_WFormat(buf, STD_ARRAYLEN(buf), format, ##__VA_ARGS__); \
     } while ( 0 )
 
-
 /**
  * @brief Copies a string to an array buffer.
  *
  * Ensures `dest` is an array and calls `stdUtil_StringCopy`.
  *
- * @param dest Destination array buffer.
- * @param src Source string.
+ * @param dest - Destination array buffer.
+ * @param src - Source string.
 */
 #define STD_STRCPY(dest, src)  \
     do {\
@@ -75,8 +82,8 @@ J3D_EXTERN_C_START
  *
  * Ensures `dest` is an array and calls `stdUtil_WideStringCopy`.
  *
- * @param dest Destination array buffer.
- * @param src Source wide string.
+ * @param dest - Destination array buffer.
+ * @param src - Source wide string.
 */
 #define STD_WSTRCPY(dest, src)  \
     do {\
@@ -89,9 +96,9 @@ J3D_EXTERN_C_START
  *
  * Ensures `dest` is an array and calls `stdUtil_StringCopy`.
  *
- * @param dest Destination array buffer.
- * @param src Source string.
- * @param num Number of chars to copy from `src`.
+ * @param dest - Destination array buffer.
+ * @param src - Source string.
+ * @param num - Number of chars to copy from `src`.
 */
 #define STD_STRNCPY(dest, src, num)  \
     do {\
@@ -105,8 +112,8 @@ J3D_EXTERN_C_START
  * Ensures `str1` has sufficient space to hold the concatenated result.
  * This macro wraps the functionality of `stdUtil_StringConcat`.
  *
- * @param str1 Destination string, which will hold the result of concatenation.
- * @param str2 Source string to append to `str1`.
+ * @param str1 - Destination string, which will hold the result of concatenation.
+ * @param str2 - Source string to append to `str1`.
 */
 #define STD_STRCAT(str1, str2)  \
     do {\
@@ -114,6 +121,35 @@ J3D_EXTERN_C_START
         stdUtil_StringCat(str1, STD_ARRAYLEN(str1), str2); \
     } while ( 0 )
 
+/**
+ * @brief Converts wide string to string.
+ *
+ * Ensures `dest` is an char array and calls `stdUtil_ToAStringEx`.
+ *
+ * @param dest - Destination char array buffer.
+ * @param src - Source wide string.
+*/
+#define STD_TOSTR(dest, src)  \
+    do {\
+        _Static_assert(STD_ISSTRARRAY(dest), "STD_TOSTR requires an array type for 'dest'"); \
+        stdUtil_ToAStringEx(dest, src, STD_ARRAYLEN(dest) - 1); \
+        dest[STD_ARRAYLEN(dest) - 1] = 0; \
+    } while ( 0 )
+
+/**
+ * @brief Converts string to wide string.
+ *
+ * Ensures `dest` is an wchar_t array and calls `stdUtil_ToWStringEx`.
+ *
+ * @param dest - Destination whcar_t array buffer.
+ * @param src - Source string.
+*/
+#define STD_TOWSTR(dest, src)  \
+    do {\
+        _Static_assert(STD_ISWSTRARRAY(dest), "STD_TOWSTR requires an array type for 'dest'"); \
+        stdUtil_ToWStringEx(dest, src, STD_ARRAYLEN(dest) - 1); \
+        dest[STD_ARRAYLEN(dest) - 1] = 0; \
+    } while ( 0 )
 
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...);
 int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...); // Added
