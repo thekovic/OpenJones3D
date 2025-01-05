@@ -201,7 +201,7 @@ int J3DAPI sithWorld_NDYReadCopyrightSection(SithWorld* pWorld, int bSkip)
     return J3D_TRAMPOLINE_CALL(sithWorld_NDYReadCopyrightSection, pWorld, bSkip);
 }
 
-void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, int* aMemUsed, int* aCount)
+void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, size_t* aMemUsed, size_t* aCount)
 {
     J3D_TRAMPOLINE_CALL(sithWorld_GetMemoryUsage, pWorld, aMemUsed, aCount);
 }

@@ -40,7 +40,7 @@ SithWorld* sithWorld_New(void);
 void J3DAPI sithWorld_Free(SithWorld* pWorld);
 signed int J3DAPI sithWorld_NDYReadHeaderSection(SithWorld* pWorld, int bSkip);
 int J3DAPI sithWorld_NDYReadCopyrightSection(SithWorld* pWorld, int bSkip);
-void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, int* aMemUsed, int* aCount);
+void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, size_t* aMemUsed, size_t* aCount);
 int J3DAPI sithWorld_RegisterTextSectionParser(const char* aSectionName, SithWorldSectionParseFunc pfParseFunction);
 void J3DAPI sithWorld_ResetRenderState(SithWorld* pWorld);
 int J3DAPI sithWorld_ValidateWorld(const SithWorld* pWorld);

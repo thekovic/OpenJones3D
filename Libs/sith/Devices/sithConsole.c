@@ -10,13 +10,13 @@
 
 #include <string.h>
 
-#define sithCommand_MAXLINES 32
-#define sithCommand_LINELEN  128
+#define SITHCONSOLE_MAXLINES 32
+#define SITHCONSOLE_LINELEN  128
 
 static bool bOpen;
 static bool bStarted;
 
-static char aBuffers[sithCommand_MAXLINES][sithCommand_LINELEN];
+static char aBuffers[SITHCONSOLE_MAXLINES][SITHCONSOLE_LINELEN];
 static size_t bufferSize;
 static size_t curFlushIndex;
 static size_t endPrintIndex;
@@ -97,13 +97,13 @@ int J3DAPI sithConsole_Open(size_t numLines, size_t numCommands)
     }
 
     // Added: bound check
-    if ( numLines > sithCommand_MAXLINES )
+    if ( numLines > SITHCONSOLE_MAXLINES )
     {
-        SITHLOG_ERROR("Failed to create console. Requested too big print buffer size! max=%d\n", sithCommand_MAXLINES);
+        SITHLOG_ERROR("Failed to create console. Requested too big print buffer size! max=%d\n", SITHCONSOLE_MAXLINES);
         return 1;
     }
 
-    memset(aBuffers, 0, numLines * sithCommand_LINELEN);
+    memset(aBuffers, 0, numLines * SITHCONSOLE_LINELEN);
     bufferSize = numLines;
 
     endPrintIndex = 0;
@@ -149,7 +149,7 @@ void J3DAPI sithConsole_PrintString(const char* pString)
         else
         {
             const size_t len = strlen(pString);
-            if ( len > sithCommand_LINELEN - 1 )
+            if ( len > SITHCONSOLE_LINELEN - 1 )
             {
                 SITHLOG_ERROR("Console string too long (%d).  Truncated.\n", len);
             }
