@@ -336,7 +336,8 @@ int J3DAPI stdDisplay_Open(size_t deviceNum)
         stdDisplay_aVideoModes,
         stdDisplay_numVideoModes,
         sizeof(StdVideoMode),
-        (int(__cdecl*)(const void*, const void*))stdDisplay_VideoModeCompare);
+        (int(__cdecl*)(const void*, const void*))stdDisplay_VideoModeCompare
+    );
 
     stdDisplay_bOpen = true;
     return 1;
@@ -1076,12 +1077,6 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
 
     if ( stdDisplay_numVideoModes >= STD_ARRAYLEN(stdDisplay_aVideoModes) ) {
         return 0;
-    }
-
-    // Added: Cap the resolution to HD since std3D device doesn't support higher resolutions
-    // TODO: Remove this constrain when porting to newer GAPI
-    if ( lpDDSurfaceDesc->dwWidth >= 2000 || lpDDSurfaceDesc->dwHeight >= 2000 ) {
-        return 1;
     }
 
     // Added: Allow only true colors
