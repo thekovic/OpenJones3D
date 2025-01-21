@@ -100,7 +100,7 @@ int J3DAPI rdCamera_NewEntry(rdCamera* pCamera, float fov, int bClipFar, float n
     pCamera->invFarClipPlane  = 0.0f;
     pCamera->orthoScale       = 1.0f;
 
-    pCamera->numLights = 0;
+    pCamera->numLights      = 0;
     pCamera->attenuationMin = 0.2f;
     pCamera->attenuationMax = 0.1f;
 
@@ -175,7 +175,6 @@ void J3DAPI rdCamera_SetProjectType(rdCamera* pCamera, rdCameraProjType type)
             pCamera->pfProjectList = rdCamera_OrthoProjectLst;
         }
     }
-
     else if ( type == RDCAMERA_PROJECT_PERSPECTIVE )
     {
         if ( pCamera->aspectRatio == 1.0f )

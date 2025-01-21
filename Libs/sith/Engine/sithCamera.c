@@ -285,20 +285,20 @@ int sithCamera_Startup(void)
     SITH_ASSERTREL(sithCamera_bStartup == 0);
 
     // 1st person camera
-    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_INTCAMERANUM], 0, SITHCAMERA_INTERNAL, SITHCAMERA_FOVDEFAULT, 1.0f, 0, 0, 0);
+    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_INTCAMERANUM], 0, SITHCAMERA_INTERNAL, SITHCAMERA_FOVDEFAULT, 1.0f, NULL, NULL, NULL);
 
     // 3rd person camera
-    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], 0, SITHCAMERA_EXTERNAL, SITHCAMERA_FOVDEFAULT, 1.0f, 0, 0, 0);
+    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], 0, SITHCAMERA_EXTERNAL, SITHCAMERA_FOVDEFAULT, 1.0f, NULL, NULL, NULL);
     rdVector_Copy3(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM].offset, &sithCamera_vecExtCameraOffset);
     sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM].interpSpeed = 0.34999999f;
 
-    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_CINEMACAMERANUM], 0, SITHCAMERA_CINEMATIC, SITHCAMERA_FOVDEFAULT, 1.0f, 0, 0, 0);
+    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_CINEMACAMERANUM], 0, SITHCAMERA_CINEMATIC, SITHCAMERA_FOVDEFAULT, 1.0f, NULL, NULL, NULL);
     sithCamera_g_aCameras[SITHCAMERA_CINEMACAMERANUM].interpSpeed = 1.0f;
 
     // Idle camera
-    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_IDLECAMERANUM], 0, SITHCAMERA_IDLE, SITHCAMERA_FOVDEFAULT, 1.0f, 0, 0, 0);
-    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_UNKNONWCAMERANUM], 0, SITHCAMERA_UNKNOWN_40, SITHCAMERA_FOVDEFAULT, 1.0f, 0, 0, 0);
-    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_ORBCAMERANUM], 0, SITHCAMERA_ORBITAL, SITHCAMERA_FOVDEFAULT, 1.0f, 0, 0, 0);
+    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_IDLECAMERANUM], 0, SITHCAMERA_IDLE, SITHCAMERA_FOVDEFAULT, 1.0f, NULL, NULL, NULL);
+    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_UNKNONWCAMERANUM], 0, SITHCAMERA_UNKNOWN_40, SITHCAMERA_FOVDEFAULT, 1.0f, NULL, NULL, NULL);
+    sithCamera_NewEntry(&sithCamera_g_aCameras[SITHCAMERA_ORBCAMERANUM], 0, SITHCAMERA_ORBITAL, SITHCAMERA_FOVDEFAULT, 1.0f, NULL, NULL, NULL);
 
     sithCamera_bStartup = 1;
     return 1;
@@ -701,7 +701,7 @@ SithSector* J3DAPI sithCamera_SearchSectorInRadius(int a1, SithSector* pSector, 
             && pCollision->pThingCollided->type != SITH_THING_CORPSE
             && pCollision->distance != 0.0f
             && pCollision->pThingCollided->type != SITH_THING_WEAPON)
-               && ((pCollision->type & SITHCOLLISION_THING) == 0 || pCollision->pThingCollided != sithPlayer_g_pLocalPlayerThing) )
+            && ((pCollision->type & SITHCOLLISION_THING) == 0 || pCollision->pThingCollided != sithPlayer_g_pLocalPlayerThing) )
         {
             /*endPos->x = pCollision->distance * moveNorm.x + startPos->x;
             endPos->y = pCollision->distance * moveNorm.y + startPos->y;
