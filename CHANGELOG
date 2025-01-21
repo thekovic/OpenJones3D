@@ -1,3 +1,18 @@
+# v0.3
+General:
+  - Fixed various bugs
+  - Fixed hiding console on cutscene start (27ca92b)
+  - Implemented:
+    * `sithConsole` (7879d45)
+    * `sithCommand` (4ec4941)
+
+Display & Render:
+  - Added support for display resolutions higher than 2048-pixel (6f9db7e)
+  - Fixed bug rendering ceiling sky (6f9db7e)
+
+Game play:
+  - Fixed submersion of dead thing in cold-water/lava (18d828d)
+
 # v0.2
 General:
   - Fixed various bugs
