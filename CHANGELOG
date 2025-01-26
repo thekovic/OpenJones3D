@@ -5,6 +5,7 @@ General:
   - Implemented:
     * `sithConsole` (7879d45)
     * `sithCommand` (4ec4941)
+    * `sithCogFunction` (33f8f9d)
 
 Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
