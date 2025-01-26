@@ -42,7 +42,7 @@ float J3DAPI sithControl_GetAxis(SithControlFunction axisId);
 int J3DAPI sithControl_GetKey(SithControlFunction keyId, int* pState);
 
 void sithControl_ReadControls(void);
-
+void sithControl_FinishRead(void);
 void sithControl_RebindKeyboard(void); // Added
 
 void sithControl_UnbindJoystickAxes(void);

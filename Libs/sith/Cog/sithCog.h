@@ -9,6 +9,7 @@
 
 J3D_EXTERN_C_START
 
+#define SITHCOG_TASKID        4u
 #define SITHCOG_NORETURNVALUE -9999
 
 #define sithCog_g_bCogStartup J3D_DECL_FAR_VAR(sithCog_g_bCogStartup, int)

@@ -271,6 +271,7 @@
 #define sithControl_GetAxis_TYPE float (J3DAPI*)(SithControlFunction)
 #define sithControl_GetKey_TYPE int (J3DAPI*)(SithControlFunction, int*)
 #define sithControl_ReadControls_TYPE void (*)(void)
+#define sithControl_FinishRead_TYPE void (*)(void)
 #define sithControl_UnbindJoystickAxes_TYPE void (*)(void)
 #define sithControl_UnbindMouseAxes_TYPE void (*)(void)
 #define sithControl_Reset_TYPE void (*)(void)

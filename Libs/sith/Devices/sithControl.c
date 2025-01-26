@@ -115,6 +115,7 @@ void sithControl_InstallHooks(void)
     J3D_HOOKFUNC(sithControl_GetAxis);
     J3D_HOOKFUNC(sithControl_GetKey);
     J3D_HOOKFUNC(sithControl_ReadControls);
+    J3D_HOOKFUNC(sithControl_FinishRead);
     J3D_HOOKFUNC(sithControl_UnbindJoystickAxes);
     J3D_HOOKFUNC(sithControl_UnbindMouseAxes);
     J3D_HOOKFUNC(sithControl_Reset);
@@ -297,7 +298,7 @@ void J3DAPI sithControl_UnbindControl(SithControlBindFlag flags, size_t controlI
         for ( size_t bindIndex = 0; bindIndex < aControlBindings[funcId].numBindings; ++bindIndex )
         {
             if ( (flags & aControlBindings[funcId].aBindings[bindIndex].flags) != 0
-              && aControlBindings[funcId].aBindings[bindIndex].controlId == controlId )
+                && aControlBindings[funcId].aBindings[bindIndex].controlId == controlId )
             {
                 sithControl_UnbindFunctionIndex(funcId, bindIndex);
                 return;
@@ -321,12 +322,12 @@ void J3DAPI sithControl_Update(float secDeltaTime, uint32_t msecDeltaTime)
     if ( bControlOpen )
     {
         if ( sithPlayer_g_pLocalPlayerThing
-          && (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.flags & SITH_AF_NOIDLECAMERA) == 0
-          && (sithPlayer_g_pLocalPlayerThing->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) == 0
-          && (sithCamera_g_stateFlags & SITHCAMERA_STATE_CUTSCENE) == 0
-          && sithPlayer_g_pLocalPlayerThing->moveInfo.physics.velocity.x == 0.0f
-          && sithPlayer_g_pLocalPlayerThing->moveInfo.physics.velocity.y == 0.0f
-          && sithPlayer_g_pLocalPlayerThing->moveInfo.physics.velocity.z == 0.0f )
+            && (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.flags & SITH_AF_NOIDLECAMERA) == 0
+            && (sithPlayer_g_pLocalPlayerThing->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) == 0
+            && (sithCamera_g_stateFlags & SITHCAMERA_STATE_CUTSCENE) == 0
+            && sithPlayer_g_pLocalPlayerThing->moveInfo.physics.velocity.x == 0.0f
+            && sithPlayer_g_pLocalPlayerThing->moveInfo.physics.velocity.y == 0.0f
+            && sithPlayer_g_pLocalPlayerThing->moveInfo.physics.velocity.z == 0.0f )
         {
             bool bIdleCheck = true;
             SithThingMoveStatus moveStatus = sithPlayer_g_pLocalPlayerThing->moveStatus;
@@ -460,8 +461,8 @@ float J3DAPI sithControl_GetKeyAsAxis(SithControlFunction axisId)
         SithControlBindFlag bindflags = pBinding->flags;
 
         if ( (bindflags & SITHCONTROLBIND_AXIS_ENABLED) == 0
-          && (bindflags & SITHCONTROLBIND_AXISCONTROL) == 0
-          && ((sithControl_g_controlOptions & 0x20) == 0 || !STDCONTROL_ISJOYSTICKBUTTON(pBinding->controlId)) ) // Fixed: Macro extracts correct aid by clearing any additional axis flags
+            && (bindflags & SITHCONTROLBIND_AXISCONTROL) == 0
+            && ((sithControl_g_controlOptions & 0x20) == 0 || !STDCONTROL_ISJOYSTICKBUTTON(pBinding->controlId)) ) // Fixed: Macro extracts correct aid by clearing any additional axis flags
         {
             float axisValue = stdControl_ReadKeyAsAxis(pBinding->controlId);
             if ( axisValue != 0.0f )
@@ -496,7 +497,7 @@ float J3DAPI sithControl_GetAxis(SithControlFunction axisId)
         SithControlBindFlag bindflags = pBinding->flags;
 
         if ( (bindflags & SITHCONTROLBIND_AXIS_ENABLED) != 0
-          && ((sithControl_g_controlOptions & 0x20) == 0 || STDCONTROL_ISMOUSEAXIS(pBinding->controlId)) ) // Fixed: Macro extracts correct aid by clearing any additional axis flags. Also macro checks also upper mouse axis bound aid
+            && ((sithControl_g_controlOptions & 0x20) == 0 || STDCONTROL_ISMOUSEAXIS(pBinding->controlId)) ) // Fixed: Macro extracts correct aid by clearing any additional axis flags. Also macro checks also upper mouse axis bound aid
         {
             float axisValue = (float)stdControl_ReadAxisRaw(aControlBindings[axisId].aBindings[i].controlId);
 
@@ -580,7 +581,7 @@ void sithControl_RebindKeyboard(void)
             for ( size_t bindIndex = 0; bindIndex < aControlBindings[funcId].numBindings && !bFound; ++bindIndex )
             {
                 if ( (aControlBindings[funcId].aBindings[bindIndex].flags & SITHCONTROLBIND_AXISCONTROL) == 0
-                  && STDCONTROL_ISKEYBOARDBUTTON(aControlBindings[funcId].aBindings[bindIndex].controlId) )
+                    && STDCONTROL_ISKEYBOARDBUTTON(aControlBindings[funcId].aBindings[bindIndex].controlId) )
                 {
                     sithControl_UnbindFunctionIndex(funcId, bindIndex);
                     bFound = true;
@@ -605,7 +606,7 @@ void sithControl_UnbindJoystickAxes(void)
             {
                 int32_t bAxisControl = pBinding->aBindings[bindIndex].flags & SITHCONTROLBIND_AXISCONTROL;
                 if ( (!bAxisControl && STDCONTROL_ISJOYSTICKBUTTON(pBinding->aBindings[bindIndex].controlId))
-                  || (bAxisControl && STDCONTROL_ISJOYSTICKAXIS(pBinding->aBindings[bindIndex].controlId)) ) // Joystick axis
+                    || (bAxisControl && STDCONTROL_ISJOYSTICKAXIS(pBinding->aBindings[bindIndex].controlId)) ) // Joystick axis
                 {
                     sithControl_UnbindFunctionIndex(funcId, bindIndex);
                     bFound = true;
@@ -635,7 +636,7 @@ void sithControl_UnbindMouseAxes(void)
             {
                 bool bAxis = (aControlBindings[funcId].aBindings[bindIndex].flags & SITHCONTROLBIND_AXISCONTROL) != 0;
                 if ( !bAxis && STDCONTROL_ISMOUSEBUTTON(aControlBindings[funcId].aBindings[bindIndex].controlId)
-                  || bAxis && STDCONTROL_ISMOUSEAXIS(aControlBindings[funcId].aBindings[bindIndex].controlId) )
+                    || bAxis && STDCONTROL_ISMOUSEAXIS(aControlBindings[funcId].aBindings[bindIndex].controlId) )
                 {
                     sithControl_UnbindFunctionIndex(funcId, bindIndex);
                     bFound = true;
@@ -887,11 +888,11 @@ void J3DAPI sithControl_sub_44F334(int (J3DAPI* pfFunc)(size_t, const char*, Sit
             size_t controlId = pBinding->aBindings[j].controlId;
             SithControlBindFlag bflags = pBinding->aBindings[j].flags;
             if ( ((bflags & SITHCONTROLBIND_KEYCONTROL) == 0 || controlId >= STDCONTROL_JOYSTICK_FIRSTKID || a2)
-              && (((bflags & SITHCONTROLBIND_AXISCONTROL) == 0 || controlId < STDCONTROL_AID_MOUSE_X || controlId >= STDCONTROL_MAX_AXES)
-                  && ((bflags & SITHCONTROLBIND_KEYCONTROL) == 0 || controlId < STDCONTROL_KID_MOUSE_LBUTTON || controlId >= STDCONTROL_MAX_KEYID)
-                  || a4)
-              && (((bflags & SITHCONTROLBIND_AXISCONTROL) == 0 || STDCONTROL_ISMOUSEAXIS(controlId))
-                  && ((bflags & SITHCONTROLBIND_KEYCONTROL) == 0 || !STDCONTROL_ISJOYSTICKBUTTON(controlId)) || a3) )
+                && (((bflags & SITHCONTROLBIND_AXISCONTROL) == 0 || controlId < STDCONTROL_AID_MOUSE_X || controlId >= STDCONTROL_MAX_AXES)
+                    && ((bflags & SITHCONTROLBIND_KEYCONTROL) == 0 || controlId < STDCONTROL_KID_MOUSE_LBUTTON || controlId >= STDCONTROL_MAX_KEYID)
+                    || a4)
+                && (((bflags & SITHCONTROLBIND_AXISCONTROL) == 0 || STDCONTROL_ISMOUSEAXIS(controlId))
+                    && ((bflags & SITHCONTROLBIND_KEYCONTROL) == 0 || !STDCONTROL_ISJOYSTICKBUTTON(controlId)) || a3) )
             {
                 bContinue = pfFunc(i, aFunctionNames[i], aControlFlags[i], j, controlId, bflags, &pBinding->aBindings[j].controlId, a5);
                 bKeyBinding = bKeyBinding

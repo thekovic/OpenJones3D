@@ -11,6 +11,10 @@
 
 J3D_EXTERN_C_START
 
+#define SITHWEAPON_HOLSTWEWHIP   1
+#define SITHWEAPON_HOLSTERPISTOL 2
+#define SITHWEAPON_HOLSTERBACK   3
+
 void sithWeapon_Open(void);
 void sithWeapon_Close(void); // Added
 

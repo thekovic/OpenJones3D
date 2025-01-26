@@ -52,6 +52,7 @@ void J3DAPI rdVector_ScaleAdd3(rdVector3* dest, const rdVector3* src, float scal
 void J3DAPI rdVector_ScaleAdd3Acc(rdVector3* dest, const rdVector3* src, float scalar); // Added
 
 float J3DAPI rdVector_Len3(const rdVector3* vec);
+float J3DAPI rdVector_Dist3(const rdVector3* a, const rdVector3* b); // Added
 float J3DAPI rdVector_Dot3(const rdVector3* a, const rdVector3* b);
 
 float J3DAPI rdVector_Cross2(const rdVector2* v1, const rdVector2* v2); // Added
@@ -222,6 +223,14 @@ inline void J3DAPI rdVector_ScaleAdd3Acc(rdVector3* dest, const rdVector3* src, 
 inline float J3DAPI rdVector_Len3(const rdVector3* vec)
 {
     return sqrtf(vec->y * vec->y + vec->z * vec->z + vec->x * vec->x);
+}
+
+inline float J3DAPI rdVector_Dist3(const rdVector3* a, const rdVector3* b)
+{
+    float dx = a->x - b->x;
+    float dy = a->y - b->y;
+    float dz = a->z - b->z;
+    return sqrtf(dx * dx + dy * dy + dz * dz);
 }
 
 inline float J3DAPI rdVector_Dot3(const rdVector3* a, const rdVector3* b)

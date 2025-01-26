@@ -151,7 +151,7 @@ int sithCog_Startup(void)
     sithCog_g_pSymbolTable->firstId = 256; // Is this the SITHCOG_MAXSCRIPTS? 
 
     sithCog_Initialize();
-    sithEvent_RegisterTask(4u, sithCog_TimerEventTask, 0, SITHEVENT_TASKONDEMAND);
+    sithEvent_RegisterTask(SITHCOG_TASKID, sithCog_TimerEventTask, 0, SITHEVENT_TASKONDEMAND);
     sithCog_g_bCogStartup = 1;
     return 0;
 }

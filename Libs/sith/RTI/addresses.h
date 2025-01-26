@@ -273,6 +273,7 @@
 #define sithControl_GetAxis_ADDR 0x0043FEA0
 #define sithControl_GetKey_ADDR 0x0043FF80
 #define sithControl_ReadControls_ADDR 0x00440060
+#define sithControl_FinishRead_ADDR 0x004400A0
 #define sithControl_UnbindJoystickAxes_ADDR 0x004400B0
 #define sithControl_UnbindMouseAxes_ADDR 0x00440130
 #define sithControl_Reset_ADDR 0x004401B0
