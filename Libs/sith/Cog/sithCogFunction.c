@@ -1287,12 +1287,13 @@ void J3DAPI sithCogFunction_SelectWeapon(SithCog* pCog)
     SITH_ASSERTREL(pThing);
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
 
-    // TODO: remove this scope
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-    {
-        sithCogExec_PushInt(pCog, 1);
-        return;
-    }
+    // Removed the debug mode check
+    // TODO: remove this commented scope
+    // if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    // {
+    //     sithCogExec_PushInt(pCog, 1);
+    //     return;
+    // }
 
     if ( !sithInventory_IsWeapon(weaponID) )
     {
@@ -1315,12 +1316,13 @@ void J3DAPI sithCogFunction_SelectWeaponWait(SithCog* pCog)
     int typeID        = sithCogExec_PopInt(pCog);
     SithThing* pThing = sithCogExec_PopThing(pCog);
 
-    // TODO: remove this scope
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-    {
-        sithCogExec_PushInt(pCog, -1);
-        return;
-    }
+    // Removed the debug mode check
+    // TODO: remove this commented scope
+    // if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    // {
+    //     sithCogExec_PushInt(pCog, -1);
+    //     return;
+    // }
 
     if ( !pThing || pThing->type != SITH_THING_PLAYER )
     {
@@ -1364,12 +1366,13 @@ void J3DAPI sithCogFunction_DeselectWeaponWait(SithCog* pCog)
 {
     SithThing* pThing = sithCogExec_PopThing(pCog);
 
-    // TODO: remove this scope
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-    {
-        sithCogExec_PushInt(pCog, -1);
-        return;
-    }
+    // Removed the debug mode check
+    // TODO: remove this commented scope
+    // if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    // {
+    //     sithCogExec_PushInt(pCog, -1);
+    //     return;
+    // }
 
     if ( !pThing || pThing->type != SITH_THING_PLAYER )
     {
@@ -1646,20 +1649,34 @@ void J3DAPI sithCogFunction_SetWeaponModel(SithCog* pCog)
     SITH_ASSERTREL(pThing);
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
 
-    // TODO: Remove if check and set model in any case
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 || pThing->type == SITH_THING_PLAYER )
-    {
-        if ( !sithInventory_g_aTypes[typeId].pModel )
-        {
-            SITHLOG_ERROR("Cog %s: No model available in SetWeaponModel().\n", pCog->aName);
-            return;
-        }
+    // Removed the debug mode check
+    // TODO: Remove this commented scope
+    //if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 || pThing->type == SITH_THING_PLAYER )
+    //{
+    //    if ( !sithInventory_g_aTypes[typeId].pModel )
+    //    {
+    //        SITHLOG_ERROR("Cog %s: No model available in SetWeaponModel().\n", pCog->aName);
+    //        return;
+    //    }
+    //
+    //    sithWeapon_SetWeaponModel(pThing, (SithWeaponId)typeId);
+    //    if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+    //    {
+    //        sithThing_SyncThing(pThing, 2);
+    //    }
+    //}
 
-        sithWeapon_SetWeaponModel(pThing, (SithWeaponId)typeId);
-        if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
-        {
-            sithThing_SyncThing(pThing, 2);
-        }
+    if ( !sithInventory_g_aTypes[typeId].pModel )
+    {
+        SITHLOG_ERROR("Cog %s: No model available in SetWeaponModel().\n", pCog->aName);
+        return;
+    }
+
+    sithWeapon_SetWeaponModel(pThing, (SithWeaponId)typeId);
+
+    if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+    {
+        sithThing_SyncThing(pThing, 2);
     }
 }
 
