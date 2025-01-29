@@ -955,7 +955,7 @@ void sithRender_BuildDynamicLights(void)
                         aVertDynamicLights[vertIdx].blue  = pLight->color.blue - att + aVertDynamicLights[vertIdx].blue;
                     }
 
-                    rdMath_ClampVector3((rdVector3*)&aVertDynamicLights[vertIdx], 0.0f, 1.0f);
+                    rdMath_ClampVector3Acc((rdVector3*)&aVertDynamicLights[vertIdx], 0.0f, 1.0f);
                     // TODO: alpha value is not set
                 }
 
@@ -979,7 +979,7 @@ void sithRender_RenderThings(void)
 
         rdVector4 sectorAmbientLight;
         rdVector_Add4(&sectorAmbientLight, &pSector->ambientLight, &pSector->extraLight);
-        rdMath_ClampVector4(&sectorAmbientLight, 0.0f, 1.0f);
+        rdMath_ClampVector4Acc(&sectorAmbientLight, 0.0f, 1.0f);
         sectorAmbientLight.alpha = 0.0f;
 
         for ( SithThing* pCurThing = pSector->pFirstThingInSector; pCurThing; pCurThing = pCurThing->pNextThingInSector )
@@ -1067,7 +1067,7 @@ void sithRender_RenderThings(void)
                     {
                         rdVector4 ambientLight;
                         rdVector_Add4(&ambientLight, &sectorAmbientLight, &pCurThing->light.color);
-                        rdMath_ClampVector4(&ambientLight, 0.0f, 1.0f);
+                        rdMath_ClampVector4Acc(&ambientLight, 0.0f, 1.0f);
                         ambientLight.alpha = sectorAmbientLight.alpha;
 
                         rdCamera_SetAmbientLight(rdCamera_g_pCurCamera, &ambientLight);

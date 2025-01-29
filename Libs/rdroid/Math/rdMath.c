@@ -59,7 +59,7 @@ void J3DAPI rdMath_CalcSurfaceNormal(rdVector3* pDestNormal, const rdVector3* pV
     pDestNormal->y = d21.z * d31.x - d21.x * d31.z;
     pDestNormal->z = d21.x * d31.y - d21.y * d31.x;
     rdVector_Normalize3Acc(pDestNormal);
-    rdMath_ClipVector3(pDestNormal, 0.000001f);
+    rdMath_ClipVector3Acc(pDestNormal, 0.000001f);
 }
 
 bool J3DAPI rdMath_PointsCollinear(const rdVector3* p1, const rdVector3* p2, const rdVector3* p3)

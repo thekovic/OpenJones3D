@@ -298,7 +298,7 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
     if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
     {
         rdVector_Add4Acc(&pPoly->extraLight, &rdCamera_g_pCurCamera->ambientLight);
-        rdMath_ClampVector4(&pPoly->extraLight, 0.0f, 1.0f); // Added: Clamp to [0,1.0]
+        rdMath_ClampVector4Acc(&pPoly->extraLight, 0.0f, 1.0f); // Added: Clamp to [0,1.0]
     }
 
     pPoly->matCelNum = prdThing->matCelNum;
