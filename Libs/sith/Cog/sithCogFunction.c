@@ -747,7 +747,7 @@ void J3DAPI sithCogFunction_GetThingTemplateCount(SithCog* pCog)
     }
 
     size_t count = 0;
-    for ( size_t i = 0; i < sithWorld_g_pCurrentWorld->lastThingIdx; ++i )
+    for ( int i = 0; i < sithWorld_g_pCurrentWorld->lastThingIdx; ++i )
     {
         SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[i];
         if ( pThing->type && pThing->type != SITH_THING_CORPSE && pThing->pTemplate == pTemplate ) {
@@ -1040,9 +1040,9 @@ void J3DAPI sithCogFunction_HeapSet(SithCog* pCog)
 {
     SithCogSymbolValue val;
     int bValidSym = sithCogExec_PopSymbol(pCog, &val);
-    int idx = sithCogExec_PopInt(pCog);
+    size_t idx = sithCogExec_PopInt(pCog);
 
-    if ( bValidSym && idx >= 0 && idx < pCog->heapSize )
+    if ( bValidSym && idx < pCog->heapSize )
     {
         pCog->aHeap[idx] = val;
     }
@@ -1050,10 +1050,10 @@ void J3DAPI sithCogFunction_HeapSet(SithCog* pCog)
 
 void J3DAPI sithCogFunction_HeapGet(SithCog* pCog)
 {
-    int num = sithCogExec_PopInt(pCog);
-    if ( num < 0 || num >= pCog->heapSize )
+    size_t num = sithCogExec_PopInt(pCog);
+    if ( num >= pCog->heapSize )
     {
-        SITHLOG_ERROR("HeapGet: index %d out of range.\n", num);
+        SITHLOG_ERROR("HeapGet: index %d out of range.\n", (int)num);
         sithCogExec_PushInt(pCog, 0);
         return;
     }
@@ -2039,6 +2039,8 @@ void J3DAPI sithCogFunction_DebugInt(SithCog* pCog)
 
 void J3DAPI sithCogFunction_DebugWaitForKey(SithCog* pCog)
 {
+    J3D_UNUSED(pCog);
+
     // Added: This scope was not present in the original debug version
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 ) {
         return;
