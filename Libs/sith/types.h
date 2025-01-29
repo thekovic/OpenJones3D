@@ -2630,11 +2630,12 @@ struct sSithCogSyntaxNode
 typedef struct sSithCogThingLink
 {
     SithThing* pThing;
-    int thingSignature;
+    uint32_t thingSignature;
     SithCog* pCog;
     int linkId;
     int mask;
 } SithCogThingLink;
+static_assert(sizeof(SithCogThingLink) == 20, "sizeof(SithCogThingLink) == 20");
 
 typedef struct sSithCogSectorLink
 {
