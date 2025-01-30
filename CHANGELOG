@@ -6,6 +6,9 @@ General:
     * `sithConsole` (7879d45)
     * `sithCommand` (4ec4941)
     * `sithCogFunction` (33f8f9d)
+    * `sithCogFunctionSector` (e46c2ab)
+    * `sithCogFunctionSurface` (40b6d38)
+    * `sithCogFunctionSound` (2df2214)
 
 Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
@@ -50,7 +53,8 @@ Game play:
   - Changed how developer dialog discovers level files (30630d1)
     Now dialog first looks for ndy folder in current working directory, and if found searches for level files in that folder. If ndy folder is not found the dialog checks for level files in `Install Path\Resource\ndy`.
   - Fixed searching for ndy level file when corresponding cnd file is not found (5e64e5b)
-    When game progresses to the next level this enables using ndy file for original levels when the corresponding cnd file is not found 
+    When game progresses to the next level this enables using ndy file for original levels when the corresponding cnd file is not found
+  - Enabled weapon COG functions in devmode (a9cbc0b)
 
 HUD:
   - Fixed drawing of horizontal wall line (8046835)
