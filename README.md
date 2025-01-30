@@ -136,7 +136,7 @@ rdroid: 100.00% (219/219)
     rdCache:       100.00% (14/14)
     rdFace:        100.00% (2/2)
 
-sith: 41.03% (771/1879)
+sith: 45.29% (851/1879)
     sithAI:                  0.00% (0/27)
     sithAIAwareness:         0.00% (0/8)
     sithAIClass:             0.00% (0/12)
@@ -148,9 +148,9 @@ sith: 41.03% (771/1879)
     sithCogFunction:       100.00% (133/133)
     sithCogFunctionAI:       0.00% (0/60)
     sithCogFunctionPlayer:   0.00% (0/37)
-    sithCogFunctionSector:   0.00% (0/25)
-    sithCogFunctionSound:    0.00% (0/17)
-    sithCogFunctionSurface:  0.00% (0/38)
+    sithCogFunctionSector: 100.00% (25/25)
+    sithCogFunctionSound:  100.00% (17/17)
+    sithCogFunctionSurface:100.00% (38/38)
     sithCogFunctionThing:    0.00% (0/215)
     sithCogParse:            0.00% (0/29)
     sithCogYacc:             0.00% (0/10)
@@ -253,5 +253,5 @@ Jones3D: 67.46% (255/378)
     jonesInventory:100.00% (15/15)
 
 
-Overall Progress: 53.43% | 1548 implemented out of 2897
+Overall Progress: 56.20% | 1628 implemented out of 2897
 ```
