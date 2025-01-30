@@ -649,8 +649,8 @@ void J3DAPI sithCogFunction_GetKeyLen(SithCog* pCog)
         sithCogExec_PushFlex(pCog, 0.0f);
         return;
     }
-    SITHLOG_ERROR("Cog %s: GetKeyLen %s %d %f.\n", pCog->aName, pKeyframe->aName, pKeyframe->numFrames, pKeyframe->fps);
 
+    SITHLOG_DEBUG("Cog %s: GetKeyLen %s %d %f.\n", pCog->aName, pKeyframe->aName, pKeyframe->numFrames, pKeyframe->fps);
     float len = (float)pKeyframe->numFrames / pKeyframe->fps;
     sithCogExec_PushFlex(pCog, len);
 }
