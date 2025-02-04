@@ -535,7 +535,7 @@ void* J3DAPI sithCogExec_PopPointer(SithCog* pCog)
     SithCogSymbolValue returnVal;
     if ( !sithCogExec_PopStack(pCog, &returnVal) )
     {
-        return 0;
+        return NULL;
     }
 
     SithCogSymbolValue retVal;
@@ -556,6 +556,7 @@ const char* J3DAPI sithCogExec_PopString(SithCog* pCog)
 
     if ( value.type != SITHCOG_VALUE_SYMBOLID )
     {
+        SITHLOG_ERROR("Cog %s: Expected string, got constant of type %d.\n", pCog->aName, value.type);
         return NULL;
     }
 
@@ -566,6 +567,8 @@ const char* J3DAPI sithCogExec_PopString(SithCog* pCog)
     {
         return pSymbol->val.val.pString;
     }
+
+    SITHLOG_ERROR("Cog %s: Expected string, got constant of type %d.\n", pCog->aName, value.type);
 
 #ifdef J3D_DEBUG
     // TODO: Verify this is correct, found in debug version
@@ -700,10 +703,10 @@ void J3DAPI sithCogExec_FunctionCallOp(SithCog* pCog)
 
     SithCogSymbol* pSymbol = NULL;
     if ( sithCogExec_PopStack(pCog, &value)
-      && value.type == SITHCOG_VALUE_SYMBOLID
-      && (pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, value.val.intValue)) != 0
-      && pSymbol->val.type == SITHCOG_VALUE_POINTER
-      && (pfCogFunction = (SithCogFunctionType)pSymbol->val.val.pointerValue) != NULL )
+        && value.type == SITHCOG_VALUE_SYMBOLID
+        && (pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, value.val.intValue)) != 0
+        && pSymbol->val.type == SITHCOG_VALUE_POINTER
+        && (pfCogFunction = (SithCogFunctionType)pSymbol->val.val.pointerValue) != NULL )
     {
         pfCogFunction(pCog);
     }
