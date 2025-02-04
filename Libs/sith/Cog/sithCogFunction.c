@@ -2011,16 +2011,16 @@ void J3DAPI sithCogFunction_DebugPrint(SithCog* pCog)
 {
     const char* pStr = sithCogExec_PopString(pCog);
     if ( pStr ) {
-        SITHLOG_ERROR("%s\n", pStr);
+        SITHLOG_DEBUG("%s\n", pStr);
     }
 }
 
 void J3DAPI sithCogFunction_DebugFlex(SithCog* pCog)
 {
+    const float val  = sithCogExec_PopFlex(pCog);
     const char* pStr = sithCogExec_PopString(pCog);
-    float val = sithCogExec_PopFlex(pCog);
     if ( pStr ) {
-        SITHLOG_ERROR("%s (%f)\n", pStr, val);
+        SITHLOG_DEBUG("%s (%f)\n", pStr, val);
     }
 
     sithCogExec_PushFlex(pCog, val);
@@ -2028,10 +2028,10 @@ void J3DAPI sithCogFunction_DebugFlex(SithCog* pCog)
 
 void J3DAPI sithCogFunction_DebugInt(SithCog* pCog)
 {
+    const int val    = sithCogExec_PopInt(pCog);
     const char* pStr = sithCogExec_PopString(pCog);
-    int val  = sithCogExec_PopInt(pCog);
     if ( pStr ) {
-        SITHLOG_ERROR("%s (%d)\n", pStr, val);
+        SITHLOG_DEBUG("%s (%d)\n", pStr, val);
     }
 
     sithCogExec_PushInt(pCog, val);
