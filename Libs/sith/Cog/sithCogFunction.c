@@ -2037,6 +2037,26 @@ void J3DAPI sithCogFunction_DebugInt(SithCog* pCog)
     sithCogExec_PushInt(pCog, val);
 }
 
+void J3DAPI sithCogFunction_DebugVector(SithCog* pCog)
+{
+    rdVector3 vec = { 0 };
+    char aVecStr[64] = { 0 }; // Added: Init to 0
+    if ( !sithCogExec_PopVector(pCog, &vec) )
+    {
+        STD_FORMAT(aVecStr, "Bad vector");
+    }
+    else
+    {
+        STD_FORMAT(aVecStr, "<%f %f %f>", vec.x, vec.y, vec.z);
+    }
+
+    const char* pStr = sithCogExec_PopString(pCog);
+    if ( pStr ) {
+        SITHLOG_DEBUG("%s %s\n", pStr, aVecStr);
+    }
+    sithCogExec_PushVector(pCog, &vec);
+}
+
 void J3DAPI sithCogFunction_DebugWaitForKey(SithCog* pCog)
 {
     J3D_UNUSED(pCog);
@@ -2198,6 +2218,7 @@ int J3DAPI sithCogFunction_RegisterFunctions(SithCogSymbolTable* pTable)
         || sithCog_RegisterFunction(pTable, sithCogFunction_DebugPrint, "debugprint") // Added: From debug version
         || sithCog_RegisterFunction(pTable, sithCogFunction_DebugFlex, "debugflex")   // Added: From debug version
         || sithCog_RegisterFunction(pTable, sithCogFunction_DebugInt, "debugint")     // Added: From debug version
+        || sithCog_RegisterFunction(pTable, sithCogFunction_DebugVector, "debugvector") // Added
         || sithCog_RegisterFunction(pTable, sithCogFunction_DebugLocalSymbols, "debuglocalsymbols") // Added: From debug version
         || sithCog_RegisterFunction(pTable, sithCogFunction_DebugWaitForKey, "debugwaitforkey"); // Added: From debug version
 }
