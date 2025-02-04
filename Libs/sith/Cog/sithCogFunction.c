@@ -47,6 +47,18 @@ void J3DAPI sithCogFunction_EnablePrint(bool bEnable)
     bPrintEnabled = bEnable;
 }
 
+void J3DAPI EnablePrint(SithCog* pCog)
+{
+    int curPrint = bPrintEnabled ? 1 : 0;
+    sithCogFunction_EnablePrint(sithCogExec_PopInt(pCog) != 0);
+    sithCogExec_PushInt(pCog, curPrint);
+}
+
+void J3DAPI IsPrintEnabled(SithCog* pCog)
+{
+    sithCogExec_PushInt(pCog, bPrintEnabled ? 1 : 0);
+}
+
 void J3DAPI sithCogFunction_GetSenderID(SithCog* pCog)
 {
     sithCogExec_PushInt(pCog, pCog->linkId);
@@ -2115,6 +2127,8 @@ int J3DAPI sithCogFunction_RegisterFunctions(SithCogSymbolTable* pTable)
         || sithCog_RegisterFunction(pTable, sithCogFunction_LoadTemplate, "loadtemplate")
         || sithCog_RegisterFunction(pTable, sithCogFunction_LoadKeyframe, "loadkeyframe")
         || sithCog_RegisterFunction(pTable, sithCogFunction_LoadModel, "loadmodel")
+        || sithCog_RegisterFunction(pTable, EnablePrint, "enableprint")
+        || sithCog_RegisterFunction(pTable, IsPrintEnabled, "isprintenabled")
         || sithCog_RegisterFunction(pTable, sithCogFunction_Print, "print")
         || sithCog_RegisterFunction(pTable, sithCogFunction_PrintInt, "printint")
         || sithCog_RegisterFunction(pTable, sithCogFunction_PrintFlex, "printflex")
