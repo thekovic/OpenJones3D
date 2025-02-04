@@ -2,6 +2,20 @@
 General:
   - Fixed various bugs
   - Fixed hiding console on cutscene start (27ca92b)
+  - Added developer COG verbs (33f8f9d)
+  - Added error log when popping invalid string from COG stack (34c9e20)
+  - Changed argument order of debug print COG functions (a80ed30)
+    Also changed the log level to debug.
+  - Added new system COG functions:
+    * `DebugVector` (eb860f8)
+    * `EnablePrint` (32763c2)
+    * `IsPrintEnabled` (32763c2)
+    * `DebugPrint` (33f8f9d)
+    * `DebugFlex` (33f8f9d)
+    * `DebugInt` (33f8f9d)
+    * `DebugLocalSymbols` (33f8f9d)
+    * `DebugWaitForKey` (33f8f9d)
+  - Implemented `Print*` Cog functions (33f8f9d) 
   - Implemented:
     * `sithConsole` (7879d45)
     * `sithCommand` (4ec4941)
