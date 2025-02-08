@@ -352,7 +352,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
         case JONES_STARTMODE_STARTGAME:
         {
             sscanf_s(lpCmdLine, "%d", &JonesMain_curLevelNum);
-            if ( JonesMain_curLevelNum == JONESLEVEL_GENERICLEVELNUM || JonesMain_curLevelNum > JONESLEVEL_NUMLEVELS )
+            if ( !JonesLevel_IsValidLevelNum(JonesMain_curLevelNum) ) // Fixed out of bound read by setting the upper bound to equal or greater
             {
                 JonesMain_curLevelNum = JONESLEVEL_FIRSTLEVELNUM;
             }
