@@ -297,7 +297,7 @@ typedef enum eSithDebugModeFlag
     SITHDEBUG_TRACKSHOTS                 = 0x40,
     SITHDEBUG_AIDISABLED                 = 0x80,
     SITHDEBUG_INEDITOR                   = 0x100,
-    SITHDEBUG_AILOOK_FOR_TARGET_DISABLED = 0x200,
+    SITHDEBUG_AINOTARGET                 = 0x200,
     SITHDEBUG_SLOWMODE                   = 0x400,
 } SithDebugModeFlag;
 

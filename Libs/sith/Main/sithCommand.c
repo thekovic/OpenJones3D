@@ -111,7 +111,7 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
 
         case 5:
             pFlags = &sithMain_g_sith_mode.debugModeFlags;
-            newFlags = SITHDEBUG_AILOOK_FOR_TARGET_DISABLED;
+            newFlags = SITHDEBUG_AINOTARGET;
             break;
 
         case 6:
