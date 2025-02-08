@@ -3,6 +3,7 @@
 
 #include <Jones3D/Display/JonesConsole.h>
 #include <Jones3D/Display/JonesHud.h>
+#include <Jones3D/Main/JonesLevel.h>
 #include <Jones3D/Main/JonesMain.h>
 #include <Jones3D/Play/jonesInventory.h>
 #include <Jones3D/RTI/symbols.h>
@@ -136,7 +137,7 @@ void jonesCog_EndLevel(void)
 
     sithSoundMixer_StopAll();
 
-    if ( sithPlayer_g_curLevelNum >= 17 ) { // If cur level is Peru or higher show end credits
+    if ( sithPlayer_g_curLevelNum >= JONESLEVEL_BONUSLEVELNUM ) { // If cur level is Peru or higher show end credits
         JonesMain_ShowEndCredits();
     }
     else if ( JonesHud_ShowLevelCompleted() )
@@ -144,7 +145,7 @@ void jonesCog_EndLevel(void)
         JonesMain_SetBonusLevel();
         sithPlayer_g_bBonusMapBought = 1;
     }
-    else if ( sithPlayer_g_curLevelNum != 16 || sithPlayer_g_bBonusMapBought ) {
+    else if ( sithPlayer_g_curLevelNum != JONESLEVEL_LASTLEVELNUM || sithPlayer_g_bBonusMapBought ) {
         JonesMain_NextLevel();
     }
     else
