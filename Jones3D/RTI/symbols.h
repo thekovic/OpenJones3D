@@ -6,7 +6,7 @@
 #include <sith/types.h>
 #include <std/types.h>
 
-#define JonesConsole_Startup_TYPE int (J3DAPI*)()
+#define JonesConsole_Startup_TYPE int (*)(void)
 #define JonesConsole_Shutdown_TYPE void (*)(void)
 #define JonesConsole_Open_TYPE int (*)(void)
 #define JonesConsole_Close_TYPE void (*)(void)
@@ -15,7 +15,7 @@
 #define JonesConsole_PrintTextWithID_TYPE void (J3DAPI*)(int, const char*)
 #define JonesConsole_ClearText_TYPE void (J3DAPI*)(int)
 #define JonesConsole_ExeCommand_TYPE int (J3DAPI*)(const char*)
-#define JonesConsole_ShowConsole_TYPE void (J3DAPI*)()
+#define JonesConsole_ShowConsole_TYPE void (*)(void)
 #define JonesConsole_HandelChar_TYPE void (J3DAPI*)(char)
 #define JonesConsole_FlushCommandLine_TYPE void (*)(void)
 #define JonesConsole_HideConsole_TYPE void (*)(void)
@@ -23,7 +23,7 @@
 #define JonesConsole_PrintFramerate_TYPE int (J3DAPI*)(const SithConsoleCommand*, const char*)
 #define JonesConsole_PrintPolys_TYPE int (J3DAPI*)(const SithConsoleCommand*, const char*)
 #define JonesConsole_ShowEndCredits_TYPE int (J3DAPI*)(const SithConsoleCommand*, const char*)
-#define JonesConsole_RemoveExpired_TYPE int (J3DAPI*)()
+#define JonesConsole_RemoveExpired_TYPE int (*)(void)
 #define JonesHud_Startup_TYPE int (*)(void)
 #define JonesHud_Shutdown_TYPE void (*)(void)
 #define JonesHud_Open_TYPE int (*)(void)

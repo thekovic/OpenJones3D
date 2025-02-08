@@ -27,7 +27,6 @@
 #include <w32util/wuRegistry.h>
 #include <wkernel/wkernel.h>
 
-
 static size_t JonesDisplay_primaryDisplayNum  = 1;
 static uint32_t JonesDisplay_backBufferWidth  = 0; // Added: init to 0
 static uint32_t JonesDisplay_backBufferHeight = 0;

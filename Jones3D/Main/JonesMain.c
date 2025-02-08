@@ -63,7 +63,6 @@
 #define JONES_QUICKSAVE_TEXTSHOWTIME    1000u // 1 sec
 #define JONES_QUICKSAVE_TEXTSHOWTIMERID 1u 
 
-#define JONES_FPSPRINT_CONSOLEID 102u
 #define JONES_FPSPRINT_INTERVAL  2000u // 2 sec
 
 #define JONES_LOGCONSOLE_ERRORCOLOR    FOREGROUND_RED | FOREGROUND_INTENSITY
@@ -1347,7 +1346,7 @@ void JonesMain_PrintFramerate(void)
                 sithRender_g_numDrawnThings
             );
 
-            JonesConsole_PrintTextWithID(JONES_FPSPRINT_CONSOLEID, std_g_genBuffer);
+            JonesConsole_PrintTextWithID(JONESCONSOLE_FRAMERATEID, std_g_genBuffer);
             STDLOG_STATUS("%s\n", std_g_genBuffer);
         }
     }

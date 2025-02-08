@@ -16,6 +16,8 @@
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
 
+#define JONESCONSOLE_COMMANDLINEID 103
+
 static bool JonesConsole_bOpened = false;
 
 size_t JonesConsole_nextIndex = 0;
@@ -29,6 +31,16 @@ static char JonesConsole_aUnused_552770[2304]; // Unused
 static rdFont* JonesConsole_pFont = NULL;
 static tHashTable* pFuncHashtbl   = NULL;
 
+void JonesConsole_FlushToDisplay(void);
+int JonesConsole_RemoveExpired(void);
+
+int J3DAPI JonesConsole_ExeCommand(const char* pLine);
+void JonesConsole_FlushCommandLine(void);
+
+int J3DAPI JonesConsole_PrintVersion(const SithConsoleCommand* pFunc, const char* pArg);
+int J3DAPI JonesConsole_PrintFramerate(const SithConsoleCommand* pFunc, const char* pArg);
+int J3DAPI JonesConsole_PrintPolys(const SithConsoleCommand* pFunc, const char* pArg);
+int J3DAPI JonesConsole_ShowEndCredits(const SithConsoleCommand* pFunc, const char* pArg);
 
 void JonesConsole_InstallHooks(void)
 {
@@ -58,7 +70,7 @@ void JonesConsole_ResetGlobals(void)
     memset(&JonesConsole_g_bStarted, 0, sizeof(JonesConsole_g_bStarted));
 }
 
-int J3DAPI JonesConsole_Startup()
+int JonesConsole_Startup(void)
 {
     STD_ASSERTREL(!JonesConsole_g_bStarted);
     if ( sithConsole_Startup() )
@@ -108,10 +120,8 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_PrintPolys, "polys", 0);
     sithConsole_RegisterCommand(JonesConsole_ShowEndCredits, "endcredit", 0);
 
-    // sithConsole_RegisterCommand(JonesConsole_JumpLevel, "jumplevel", 0);
+    //sithConsole_RegisterCommand(JonesConsole_JumpLevel, "jumplevel", 0);
     //sithConsole_RegisterCommand(JonesConsole_Radius, "radius", 0);
-    //sithConsole_RegisterCommand(JonesConsole_KatOn, "katon", 0);
-    //sithConsole_RegisterCommand(JonesConsole_KatOff, "katoff", 0);
     //sithConsole_RegisterCommand(JonesConsole_PVS, "pvs", 0);
     //sithConsole_RegisterCommand(JonesConsole_NextLevel, "nextlevel", 0);
     //sithConsole_RegisterCommand(JonesConsole_EndLevel, "endlevel", 0);
@@ -297,7 +307,7 @@ int J3DAPI JonesConsole_ExeCommand(const char* pLine)
     return 1;
 }
 
-void J3DAPI JonesConsole_ShowConsole()
+void JonesConsole_ShowConsole(void)
 {
     JonesConsole_g_bVisible = 1;
 
@@ -338,14 +348,14 @@ void J3DAPI JonesConsole_HandelChar(char chr)
 
 void JonesConsole_FlushCommandLine(void)
 {
-    JonesConsole_PrintTextWithID(103, JonesConsole_aCmdLine);
+    JonesConsole_PrintTextWithID(JONESCONSOLE_COMMANDLINEID, JonesConsole_aCmdLine);
 }
 
 void JonesConsole_HideConsole(void)
 {
     JonesConsole_cursorPos = 0;
     JonesConsole_g_bVisible = 0;
-    JonesConsole_ClearText(103);
+    JonesConsole_ClearText(JONESCONSOLE_COMMANDLINEID);
     stdControl_SetActivation(1);
 }
 
@@ -362,7 +372,7 @@ int J3DAPI JonesConsole_PrintFramerate(const SithConsoleCommand* pFunc, const ch
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
 
-    JonesConsole_ClearText(102);
+    JonesConsole_ClearText(JONESCONSOLE_FRAMERATEID);
     JonesMain_TogglePrintFramerate();
     return 1;
 }
@@ -394,7 +404,7 @@ int J3DAPI JonesConsole_ShowEndCredits(const SithConsoleCommand* pFunc, const ch
     return 1;
 }
 
-int J3DAPI JonesConsole_RemoveExpired()
+int JonesConsole_RemoveExpired(void)
 {
     size_t nextIdx = 0;
     size_t time = stdPlatform_GetTimeMsec();
