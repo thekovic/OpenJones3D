@@ -48,6 +48,7 @@
 #include <w32util/wuRegistry.h>
 
 #define SITH_PATHSIZE 128
+#define SITH_DEFAULTGAMEDIFFICULTY 5
 
 static bool sith_bStartup = false; // Added: Init to false
 static bool sith_bOpen    = false; // Added: Init to false
@@ -75,6 +76,7 @@ float sith_unknownRadius2;
 
 static const SithMainStartLevelNdsInfo sithMain_aLevelNdsInfos[17] =
 {
+    // Note all level file names must be of 6 chars; see sithGetCurrentWorldSaveName
     { "SITHSTRING_STARTCYN", "00_CYN" },
     { "SITHSTRING_STARTBAB", "01_BAB" },
     { "SITHSTRING_STARTRIV", "02_RIV" },
@@ -212,7 +214,7 @@ int sithStartup(void)
 
     memset(&sithMain_g_sith_mode, 0, sizeof(sithMain_g_sith_mode));
 
-    int difficulty = wuRegistry_GetInt("Difficulty", 5);
+    int difficulty = wuRegistry_GetInt("Difficulty", SITH_DEFAULTGAMEDIFFICULTY);
     sithSetGameDifficulty(difficulty);
 
     memset(sith_aTmpAutoSaveFilePrefix, 0, sizeof(sith_aTmpAutoSaveFilePrefix));
@@ -859,12 +861,12 @@ const char* sithGetCurrentWorldSaveName(void)
     size_t i;
     for ( i = 0; ; ++i )
     {
-        if ( i >= 17 )
+        if ( i >= STD_ARRAYLEN(sithMain_aLevelNdsInfos) )
         {
             return sithWorld_g_pCurrentWorld->aName;
         }
 
-        if ( !strncmpi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aLevelNamePrefix, 6u) )
+        if ( !strncmpi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aFilename, 6u) )
         {
             break;
         }
@@ -889,7 +891,7 @@ const char* sithGetCurrentWorldSaveName(void)
 
 const char* J3DAPI sithGetLevelSaveFilename(size_t levelNum)
 {
-    if ( levelNum >= 17 )
+    if ( levelNum >= STD_ARRAYLEN(sithMain_aLevelNdsInfos) )
     {
         return 0;
     }

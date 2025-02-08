@@ -2936,7 +2936,7 @@ typedef struct sCndSurfaceAdjoin
 typedef struct sSithMainStartLevelNdsInfo
 {
     const char* aName;
-    const char* aLevelNamePrefix;
+    const char* aFilename;
 } SithMainStartLevelNdsInfo;
 
 typedef struct sSithQuetzAnimInfo
