@@ -126,20 +126,24 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
     // Set/Clear flag
     if ( pArg )
     {
-        if ( !strcmpi(pArg, "on") || !strcmpi(pArg, "1") )
+        bool bON;
+        if ( sithCommand_ParseBool(pArg, &bON) )
         {
-            *pFlags |= newFlags;
-            if ( pFunc->flags == 4 ) // invul
+            if ( bON )
             {
-                sithPlayer_g_bPlayerInvulnerable = 1;
+                *pFlags |= newFlags;
+                if ( pFunc->flags == 4 ) // invul
+                {
+                    sithPlayer_g_bPlayerInvulnerable = 1;
+                }
             }
-        }
-        else if ( !strcmpi(pArg, "off") || !strcmpi(pArg, "0") )
-        {
-            *pFlags &= ~newFlags;
-            if ( pFunc->flags == 4 )    // invul
+            else
             {
-                sithPlayer_g_bPlayerInvulnerable = 0;
+                *pFlags &= ~newFlags;
+                if ( pFunc->flags == 4 )    // invul
+                {
+                    sithPlayer_g_bPlayerInvulnerable = 0;
+                }
             }
         }
     }
