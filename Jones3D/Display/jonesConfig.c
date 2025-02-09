@@ -2527,9 +2527,9 @@ UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                         if ( strlen(aPath) )
                         {
                             if ( !JonesMain_HasStarted()
-                              || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
-                              || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0
-                              || jonesConfig_ShowLoadGameWarningMsgBox(hDlg) == 1 )
+                                || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DYING) != 0
+                                || (sithPlayer_g_pLocalPlayerThing->flags & SITH_TF_DESTROYED) != 0
+                                || jonesConfig_ShowLoadGameWarningMsgBox(hDlg) == 1 )
                             {
                                 return FALSE;
                             }
@@ -3116,8 +3116,7 @@ void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
     JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
     if ( bEnable )
     {
-        sithControl_UnbindMouseAxes();
-        sithControl_RegisterMouseBindings();
+        sithControl_RebindMouse();
     }
 
     else if ( pSettings->bWindowMode )
