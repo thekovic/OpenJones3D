@@ -115,15 +115,49 @@ void stdControl_DisableReadJoysticks(void);
 int J3DAPI stdControl_EnableAxis(int axisID);
 
 void stdControl_ReadControls(void);
+void stdControl_FinishRead(void); // Added
+
 float J3DAPI stdControl_ReadAxis(size_t axis);
 int J3DAPI stdControl_ReadAxisRaw(size_t axis);
 float J3DAPI stdControl_ReadKeyAsAxis(size_t keyId);
-int J3DAPI stdControl_ReadAxisAsKey(size_t axis, int* pNumPressed);
-int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pNumPressed, float lowValue);
-int J3DAPI stdControl_ReadKey(size_t keyNum, int* pNumPressed);
-void stdControl_FinishRead(void); // Added
 
-void J3DAPI stdControl_RegisterMouseAxesXY(float xrange, float yrange); // Added
+/**
+ * @brief Emulates a key press from a joystick/gamepad axis.
+ *
+ * Returns non-zero if the axis is "pressed". If pbPressed is not NULL,
+ * it is set to non-zero if the axis was just pressed - always true if non-zero value is returned.
+ *
+ * @param axis - The axis index.
+ * @param pbPressed - Pointer to an int for the "just pressed" state.
+ * @return A non-zero value if the key is currently pressed down; zero otherwise.
+ */
+int J3DAPI stdControl_ReadAxisAsKey(size_t axis, int* pbPressed);
+
+/**
+ * @brief Emulates a key press from a joystick/gamepad axis with a threshold.
+ *
+ * Returns non-zero if the axis value exceeds the specified threshold. If pbPressed is not NULL,
+ * it is set to non-zero if the axis was just pressed - always true if non-zero value is returned.
+ *
+ * @param axis - The axis index.
+ * @param pbPressed - Pointer to an int for the "just pressed" state.
+ * @param lowValue - The threshold value for detecting a press.
+ * @return A non-zero value if the key is currently pressed down; zero otherwise.
+ */
+int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pbPressed, float lowValue);
+
+/**
+ * @brief Reads the current and just pressed state of a specified key.
+ *
+ * Returns non-zero if the key is currently pressed. If pbPressed is not NULL,
+ * it is set to non-zero if the key was just pressed.
+ *
+ * @param keyNum - The key identifier.
+ * @param pbPressed - Pointer to an int for the "just pressed" state.
+ *
+ * @return A non-zero value if the key is currently pressed down; zero otherwise.
+ */
+int J3DAPI stdControl_ReadKey(size_t keyNum, int* pbPressed);
 
 int stdControl_ControlsActive(void);
 int J3DAPI stdControl_SetActivation(int bActive); // returns 0 if mouse control was successfully processed 
@@ -132,34 +166,22 @@ int stdControl_ToggleMouse(void);
 int J3DAPI stdControl_EnableMouse(int bEnable);
 bool stdControl_IsMouseEnabled(void); // Added
 
+void J3DAPI stdControl_RegisterMouseAxesXY(float xrange, float yrange); // Added
+void stdControl_ResetMousePos(void);
+int stdControl_MouseSensitivityEnabled(void); // Added: From debug version
+void J3DAPI stdControl_EnableMouseSensitivity(int bEnable);
+void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivity); // Added
+void J3DAPI stdControl_ShowMouseCursor(int bShow);
+
 int stdControl_ControlsIdle(void);
 
 int J3DAPI stdControl_TestAxisFlag(size_t axis, StdControlAxisFlag flags);
 void J3DAPI stdControl_SetAxisFlags(size_t axis, StdControlAxisFlag flags);
 
-void J3DAPI stdControl_InitJoysticks();
-void J3DAPI stdControl_InitKeyboard(int bForeground);
-void J3DAPI stdControl_InitMouse();
-
-void J3DAPI stdControl_EnableAxisRead(size_t axis);
-
-void stdControl_ReadKeyboard(void);
-void stdControl_ReadJoysticks(void);
-void J3DAPI stdControl_ReadMouse();
-
 void J3DAPI stdControl_RegisterAxis(size_t aid, int min, int max, float deadzoneScale);
-
-const char* J3DAPI stdControl_DIGetStatus(int HRESULT);
-BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, LPVOID pContext);
-
-void stdControl_ResetMousePos(void);
-
 size_t stdControl_GetMaxJoystickButtons(void);
 size_t stdControl_GetNumJoysticks(void);
-
-void J3DAPI stdControl_EnableMouseSensitivity(int bEnable);
-void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivity); // Added
-void J3DAPI stdControl_ShowMouseCursor(int bShow);
+const char* J3DAPI stdControl_GetJoysticDescription(int joyNum); // Added: From debug version
 
 int J3DAPI stdControl_IsGamePad(int joyNum);
 
