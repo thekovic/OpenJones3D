@@ -31,6 +31,7 @@ SithControlBinding* J3DAPI sithControl_BindAxis(SithControlFunction functionId, 
 
 void J3DAPI sithControl_UnbindFunction(SithControlFunction fctnID);
 void J3DAPI sithControl_UnbindFunctionIndex(size_t funcId, size_t bindIndex);
+void J3DAPI sithControl_UnbindFunctionControl(SithControlFunction fctnID, size_t controlId); // Added
 void J3DAPI sithControl_UnbindControl(SithControlBindFlag flags, size_t controlId);
 
 void J3DAPI sithControl_RegisterControlCallback(SithControlCallback pfCallback);
@@ -57,6 +58,8 @@ void sithControl_RegisterControlFunctions(void);
 void sithControl_RegisterKeyboardBindings(void);
 void sithControl_RegisterJoystickBindings(void);
 void sithControl_RegisterMouseBindings(void); // Added
+
+void sithControl_EnableDevControls(bool bEnable); // Added
 
 // Helper hooking functions
 void sithControl_InstallHooks(void);

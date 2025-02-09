@@ -524,7 +524,7 @@ void J3DAPI JonesConsole_EnableDevMode(bool bEnable)
     }
 
     // Following required due to SITHDEBUG_INEDITOR
-    sithControl_RebindKeyboard(); // Enable dev keys. Note, this will reset key config to default, might be better to do some jonesConfig action here
+    sithControl_EnableDevControls(bEnable);
     if ( stdControl_IsMouseEnabled() ) {
         sithControl_RebindMouse();
     }

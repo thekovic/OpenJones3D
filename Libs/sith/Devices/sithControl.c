@@ -291,6 +291,19 @@ void J3DAPI sithControl_UnbindFunctionIndex(size_t funcId, size_t bindIndex) // 
     }
 }
 
+void J3DAPI sithControl_UnbindFunctionControl(SithControlFunction fctnID, size_t controlId)
+{
+    SITH_ASSERTREL((((fctnID) >= (0)) ? (((fctnID) <= (SITHCONTROL_MAXFUNCTIONS - 1)) ? 1 : 0) : 0));
+    for ( size_t bindIndex = 0; bindIndex < aControlBindings[fctnID].numBindings; ++bindIndex )
+    {
+        if ( aControlBindings[fctnID].aBindings[bindIndex].controlId == controlId )
+        {
+            sithControl_UnbindFunctionIndex(fctnID, bindIndex);
+            return;
+        }
+    }
+}
+
 void J3DAPI sithControl_UnbindControl(SithControlBindFlag flags, size_t controlId)
 {
     for ( size_t funcId = 0; funcId < SITHCONTROL_MAXFUNCTIONS; funcId++ )
@@ -749,7 +762,7 @@ void sithControl_RegisterKeyboardBindings(void)
         sithControl_BindControl(SITHCONTROL_FIRE1, DIK_RCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_FIRE1, DIK_LCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_ACT3, DIK_Z, (SithControlBindFlag)0);
-        sithControl_BindControl(SITHCONTROL_ACTIVATE, DIK_F11, (SithControlBindFlag)0); // Changed: Changed to DIK_F11 from DIK_GRAVE
+        sithControl_BindControl(SITHCONTROL_ACTIVATE, DIK_GRAVE, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_ACT2, DIK_LCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_ACT2, DIK_RCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_WSELECT0, DIK_0, (SithControlBindFlag)0);
@@ -783,15 +796,7 @@ void sithControl_RegisterKeyboardBindings(void)
         // Note this if scope is removed in release version but we'll keep it
         if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
         {
-            sithControl_BindControl(SITHCONTROL_DEBUG, DIK_BACK, (SithControlBindFlag)0);
-            sithControl_BindControl(SITHCONTROL_GAMMA, DIK_F5, (SithControlBindFlag)0);
-
-            sithControl_BindControl(SITHCONTROL_MLOOK, DIK_V, (SithControlBindFlag)0);
-            sithControl_BindControl(SITHCONTROL_FORWARD, DIK_W, (SithControlBindFlag)0);
-            sithControl_BindControl(SITHCONTROL_PITCH, DIK_PRIOR, SITHCONTROLBIND_INVERT_AXIS);
-            sithControl_BindControl(SITHCONTROL_PITCH, DIK_NEXT, (SithControlBindFlag)0);
-            sithControl_BindControl(SITHCONTROL_CENTER, DIK_HOME, (SithControlBindFlag)0);
-            sithControl_BindControl(SITHCONTROL_CENTER, DIK_NUMPAD5, (SithControlBindFlag)0);
+            sithControl_EnableDevControls(true);
         }
     }
 }
@@ -921,5 +926,34 @@ void J3DAPI sithControl_sub_44F334(int (J3DAPI* pfFunc)(size_t, const char*, Sit
         {
             bContinue = pfFunc(i, aFunctionNames[i], aControlFlags[i], (size_t)-1, 0, SITHCONTROLBIND_INVERT_AXIS | SITHCONTROLBIND_KEYCONTROL, NULL, a5);
         }
+    }
+}
+
+void sithControl_EnableDevControls(bool bEnable)
+{
+    if ( bEnable )
+    {
+        sithControl_BindControl(SITHCONTROL_ACTIVATE, DIK_F11, (SithControlBindFlag)0); // Added: Change to DIK_F11 from DIK_GRAVE; required atm for cycle cameras in devmode 
+
+        // Following are bindings from debug version
+        sithControl_BindControl(SITHCONTROL_DEBUG, DIK_BACK, (SithControlBindFlag)0);
+        sithControl_BindControl(SITHCONTROL_GAMMA, DIK_F5, (SithControlBindFlag)0);
+
+        sithControl_BindControl(SITHCONTROL_MLOOK, DIK_V, (SithControlBindFlag)0);
+        sithControl_BindControl(SITHCONTROL_PITCH, DIK_PRIOR, SITHCONTROLBIND_INVERT_AXIS);
+        sithControl_BindControl(SITHCONTROL_PITCH, DIK_NEXT, (SithControlBindFlag)0);
+        sithControl_BindControl(SITHCONTROL_CENTER, DIK_HOME, (SithControlBindFlag)0);
+        sithControl_BindControl(SITHCONTROL_CENTER, DIK_NUMPAD5, (SithControlBindFlag)0);
+    }
+    else
+    {
+        sithControl_UnbindFunction(SITHCONTROL_DEBUG);
+        sithControl_UnbindFunction(SITHCONTROL_GAMMA);
+
+        sithControl_UnbindFunctionControl(SITHCONTROL_MLOOK, DIK_V);
+        sithControl_UnbindFunctionControl(SITHCONTROL_PITCH, DIK_PRIOR);
+        sithControl_UnbindFunctionControl(SITHCONTROL_PITCH, DIK_NEXT);
+        sithControl_UnbindFunctionControl(SITHCONTROL_CENTER, DIK_HOME);
+        sithControl_UnbindFunctionControl(SITHCONTROL_CENTER, DIK_NUMPAD5);
     }
 }
