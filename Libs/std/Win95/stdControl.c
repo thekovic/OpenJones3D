@@ -436,33 +436,39 @@ float J3DAPI stdControl_ReadKeyAsAxis(size_t keyId)
     return deltaTime;
 }
 
-int J3DAPI stdControl_ReadAxisAsKey(size_t axis, int* pState)
+int J3DAPI stdControl_ReadAxisAsKey(size_t axis, int* pNumPressed)
 {
     if ( (axis & STDCONTROL_AID_LOW_SENSITIVITY) == 0 || (stdControl_aAxes[axis].flags & STDCONTROL_AXIS_GAMEPAD) != 0 )
     {
-        return stdControl_ReadAxisAsKeyEx(axis, pState, 0.25f);
+        return stdControl_ReadAxisAsKeyEx(axis, pNumPressed, 0.25f);
     }
     else
     {
-        return stdControl_ReadAxisAsKeyEx(axis, pState, 0.75f);
+        return stdControl_ReadAxisAsKeyEx(axis, pNumPressed, 0.75f);
     }
 }
 
-int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pState, float lowValue)
+int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pNumPressed, float lowValue)
 {
-    J3D_UNUSED(pState);
-
     float pos = stdControl_ReadAxis(axis);
     if ( (axis & (STDCONTROL_AID_LOW_SENSITIVITY | STDCONTROL_AID_POSITIVE_AXIS | STDCONTROL_AID_NEGATIVE_AXIS)) != 0 )
     {
         int axisFlag = axis & STDCONTROL_AID_NEGATIVE_AXIS;
         if ( axisFlag == STDCONTROL_AID_POSITIVE_AXIS && pos > (double)lowValue )
         {
+            // Fixed: Increment num key pressed by 1
+            if ( pNumPressed ) {
+                *pNumPressed += 1;
+            }
             return 1;
         }
 
         if ( axisFlag == STDCONTROL_AID_NEGATIVE_AXIS && -lowValue > pos )
         {
+            // Fixed: Increment num key pressed by 1
+            if ( pNumPressed ) {
+                *pNumPressed += 1;
+            }
             return 1;
         }
     }
@@ -470,6 +476,10 @@ int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pState, float lowValue)
     {
         if ( fabsf(pos) > lowValue )
         {
+            // Fixed: Increment num key pressed by 1
+            if ( pNumPressed ) {
+                *pNumPressed += 1;
+            }
             return 1;
         }
     }

@@ -118,8 +118,8 @@ void stdControl_ReadControls(void);
 float J3DAPI stdControl_ReadAxis(size_t axis);
 int J3DAPI stdControl_ReadAxisRaw(size_t axis);
 float J3DAPI stdControl_ReadKeyAsAxis(size_t keyId);
-int J3DAPI stdControl_ReadAxisAsKey(size_t axis, int* pState);
-int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pState, float lowValue);
+int J3DAPI stdControl_ReadAxisAsKey(size_t axis, int* pNumPressed);
+int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pNumPressed, float lowValue);
 int J3DAPI stdControl_ReadKey(size_t keyNum, int* pNumPressed);
 void stdControl_FinishRead(void); // Added
 
