@@ -719,120 +719,92 @@ void J3DAPI stdControl_SetAxisFlags(size_t axis, StdControlAxisFlag flags)
 
 void J3DAPI stdControl_InitJoysticks()
 {
-    HWND hwnd;
-    StdControlAxisFlag flags;
-    const char* pErrorStr;
-    int hres;
-    unsigned int joyNum;
-    DIPROPRANGE dirange;
-    LPDIRECTINPUTDEVICEA lpd;
-
-    lpd = NULL;
-    for ( joyNum = 0; joyNum < stdControl_numJoystickDevices; ++joyNum )
+    for ( size_t joyNum = 0; joyNum < stdControl_numJoystickDevices; ++joyNum )
     {
+        LPDIRECTINPUTDEVICEA lpd = NULL;
         if FAILED(IDirectInput_CreateDevice(stdControl_pDI, &stdControl_aJoystickDevices[joyNum].dinstance.guidInstance, &lpd, 0))
         {
             STDLOG_ERROR("Could not create DInput Joystick device.\n");
         }
 
-        hres = IDirectInputDevice_QueryInterface(lpd, &IID_IDirectInputDevice2A, (LPVOID*)&stdControl_aJoystickDevices[joyNum].pDIDevice);
+        int hres = IDirectInputDevice_QueryInterface(lpd, &IID_IDirectInputDevice2A, (LPVOID*)&stdControl_aJoystickDevices[joyNum].pDIDevice);
         IDirectInputDevice_Release(lpd);
-        lpd = NULL;
 
         if FAILED(hres)
         {
-            goto LABEL_27;
+            goto error;
         }
 
         stdControl_aJoystickDevices[joyNum].caps.dwSize = sizeof(DIDEVCAPS);
         hres = IDirectInputDevice2_GetCapabilities(stdControl_aJoystickDevices[joyNum].pDIDevice, &stdControl_aJoystickDevices[joyNum].caps);
         if FAILED(hres)
         {
-            goto LABEL_27;
+            goto error;
         }
 
         hres = IDirectInputDevice2_SetDataFormat(stdControl_aJoystickDevices[joyNum].pDIDevice, &c_dfDIJoystick);
         if FAILED(hres)
         {
-            goto LABEL_27;
+            goto error;
         }
 
-        hwnd = stdWin95_GetWindow();
-        hres = IDirectInputDevice2_SetCooperativeLevel(
-            stdControl_aJoystickDevices[joyNum].pDIDevice,
-            hwnd,
-            DISCL_BACKGROUND | DISCL_EXCLUSIVE);
+        HWND hwnd = stdWin95_GetWindow();
+        hres = IDirectInputDevice2_SetCooperativeLevel(stdControl_aJoystickDevices[joyNum].pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_EXCLUSIVE);
         if FAILED(hres)
         {
-            goto LABEL_27;
+            goto error;
         }
 
-        // Note, below the constant 6 in the array indexing is the number of joystic axis which is 3 - positional and 3 - rotation axis
-
-        dirange.diph.dwSize = sizeof(DIPROPRANGE);
+        // Note, below the constant 6 in the array indexing is the number of joystick axis which is 3 - positional and 3 - rotation axis
+        DIPROPRANGE dirange       = { 0 }; // Added: Init to 0
+        dirange.diph.dwSize       = sizeof(DIPROPRANGE);
         dirange.diph.dwHeaderSize = sizeof(DIPROPHEADER);
-        dirange.diph.dwObj = DIJOFS_X;
-        dirange.diph.dwHow = DIPH_BYOFFSET;
+        dirange.diph.dwObj        = DIJOFS_X;
+        dirange.diph.dwHow        = DIPH_BYOFFSET;
+
         if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
-            stdControl_RegisterAxis(6 * joyNum, dirange.lMin, dirange.lMax, 0.2f);
+            stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_Y;
         if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
-            stdControl_RegisterAxis(6 * joyNum + 1, dirange.lMin, dirange.lMax, 0.2f);
+            stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_Z;
         if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
-            stdControl_RegisterAxis(6 * joyNum + 2, dirange.lMin, dirange.lMax, 0.2f);
+            stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_Z(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_RX;
         if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
-            stdControl_RegisterAxis(6 * joyNum + 3, dirange.lMin, dirange.lMax, 0.2f);
+            stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RX(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_RY;
         if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
-            stdControl_RegisterAxis(6 * joyNum + 4, dirange.lMin, dirange.lMax, 0.2f);
+            stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RY(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_RZ;
         if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
-            stdControl_RegisterAxis(6 * joyNum + 5, dirange.lMin, dirange.lMax, 0.2f);
+            stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RZ(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         if ( GET_DIDEVICE_SUBTYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DIDEVTYPEJOYSTICK_GAMEPAD )
         {
-            flags = stdControl_aAxes[6 * joyNum + 1].flags;
-            flags = flags | STDCONTROL_AXIS_GAMEPAD;
-            stdControl_aAxes[6 * joyNum + 1].flags = flags;
-
-            flags = stdControl_aAxes[6 * joyNum].flags;
-            flags = flags | STDCONTROL_AXIS_GAMEPAD;
-            stdControl_aAxes[6 * joyNum].flags = flags;
-
-            flags = stdControl_aAxes[6 * joyNum + 2].flags;
-            flags = flags | STDCONTROL_AXIS_GAMEPAD;
-            stdControl_aAxes[6 * joyNum + 2].flags = flags;
-
-            flags = stdControl_aAxes[6 * joyNum + 3].flags;
-            flags = flags | STDCONTROL_AXIS_GAMEPAD;
-            stdControl_aAxes[6 * joyNum + 3].flags = flags;
-
-            flags = stdControl_aAxes[6 * joyNum + 4].flags;
-            flags = flags | STDCONTROL_AXIS_GAMEPAD;
-            stdControl_aAxes[6 * joyNum + 4].flags = flags;
-
-            flags = stdControl_aAxes[6 * joyNum + 5].flags;
-            flags = flags | STDCONTROL_AXIS_GAMEPAD;
-            stdControl_aAxes[6 * joyNum + 5].flags = flags;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Z(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RX(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RY(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RZ(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
         }
 
         if ( (stdControl_aJoystickDevices[joyNum].caps.dwFlags & DIDC_FORCEFEEDBACK) != 0 )
@@ -848,21 +820,20 @@ void J3DAPI stdControl_InitJoysticks()
         hres = IDirectInputDevice2_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
         if FAILED(hres)
         {
-        LABEL_27:
-            pErrorStr = stdControl_DIGetStatus(hres);
-            STDLOG_STATUS("%s error Acquiring Joystick.\n", pErrorStr);
+        error:
+            STDLOG_STATUS("%s error Acquiring Joystick.\n", stdControl_DIGetStatus(hres));
             if ( stdControl_aJoystickDevices[joyNum].pDIDevice )
             {
                 IDirectInputDevice2_Release(stdControl_aJoystickDevices[joyNum].pDIDevice);
             }
 
             stdControl_aJoystickDevices[joyNum].pDIDevice = 0;
-            stdControl_aAxes[6 * joyNum].flags &= ~STDCONTROL_AXIS_REGISTERED;
-            stdControl_aAxes[6 * joyNum + 1].flags &= ~STDCONTROL_AXIS_REGISTERED;
-            stdControl_aAxes[6 * joyNum + 2].flags &= ~STDCONTROL_AXIS_REGISTERED;
-            stdControl_aAxes[6 * joyNum + 3].flags &= ~STDCONTROL_AXIS_REGISTERED;
-            stdControl_aAxes[6 * joyNum + 4].flags &= ~STDCONTROL_AXIS_REGISTERED;
-            stdControl_aAxes[6 * joyNum + 5].flags &= ~STDCONTROL_AXIS_REGISTERED;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Z(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RX(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RY(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
+            stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RZ(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
         }
     }
 }
