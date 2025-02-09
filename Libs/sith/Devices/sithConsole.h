@@ -9,11 +9,21 @@
 
 J3D_EXTERN_C_START
 
+typedef enum eSithConsoleFlags // Added
+{
+    SITHCONSOLE_DEVMODE = 0x100 // enables dev commands
+} SithConsoleFlags;
+
 int sithConsole_Startup(void);
 void sithConsole_Shutdown(void);
 
 int J3DAPI sithConsole_Open(size_t numLines, size_t numCommands);
 void sithConsole_Close(void);
+
+// Added
+SithConsoleFlags sithConsole_GetConsoleFlags();
+void J3DAPI sithConsole_SetConsoleFlags(SithConsoleFlags flags);
+void J3DAPI sithConsole_ClearConsoleFlags(SithConsoleFlags flags);
 
 void J3DAPI sithConsole_PrintString(const char* pString);
 void J3DAPI sithConsole_PrintWString(const wchar_t* pwString);

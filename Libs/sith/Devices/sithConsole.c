@@ -16,6 +16,8 @@
 static bool bOpen;
 static bool bStarted;
 
+static SithConsoleFlags consoleflags = 0x0; // Added
+
 static char aBuffers[SITHCONSOLE_MAXLINES][SITHCONSOLE_LINELEN];
 static size_t bufferSize;
 static size_t curFlushIndex;
@@ -136,6 +138,21 @@ void sithConsole_Close(void)
     bOpen = false;
 }
 
+SithConsoleFlags sithConsole_GetConsoleFlags(void)
+{
+    return consoleflags;
+}
+
+void J3DAPI sithConsole_SetConsoleFlags(SithConsoleFlags flags)
+{
+    consoleflags |= flags;
+}
+
+void J3DAPI sithConsole_ClearConsoleFlags(SithConsoleFlags flags)
+{
+    consoleflags &= ~flags;
+}
+
 void J3DAPI sithConsole_PrintString(const char* pString)
 {
     SITH_ASSERTREL(pString);
@@ -190,7 +207,7 @@ int J3DAPI sithConsole_ExeCommand(const char* pLine)
     }
 
     SithConsoleCommand* pFunc = (SithConsoleCommand*)stdHashtbl_Find(pCommandTable, pCmdName);
-    if ( !pFunc )
+    if ( !pFunc || (pFunc->flags & SITHCONSOLE_DEVMODE) != 0 && (consoleflags & SITHCONSOLE_DEVMODE) == 0 )
     {
         STD_FORMAT(std_g_genBuffer, "Console command %s not recognized.", pCmdName);
         sithConsole_PrintString(std_g_genBuffer);
