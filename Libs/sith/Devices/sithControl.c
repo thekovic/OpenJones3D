@@ -652,7 +652,6 @@ void sithControl_RebindMouse(void)
     sithControl_RegisterMouseBindings();
 }
 
-
 void sithControl_Reset(void)
 {
     memset(aControlBindings, 0, sizeof(aControlBindings));
@@ -835,22 +834,27 @@ void sithControl_RegisterMouseBindings(void)
             SithControlBinding* pBinding = sithControl_BindAxis(SITHCONTROL_MOUSETURN, STDCONTROL_AID_MOUSE_X, SITHCONTROLBIND_AXIS_ENABLED | SITHCONTROLBIND_INVERT_AXIS);
             if ( pBinding )
             {
-                pBinding->sensitivity = 0.40000001f;
+                pBinding->sensitivity = 0.05f; // Changed
             }
 
             pBinding = sithControl_BindAxis(SITHCONTROL_PITCH, STDCONTROL_AID_MOUSE_Y, SITHCONTROLBIND_AXIS_ENABLED);
             if ( pBinding )
             {
-                pBinding->sensitivity = 0.30000001f;
-            }
-
-            pBinding = sithControl_BindAxis(SITHCONTROL_PITCH, STDCONTROL_AID_MOUSE_Z, (SithControlBindFlag)0);
-            if ( pBinding )
-            {
-                pBinding->sensitivity = 4.0f;
+                pBinding->sensitivity = 0.05f; // Changed
             }
 
             sithControl_BindControl(SITHCONTROL_FIRE1, STDCONTROL_KID_MOUSE_LBUTTON, (SithControlBindFlag)0);
+            sithControl_BindControl(SITHCONTROL_ACT2, STDCONTROL_KID_MOUSE_LBUTTON, (SithControlBindFlag)0); // Added
+            sithControl_BindControl(SITHCONTROL_JUMP, STDCONTROL_KID_MOUSE_RBUTTON, (SithControlBindFlag)0); // Added
+
+            sithControl_BindControl(SITHCONTROL_WEAPONTOGGLE, STDCONTROL_KID_MOUSE_MBUTTON, (SithControlBindFlag)0); // Added
+            sithControl_BindAxis(SITHCONTROL_NEXTWEAP, STDCONTROL_AID_MOUSE_Z | STDCONTROL_AID_POSITIVE_AXIS, (SithControlBindFlag)0); // Added
+            sithControl_BindAxis(SITHCONTROL_PREVWEAP, STDCONTROL_AID_MOUSE_Z | STDCONTROL_AID_NEGATIVE_AXIS, (SithControlBindFlag)0); // Added
+            sithControl_BindAxis(SITHCONTROL_NEXTWEAPON, STDCONTROL_AID_MOUSE_Z | STDCONTROL_AID_POSITIVE_AXIS, (SithControlBindFlag)0); // Added
+            sithControl_BindAxis(SITHCONTROL_PREVWEAPON, STDCONTROL_AID_MOUSE_Z | STDCONTROL_AID_NEGATIVE_AXIS, (SithControlBindFlag)0); // Added
+
+           //stdControl_SetMouseSensitivity(0.2, 0.2);
+            stdControl_EnableMouseSensitivity(0); // Added: Note axis sensitivity best works when mouse sensitivity is disabled here
         }
         else
         {
