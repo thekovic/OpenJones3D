@@ -4,6 +4,7 @@ General:
   - Fixed hiding console on cutscene start (27ca92b)
   - Added developer COG verbs (33f8f9d)
   - Added error log when popping invalid string from COG stack (34c9e20)
+  - Rename debug mode flag `SITHDEBUG_AILOOK_FOR_TARGET_DISABLED` to `SITHDEBUG_AINOTARGET` (53b9091)
   - Changed argument order of debug print COG functions (a80ed30)
     Also changed the log level to debug.
   - Added new system COG functions:
@@ -15,7 +16,7 @@ General:
     * `DebugInt` (33f8f9d)
     * `DebugLocalSymbols` (33f8f9d)
     * `DebugWaitForKey` (33f8f9d)
-  - Implemented `Print*` Cog functions (33f8f9d) 
+  - Implemented `Print*` Cog functions (33f8f9d)
   - Implemented:
     * `sithConsole` (7879d45)
     * `sithCommand` (4ec4941)
@@ -23,6 +24,23 @@ General:
     * `sithCogFunctionSector` (e46c2ab)
     * `sithCogFunctionSurface` (40b6d38)
     * `sithCogFunctionSound` (2df2214)
+    - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
+    - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
+    - Refactored `stdControl` module (fc4060c)
+    - Added devmode logic to `sithConsole` module (57b685b)
+      This enables commands flagged with `SITHCONSOLE_DEVMODE` flag to be available only
+      when console flags have SITHCONSOLE_DEVMODE set.
+    - Added dev commands:
+    * `jumplevel` (e59ffab)
+    * `radius` (e59ffab)
+    * `pvs` (e59ffab)
+    * `nextlevel` (e59ffab)
+    * `endlevel` (e59ffab)
+    * `restart` (e59ffab)
+    * `sounds` (e59ffab)
+    * `devmode` (e59ffab)
+    * `ineditor` (e59ffab)
+
 
 Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
@@ -30,6 +48,9 @@ Display & Render:
 
 Game play:
   - Fixed submersion of dead thing in cold-water/lava (18d828d)
+  - Fixed mouse sensitivity when in-editor mode (d25081f)
+  - Added mouse button actions for fire/activate, jump, weapon toggle, and weapon selection when in-editor mode (d25081f)
+  - Restricted developer/debug control keys to in-editor/dev mode only (d25081f)
 
 # v0.2
 General:
