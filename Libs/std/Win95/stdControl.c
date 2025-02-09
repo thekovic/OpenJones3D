@@ -131,8 +131,7 @@ void stdControl_InstallHooks(void)
 }
 
 void stdControl_ResetGlobals(void)
-{
-}
+{}
 
 int J3DAPI stdControl_Startup(int bKeyboardForeground)
 {
@@ -507,8 +506,7 @@ int J3DAPI stdControl_ReadKey(size_t keyNum, int* pNumPressed)
 }
 
 void stdControl_FinishRead(void)
-{
-}
+{}
 
 void J3DAPI stdControl_RegisterMouseAxesXY(float xrange, float yrange)
 {
@@ -657,6 +655,11 @@ int J3DAPI stdControl_EnableMouse(int bEnable)
     return 1;
 }
 
+bool stdControl_IsMouseEnabled(void)
+{
+    return stdControl_bReadMouse;
+}
+
 int stdControl_ControlsIdle(void)
 {
     return stdControl_bControlsIdle;
@@ -758,9 +761,9 @@ void J3DAPI stdControl_InitJoysticks()
 
         hwnd = stdWin95_GetWindow();
         hres = IDirectInputDevice2_SetCooperativeLevel(
-                   stdControl_aJoystickDevices[joyNum].pDIDevice,
-                   hwnd,
-                   DISCL_BACKGROUND | DISCL_EXCLUSIVE);
+            stdControl_aJoystickDevices[joyNum].pDIDevice,
+            hwnd,
+            DISCL_BACKGROUND | DISCL_EXCLUSIVE);
         if FAILED(hres)
         {
             goto LABEL_27;
@@ -895,13 +898,13 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
             ? IDirectInputDevice_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)
             : IDirectInputDevice_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
         if ( FAILED(hres)
-          || (didpw.diph.dwSize = sizeof(DIPROPDWORD),
-              didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER),
-              didpw.diph.dwObj = 0,
-              didpw.diph.dwHow = DIPH_DEVICE,
-              didpw.dwData     = STD_ARRAYLEN(stdControl_aKeyboardState), // input buffer size
-              hres = IDirectInputDevice_SetProperty(stdControl_keyboard.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph),
-              hres < 0) )
+            || (didpw.diph.dwSize = sizeof(DIPROPDWORD),
+                didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER),
+                didpw.diph.dwObj = 0,
+                didpw.diph.dwHow = DIPH_DEVICE,
+                didpw.dwData     = STD_ARRAYLEN(stdControl_aKeyboardState), // input buffer size
+                hres = IDirectInputDevice_SetProperty(stdControl_keyboard.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph),
+                hres < 0) )
         {
         error:
             STDLOG_STATUS("%s error Acquiring Keyboard.\n", stdControl_DIGetStatus(hres));
@@ -942,13 +945,13 @@ void J3DAPI stdControl_InitMouse()
         HWND hwnd = stdWin95_GetWindow();
         hres = IDirectInputDevice_SetCooperativeLevel(stdControl_mouse.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_EXCLUSIVE);
         if ( FAILED(hres)
-          || (didpw.diph.dwSize = sizeof(DIPROPDWORD),
-              didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER),
-              didpw.diph.dwObj = 0,
-              didpw.diph.dwHow = DIPH_DEVICE,
-              didpw.dwData     = STDCONTROL_MOUSE_BUFFERSIZE, // input buffer size
-              hres = IDirectInputDevice_SetProperty(stdControl_mouse.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph),
-              hres < 0) )
+            || (didpw.diph.dwSize = sizeof(DIPROPDWORD),
+                didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER),
+                didpw.diph.dwObj = 0,
+                didpw.diph.dwHow = DIPH_DEVICE,
+                didpw.dwData     = STDCONTROL_MOUSE_BUFFERSIZE, // input buffer size
+                hres = IDirectInputDevice_SetProperty(stdControl_mouse.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph),
+                hres < 0) )
         {
         error:
             STDLOG_STATUS("%s error Acquiring Mouse.\n", stdControl_DIGetStatus(hres));
@@ -1324,7 +1327,30 @@ void J3DAPI stdControl_ShowMouseCursor(int bShow)
     }
 }
 
-unsigned int J3DAPI stdControl_IsGamePad(int joyNum)
+int J3DAPI stdControl_IsGamePad(int joyNum)
 {
     return GET_DIDEVICE_SUBTYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DIDEVTYPEJOYSTICK_GAMEPAD;
+}
+
+void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivity)
+{
+    if ( (stdControl_aAxes[STDCONTROL_AID_MOUSE_X].flags & STDCONTROL_AXIS_REGISTERED) != 0 )
+    {
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_X].deadzoneThreshold = 0;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max       = (int)(xSensitivity * 250.0);
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_X].min       = -stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_X].flags    |= STDCONTROL_AXIS_REGISTERED;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_X].center    = (2 * stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max + 1) / 2 - stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_X].scale     = 1.0f / (float)(stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max - stdControl_aAxes[STDCONTROL_AID_MOUSE_X].center);
+    }
+
+    if ( (stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].flags & STDCONTROL_AXIS_REGISTERED) != 0 )
+    {
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].deadzoneThreshold   = 0;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max       = (int)(ySensitivity * 200.0);
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].min       = -stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].flags    |= STDCONTROL_AXIS_REGISTERED;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].center    = (2 * stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max + 1) / 2 - stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max;
+        stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].scale     = 1.0f / (float)(stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max - stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].center);
+    }
 }

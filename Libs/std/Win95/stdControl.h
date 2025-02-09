@@ -77,7 +77,7 @@ J3D_EXTERN_C_START
 #define STDCONTROL_ISJOYSTICKAXIS(aid) (STDCONTROL_GETAID(aid) < STDCONTROL_AID_MOUSE_X)
 #define STDCONTROL_ISJOYSTICKBUTTON(kid) (STDCONTROL_GETAID(kid) >= STDCONTROL_JOYSTICK_FIRSTKID) && (STDCONTROL_GETAID(kid) < STDCONTROL_KID_MOUSE_LBUTTON)
 
-// Inplace reg. tests
+// In-place reg. tests
 static_assert(STDCONTROL_JOYSTICK_FIRSTKID == 256, "STDCONTROL_JOYSTICK_FIRSTKID == 256");
 static_assert(STDCONTROL_JOYSTICK_TOTALKIDS == 384, "STDCONTROL_JOYSTICK_TOTALKIDS == 384");
 static_assert(STDCONTROL_KID_MOUSE_LBUTTON == 640, "STDCONTROL_AID_MOUSE_LBUTTON == 640");
@@ -130,6 +130,7 @@ int J3DAPI stdControl_SetActivation(int bActive); // returns 0 if mouse control 
 
 int stdControl_ToggleMouse(void);
 int J3DAPI stdControl_EnableMouse(int bEnable);
+bool stdControl_IsMouseEnabled(void); // Added
 
 int stdControl_ControlsIdle(void);
 
@@ -157,9 +158,10 @@ size_t stdControl_GetMaxJoystickButtons(void);
 size_t stdControl_GetNumJoysticks(void);
 
 void J3DAPI stdControl_EnableMouseSensitivity(int bEnable);
+void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivity); // Added
 void J3DAPI stdControl_ShowMouseCursor(int bShow);
 
-unsigned int J3DAPI stdControl_IsGamePad(int joyNum);
+int J3DAPI stdControl_IsGamePad(int joyNum);
 
 // Helper hooking functions
 void stdControl_InstallHooks(void);
