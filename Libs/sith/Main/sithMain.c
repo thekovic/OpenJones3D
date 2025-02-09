@@ -64,8 +64,8 @@ static char sith_aTmpAutoSaveFilePrefix[SITH_PATHSIZE];
 static char sith_aTmpScreenShotDirPath[SITH_PATHSIZE];
 
 static int sith_bDrawUnknown;
-static int sith_bDrawPlayerMoveBounds;
-static int sith_bDrawThingMoveBounds;
+static bool sith_bDrawPlayerMoveBounds = false; // Added: Init to false
+static bool sith_bDrawThingMoveBounds = false; // Added: Init to false
 static int sith_performanceLevel;
 
 rdVector3 sith_unknownPos;
@@ -759,6 +759,12 @@ void sithAdvanceRenderTick(void)
         sithWorld_ResetRenderState(sithWorld_g_pCurrentWorld);
         sithMain_g_curRenderTick = 1;
     }
+}
+
+bool sithToggleDrawPlayerRadius(void)
+{
+    sith_bDrawPlayerMoveBounds = !sith_bDrawPlayerMoveBounds;
+    return sith_bDrawPlayerMoveBounds;
 }
 
 void sithMakeDirs(void)

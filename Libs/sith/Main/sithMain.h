@@ -73,6 +73,7 @@ void sithClose(void);
 void sithUpdate(void);
 void sithDrawScene(void);
 void sithAdvanceRenderTick(void);
+bool sithToggleDrawPlayerRadius(void); // Added
 
 void J3DAPI sithSetGameDifficulty(int difficulty);
 int sithGetGameDifficulty(void);
