@@ -715,7 +715,7 @@ void sithControl_RegisterControlFunctions(void)
     sithControl_RegisterKeyFunction(SITHCONTROL_CAMERAZOOMOUT);
 
     // Note this if scope if removed in release version but we'll keep it
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    //if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
         sithControl_RegisterKeyFunction(SITHCONTROL_MLOOK);
         sithControl_RegisterAxisFunction(SITHCONTROL_PITCH, SITHCONTROLFUNCTION_UNKNOWN_8);
@@ -749,7 +749,7 @@ void sithControl_RegisterKeyboardBindings(void)
         sithControl_BindControl(SITHCONTROL_FIRE1, DIK_RCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_FIRE1, DIK_LCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_ACT3, DIK_Z, (SithControlBindFlag)0);
-        sithControl_BindControl(SITHCONTROL_ACTIVATE, DIK_GRAVE, (SithControlBindFlag)0);
+        sithControl_BindControl(SITHCONTROL_ACTIVATE, DIK_F11, (SithControlBindFlag)0); // Changed: Changed to DIK_F11 from DIK_GRAVE
         sithControl_BindControl(SITHCONTROL_ACT2, DIK_LCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_ACT2, DIK_RCONTROL, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_WSELECT0, DIK_0, (SithControlBindFlag)0);
@@ -780,14 +780,12 @@ void sithControl_RegisterKeyboardBindings(void)
         sithControl_BindControl(SITHCONTROL_HEALTH, DIK_H, (SithControlBindFlag)0);
         sithControl_BindControl(SITHCONTROL_CHALK, DIK_K, (SithControlBindFlag)0);
 
-        // Note, following 2 bindings are present id debug version but removed in release
-       // TODO: bind these 2 keys only if SITHDEBUG_INEDITOR or SITHDEBUG_DEVMODE is enabled
-        sithControl_BindControl(SITHCONTROL_DEBUG, DIK_BACK, (SithControlBindFlag)0);
-        sithControl_BindControl(SITHCONTROL_GAMMA, DIK_F5, (SithControlBindFlag)0);
-
-        // Note this if scope if removed in release version but we'll keep it
+        // Note this if scope is removed in release version but we'll keep it
         if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
         {
+            sithControl_BindControl(SITHCONTROL_DEBUG, DIK_BACK, (SithControlBindFlag)0);
+            sithControl_BindControl(SITHCONTROL_GAMMA, DIK_F5, (SithControlBindFlag)0);
+
             sithControl_BindControl(SITHCONTROL_MLOOK, DIK_V, (SithControlBindFlag)0);
             sithControl_BindControl(SITHCONTROL_FORWARD, DIK_W, (SithControlBindFlag)0);
             sithControl_BindControl(SITHCONTROL_PITCH, DIK_PRIOR, SITHCONTROLBIND_INVERT_AXIS);
