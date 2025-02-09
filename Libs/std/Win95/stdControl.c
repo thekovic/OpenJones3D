@@ -682,16 +682,15 @@ int J3DAPI stdControl_TestAxisFlag(size_t axis, StdControlAxisFlag flags)
 
     if ( bPositiveAxis )
     {
-        flags = flags & ~(STDCONTROL_AXIS_UNKNOWN_10 | STDCONTROL_AXIS_ENABLED) | STDCONTROL_AXIS_UNKNOWN_10;
+        flags = flags & ~(STDCONTROL_AXIS_POSITIVE | STDCONTROL_AXIS_ENABLED) | STDCONTROL_AXIS_POSITIVE;
     }
 
-    if ( !bNegativeAxis )
+    if ( bNegativeAxis )
     {
+        flags = flags & ~(STDCONTROL_AXIS_NEGATIVE | STDCONTROL_AXIS_ENABLED) | STDCONTROL_AXIS_NEGATIVE;
         return flags & stdControl_aAxes[aid].flags;
     }
 
-    flags = flags & ~STDCONTROL_AXIS_ENABLED;
-    flags = flags | STDCONTROL_AXIS_UNKNOWN_20;
     return flags & stdControl_aAxes[aid].flags;
 }
 
@@ -706,12 +705,12 @@ void J3DAPI stdControl_SetAxisFlags(size_t axis, StdControlAxisFlag flags)
         {
             if ( bPositiveAxis )
             {
-                flags |= STDCONTROL_AXIS_UNKNOWN_10;
+                flags |= STDCONTROL_AXIS_POSITIVE;
             }
 
             if ( bNegativeAxis )
             {
-                flags |= STDCONTROL_AXIS_UNKNOWN_20;
+                flags |= STDCONTROL_AXIS_NEGATIVE;
             }
         }
 
@@ -1097,52 +1096,48 @@ void stdControl_ReadMouse(void)
 
     DIMOUSESTATE mouseState;
     HRESULT hr = IDirectInputDevice_GetDeviceState(stdControl_mouse.pDIDevice, sizeof(DIMOUSESTATE), &mouseState);
-    if ( hr == DIERR_NOTACQUIRED || hr == DIERR_INPUTLOST )
-    {
-        goto LABEL_30;
-    }
-
     if ( hr != DI_OK )
     {
-        STDLOG_ERROR("GetDeviceState(mouse) returned %s.\n", stdControl_DIGetStatus(hr));
+        if ( hr != DIERR_NOTACQUIRED && hr != DIERR_INPUTLOST ) {
+            STDLOG_ERROR("GetDeviceState(mouse) returned %s.\n", stdControl_DIGetStatus(hr));
+        }
 
-    LABEL_30:
         hr = IDirectInputDevice_Acquire(stdControl_mouse.pDIDevice);
         if ( hr != DI_OK && hr != DIERR_OTHERAPPHASPRIO )
         {
             STDLOG_ERROR("Acquire mouse returned %s.\n", stdControl_DIGetStatus(hr));
         }
-
-        goto LABEL_33;
-    }
-
-    if ( stdControl_bMouseSensitivityEnabled )
-    {
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] += mouseState.lX;
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X]  = STDMATH_CLAMP(stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X], stdControl_aAxes[STDCONTROL_AID_MOUSE_X].min, stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max);
-
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] += mouseState.lY;
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y]  = STDMATH_CLAMP(stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y], stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].min, stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max);
-
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z] += mouseState.lZ;
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z]  = STDMATH_CLAMP(stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z], stdControl_aAxes[STDCONTROL_AID_MOUSE_Z].min, stdControl_aAxes[STDCONTROL_AID_MOUSE_Z].max);
     }
     else
     {
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] = mouseState.lX;
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] = mouseState.lY;
-        stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z] = mouseState.lZ;
-        if ( stdControl_readDeltaTime < 25 )
+        // Update axis state
+        if ( stdControl_bMouseSensitivityEnabled )
         {
-            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] = (stdControl_mousePos.x + mouseState.lX) / 2;
-            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] = (stdControl_mousePos.y + mouseState.lY) / 2;
-        }
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] += mouseState.lX;
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X]  = STDMATH_CLAMP(stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X], stdControl_aAxes[STDCONTROL_AID_MOUSE_X].min, stdControl_aAxes[STDCONTROL_AID_MOUSE_X].max);
 
-        stdControl_mousePos.x = mouseState.lX;
-        stdControl_mousePos.y = mouseState.lY;
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] += mouseState.lY;
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y]  = STDMATH_CLAMP(stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y], stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].min, stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max);
+
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z] += mouseState.lZ;
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z]  = STDMATH_CLAMP(stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z], stdControl_aAxes[STDCONTROL_AID_MOUSE_Z].min, stdControl_aAxes[STDCONTROL_AID_MOUSE_Z].max);
+        }
+        else
+        {
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] = mouseState.lX;
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] = mouseState.lY;
+            stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z] = mouseState.lZ;
+            if ( stdControl_readDeltaTime < 25 )
+            {
+                stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] = (stdControl_mousePos.x + mouseState.lX) / 2;
+                stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] = (stdControl_mousePos.y + mouseState.lY) / 2;
+            }
+
+            stdControl_mousePos.x = mouseState.lX;
+            stdControl_mousePos.y = mouseState.lY;
+        }
     }
 
-LABEL_33:
     DWORD bufferSize = STDCONTROL_MOUSE_BUFFERSIZE;
     hr = IDirectInputDevice_GetDeviceData(stdControl_mouse.pDIDevice, sizeof(DIDEVICEOBJECTDATA), aMouseBuffer, &bufferSize, 0);
     if ( hr != DI_OK )
