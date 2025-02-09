@@ -1,13 +1,20 @@
 #include "JonesConsole.h"
 #include <j3dcore/j3dhook.h>
 #include <Jones3D/Main/JonesMain.h>
+#include <Jones3D/Play/jonesCog.h>
 #include <Jones3D/RTI/symbols.h>
 
 #include <rdroid/Engine/rdCamera.h>
 #include <rdroid/Primitives/rdFont.h>
 
-#include <sith/Engine/sithRender.h>
 #include <sith/Devices/sithConsole.h>
+#include <sith/Devices/sithControl.h>
+#include <sith/Engine/sithRender.h>
+#include <sith/Gameplay/sithTime.h>
+#include <sith/Main/sithCommand.h>
+#include <sith/Main/sithMain.h>
+
+#include <sound/Sound.h>
 
 #include <std/General/std.h>
 #include <std/General/stdHashtbl.h>
@@ -15,6 +22,8 @@
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
+
+#include <w32util/wuRegistry.h>
 
 #define JONESCONSOLE_COMMANDLINEID 103
 
@@ -40,7 +49,19 @@ void JonesConsole_FlushCommandLine(void);
 int J3DAPI JonesConsole_PrintVersion(const SithConsoleCommand* pFunc, const char* pArg);
 int J3DAPI JonesConsole_PrintFramerate(const SithConsoleCommand* pFunc, const char* pArg);
 int J3DAPI JonesConsole_PrintPolys(const SithConsoleCommand* pFunc, const char* pArg);
+int J3DAPI JonesConsole_JumpLevel(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
+int J3DAPI JonesConsole_Radius(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
+int J3DAPI JonesConsole_Sounds(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
+int J3DAPI JonesConsole_PVS(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
+int J3DAPI JonesConsole_NextLevel(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
+int J3DAPI JonesConsole_EndLevel(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
+int J3DAPI JonesConsole_Restart(const SithConsoleCommand* pFunc, const char* pArg); // Added: From debug version
 int J3DAPI JonesConsole_ShowEndCredits(const SithConsoleCommand* pFunc, const char* pArg);
+
+void J3DAPI JonesConsole_EnableDevMode(bool bEnable); // Added
+int J3DAPI JonesConsole_DevMode(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pArg); // Added
+
 
 void JonesConsole_InstallHooks(void)
 {
@@ -118,15 +139,24 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_PrintVersion, "version", 0);
     sithConsole_RegisterCommand(JonesConsole_PrintFramerate, "framerate", 0);
     sithConsole_RegisterCommand(JonesConsole_PrintPolys, "polys", 0);
-    sithConsole_RegisterCommand(JonesConsole_ShowEndCredits, "endcredit", 0);
+    sithConsole_RegisterCommand(JonesConsole_ShowEndCredits, "endcredit", SITHCONSOLE_DEVMODE);
 
-    //sithConsole_RegisterCommand(JonesConsole_JumpLevel, "jumplevel", 0);
-    //sithConsole_RegisterCommand(JonesConsole_Radius, "radius", 0);
-    //sithConsole_RegisterCommand(JonesConsole_PVS, "pvs", 0);
-    //sithConsole_RegisterCommand(JonesConsole_NextLevel, "nextlevel", 0);
-    //sithConsole_RegisterCommand(JonesConsole_EndLevel, "endlevel", 0);
-    //sithConsole_RegisterCommand(JonesConsole_Restart, "restart", 0);
-    //sithConsole_RegisterCommand(JonesConsole_Sounds, "sounds", 0);
+    // Added: Following commands were added from debug version
+    sithConsole_RegisterCommand(JonesConsole_JumpLevel, "jumplevel", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_Radius, "radius", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_PVS, "pvs", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_NextLevel, "nextlevel", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_EndLevel, "endlevel", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_Restart, "restart", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_Sounds, "sounds", SITHCONSOLE_DEVMODE);
+
+    sithConsole_RegisterCommand(JonesConsole_DevMode, "devmode", 0);  // Added
+    sithConsole_RegisterCommand(JonesConsole_InEditor, "ineditor", 0);  // Added
+
+    // Added
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ) {
+        JonesConsole_EnableDevMode(true);
+    }
 
     JonesConsole_nextIndex = 0;
 
@@ -396,11 +426,159 @@ int J3DAPI JonesConsole_PrintPolys(const SithConsoleCommand* pFunc, const char* 
     return 1;
 }
 
+
+int J3DAPI JonesConsole_JumpLevel(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    if ( !pArg )
+    {
+        sithConsole_PrintString("Level Number?");
+        return 0;
+    }
+
+    size_t levelNum;
+    if ( !sscanf_s(pArg, "%d", &levelNum) )
+    {
+        return 0;
+    }
+
+    JonesMain_JumpLevel(levelNum + 1);
+    return 1;
+}
+
+int J3DAPI JonesConsole_Radius(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    sithToggleDrawPlayerRadius();
+    return 1;
+}
+
+int J3DAPI JonesConsole_Sounds(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    STDLOG_STATUS("Game time %f\n", sithTime_g_secGameTime);
+    Sound_SoundDump();
+    return 1;
+}
+
+int J3DAPI JonesConsole_PVS(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    sithRender_TogglePVS();
+    return 1;
+}
+
+int J3DAPI JonesConsole_NextLevel(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    JonesMain_NextLevel();
+    return 1;
+}
+
+int J3DAPI JonesConsole_EndLevel(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    jonesCog_EndLevel();
+    return 1;
+}
+
+int J3DAPI JonesConsole_Restart(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    JonesMain_RestartLevel();
+    return 1;
+}
+
 int J3DAPI JonesConsole_ShowEndCredits(const SithConsoleCommand* pFunc, const char* pArg)
 {
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
     JonesMain_ShowEndCredits();
+    return 1;
+}
+
+void J3DAPI JonesConsole_EnableDevMode(bool bEnable)
+{
+    if ( bEnable )
+    {
+        sithMain_g_sith_mode.debugModeFlags |= SITHDEBUG_INEDITOR;
+        sithConsole_SetConsoleFlags(SITHCONSOLE_DEVMODE);
+    }
+    else
+    {
+        sithMain_g_sith_mode.debugModeFlags &= ~SITHDEBUG_INEDITOR;
+        sithConsole_ClearConsoleFlags(SITHCONSOLE_DEVMODE);
+    }
+
+    // Following required due to SITHDEBUG_INEDITOR
+    sithControl_RebindKeyboard(); // Enable dev keys. Note, this will reset key config to default, might be better to do some jonesConfig action here
+    if ( stdControl_IsMouseEnabled() ) {
+        sithControl_RebindMouse();
+    }
+}
+
+int J3DAPI JonesConsole_DevMode(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    if ( !pArg )
+    {
+        STD_FORMAT(std_g_genBuffer, "devmode %s", (sithConsole_GetConsoleFlags() & SITHCONSOLE_DEVMODE) != 0 ? "on" : "off");
+        sithConsole_PrintString(std_g_genBuffer);
+        return 0;
+    }
+
+    bool bEnable;
+    if ( !sithCommand_ParseBool(pArg, &bEnable) )
+    {
+        sithConsole_PrintString("Invalid argument!");
+        return 0;
+    }
+
+    JonesConsole_EnableDevMode(bEnable);
+    return 1;
+}
+
+int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    if ( !pArg )
+    {
+        STD_FORMAT(std_g_genBuffer, "ineditor %s", (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ? "on" : "off");
+        sithConsole_PrintString(std_g_genBuffer);
+        return 0;
+    }
+
+    bool bEnable;
+    if ( !sithCommand_ParseBool(pArg, &bEnable) )
+    {
+        sithConsole_PrintString("Invalid argument!");
+        return 0;
+    }
+
+    if ( bEnable )
+    {
+        sithMain_g_sith_mode.debugModeFlags |= SITHDEBUG_INEDITOR;
+    }
+    else
+    {
+        sithMain_g_sith_mode.debugModeFlags &= ~SITHDEBUG_INEDITOR;
+    }
+
     return 1;
 }
 
