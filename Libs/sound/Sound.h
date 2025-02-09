@@ -64,10 +64,14 @@ int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle); // Added 
 
 tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel);
 void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient);
+
 int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPosX, uint8_t* pMouthPosY, int a4);
+size_t J3DAPI Sound_GetAllInstanceInfo(SoundInstanceInfo* pCurInstance, size_t sizeInstances); // Added: From debug version
 void J3DAPI Sound_SetReverseSound(int bReverse);
+void Sound_SoundDump(void); // Added: From debug version
 tSoundHandle J3DAPI Sound_GetNextHandle();
 tSoundChannelHandle J3DAPI Sound_GetNextChannelHandle();
+
 int J3DAPI Sound_GetFreeCache(int bankNum, int requiredSize);
 void J3DAPI Sound_IncreaseFreeCache(int bankNum, unsigned int nSize);
 int J3DAPI Sound_BankCacheWriteSoundFilePath(int bankNum, const void* pName, unsigned int len);

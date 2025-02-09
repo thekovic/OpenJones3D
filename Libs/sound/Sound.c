@@ -545,10 +545,10 @@ int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
         }
 
         if ( pCurChannel->handle
-          && (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
-          && pCurChannel->thingId == thingId
-          && (!handle || pCurChannel->hSnd == handle)
-          && (pCurChannel->flags & SOUND_CHANNEL_PITCHFADE) != 0 )
+            && (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
+            && pCurChannel->thingId == thingId
+            && (!handle || pCurChannel->hSnd == handle)
+            && (pCurChannel->flags & SOUND_CHANNEL_PITCHFADE) != 0 )
         {
             return 1;
         }
@@ -663,8 +663,8 @@ LABEL_30:
         {
             SoundThingInfo thngSndInfo;
             if ( (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
-              && Sound_pfGetThingInfoCallback
-              && Sound_pfGetThingInfoCallback(pCurChannel->thingId, &thngSndInfo) )
+                && Sound_pfGetThingInfoCallback
+                && Sound_pfGetThingInfoCallback(pCurChannel->thingId, &thngSndInfo) )
             {
                 pCurChannel->playPos.x = thngSndInfo.pos.x;
                 pCurChannel->playPos.y = thngSndInfo.pos.y;
@@ -788,9 +788,9 @@ LABEL_30:
         {
             pCurChannel = &Sound_apChannels[i];
             if ( pCurChannel->handle
-              && (SoundDriver_GetStatusAndCaps(pCurChannel->pDSoundBuffer) & SOUND_CHANNEL_PLAYING) == 0
-              && (pCurChannel->flags & SOUND_CHANNEL_PAUSED) == 0
-              && (pCurChannel->flags & SOUND_CHANNEL_FAR) == 0 )
+                && (SoundDriver_GetStatusAndCaps(pCurChannel->pDSoundBuffer) & SOUND_CHANNEL_PLAYING) == 0
+                && (pCurChannel->flags & SOUND_CHANNEL_PAUSED) == 0
+                && (pCurChannel->flags & SOUND_CHANNEL_FAR) == 0 )
             {
                 SoundDriver_Release(pCurChannel->pDSoundBuffer);
                 pCurChannel->pDSoundBuffer = NULL;
@@ -800,4 +800,146 @@ LABEL_30:
             }
         }
     }
+}
+
+size_t J3DAPI Sound_GetAllInstanceInfo(SoundInstanceInfo* pCurInstance, size_t sizeInstances)
+{
+    size_t numSounds   = 0;
+    size_t numChannels = Sound_numChannels;
+    tSoundChannel* pCurChannel = &Sound_apChannels[Sound_numChannels];
+    while ( 1 )
+    {
+        --pCurChannel;
+        if ( !numChannels-- )
+        {
+            break;
+        }
+
+        if ( pCurChannel->handle )
+        {
+
+            if ( numSounds >= sizeInstances )
+            {
+                Sound_pHS->pErrorPrint("Sound_GetAllInstanceInfo: Return value not big enough!\n");
+                return sizeInstances;
+            }
+
+            SoundInfo* pSndInfo = Sound_soundbank_GetSoundInfo(pCurChannel->hSnd);
+            if ( pSndInfo )
+            {
+                pCurInstance->pName = (const char*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->nameOffset];
+            }
+            else
+            {
+                Sound_pHS->pErrorPrint("Sound_GetAllInstanceInfo: Unknown sound data for playing sound.\n");
+                pCurInstance->pName = ">ERR:Unknown<";
+            }
+
+            pCurInstance->handle  = pCurChannel->handle;
+            pCurInstance->thingId = pCurChannel->thingId;
+            pCurInstance->flags   = pCurChannel->flags;
+            ++pCurInstance;
+            ++numSounds;
+        }
+    }
+
+    return numSounds;
+}
+
+void Sound_SoundDump(void)
+{
+    SoundInstanceInfo aInfos[64];
+    size_t numSounds = Sound_GetAllInstanceInfo(aInfos, STD_ARRAYLEN(aInfos));
+
+    char aText[256];
+    STD_FORMAT(aText, "Sound Dump of %d sounds\n", numSounds);
+    Sound_pHS->pStatusPrint(aText);
+
+    for ( size_t i = 0; i < numSounds; ++i )
+    {
+        char aPlayingText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_PLAYING) != 0 )
+        {
+            STD_FORMAT(aPlayingText, "Playing,");
+        }
+        else
+        {
+            STD_FORMAT(aPlayingText, "NotPlay,");
+        }
+
+        char aPusedText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_PAUSED) != 0 )
+        {
+            STD_FORMAT(aPusedText, "Paused,");
+        }
+        else
+        {
+            STD_FORMAT(aPusedText, "Not Paused,");
+        }
+
+        char aDistanceText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_FAR) != 0 )
+        {
+            STD_FORMAT(aDistanceText, "Far,");
+        }
+        else
+        {
+            STD_FORMAT(aDistanceText, "   ,");
+        }
+
+        char aLoopingText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_LOOP) != 0 )
+        {
+            STD_FORMAT(aLoopingText, "Looping,");
+        }
+        else
+        {
+            STD_FORMAT(aLoopingText, "       ,");
+        }
+
+        char aSpacialText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_3DSOUND) != 0 )
+        {
+            STD_FORMAT(aSpacialText, "3D,");
+        }
+        else
+        {
+            STD_FORMAT(aSpacialText, "2D,");
+        }
+
+        char aThingText[32];
+        if ( (aInfos[i].flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0 )
+        {
+            STD_FORMAT(aThingText, "Thing,");
+        }
+        else
+        {
+            STD_FORMAT(aThingText, "     ,");
+        }
+
+        char aVoldFadeText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_VOLUMEFADE) != 0 )
+        {
+            STD_FORMAT(aVoldFadeText, "volFade,");
+        }
+        else
+        {
+            STD_FORMAT(aVoldFadeText, "       ,");
+        }
+
+        char aPitchText[32];
+        if ( (aInfos[i].flags & SOUND_CHANNEL_PITCHFADE) != 0 )
+        {
+            STD_FORMAT(aPitchText, "pitchFade,");
+        }
+        else
+        {
+            STD_FORMAT(aPitchText, "         ,");
+        }
+
+        STD_FORMAT(aText, "%s %d\n \t%s %s %s %s %s %s %s %s", aInfos[i].pName, aInfos[i].handle, aPlayingText, aDistanceText, aLoopingText, aSpacialText, aThingText, aVoldFadeText, aPitchText, aPusedText);
+        Sound_pHS->pStatusPrint("%s\n", aText);
+    }
+
+    Sound_pHS->pStatusPrint("\n");
 }

@@ -27,30 +27,30 @@ typedef enum eSoundPlayFlag
 typedef enum eSoundChannelFlag J3D_ENUM_TYPE(uint32_t)
 {
     SOUND_CHANNEL_PLAYING          = 0x1,
-    SOUND_CHANNEL_LOOP             = 0x2,
-    SOUND_CHANNEL_HWMIXING         = 0x4,
-    SOUND_CHANNEL_GLOBALFOCUS      = 0x8,
-    SOUND_CHANNEL_VOLUMEFADE       = 0x10,
-    SOUND_CHANNEL_PITCHFADE        = 0x20,
-    SOUND_CHANNEL_PLAYONCE         = 0x100,
-    SOUND_CHANNEL_PLAYTHINGONCE    = 0x200,
-    SOUND_CHANNEL_PAUSED           = 0x20000,
-    SOUND_CHANNEL_3DSOUND          = 0x40000,
-    SOUND_CHANNEL_THING            = 0x80000,
-    SOUND_CHANNEL_COMPRESSED       = 0x100000,
-    SOUND_CHANNEL_FAR              = 0x200000,
-    SOUND_CHANNEL_SWMIXING         = 0x400000,
-    SOUND_CHANNEL_UNKNOWN_800000   = 0x800000,
-    SOUND_CHANNEL_RESTART          = 0x1000000,
-    SOUND_CHANNEL_UNKNOWN_2000000  = 0x2000000,
-    SOUND_CHANNEL_USE3DCAPS        = 0x4000000,
-    SOUND_CHANNEL_UNKNOWN_8000000  = 0x8000000,
-    SOUND_CHANNEL_UNKNOWN_10000000 = 0x10000000,
+        SOUND_CHANNEL_LOOP             = 0x2,
+        SOUND_CHANNEL_HWMIXING         = 0x4,
+        SOUND_CHANNEL_GLOBALFOCUS      = 0x8,
+        SOUND_CHANNEL_VOLUMEFADE       = 0x10,
+        SOUND_CHANNEL_PITCHFADE        = 0x20,
+        SOUND_CHANNEL_PLAYONCE         = 0x100,
+        SOUND_CHANNEL_PLAYTHINGONCE    = 0x200,
+        SOUND_CHANNEL_PAUSED           = 0x20000,
+        SOUND_CHANNEL_3DSOUND          = 0x40000,
+        SOUND_CHANNEL_THING            = 0x80000,
+        SOUND_CHANNEL_COMPRESSED       = 0x100000,
+        SOUND_CHANNEL_FAR              = 0x200000,
+        SOUND_CHANNEL_SWMIXING         = 0x400000,
+        SOUND_CHANNEL_UNKNOWN_800000   = 0x800000,
+        SOUND_CHANNEL_RESTART          = 0x1000000,
+        SOUND_CHANNEL_UNKNOWN_2000000  = 0x2000000,
+        SOUND_CHANNEL_USE3DCAPS        = 0x4000000,
+        SOUND_CHANNEL_UNKNOWN_8000000  = 0x8000000,
+        SOUND_CHANNEL_UNKNOWN_10000000 = 0x10000000,
 } tSoundChannelFlag;
 
 typedef enum eSoundEnvFlags
 {
-  SOUND_ENV_UNDERWATER = 0x1,
+    SOUND_ENV_UNDERWATER = 0x1,
 } SoundEnvFlags;
 
 typedef unsigned int tSoundChannelHandle;
@@ -59,9 +59,9 @@ typedef unsigned int tSoundHandle;
 typedef struct sSoundThingInfo SoundThingInfo;
 typedef struct sSoundSpatialInfo SoundSpatialInfo;
 
-typedef int (J3DAPI *SoundGetThingInfoCallback)(int thingID, SoundThingInfo *pInfo);
-typedef void (J3DAPI *SoundCalcListenerSoundMixFunc)(const SoundSpatialInfo *, float *volume, float *pan, float *pitch);
-typedef uint8_t *(J3DAPI *SoundDriverGetSoundBufferDataFunc)(LPDIRECTSOUNDBUFFER pDSBuf, unsigned int *pSoundDataSize, unsigned int *pbCompressed);
+typedef int (J3DAPI* SoundGetThingInfoCallback)(int thingID, SoundThingInfo* pInfo);
+typedef void (J3DAPI* SoundCalcListenerSoundMixFunc)(const SoundSpatialInfo*, float* volume, float* pan, float* pitch);
+typedef uint8_t* (J3DAPI* SoundDriverGetSoundBufferDataFunc)(LPDIRECTSOUNDBUFFER pDSBuf, unsigned int* pSoundDataSize, unsigned int* pbCompressed);
 
 
 typedef struct sSoundInfo
@@ -71,7 +71,7 @@ typedef struct sSoundInfo
     unsigned int filePathOffset;
     unsigned int nameOffset;
     unsigned int dataOffset;
-    uint8_t *pLipSyncData;
+    uint8_t* pLipSyncData;
     unsigned int sampleRate;
     unsigned int sempleBitSize;
     unsigned int numChannels;
@@ -126,16 +126,24 @@ typedef struct sAudioCompressorState
 
 struct sSoundSpatialInfo
 {
-  rdVector3 pos;
-  int unknown1;
-  int unknown2;
-  int unknown3;
-  float minRadius;
-  float maxRadius;
-  float volume;
-  float pitch;
-  SoundEnvFlags flags;
+    rdVector3 pos;
+    int unknown1;
+    int unknown2;
+    int unknown3;
+    float minRadius;
+    float maxRadius;
+    float volume;
+    float pitch;
+    SoundEnvFlags flags;
 };
+
+typedef struct sSoundInstanceInfo
+{
+    tSoundChannelHandle handle;
+    const char* pName;
+    int thingId;
+    tSoundChannelFlag flags;
+} SoundInstanceInfo;
 
 
 J3D_EXTERN_C_END
