@@ -688,7 +688,6 @@ int J3DAPI stdControl_TestAxisFlag(size_t axis, StdControlAxisFlag flags)
     if ( bNegativeAxis )
     {
         flags = flags & ~(STDCONTROL_AXIS_NEGATIVE | STDCONTROL_AXIS_ENABLED) | STDCONTROL_AXIS_NEGATIVE;
-        return flags & stdControl_aAxes[aid].flags;
     }
 
     return flags & stdControl_aAxes[aid].flags;
