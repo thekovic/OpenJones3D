@@ -34,7 +34,7 @@ This project does ***not*** include any original game assets. A valid copy of th
 1. Copy the headers and library files of DirectX 6.1 SDK into `Libs\external\DirectX61c\` under `include` and `lib` folders.
 2. Use CMake to generate the project for Visual Studio:
    ```bash
-   cmake -DJONES3D_ENABLE_POST_BUILD_COPY=ON -DJONES3D_POST_BUILD_COPY_DIR="<game-install-folder>\Resource" ..
+   cmake -A win32 -DJONES3D_ENABLE_POST_BUILD_COPY=ON -DJONES3D_POST_BUILD_COPY_DIR="<game-install-folder>\Resource" ..
    ```
    *Note: If copying compiled binaries is not required the 2 extra configuration options can be omitted in.*
 3. Build the project
