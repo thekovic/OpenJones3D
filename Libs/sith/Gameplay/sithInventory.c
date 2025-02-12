@@ -276,7 +276,7 @@ float J3DAPI sithInventory_ChangeInventory(SithThing* pThing, size_t typeId, flo
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
 
     SithInventoryType* pType = &sithInventory_g_aTypes[typeId];
-    if ( pThing->thingInfo.actorInfo.pPlayer == (SithPlayer*)-0x88 || (pType->flags & SITHINVENTORY_TYPE_REGISTERED) == 0 )
+    if ( pThing->thingInfo.actorInfo.pPlayer->aItems == NULL || (pType->flags & SITHINVENTORY_TYPE_REGISTERED) == 0 ) // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems == NULL ???
     {
         return 0.0f;
     }
@@ -390,7 +390,7 @@ int J3DAPI sithInventory_IsInventoryActivated(SithThing* pThing, size_t typeId)
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(typeId < STD_ARRAYLEN(sithInventory_g_aTypes));
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
-    return pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NUL ???
+    return pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NULL ???
         && (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) != 0
         && (pThing->thingInfo.actorInfo.pPlayer->aItems[typeId].status & SITHINVENTORY_ITEM_ACTIVATED) != 0;
 }
@@ -436,8 +436,8 @@ void J3DAPI sithInventory_SetInventoryDisabled(SithThing* pThing, size_t typeId,
     SITH_ASSERTREL(typeId < STD_ARRAYLEN(sithInventory_g_aTypes));
 
     if ( pThing->thingInfo.actorInfo.pPlayer
-      && pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NUL ???
-      && (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
+        && pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NUL ???
+        && (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
     {
         SithInventoryItem* pItem = &pThing->thingInfo.actorInfo.pPlayer->aItems[typeId];
         if ( bDisabled )
