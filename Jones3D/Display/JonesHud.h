@@ -71,6 +71,9 @@ void J3DAPI JonesHud_InventoryItemChanged(int typeId);
 void JonesHud_RenderInventoryItemChange(void);
 void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scale);
 
+// Returns menu item by index or NULL if index >= JONESHUD_MAX_MENU_ITEMS
+const JonesHudMenuItem* J3DAPI JonesHud_GetMenuItem(size_t index);
+
 // Returns 1 when bonus map was bought
 int JonesHud_ShowLevelCompleted(void);
 HANDLE J3DAPI JonesHud_OpenHelp(HANDLE process);

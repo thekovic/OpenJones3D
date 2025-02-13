@@ -4,6 +4,7 @@
 #include <j3dcore/j3dhook.h>
 
 #include <Jones3D/Display/jonesConfig.h>
+#include <Jones3D/Main/jonesLevel.h>
 #include <Jones3D/Main/jonesMain.h>
 #include <Jones3D/Main/jonesString.h>
 #include <Jones3D/Play/jonesCog.h>
@@ -3725,27 +3726,11 @@ void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scal
 
 int JonesHud_ShowLevelCompleted(void)
 {
-    HWND hwnd;
-    float amount_1;
-    float amountb;
-    float v8;
-    float v9;
-    int bItemAvailable;
-    float amount_2;
-    float v13;
-    float amount;
-    unsigned int menuID_1;
-    int menuID;
-    SithGameStatistics* pGameStatistics;
-    int aItemsState[14];
-    int balance;
-
-    int v18 = 0;
-    int elapsedTime = 0;
-    int iqPoints = 0;
+    int elapsedTime        = 0;
+    int iqPoints           = 0;
     int foundTreasureValue = 0;
-    int totalTrasureValue = 0;
-    int numFoundTreasures = 0;
+    int totalTrasureValue  = 0;
+    int numFoundTreasures  = 0;
 
     SithGameStatistics* pStatistics = sithGamesave_GetGameStatistics();
     if ( pStatistics && sithGamesave_LockGameStatistics() )
@@ -3753,77 +3738,47 @@ int JonesHud_ShowLevelCompleted(void)
         elapsedTime = pStatistics->aLevelStatistic[pStatistics->curLevelNum - 1].elapsedTime;
         iqPoints = pStatistics->totalIQPoints - JonesHud_levelStartIQPoints;
         numFoundTreasures = pStatistics->aLevelStatistic[pStatistics->curLevelNum - 1].numFoundTreasures;
-        if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
-        {
-            amount = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID].amount;
-        }
-        else
-        {
-            amount = 0.0f;
-        }
 
+        float amount = sithInventory_GetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID); // Changed: To use sithInventory_GetInventory instead of manually do what function does
         totalTrasureValue = (int32_t)amount;
         foundTreasureValue = totalTrasureValue - JonesHud_foundTreasureValue;
         sithGamesave_UnlockGameStatistics();
     }
 
-    if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
-    {
-        v13 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID].amount;
-    }
-    else
-    {
-        v13 = 0.0f;
-    }
+    int balance = (int)sithInventory_GetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID); // Changed: To use sithInventory_GetInventory instead of manually do what function does
 
-    balance = (int32_t)v13;
+    int aItemsState[14] = { 0 }; // Added: init to 0
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aStoreItems); ++i )
     {
         if ( JonesHud_aStoreItems[i].menuID == JONESHUD_MENU_INVITEM_BONUSMAP
-            && !sithPlayer_g_bBonusMapBought
-            && JonesMain_GetCurrentLevelNum() != 17
+            && !sithPlayer_g_bBonusMapBought // TODO: in debug version JonesHud_bBonusMapBought is used
+            && JonesMain_GetCurrentLevelNum() != JONESLEVEL_BONUSLEVELNUM
             && JonesMain_GetCurrentLevelNum() != 10
             && JonesMain_GetCurrentLevelNum() != 15
             || JonesHud_aStoreItems[i].menuID >= JONESHUD_MENU_HEALTH_SMALL
             && JonesHud_aStoreItems[i].menuID <= JONESHUD_MENU_HEALTH_POISONKIT )
         {
-            if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
-            {
-                amount_2 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID].amount;
-            }
-            else
-            {
-                amount_2 = 0.0f;
-            }
-
-            aItemsState[i] = (16 * (int32_t)amount_2) | (JonesHud_aStoreItems[i].menuID << 16) | 1;
+            float amount = sithInventory_GetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID); // Changed: To use sithInventory_GetInventory instead of manually do what function does
+            aItemsState[i] = (16 * (int32_t)amount) | (JonesHud_aStoreItems[i].menuID << 16) | 1;
         }
         else
         {
-            menuID = JonesHud_aStoreItems[i].menuID;
-            bItemAvailable = 0;
+            int menuID = JonesHud_aStoreItems[i].menuID;
+            bool bItemAvailable = false;
             if ( JonesHud_apMenuItems[menuID] )
             {
                 if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[menuID]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0
                     ? sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[menuID]->inventoryID].status & SITHINVENTORY_ITEM_FOUND
                     : 0 )
                 {
-                    bItemAvailable = 1;
+                    bItemAvailable = true;
                 }
             }
 
             if ( bItemAvailable )
             {
-                if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
-                {
-                    v9 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID].amount;
-                }
-                else
-                {
-                    v9 = 0.0f;
-                }
-
-                aItemsState[i] = bItemAvailable | (16 * (int32_t)v9) | (menuID << 16);
+                float amount = sithInventory_GetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JonesHud_aStoreItems[i].menuID]->inventoryID); // Changed: To use sithInventory_GetInventory instead of manually do what function does
+                aItemsState[i] = bItemAvailable | (16 * (int32_t)amount) | (menuID << 16);
             }
             else
             {
@@ -3832,9 +3787,9 @@ int JonesHud_ShowLevelCompleted(void)
         }
     }
 
-    hwnd = stdWin95_GetWindow();
+    int bBoughtBounusMap = 0;
     if ( jonesConfig_ShowLevelCompletedDialog(
-        hwnd,
+        stdWin95_GetWindow(),
         &balance,
         aItemsState,
         11,
@@ -3846,49 +3801,38 @@ int JonesHud_ShowLevelCompleted(void)
     {
         for ( size_t i = 0; i < STD_ARRAYLEN(aItemsState); ++i )
         {
-            menuID_1 = (aItemsState[i] & ~0xFFFFu) >> 16;
+            int menuID = (aItemsState[i] & ~0xFFFFu) >> 16;
             if ( (uint16_t)aItemsState[i] )
             {
-                if ( menuID_1 == JONESHUD_MENU_INVITEM_BONUSMAP )
+                if ( menuID == JONESHUD_MENU_INVITEM_BONUSMAP )
                 {
                     jonesConfig_UpdateCurrentLevelNum();
-                    v18 = 1;
+                    bBoughtBounusMap = 1;
                     JonesHud_bBonusMapBought = 1;
                 }
-
-                else if ( JonesHud_apMenuItems[menuID_1] )
+                else if ( JonesHud_apMenuItems[menuID] )
                 {
-                    amount_1 = (float)(JonesHud_aStoreItems[i].unknown132 * (uint16_t)aItemsState[i]);
-                    sithInventory_ChangeInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID_1]->inventoryID, amount_1);
-                    sithInventory_SetInventoryAvailable(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID_1]->inventoryID, 1);
+                    float amount = (float)(JonesHud_aStoreItems[i].unitsPerItem * (uint16_t)aItemsState[i]);
+                    sithInventory_ChangeInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID]->inventoryID, amount);
+                    sithInventory_SetInventoryAvailable(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[menuID]->inventoryID, 1);
                 }
             }
         }
 
-        amountb = (float)balance;
-        sithInventory_SetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID, amountb);
+        sithInventory_SetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID, (float)balance);
     }
 
-    pGameStatistics = sithGamesave_GetGameStatistics();
+    SithGameStatistics* pGameStatistics = sithGamesave_GetGameStatistics();
     if ( !pGameStatistics || !sithGamesave_LockGameStatistics() )
     {
-        return v18;
+        return bBoughtBounusMap;
     }
 
-    if ( (sithInventory_g_aTypes[JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
-    {
-        v8 = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID].amount;
-    }
-    else
-    {
-        v8 = 0.0f;
-    }
-
-    pGameStatistics->foundTreasureValue = (int32_t)v8;
-    pGameStatistics->numFoundTreasures = 0;
+    pGameStatistics->foundTreasureValue = (int32_t)sithInventory_GetInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_apMenuItems[JONESHUD_MENU_TREASURE_CHEST]->inventoryID); // Changed: To use sithInventory_GetInventory instead of manually do what function does
+    pGameStatistics->numFoundTreasures  = 0;
 
     sithGamesave_UnlockGameStatistics();
-    return v18;
+    return bBoughtBounusMap;
 }
 
 HANDLE J3DAPI JonesHud_OpenHelp(HANDLE process)
@@ -4559,4 +4503,13 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
 
     JonesHud_msecCreditsElapsedTime = msecCurTime;
     return 0;
+}
+
+const JonesHudMenuItem* J3DAPI JonesHud_GetMenuItem(size_t index)
+{
+    if ( index < JONESHUD_MAX_MENU_ITEMS )
+    {
+        return JonesHud_apMenuItems[index];
+    }
+    return NULL;
 }
