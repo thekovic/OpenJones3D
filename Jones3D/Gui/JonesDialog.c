@@ -165,7 +165,7 @@ int J3DAPI JonesDialog_InitCursorTracking(int* pAlreadyInited)
     if ( !ClipCursor(&recz) )
     {
         dwError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_InitCursorTracking: Error calling ClipCursor().  Reason: %s", JonesDialog_szErrorBuffer);
         JonesDialog_ResetCursorTracking();
         return 1;
@@ -283,7 +283,7 @@ int J3DAPI JonesDialog_TrackCursor(int bReDraw)
         SRCAND) )
     {
         dwError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_TrackCursor: BitBlt of cursor, SRCAND failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
@@ -302,7 +302,7 @@ int J3DAPI JonesDialog_TrackCursor(int bReDraw)
             SRCPAINT) )
         {
             LastError = GetLastError();
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, 0xFFu, 0);
+            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
             STDLOG_ERROR("JonesDialog_TrackCursor: BitBlt of cursor, SRCPAINT failed.  Reason: %s", JonesDialog_szErrorBuffer);
         }
 
@@ -320,7 +320,7 @@ int J3DAPI JonesDialog_TrackCursor(int bReDraw)
         SRCPAINT) )
     {
         dwError_1 = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, 255u, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_TrackCursor: BitBlt of cursor, SRCPAINT failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
@@ -396,7 +396,7 @@ int J3DAPI JonesDialog_CopyRectToDrawBuffer(GDIDIBSectionInfo* pInfo, const PPOI
                         SRCCOPY) )
                     {
                         dwError = GetLastError();
-                        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                         STDLOG_ERROR("JonesDialog_CopyRectToDrawBuffer: BitBlt to virtual desktop failed.  Reason: %s", JonesDialog_szErrorBuffer);
                     }
 
@@ -415,7 +415,7 @@ int J3DAPI JonesDialog_CopyRectToDrawBuffer(GDIDIBSectionInfo* pInfo, const PPOI
                     SRCCOPY) )
                 {
                     dwError_1 = GetLastError();
-                    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                     STDLOG_ERROR("JonesDialog_CopyRectToDrawBuffer: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
                 }
 
@@ -468,7 +468,7 @@ int J3DAPI JonesDialog_RestoreBackground(HDC hdc, HWND hwnd, LPPOINT a3, LPRECT 
     }
 
     dwError = GetLastError();
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
     STDLOG_ERROR("JonesDialog_RestoreBackground: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
     return 1;
 }
@@ -591,16 +591,16 @@ void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowMo
                 SRCCOPY) )
             {
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_SetGameState: BitBlt of background to virtual desktop failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
             hDC = GetDC(0);
             if ( hDC != JonesDialog_GDIDIBSectionInfo.hScreenDC
-              && !BitBlt(hDC, 0, 0, width, height, JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, SRCCOPY) )
+                && !BitBlt(hDC, 0, 0, width, height, JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, SRCCOPY) )
             {
                 dwError_1 = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_SetGameState: BitBlt of background to actual desktop failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
@@ -1059,7 +1059,7 @@ LRESULT CALLBACK JonesDialog_SubclassDialogWindowProc(HWND hwnd, UINT uMsg, WPAR
                 }
 
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_SubclassDialogWindowProc: Error calling ClipCursor().  Reason: %s", JonesDialog_szErrorBuffer);
 
                 result = 1;
@@ -1172,7 +1172,7 @@ void J3DAPI JonesDialog_HandleWM_NCPAINT(HWND hwnd, WPARAM wParam, JonesDialogDa
         else
         {
             dwError = GetLastError();
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 0xFFu, 0);
+            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
             STDLOG_ERROR("JonesDialog_HandleWM_NCPAINT: GDIDIBSectionInfo.hDC is NULL.  Reason: %s\n", JonesDialog_szErrorBuffer);
         }
     }
@@ -1275,7 +1275,7 @@ int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hd
             if ( !pInfo->hBitmap )
             {
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer), 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_AllocOffScreenGDISection: CreateDIBSection failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
@@ -1330,10 +1330,10 @@ int J3DAPI JonesDialog_AllocOffScreenDIBSection(int* pBSkipedAllocation)
 
     JonesDialog_GDIDIBSectionInfoOffScreen.bHasDC = 1;
     if ( !*pBSkipedAllocation
-      && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, pDisplayMode.rasterInfo.width, pDisplayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
+        && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, pDisplayMode.rasterInfo.width, pDisplayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
     {
         LastError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer), 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_AllocOffScreenDIBSection: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
