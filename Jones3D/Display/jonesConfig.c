@@ -2077,33 +2077,10 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
             *hdc = NULL;
             return 1;
         }
-        case WM_PAINT:
-        {
-            // Fixed: Added full paint logic.
-            //        This should fixed painting the file list on windows 11
-
-            PAINTSTRUCT ps;
-            /*HDC hdcThumbnail =*/ BeginPaint(hDlg, &ps);
-
-            //LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
-            HWND hThumbnail = GetDlgItem(hDlg, 1125);
-            InvalidateRect(hThumbnail, NULL, TRUE);  // Mark for repaint
-            UpdateWindow(hThumbnail);
-
-            HWND hIcon = GetDlgItem(hDlg, 1115);
-            InvalidateRect(hIcon, NULL, TRUE);  // Mark for repaint
-            UpdateWindow(hIcon);
-
-            // End painting
-            EndPaint(hDlg, &ps);
-            return 1;
-        }
         case WM_NOTIFY:
         {
-            SaveGameDialogData* pData  = (SaveGameDialogData*)GetWindowLong(hDlg, DWL_USER);
-            NMHDR* pNmHdr = (NMHDR*)lParam;
-
-            switch ( pNmHdr->code )
+            SaveGameDialogData* pData  = (SaveGameDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+            switch ( ((LPNMHDR)lParam)->code )
             {
                 case CDN_FILEOK:
                 {
@@ -2217,7 +2194,7 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                             }
                             else
                             {
-                                SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                                SetWindowLongPtr(hDlg, DWL_MSGRESULT, 1);
                                 return 1;
                             }
                         }
@@ -2236,17 +2213,17 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                             jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_SAVEGM", aErrorText, 141);
                         }
 
-                        SetWindowLong(hDlg, DWL_MSGRESULT, 1);
+                        SetWindowLongPtr(hDlg, DWL_MSGRESULT, 1);
                         return 1;
                     }
                 }
                 case CDN_INITDONE:
                 {
                     HWND hThumbnail = GetDlgItem(hDlg, 1125);
-                    SetWindowLong(hThumbnail, GWL_USERDATA, 154);
+                    SetWindowLongPtr(hThumbnail, GWL_USERDATA, 154);
 
                     HWND hIcon = GetDlgItem(hDlg, 1115);
-                    SetWindowLong(hIcon, GWL_USERDATA, 154);
+                    SetWindowLongPtr(hIcon, GWL_USERDATA, 154);
 
                     jonesConfig_hFontSaveGameDlg = jonesConfig_InitDialog(GetParent(hDlg), NULL, JONESCONFIG_NOFONTSCALE(154));
                     jonesConfig_hFontSaveGameDlg = jonesConfig_InitDialog(hDlg, jonesConfig_hFontSaveGameDlg, 154);
@@ -2272,17 +2249,18 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpO
     pData->hdcThumbnail = CreateCompatibleDC(GetDC(hThumbnail));
 
     hThumbnail = GetDlgItem(hDlg, 1125); // ??
-    pData->pfThumbnailProc = GetWindowLong(hThumbnail, GWL_WNDPROC);
+    pData->pfThumbnailProc = GetWindowLongPtr(hThumbnail, GWL_WNDPROC);
     SetWindowLongPtr(hThumbnail, GWL_WNDPROC, (LONG)jonesConfig_SaveGameThumbnailPaintProc);
 
     SetWindowLongPtr(hDlg, DWL_USER, (LONG)pData);
 
-    RECT dlgRect;
-    GetWindowRect(hDlg, &dlgRect);
-
-    RECT thumbWndRect, thumbRect;;
-    GetWindowRect(hThumbnail, &thumbWndRect);
+    RECT thumbRect;
     GetClientRect(hThumbnail, &thumbRect);
+
+    // Added: Calculate thumbRect to screen
+    POINT pt = { thumbRect.left, thumbRect.top };
+    ClientToScreen(hThumbnail, &pt);
+    OffsetRect(&thumbRect, pt.x - thumbRect.left, pt.y - thumbRect.top);
 
     // Changed: Added scale the thumb size to DPI
     UINT systemDPI = GetDpiForWindow(hDlg);
@@ -2295,14 +2273,20 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpO
 
     if ( thumbWidth != 0 || thumbHeight != 0 )
     {
-        MoveWindow(hDlg, dlgRect.left, dlgRect.top, thumbWidth + dlgRect.right - dlgRect.left, dlgRect.bottom - dlgRect.top, 1);
+        RECT dlgWndRect;
+        GetWindowRect(hDlg, &dlgWndRect);
+
+        RECT thumbWndRect;
+        GetWindowRect(hThumbnail, &thumbWndRect);
+
+        MoveWindow(hDlg, dlgWndRect.left, dlgWndRect.top, thumbWidth + dlgWndRect.right - dlgWndRect.left, dlgWndRect.bottom - dlgWndRect.top, TRUE);
         MoveWindow(
             hThumbnail,
-            thumbWndRect.left - dlgRect.left,
-            thumbWndRect.top - dlgRect.top,
+            (thumbWndRect.left - dlgWndRect.left) + (thumbRect.left - thumbWndRect.left), // Added: x + borderSize (thumbRect.left - thumbWndRect.left)... This should fix rendering image on different DPIs
+            thumbWndRect.top - dlgWndRect.top,
             thumbWidth + thumbWndRect.right - thumbWndRect.left,
             thumbHeight + thumbWndRect.bottom - thumbWndRect.top,
-            1
+            TRUE
         );
     }
 
