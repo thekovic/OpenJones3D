@@ -2335,6 +2335,10 @@ INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam
 
             RECT rectWndThumb;
             HWND hThumb = GetDlgItem(hWnd, 1182);
+
+            // Added: Make hThumb to be drawn by hWnd -> WM_DRAWITEM
+            SetWindowLong(hThumb, GWL_STYLE, GetWindowLong(hThumb, GWL_STYLE) | SS_OWNERDRAW);
+
             GetWindowRect(hThumb, &rectWndThumb);
             MoveWindow(hThumb, rectWndThumb.top - rectWnd.top, rectWndThumb.left - rectWnd.left, 64, 64, TRUE);
 
@@ -2351,24 +2355,20 @@ INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam
         case WM_DESTROY:
             jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontExitDlg);
             return 1;
-        case WM_PAINT:
+        case WM_DRAWITEM: // Added: Fixes thumb drawing
         {
-            GameSaveMsgBoxData* pGSData = (GameSaveMsgBoxData*)GetWindowLongA(hWnd, DWL_USER);// ?? GameSaveMsgBoxData was stored in init
-
-            HWND hThumb = GetDlgItem(hWnd, 1182);
-
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hThumb, (LPPAINTSTRUCT)&ps);
-            HDC hmemdc = CreateCompatibleDC(hdc);
-
-            SetStretchBltMode(hdc, STRETCH_HALFTONE);
-
-            jonesConfig_DrawImageOnDialogItem(hWnd, hmemdc, hdc, 1182, jonesConfig_apDialogIcons[4], jonesConfig_apDialogIcons[5]);// exit and exitmask bmps
-
-            DeleteObject((HGDIOBJ)hmemdc);
-            EndPaint(hThumb, &ps);
-            return 0;
+            LPDRAWITEMSTRUCT pdis = (LPDRAWITEMSTRUCT)lparam;
+            if ( pdis->CtlID == 1182 )
+            {
+                HDC hmemdc = CreateCompatibleDC(pdis->hDC);
+                SetStretchBltMode(pdis->hDC, STRETCH_HALFTONE);
+                jonesConfig_DrawImageOnDialogItem(hWnd, hmemdc, pdis->hDC, 1182, jonesConfig_apDialogIcons[4], jonesConfig_apDialogIcons[5]); // exit and exitmask bmps
+                DeleteDC(hmemdc);
+                return TRUE;
+            }
+            return FALSE;
         }
+
         default:
             return 0;
     }
