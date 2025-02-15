@@ -29,7 +29,7 @@ void J3DAPI JonesDialog_FreeScreenDIBSection();
 int J3DAPI JonesDialog_AllocOffScreenDIBSection(int* pBSkipedAllocation);
 int J3DAPI JonesDialog_FreeOffScreenDIBSection();
 BOOL J3DAPI JonesDialog_ShowFileSelectDialog(LPOPENFILENAMEA pofn, int bOpen);
-UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
+UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // Helper hooking functions
 void JonesDialog_InstallHooks(void);
