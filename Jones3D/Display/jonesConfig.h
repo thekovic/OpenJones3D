@@ -12,9 +12,11 @@
 J3D_EXTERN_C_START
 
 int jonesConfig_Startup(void);
+void jonesConfig_Shutdown(void);
+
 int J3DAPI jonesConfig_InitKeySetsPath();
 int J3DAPI jonesConfig_InitKeyActions();
-void jonesConfig_Shutdown(void);
+
 void J3DAPI jonesConfig_ControlToString(unsigned int controlId, char* pDest);
 int J3DAPI jonesConfig_ShowMessageDialog(HWND hWnd, const char* pTitle, const char* pText, int iconID);
 BOOL CALLBACK jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM a4);
@@ -40,19 +42,19 @@ void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect);
 void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo);
 int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath);
 UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpOfn);
+int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOfn);
 LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 int J3DAPI jonesConfig_ShowOverwriteSaveGameDlg(HWND hWnd, const char* aFilePath);
 int J3DAPI jonesConfig_ShowExitGameDialog(HWND hWnd, char* pSaveGameFilePath);
 INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam);
 INT_PTR CALLBACK jonesConfig_SaveGameMsgBoxProc(HWND hWnd, UINT umsg, WPARAM wParam, LPARAM lParam);
 int J3DAPI jonesConfig_GameSaveSetData(HWND hDlg, int a2, GameSaveMsgBoxData* pData);
-void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult);
+
 int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath);
 void* J3DAPI jonesConfig_sub_405F60(HWND hWnd);
 UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd);
-BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn);
+BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pofn);
 LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd);

@@ -138,6 +138,8 @@ HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
 #define jonesConfig_hFontPurchaseMessageBox J3D_DECL_FAR_VAR(jonesConfig_hFontPurchaseMessageBox, HFONT)
 #define jonesConfig_hFontDialogInsertCD J3D_DECL_FAR_VAR(jonesConfig_hFontDialogInsertCD, HFONT)
 
+void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult);
+
 void jonesConfig_InstallHooks(void)
 {
     // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
@@ -169,7 +171,7 @@ void jonesConfig_InstallHooks(void)
     J3D_HOOKFUNC(jonesConfig_SetWindowFontAndPosition);
     J3D_HOOKFUNC(jonesConfig_GetWindowScreenRect);
     J3D_HOOKFUNC(jonesConfig_SetDialogTitleAndPosition);
-    // J3D_HOOKFUNC(jonesConfig_GetSaveGameFilePath);
+    J3D_HOOKFUNC(jonesConfig_GetSaveGameFilePath);
     J3D_HOOKFUNC(jonesConfig_SaveGameDialogHookProc);
     J3D_HOOKFUNC(jonesConfig_SaveGameDialogInit);
     J3D_HOOKFUNC(jonesConfig_SaveGameThumbnailPaintProc);
@@ -906,10 +908,10 @@ void J3DAPI jonesConfig_BindJoystickControl(SithControlFunction functionId, int 
 //    J3D_TRAMPOLINE_CALL(jonesConfig_SetDialogTitleAndPosition, hWnd, pDlgFontInfo);
 //}
 
-int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_GetSaveGameFilePath, hWnd, pOutFilePath);
-}
+//int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_GetSaveGameFilePath, hWnd, pOutFilePath);
+//}
 
 //UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 //{
@@ -2051,13 +2053,96 @@ void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo
     }
 }
 
+int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
+{
+    char aFileterStr[512] = { 0 };
+    const char* pFilterStr = jonesString_GetString("JONES_STR_FILTER");
+    if ( pFilterStr ) {
+        STD_STRCPY(aFileterStr, pFilterStr);
+    }
+
+    char aSaveGameStr[512] = { 0 };
+    const char* pSaveGMStr = jonesString_GetString("JONES_STR_SAVEGM");
+    if ( pSaveGMStr ) {
+        STD_STRCPY(aSaveGameStr, pSaveGMStr);
+    }
+
+    if ( !aFileterStr[0] || !aSaveGameStr[0] ) {
+        return 2;
+    }
+
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE); // ??
+
+    CHAR aCurDir[128] = { 0 };
+    GetCurrentDirectory(STD_ARRAYLEN(aCurDir), aCurDir);
+
+    OPENFILENAME ofn = { 0 };
+    ofn.lStructSize   = sizeof(OPENFILENAME);
+    ofn.hwndOwner     = hWnd;
+    ofn.hInstance     = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+
+    char aFilterStr[128] = { 0 };
+    STD_FORMAT(aFilterStr, aFileterStr, "(.nds)");
+    STD_FORMAT(aFilterStr, "%s%c%s%c", aFilterStr, '\0', "*.nds", '\0'); // Fixed: filtering only by .nds files. Note, 2 terminal nulls are required, that's way null at the end
+
+    ofn.lpstrFilter = aFilterStr;
+
+    memset(&ofn.lpstrCustomFilter, 0, 12);
+
+    char aFilename[128] = { 0 };
+    aFilename[0]        = 0;
+    ofn.lpstrFile       = aFilename;
+    ofn.nMaxFile        = STD_ARRAYLEN(aFilename);
+
+    char aFileTitle[128] = { 0 };
+    ofn.lpstrFileTitle   = aFileTitle;
+    ofn.nMaxFileTitle    = STD_ARRAYLEN(aFileTitle);
+
+    SaveGameDialogData dialogData = { 0 };
+    dialogData.hThumbnail         = NULL;
+    ofn.lCustData                 = (LPARAM)&dialogData;
+
+    ofn.lpstrInitialDir = sithGetSaveGamesDir();
+    ofn.lpstrTitle      = aSaveGameStr;
+    ofn.Flags           = OFN_EXPLORER | OFN_NONETWORKBUTTON | OFN_NOVALIDATE | OFN_ENABLETEMPLATE | OFN_ENABLEHOOK | OFN_HIDEREADONLY;
+    ofn.nFileOffset     = 0;
+    ofn.nFileExtension  = 0;
+    ofn.lpstrDefExt     = "nds";
+    ofn.lpfnHook        = jonesConfig_SaveGameDialogHookProc;
+    ofn.lpTemplateName  = MAKEINTRESOURCE(154);
+
+    uint32_t width, height;
+    JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
+    if ( pSettings && pSettings->bWindowMode )
+    {
+        RECT rect;
+        GetWindowRect(GetDesktopWindow(), &rect);
+        height = rect.bottom - rect.top;
+        width  = rect.right - rect.left;
+    }
+    else {
+        stdDisplay_GetBackBufferSize(&width, &height);
+    }
+
+    BOOL res = JonesDialog_ShowFileSelectDialog(&ofn,/*bOpen=*/0);
+    SetCurrentDirectory(aCurDir);
+
+    if ( !res || !pOutFilePath ) {
+        return 2;
+    }
+
+    stdFnames_ChangeExt(ofn.lpstrFile, "nds");
+    stdUtil_StringCopy(pOutFilePath, 128u, ofn.lpstrFile);
+    return 1;
+}
+
 UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch ( uMsg )
     {
         case WM_INITDIALOG:
         {
-            return jonesConfig_SaveGameDialogInit(hDlg, wParam, (LPOPENFILENAMEA)lParam);
+            return jonesConfig_SaveGameDialogInit(hDlg, wParam, (LPOPENFILENAME)lParam);
         }
         case WM_COMMAND:
         {
@@ -2238,7 +2323,7 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
     return 0;
 }
 
-int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpOfn)
+int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOfn)
 {
     J3D_UNUSED(a2);
 
@@ -2463,7 +2548,7 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
         stdDisplay_GetBackBufferSize(&width, &height);
     }
 
-    BOOL bHasFilePath = JonesDialog_ShowFileSelectDialog((LPOPENFILENAMEA)&ofn, 1);
+    BOOL bHasFilePath = JonesDialog_ShowFileSelectDialog((LPOPENFILENAME)&ofn, 1);
     SetCurrentDirectory(aCwd);
     if ( !bHasFilePath && !data.unknown36 || !pDestNdsPath )
     {
@@ -2490,7 +2575,7 @@ UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
     {
         case WM_INITDIALOG:
         {
-            return jonesConfig_LoadGameDialogInit(hDlg, wParam, (LPOPENFILENAMEA)lParam);
+            return jonesConfig_LoadGameDialogInit(hDlg, wParam, (LPOPENFILENAME)lParam);
         }
         case WM_COMMAND:
         {
@@ -2557,7 +2642,7 @@ UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
 
                     bool bValidFile = false;
                     CHAR aPath[128] = { 0 };
-                    LPOPENFILENAMEA pofn = pOfNotify->lpOFN;
+                    LPOPENFILENAME pofn = pOfNotify->lpOFN;
                     if ( pofn->nFileOffset < 0x8000 )
                     {
 
@@ -2753,7 +2838,7 @@ LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WP
     return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
 }
 
-BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn)
+BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pofn)
 {
     J3D_UNUSED(a2);
 
