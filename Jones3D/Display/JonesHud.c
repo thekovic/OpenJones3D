@@ -2781,7 +2781,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
     }
 }
 
-void J3DAPI JonesHud_MenuActivateItem()
+void JonesHud_MenuActivateItem(void)
 {
     HWND hwnd;
     int32_t bItemDisable;
@@ -2917,7 +2917,7 @@ void J3DAPI JonesHud_MenuActivateItem()
                 if ( exitCode != STILL_ACTIVE )
                     //if ( exitCode != 259 )
                 {
-                    JonesHud_hProcessHelp = 0;
+                    JonesHud_hProcessHelp = NULL;
                 }
             }
 
@@ -3053,7 +3053,7 @@ void J3DAPI JonesHud_MenuActivateItem()
     }
 }
 
-void J3DAPI JonesHud_ResetMenuItems()
+void JonesHud_ResetMenuItems(void)
 {
     if ( !sithPlayer_g_pLocalPlayerThing )
     {

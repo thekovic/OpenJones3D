@@ -61,8 +61,8 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem);
 void J3DAPI JonesHud_RenderMenuItems(JonesHudMenuItem* pItem);
 // Function formats and displays inventory items and its text
 void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem);
-void J3DAPI JonesHud_MenuActivateItem();
-void J3DAPI JonesHud_ResetMenuItems();
+void JonesHud_MenuActivateItem(void);
+void JonesHud_ResetMenuItems(void);
 void J3DAPI JonesHud_SetLeftRightItems(JonesHudMenuItem* pItem1, JonesHudMenuItem* pItem2);
 void J3DAPI JonesHud_SetDownUpItems(JonesHudMenuItem* pItem1, JonesHudMenuItem* pItem2);
 void J3DAPI JonesHud_sub_4198E0(JonesHudMenuItem* pItem);
