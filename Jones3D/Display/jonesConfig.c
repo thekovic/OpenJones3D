@@ -76,8 +76,8 @@ static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
    { 233, 344, 180 },
    { 190, 538, 297 },
    { 212, 280, 74 },
-   { 159, 583, 250 },
-   { 154, 579, 252 },
+   { 159, 583, 330 }, // Changed: height to 330 from 250
+   { 154, 579, 332 }, // Changed: height to 332 from 252
    { 167, 279, 75 }
 };
 
@@ -2279,7 +2279,16 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpO
         RECT thumbWndRect;
         GetWindowRect(hThumbnail, &thumbWndRect);
 
-        MoveWindow(hDlg, dlgWndRect.left, dlgWndRect.top, thumbWidth + dlgWndRect.right - dlgWndRect.left, dlgWndRect.bottom - dlgWndRect.top, TRUE);
+        // Added: Added padding. This should fix drawing all components right of file list
+        const int pad = 10 * dpiScale;
+        MoveWindow(hDlg,
+            dlgWndRect.left,
+            dlgWndRect.top,
+            thumbWidth + dlgWndRect.right - dlgWndRect.left + pad,
+            dlgWndRect.bottom - dlgWndRect.top + pad,
+            TRUE
+        );
+
         MoveWindow(
             hThumbnail,
             (thumbWndRect.left - dlgWndRect.left) + (thumbRect.left - thumbWndRect.left), // Added: x + borderSize (thumbRect.left - thumbWndRect.left)... This should fix rendering image on different DPIs
@@ -2405,12 +2414,11 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
     STD_FORMAT(aFilterStr, aFilterFormatStr, " (.nds)");
     STD_FORMAT(aFilterStr, "%s%c%s%c", aFilterStr, '\0', "*.nds", '\0'); // Fixed: filtering only by .nds files. Note, 2 terminal nulls are required, that's way null at the end
 
-    OPENFILENAME ofn = { 0 };
-    ofn.lStructSize = sizeof(OPENFILENAME);
-    ofn.hwndOwner   = hWnd;
-    ofn.hInstance   = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
-    ofn.lpstrFilter = aFilterStr;
-    //memset(&ofn.lpstrCustomFilter, 0, 12); // ??
+    OPENFILENAME ofn      = { 0 };
+    ofn.lStructSize       = sizeof(OPENFILENAME);
+    ofn.hwndOwner         = hWnd;
+    ofn.hInstance         = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    ofn.lpstrFilter       = aFilterStr;
     ofn.lpstrCustomFilter = NULL;
 
     char aLastFile[128] = { 0 };
@@ -2818,17 +2826,17 @@ BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA po
         dlgWinRect.left,
         dlgWinRect.top,
         thmbWidth + dlgWinRect.right - dlgWinRect.left,
-        dlgWinRect.bottom - dlgWinRect.top,
-        1
+        11 * dpiScale + dlgWinRect.bottom - dlgWinRect.top, // Added: Added padding  11 * dpiScale. This should fix drawing all components right of file list
+        TRUE
     );
 
     MoveWindow(
         hThumbnail,
-        thumbWinRect.left - dlgWinRect.left,
+        (thumbWinRect.left - dlgWinRect.left),
         thumbWinRect.top - dlgWinRect.top,
         thmbWidth + thumbWinRect.right - thumbWinRect.left,
         thmbHeight + thumbWinRect.bottom - thumbWinRect.top,
-        1
+        TRUE
     );
 
     LONG width = thumbWinRect.right + thmbWidth - thumbWinRect.left;
