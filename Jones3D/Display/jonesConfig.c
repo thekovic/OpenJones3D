@@ -1729,18 +1729,27 @@ BOOL CALLBACK jonesConfig_ResetWindowFontCallback(HWND hWnd, LPARAM lparam)
     return TRUE;
 }
 
-BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hwnd, LPARAM lparam)
+BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
 {
-    // Function changes all text of controls from JONES_STR_* to corresponding text
+    // Function resize control by scale, sets font and 
+    // replaces all text of control from JONES_STR_* to corresponding text
+
+    // Fixed: Check if hCtrl parent is top dialog, otherwise skip control.
+    //        This fixes positioning and scaling of controls with children
+    //        as they also get enumerated. So we skip here any child window of the control.
+    if ( GetDlgCtrlID(GetParent(hCtrl)) != 0 ) {
+        return TRUE;
+    }
 
     if ( !lparam ) { // Added: Added check for null
         return TRUE;
     }
     JonesDialogFontInfo* pFontInfo = (JonesDialogFontInfo*)lparam;
+
     if ( pFontInfo->hFont )
     {
-        // Position hwnd based on font
-        jonesConfig_SetWindowFontAndPosition(hwnd, pFontInfo);
+        // Scale and set font
+        jonesConfig_SetWindowFontAndPosition(hCtrl, pFontInfo);
     }
 
     if ( pFontInfo->dialogID == 154 || pFontInfo->dialogID == 159 ) // Load/Save dialogs
