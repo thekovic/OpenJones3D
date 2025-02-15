@@ -2438,14 +2438,14 @@ INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam
             GetClientRect(hWnd, &rectWnd);
             jonesConfig_GetWindowScreenRect(hWnd, &rectWnd);
 
-            RECT rectWndThumb;
-            HWND hThumb = GetDlgItem(hWnd, 1182);
+            RECT rectWndIcon;
+            HWND hIcon = GetDlgItem(hWnd, 1182);
 
-            // Added: Make hThumb to be drawn by hWnd -> WM_DRAWITEM
-            SetWindowLong(hThumb, GWL_STYLE, GetWindowLong(hThumb, GWL_STYLE) | SS_OWNERDRAW);
+            // Added: Make hIcon to be drawn by hWnd -> WM_DRAWITEM
+            SetWindowLong(hIcon, GWL_STYLE, GetWindowLong(hIcon, GWL_STYLE) | SS_OWNERDRAW);
 
-            GetWindowRect(hThumb, &rectWndThumb);
-            MoveWindow(hThumb, rectWndThumb.top - rectWnd.top, rectWndThumb.left - rectWnd.left, 64, 64, TRUE);
+            GetWindowRect(hIcon, &rectWndIcon);
+            MoveWindow(hIcon, rectWndIcon.top - rectWnd.top, rectWndIcon.left - rectWnd.left, 96, 96, TRUE); // Changed: Shange icon size to 96 from 64
 
             GameSaveMsgBoxData* pGSData = (GameSaveMsgBoxData*)lparam;
             jonesConfig_hFontExitDlg = jonesConfig_InitDialog(hWnd, 0, pGSData->dialogID);
@@ -2460,7 +2460,7 @@ INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam
         case WM_DESTROY:
             jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontExitDlg);
             return 1;
-        case WM_DRAWITEM: // Added: Fixes thumb drawing
+        case WM_DRAWITEM: // Added: Fixes icon drawing
         {
             LPDRAWITEMSTRUCT pdis = (LPDRAWITEMSTRUCT)lparam;
             if ( pdis->CtlID == 1182 )
