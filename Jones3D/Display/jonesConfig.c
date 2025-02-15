@@ -1583,24 +1583,22 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
     {
         if ( jonesConfig_aDialogSizes[i].dialogID == dlgID )
         {
-            dialogRefHeight = jonesConfig_aDialogSizes[i].refHeight * dpiScale;
+            dialogRefHeight = jonesConfig_aDialogSizes[i].refHeight * dpiScale; // Added: scale by dpi
             break;
         }
     }
 
     double scale = 1.0; // Added: Init to 1.0
-    if ( dialogRefHeight > 0 )
-    {
-        scale = (dialogRefHeight / (double)rect.bottom) * dpiScale;
+    if ( dialogRefHeight > 0 ) {
+        scale = (dialogRefHeight / (double)rect.bottom) * dpiScale; // Added: scale by dpi
     }
 
     int cHeight;
     float cHeightf;
     uint32_t scrwidth, scrheight;
 
-    // Adjust reference heights and widths for DPI
-    int scaledRefHeight = (int)(RD_REF_HEIGHT * dpiScale);
-    int scaledRefWidth  = (int)(RD_REF_WIDTH * dpiScale);
+    int scaledRefHeight = (int)(RD_REF_HEIGHT * scale);
+    int scaledRefWidth  = (int)(RD_REF_WIDTH * scale);
 
     if ( bWindowMode || !JonesMain_HasStarted() )
     {
@@ -1639,7 +1637,8 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
         stdDisplay_GetBackBufferSize(&scrwidth, &scrheight);
 
         // Calculate base font size considering DPI
-        cHeight = -MulDiv(8, systemDPI, USER_DEFAULT_SCREEN_DPI);
+        cHeight = -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI); // Changed: to 10 from 8
+        cHeightf  = cHeight;
 
         if ( scrheight >= (size_t)scaledRefHeight || scrwidth >= (size_t)scaledRefWidth )
         {
@@ -1665,13 +1664,13 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
         cHeightf = cHeighRnd;
     }
 
-    if ( cHeight <= (int)cHeightf )
+    if ( cHeight > (int)cHeightf ) // Changed: Use cHeightf if smaller than cHeight; i.e.: bigger font size
     {
         cHeight = (int)cHeightf;
     }
 
     // Adjust minimum height based on DPI
-    if ( cHeight > -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI) ) // Changed to 10 from 9
+    if ( cHeight > -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI) ) // Changed: to 10 from 9 and dpi scale check
     {
         cHeight = -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI);
     }
@@ -1757,24 +1756,26 @@ BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
         return TRUE;
     }
 
+    // Replace JONES_STR_* strings to corresponding text
+
     CHAR aClassName[256] = { 0 };
-    GetClassName(hwnd, aClassName, 256);
+    GetClassName(hCtrl, aClassName, 256);
 
     CHAR aText[256] = { 0 };
     if ( strncmpi(aClassName, "BUTTON", STD_ARRAYLEN(aClassName)) == 0 )
     {
-        GetWindowText(hwnd, aText, STD_ARRAYLEN(aText));
+        GetWindowText(hCtrl, aText, STD_ARRAYLEN(aText));
         LPCSTR pText = jonesString_GetString(aText);
         if ( pText )
         {
-            SetWindowText(hwnd, pText);
+            SetWindowText(hCtrl, pText);
         }
 
         return TRUE;
     }
     else if ( strncmpi(aClassName, "STATIC", STD_ARRAYLEN(aClassName)) == 0 )
     {
-        GetWindowText(hwnd, aText, STD_ARRAYLEN(aText));
+        GetWindowText(hCtrl, aText, STD_ARRAYLEN(aText));
         if ( strchr(aText, '%') )
         {
             return TRUE;
@@ -1783,7 +1784,7 @@ BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
         LPCSTR pText = jonesString_GetString(aText);
         if ( pText )
         {
-            SetWindowText(hwnd, pText);
+            SetWindowText(hCtrl, pText);
         }
 
         return TRUE;
@@ -1793,16 +1794,17 @@ BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
     return TRUE;
 }
 
-void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo* pFontInfo)
+void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hCtrl, JonesDialogFontInfo* pFontInfo)
 {
-    HWND hDlg = GetParent(hwnd);
+    HWND hParent = GetParent(hCtrl);
+
     // Set font
     if ( pFontInfo->hFont )
     {
-        SendMessage(hwnd, WM_SETFONT, (WPARAM)pFontInfo->hFont, 1); // 1 - repaint
+        SendMessage(hCtrl, WM_SETFONT, (WPARAM)pFontInfo->hFont, 1); // 1 - repaint
         if ( HIWORD(pFontInfo->dialogID) != JONESCONFIG_NOFONTSCALEMASK )
         {
-            SetWindowLongPtr(hwnd, GWL_USERDATA, (LONG_PTR)pFontInfo->hControlFont);
+            SetWindowLongPtr(hCtrl, GWL_USERDATA, (LONG_PTR)pFontInfo->hControlFont);
         }
     }
 
@@ -1814,13 +1816,13 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo*
     int widthDesktop  = rectDesktop.right - rectDesktop.left;
 
     RECT rectWindow;
-    GetWindowRect(hwnd, &rectWindow);
+    GetWindowRect(hCtrl, &rectWindow);
 
     RECT rectClient;
-    GetClientRect(hwnd, &rectClient);
+    GetClientRect(hCtrl, &rectClient);
 
     RECT rectDlgWindow;
-    GetWindowRect(hDlg, &rectDlgWindow);
+    GetWindowRect(hParent, &rectDlgWindow);
 
     if ( !pFontInfo->bWindowMode || pFontInfo->fontScaleX < 1.0f || pFontInfo->fontScaleY < 1.0f )
     {
@@ -1828,9 +1830,9 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo*
         if ( HIWORD(pFontInfo->dialogID) != JONESCONFIG_NOFONTSCALEMASK )
         {
         LABEL_17:
-            HICON hIcon = (HICON)SendMessage(hwnd, STM_GETICON, 0, 0);
-            HWND dlgItem = GetDlgItem(hDlg, 1182);
-            if ( dlgItem == hwnd )
+            HICON hIcon = (HICON)SendMessage(hCtrl, STM_GETICON, 0, 0);
+            HWND dlgItem = GetDlgItem(hParent, 1182);
+            if ( dlgItem == hCtrl )
             {
                 hIcon = (HICON)dlgItem;
             }
@@ -1840,16 +1842,16 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo*
 
             if ( pFontInfo->dialogID == 159 || pFontInfo->dialogID == 154 )// Load/Save dialog
             {
-                LONG dlgID =(LONG)GetWindowLongPtr(hwnd, GWL_USERDATA); // TODO: UNUSED
+                LONG dlgID =(LONG)GetWindowLongPtr(hCtrl, GWL_USERDATA); // TODO: UNUSED
                 J3D_UNUSED(dlgID);
 
-                HWND hwndParent = GetParent(hDlg);
+                HWND hwndParent = GetParent(hParent);
                 if ( hwndParent )
                 {
                     HWND dlgItem1137 = GetDlgItem(hwndParent, 1137);
                     if ( dlgItem1137 )
                     {
-                        if ( dlgItem1137 != hwnd )
+                        if ( dlgItem1137 != hCtrl )
                         {
                             RECT rectDlgItem1137Window;
                             GetWindowRect(dlgItem1137, &rectDlgItem1137Window);
@@ -1858,46 +1860,46 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo*
                     }
                 }
 
-                if ( hwnd == GetDlgItem(hDlg, 1120) )
+                if ( hCtrl == GetDlgItem(hParent, 1120) )
                 {
-                    hwndResumeBtn = hwnd;
+                    hwndResumeBtn = hCtrl;
                 }
-                if ( hwnd == GetDlgItem(hDlg, 1163) || hwnd == GetDlgItem(hDlg, 1125) )
+                if ( hCtrl == GetDlgItem(hParent, 1163) || hCtrl == GetDlgItem(hParent, 1125) )
                 {
-                    hwndThumbnail = hwnd; // Load / Save thumbnail
+                    hwndThumbnail = hCtrl; // Load / Save thumbnail
                     offsetY = 0;
                 }
             }
 
-            if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail )
+            //if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail )
             {
                 double fontScaleX = pFontInfo->fontScaleX;
-                if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
+             /*   if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
                 {
                     fontScaleX = (double)heightDesktop / RD_REF_HEIGHT;
-                }
+                }*/
 
-                rectWindow.bottom = (int32_t)((double)(rectWindow.bottom - rectWindow.top) * fontScaleX) + rectWindow.top;
+                rectWindow.bottom = (LONG)((double)(rectWindow.bottom - rectWindow.top) * fontScaleX) + rectWindow.top;
             }
 
-            if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail && !hwndResumeBtn )
+            //if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail && !hwndResumeBtn )
             {
                 double fontScaleY = pFontInfo->fontScaleY;
-                if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
+               /* if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
                 {
                     fontScaleY = (double)widthDesktop / RD_REF_WIDTH;
-                }
+                }*/
 
-                rectWindow.right = (int32_t)((double)(rectWindow.right - rectWindow.left) * fontScaleY) + rectWindow.left;
+                rectWindow.right = (LONG)((double)(rectWindow.right - rectWindow.left) * fontScaleY) + rectWindow.left;
             }
 
-            if ( !hDlg )
+            if ( !hParent )
             {
                 return;
             }
 
-            GetWindowRect(hDlg, &rectDlgWindow);
-            jonesConfig_GetWindowScreenRect(hDlg, &rectClient);
+            GetWindowRect(hParent, &rectDlgWindow);
+            jonesConfig_GetWindowScreenRect(hParent, &rectClient);
 
             int posX = (int)((double)(rectWindow.left - rectClient.left) * pFontInfo->fontScaleY);
             int posY = (int)((double)(rectWindow.top - rectClient.top) * pFontInfo->fontScaleX);
@@ -1906,11 +1908,11 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo*
                 posY += offsetY;
             }
 
-            // Set position
-            MoveWindow(hwnd, posX, posY, rectWindow.right - rectWindow.left, rectWindow.bottom - rectWindow.top, 1); // 1 - repaint
+            // Resize and reposition control
+            MoveWindow(hCtrl, posX, posY, rectWindow.right - rectWindow.left, rectWindow.bottom - rectWindow.top, /*bRepaint=*/TRUE);
 
-            GetWindowRect(hwnd, &rectWindow);
-            GetClientRect(hwnd, &rectClient);
+            GetWindowRect(hCtrl, &rectWindow);
+            GetClientRect(hCtrl, &rectClient);
             if ( rectWindow.bottom <= rectDlgWindow.bottom && rectWindow.right <= rectDlgWindow.right )
             {
                 return;
@@ -1926,38 +1928,38 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo*
             {
                 if ( dDlgWinY <= 0 )
                 {
-                    MoveWindow(hDlg, rectDlgWindow.left, rectDlgWindow.top, dDlgWinX + dlgWidth, dlgHeight, 1);
+                    MoveWindow(hParent, rectDlgWindow.left, rectDlgWindow.top, dDlgWinX + dlgWidth, dlgHeight, 1);
                 }
                 else
                 {
-                    MoveWindow(hDlg, rectDlgWindow.left, rectDlgWindow.top, dlgWidth, dDlgWinY + dlgHeight, 1);
+                    MoveWindow(hParent, rectDlgWindow.left, rectDlgWindow.top, dlgWidth, dDlgWinY + dlgHeight, 1);
                 }
             }
             else
             {
-                MoveWindow(hDlg, rectDlgWindow.left, rectDlgWindow.top, dDlgWinX + dlgWidth, dDlgWinY + dlgHeight, 1);
+                MoveWindow(hParent, rectDlgWindow.left, rectDlgWindow.top, dDlgWinX + dlgWidth, dDlgWinY + dlgHeight, 1);
             }
 
             return;
         }
 
-        LONG dlgID = (LONG)GetWindowLongPtr(hwnd, GWL_USERDATA);
+        LONG dlgID = (LONG)GetWindowLongPtr(hCtrl, GWL_USERDATA);
         if ( dlgID == 159 || dlgID == 154 )     // load/save dialogs
         {
-            SendMessage(hwnd, WM_SETFONT, (WPARAM)pFontInfo->hControlFont, 1);// 1 - marks redraw
+            SendMessage(hCtrl, WM_SETFONT, (WPARAM)pFontInfo->hControlFont, 1);// 1 - marks redraw
             return;
         }
 
-        HWND dlgItem1137  = GetDlgItem(hDlg, 1137);
-        if ( dlgItem1137 ) // note dlg item with this ID in resources
+        HWND dlgItem1137  = GetDlgItem(hParent, 1137);
+        if ( dlgItem1137 ) // note, no dlg item with this ID in resources
         {
             CHAR aClassName[256] = { 0 };
-            GetClassName(hwnd, aClassName, 256);
-            if ( dlgItem1137 != hwnd && strcmp(aClassName, "ToolbarWindow32") )
+            GetClassName(hCtrl, aClassName, 256);
+            if ( dlgItem1137 != hCtrl && strcmp(aClassName, "ToolbarWindow32") )
             {
                 RECT rectDlgItem1137Window;
                 GetWindowRect(dlgItem1137, &rectDlgItem1137Window);
-                offsetY = (int32_t)((double)(rectDlgItem1137Window.bottom - rectDlgItem1137Window.top) * (1.0f - pFontInfo->fontScaleX));
+                offsetY = (int)((double)(rectDlgItem1137Window.bottom - rectDlgItem1137Window.top) * (1.0f - pFontInfo->fontScaleX));
             }
 
             goto LABEL_17;

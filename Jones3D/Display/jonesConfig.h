@@ -18,12 +18,15 @@ int J3DAPI jonesConfig_InitKeySetsPath();
 int J3DAPI jonesConfig_InitKeyActions();
 
 void J3DAPI jonesConfig_ControlToString(unsigned int controlId, char* pDest);
+
 int J3DAPI jonesConfig_ShowMessageDialog(HWND hWnd, const char* pTitle, const char* pText, int iconID);
 BOOL CALLBACK jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM a4);
+
 void J3DAPI jonesConfig_sub_4025F0(HWND hWnd, uint16_t* a2);
 int J3DAPI jonesConfig_sub_402670(HWND hDlg, int a2, uint16_t* dwNewLong);
 int J3DAPI jonesConfig_SetTextControl(HWND hDlg, HWND hWnd, const char* aText);
 BOOL J3DAPI jonesConfig_sub_402A90(HWND hDlg, int nResult);
+
 JonesControlsScheme* J3DAPI jonesConfig_NewControlScheme();
 int J3DAPI jonesConfig_LoadConstrolsScheme(const char* pFilePath, JonesControlsScheme* pConfig);
 int J3DAPI jonesConfig_GetEntryIndex(int* argNum, StdConffileEntry* pEntry, int a3, const char** apStringList, int size);
@@ -32,14 +35,16 @@ int J3DAPI jonesConfig_GetControllerKeySchemeIndex(int* pArgNum, StdConffileEntr
 int J3DAPI jonesConfig_SetDefaultControlScheme(JonesControlsScheme* pScheme, int num);
 void J3DAPI jonesConfig_BindControls(JonesControlsScheme* pConfig);
 void J3DAPI jonesConfig_BindJoystickControl(SithControlFunction functionId, int controlId);
+
 HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID);
 HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgResNum, float* pFontScale);
 void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont);
 BOOL CALLBACK jonesConfig_ResetWindowFontCallback(HWND hWnd, LPARAM lparam);
-void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo* pFontInfo);
 BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam);
+void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hCtrl, JonesDialogFontInfo* pFontInfo);
 void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect);
 void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo);
+
 int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath);
 UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOfn);
