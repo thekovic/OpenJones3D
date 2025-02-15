@@ -84,9 +84,45 @@ static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
    { 167, 279, 75 }
 };
 
-HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
+// jonesConfig_DrawStatisticDialogIQPoints
+static const StdRect jonesConfig_aNumberGlyphMetrics[10] =
+{
+  { 11, 2, 44, 45 },
+  { 49, 2, 69, 45 },
+  { 78, 2, 106, 45 },
+  { 110, 2, 138, 45 },
+  { 11, 76, 44, 120 },
+  { 45, 76, 75, 120 },
+  { 77, 76, 107, 120 },
+  { 11, 150, 45, 194 },
+  { 45, 150, 75, 194 },
+  { 76, 150, 107, 194 }
+};
 
-#define jonesConfig_aNumberGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aNumberGlyphMetrics, StdRect(*)[10])
+// Game save dialog
+static HFONT jonesConfig_hFontSaveGameDlg = NULL;
+
+// Game load dialog
+static HFONT jonesConfig_hFontLoadGameDlg = NULL;
+
+// Game play options dialog
+static HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
+
+// Exit game dialog
+static HFONT jonesConfig_hFontExitDlg = NULL;
+
+// Chapter completed dialog
+static int jonesConfig_prevLevelNum = -1;
+static HFONT jonesConfig_hFontLevelCopletedDialog;
+
+// Store dialog
+static HFONT jonesConfig_hFontStoreDialog;
+static HFONT jonesConfig_hFontPurchaseMessageBox;
+
+// CD dialog
+static HFONT jonesConfig_hFontDialogInsertCD;
+
+//#define jonesConfig_aNumberGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aNumberGlyphMetrics, StdRect(*)[10])
 #define jonesConfig_apDialogIconFiles J3D_DECL_FAR_ARRAYVAR(jonesConfig_apDialogIconFiles, char*(*)[6])
 #define jonesConfig_aLevelNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aLevelNames, const char*(*)[17])
 #define jonesConfig_JONES_STR_SUMMERY J3D_DECL_FAR_VAR(jonesConfig_JONES_STR_SUMMERY, const char*)
@@ -99,7 +135,7 @@ HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
 #define jonesConfig_dword_511954 J3D_DECL_FAR_VAR(jonesConfig_dword_511954, int)
 #define jonesConfig_dword_511958 J3D_DECL_FAR_VAR(jonesConfig_dword_511958, int)
 #define jonesConfig_perfLevel J3D_DECL_FAR_VAR(jonesConfig_perfLevel, int)
-#define jonesConfig_prevLevelNum J3D_DECL_FAR_VAR(jonesConfig_prevLevelNum, int)
+//#define jonesConfig_prevLevelNum J3D_DECL_FAR_VAR(jonesConfig_prevLevelNum, int)
 #define jonesConfig_dword_5510B8 J3D_DECL_FAR_VAR(jonesConfig_dword_5510B8, int)
 #define jonesConfig_dword_5510BC J3D_DECL_FAR_VAR(jonesConfig_dword_5510BC, int)
 #define jonesConfig_dword_5510C0 J3D_DECL_FAR_VAR(jonesConfig_dword_5510C0, int)
@@ -116,10 +152,10 @@ HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
 #define jonesConfig_bStartup J3D_DECL_FAR_VAR(jonesConfig_bStartup, int)
 #define jonesConfig_dword_551DCC J3D_DECL_FAR_VAR(jonesConfig_dword_551DCC, int)
 #define jonesConfig_hdo_551DD0 J3D_DECL_FAR_VAR(jonesConfig_hdo_551DD0, HGDIOBJ)
-#define jonesConfig_hFontSaveGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontSaveGameDlg, HFONT)
-#define jonesConfig_hFontExitDlg J3D_DECL_FAR_VAR(jonesConfig_hFontExitDlg, HFONT)
+//#define jonesConfig_hFontSaveGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontSaveGameDlg, HFONT)
+//#define jonesConfig_hFontExitDlg J3D_DECL_FAR_VAR(jonesConfig_hFontExitDlg, HFONT)
 #define jonesConfig_hFontGameSaveMsgBox J3D_DECL_FAR_VAR(jonesConfig_hFontGameSaveMsgBox, HFONT)
-#define jonesConfig_hFontLoadGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontLoadGameDlg, HFONT)
+//#define jonesConfig_hFontLoadGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontLoadGameDlg, HFONT)
 //#define jonesConfig_hFontGamePlayOptionsDlg J3D_DECL_FAR_VAR(jonesConfig_hFontGamePlayOptionsDlg, HFONT)
 #define jonesConfig_hFontControlOptions J3D_DECL_FAR_VAR(jonesConfig_hFontControlOptions, HFONT)
 #define jonesConfig_dword_551DEC J3D_DECL_FAR_VAR(jonesConfig_dword_551DEC, void*)
@@ -135,10 +171,10 @@ HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
 #define jonesConfig_dword_551E14 J3D_DECL_FAR_VAR(jonesConfig_dword_551E14, int)
 #define jonesConfig_hFontGameOverDialog J3D_DECL_FAR_VAR(jonesConfig_hFontGameOverDialog, HFONT)
 #define jonesConfig_dword_551E1C J3D_DECL_FAR_VAR(jonesConfig_dword_551E1C, HGDIOBJ)
-#define jonesConfig_hFontLevelCopletedDialog J3D_DECL_FAR_VAR(jonesConfig_hFontLevelCopletedDialog, HFONT)
-#define jonesConfig_hFontStoreDialog J3D_DECL_FAR_VAR(jonesConfig_hFontStoreDialog, HFONT)
-#define jonesConfig_hFontPurchaseMessageBox J3D_DECL_FAR_VAR(jonesConfig_hFontPurchaseMessageBox, HFONT)
-#define jonesConfig_hFontDialogInsertCD J3D_DECL_FAR_VAR(jonesConfig_hFontDialogInsertCD, HFONT)
+//#define jonesConfig_hFontLevelCopletedDialog J3D_DECL_FAR_VAR(jonesConfig_hFontLevelCopletedDialog, HFONT)
+//#define jonesConfig_hFontStoreDialog J3D_DECL_FAR_VAR(jonesConfig_hFontStoreDialog, HFONT)
+//#define jonesConfig_hFontPurchaseMessageBox J3D_DECL_FAR_VAR(jonesConfig_hFontPurchaseMessageBox, HFONT)
+//#define jonesConfig_hFontDialogInsertCD J3D_DECL_FAR_VAR(jonesConfig_hFontDialogInsertCD, HFONT)
 
 void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult);
 
@@ -294,7 +330,7 @@ void jonesConfig_InstallHooks(void)
 
 void jonesConfig_ResetGlobals(void)
 {
-    StdRect jonesConfig_aNumberGlyphMetrics_tmp[10] = {
+    /*StdRect jonesConfig_aNumberGlyphMetrics_tmp[10] = {
       { 11, 2, 44, 45 },
       { 49, 2, 69, 45 },
       { 78, 2, 106, 45 },
@@ -306,7 +342,7 @@ void jonesConfig_ResetGlobals(void)
       { 45, 150, 75, 194 },
       { 76, 150, 107, 194 }
     };
-    memcpy(&jonesConfig_aNumberGlyphMetrics, &jonesConfig_aNumberGlyphMetrics_tmp, sizeof(jonesConfig_aNumberGlyphMetrics));
+    memcpy(&jonesConfig_aNumberGlyphMetrics, &jonesConfig_aNumberGlyphMetrics_tmp, sizeof(jonesConfig_aNumberGlyphMetrics));*/
 
     char* jonesConfig_apDialogIconFiles_tmp[6] = {
       "iq.bmp",
@@ -696,8 +732,8 @@ void jonesConfig_ResetGlobals(void)
     int jonesConfig_perfLevel_tmp = 4;
     memcpy(&jonesConfig_perfLevel, &jonesConfig_perfLevel_tmp, sizeof(jonesConfig_perfLevel));
 
-    int jonesConfig_prevLevelNum_tmp = -1;
-    memcpy(&jonesConfig_prevLevelNum, &jonesConfig_prevLevelNum_tmp, sizeof(jonesConfig_prevLevelNum));
+    /*int jonesConfig_prevLevelNum_tmp = -1;
+    memcpy(&jonesConfig_prevLevelNum, &jonesConfig_prevLevelNum_tmp, sizeof(jonesConfig_prevLevelNum));*/
 
 
     jonesConfig_dword_5510B8 = 0;
@@ -745,8 +781,8 @@ void jonesConfig_ResetGlobals(void)
     memset(&jonesConfig_bStartup, 0, sizeof(jonesConfig_bStartup));
     memset(&jonesConfig_dword_551DCC, 0, sizeof(jonesConfig_dword_551DCC));
     memset(&jonesConfig_hdo_551DD0, 0, sizeof(jonesConfig_hdo_551DD0));
-    memset(&jonesConfig_hFontSaveGameDlg, 0, sizeof(jonesConfig_hFontSaveGameDlg));
-    memset(&jonesConfig_hFontExitDlg, 0, sizeof(jonesConfig_hFontExitDlg));
+   // memset(&jonesConfig_hFontSaveGameDlg, 0, sizeof(jonesConfig_hFontSaveGameDlg));
+    //memset(&jonesConfig_hFontExitDlg, 0, sizeof(jonesConfig_hFontExitDlg));
     memset(&jonesConfig_hFontGameSaveMsgBox, 0, sizeof(jonesConfig_hFontGameSaveMsgBox));
     memset(&jonesConfig_hFontLoadGameDlg, 0, sizeof(jonesConfig_hFontLoadGameDlg));
     //memset(&jonesConfig_hFontGamePlayOptionsDlg, 0, sizeof(jonesConfig_hFontGamePlayOptionsDlg));
@@ -764,10 +800,10 @@ void jonesConfig_ResetGlobals(void)
     memset(&jonesConfig_dword_551E14, 0, sizeof(jonesConfig_dword_551E14));
     memset(&jonesConfig_hFontGameOverDialog, 0, sizeof(jonesConfig_hFontGameOverDialog));
     memset(&jonesConfig_dword_551E1C, 0, sizeof(jonesConfig_dword_551E1C));
-    memset(&jonesConfig_hFontLevelCopletedDialog, 0, sizeof(jonesConfig_hFontLevelCopletedDialog));
+    /*memset(&jonesConfig_hFontLevelCopletedDialog, 0, sizeof(jonesConfig_hFontLevelCopletedDialog));
     memset(&jonesConfig_hFontStoreDialog, 0, sizeof(jonesConfig_hFontStoreDialog));
     memset(&jonesConfig_hFontPurchaseMessageBox, 0, sizeof(jonesConfig_hFontPurchaseMessageBox));
-    memset(&jonesConfig_hFontDialogInsertCD, 0, sizeof(jonesConfig_hFontDialogInsertCD));
+    memset(&jonesConfig_hFontDialogInsertCD, 0, sizeof(jonesConfig_hFontDialogInsertCD));*/
 
 }
 
@@ -2498,15 +2534,13 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
 
     char aLastFile[128] = { 0 };
     const char* pLastFile = sithGamesave_GetLastFilename();
-    if ( pLastFile )
-    {
+    if ( pLastFile ) {
         STD_STRCPY(aLastFile, pLastFile);
     }
 
     ofn.nMaxFile  = STD_ARRAYLEN(aLastFile);
     ofn.lpstrFile = aLastFile;
-    if ( strlen(aLastFile) == 0 )
-    {
+    if ( strlen(aLastFile) == 0 ) {
         aLastFile[0] = 0;
     }
 
@@ -3121,7 +3155,6 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
 
     SendMessage(hDifSlider, TBM_SETTICFREQ, 1u, 0);
     SendMessage(hDifSlider, TBM_SETPAGESIZE, 0, 1);
-
 
     const char* pDifficultyStr = NULL;
     switch ( sithGetGameDifficulty() )
