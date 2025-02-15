@@ -263,10 +263,6 @@ void jonesConfig_InstallHooks(void)
     J3D_HOOKFUNC(jonesConfig_DrawStatisticDialogIQPoints);
     // J3D_HOOKFUNC(jonesConfig_InitStatisticDialog);
     // J3D_HOOKFUNC(jonesConfig_StatisticProc_HandleWM_COMMAND);
-    // J3D_HOOKFUNC(jonesConfig_ShowLevelCompletedDialog);
-    // J3D_HOOKFUNC(jonesConfig_LevelCompletedDialogProc);
-    // J3D_HOOKFUNC(jonesConfig_InitLevelCompletedDialog);
-    // J3D_HOOKFUNC(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND);
     // J3D_HOOKFUNC(jonesConfig_ShowStoreDialog);
     // J3D_HOOKFUNC(jonesConfig_StoreDialogProc);
     // J3D_HOOKFUNC(jonesConfig_StoreHandleDragEvent);
@@ -288,6 +284,10 @@ void jonesConfig_InstallHooks(void)
     // J3D_HOOKFUNC(jonesConfig_DialogInsertCDProc);
     // J3D_HOOKFUNC(jonesConfig_InitDialogInsertCD);
     // J3D_HOOKFUNC(jonesConfig_InsertCD_HandleWM_COMMAND);
+    J3D_HOOKFUNC(jonesConfig_ShowLevelCompletedDialog);
+    J3D_HOOKFUNC(jonesConfig_LevelCompletedDialogProc);
+    J3D_HOOKFUNC(jonesConfig_InitLevelCompletedDialog);
+    J3D_HOOKFUNC(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowDialogInsertCD);
     J3D_HOOKFUNC(jonesConfig_DialogInsertCDProc);
     J3D_HOOKFUNC(jonesConfig_InitDialogInsertCD);
@@ -1368,26 +1368,6 @@ void J3DAPI jonesConfig_StatisticProc_HandleWM_COMMAND(HWND hWnd, int16_t wParam
     J3D_TRAMPOLINE_CALL(jonesConfig_StatisticProc_HandleWM_COMMAND, hWnd, wParam);
 }
 
-int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* apItemsState, int a4, int elapsedTime, int qiPoints, int numFoundTrasures, int foundTrasureValue, int totalTreasureValue)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowLevelCompletedDialog, hWnd, pBalance, apItemsState, a4, elapsedTime, qiPoints, numFoundTrasures, foundTrasureValue, totalTreasureValue);
-}
-
-int __stdcall jonesConfig_LevelCompletedDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_LevelCompletedDialogProc, hWnd, uMsg, wParam, lParam);
-}
-
-int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCompletedDialogState* pState)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_InitLevelCompletedDialog, hDlg, wParam, pState);
-}
-
-void J3DAPI jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(HWND hWnd, int wParam)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND, hWnd, wParam);
-}
-
 int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsState, int a4)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_ShowStoreDialog, hWnd, pBalance, pItemsState, a4);
@@ -1492,6 +1472,26 @@ int J3DAPI jonesConfig_InsertCD_HandleWM_COMMAND(HWND hWnd, int nResult)
 {
     return J3D_TRAMPOLINE_CALL(jonesConfig_InsertCD_HandleWM_COMMAND, hWnd, nResult);
 }
+//
+//int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* apItemsState, int a4, int elapsedTime, int qiPoints, int numFoundTrasures, int foundTrasureValue, int totalTreasureValue)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowLevelCompletedDialog, hWnd, pBalance, apItemsState, a4, elapsedTime, qiPoints, numFoundTrasures, foundTrasureValue, totalTreasureValue);
+//}
+//
+//int __stdcall jonesConfig_LevelCompletedDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_LevelCompletedDialogProc, hWnd, uMsg, wParam, lParam);
+//}
+//
+//int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCompletedDialogState* pState)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitLevelCompletedDialog, hDlg, wParam, pState);
+//}
+//
+//void J3DAPI jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(HWND hWnd, int wParam)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND, hWnd, wParam);
+//}
 //int J3DAPI jonesConfig_ShowDialogInsertCD(HWND hWnd, LPARAM dwInitParam)
 //{
 //    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowDialogInsertCD, hWnd, dwInitParam);
@@ -3431,6 +3431,166 @@ void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageI
     // Draw IQ mask bmp
     SelectObject(pImageInfo->hdcFront, (HGDIOBJ)jonesConfig_apDialogIcons[1]);
     BitBlt(pImageInfo->hdcFront, x, y, width, height, pImageInfo->hdcBack, 0, 0, SRCCOPY);
+}
+
+int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* apItemsState, int a4, int elapsedTime, int qiPoints, int numFoundTrasures, int foundTrasureValue, int totalTreasureValue)
+{
+    tLevelCompletedDialogState state = { 0 };
+    state.balance            = pBalance;
+    state.apItemsState       = apItemsState;
+    state.unknown2           = a4;
+    state.elapsedTime        = elapsedTime;
+    state.iqPoints           = qiPoints;
+    state.numFoundTrasures   = numFoundTrasures;
+    state.foundTreasureValue = foundTrasureValue;
+    state.totalTreasureValue = totalTreasureValue;
+    state.pStatistics        = sithGamesave_GetGameStatistics();
+
+    if ( !state.pStatistics || !sithGamesave_LockGameStatistics() )
+    {
+        return jonesConfig_ShowStoreDialog(hWnd, pBalance, apItemsState, a4);
+    }
+
+    JonesDialogImageInfo imageInfo = { 0 };
+    state.pIQImageInfo = &imageInfo;
+
+    int result = JonesDialog_ShowDialog(MAKEINTRESOURCEA(233), hWnd, jonesConfig_LevelCompletedDialogProc, (LPARAM)&state);
+    *pBalance  = *state.balance;
+    sithGamesave_UnlockGameStatistics();
+    return result;
+}
+
+int CALLBACK jonesConfig_LevelCompletedDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_INITDIALOG:
+        {
+            jonesConfig_hFontLevelCopletedDialog = jonesConfig_InitDialog(hWnd, 0, 233);
+            int result  = jonesConfig_InitLevelCompletedDialog(hWnd, wParam, (tLevelCompletedDialogState*)lParam);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return result;
+        }
+        case WM_COMMAND:
+            jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(hWnd, (uint16_t)wParam);
+            return 0;
+
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontLevelCopletedDialog);
+            return 1;
+
+        // Removed: The IQ bmp and qi points are drawn in WM_DRAWITEM; fixes drawing the bitmaps
+        //case WM_PAINT:
+        //{
+        //    tLevelCompletedDialogState* pState = (tLevelCompletedDialogState*)GetWindowLongPtr(hWnd, DWL_USER);
+        //    HWND hImgCtrl = GetDlgItem(hWnd, 1135);
+        //    PAINTSTRUCT paint = { 0 }; // Added: Init to 0
+        //    HDC hdcImg = BeginPaint(hWnd, (LPPAINTSTRUCT)&paint);
+        //
+        //    SetStretchBltMode(hdcImg, STRETCH_HALFTONE);
+        //    jonesConfig_DrawImageOnDialogItem(hWnd, pState->pIQImageInfo->hdcFront, hdcImg, 1135, jonesConfig_apDialogIcons[0], jonesConfig_apDialogIcons[1]);//   "iq.bmp" "iqMask.bmp"
+        //
+        //    EndPaint(hWnd, &paint);
+        //    return 0;
+        //}
+
+        // Added: Fixes drawing of IQ bmp and iq points. Note, jonesConfig_InitLevelCompletedDialog sets picture control 1135 to be drawn by dialog
+        case WM_DRAWITEM:
+        {
+            LPDRAWITEMSTRUCT pdis = (LPDRAWITEMSTRUCT)lParam;
+            if ( pdis->CtlID == 1135 )
+            {
+                tLevelCompletedDialogState* pState = (tLevelCompletedDialogState*)GetWindowLongPtr(hWnd, DWL_USER);
+                SetStretchBltMode(pdis->hDC, STRETCH_HALFTONE);
+                jonesConfig_DrawImageOnDialogItem(hWnd, pState->pIQImageInfo->hdcFront, pdis->hDC, 1135, jonesConfig_apDialogIcons[0], jonesConfig_apDialogIcons[1]); //  "iq.bmp" "iqMask.bmp"
+                return TRUE;
+            }
+            return FALSE;
+        }
+
+        default:
+            return 0;
+    };
+}
+
+int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCompletedDialogState* pState)
+{
+    J3D_UNUSED(wParam);
+
+    HWND DlgItem;
+    HDC DC;
+
+    HWND hImgCtrl = GetDlgItem(hDlg, 1135);
+
+    // Added: Make hImgCtrl to be drawn by hDlg -> WM_DRAWITEM
+    LONG style = GetWindowLong(hImgCtrl, GWL_STYLE);
+    SetWindowLong(hImgCtrl, GWL_STYLE, style | SS_OWNERDRAW);
+
+    pState->pIQImageInfo->hdcFront = CreateCompatibleDC(GetDC(hImgCtrl));
+
+    DlgItem = GetDlgItem(hDlg, 1135);           // ??
+    DC = GetDC(DlgItem);
+    pState->pIQImageInfo->hdcBack = CreateCompatibleDC(DC);
+
+    jonesConfig_prevLevelNum = pState->pStatistics->curLevelNum - 1;
+    jonesConfig_DrawStatisticDialogIQPoints(hDlg, &pState->pIQImageInfo, 233, pState->pStatistics->aLevelStatistic[jonesConfig_prevLevelNum].iqPoints);
+
+    CHAR aText[256] = { 0 };
+
+    int hours = pState->elapsedTime >> 8;
+    int minutes = (hours << 8) ^ pState->elapsedTime;
+
+    if ( minutes >= 10 )
+    {
+        STD_FORMAT(aText, "%i : %i ", hours, minutes);
+    }
+    else
+    {
+        STD_FORMAT(aText, "%i : 0%i ", hours, minutes);
+    }
+
+    SetWindowText(GetDlgItem(hDlg, 1153), aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pState->iqPoints);
+    SetWindowText(GetDlgItem(hDlg, 1154), aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pState->numFoundTrasures);
+    SetWindowText(GetDlgItem(hDlg, 1155), aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pState->foundTreasureValue);
+    SetWindowText(GetDlgItem(hDlg, 1157), aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pState->totalTreasureValue);
+    SetWindowText(GetDlgItem(hDlg, 1156), aText);
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pState);
+    return 1;
+}
+
+void J3DAPI jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(HWND hWnd, int wParam)
+{
+    tLevelCompletedDialogState* pState = (tLevelCompletedDialogState*)GetWindowLongPtr(hWnd, DWL_USER);
+    if ( wParam > 0 && wParam <= 2 ) // 1 or 2 - done
+    {
+        DeleteObject((HGDIOBJ)pState->pIQImageInfo->hBmp);
+        pState->pIQImageInfo->hBmp = NULL;
+
+        DeleteDC(pState->pIQImageInfo->hdcFront);
+        DeleteDC(pState->pIQImageInfo->hdcBack);
+
+        // Show store dialog if not bonus level
+        if ( pState->pStatistics->curLevelNum + 1 < JONESLEVEL_BONUSLEVELNUM )
+        {
+            jonesConfig_ShowStoreDialog(hWnd, pState->balance, pState->apItemsState, pState->unknown2);
+        }
+
+        InvalidateRect(hWnd, NULL, TRUE);
+        EndDialog(hWnd, wParam);
+    }
 }
 INT_PTR CALLBACK jonesConfig_DialogInsertCDProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
