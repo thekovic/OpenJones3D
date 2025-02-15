@@ -277,7 +277,7 @@
 #define jonesConfig_ShowStatisticsDialog_TYPE int (J3DAPI*)(HWND, SithGameStatistics*)
 #define jonesConfig_StatisticsDialogProc_TYPE INT_PTR (__stdcall*)(HWND, UINT, WPARAM, LPARAM)
 #define jonesConfig_sub_40D100_TYPE int (J3DAPI*)(int, HWND, int, int)
-#define jonesConfig_UpdateCurrentLevelNum_TYPE void (J3DAPI*)()
+#define jonesConfig_UpdateCurrentLevelNum_TYPE void (*)(void)
 #define jonesConfig_DrawImageOnDialogItem_TYPE int (J3DAPI*)(HWND, HDC, HDC, int, HBITMAP, HBITMAP)
 #define jonesConfig_SetStatisticsDialogForLevel_TYPE int (J3DAPI*)(HWND, int, int*)
 #define jonesConfig_DrawStatisticDialogIQPoints_TYPE void (J3DAPI*)(HWND, JonesDialogImageInfo**, int, int)

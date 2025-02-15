@@ -1,7 +1,10 @@
 #include "jonesConfig.h"
 #include <j3dcore/j3dhook.h>
 
+#include <Jones3D/Display/JonesHudConstants.h>
 #include <Jones3D/Gui/JonesDialog.h>
+#include <Jones3D/Main/JonesFile.h>
+#include <Jones3D/Main/JonesLevel.h>
 #include <Jones3D/Main/JonesMain.h>
 #include <Jones3D/Main/jonesString.h>
 #include <Jones3D/Play/jonesInventory.h>
@@ -83,7 +86,6 @@ static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
 
 HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
 
-#define jonesConfig_aStoreItems J3D_DECL_FAR_ARRAYVAR(jonesConfig_aStoreItems, tStoreItem(*)[14])
 #define jonesConfig_aNumberGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aNumberGlyphMetrics, StdRect(*)[10])
 #define jonesConfig_apDialogIconFiles J3D_DECL_FAR_ARRAYVAR(jonesConfig_apDialogIconFiles, char*(*)[6])
 #define jonesConfig_aLevelNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aLevelNames, const char*(*)[17])
@@ -263,31 +265,27 @@ void jonesConfig_InstallHooks(void)
     J3D_HOOKFUNC(jonesConfig_DrawStatisticDialogIQPoints);
     // J3D_HOOKFUNC(jonesConfig_InitStatisticDialog);
     // J3D_HOOKFUNC(jonesConfig_StatisticProc_HandleWM_COMMAND);
-    // J3D_HOOKFUNC(jonesConfig_ShowStoreDialog);
-    // J3D_HOOKFUNC(jonesConfig_StoreDialogProc);
-    // J3D_HOOKFUNC(jonesConfig_StoreHandleDragEvent);
-    // J3D_HOOKFUNC(jonesConfig_StoreDialog_HandleWM_MBUTTONUP);
-    // J3D_HOOKFUNC(jonesConfig_StoreDialog_HandleWM_MOUSEFIRST);
-    // J3D_HOOKFUNC(jonesConfig_InitStoreDialog);
-    // J3D_HOOKFUNC(jonesConfig_StoreInitItemIcons);
-    // J3D_HOOKFUNC(jonesConfig_StoreSetListColumns);
-    // J3D_HOOKFUNC(jonesConfig_StoreInitItemList);
-    // J3D_HOOKFUNC(jonesConfig_UpdateBalances);
-    // J3D_HOOKFUNC(jonesConfig_AddStoreCartItem);
-    // J3D_HOOKFUNC(jonesConfig_RemoveStoreCartItem);
-    // J3D_HOOKFUNC(jonesConfig_StoreDialog_HandleWM_COMMAND);
-    // J3D_HOOKFUNC(jonesConfig_ClearStoreCart);
-    // J3D_HOOKFUNC(jonesConfig_ShowPurchaseMessageBox);
-    // J3D_HOOKFUNC(jonesConfig_PurchaseMessageBoxProc);
-    // J3D_HOOKFUNC(jonesConfig_InitPurchaseMessageBox);
-    // J3D_HOOKFUNC(jonesConfig_ShowDialogInsertCD);
-    // J3D_HOOKFUNC(jonesConfig_DialogInsertCDProc);
-    // J3D_HOOKFUNC(jonesConfig_InitDialogInsertCD);
-    // J3D_HOOKFUNC(jonesConfig_InsertCD_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowLevelCompletedDialog);
     J3D_HOOKFUNC(jonesConfig_LevelCompletedDialogProc);
     J3D_HOOKFUNC(jonesConfig_InitLevelCompletedDialog);
     J3D_HOOKFUNC(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND);
+    J3D_HOOKFUNC(jonesConfig_ShowStoreDialog);
+    J3D_HOOKFUNC(jonesConfig_StoreDialogProc);
+    J3D_HOOKFUNC(jonesConfig_StoreHandleDragEvent);
+    J3D_HOOKFUNC(jonesConfig_StoreDialog_HandleWM_MBUTTONUP);
+    J3D_HOOKFUNC(jonesConfig_StoreDialog_HandleWM_MOUSEFIRST);
+    J3D_HOOKFUNC(jonesConfig_InitStoreDialog);
+    J3D_HOOKFUNC(jonesConfig_StoreInitItemIcons);
+    J3D_HOOKFUNC(jonesConfig_StoreSetListColumns);
+    J3D_HOOKFUNC(jonesConfig_StoreInitItemList);
+    J3D_HOOKFUNC(jonesConfig_UpdateBalances);
+    J3D_HOOKFUNC(jonesConfig_AddStoreCartItem);
+    J3D_HOOKFUNC(jonesConfig_RemoveStoreCartItem);
+    J3D_HOOKFUNC(jonesConfig_StoreDialog_HandleWM_COMMAND);
+    J3D_HOOKFUNC(jonesConfig_ClearStoreCart);
+    J3D_HOOKFUNC(jonesConfig_ShowPurchaseMessageBox);
+    J3D_HOOKFUNC(jonesConfig_PurchaseMessageBoxProc);
+    J3D_HOOKFUNC(jonesConfig_InitPurchaseMessageBox);
     J3D_HOOKFUNC(jonesConfig_ShowDialogInsertCD);
     J3D_HOOKFUNC(jonesConfig_DialogInsertCDProc);
     J3D_HOOKFUNC(jonesConfig_InitDialogInsertCD);
@@ -1367,111 +1365,6 @@ void J3DAPI jonesConfig_StatisticProc_HandleWM_COMMAND(HWND hWnd, int16_t wParam
 {
     J3D_TRAMPOLINE_CALL(jonesConfig_StatisticProc_HandleWM_COMMAND, hWnd, wParam);
 }
-
-int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsState, int a4)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowStoreDialog, hWnd, pBalance, pItemsState, a4);
-}
-
-int __stdcall jonesConfig_StoreDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialogProc, hwnd, msg, wparam, lparam);
-}
-
-int J3DAPI jonesConfig_StoreHandleDragEvent(HWND hwnd, HWND hDlgCtrl)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreHandleDragEvent, hwnd, hDlgCtrl);
-}
-
-void J3DAPI jonesConfig_StoreDialog_HandleWM_MBUTTONUP(HWND hWnd)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_MBUTTONUP, hWnd);
-}
-
-BOOL J3DAPI jonesConfig_StoreDialog_HandleWM_MOUSEFIRST(HWND hWnd)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_MOUSEFIRST, hWnd);
-}
-
-int J3DAPI jonesConfig_InitStoreDialog(HWND hDlg, int a2, tStoreCartState* pCart)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_InitStoreDialog, hDlg, a2, pCart);
-}
-
-int J3DAPI jonesConfig_StoreInitItemIcons(HWND hWnd, tStoreCartState* pCart)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreInitItemIcons, hWnd, pCart);
-}
-
-LRESULT J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreSetListColumns, hList, pColumnName);
-}
-
-void J3DAPI jonesConfig_StoreInitItemList(HWND hWnd, int* apItemsState, int listID)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_StoreInitItemList, hWnd, apItemsState, listID);
-}
-
-void J3DAPI jonesConfig_UpdateBalances(HWND hDlg, tStoreCartState* pCart)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_UpdateBalances, hDlg, pCart);
-}
-
-void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_AddStoreCartItem, hDlg, pCart);
-}
-
-void J3DAPI jonesConfig_RemoveStoreCartItem(HWND hDlg, tStoreCartState* pCart)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_RemoveStoreCartItem, hDlg, pCart);
-}
-
-void J3DAPI jonesConfig_StoreDialog_HandleWM_COMMAND(HWND hWnd, WPARAM wParam)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_COMMAND, hWnd, wParam);
-}
-
-void J3DAPI jonesConfig_ClearStoreCart(HWND hDlg, tStoreCartState* pCart)
-{
-    J3D_TRAMPOLINE_CALL(jonesConfig_ClearStoreCart, hDlg, pCart);
-}
-
-int J3DAPI jonesConfig_ShowPurchaseMessageBox(HWND hWnd, tStoreCartState* dwInitParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowPurchaseMessageBox, hWnd, dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_PurchaseMessageBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_PurchaseMessageBoxProc, hWnd, uMsg, wParam, lParam);
-}
-
-int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState* pCart)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_InitPurchaseMessageBox, hDlg, a2, pCart);
-}
-
-int J3DAPI jonesConfig_ShowDialogInsertCD(HWND hWnd, LPARAM dwInitParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowDialogInsertCD, hWnd, dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_DialogInsertCDProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_DialogInsertCDProc, hWnd, uMsg, wParam, lParam);
-}
-
-int J3DAPI jonesConfig_InitDialogInsertCD(HWND hDlg, int a2, int cdNum)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_InitDialogInsertCD, hDlg, a2, cdNum);
-}
-
-int J3DAPI jonesConfig_InsertCD_HandleWM_COMMAND(HWND hWnd, int nResult)
-{
-    return J3D_TRAMPOLINE_CALL(jonesConfig_InsertCD_HandleWM_COMMAND, hWnd, nResult);
-}
 //
 //int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* apItemsState, int a4, int elapsedTime, int qiPoints, int numFoundTrasures, int foundTrasureValue, int totalTreasureValue)
 //{
@@ -1492,6 +1385,92 @@ int J3DAPI jonesConfig_InsertCD_HandleWM_COMMAND(HWND hWnd, int nResult)
 //{
 //    J3D_TRAMPOLINE_CALL(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND, hWnd, wParam);
 //}
+//
+//int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsState, int a4)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowStoreDialog, hWnd, pBalance, pItemsState, a4);
+//}
+//
+//int __stdcall jonesConfig_StoreDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialogProc, hwnd, msg, wparam, lparam);
+//}
+//
+//int J3DAPI jonesConfig_StoreHandleDragEvent(HWND hwnd, HWND hDlgCtrl)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreHandleDragEvent, hwnd, hDlgCtrl);
+//}
+//
+//void J3DAPI jonesConfig_StoreDialog_HandleWM_MBUTTONUP(HWND hWnd)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_MBUTTONUP, hWnd);
+//}
+//
+//BOOL J3DAPI jonesConfig_StoreDialog_HandleWM_MOUSEFIRST(HWND hWnd)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_MOUSEFIRST, hWnd);
+//}
+//
+//int J3DAPI jonesConfig_InitStoreDialog(HWND hDlg, int a2, tStoreCartState* pCart)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitStoreDialog, hDlg, a2, pCart);
+//}
+//
+//int J3DAPI jonesConfig_StoreInitItemIcons(HWND hWnd, tStoreCartState* pCart)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreInitItemIcons, hWnd, pCart);
+//}
+//
+//LRESULT J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreSetListColumns, hList, pColumnName);
+//}
+//
+//void J3DAPI jonesConfig_StoreInitItemList(HWND hWnd, int* apItemsState, int listID)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_StoreInitItemList, hWnd, apItemsState, listID);
+//}
+//
+//void J3DAPI jonesConfig_UpdateBalances(HWND hDlg, tStoreCartState* pCart)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_UpdateBalances, hDlg, pCart);
+//}
+//
+//void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_AddStoreCartItem, hDlg, pCart);
+//}
+//
+//void J3DAPI jonesConfig_RemoveStoreCartItem(HWND hDlg, tStoreCartState* pCart)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_RemoveStoreCartItem, hDlg, pCart);
+//}
+//
+//void J3DAPI jonesConfig_StoreDialog_HandleWM_COMMAND(HWND hWnd, WPARAM wParam)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_COMMAND, hWnd, wParam);
+//}
+//
+//void J3DAPI jonesConfig_ClearStoreCart(HWND hDlg, tStoreCartState* pCart)
+//{
+//    J3D_TRAMPOLINE_CALL(jonesConfig_ClearStoreCart, hDlg, pCart);
+//}
+//
+//int J3DAPI jonesConfig_ShowPurchaseMessageBox(HWND hWnd, tStoreCartState* dwInitParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowPurchaseMessageBox, hWnd, dwInitParam);
+//}
+//
+//INT_PTR __stdcall jonesConfig_PurchaseMessageBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_PurchaseMessageBoxProc, hWnd, uMsg, wParam, lParam);
+//}
+//
+//int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState* pCart)
+//{
+//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitPurchaseMessageBox, hDlg, a2, pCart);
+//}
+//
 //int J3DAPI jonesConfig_ShowDialogInsertCD(HWND hWnd, LPARAM dwInitParam)
 //{
 //    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowDialogInsertCD, hWnd, dwInitParam);
@@ -3592,6 +3571,626 @@ void J3DAPI jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(HWND hWnd, int wP
         EndDialog(hWnd, wParam);
     }
 }
+
+int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsState, int a4)
+{
+    tStoreCartState cart = { 0 };
+    cart.balance         = *pBalance;
+    cart.apItemsState    = pItemsState;
+    cart.unknown20       = a4;
+
+    int result = JonesDialog_ShowDialog(MAKEINTRESOURCEA(190), hWnd, jonesConfig_StoreDialogProc, (LPARAM)&cart);
+    *pBalance  = cart.balance;
+    return result;
+}
+
+int CALLBACK jonesConfig_StoreDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+    switch ( msg )
+    {
+        case WM_INITDIALOG:
+            jonesConfig_hFontStoreDialog = jonesConfig_InitDialog(hwnd, 0, 190);
+            int result = jonesConfig_InitStoreDialog(hwnd, wparam, (tStoreCartState*)lparam);
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return result;
+
+        case WM_COMMAND:
+            jonesConfig_StoreDialog_HandleWM_COMMAND(hwnd, (uint16_t)wparam);
+            return 0;
+
+        case WM_MOUSEFIRST:
+            jonesConfig_StoreDialog_HandleWM_MOUSEFIRST(hwnd);
+            return 1;
+
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+            jonesConfig_StoreDialog_HandleWM_MBUTTONUP(hwnd);
+            return 1;
+
+        case WM_NOTIFY:
+        {
+            tStoreCartState* pCart = (tStoreCartState*)GetWindowLongPtr(hwnd, DWL_USER);
+            switch ( ((LPNMHDR)lparam)->code )
+            {
+                case LVN_BEGINDRAG:
+                case LVN_BEGINRDRAG:
+                {
+                    // Note, lparam is NMLISTVIEW struct here
+                    pCart->dragListId = ((LPNMHDR)lparam)->idFrom;
+                    jonesConfig_StoreHandleDragEvent(hwnd, GetDlgItem(hwnd, pCart->dragListId));
+                } break;
+                case NM_DBLCLK:
+                {
+                    // If double mouse button click, add or remove item to cart based on which list item was clicked
+                    if ( ((LPNMHDR)lparam)->idFrom == 1005 ) // available list editor
+                    {
+                        jonesConfig_AddStoreCartItem(hwnd, pCart);
+                    }
+                    else if ( ((LPNMHDR)lparam)->idFrom == 1006 ) // cart items list editor
+                    {
+                        jonesConfig_RemoveStoreCartItem(hwnd, pCart);
+                    }
+                }
+            };
+        } return 1;
+
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hwnd, jonesConfig_hFontStoreDialog);
+            return 1;
+
+        default:
+            return 0;
+    }
+}
+
+int J3DAPI jonesConfig_StoreHandleDragEvent(HWND hwnd, HWND hDlgCtrl)
+{
+    tStoreCartState* pCart = (tStoreCartState*)GetWindowLongPtr(hwnd, DWL_USER);
+    UINT numSelected = ListView_GetSelectedCount(hDlgCtrl);
+
+    SetCapture(hwnd);
+
+    POINT cursorPos;
+    GetCursorPos(&cursorPos);
+
+    RECT dlgRect, wndRect;
+    GetWindowRect(hDlgCtrl, &dlgRect);
+    GetWindowRect(hwnd, &wndRect);
+
+    int itemIdx   = -1;
+    RECT itemRect = { 0 }; // Added: init to 0
+    for ( UINT i = 0; i < numSelected; ++i )
+    {
+        itemIdx = ListView_GetNextItem(hDlgCtrl, itemIdx, LVNI_SELECTED);
+        ListView_GetItemRect(hDlgCtrl, itemIdx, &itemRect, LVIR_SELECTBOUNDS);
+
+        LONG dragX = cursorPos.x - (dlgRect.left + itemRect.left);
+        LONG dragY = cursorPos.y - (dlgRect.top + itemRect.top);
+
+        LVITEMA item;
+        item.mask     = LVIF_PARAM;
+        item.iSubItem = 0;
+        item.iItem    = itemIdx;
+        ListView_GetItem(hDlgCtrl, &item);
+
+        int imageIdx = HIWORD(item.lParam);
+
+        HIMAGELIST hList = ListView_GetImageList(hDlgCtrl, LVSIL_SMALL);
+        if ( !ImageList_BeginDrag(hList, imageIdx, dragX, dragY) )
+        {
+            ImageList_EndDrag();
+            ImageList_DragLeave(hwnd);
+            int result = ReleaseCapture();
+            pCart->bDragging = 0;
+            return result;
+        }
+    }
+
+    int result = ImageList_DragEnter(hwnd, cursorPos.x - wndRect.left, cursorPos.y - wndRect.top);
+    pCart->bDragging = 1;
+    return result;
+}
+
+void J3DAPI jonesConfig_StoreDialog_HandleWM_MBUTTONUP(HWND hWnd)
+{
+    tStoreCartState* pCart = (tStoreCartState*)GetWindowLongPtr(hWnd, DWL_USER);
+    if ( pCart->bDragging )
+    {
+        ImageList_EndDrag();
+        ImageList_DragLeave(hWnd);
+
+        POINT cursorPos;
+        GetCursorPos(&cursorPos);
+
+        RECT rect;
+        HWND dlgItem = GetDlgItem(hWnd, 1006);
+        GetWindowRect(dlgItem, &rect);
+
+        if ( PtInRect(&rect, cursorPos) && pCart->dragListId == 1005 )// available items list
+        {
+            jonesConfig_AddStoreCartItem(hWnd, pCart);
+        }
+        else
+        {
+            HWND hItemsDialog = GetDlgItem(hWnd, 1005);
+            GetWindowRect(hItemsDialog, &rect);
+            if ( PtInRect(&rect, cursorPos) )
+            {
+                if ( pCart->dragListId == 1006 )// cart list
+                {
+                    jonesConfig_RemoveStoreCartItem(hWnd, pCart);
+                }
+            }
+        }
+
+        pCart->bDragging = 0;
+        ReleaseCapture();
+    }
+}
+
+
+BOOL J3DAPI jonesConfig_StoreDialog_HandleWM_MOUSEFIRST(HWND hWnd)
+{
+    POINT cursorPos;
+    GetCursorPos(&cursorPos);
+
+    RECT rect;
+    GetWindowRect(hWnd, &rect);
+    return ImageList_DragMove(cursorPos.x - rect.left, cursorPos.y - rect.top);
+}
+
+int J3DAPI jonesConfig_InitStoreDialog(HWND hDlg, int a2, tStoreCartState* pCart)
+{
+    J3D_UNUSED(a2);
+
+    HWND hAvailableList = GetDlgItem(hDlg, 1005);
+    HWND hCartList      = GetDlgItem(hDlg, 1006);
+    HWND hCurrentList   = GetDlgItem(hDlg, 1199);
+    if ( !jonesConfig_StoreInitItemIcons(hDlg, pCart) )
+    {
+        return 0;
+    }
+
+    ListView_SetImageList(hAvailableList, pCart->hList, LVSIL_SMALL);
+    ListView_SetImageList(hCartList, pCart->hList, LVSIL_SMALL);
+    ListView_SetImageList(hCurrentList, pCart->hList, LVSIL_SMALL);
+
+    jonesConfig_StoreSetListColumns(hAvailableList, "JONES_STR_COST");
+    jonesConfig_StoreSetListColumns(hCartList, "JONES_STR_COST");
+    jonesConfig_StoreSetListColumns(hCurrentList, "JONES_STR_COUNT");
+
+    jonesConfig_StoreInitItemList(hCurrentList, pCart->apItemsState, 1199);
+    jonesConfig_StoreInitItemList(hAvailableList, pCart->apItemsState, 1005);
+
+    if ( ListView_GetItemCount(hCurrentList) > ListView_GetCountPerPage(hCurrentList) )
+    {
+        int colWidth = ListView_GetColumnWidth(hCurrentList, 0);
+        int vscrlWidth = GetSystemMetrics(SM_CXVSCROLL);
+        ListView_SetColumnWidth(hCurrentList, 0, colWidth - vscrlWidth);
+    }
+
+    if ( ListView_GetItemCount(hAvailableList) > ListView_GetCountPerPage(hAvailableList) )
+    {
+        int colWidth   = ListView_GetColumnWidth(hAvailableList, 0);
+        int vscrlWidth = GetSystemMetrics(SM_CXVSCROLL);
+        ListView_SetColumnWidth(hAvailableList, 0, colWidth - vscrlWidth);
+    }
+
+    pCart->total         = 0;
+    pCart->cartListWidth = ListView_GetColumnWidth(hCartList, 0);
+    jonesConfig_UpdateBalances(hDlg, pCart);
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pCart);
+    return 1;
+}
+
+int J3DAPI jonesConfig_StoreInitItemIcons(HWND hWnd, tStoreCartState* pCart)
+{
+    pCart->hList = ImageList_Create(48, 48, ILC_MASK | ILC_COLOR8, STD_ARRAYLEN(JonesHud_aStoreItems), 0); // Changed icon size to 48 from 16
+    if ( !pCart->hList )
+    {
+        return 0;
+    }
+
+    HINSTANCE hInstance = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    int result = hInstance != NULL;
+    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aStoreItems); ++i )
+    {
+        pCart->aItemIcons[i] = LoadIconA(hInstance, MAKEINTRESOURCEA(JonesHud_aStoreItems[i].iconID));
+        result = ImageList_ReplaceIcon(pCart->hList, -1, pCart->aItemIcons[i]);
+    }
+
+    return result;
+}
+
+LRESULT J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName)
+{
+    LVCOLUMNA col = { 0 }; // Added: Init to 0
+    col.mask       = LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
+    col.cchTextMax = 256;
+
+    uint32_t  height, width;
+    stdDisplay_GetBackBufferSize(&width, &height);
+
+    // Removed: 
+  /*float scale = 1.0f;
+    if ( (float)height / RD_REF_HEIGHT <= 1.0f )
+    {
+        scale = (float)height / RD_REF_HEIGHT;
+    }*/
+    float scale = RD_REF_APECTRATIO / (width / height); // Added: Fixes scaling issue on 16:9 ...
+    int pad = (int)(50.0f * scale); // Changed: Change padding to 50 from 40 due to bigger font size
+    int colNum = 0;
+
+    RECT rect;
+    GetClientRect(hList, &rect);
+
+    col.fmt      = LVCFMT_LEFT;
+    col.cx       = rect.right - rect.left - pad;
+    col.pszText  = (LPSTR)jonesString_GetString("JONES_STR_ITEMNAME");
+    col.iSubItem = colNum;
+    ListView_InsertColumn(hList, colNum++, &col);
+
+
+    col.fmt      = LVCFMT_RIGHT;
+    col.cx       = pad;
+    col.pszText  = (LPSTR)jonesString_GetString(pColumnName);
+    col.iSubItem = colNum;
+    return ListView_InsertColumn(hList, colNum, &col);
+}
+
+void J3DAPI jonesConfig_StoreInitItemList(HWND hWnd, int* apItemsState, int listID)
+{
+    LVITEM newItem;
+    newItem.mask       = LVIF_STATE | LVIF_PARAM | LVIF_IMAGE | LVIF_TEXT;
+    newItem.cchTextMax = 256; // must match aCost
+    newItem.state      = 0;
+    newItem.stateMask  = 0;
+
+    int imageIdx = 0;
+    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aStoreItems); ++i )
+    {
+        if ( listID == 1005 ) //  available items list
+        {
+            if ( (apItemsState[i] & 0xF) != 0 ) // if item is available
+            {
+                newItem.iItem    = imageIdx;
+                newItem.iSubItem = 0;
+                newItem.pszText  = (LPSTR)jonesString_GetString(JonesHud_aStoreItems[i].aClipName);
+                newItem.iImage   = i;
+                newItem.lParam   = JonesHud_aStoreItems[i].price | (i << 16);
+                ListView_InsertItem(hWnd, &newItem);
+
+                char aCost[256];
+                STD_FORMAT(aCost, "%d", JonesHud_aStoreItems[i].price);
+                ListView_SetItemText(hWnd, imageIdx++, 1, aCost);
+            }
+
+            apItemsState[i] &= ~0xFFFFu;
+        }
+        else if ( listID == 1199 ) // current inventory list
+        {
+            if ( (apItemsState[i] & 0xFFF0) >> 4 )
+            {
+                newItem.iItem    = imageIdx;
+                newItem.iSubItem = 0;
+                newItem.pszText  = (LPSTR)jonesString_GetString(JonesHud_aStoreItems[i].aName);
+                newItem.iImage   = i;
+                ListView_InsertItem(hWnd, &newItem);
+
+                char aAmount[256];
+                STD_FORMAT(aAmount, "%d", (apItemsState[i] & 0xFFF0) >> 4);// extracts amount
+                ListView_SetItemText(hWnd, imageIdx++, 1, aAmount);
+            }
+        }
+    }
+}
+
+void J3DAPI jonesConfig_UpdateBalances(HWND hDlg, tStoreCartState* pCart)
+{
+    CHAR aText[256] = { 0 };
+    STD_FORMAT(aText, "%i ", pCart->total);
+
+    HWND hTotalCtrl = GetDlgItem(hDlg, 1173); // total cost
+    SetWindowTextA(hTotalCtrl, aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pCart->balance);
+
+    HWND hBalanceCtrl = GetDlgItem(hDlg, 1174); // balance
+    SetWindowTextA(hBalanceCtrl, aText);
+}
+
+void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart)
+{
+    HWND hItemsList = GetDlgItem(hDlg, 1005);        // available items list
+    UINT selectedCount = ListView_GetSelectedCount(hItemsList);
+    if ( selectedCount )
+    {
+        int total = 0;
+        int itemIdx = -1;
+        int bonusMapItemIdx = -1;
+        for ( UINT i = 0; i < selectedCount; ++i )
+        {
+            itemIdx = ListView_GetNextItem(hItemsList, itemIdx, LVNI_SELECTED);
+
+            LVITEM lvitem   = { 0 }; // Added: init to 0
+            lvitem.mask     = LVIF_PARAM;
+            lvitem.iSubItem = 0;
+            lvitem.iItem    = itemIdx;
+            ListView_GetItem(hItemsList, &lvitem);
+
+            int storeItemIdx = HIWORD(lvitem.lParam);//  HIWORD
+            if ( storeItemIdx > -1 ) // Fixed: Added check for bonusMapItemIdx > -1 
+            {
+                if ( JonesHud_aStoreItems[storeItemIdx].menuID == JONESHUD_MENU_INVITEM_BONUSMAP )
+                {
+                    bonusMapItemIdx = storeItemIdx;
+                }
+
+                total += JonesHud_aStoreItems[storeItemIdx].price;
+            }
+        }
+
+        if ( pCart->balance >= total )
+        {
+            if ( bonusMapItemIdx > -1 && JonesHud_aStoreItems[bonusMapItemIdx].menuID == JONESHUD_MENU_INVITEM_BONUSMAP ) // Fixed: Added check for bonusMapItemIdx > -1 
+            {
+                const char* pDlgText = jonesString_GetString("JONES_STR_PERU");
+                if ( pDlgText )
+                {
+                    jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_STORE", pDlgText, 191);
+                    InvalidateRect(hDlg, 0, 1);
+                }
+            }
+
+            itemIdx = -1;
+            for ( UINT i = 0; i < selectedCount; ++i )
+            {
+                // Get item from available item list
+                itemIdx = ListView_GetNextItem(hItemsList, itemIdx, LVNI_SELECTED);
+
+                char aItemText[256] = { 0 };
+                LVITEM item     = { 0 }; // Added: Init to 0
+                item.mask       = LVIF_PARAM | LVIF_TEXT;
+                item.iSubItem   = 0;
+                item.iItem      = itemIdx;
+                item.pszText    = aItemText;
+                item.cchTextMax = STD_ARRAYLEN(aItemText);
+                ListView_GetItem(hItemsList, &item);
+
+                // Add item to purchase list
+                int itemStateIdx = HIWORD(item.lParam); // See jonesConfig_StoreInitItemList
+
+                HWND hCartList  = GetDlgItem(hDlg, 1006);// cart list
+                item.mask      = LVIF_STATE | LVIF_PARAM | LVIF_IMAGE | LVIF_TEXT;
+                item.state     = 0;
+                item.stateMask = 0;
+                item.iImage    = itemStateIdx;
+                item.iItem     = ListView_GetItemCount(hCartList);
+                ListView_InsertItem(hCartList, &item);
+
+                // Set item in cart
+                memset(aItemText, 0, sizeof(aItemText));
+                ListView_GetItemText(hItemsList, itemIdx, 1, aItemText, STD_ARRAYLEN(aItemText));
+                ListView_SetItemText(hCartList, item.iItem, 1, aItemText);
+
+                int numItems = pCart->apItemsState[itemStateIdx];
+                pCart->apItemsState[itemStateIdx] = ((uint16_t)numItems + 1) | numItems & 0xFFFF0000;
+
+                if ( ListView_GetItemCount(hCartList) > ListView_GetCountPerPage(hCartList) )
+                {
+                    int vscrollWidth = GetSystemMetrics(SM_CXVSCROLL);
+                    ListView_SetColumnWidth(hCartList, 0, pCart->cartListWidth - vscrollWidth);
+                }
+            }
+
+            pCart->total   += total;
+            pCart->balance -= total;
+            jonesConfig_UpdateBalances(hDlg, pCart);
+        }
+        else
+        {
+            const char* pDlgText = NULL;
+            if ( bonusMapItemIdx > -1 && JonesHud_aStoreItems[bonusMapItemIdx].menuID == JONESHUD_MENU_INVITEM_BONUSMAP ) { // Fixed: Added check for bonusMapItemIdx > -1 
+                pDlgText = jonesString_GetString("JONES_STR_NOPERU");
+            }
+            else if ( selectedCount == 1 ) {
+                pDlgText = jonesString_GetString("JONES_STR_CANTBUY1");
+            }
+            else {
+                pDlgText = jonesString_GetString("JONES_STR_CANTBUY");
+            }
+
+            if ( pDlgText )
+            {
+                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_STORE", pDlgText, 191);
+                InvalidateRect(hDlg, 0, 1);
+            }
+        }
+    }
+}
+
+void J3DAPI jonesConfig_RemoveStoreCartItem(HWND hDlg, tStoreCartState* pCart)
+{
+    int total = 0;
+    HWND hCartList = GetDlgItem(hDlg, 1006);
+    UINT selectedCount = ListView_GetSelectedCount(hCartList);
+    if ( selectedCount )
+    {
+        int idx = -1;
+        for ( UINT i = 0; i < selectedCount; ++i )
+        {
+            idx = ListView_GetNextItem(hCartList, idx, LVNI_SELECTED);
+
+            LVITEM lvitem;
+            lvitem.mask     = LVIF_PARAM;
+            lvitem.iSubItem = 0;
+            lvitem.iItem    = idx;
+            ListView_GetItem(hCartList, &lvitem);
+
+            total += LOWORD(lvitem.lParam);
+
+            SendMessage(hCartList, LVM_DELETEITEM, idx, 0);
+
+            int numItems = pCart->apItemsState[HIWORD(lvitem.lParam)];
+            pCart->apItemsState[HIWORD(lvitem.lParam)] = ((uint16_t)numItems - 1) | numItems & 0xFFFF0000;
+
+            int itemsCount = ListView_GetItemCount(hCartList);
+            if ( itemsCount <= ListView_GetCountPerPage(hCartList) )
+            {
+                ListView_SetColumnWidth(hCartList, 0, LOWORD(pCart->cartListWidth));
+            }
+        }
+
+        pCart->total   -= total;
+        pCart->balance += total;
+        jonesConfig_UpdateBalances(hDlg, pCart);
+    }
+}
+
+void J3DAPI jonesConfig_StoreDialog_HandleWM_COMMAND(HWND hWnd, WPARAM wParam)
+{
+    tStoreCartState* pCart = (tStoreCartState*)GetWindowLongPtr(hWnd, DWL_USER);
+    switch ( (int)wParam )
+    {
+        case 1:
+        case 2:
+        {
+            if ( pCart->balance <= 0 ) {
+                EndDialog(hWnd, wParam);
+            }
+            else if ( jonesConfig_ShowPurchaseMessageBox(hWnd, pCart) == 1 )
+            {
+                InvalidateRect(hWnd, 0, 1);
+                EndDialog(hWnd, wParam);
+            }
+        } return;
+        case 1168: // Add item
+            jonesConfig_AddStoreCartItem(hWnd, pCart);
+            return;
+        case 1169: // Return item
+            jonesConfig_RemoveStoreCartItem(hWnd, pCart);
+            return;
+        case 1175: // Clear items
+            jonesConfig_ClearStoreCart(hWnd, pCart);
+            return;
+
+    }
+}
+
+void J3DAPI jonesConfig_ClearStoreCart(HWND hDlg, tStoreCartState* pCart)
+{
+    HWND hWnd = GetDlgItem(hDlg, 1006);
+    int count = ListView_GetItemCount(hWnd);
+    for ( int i = 0; i < count; ++i )
+    {
+        LVITEM lvitem;
+        lvitem.mask = LVIF_PARAM;
+        lvitem.iSubItem = 0;
+        lvitem.iItem = i;
+        ListView_GetItem(hWnd, &lvitem);
+
+        unsigned int idx = HIWORD(lvitem.lParam);
+        pCart->apItemsState[idx] = ((uint16_t)pCart->apItemsState[idx] - 1) | pCart->apItemsState[idx] & 0xFFFF0000;
+    }
+
+    pCart->balance += pCart->total;
+    pCart->total = 0;
+    ListView_DeleteAllItems(hWnd);
+    jonesConfig_UpdateBalances(hDlg, pCart);
+}
+
+int J3DAPI jonesConfig_ShowPurchaseMessageBox(HWND hWnd, tStoreCartState* dwInitParam)
+{
+    return JonesDialog_ShowDialog(MAKEINTRESOURCEA(212), hWnd, jonesConfig_PurchaseMessageBoxProc, (LPARAM)dwInitParam);
+}
+
+INT_PTR CALLBACK jonesConfig_PurchaseMessageBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontPurchaseMessageBox);
+            return 1;
+
+        case WM_INITDIALOG:
+            jonesConfig_hFontPurchaseMessageBox = jonesConfig_InitDialog(hWnd, 0, 212);
+            int bSuccess = jonesConfig_InitPurchaseMessageBox(hWnd, wParam, (tStoreCartState*)lParam);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return bSuccess;
+
+        case WM_COMMAND:
+            jonesConfig_MsgBoxDlg_HandleWM_COMMAND(hWnd, (uint16_t)wParam);
+            return 0;
+
+        default:
+            return 0;
+    }
+}
+
+int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState* pCart)
+{
+    J3D_UNUSED(a2);
+
+    char aText[512] = { 0 };
+
+    if ( pCart->total )
+    {
+        STD_STRCAT(aText, "\n");
+        char* pFormat = (char*)jonesString_GetString("JONES_STR_ADDINV");
+        if ( pFormat )
+        {
+            STD_STRCAT(aText, pFormat);
+            STD_STRCAT(aText, " ");
+        }
+
+        pFormat = (char*)jonesString_GetString("JONES_STR_SUBCHEST");
+        if ( pFormat )
+        {
+            char aTotalText[256] = { 0 };
+            STD_FORMAT(aTotalText, pFormat, pCart->total);
+            STD_STRCAT(aText, aTotalText);
+            STD_STRCAT(aText, "  ");
+        }
+
+        pFormat = (char*)jonesString_GetString("JONES_STR_YESNOBUY");
+        if ( pFormat )
+        {
+            STD_STRCAT(aText, pFormat);
+        }
+    }
+    else
+    {
+        char* pFormat = (char*)jonesString_GetString("JONES_STR_NOCHANGE");
+        if ( pFormat )
+        {
+            STD_STRCAT(aText, pFormat);
+            STD_STRCAT(aText, "  ");
+        }
+
+        pFormat = (char*)jonesString_GetString("JONES_STR_ABANDON");
+        if ( pFormat )
+        {
+            STD_STRCAT(aText, pFormat);
+        }
+    }
+
+    HWND hMsgControl = GetDlgItem(hDlg, 1191);
+    jonesConfig_SetTextControl(hDlg, hMsgControl, aText);
+    return 1;
+}
+
+int J3DAPI jonesConfig_ShowDialogInsertCD(HWND hWnd, LPARAM dwInitParam)
+{
+    ShowCursor(1);
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE); // TODO: ??
+    int btnNum = JonesDialog_ShowDialog(MAKEINTRESOURCEA(167), hWnd, jonesConfig_DialogInsertCDProc, dwInitParam);
+    ShowCursor(0);
+    return btnNum; // 1 - ok or 2 - quit 
+}
+
 INT_PTR CALLBACK jonesConfig_DialogInsertCDProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch ( uMsg )

@@ -342,11 +342,11 @@ typedef struct sJonesControlsConfig
 typedef struct sStoreItem
 {
     int iconID;
-    const char aInventoryName[256];
-    const char aStoreName[256];
+    const char aName[256];
+    const char aClipName[256];
     int menuID;
-    int cost;
-    int unknown132;
+    int price;
+    int unitsPerItem;
 } tStoreItem;
 
 typedef struct sStoreCartState
