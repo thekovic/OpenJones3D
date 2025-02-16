@@ -1653,7 +1653,7 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
 
         // Calculate base font size considering DPI
         cHeight = -MulDiv(10, systemDPI, USER_DEFAULT_SCREEN_DPI); // Changed: to 10 from 8
-        cHeightf  = cHeight;
+        cHeightf = (float)cHeight;
 
         if ( scrheight >= (size_t)scaledRefHeight || scrwidth >= (size_t)scaledRefWidth )
         {
@@ -1822,13 +1822,6 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hCtrl, JonesDialogFontInfo
             SetWindowLongPtr(hCtrl, GWL_USERDATA, (LONG_PTR)pFontInfo->hControlFont);
         }
     }
-
-    RECT rectDesktop;
-    HWND hwndDesktop  = GetDesktopWindow();
-    GetWindowRect(hwndDesktop, &rectDesktop);
-
-    int heightDesktop = rectDesktop.bottom - rectDesktop.top;
-    int widthDesktop  = rectDesktop.right - rectDesktop.left;
 
     RECT rectWindow;
     GetWindowRect(hCtrl, &rectWindow);
@@ -2391,7 +2384,7 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOf
         GetWindowRect(hThumbnail, &thumbWndRect);
 
         // Added: Added padding. This should fix drawing all components right of file list
-        const int pad = 10 * dpiScale;
+        const int pad = (int)ceil(10.0 * dpiScale);
         MoveWindow(hDlg,
             dlgWndRect.left,
             dlgWndRect.top,
@@ -2935,7 +2928,7 @@ BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pof
         dlgWinRect.left,
         dlgWinRect.top,
         thmbWidth + dlgWinRect.right - dlgWinRect.left,
-        11 * dpiScale + dlgWinRect.bottom - dlgWinRect.top, // Added: Added padding  11 * dpiScale. This should fix drawing all components right of file list
+        (LONG)ceil(11.0 * dpiScale) + dlgWinRect.bottom - dlgWinRect.top, // Added: Added padding  11 * dpiScale. This should fix drawing all components right of file list
         TRUE
     );
 
