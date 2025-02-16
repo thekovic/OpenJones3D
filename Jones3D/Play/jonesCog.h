@@ -25,8 +25,12 @@ int jonesCog_Startup(void);
 void jonesCog_Shutdown(void);
 
 void jonesCog_EndLevel(void);
-void J3DAPI jonesCog_StartCutscene(SithCog* pCog);
-void J3DAPI jonesCog_EnableInterface(SithCog* pCog);
+void J3DAPI jonesCog_StartCutscene(SithCog* pCog);// TODO: this should actually be restore cutscene if NULL is passed
+
+void J3DAPI jonesCog_ToggleInterface(SithCog* pCog); // TODO: this should actually be restore interface if NULL is passed
+void J3DAPI jonesCog_EnableInterface(bool bEnable); // Added
+
+void J3DAPI jonesCog_EnableIndicatrors(bool bEnable); // Added
 
 // Helper hooking functions
 void jonesCog_InstallHooks(void);

@@ -678,7 +678,7 @@ void JonesHud_Render(void) // maybe this function should be called something ele
         {
             // Menu is closed show in game HUD
             JonesHud_bInterfaceEnabled = 0;
-            jonesCog_EnableInterface(NULL);
+            jonesCog_ToggleInterface(NULL);
         }
 
         if ( JonesHud_bExitActivated && !JonesHud_hudState )
@@ -1305,7 +1305,6 @@ int J3DAPI JonesHud_RenderFadeHealthIndicator(int bFade)
             }
         }
     }
-
     else if ( JonesHud_healthIndAlpha <= 0.0f )
     {
         JonesHud_bFadingHealthHUD = 0;

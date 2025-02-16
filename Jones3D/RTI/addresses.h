@@ -173,7 +173,7 @@
 #define jonesCog_UpdateDifficulty_ADDR 0x00401450
 #define jonesCog_EnableInterfaceFunc_ADDR 0x00401480
 #define jonesCog_StartCutscene_ADDR 0x004014E0
-#define jonesCog_EnableInterface_ADDR 0x004014F0
+#define jonesCog_ToggleInterface_ADDR 0x004014F0
 #define jonesConfig_Startup_ADDR 0x00401500
 #define jonesConfig_InitKeySetsPath_ADDR 0x00401660
 #define jonesConfig_InitKeyActions_ADDR 0x00401780

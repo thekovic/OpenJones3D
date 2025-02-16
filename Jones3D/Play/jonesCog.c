@@ -54,7 +54,7 @@ void jonesCog_InstallHooks(void)
     J3D_HOOKFUNC(jonesCog_UpdateDifficulty);
     J3D_HOOKFUNC(jonesCog_EnableInterfaceFunc);
     J3D_HOOKFUNC(jonesCog_StartCutscene);
-    J3D_HOOKFUNC(jonesCog_EnableInterface);
+    J3D_HOOKFUNC(jonesCog_ToggleInterface);
 }
 
 void jonesCog_ResetGlobals(void)
@@ -329,7 +329,34 @@ void J3DAPI jonesCog_StartCutscene(SithCog* pCog)
     jonesCog_StartCutsceneFunc(pCog);
 }
 
-void J3DAPI jonesCog_EnableInterface(SithCog* pCog)
+void J3DAPI jonesCog_ToggleInterface(SithCog* pCog)
 {
     jonesCog_EnableInterfaceFunc(pCog);
+}
+
+void J3DAPI jonesCog_EnableInterface(bool bEnable)
+{
+    if ( jonesCog_g_bMenuVisible )
+    {
+        JonesHud_EnableInterface(1);
+        jonesCog_bInterfaceEnabled = bEnable ? 1 : 0;
+        return;
+    }
+
+    JonesHud_EnableMenu(bEnable);
+    jonesCog_g_bEnableGamesave = bEnable ? 1 : 0;
+}
+
+void J3DAPI jonesCog_EnableIndicatrors(bool bEnable)
+{
+    if ( bEnable )
+    {
+        jonesCog_g_bShowHealthHUD = 1;
+        JonesHud_SetFadeHealthHUD(1, 1);
+    }
+    else
+    {
+        jonesCog_g_bShowHealthHUD = 0;
+        JonesHud_SetFadeHealthHUD(0, 0);
+    }
 }
