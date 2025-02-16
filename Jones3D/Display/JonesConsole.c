@@ -1,5 +1,7 @@
 #include "JonesConsole.h"
 #include <j3dcore/j3dhook.h>
+#include <Jones3D/Display/jonesConfig.h>
+#include <Jones3D/Display/JonesHud.h>
 #include <Jones3D/Main/JonesMain.h>
 #include <Jones3D/Play/jonesCog.h>
 #include <Jones3D/RTI/symbols.h>
@@ -10,6 +12,8 @@
 #include <sith/Devices/sithConsole.h>
 #include <sith/Devices/sithControl.h>
 #include <sith/Engine/sithRender.h>
+#include <sith/Gameplay/sithInventory.h>
+#include <sith/Gameplay/sithPlayer.h>
 #include <sith/Gameplay/sithTime.h>
 #include <sith/Main/sithCommand.h>
 #include <sith/Main/sithMain.h>
@@ -22,6 +26,7 @@
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
+#include <std/Win95/stdWin95.h>
 
 #include <w32util/wuRegistry.h>
 
@@ -61,6 +66,9 @@ int J3DAPI JonesConsole_ShowEndCredits(const SithConsoleCommand* pFunc, const ch
 void J3DAPI JonesConsole_EnableDevMode(bool bEnable); // Added
 int J3DAPI JonesConsole_DevMode(const SithConsoleCommand* pFunc, const char* pArg); // Added
 int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI JonesConsole_Money(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI JonesConsole_Indicator(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 
 void JonesConsole_InstallHooks(void)
@@ -151,7 +159,10 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_Sounds, "sounds", SITHCONSOLE_DEVMODE);
 
     sithConsole_RegisterCommand(JonesConsole_DevMode, "devmode", 0);  // Added
-    sithConsole_RegisterCommand(JonesConsole_InEditor, "ineditor", 0);  // Added
+    sithConsole_RegisterCommand(JonesConsole_InEditor, "ineditor", SITHCONSOLE_DEVMODE);  // Added
+    sithConsole_RegisterCommand(JonesConsole_Money, "money", SITHCONSOLE_DEVMODE);  // Added
+    sithConsole_RegisterCommand(JonesConsole_Interface, "interface", SITHCONSOLE_DEVMODE);  // Added
+    sithConsole_RegisterCommand(JonesConsole_Indicator, "indicator", SITHCONSOLE_DEVMODE);  // Added
 
     // Added
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ) {
@@ -579,6 +590,77 @@ int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pA
         sithMain_g_sith_mode.debugModeFlags &= ~SITHDEBUG_INEDITOR;
     }
 
+    return 1;
+}
+
+int J3DAPI JonesConsole_Money(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    if ( !sithPlayer_g_pLocalPlayerThing )
+    {
+        sithConsole_PrintString("No player!");
+        return 0;
+    }
+
+    if ( !pArg )
+    {
+        sithConsole_PrintString("Missing amount!");
+        return 0;
+    }
+
+    int amount = 0;
+    if ( sscanf_s(pArg, "%d", &amount) != 1 )
+    {
+        sithConsole_PrintString("Invalid amount!");
+        return 0;
+    }
+
+    sithInventory_ChangeInventory(sithPlayer_g_pLocalPlayerThing, JonesHud_GetMenuItem(JONESHUD_MENU_TREASURE_CHEST)->inventoryID, (float)amount);
+    return 1;
+}
+
+int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    if ( !pArg )
+    {
+        STD_FORMAT(std_g_genBuffer, "interface %s", JonesHud_IsMenuEnabled() ? "on" : "off");
+        sithConsole_PrintString(std_g_genBuffer);
+        return 0;
+    }
+
+    bool bEnable;
+    if ( !sithCommand_ParseBool(pArg, &bEnable) )
+    {
+        sithConsole_PrintString("Invalid argument!");
+        return 0;
+    }
+
+    jonesCog_EnableInterface(bEnable);
+    return 1;
+}
+
+int J3DAPI JonesConsole_Indicator(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    if ( !pArg )
+    {
+        STD_FORMAT(std_g_genBuffer, "indicator %s", jonesCog_g_bShowHealthHUD ? "on" : "off");
+        sithConsole_PrintString(std_g_genBuffer);
+        return 0;
+    }
+
+    bool bEnable;
+    if ( !sithCommand_ParseBool(pArg, &bEnable) )
+    {
+        sithConsole_PrintString("Invalid argument!");
+        return 0;
+    }
+
+    jonesCog_EnableIndicatrors(bEnable);
     return 1;
 }
 
