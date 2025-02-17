@@ -222,8 +222,7 @@ wchar_t* J3DAPI stdStrTable_GetValueOrKey(const tStringTable* pStrTable, const c
         return pVal;
     }
 
-    stdUtil_ToWStringEx(stdStrTable_aBuffer, pKey, STD_ARRAYLEN(stdStrTable_aBuffer) - 1);
-    stdStrTable_aBuffer[STD_ARRAYLEN(stdStrTable_aBuffer) - 1] = 0;
+    STD_TOWSTR(stdStrTable_aBuffer, pKey);
     return stdStrTable_aBuffer;
 }
 

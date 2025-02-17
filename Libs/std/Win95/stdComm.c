@@ -108,8 +108,7 @@ void stdComm_InstallHooks(void)
 }
 
 void stdComm_ResetGlobals(void)
-{
-}
+{}
 
 int32_t J3DAPI stdComm_Send(DPID idFrom, DPID idTo, const void* pData, uint32_t size, uint32_t flags)
 {
@@ -536,8 +535,7 @@ void J3DAPI stdComm_SessionToSettings(LPDPSESSIONDESC2 pSession, StdCommGame* pS
     wchar_t* v3 = wcstok(0, L"\n", &pntok);
     if ( v3 )
     {
-        stdUtil_ToAStringEx(pSettings->aSomething, v3, sizeof(pSettings->aSomething) - 1);
-        pSettings->aSomething[63] = 0;
+        STD_TOSTR(pSettings->aSomething, v3);
     }
 
     pSettings->guid              = pSession->guidInstance;
