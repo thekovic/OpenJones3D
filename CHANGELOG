@@ -40,11 +40,37 @@ General:
     * `sounds` (e59ffab)
     * `devmode` (e59ffab)
     * `ineditor` (e59ffab)
+    * `money` (1e9a47f)
+    * `interface` (1e9a47f)
+    * `indicator` (1e9a47f)
+    * `invul`, `wuss`, `ouch`, `warp`, `jump`, `imp1`, `imp2` (9d399b0)
+    * `imp3`, `imp4`, `imp5`, `fly`, `players`, `ping`, `kick` (9d399b0)
+    * `tick`, `session`, `electroman`, `trackshots`, `caminfo` (9d399b0)
+    * `fov`, `tj`, `weapons`, `help`, `disableai`, `notarget` (9d399b0)
+    * `disablepuppet`, `cogtrace`, `coglist`, `cogstatus` (9d399b0)
+    * `noaishots`, `aistatus`, `ailist`, `cogpause` (9d399b0)
+    * `pauseallcogs`, `matlist`, `activate`, `slowmo` (9d399b0)
+    * `stopsound`, `wpdraw` (9d399b0)
 
 
 Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
   - Fixed bug rendering ceiling sky (6f9db7e)
+  - Fixed thumbnail rendering in save game dialog (c7bb134)
+  - Fixed thumbnail rendering in exit dialog (b64fb63)
+  - Increased size of game save/load dialogs (ce321bb)
+  - Changed the native open file dialog for game save dialog (5871f09)
+  - Implemented the top layer of the game save dialog, resulting in a dialog style update (f38ff8a)
+  - Fixed incorrect scaling & positioning of dialog controls with nested child windows. (50a3f83)
+    This fixes positioning of lists in Indy's trade post and key config dialogs.
+  - Increased font size for all GDI dialogs (d1a09a0)
+  - Added scaling for embedded dialog icon(s) (d1a09a0)
+  - Increased size of exit dialog icon (fc92734)
+  - Implemented chapter completed dialog (8ceab2c) 
+  - Fixed rendering of IQ points in chapter completed dialog (8ceab2c)
+  - Implemented Indy's trading post dialog (a8a32ff)
+  - Fixed column padding in trading post dialog (a8a32ff)
+  - Increased the size of store item icon to 48 (a8a32ff)
 
 Game play:
   - Fixed submersion of dead thing in cold-water/lava (18d828d)
