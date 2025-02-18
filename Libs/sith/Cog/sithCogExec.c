@@ -175,8 +175,7 @@ void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum)
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer, "Cog %s: execution started.\n", pCog->aName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: execution started.\n", pCog->aName);
     }
 
     sithCogExec_Execute(pCog);
@@ -732,8 +731,7 @@ void J3DAPI sithCogExec_RetOp(SithCog* pCog)
 {
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer, "Cog %s: Returned from depth %d.\n", pCog->aName, pCog->callDepth);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: Returned from depth %d.\n", pCog->aName, pCog->callDepth);
     }
 
     sithCogExec_PopCallstack(pCog);

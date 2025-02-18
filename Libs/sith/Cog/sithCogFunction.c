@@ -119,8 +119,7 @@ void J3DAPI sithCogFunction_Sleep(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer, "Cog %s: Sleeping for %f seconds.\n", pCog->aName, secWait);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: Sleeping for %f seconds.\n", pCog->aName, secWait);
     }
 
     pCog->status = SITHCOG_STATUS_SLEEPING;
@@ -370,8 +369,7 @@ void J3DAPI sithCogFunction_SetPulse(SithCog* pCog)
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "Cog %s: Pulse disabled.\n", pCog->aName);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("Cog %s: Pulse disabled.\n", pCog->aName);
         }
         pCog->flags &= ~SITHCOG_PULSE_SET;
     }
@@ -379,8 +377,7 @@ void J3DAPI sithCogFunction_SetPulse(SithCog* pCog)
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "Cog %s: Pulse set to %f seconds.\n", pCog->aName, interval);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("Cog %s: Pulse set to %f seconds.\n", pCog->aName, interval);
         }
 
         pCog->flags |= SITHCOG_PULSE_SET;
@@ -397,8 +394,7 @@ void J3DAPI sithCogFunction_SetTimer(SithCog* pCog)
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "Cog %s: Timer cancelled.\n", pCog->aName);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("Cog %s: Timer cancelled.\n", pCog->aName);
         }
 
         pCog->flags &=  ~SITHCOG_TIMER_SET;
@@ -407,8 +403,7 @@ void J3DAPI sithCogFunction_SetTimer(SithCog* pCog)
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "Cog %s: Timer set for %f seconds.\n", pCog->aName, when);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("Cog %s: Timer set for %f seconds.\n", pCog->aName, when);
         }
 
         pCog->flags |= SITHCOG_TIMER_SET;

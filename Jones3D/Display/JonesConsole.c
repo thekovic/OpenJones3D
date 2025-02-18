@@ -423,17 +423,10 @@ int J3DAPI JonesConsole_PrintPolys(const SithConsoleCommand* pFunc, const char* 
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
 
-    STD_FORMAT(std_g_genBuffer, "Arch polys: %d", sithRender_g_numArchPolys);
-    sithConsole_PrintString(std_g_genBuffer);
-
-    STD_FORMAT(std_g_genBuffer, "Alpha Arch polys: %d", sithRender_g_numAlphaArchPolys);
-    sithConsole_PrintString(std_g_genBuffer);
-
-    STD_FORMAT(std_g_genBuffer, "Thing polys: %d", sithRender_g_numThingPolys);
-    sithConsole_PrintString(std_g_genBuffer);
-
-    STD_FORMAT(std_g_genBuffer, "Alpha Thing polys: %d", sithRender_g_numAlphaThingPoly);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("Arch polys: %d", sithRender_g_numArchPolys);
+    SITHCONSOLE_PRINTF("Alpha Arch polys: %d", sithRender_g_numAlphaArchPolys);
+    SITHCONSOLE_PRINTF("Thing polys: %d", sithRender_g_numThingPolys);
+    SITHCONSOLE_PRINTF("Alpha Thing polys: %d", sithRender_g_numAlphaThingPoly);
     return 1;
 }
 
@@ -547,8 +540,7 @@ int J3DAPI JonesConsole_DevMode(const SithConsoleCommand* pFunc, const char* pAr
 
     if ( !pArg )
     {
-        STD_FORMAT(std_g_genBuffer, "devmode %s", (sithConsole_GetConsoleFlags() & SITHCONSOLE_DEVMODE) != 0 ? "on" : "off");
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("devmode %s", (sithConsole_GetConsoleFlags() & SITHCONSOLE_DEVMODE) != 0 ? "on" : "off");
         return 0;
     }
 
@@ -569,8 +561,7 @@ int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pA
 
     if ( !pArg )
     {
-        STD_FORMAT(std_g_genBuffer, "ineditor %s", (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ? "on" : "off");
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("ineditor %s", (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ? "on" : "off");
         return 0;
     }
 
@@ -626,8 +617,7 @@ int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* p
 
     if ( !pArg )
     {
-        STD_FORMAT(std_g_genBuffer, "interface %s", JonesHud_IsMenuEnabled() ? "on" : "off");
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("interface %s", JonesHud_IsMenuEnabled() ? "on" : "off");
         return 0;
     }
 
@@ -648,8 +638,7 @@ int J3DAPI JonesConsole_Indicator(const SithConsoleCommand* pFunc, const char* p
 
     if ( !pArg )
     {
-        STD_FORMAT(std_g_genBuffer, "indicator %s", jonesCog_g_bShowHealthHUD ? "on" : "off");
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("indicator %s", jonesCog_g_bShowHealthHUD ? "on" : "off");
         return 0;
     }
 

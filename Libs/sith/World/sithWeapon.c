@@ -1051,8 +1051,7 @@ int J3DAPI sithWeapon_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pS
 
         int secIdx  = sithSector_GetSectorIndex(pSurf->pSector);
         int surfIdx = sithSurface_GetSurfaceIndex(pSurf);
-        STD_FORMAT(std_g_genBuffer, "Weapon hit surface %d, sector %d, material '%s'.\n", surfIdx, secIdx, pMatName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Weapon hit surface %d, sector %d, material '%s'.\n", surfIdx, secIdx, pMatName);
     }
 
     // If hit sky surface, destroy projectile

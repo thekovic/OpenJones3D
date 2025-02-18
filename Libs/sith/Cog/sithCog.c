@@ -392,7 +392,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer,
+        SITHCONSOLE_PRINTF(
             "Cog %s: Message %d delivered, senderType=%d, senderIndex=%d, sourceType=%d, sourceIndex=%d, linkId=%d.\n",
             pCog->aName,
             messageType,
@@ -402,15 +402,13 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
             srcIdx,
             linkId
         );
-        sithConsole_PrintString(std_g_genBuffer);
     }
 
     if ( (pCog->flags & SITHCOG_DISABLED) != 0 )
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "Cog %s: Disabled, message ignored.\n", pCog->aName);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("Cog %s: Disabled, message ignored.\n", pCog->aName);
         }
         return;
     }
@@ -426,8 +424,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: Message %d received but ignored.  No handler.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: Message %d received but ignored.  No handler.\n", pCog->aName, messageType);
         }
         return;
     }
@@ -436,8 +433,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: Message %d received but COG is paused.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: Message %d received but COG is paused.\n", pCog->aName, messageType);
         }
         return;
     }
@@ -469,8 +465,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
 
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: Message %d received and accepted for execution.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: Message %d received and accepted for execution.\n", pCog->aName, messageType);
         }
 
         sithCogExec_ExecuteMessage(pCog, handlerNum);
@@ -488,7 +483,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer,
+        SITHCONSOLE_PRINTF(
             "Cog %s: MessageEx %d delivered, senderType=%d, senderIndex=%d, sourceType=%d, sourceIndex=%d, linkId=%d, param0=%d, param1=%d, param2=%d, param3=%d.\n",
             pCog->aName,
             messageType,
@@ -502,7 +497,6 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             param2,
             param3
         );
-        sithConsole_PrintString(std_g_genBuffer);
     }
 
     if ( (pCog->flags & SITHCOG_DISABLED) != 0 )
@@ -512,8 +506,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             return SITHCOG_NORETURNVALUE;
         }
 
-        STD_FORMAT(std_g_genBuffer, "Cog %s: Disabled, MessageEx ignored.\n", pCog->aName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: Disabled, MessageEx ignored.\n", pCog->aName);
         return SITHCOG_NORETURNVALUE;
     }
 
@@ -531,8 +524,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             return SITHCOG_NORETURNVALUE;
         }
 
-        STD_FORMAT(std_g_genBuffer, "--Cog %s: MessageEx %d received but ignored.  No handler.\n", pCog->aName, messageType);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("--Cog %s: MessageEx %d received but ignored.  No handler.\n", pCog->aName, messageType);
         return SITHCOG_NORETURNVALUE;
     }
 
@@ -543,8 +535,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             return SITHCOG_NORETURNVALUE;
         }
 
-        STD_FORMAT(std_g_genBuffer, "--Cog %s: MessageEx %d received but COG is paused.\n", pCog->aName, messageType);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("--Cog %s: MessageEx %d received but COG is paused.\n", pCog->aName, messageType);
         return SITHCOG_NORETURNVALUE;
     }
 
@@ -581,8 +572,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
 
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: MessageEx %d received and accepted for execution.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: MessageEx %d received and accepted for execution.\n", pCog->aName, messageType);
         }
 
         sithCogExec_ExecuteMessage(pCog, handlerNum);
@@ -1803,14 +1793,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Ok wake up COG now and continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to timer elapse.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to timer elapse.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_THING_TO_STOP:
         {
             if ( (sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].moveInfo.pathMovement.mode & (SITH_PATHMOVE_ROTATE | SITH_PATHMOVE_MOVE)) != 0 )
@@ -1822,14 +1810,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Ok thing stopped continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to movement completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to movement completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_KEYFRAME_TO_STOP:
         {
             SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[1]];
@@ -1838,8 +1824,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             {
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: waking up due to keyframe completion.\n", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: waking up due to keyframe completion.\n", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -1855,14 +1840,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Keyframe stopped playing, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: waking up due to keyframe completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: waking up due to keyframe completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_SOUND_TO_STOP:
         {
             tSoundChannelHandle channel = sithSoundMixer_GetChannelHandle(pCog->statusParams[0]);
@@ -1875,14 +1858,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Sound stopped playing continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: waking up due to sound completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: waking up due to sound completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_AI_TO_STOP:
         {
             SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]];
@@ -1891,8 +1872,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // Thing no longer exists
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI movement completion, but AI no longer exists!", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI movement completion, but AI no longer exists!", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -1904,8 +1884,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI no longer exists
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI %s movement completion, but AI control block no longer exists!", pCog->aName, pThing->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI %s movement completion, but AI control block no longer exists!", pCog->aName, pThing->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -1921,14 +1900,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // AI stopped, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to AI movement completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to AI movement completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_ACTOR_WEAPON_SELECT_FINISH:
         {
             if ( !sithWeapon_SelectWeapon(&sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]], (SithWeaponId)pCog->statusParams[1]) )
@@ -1940,14 +1917,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Weapon selected, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Weapon selection successful. Waking up cog %s.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Weapon selection successful. Waking up cog %s.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_ACTOR_WEAPON_DESELECT_FINISH:
         {
             if ( sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].thingInfo.actorInfo.deselectedWeaponID != -1
@@ -1960,14 +1935,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Weapon deselected, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Weapon deselection complete. Waking up cog %s.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Weapon deselection complete. Waking up cog %s.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_ANIMATION_TO_STOP:
         {
             if ( sithAnimate_GetAnim(pCog->statusParams[0]) )
@@ -1979,14 +1952,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Animation finished playing, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to animation completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to animation completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_AI_HEAD_TRACK:
         {
             SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]];
@@ -1995,8 +1966,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI thing gone
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI head tracking, but AI no longer exists!", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI head tracking, but AI no longer exists!", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -2008,8 +1978,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI gone
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI %s head tracking, but AI control block no longer exists!", pCog->aName, pThing->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI %s head tracking, but AI control block no longer exists!", pCog->aName, pThing->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -2021,22 +1990,19 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI head tracking stopped
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to AI head tracking at max yaw.\n", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Waking up due to AI head tracking at max yaw.\n", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
             }
             return;
         }
-
         case SITHCOG_STATUS_WAITING_PLAYER_TO_STOP:
         {
             SithThing* pThing = sithPlayer_g_pLocalPlayerThing;
             if ( !sithPlayer_g_pLocalPlayerThing || sithPlayer_g_pLocalPlayerThing->type == SITH_THING_FREE )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s was waiting for player to stop, player is gone!", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s was waiting for player to stop, player is gone!", pCog->aName);
                 sithCogExec_Execute(pCog);
             }
 
@@ -2078,7 +2044,7 @@ void J3DAPI sithCog_ProcessCogs()
     }
 }
 
-void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
+int J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
 {
     J3D_UNUSED(pFunc);
 
@@ -2094,11 +2060,10 @@ void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
         || !pCog->pSymbolTable )
     {
         sithConsole_PrintString("Error, bad parameters.\n");
-        return;
+        return 0;
     }
 
-    STD_FORMAT(std_g_genBuffer, "Cog #%d: Name:%s  Script %s\n", index, pCog->aName, pCog->pScript->aName);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("Cog #%d: Name:%s  Script %s\n", index, pCog->aName, pCog->pScript->aName);
 
     for ( size_t i = 0; i < pCog->pSymbolTable->numUsedSymbols; i++ )
     {
@@ -2125,6 +2090,8 @@ void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
 
         sithConsole_PrintString(std_g_genBuffer);
     }
+
+    return 1;
 }
 
 void J3DAPI sithCog_AddIntSymbol(SithCogSymbolTable* pTbl, int val, const char* pName)

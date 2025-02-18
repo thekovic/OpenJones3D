@@ -258,8 +258,7 @@ int J3DAPI sithCommand_Coords(const SithConsoleCommand* pFunc, const char* pArg)
         rdMatrix_ExtractAngles34(&pPlayer->orient, &pyr);
         int secIdx = sithSector_GetSectorIndex(pPlayer->pInSector);
 
-        STD_FORMAT(
-            std_g_genBuffer,
+        SITHCONSOLE_PRINTF(
             "Pos: (%.2f, %.2f, %.2f) PYR: (%.2f, %.2f, %.2f) Sector: %d.",
             pPlayer->pos.x,
             pPlayer->pos.y,
@@ -269,7 +268,6 @@ int J3DAPI sithCommand_Coords(const SithConsoleCommand* pFunc, const char* pArg)
             pyr.roll,
             secIdx
         );
-        sithConsole_PrintString(std_g_genBuffer);
     }
 
     return 1;
@@ -296,48 +294,37 @@ int J3DAPI sithCommand_Memory(const SithConsoleCommand* pFunc, const char* pArg)
 
     size_t totalUsed = 0;
 
-    STD_FORMAT(std_g_genBuffer, "%5d Materials        %8d bytes.", aCount[0], aMemUsed[0]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Materials        %8d bytes.", aCount[0], aMemUsed[0]);
     totalUsed += aMemUsed[0];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Models           %8d bytes.", aCount[10], aMemUsed[10]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Models           %8d bytes.", aCount[10], aMemUsed[10]);
     totalUsed += aMemUsed[10];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Keyframes        %8d bytes.", aCount[11], aMemUsed[11]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Keyframes        %8d bytes.", aCount[11], aMemUsed[11]);
     totalUsed += aMemUsed[11];
 
-    STD_FORMAT(std_g_genBuffer, "%5d World Vertices   %8d bytes.", aCount[1], aMemUsed[1]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d World Vertices   %8d bytes.", aCount[1], aMemUsed[1]);
     totalUsed += aMemUsed[1];
 
-    STD_FORMAT(std_g_genBuffer, "%5d World TexVerts   %8d bytes.", aCount[2], aMemUsed[2]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d World TexVerts   %8d bytes.", aCount[2], aMemUsed[2]);
     totalUsed += aMemUsed[2];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Surfaces         %8d bytes.", aCount[3], aMemUsed[3]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Surfaces         %8d bytes.", aCount[3], aMemUsed[3]);
     totalUsed += aMemUsed[3];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Sectors          %8d bytes.", aCount[5], aMemUsed[5]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Sectors          %8d bytes.", aCount[5], aMemUsed[5]);
     totalUsed += aMemUsed[5];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Cog Scripts\t\t%8d bytes.", aCount[8], aMemUsed[8]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Cog Scripts\t\t%8d bytes.", aCount[8], aMemUsed[8]);
     totalUsed += aMemUsed[8];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Cogs             %8d bytes.", aCount[7], aMemUsed[7]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Cogs             %8d bytes.", aCount[7], aMemUsed[7]);
     totalUsed += aMemUsed[7];
 
-    STD_FORMAT(std_g_genBuffer, "%5d Adjoins          %8d bytes.", aCount[4], aMemUsed[4]);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("%5d Adjoins          %8d bytes.", aCount[4], aMemUsed[4]);
     totalUsed += aMemUsed[4];
 
-    STD_FORMAT(std_g_genBuffer, "Total Memory Used:   %8d bytes.", totalUsed);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("Total Memory Used:   %8d bytes.", totalUsed);
     return 1;
 }
 
@@ -346,14 +333,12 @@ int J3DAPI sithCommand_DynamicMemory(const SithConsoleCommand* pFunc, const char
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
 
-    STD_FORMAT(
-        std_g_genBuffer,
+    SITHCONSOLE_PRINTF(
         "NumAllocs: %d TotalMemAlloc: %d bytes MaxMemAlloc: %d bytes",
         stdMemory_g_curState.totalAllocs,
         stdMemory_g_curState.totalBytes,
         stdMemory_g_curState.maxBytes
     );
-    sithConsole_PrintString(std_g_genBuffer);
     return 1;
 }
 

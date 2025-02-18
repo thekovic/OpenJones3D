@@ -86,7 +86,7 @@ SithCogScript* J3DAPI sithCog_LoadScript(SithWorld* pWorld, const char* pName); 
 
 void J3DAPI sithCog_ProcessCog(SithCog* pCog);
 void J3DAPI sithCog_ProcessCogs();
-void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 // Maybe following should be all called register* functions
 void J3DAPI sithCog_AddIntSymbol(SithCogSymbolTable* pTbl, int val, const char* pName);

@@ -209,8 +209,7 @@ int J3DAPI sithConsole_ExeCommand(const char* pLine)
     SithConsoleCommand* pFunc = (SithConsoleCommand*)stdHashtbl_Find(pCommandTable, pCmdName);
     if ( !pFunc || (pFunc->flags & SITHCONSOLE_DEVMODE) != 0 && (consoleflags & SITHCONSOLE_DEVMODE) == 0 )
     {
-        STD_FORMAT(std_g_genBuffer, "Console command %s not recognized.", pCmdName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Console command %s not recognized.", pCmdName);
         return 0;
     }
 
