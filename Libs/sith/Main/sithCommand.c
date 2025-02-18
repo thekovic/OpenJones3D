@@ -77,7 +77,7 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
     // Added: Init to null and 0
     int* pFlags  = NULL;
     int newFlags = 0;
-    switch ( pFunc->flags )
+    switch ( pFunc->flags & ~SITHCONSOLE_DEVMODE )
     {
         case 0:
             pFlags = &sithMain_g_sith_mode.debugModeFlags;
