@@ -1,6 +1,10 @@
 #include "sithAI.h"
 #include <j3dcore/j3dhook.h>
+
+#include <sith/Devices/sithConsole.h>
 #include <sith/RTI/symbols.h>
+
+#include <std/General/stdUtil.h>
 
 #define sithAI_pRegisteredInstinctHashtbl J3D_DECL_FAR_VAR(sithAI_pRegisteredInstinctHashtbl, tHashTable*)
 #define sithAI_numFreeAIs J3D_DECL_FAR_VAR(sithAI_numFreeAIs, int)
@@ -52,7 +56,7 @@ void sithAI_ResetGlobals(void)
     memset(&sithAI_aRegisteredInstincts, 0, sizeof(sithAI_aRegisteredInstincts));
     memset(&sithAI_numRegisteredInstincts, 0, sizeof(sithAI_numRegisteredInstincts));
     memset(&sithAI_g_aControlBlocks, 0, sizeof(sithAI_g_aControlBlocks));
-    memset(&sithAI_g_numUsedBlocks, 0, sizeof(sithAI_g_numUsedBlocks));
+    memset(&sithAI_g_lastUsedAIIndex, 0, sizeof(sithAI_g_lastUsedAIIndex));
 }
 
 int sithAI_Startup(void)
@@ -188,4 +192,84 @@ int J3DAPI sithAI_CreateAI()
 void J3DAPI sithAI_FreeAllAIs()
 {
     J3D_TRAMPOLINE_CALL(sithAI_FreeAllAIs);
+}
+
+int J3DAPI sithAI_AIList(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    if ( !sithAI_g_bOpen )
+    {
+        sithConsole_PrintString("AI system not open.\n");
+        return 0;
+    }
+
+    sithConsole_PrintString("Active AI things:\n");
+
+    for ( int i = 0; i <= sithAI_g_lastUsedAIIndex; ++i )
+    {
+        SithAIControlBlock* pLocal = &sithAI_g_aControlBlocks[i];
+        if ( pLocal->pClass && pLocal->pOwner )
+        {
+            SITHCONSOLE_PRINTF(
+                "Block %2d: Class '%s', Owner '%s' (%d), Flags 0x%x\n",
+                i,
+                pLocal->pClass->aName,
+                pLocal->pOwner->aName,
+                pLocal->pOwner->idx,
+                pLocal->mode
+            );
+        }
+    }
+
+    return 1;
+}
+
+int J3DAPI sithAI_AIStatus(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+
+    int idx;
+    if ( !pArg || !sithAI_g_bOpen || sscanf_s(pArg, "%d", &idx) != 1 || idx > sithAI_g_lastUsedAIIndex )
+    {
+        sithConsole_PrintString("Cannot process AIStatus command.\n");
+        return 0;
+    }
+
+    SithAIControlBlock* pLocal = &sithAI_g_aControlBlocks[idx];
+    if ( !pLocal->pOwner )
+    {
+        sithConsole_PrintString("That AI block is not currently active.\n");
+        return 1;
+    }
+
+    SITHCONSOLE_PRINTF("AI Status dump for thing %d (%s).\n", pLocal->pOwner->idx, pLocal->pOwner->aName);
+    SITHCONSOLE_PRINTF(
+        "Class '%s', Flags=0x%x, Moods %d/%d/%d, NextUpdate=%d\n",
+        pLocal->pClass->aName,
+        pLocal->mode,
+        pLocal->aMoods[0],
+        pLocal->aMoods[1],
+        pLocal->aMoods[2],
+        pLocal->msecNextUpdate
+    );
+
+    sithConsole_PrintString("Current instincts:\n");
+    for ( int i = 0; i < pLocal->numInstincts; ++i )
+    {
+        SITHCONSOLE_PRINTF(
+            "Instinct %d: Params: %f/%f/%f/%f, nextUpdate=%d, mask=0x%x, mode=0x%x.\n",
+            i,
+            pLocal->aInstinctStates[i].aParams[0],
+            pLocal->aInstinctStates[i].aParams[1],
+            pLocal->aInstinctStates[i].aParams[2],
+            pLocal->aInstinctStates[i].aParams[3],
+            pLocal->aInstinctStates[i].msecNextUpdate,
+            pLocal->pClass->aInstincts[i].triggerEvents,
+            pLocal->pClass->aInstincts[i].updateModes
+        );
+    }
+
+    return 1;
 }

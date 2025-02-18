@@ -17,8 +17,8 @@ J3D_EXTERN_C_START
 #define sithAI_g_aControlBlocks J3D_DECL_FAR_ARRAYVAR(sithAI_g_aControlBlocks, SithAIControlBlock(*)[256])
 // extern SithAIControlBlock sithAI_g_aControlBlocks[256];
 
-#define sithAI_g_numUsedBlocks J3D_DECL_FAR_VAR(sithAI_g_numUsedBlocks, int)
-// extern int sithAI_g_numUsedBlocks;
+#define sithAI_g_lastUsedAIIndex J3D_DECL_FAR_VAR(sithAI_g_lastUsedAIIndex, int)
+// extern int sithAI_g_lastUsedAIIndex;
 
 int sithAI_Startup(void);
 void J3DAPI sithAI_Shutdown();
@@ -47,6 +47,9 @@ int J3DAPI sithAI_CreateInstinctRegistry(unsigned int maxInstincts);
 int J3DAPI sithAI_FreeAI(unsigned int aiNum);
 int J3DAPI sithAI_CreateAI();
 void J3DAPI sithAI_FreeAllAIs();
+
+int J3DAPI sithAI_AIList(const SithConsoleCommand* pFunc, const char* pArg); //Added: From debug version
+int J3DAPI sithAI_AIStatus(const SithConsoleCommand* pFunc, const char* pArg); //Added: From debug version
 
 // Helper hooking functions
 void sithAI_InstallHooks(void);

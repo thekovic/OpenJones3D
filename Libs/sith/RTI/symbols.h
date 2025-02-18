@@ -520,7 +520,7 @@
 #define sithMulti_ProcessQuit_TYPE int (J3DAPI*)(const SithMessage*)
 #define sithMulti_Update_TYPE void (J3DAPI*)(int)
 #define sithMulti_SyncScores_TYPE void (J3DAPI*)()
-#define sithMulti_GetPlayerNum_TYPE int (J3DAPI*)(DPID)
+#define sithMulti_GetPlayerIndexByID_TYPE int (J3DAPI*)(DPID)
 #define sithMulti_ProcessKilledPlayer_TYPE void (J3DAPI*)(const SithPlayer*, const SithThing*, const SithThing*)
 #define sithMulti_QuitGame_TYPE int (J3DAPI*)(unsigned int, int)
 #define sithMulti_Respawn_TYPE size_t (J3DAPI*)(SithThing*)

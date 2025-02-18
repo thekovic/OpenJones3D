@@ -8,6 +8,7 @@
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
+#include <stdio.h>
 #include <string.h>
 
 #define SITHCONSOLE_MAXLINES 32
@@ -278,7 +279,7 @@ void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteT
     pfFlushFunc    = pfFlush;
 }
 
-int J3DAPI sithCommand_Help(const SithConsoleCommand* pFunc, const char* pArg)
+int J3DAPI sithConsole_Help(const SithConsoleCommand* pFunc, const char* pArg)
 {
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);

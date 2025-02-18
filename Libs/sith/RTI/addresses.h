@@ -522,7 +522,7 @@
 #define sithMulti_ProcessQuit_ADDR 0x00455C20
 #define sithMulti_Update_ADDR 0x00455CD0
 #define sithMulti_SyncScores_ADDR 0x00455DF0
-#define sithMulti_GetPlayerNum_ADDR 0x00455E00
+#define sithMulti_GetPlayerIndexByID_ADDR 0x00455E00
 #define sithMulti_ProcessKilledPlayer_ADDR 0x00455E30
 #define sithMulti_QuitGame_ADDR 0x00455FD0
 #define sithMulti_Respawn_ADDR 0x00456000
@@ -2353,7 +2353,7 @@
 #define sithAI_aRegisteredInstincts_ADDR 0x0055EDC8
 #define sithAI_numRegisteredInstincts_ADDR 0x0055EDCC
 #define sithAI_g_aControlBlocks_ADDR 0x01801360
-#define sithAI_g_numUsedBlocks_ADDR 0x0182EB60
+#define sithAI_g_lastUsedAIIndex_ADDR 0x0182EB60
 #define sithString_sithStringsTbl_ADDR 0x005624A8
 #define sithString_voiceStringsTbl_ADDR 0x005624B8
 #define sithString_bStartup_ADDR 0x005624C8

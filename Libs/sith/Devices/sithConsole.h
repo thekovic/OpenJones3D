@@ -41,7 +41,7 @@ void sithConsole_Flush(void);
 int J3DAPI sithConsole_RegisterCommand(SithConsoleFunction pfFunc, const char* pName, int flags);
 void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlushFunc pfFlush);
 
-int J3DAPI sithCommand_Help(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI sithConsole_Help(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 // Helper hooking functions
 void sithConsole_InstallHooks(void);

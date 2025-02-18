@@ -2,7 +2,12 @@
 #include <j3dcore/j3dhook.h>
 #include <sith/RTI/symbols.h>
 
-#define sithMulti_tickRate J3D_DECL_FAR_VAR(sithMulti_tickRate, int)
+#include <sith/Devices/sithComm.h>
+#include <sith/Dss/sithDSS.h>
+#include <sith/Gameplay/sithPlayer.h>
+#include <sith/Gameplay/sithTime.h>
+
+#define sithMulti_tickRate J3D_DECL_FAR_VAR(sithMulti_tickRate, size_t)
 #define sithMulti_numUpdatedSurfaces J3D_DECL_FAR_VAR(sithMulti_numUpdatedSurfaces, int)
 #define sithMulti_lastUpdateIdx J3D_DECL_FAR_VAR(sithMulti_lastUpdateIdx, int)
 #define sithMulti_playerWelcomeState J3D_DECL_FAR_VAR(sithMulti_playerWelcomeState, int)
@@ -16,11 +21,11 @@
 #define sithMulti_newPlayerId J3D_DECL_FAR_VAR(sithMulti_newPlayerId, DPID)
 #define sithMulti_bSyncScores J3D_DECL_FAR_VAR(sithMulti_bSyncScores, int)
 #define sithMulti_pfNewPlayerJoinedCallback J3D_DECL_FAR_VAR(sithMulti_pfNewPlayerJoinedCallback, SithMultiNewPlayerJoinedCallback)
-#define sithMulti_msecPingStartTime J3D_DECL_FAR_VAR(sithMulti_msecPingStartTime, int)
-#define sithMulti_msecQuitGameTime J3D_DECL_FAR_VAR(sithMulti_msecQuitGameTime, int)
+#define sithMulti_msecPingStartTime J3D_DECL_FAR_VAR(sithMulti_msecPingStartTime, unsigned int)
+#define sithMulti_msecQuitGameTime J3D_DECL_FAR_VAR(sithMulti_msecQuitGameTime, unsigned int)
 #define sithMulti_numRemovedStaticThings J3D_DECL_FAR_VAR(sithMulti_numRemovedStaticThings, int)
-#define sithMulti_msecLastSyncScoreTime J3D_DECL_FAR_VAR(sithMulti_msecLastSyncScoreTime, int)
-#define sithMulti_msecWelcomeUpdateInterval J3D_DECL_FAR_VAR(sithMulti_msecWelcomeUpdateInterval, int)
+#define sithMulti_msecLastSyncScoreTime J3D_DECL_FAR_VAR(sithMulti_msecLastSyncScoreTime, unsigned int)
+#define sithMulti_msecWelcomeUpdateInterval J3D_DECL_FAR_VAR(sithMulti_msecWelcomeUpdateInterval, unsigned int)
 #define sithMulti_dword_17F10EC J3D_DECL_FAR_VAR(sithMulti_dword_17F10EC, int)
 
 void sithMulti_InstallHooks(void)
@@ -45,7 +50,7 @@ void sithMulti_InstallHooks(void)
     // J3D_HOOKFUNC(sithMulti_ProcessQuit);
     // J3D_HOOKFUNC(sithMulti_Update);
     // J3D_HOOKFUNC(sithMulti_SyncScores);
-    // J3D_HOOKFUNC(sithMulti_GetPlayerNum);
+    J3D_HOOKFUNC(sithMulti_GetPlayerIndexByID);
     // J3D_HOOKFUNC(sithMulti_ProcessKilledPlayer);
     // J3D_HOOKFUNC(sithMulti_QuitGame);
     // J3D_HOOKFUNC(sithMulti_Respawn);
@@ -176,10 +181,10 @@ void J3DAPI sithMulti_SyncScores()
     J3D_TRAMPOLINE_CALL(sithMulti_SyncScores);
 }
 
-int J3DAPI sithMulti_GetPlayerNum(DPID idPlayer)
-{
-    return J3D_TRAMPOLINE_CALL(sithMulti_GetPlayerNum, idPlayer);
-}
+//int J3DAPI sithMulti_GetPlayerIndexByID(DPID idPlayer)
+//{
+//    return J3D_TRAMPOLINE_CALL(sithMulti_GetPlayerIndexByID, idPlayer);
+//}
 
 void J3DAPI sithMulti_ProcessKilledPlayer(const SithPlayer* pPlayer, const SithThing* pPlayerThing, const SithThing* pKiller)
 {
@@ -231,9 +236,41 @@ void J3DAPI sithMulti_StopWelcomingPlayer(int bError)
     J3D_TRAMPOLINE_CALL(sithMulti_StopWelcomingPlayer, bError);
 }
 
-
 void sithMulti_OpenGame(void)
 {
     // TODO: Add implementation
     SITH_ASSERT(0);
+}
+
+size_t J3DAPI sithMulti_GetTickRate(void)
+{
+    return sithMulti_tickRate;
+}
+
+void J3DAPI sithMulti_SetTickRate(size_t tickRate)
+{
+    sithMulti_tickRate = tickRate;
+}
+
+int J3DAPI sithMulti_Ping(DPID idTo)
+{
+    sithMulti_msecPingStartTime = sithTime_g_msecGameTime;
+
+    SITHDSS_STARTOUT(SITHDSS_PING);
+    SITHDSS_PUSHUINT32(sithTime_g_msecGameTime);
+    SITHDSS_ENDOUT;
+    return sithMessage_SendMessage(&sithMulti_g_message, idTo, 1u, 0);
+}
+
+int J3DAPI sithMulti_GetPlayerIndexByID(int playerID)
+{
+    for ( size_t i = 0; i < sithPlayer_g_numPlayers; ++i )
+    {
+        if ( playerID == sithPlayer_g_aPlayers[i].playerNetId )
+        {
+            return i;
+        }
+    }
+
+    return -1;
 }
