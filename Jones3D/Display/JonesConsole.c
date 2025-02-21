@@ -136,7 +136,7 @@ int JonesConsole_Open(void)
         return 0;
     }
 
-    if ( sithConsole_Open(16, 64) )
+    if ( sithConsole_Open(16, 120) ) // Changed: Increased max commands to 120 from 64
     {
         return 1;
     }
