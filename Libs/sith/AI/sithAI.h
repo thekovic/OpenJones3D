@@ -21,32 +21,30 @@ J3D_EXTERN_C_START
 // extern int sithAI_g_lastUsedAIIndex;
 
 int sithAI_Startup(void);
-void J3DAPI sithAI_Shutdown();
-void J3DAPI sithAI_Open();
-void J3DAPI sithAI_Close();
+void sithAI_Shutdown(void);
+void sithAI_Open(void);
+void sithAI_Close(void);
+
 void J3DAPI sithAI_Create(SithThing* pThing);
 void J3DAPI sithAI_Free(SithThing* pThing);
-int J3DAPI sithAI_Process();
-void J3DAPI sithAI_ProcessAIState(SithAIControlBlock* pLocal);
-unsigned int J3DAPI sithAI_InstinctUpdate(SithAIControlBlock* pLocal);
-signed int J3DAPI sithAI_ForceInstinctUpdate(SithAIControlBlock* pLocal, const char* pInstinctName, int bSendModeChangeEvent);
+
+void sithAI_Process(void);
+int J3DAPI sithAI_ForceInstinctUpdate(SithAIControlBlock* pLocal, const char* pInstinctName, int bSendModeChangeEvent);
+
 void J3DAPI sithAI_EmitEvent(SithAIControlBlock* pLocal, SithAIEventType event, void* pObject);
-int J3DAPI sithAI_ProcessBlockedEvent(SithAIControlBlock* pLocal, SithAIEventType aievent);
-int J3DAPI sithAI_ProcessUnhandledEvent(SithAIControlBlock* pLocal, SithAIEventType event, void* pObject);
-int J3DAPI sithAI_ProcessUnhandledWpntEvent(SithAIControlBlock* pLocal, SithAIEventType event);
+
 void J3DAPI sithAI_Stop(SithThing* pThing);
-void sithAI_StopAllAttackingAIs();
-int J3DAPI sithAI_RegisterInstinct(char* pName, SithAIInstinctFunc pfInstinct, SithAIMode updateModes, SithAIMode updateBlockModes, SithAIEventType triggerEvents);
+void sithAI_StopAllAttackingAIs(void);
+
+int J3DAPI sithAI_RegisterInstinct(const char* pName, SithAIInstinctFunc pfInstinct, SithAIMode updateModes, SithAIMode updateBlockModes, SithAIEventType triggerEvents);
 SithAIRegisteredInstinct* J3DAPI sithAI_FindInstinct(const char* pInstinctName);
 int J3DAPI sithAI_GetInstinctIndex(const SithAIControlBlock* pLocal, const SithAIRegisteredInstinct* pRegInstinct);
-BOOL J3DAPI sithAI_HasInstinct(const SithAIControlBlock* pLocal, const char* pName);
-signed int J3DAPI sithAI_EnableInstinct(SithAIControlBlock* pLocal, const char* pInstinctName, int bEnable);
-signed int J3DAPI sithAI_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
-signed int J3DAPI sithAI_AllocAIFrames(SithAIControlBlock* pLocal, int sizeFrames);
-int J3DAPI sithAI_CreateInstinctRegistry(unsigned int maxInstincts);
-int J3DAPI sithAI_FreeAI(unsigned int aiNum);
-int J3DAPI sithAI_CreateAI();
-void J3DAPI sithAI_FreeAllAIs();
+int J3DAPI sithAI_HasInstinct(const SithAIControlBlock* pLocal, const char* pName);
+int J3DAPI sithAI_EnableInstinct(SithAIControlBlock* pLocal, const char* pInstinctName, int bEnable);
+
+int J3DAPI sithAI_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithAI_AllocAIFrames(SithAIControlBlock* pLocal, size_t sizeFrames);
+void J3DAPI sithAI_CreateAIFramesFomMarker(SithThing* pNewThing, const SithThing* pMarker, const rdVector3* pivot); // Added: From debug version
 
 int J3DAPI sithAI_AIList(const SithConsoleCommand* pFunc, const char* pArg); //Added: From debug version
 int J3DAPI sithAI_AIStatus(const SithConsoleCommand* pFunc, const char* pArg); //Added: From debug version

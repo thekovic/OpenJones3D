@@ -938,7 +938,7 @@
 #define sithAI_CreateInstinctRegistry_ADDR 0x0042B260
 #define sithAI_FreeAI_ADDR 0x0042B330
 #define sithAI_CreateAI_ADDR 0x0042B3F0
-#define sithAI_FreeAllAIs_ADDR 0x0042B470
+#define sithAI_ResetAllAIs_ADDR 0x0042B470
 #define sithString_Startup_ADDR 0x0043F380
 #define sithString_Shutdown_ADDR 0x0043F470
 #define sithString_GetString_ADDR 0x0043F4A0
