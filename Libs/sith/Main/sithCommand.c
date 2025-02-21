@@ -78,7 +78,7 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
             }
 
             pFlags = (int*)&sithWorld_g_pCurrentWorld->pLocalPlayer->thingInfo.actorInfo.flags;
-            newFlags = SITHDEBUG_INVULNERABLE;
+            newFlags = SITH_AF_INVULNERABLE;
             break;
 
         case 5:

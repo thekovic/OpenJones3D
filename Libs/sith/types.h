@@ -293,7 +293,7 @@ typedef enum eSithDebugModeFlag
 {
     SITHDEBUG_AIEVENTS_DISABLED          = 0x1,
     SITHDEBUG_PUPPETSYSTEM_DISABLED      = 0x2,
-    SITHDEBUG_INVULNERABLE               = 0x8,
+    SITHDEBUG_UNKNOWN_8                  = 0x8,
     SITHDEBUG_TRACKSHOTS                 = 0x40,
     SITHDEBUG_AIDISABLED                 = 0x80,
     SITHDEBUG_INEDITOR                   = 0x100,
