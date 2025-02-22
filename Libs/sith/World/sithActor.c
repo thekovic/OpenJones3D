@@ -679,12 +679,7 @@ int J3DAPI sithActor_ActorCollisionHandler(SithThing* pSrcThing, SithThing* pThi
         sithAI_EmitEvent(pSrcThing->controlInfo.aiControl.pLocal, SITHAI_EVENT_TOUCHED, pThing);
     }
 
-    if ( pThing->controlType != SITH_CT_AI )
-    {
-        return bCollision;
-    }
-
-    if ( pThing->controlInfo.aiControl.pLocal )
+    if ( pThing->controlType == SITH_CT_AI && pThing->controlInfo.aiControl.pLocal )
     {
         sithAI_EmitEvent(pThing->controlInfo.aiControl.pLocal, SITHAI_EVENT_TOUCHED, pSrcThing);
     }

@@ -88,8 +88,8 @@ void sithWorld_ResetGlobals(void)
       },
       {
         "aiclasses",
-        &sithAIClass_CNDReadAIClassSection,
-        &sithAIClass_CNDWriteAIClassSection
+        &sithAIClass_ReadAIClassesBinary,
+        &sithAIClass_WriteAIClassesBinary
       },
       { "models", &sithModel_LoadModelsBinary, &sithModel_WriteModelsBinary },
       {

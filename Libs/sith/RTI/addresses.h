@@ -1018,9 +1018,9 @@
 #define sithEvent_AddEvent_ADDR 0x00452900
 #define sithAIClass_Startup_ADDR 0x004566F0
 #define sithAIClass_Shutdown_ADDR 0x00456710
-#define sithAIClass_NDYReadAIClassSection_ADDR 0x00456730
-#define sithAIClass_CNDWriteAIClassSection_ADDR 0x00456980
-#define sithAIClass_CNDReadAIClassSection_ADDR 0x004569F0
+#define sithAIClass_ReadAIClassesText_ADDR 0x00456730
+#define sithAIClass_WriteAIClassesBinary_ADDR 0x00456980
+#define sithAIClass_ReadAIClassesBinary_ADDR 0x004569F0
 #define sithAIClass_AllocWorldAIClasses_ADDR 0x00456A70
 #define sithAIClass_FreeWorldAIClasses_ADDR 0x00456B50
 #define sithAIClass_Load_ADDR 0x00456BE0
@@ -1293,7 +1293,7 @@
 #define sithAIAwareness_CreateTransmittingEvent_ADDR 0x004B0A90
 #define sithAIAwareness_ProcessEvents_ADDR 0x004B0AE0
 #define sithAIAwareness_Update_ADDR 0x004B0B30
-#define sithAIAwareness_sub_4B0BE0_ADDR 0x004B0BE0
+#define sithAIAwareness_IsInTransmittingRange_ADDR 0x004B0BE0
 #define sithAIAwareness_ProcessEvent_ADDR 0x004B0CC0
 #define sithAIAwareness_CheckAdjoinDistance_ADDR 0x004B0E30
 #define sithAIAwareness_CreateEvent_ADDR 0x004B1010

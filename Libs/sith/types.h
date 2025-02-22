@@ -8,25 +8,22 @@
 
 J3D_EXTERN_C_START
 
-#define SITHTHING_NUMADJECTIVES 77
+#define SITHTHING_NUMADJECTIVES 77u
 
-#define SITH_PUPPET_NUMMOVEMODES  3
-#define SITH_PUPPET_NUMARMEDMODES 8
-#define SITH_PUPPET_NUMSUBMODES   84
+#define SITH_PUPPET_NUMMOVEMODES  3u
+#define SITH_PUPPET_NUMARMEDMODES 8u
+#define SITH_PUPPET_NUMSUBMODES   84u
 
-#define SITHMESSAGE_NUMTYPES  65
+#define SITHMESSAGE_NUMTYPES  65u
 #define SITHMESSAGE_SENDTOALL ((DPID)-1)
 
-#define SITHAIAWARENESS_NUMTYPES  4
-#define SITHAIAWARENESS_MAXEVENTS 32
+#define SITHCOGEXEC_CALLSTACKSIZE 4u
+#define SITHCOGEXEC_STACKSIZE     256u
 
-#define SITHCOGEXEC_CALLSTACKSIZE 4
-#define SITHCOGEXEC_STACKSIZE     256
-
-#define SITHAI_MAXWPNTOWNERS          10
-#define SITHAI_MAXINSTINCTS           16
-#define SITHAI_MAXREGISTEREDINSTINCTS 32
-#define SITHAI_MAXWPNTS               60
+#define SITHAI_MAXWPNTOWNERS          10u
+#define SITHAI_MAXINSTINCTS           16u
+#define SITHAI_MAXREGISTEREDINSTINCTS 32u
+#define SITHAI_MAXWPNTS               60u
 
 #define SITH_STATICRESOURCE_INDEXMASK 0x8000
 
@@ -34,7 +31,7 @@ J3D_EXTERN_C_START
 #define SITHGAMESAVE_SAVE    0x1
 #define SITHGAMESAVE_RESTORE 0x2
 
-#define SITHINVENTORY_MAXTYPES 200
+#define SITHINVENTORY_MAXTYPES 200u
 
 typedef enum eSithThingType
 {
@@ -2423,8 +2420,8 @@ struct sSithAIControlBlock
     SithAIMode mode;
     SithAISubMode submode;
     SithAIInstinctState aInstinctStates[16];
-    int numInstincts;
-    int msecNextUpdate;
+    size_t numInstincts;
+    uint32_t msecNextUpdate;
     rdVector3 goalLVec;
     rdVector3 lookPos;
     rdVector3 movePos;
@@ -2440,7 +2437,7 @@ struct sSithAIControlBlock
     float distance;
     int targetSightState;
     rdVector3 vecUnknown122;
-    unsigned int msecAttackStart;
+    uint32_t msecAttackStart;
     rdVector3 weaponFirePos;
     SithThing* goalThing;
     rdVector3 vecUnknown6;
@@ -2462,11 +2459,11 @@ struct sSithAIControlBlock
     int unknown166;
     int unknown167;
     int unknown168;
-    unsigned int msecFireWaitTime;
-    unsigned int msecPauseMoveUntil;
+    uint32_t msecFireWaitTime;
+    uint32_t msecPauseMoveUntil;
     rdVector3* aFrames;
-    int numFrames;
-    int sizeFrames;
+    size_t numFrames;
+    size_t sizeFrames;
     int allowedSurfaceTypes;
     rdVector3 vecUnknown3;
     rdVector3 vecUnknown;
@@ -2859,12 +2856,13 @@ typedef struct sSithWorldNdyParseHandler
 
 typedef struct sSithAIAwarenessSector
 {
-    int processID;
+    size_t processID;
     float aLevelAtTransmittingPos[4];
     rdVector3 aStartPos[4];
     rdVector3 aEndPos[4];
     SithThing* aTransmittingThing[4];
 } SithAIAwarenessSector;
+static_assert(sizeof(SithAIAwarenessSector) == 132, "sizeof(sSithAIAwarenessSector) == 132");
 
 struct sSithConsoleCommand
 {

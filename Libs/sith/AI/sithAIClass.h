@@ -1,7 +1,6 @@
 #ifndef SITH_SITHAICLASS_H
 #define SITH_SITHAICLASS_H
 #include <j3dcore/j3d.h>
-#include <rdroid/types.h>
 #include <sith/types.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
@@ -13,17 +12,19 @@ J3D_EXTERN_C_START
 // extern tHashTable *sithAIClass_g_pHashtable;
 
 int sithAIClass_Startup(void);
-void J3DAPI sithAIClass_Shutdown();
-int J3DAPI sithAIClass_NDYReadAIClassSection(SithWorld* pWorld, int bSkip);
-int J3DAPI sithAIClass_CNDWriteAIClassSection(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithAIClass_CNDReadAIClassSection(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithAIClass_AllocWorldAIClasses(SithWorld* pWorld, int numClasses);
+void sithAIClass_Shutdown(void);
+
+int J3DAPI sithAIClass_WriteAIClassesText(const SithWorld* pWorld); // Added: From debug version
+int J3DAPI sithAIClass_ReadAIClassesText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithAIClass_WriteAIClassesBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithAIClass_ReadAIClassesBinary(tFileHandle fh, SithWorld* pWorld);
+
+int J3DAPI sithAIClass_AllocWorldAIClasses(SithWorld* pWorld, size_t numClasses);
 void J3DAPI sithAIClass_FreeWorldAIClasses(SithWorld* pWorld);
+
 SithAIClass* J3DAPI sithAIClass_Load(SithWorld* pWorld, const char* pName);
 int J3DAPI sithAIClass_LoadEntry(const char* pPath, SithAIClass* pClass);
-SithAIClass* J3DAPI sithAIClass_CacheFind(const char* pName);
-void J3DAPI sithAIClass_CacheAdd(SithAIClass* pClass);
-int J3DAPI sithAIClass_CacheRemove(const SithAIClass* pClass);
 
 // Helper hooking functions
 void sithAIClass_InstallHooks(void);
