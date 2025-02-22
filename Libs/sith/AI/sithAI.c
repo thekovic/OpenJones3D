@@ -24,9 +24,9 @@ static size_t numFreeAIs = 0; // Added: Init to 0
 static size_t aFreeAIIndices[STD_ARRAYLEN(sithAI_g_aControlBlocks)];
 
 static bool bStartup = false; // Added: Init to false
-static SithAIRegisteredInstinct* aRegisteredInstincts; // TODO: SHould be aRegisteredInstincts
+static SithAIRegisteredInstinct* aRegisteredInstincts;
 static size_t numRegisteredInstincts;
-static tHashTable* pRegisteredInstinctHashtbl; // TODO: Should be pRegisteredInstinctHashtbl
+static tHashTable* pRegisteredInstinctHashtbl;
 
 void J3DAPI sithAI_ProcessAIState(SithAIControlBlock* pLocal);
 void J3DAPI sithAI_InstinctUpdate(SithAIControlBlock* pLocal);

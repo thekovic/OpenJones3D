@@ -15,12 +15,12 @@
 #include <std/General/stdMath.h>
 #include <std/General/stdUtil.h>
 
-static bool sithAIAwareness_bOpened = false; // Added: Init to false
+static bool bOpened = false; // Added: Init to false
 
-size_t sithAIAwareness_numEvents;
-SithAIAwarenessEvent sithAIAwareness_aEvents[SITHAIAWARENESS_MAXEVENTS];
+static size_t numEvents;
+static SithAIAwarenessEvent aEvents[SITHAIAWARENESS_MAXEVENTS];
 
-size_t sithAIAwareness_curProcessID = 0; // Added: Init to 0
+static size_t curProcessID = 0; // Added: Init to 0
 
 void sithAIAwareness_ProcessEvents(void);
 int J3DAPI sithAIAwareness_Update(int msecTime, SithEventParams* pParams);
@@ -48,7 +48,7 @@ void sithAIAwareness_ResetGlobals(void)
 int sithAIAwareness_Open(void)
 {
     SITH_ASSERTREL(sithWorld_g_pCurrentWorld);
-    if ( sithAIAwareness_bOpened )
+    if ( bOpened )
     {
         return 0;
     }
@@ -60,19 +60,19 @@ int sithAIAwareness_Open(void)
     }
     memset(sithAIAwareness_g_aSectors, 0, sizeof(SithAIAwarenessSector) * sithWorld_g_pCurrentWorld->numSectors);
 
-    sithAIAwareness_numEvents = 0;
+    numEvents = 0;
     if ( !sithEvent_RegisterTask(SITHAIAWARENESS_TASKID, sithAIAwareness_Update, 500u, SITHEVENT_TASKINTERVAL) )
     {
         return 1;
     }
 
-    sithAIAwareness_bOpened = true;
+    bOpened = true;
     return 0;
 }
 
 void sithAIAwareness_Close(void)
 {
-    if ( sithAIAwareness_bOpened )
+    if ( bOpened )
     {
         SITH_ASSERTREL(sithAIAwareness_g_aSectors);
         stdMemory_Free(sithAIAwareness_g_aSectors);
@@ -80,7 +80,7 @@ void sithAIAwareness_Close(void)
 
         // Remove event task
         sithEvent_RegisterTask(SITHAIAWARENESS_TASKID, NULL, 0, SITHEVENT_TASKDISABLED);
-        sithAIAwareness_bOpened = false;
+        bOpened = false;
     }
 }
 
@@ -97,9 +97,9 @@ int J3DAPI sithAIAwareness_CreateTransmittingEvent(SithSector* pSector, const rd
 
 void sithAIAwareness_ProcessEvents(void)
 {
-    for ( size_t eventNum = 0; eventNum < sithAIAwareness_numEvents; ++eventNum )
+    for ( size_t eventNum = 0; eventNum < numEvents; ++eventNum )
     {
-        SithAIAwarenessEvent* pEvent = &sithAIAwareness_aEvents[eventNum];
+        SithAIAwarenessEvent* pEvent = &aEvents[eventNum];
         sithAIAwareness_ProcessEvent(pEvent, pEvent->pSector, &pEvent->pos, &pEvent->pos, pEvent->levelAtTransmittingPos, NULL, pEvent->pThing);
     }
 }
@@ -109,8 +109,8 @@ int J3DAPI sithAIAwareness_Update(int msecTime, SithEventParams* pParams)
     J3D_UNUSED(msecTime);
     J3D_UNUSED(pParams);
 
-    ++sithAIAwareness_curProcessID;
-    if ( !sithAIAwareness_numEvents )
+    ++curProcessID;
+    if ( !numEvents )
     {
         return 1;
     }
@@ -125,14 +125,14 @@ int J3DAPI sithAIAwareness_Update(int msecTime, SithEventParams* pParams)
         if ( pLocal->pClass && pLocal->pOwner && (pLocal->pOwner->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) == 0 )
         {
             SithSector* pSector = pLocal->pOwner->pInSector;
-            if ( pSector && sithAIAwareness_g_aSectors[sithSector_GetSectorIndex(pSector)].processID == sithAIAwareness_curProcessID ) // TODO: sithSector_GetSectorIndex might return -1
+            if ( pSector && sithAIAwareness_g_aSectors[sithSector_GetSectorIndex(pSector)].processID == curProcessID ) // TODO: sithSector_GetSectorIndex might return -1
             {
                 sithAI_EmitEvent(pLocal, SITHAI_EVENT_SOUND, 0);
             }
         }
     }
 
-    sithAIAwareness_numEvents = 0;
+    numEvents = 0;
     return 1;
 }
 
@@ -150,10 +150,10 @@ void J3DAPI sithAIAwareness_ProcessEvent(const SithAIAwarenessEvent* pEvent, con
     SITH_ASSERTREL(levelAtTransmittingPos > 0.0f);
 
     SithAIAwarenessSector* pAISector = &sithAIAwareness_g_aSectors[sithSector_GetSectorIndex(pSector)]; // TODO: sithSector_GetSectorIndex might return -1
-    if ( pAISector->processID != sithAIAwareness_curProcessID )
+    if ( pAISector->processID != curProcessID )
     {
         memset(pAISector, 0, sizeof(SithAIAwarenessSector));
-        pAISector->processID = sithAIAwareness_curProcessID;
+        pAISector->processID = curProcessID;
     }
 
     if ( pAISector->aLevelAtTransmittingPos[pEvent->type] < (double)levelAtTransmittingPos )
@@ -217,16 +217,16 @@ float J3DAPI sithAIAwareness_CheckAdjoinDistance(const SithSurfaceAdjoin* pAdjoi
 
 int J3DAPI sithAIAwareness_CreateEvent(SithSector* pSector, const rdVector3* pos, int type, float levelAtTransmittingPos, SithThing* pThing)
 {
-    if ( sithAIAwareness_numEvents == STD_ARRAYLEN(sithAIAwareness_aEvents) )
+    if ( numEvents == STD_ARRAYLEN(aEvents) )
     {
         return 0;
     }
 
-    rdVector_Copy3(&sithAIAwareness_aEvents[sithAIAwareness_numEvents].pos, pos);
-    sithAIAwareness_aEvents[sithAIAwareness_numEvents].pSector = pSector;
-    sithAIAwareness_aEvents[sithAIAwareness_numEvents].type    = type;
-    sithAIAwareness_aEvents[sithAIAwareness_numEvents].levelAtTransmittingPos = levelAtTransmittingPos;
-    sithAIAwareness_aEvents[sithAIAwareness_numEvents].pThing = pThing;
-    sithAIAwareness_numEvents++;
+    rdVector_Copy3(&aEvents[numEvents].pos, pos);
+    aEvents[numEvents].pSector = pSector;
+    aEvents[numEvents].type    = type;
+    aEvents[numEvents].levelAtTransmittingPos = levelAtTransmittingPos;
+    aEvents[numEvents].pThing = pThing;
+    numEvents++;
     return 1;
 }
