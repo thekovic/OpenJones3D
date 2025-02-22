@@ -15,6 +15,12 @@
 
 #define J3D_FILE __BASE_FILE__
 
+#if defined(_M_X64) || defined(__x86_64__) || defined(_M_IA64) || defined(__ia64__) || defined(__aarch64__) || defined(__amd64)
+    #define J3D_64BIT 1
+#else // assuming 32-bit platform
+    #define J3D_32BIT 1
+#endif
+
 // Platform specific definitions
 #ifdef _WIN32
 #   ifndef NDEBUG
