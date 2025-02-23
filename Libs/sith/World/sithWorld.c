@@ -99,13 +99,13 @@ void sithWorld_ResetGlobals(void)
       },
       {
         "keyframes",
-        &sithPuppet_CNDReadKeyframeSection,
-        &sithPuppet_CNDWriteKeyframeSection
+        &sithPuppet_ReadStaticKeyframesListBinary,
+        &sithPuppet_WriteStaticKeyframesListBinary
       },
       {
         "animclass",
-        &sithPuppet_CNDReadPuppetSection,
-        &sithPuppet_CNDWritePuppetSection
+        &sithPuppet_ReadStaticPuppetsListBinary,
+        &sithPuppet_WriteStaticPuppetsListBinary
       },
       {
         "soundclasses",

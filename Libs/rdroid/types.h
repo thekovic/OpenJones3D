@@ -7,17 +7,15 @@
 
 J3D_EXTERN_C_START
 
-#define RDCAMERA_MAX_LIGHTS 128
+#define RDCAMERA_MAX_LIGHTS 128u
 
-#define RDCLIP_MAXWORKVERTS  80
-#define RDQCLIP_MAXWORKVERTS 80
+#define RDCLIP_MAXWORKVERTS  80u
+#define RDQCLIP_MAXWORKVERTS 80u
 
-#define RDKEYFRAME_MAX_MARKERS 16
+#define RDKEYFRAME_MAX_MARKERS 16u
 
-#define RDPUPPET_MAX_TRACKS   8
-#define RDPUPPET_MAX_KFNODES  64
-
-
+#define RDPUPPET_MAX_TRACKS   8u
+#define RDPUPPET_MAX_KFNODES  64u
 
 typedef enum erdThingType
 {
@@ -527,7 +525,7 @@ typedef struct srdPuppetTrack
     float prevFrame;
     rdKeyframe* pKFTrack;
     rdPuppetTrackCallback pfCallback;
-    unsigned int guid;
+    uint32_t guid;
 } rdPuppetTrack;
 static_assert(sizeof(rdPuppetTrack) == 308, "sizeof(rdPuppetTrack) == 308");
 

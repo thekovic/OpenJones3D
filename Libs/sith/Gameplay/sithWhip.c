@@ -385,7 +385,7 @@ void J3DAPI sithWhip_WhipClimbPuppetCallback(SithThing* pThing, int track, rdKey
             sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
         }
 
-        sithPuppet_RemoveTrackNum(pThing, track);
+        sithPuppet_FreeTrackByIndex(pThing, track);
     }
 }
 
@@ -399,7 +399,7 @@ void J3DAPI sithWhip_ClimbDismountPuppetCallback(SithThing* pThing, int track, r
             sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
         }
 
-        sithPuppet_RemoveTrackNum(pThing, track);
+        sithPuppet_FreeTrackByIndex(pThing, track);
     }
 }
 

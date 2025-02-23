@@ -2343,6 +2343,7 @@ struct sSithPuppetTrack
     SithPuppetSubMode submode;
     SithPuppetTrack* pNextTrack;
 };
+static_assert(sizeof(SithPuppetTrack) == 16, "sizeof(SithPuppetTrack) == 16");
 
 typedef struct sSithPuppetState
 {
@@ -2573,31 +2574,13 @@ typedef struct sCndMaterialInfo
 } CndMaterialInfo;
 static_assert(sizeof(CndMaterialInfo) == 136, "sizeof(CndMaterialInfo) == 136");
 
-typedef struct sCndKeyframeInfo
-{
-    char name[64];
-    int flags;
-    int type;
-    int numFrames;
-    float fps;
-    int numMarkers;
-    int numJoints;
-    int numNodes;
-} CndKeyframeInfo;
-
-typedef struct sCndKeyframeNode
-{
-    char meshName[64];
-    int nodeNum;
-    int numEntries;
-} CndKeyframeNode;
-
 typedef struct sCndAdjoin
 {
     int flags;
     int mirror;
     float distance;
 } CndAdjoin;
+static_assert(sizeof(CndAdjoin) == 12, "sizeof(CndAdjoin) == 12");
 
 typedef struct sCndSurfaceInfo
 {
