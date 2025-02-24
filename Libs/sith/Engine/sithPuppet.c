@@ -305,7 +305,7 @@ void J3DAPI sithPuppet_Free(SithThing* pThing)
         if ( pThing->pPuppetState->pFirstTrack )
         {
             SithPuppetTrack* pNextTrack;
-            for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pNextTrack )
+            for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pNextTrack )
             {
                 pNextTrack = pTrack->pNextTrack;
                 stdMemory_Free(pTrack);
@@ -324,13 +324,13 @@ void J3DAPI sithPuppet_RemoveAllTracks(SithThing* pThing)
     SithPuppetTrack* pNextTrack;
     for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack; pTrack = pNextTrack )
     {
-        if ( pTrack == STDMEMORY_NULL )
+        if ( pTrack == STDMEMORY_FREEDPTR )
         {
             SITHLOG_ERROR("Pup track list is messed up, pointer to freed memory!\n");
             break;
         }
 
-        if ( pTrack->trackNum == (int)STDMEMORY_NULL )
+        if ( pTrack->trackNum == (int)STDMEMORY_FREEDPTR )
         {
             SITHLOG_ERROR("Pup track list is messed up, pointer to freed memory!\n");
             break;
@@ -339,7 +339,7 @@ void J3DAPI sithPuppet_RemoveAllTracks(SithThing* pThing)
         pNextTrack = pTrack->pNextTrack;
 
         rdPuppet_RemoveTrack(pThing->renderData.pPuppet, pTrack->trackNum);
-        if ( pTrack->pNextTrack != STDMEMORY_NULL )
+        if ( pTrack->pNextTrack != STDMEMORY_FREEDPTR )
         {
             stdMemory_Free(pTrack);
         }
@@ -374,7 +374,7 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
         SithPuppetTrack* pNextTrack;
         for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack; pTrack = pNextTrack )
         {
-            if ( pTrack->pNextTrack == STDMEMORY_NULL )
+            if ( pTrack->pNextTrack == STDMEMORY_FREEDPTR )
             {
                 pTrack->pNextTrack = NULL;
             }
@@ -503,7 +503,7 @@ void J3DAPI sithPuppet_PlayFidgetMode(SithThing* pThing)
     {
         for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack; pTrack = pTrack->pNextTrack )
         {
-            if ( pTrack == STDMEMORY_NULL || pTrack->submode == SITHPUPPETSUBMODE_FIDGET || pTrack->submode == SITHPUPPETSUBMODE_FIDGET2 )
+            if ( pTrack == STDMEMORY_FREEDPTR || pTrack->submode == SITHPUPPETSUBMODE_FIDGET || pTrack->submode == SITHPUPPETSUBMODE_FIDGET2 )
             {
                 return;
             }
@@ -538,7 +538,7 @@ void J3DAPI sithPuppet_StopFridgetTrack(SithThing* pThing)
 
     if ( pThing->controlType != SITH_CT_AI || !pThing->controlInfo.aiControl.pLocal || (pThing->controlInfo.aiControl.pLocal->mode & SITHAI_MODE_BLOCK) == 0 )
     {
-        for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )
+        for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )
         {
             if ( pTrack->submode == SITHPUPPETSUBMODE_FIDGET || pTrack->submode == SITHPUPPETSUBMODE_FIDGET2 )
             {
@@ -563,7 +563,7 @@ int J3DAPI sithPuppet_IsModeOnTrack(const SithThing* pThing, SithPuppetSubMode m
         return 0;
     }
 
-    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )
+    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )
     {
         if ( pTrack->submode == mode )
         {
@@ -626,7 +626,7 @@ SithPuppetTrack* J3DAPI sithPuppet_FindActiveTrack(const SithThing* pThing, cons
     SithPuppetTrack* pTrack = NULL;
     for ( pTrack = pThing->pPuppetState->pFirstTrack; ; pTrack = pTrack->pNextTrack )
     {
-        if ( !pTrack || pTrack == STDMEMORY_NULL )
+        if ( !pTrack || pTrack == STDMEMORY_FREEDPTR )
         {
             return NULL;
         }
@@ -673,7 +673,7 @@ void J3DAPI sithPuppet_UpdateThingMoveTracks(SithThing* pThing, float secDeltaTi
         moveSpeed = sithPuppet_UpdateThingMove(pThing, NULL) * secDeltaTime;
     }
 
-    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )
+    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )
     {
         if ( (pTrack->pSubmode->flags & RDKEYFRAME_PUPPET_CONTROLLED) != 0 )
         {
@@ -1291,7 +1291,7 @@ int J3DAPI sithPuppet_SetSubMode(SithThing* pThing, SithPuppetSubMode newSubMode
 
     int trackNum = -1;
     SithPuppetTrack* pNextTrack;
-    for ( SithPuppetTrack* pCurTrack = pThing->pPuppetState->pFirstTrack; pCurTrack && pCurTrack != STDMEMORY_NULL; pCurTrack = pNextTrack )
+    for ( SithPuppetTrack* pCurTrack = pThing->pPuppetState->pFirstTrack; pCurTrack && pCurTrack != STDMEMORY_FREEDPTR; pCurTrack = pNextTrack )
     {
         bool bTrackFadding = false;
         pNextTrack = pCurTrack->pNextTrack;
@@ -1373,7 +1373,7 @@ void J3DAPI sithPuppet_SetMoveMode(SithThing* pThing, SithPuppetMoveMode newMode
         pThing->pPuppetState->moveMode  = newMode;
 
         SithPuppetTrack* pNextTrack;
-        for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pNextTrack )
+        for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pNextTrack )
         {
             pNextTrack = pTrack->pNextTrack;
             sithPuppet_StopKey(pThing->renderData.pPuppet, pTrack->trackNum, 0.0f);
@@ -1409,7 +1409,7 @@ int J3DAPI sithPuppet_PlayMode(SithThing* pThing, SithPuppetSubMode submode, rdP
         return -1;
     }
 
-    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )
+    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )
     {
         if ( pTrack->submode == submode )
         {
@@ -1456,7 +1456,7 @@ int J3DAPI sithPuppet_PlayForceMoveMode(SithThing* pThing, SithPuppetSubMode sub
         return -1;
     }
 
-    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
+    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
     {
         if ( pTrack->submode == submode )
         {
@@ -1607,7 +1607,7 @@ void J3DAPI sithPuppet_SwapSubMode(SithThing* pThing, SithPuppetSubMode newMode,
             sithPuppet_StopFridgetTrack(pThing);
 
             SithPuppetTrack* pTrack;
-            for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
+            for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
             {
                 if ( pTrack->submode == oldMode )
                 {
@@ -1655,7 +1655,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
     {
         bool bStopTrack = false;
         SithPuppetTrack* pTrack;
-        for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_NULL; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
+        for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
         {
             if ( pTrack->pSubmode && (pTrack->pSubmode->flags & RDKEYFRAME_FORCEMOVE) != 0 )
             {
@@ -3492,7 +3492,7 @@ void J3DAPI sithPuppet_FreeTrack(SithThing* pThing, SithPuppetTrack* pTrack)
 void J3DAPI sithPuppet_FreeTrackByIndex(SithThing* pThing, int trackNum)
 {
     SithPuppetTrack* pFirstTrack = pThing->pPuppetState->pFirstTrack;
-    if ( pFirstTrack && pFirstTrack != STDMEMORY_NULL )
+    if ( pFirstTrack && pFirstTrack != STDMEMORY_FREEDPTR )
     {
         if ( pFirstTrack->trackNum == trackNum )
         {
@@ -3502,7 +3502,7 @@ void J3DAPI sithPuppet_FreeTrackByIndex(SithThing* pThing, int trackNum)
         else
         {
             SithPuppetTrack* pPrevTrack = pThing->pPuppetState->pFirstTrack;
-            for ( SithPuppetTrack* pCurTrack = pFirstTrack->pNextTrack; pCurTrack && pCurTrack != STDMEMORY_NULL; pCurTrack = pCurTrack->pNextTrack )
+            for ( SithPuppetTrack* pCurTrack = pFirstTrack->pNextTrack; pCurTrack && pCurTrack != STDMEMORY_FREEDPTR; pCurTrack = pCurTrack->pNextTrack )
             {
                 if ( pCurTrack->trackNum == trackNum )
                 {
@@ -3534,7 +3534,7 @@ SithPuppetTrack* J3DAPI sithPuppet_GetModeTrackImpl(const SithThing* pThing, Sit
         }
 
         pCurTrack = pCurTrack->pNextTrack;
-        if ( pCurTrack == STDMEMORY_NULL )
+        if ( pCurTrack == STDMEMORY_FREEDPTR )
         {
             pCurTrack = NULL;
         }
