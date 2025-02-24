@@ -36,7 +36,7 @@ char* J3DAPI stdUtil_StringDuplicate(const char* pSource, tHostServices* pHS)
         return NULL;
     }
 
-    strcpy(pDupStr, pSource);
+    stdUtil_StringCopy(pDupStr, len + 1, pSource);
     return pDupStr;
 }
 
