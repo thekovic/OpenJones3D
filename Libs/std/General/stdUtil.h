@@ -151,6 +151,7 @@ J3D_EXTERN_C_START
         dest[STD_ARRAYLEN(dest) - 1] = 0; \
     } while ( 0 )
 
+char* J3DAPI stdUtil_StringDuplicate(const char* pSource, tHostServices* pHS); // Added: From debug version
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...);
 int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...); // Added
 char* J3DAPI stdUtil_StringSplit(const char* pSource, char* pFirstToken, size_t maxTokenLenght, const char* pSeparators); // Splits string on the first occurrence of pSeparators

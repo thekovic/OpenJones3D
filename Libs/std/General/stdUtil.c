@@ -24,6 +24,22 @@ void stdUtil_InstallHooks(void)
 void stdUtil_ResetGlobals(void)
 {}
 
+char* J3DAPI stdUtil_StringDuplicate(const char* pSource, tHostServices* pHS)
+{
+    STD_ASSERTREL(pSource != NULL);
+    STD_ASSERTREL(pHS != NULL);
+
+    size_t len = strlen(pSource);
+    char* pDupStr = (char*)STDMALLOC(len + 1);
+    if ( !pDupStr )
+    {
+        return NULL;
+    }
+
+    strcpy(pDupStr, pSource);
+    return pDupStr;
+}
+
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...)
 {
     va_list args;
