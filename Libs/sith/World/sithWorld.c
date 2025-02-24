@@ -120,8 +120,8 @@ void sithWorld_ResetGlobals(void)
       { "cogs", &sithCog_LoadBinary, &sithCog_WriteBinary },
       {
         "templates",
-        &sithTemplate_CNDReadTemplateSection,
-        &sithTemplate_CNDWriteTemplateSection
+        &sithTemplate_ReadThingTemplateListBinary,
+        &sithTemplate_WriteThingTemplateListBinary
       },
       { "things", &sithThing_LoadThingsBinary, &sithThing_WriteThingsBinary },
       { "pvs", &sithPVS_LoadBinary, &sithPVS_WriteBinary }

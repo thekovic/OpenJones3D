@@ -1035,9 +1035,9 @@
 #define sithTemplate_AllocWorldTemplates_ADDR 0x0045CAD0
 #define sithTemplate_GetTemplateByIndex_ADDR 0x0045CBF0
 #define sithTemplate_GetTemplateIndex_ADDR 0x0045CC40
-#define sithTemplate_NDYReadTemplateSection_ADDR 0x0045CC90
-#define sithTemplate_CNDWriteTemplateSection_ADDR 0x0045CDC0
-#define sithTemplate_CNDReadTemplateSection_ADDR 0x0045CDF0
+#define sithTemplate_ReadThingTemplateListText_ADDR 0x0045CC90
+#define sithTemplate_WriteThingTemplateListBinary_ADDR 0x0045CDC0
+#define sithTemplate_ReadThingTemplateListBinary_ADDR 0x0045CDF0
 #define sithTemplate_AddTemplate_ADDR 0x0045CE40
 #define sithTemplate_FreeWorldTemplates_ADDR 0x0045CE50
 #define sithTemplate_GetTemplate_ADDR 0x0045CF40
@@ -1045,7 +1045,7 @@
 #define sithTemplate_CacheFind_ADDR 0x0045D340
 #define sithTemplate_CacheAdd_ADDR 0x0045D380
 #define sithTemplate_CacheRemove_ADDR 0x0045D410
-#define sithTemplate_NDYReadTemplateList_ADDR 0x0045D480
+#define sithTemplate_ParseTemplateList_ADDR 0x0045D480
 #define sithMaterial_Startup_ADDR 0x0045D530
 #define sithMaterial_Shutdown_ADDR 0x0045D550
 #define sithMaterial_FreeWorldMaterials_ADDR 0x0045D570
