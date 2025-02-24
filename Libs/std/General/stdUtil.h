@@ -153,14 +153,14 @@ J3D_EXTERN_C_START
 
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...);
 int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...); // Added
-char* J3DAPI stdUtil_StringSplit(const char* pSource, char* pDest, unsigned int destSize, char* pSeparators);
-char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, unsigned int destSize);
+char* J3DAPI stdUtil_StringSplit(const char* pSource, char* pFirstToken, size_t maxTokenLenght, const char* pSeparators); // Splits string on the first occurrence of pSeparators
+char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, size_t destSize);
 
 wchar_t* J3DAPI stdUtil_ToWString(const char* pString);
-int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, unsigned int maxChars);
+int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, size_t maxChars);
 
 char* J3DAPI stdUtil_ToAString(const wchar_t* pwString);
-void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, unsigned int maxChars);
+void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, size_t maxChars);
 
 void J3DAPI stdUtil_ToLower(char* pStr);
 void J3DAPI stdUtil_ToUpper(char* pStr); // Added

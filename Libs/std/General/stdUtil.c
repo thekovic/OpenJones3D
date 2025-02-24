@@ -5,6 +5,7 @@
 #include <std/General/stdPlatform.h>
 #include <std/RTI/symbols.h>
 
+#include <string.h>
 #include <wchar.h>
 
 void stdUtil_InstallHooks(void)
@@ -41,47 +42,38 @@ int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...)
     return result;
 }
 
-char* J3DAPI stdUtil_StringSplit(const char* pSource, char* pDest, unsigned int destSize, char* pSeparators)
+char* J3DAPI stdUtil_StringSplit(const char* pSource, char* pFirstToken, size_t maxTokenLenght, const char* pSeparators)
 {
-    const char* pBegin;
-    char* pEnd;
-    size_t len;
+    STD_ASSERTREL(pSource != NULL);
+    STD_ASSERTREL(pSeparators != NULL);
 
-    STD_ASSERTREL(pSource != ((void*)0));
-    STD_ASSERTREL(pSeparators != ((void*)0));
-    if ( pDest )
+    if ( pFirstToken )
     {
-        *pDest = 0;
+        *pFirstToken = 0;
     }
 
-    pBegin = &pSource[strspn(pSource, pSeparators)];
-    pEnd = strpbrk(pBegin, pSeparators);
-    if ( pEnd )
+    const char* pTokenStart = &pSource[strspn(pSource, pSeparators)]; // Skip any leading separators.
+    char* pTokenEnd = strpbrk(pTokenStart, pSeparators); // Find the next occurrence of any separator.
+
+    // Changed: Swap if statements to first check for null pDest
+    if ( !pFirstToken )
     {
-        len = pEnd - pBegin;
-    }
-    else
-    {
-        len = strlen(pBegin);
+        return pTokenEnd;
     }
 
-    if ( !pDest )
-    {
-        return pEnd;
-    }
-
-    stdUtil_StringNumCopy(pDest, destSize, pBegin, len);
-    return pEnd;
+    size_t len = pTokenEnd ? pTokenEnd - pTokenStart : strlen(pTokenStart);
+    stdUtil_StringNumCopy(pFirstToken, maxTokenLenght, pTokenStart, len);
+    return pTokenEnd;
 }
 
-char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, unsigned int destSize)
+char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, size_t destSize)
 {
     char* pCur;
     char* pStrBegin;
     char* pStrEnd;
     //unsigned int strSize;
 
-    STD_ASSERTREL(pSource != ((void*)0));
+    STD_ASSERTREL(pSource != NULL);
     if ( pDest )
     {
         *pDest = 0;
@@ -111,13 +103,13 @@ char* J3DAPI stdUtil_ParseLiteral(const char* pSource, char* pDest, unsigned int
     return pStrEnd + 1;
 }
 
-int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, unsigned int maxChars)
+int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, size_t maxChars)
 {
-    STD_ASSERTREL(pwString != ((void*)0));
-    STD_ASSERTREL(pString != ((void*)0));
+    STD_ASSERTREL(pwString != NULL);
+    STD_ASSERTREL(pString != NULL);
     STD_ASSERTREL(maxChars >= 0);
 
-    unsigned int numChars = 0;
+    size_t numChars = 0;
     while ( numChars < maxChars && *pString )
     {
         *pwString++ = *(uint8_t*)pString++;
@@ -131,13 +123,13 @@ int J3DAPI stdUtil_ToWStringEx(wchar_t* pwString, const char* pString, unsigned 
     return numChars;
 }
 
-void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, unsigned int maxChars)
+void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, size_t maxChars)
 {
-    STD_ASSERTREL(pString != ((void*)0));
-    STD_ASSERTREL(pwString != ((void*)0));
+    STD_ASSERTREL(pString != NULL);
+    STD_ASSERTREL(pwString != NULL);
     STD_ASSERTREL(maxChars >= 0);
 
-    unsigned int numChars = 0;
+    size_t numChars = 0;
     while ( numChars < maxChars && *pwString )
     {
         *pString = (*pwString <= 255u) ? *(uint8_t*)pwString : '?';
@@ -154,10 +146,10 @@ void J3DAPI stdUtil_ToAStringEx(char* pString, const wchar_t* pwString, unsigned
 
 wchar_t* J3DAPI stdUtil_ToWString(const char* pString)
 {
-    STD_ASSERTREL(pString != ((void*)0));
+    STD_ASSERTREL(pString != NULL);
 
     wchar_t* pwString = (wchar_t*)STDMALLOC(sizeof(wchar_t) * strlen(pString) + sizeof(wchar_t)); // Note, extra 2 bytes for storing null
-    STD_ASSERTREL(pwString != ((void*)0));
+    STD_ASSERTREL(pwString != NULL);
 
     stdUtil_ToWStringEx(pwString, pString, strlen(pString));
     pwString[strlen(pString)] = 0;
@@ -166,11 +158,11 @@ wchar_t* J3DAPI stdUtil_ToWString(const char* pString)
 
 char* J3DAPI stdUtil_ToAString(const wchar_t* pwString)
 {
-    STD_ASSERTREL(pwString != ((void*)0));
+    STD_ASSERTREL(pwString != NULL);
     size_t len = wcslen(pwString);
 
     char* pString = (char*)STDMALLOC(len + 1); // Note, extra byte for storing null
-    STD_ASSERTREL(pString != ((void*)0));
+    STD_ASSERTREL(pString != NULL);
 
     stdUtil_ToAStringEx(pString, pwString, len);
     pString[wcslen(pwString)] = 0;
