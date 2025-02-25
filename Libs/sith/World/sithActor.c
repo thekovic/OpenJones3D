@@ -194,7 +194,7 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
 
 float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float damage, SithDamageType damageType)
 {
-    SITH_ASSERTREL(pActor && (damage > ((float)0.0)));
+    SITH_ASSERTREL(pActor && (damage > 0.0f));
     SITH_ASSERTREL(pActor->type == SITH_THING_ACTOR || pActor->type == SITH_THING_PLAYER);
 
     if ( pActor->type == SITH_THING_PLAYER
@@ -285,7 +285,7 @@ float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float d
 
 float J3DAPI sithActor_DamageRaftActor(SithThing* pActor, SithThing* pPerpetrator, float damage, SithDamageType damageType)
 {
-    SITH_ASSERTREL(pActor && (damage > ((float)0.0)));
+    SITH_ASSERTREL(pActor && (damage > 0.0f));
     SITH_ASSERTREL(pActor->type == SITH_THING_ACTOR || pActor->type == SITH_THING_PLAYER);
 
     if ( stdComm_IsGameActive() && (pActor->flags & SITH_TF_REMOTE) != 0 )

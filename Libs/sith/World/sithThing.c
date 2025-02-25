@@ -1367,7 +1367,7 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         }
 
         pThing->distanceMoved = distanceMoved;
-        SITH_ASSERTREL(distanceMoved >= ((float)0.0));
+        SITH_ASSERTREL(distanceMoved >= 0.0f);
     }
 
     if ( pThing->pAttachedThing && (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0 )

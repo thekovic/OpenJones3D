@@ -265,7 +265,7 @@ void J3DAPI rdPuppet_AdvanceTrack(rdPuppet* pPuppet, int32_t track, float frames
 {
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
     RD_ASSERTREL(pPuppet);
-    RD_ASSERTREL(frames >= ((float)0.0));
+    RD_ASSERTREL(frames >= 0.0f);
 
     if ( !pPuppet->aTracks[track].pKFTrack )
     {
@@ -533,7 +533,7 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
 
                     rdKeyframeNodeEntry* pKfFrame = &pTrack->pKFTrack->aNodes[pNode->num].aEntries[pTrack->aCurKfNodeEntryNums[pNode->num]];
                     float baseDeltaFrames = pTrack->curFrame - pKfFrame->frame;
-                    RD_ASSERTREL(baseDeltaFrames >= ((float)0.0));
+                    RD_ASSERTREL(baseDeltaFrames >= 0.0f);
 
                     rdVector3 dkfpos, dkfrot;
                     if ( (pKfFrame->flags & 1) != 0 )// dpos

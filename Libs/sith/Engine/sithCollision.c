@@ -1060,7 +1060,7 @@ float J3DAPI sithCollision_SearchForCollisions(SithSector* pStartSector, SithThi
     unsigned int collNum;
 
     SITH_ASSERTREL((pStartSector) && (startPos) && (moveNorm));
-    SITH_ASSERTREL((moveDist >= ((float)0.0)) && (radius >= ((float)0.0)));
+    SITH_ASSERTREL((moveDist >= 0.0f) && (radius >= 0.0f));
 
     stackLevel++;
     SITH_ASSERTREL(stackLevel >= 0);
@@ -1198,8 +1198,8 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
 
     pWorld = sithWorld_g_pCurrentWorld;
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
-    SITH_ASSERTREL(radius >= ((float)0.0));
-    SITH_ASSERTREL(moveDist >= ((float)0.0));
+    SITH_ASSERTREL(radius >= 0.0f);
+    SITH_ASSERTREL(moveDist >= 0.0f);
     v9.x = moveNorm->x * moveDist + startPos->x;
     v9.y = moveNorm->y * moveDist + startPos->y;
     v9.z = moveNorm->z * moveDist + startPos->z;
@@ -1495,7 +1495,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
             totalImpactSpeed = stdMath_ClipNearZero(fabsf(impactSpeed + hitImpactSpeed));
 
             float totalMass = mass + hitMass;
-            SITH_ASSERTREL(totalMass > ((float)0.0));
+            SITH_ASSERTREL(totalMass > 0.0f);
             if ( totalImpactSpeed <= 0.0f )
             {
                 return 0;

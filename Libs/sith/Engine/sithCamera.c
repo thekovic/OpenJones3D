@@ -522,7 +522,7 @@ int sithCamera_SetCurrentToCycleCamera(void)
 int J3DAPI SithCamera_sub_44ACCA(SithCamera* pTargetCamera, float time)
 {
     SITH_ASSERTREL(pTargetCamera != ((void*)0));
-    SITH_ASSERTREL(time >= ((float)0.0));
+    SITH_ASSERTREL(time >= 0.0f);
     if ( sithCamera_g_pCurCamera && pTargetCamera->unknown1 < (unsigned int)sithCamera_g_pCurCamera->unknown1 )
     {
         return 0;

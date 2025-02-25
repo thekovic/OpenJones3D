@@ -652,15 +652,11 @@ SithPuppetTrack* J3DAPI sithPuppet_FindActiveTrack(const SithThing* pThing, cons
 
 void J3DAPI sithPuppet_UpdateThingMoveTracks(SithThing* pThing, float secDeltaTime)
 {
-    SithActorFlag flags;
-    float moveSpeed;
-    ;
-    ;
-
     SITH_ASSERTREL(pThing);
     SITH_ASSERTREL(pThing->renderData.pPuppet);
     SITH_ASSERTREL(pThing->moveType == SITH_MT_PHYSICS);
 
+    float moveSpeed;
     if ( pThing->controlType == SITH_CT_AI
         && pThing->controlInfo.aiControl.pLocal
         && (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0
@@ -684,14 +680,13 @@ void J3DAPI sithPuppet_UpdateThingMoveTracks(SithThing* pThing, float secDeltaTi
             }
             else
             {
-                flags = pThing->thingInfo.actorInfo.flags;
-                if ( (flags & SITH_AF_FASTMOVE15) != 0 )
+                if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_FASTMOVE15) != 0 )
                 {
                     float numFrames = fabsf(moveSpeed) * 500.0f;
                     rdPuppet_AdvanceTrack(pThing->renderData.pPuppet, pTrack->trackNum, numFrames);
                 }
 
-                else if ( (flags & SITH_AF_FASTMOVE10) != 0 )
+                else if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_FASTMOVE10) != 0 )
                 {
                     float numFrames = fabsf(moveSpeed) * 300.0f;
                     rdPuppet_AdvanceTrack(pThing->renderData.pPuppet, pTrack->trackNum, numFrames);
@@ -1723,7 +1718,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
         {
             sithPhysics_ResetThingMovement(pThing);
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_RISING, NULL);
-            for ( size_t i = 0; i < 8; ++i )       // TODO: make constant
+            for ( size_t i = 0; i < 8; ++i ) // TODO: make constant
             {
                 sithFX_CreateBubble(pThing);
             }
@@ -1860,10 +1855,10 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
 
             sithCollision_DecreaseStackLevel();
 
-            SithSurface* pHitSurf = NULL;
+            SithSurface* pHitSurf  = NULL;
             rdModel3Mesh* pHitMesh = NULL;
-            SithThing* pHitThing = NULL;
-            rdFace* pHitFace = NULL;
+            SithThing* pHitThing   = NULL;
+            rdFace* pHitFace       = NULL;
 
             pThing->collide.movesize = 0.04f; // restore default move size
 
@@ -2331,17 +2326,14 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                         {
                             sndMode = 1;
                         }
-
                         else if ( (pSurfaceAttached->flags & SITH_SURFACE_EARTH) != 0 )
                         {
                             sndMode = 4;
                         }
-
                         else if ( (pSurfaceAttached->flags & SITH_SURFACE_SNOW) != 0 )
                         {
                             sndMode = 5;
                         }
-
                         else if ( (pSurfaceAttached->flags & SITH_SURFACE_WOOD) != 0 )
                         {
                             sndMode = 6;
@@ -2547,8 +2539,8 @@ SithPuppetClass* J3DAPI sithPuppet_LoadPuppetClass(const char* pFilename)
 {
     SithWorld* pWorld = sithWorld_g_pLastLoadedWorld;
     SITH_ASSERTREL(pWorld);
-    SITH_ASSERTREL(pFilename);
 
+    SITH_ASSERTREL(pFilename);
     SithPuppetClass* pClass = sithPuppet_ClassCacheFind(pFilename);
     if ( pClass )
     {
@@ -2558,7 +2550,7 @@ SithPuppetClass* J3DAPI sithPuppet_LoadPuppetClass(const char* pFilename)
     if ( pWorld->numPuppetClasses == pWorld->sizePuppetClasses )
     {
         SITHLOG_ERROR("Too many puppet classes loaded, line %d.\n", stdConffile_GetLineNumber());
-        return 0;
+        return NULL;
     }
 
     pClass = &pWorld->aPuppetClasses[pWorld->numPuppetClasses];
@@ -2571,7 +2563,7 @@ SithPuppetClass* J3DAPI sithPuppet_LoadPuppetClass(const char* pFilename)
     if ( sithPuppet_LoadPuppetClassEntry(pClass, aPath) )
     {
         SITHLOG_ERROR("Failed to load anim class %s.\n", aPath);
-        return 0;
+        return NULL;
     }
 
     ++pWorld->numPuppetClasses;
@@ -2765,6 +2757,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListText(SithWorld* pWorld, int bSkip)
     }
 
     float progress = 80.0f;
+    const float progressDelta = 15.0f / (float)numKeyframes;
     while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( !sithPuppet_LoadKeyframe(stdConffile_g_entry.aArgs[1].argValue) )
@@ -2773,7 +2766,6 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListText(SithWorld* pWorld, int bSkip)
             return 1;
         }
 
-        float progressDelta = 15.0f / (float)numKeyframes;
         progress += progressDelta;
         if ( progress >= 95.0f )
         {
@@ -3294,7 +3286,6 @@ float J3DAPI sithPuppet_GetThingLocalVelocityAxis(SithThing* pThing, size_t* pAx
         }
     }
 }
-
 
 int J3DAPI sithPuppet_StopMode(SithThing* pThing, SithPuppetSubMode submode, float fadeOutTime)
 {

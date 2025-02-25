@@ -94,7 +94,7 @@ void J3DAPI sithTime_SetFrameTime(uint32_t frameTime)
     sithTime_g_frameTime = sithTime_g_frameTime = STDMATH_CLAMP(sithTime_g_frameTime, 10, SITHTIME_MAXFRAMETIME); // min 10ms;
 
     sithTime_g_frameTimeFlex = sithTime_g_frameTime * 0.001f;
-    SITH_ASSERTREL(sithTime_g_frameTimeFlex > ((float)0.0));
+    SITH_ASSERTREL(sithTime_g_frameTimeFlex > 0.0f);
 
     sithTime_g_fps           = 1.0f / sithTime_g_frameTimeFlex;
     sithTime_g_msecGameTime += sithTime_g_frameTime;
