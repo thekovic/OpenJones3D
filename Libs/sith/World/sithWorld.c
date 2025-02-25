@@ -94,8 +94,8 @@ void sithWorld_ResetGlobals(void)
       { "models", &sithModel_LoadModelsBinary, &sithModel_WriteModelsBinary },
       {
         "sprites",
-        &sithSprite_CNDReadSpriteSection,
-        &sithSprite_CNDWriteSpriteSection
+        &sithSprite_ReadStaticSpritesListBinary,
+        &sithSprite_WriteStaticSpritesListBinary
       },
       {
         "keyframes",

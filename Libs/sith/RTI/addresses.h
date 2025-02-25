@@ -1259,10 +1259,10 @@
 #define sithSprite_Shutdown_ADDR 0x004AAFC0
 #define sithSprite_Update_ADDR 0x004AAFE0
 #define sithSprite_Draw_ADDR 0x004AB0A0
-#define sithSprite_UpdateSize_ADDR 0x004AB150
-#define sithSprite_NDYReadSpriteSection_ADDR 0x004AB1B0
-#define sithSprite_CNDWriteSpriteSection_ADDR 0x004AB470
-#define sithSprite_CNDReadSpriteSection_ADDR 0x004AB4D0
+#define sithSprite_Create_ADDR 0x004AB150
+#define sithSprite_ReadStaticSpritesListText_ADDR 0x004AB1B0
+#define sithSprite_WriteStaticSpritesListBinary_ADDR 0x004AB470
+#define sithSprite_ReadStaticSpritesListBinary_ADDR 0x004AB4D0
 #define sithSprite_FreeWorldSprites_ADDR 0x004AB550
 #define sithSprite_Load_ADDR 0x004AB640
 #define sithSprite_AllocWorldSprites_ADDR 0x004ABA60
@@ -2438,9 +2438,9 @@
 #define sithAIUtil_aAIWpnts_ADDR 0x00585730
 #define sithAIUtil_secLastUpdate_ADDR 0x00586270
 #define sithAIUtil_mkPoinCurFlags_ADDR 0x00586274
-#define sithSprite_g_pHashtable_ADDR 0x0059BDA4
+#define sithSprite_pHashtable_ADDR 0x0059BDA4
 #define sithExplosion_bExpandFadeSet_ADDR 0x0059BDA8
-#define sithParticle_g_pHashtable_ADDR 0x0059BDAC
+#define sithParticle_pHashtable_ADDR 0x0059BDAC
 #define sithAIAwareness_aEvents_ADDR 0x0059BDB0
 #define sithAIAwareness_g_aSectors_ADDR 0x0059C130
 #define sithAIAwareness_numEvents_ADDR 0x0059C134

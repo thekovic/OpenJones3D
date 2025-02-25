@@ -2301,7 +2301,7 @@ void J3DAPI sithThing_SetThingBasedOn(SithThing* pThing, const SithThing* pTempl
 
             case RD_THING_SPRITE3:
                 rdThing_SetSprite3(&pThing->renderData, pThing->renderData.data.pSprite3);
-                sithSprite_UpdateSize(pThing);
+                sithSprite_Create(pThing);
                 break;
         }
 
@@ -2448,7 +2448,7 @@ SithThing* J3DAPI sithThing_CreateThing(const SithThing* pTemplate, SithThing* p
 
     if ( pNewThing->type == SITH_THING_SPRITE )
     {
-        sithSprite_UpdateSize(pNewThing);
+        sithSprite_Create(pNewThing);
     }
 
     if ( pNewThing->moveType == SITH_MT_PATH

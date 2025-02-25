@@ -437,7 +437,7 @@ typedef struct srdParticle
     rdLightMode lightningMode;
     size_t numVertices;
     rdVector3* aVerticies;
-    int32_t* aVertMatCelNums;
+    int* aVertMatCelNums;
     rdVector4* aExtraLights;
     float size;
     float sizeHalf;

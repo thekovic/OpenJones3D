@@ -1951,7 +1951,7 @@ static_assert(sizeof(SithWeaponInfo) == 48, "sizeof(SithWeaponInfo) == 48");
 typedef struct sSithParticleInfo
 {
     SithParticleFlag flags;
-    int numParticles;
+    size_t numParticles;
     rdMaterial* pMaterial;
     float size;
     float growthSpeed;
@@ -1963,6 +1963,7 @@ typedef struct sSithParticleInfo
     float curGrowthSize;
     float secElapsed;
 } SithParticleInfo;
+static_assert(sizeof(SithParticleInfo) == 48, "sizeof(SithParticleInfo) == 48");
 
 typedef union sSithActorEndurance
 {

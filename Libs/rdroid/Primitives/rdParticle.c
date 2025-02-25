@@ -18,7 +18,6 @@
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
-#define RDPARTICLE_MAXVERTS 256
 #define RDPARTICLE_MAJVER   1
 #define RDPARTICLE_MINVER   0
 
