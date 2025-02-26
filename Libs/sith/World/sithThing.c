@@ -1453,7 +1453,7 @@ int J3DAPI sithThing_GetThingIndex(const SithThing* pThing)
 
 SithThing* J3DAPI sithThing_GetGuidThing(int guid)
 {
-    if ( (guid & 0x80000000) != 0 )
+    if ( guid < 0 )
     {
         return NULL;
     }
