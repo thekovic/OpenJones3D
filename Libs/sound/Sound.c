@@ -521,7 +521,7 @@ int J3DAPI Sound_ReadFile(tFileHandle fh, void* pData, unsigned int size)
     return J3D_TRAMPOLINE_CALL(Sound_ReadFile, fh, pData, size);
 }
 
-int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
+bool J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
 {
     if ( (int)handle >= 1234 && (int)handle < 1112345 && (handle & 1) != 0 )
     {
@@ -531,7 +531,7 @@ int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
     if ( handle && ((int)handle < 1234 || (int)handle >= 1112345 || (handle & 1) != 0) )
     {
         Sound_pHS->pErrorPrint("Sound_IsThingFadingPitch: Don't know what 'sound' is: %p\n", handle);
-        return 0;
+        return false;
     }
 
     size_t count = Sound_numChannels;
@@ -550,11 +550,11 @@ int J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
             && (!handle || pCurChannel->hSnd == handle)
             && (pCurChannel->flags & SOUND_CHANNEL_PITCHFADE) != 0 )
         {
-            return 1;
+            return true;
         }
     }
 
-    return 0;
+    return false;
 }
 
 static void Sound_UpdateFades(void) // Added
@@ -642,7 +642,7 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
 
     if ( pPos )
     {
-        rdVector_Copy3(&Sound_curUpdatePos, pPos);
+        Sound_curUpdatePos = *pPos;
     }
 
     SoundDriver_SetListenerPosition(pPos, pVelocity, pTopOrient, pFrontOrient);
@@ -666,10 +666,8 @@ LABEL_30:
                 && Sound_pfGetThingInfoCallback
                 && Sound_pfGetThingInfoCallback(pCurChannel->thingId, &thngSndInfo) )
             {
-                pCurChannel->playPos.x = thngSndInfo.pos.x;
-                pCurChannel->playPos.y = thngSndInfo.pos.y;
-                pCurChannel->playPos.z = thngSndInfo.pos.z;
-                pCurChannel->envflags  = thngSndInfo.envflags;
+                pCurChannel->playPos  = thngSndInfo.pos;
+                pCurChannel->envflags = thngSndInfo.envflags;
 
                 SoundDriver_SetPosAndVelocity(
                     pCurChannel->pDSoundBuffer,
@@ -696,9 +694,12 @@ LABEL_30:
                 pCurChannel->maxRadius,
                 pCurChannel->envflags) )
             {
-                Sound_StopChannel(pCurChannel->handle); // Fixed: Fixed bug to use correct channel handle; OG used count var
+                // Fixed: Added check for channel not being played far away. 
+                //        This prevents removing a looping sound
+                if ( (pCurChannel->flags & SOUND_CHANNEL_FAR) == 0 ) {
+                    Sound_StopChannel(pCurChannel->handle); // Fixed: Fixed bug to use correct channel handle; OG used count var
+                }
             }
-
             else if ( (pCurChannel->flags & SOUND_CHANNEL_RESTART) != 0 )
             {
                 pCurChannel->flags |= SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING;
@@ -758,6 +759,7 @@ LABEL_30:
                         channel.maxRadius,
                         channel.envflags
                     );
+
                     if ( !hChannel )
                     {
                         Sound_pHS->pErrorPrint("Sound_Update: Error restarting distant sound.\n");
@@ -782,6 +784,7 @@ LABEL_30:
 
     SoundDriver_ListenerCommitDeferred();
 
+    // Remove channels that have finished playing
     if ( Sound_apChannels )
     {
         for ( size_t i = 0; i < Sound_numChannels; ++i )
