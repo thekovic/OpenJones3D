@@ -205,8 +205,8 @@ int J3DAPI sithSprite_WriteStaticSpritesListBinary(tFileHandle fh, SithWorld* pW
 {
     for ( size_t i = 0; i < pWorld->numSprites; ++i )
     {
-        static_assert(STD_ARRAYLEN(pWorld->aSprites[i].aName) == 64, "STD_ARRAYLEN(pWorld->aSprites[i].aName) == 64");
-        if ( sith_g_pHS->pFileWrite(fh, &pWorld->aSprites[i].aName, STD_ARRAYLEN(pWorld->aSprites[i].aName)) != STD_ARRAYLEN(pWorld->aSprites[i].aName) )
+        static_assert(sizeof(pWorld->aSprites[i].aName) == 64, "sizeof(pWorld->aSprites[i].aName) == 64");
+        if ( sith_g_pHS->pFileWrite(fh, &pWorld->aSprites[i].aName, sizeof(pWorld->aSprites[i].aName)) != sizeof(pWorld->aSprites[i].aName) )
         {
             return 1;
         }
@@ -226,7 +226,7 @@ int J3DAPI sithSprite_ReadStaticSpritesListBinary(tFileHandle fh, SithWorld* pWo
     for ( size_t i = 0; i < numSprites; ++i )
     {
         char aFilename[64]; // Note, must be 64
-        if ( sith_g_pHS->pFileRead(fh, aFilename, STD_ARRAYLEN(aFilename)) != STD_ARRAYLEN(aFilename)
+        if ( sith_g_pHS->pFileRead(fh, aFilename, sizeof(aFilename)) != sizeof(aFilename)
             || !sithSprite_Load(pWorld, aFilename) )
         {
             return 1;
