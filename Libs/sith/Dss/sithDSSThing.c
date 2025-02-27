@@ -278,14 +278,30 @@ int J3DAPI sithDSSThing_Attachment(const SithThing* pThing, DPID idTo, unsigned 
         SITHDSS_PUSHINT32(pThing->attach.attachedToStructure.pThingAttached->guid);
        /**(uint32_t*)pCurOut = pThing->attach.attachedToStructure.pThingAttached->guid;
        pCurOut = &sithMulti_g_message.data[10];*/
+
         if ( (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0 )
         {
             SithThing* pThingAttached = pThing->attach.attachedToStructure.pThingAttached;
             if ( pThingAttached && pThingAttached->renderData.data.pModel3 )
             {
-                SITHDSS_PUSHINT16(pThing->attach.pFace - pThing->attach.attachedToStructure.pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->aFaces);
-               /**(uint16_t*)pCurOut = pThing->attach.pFace - pThing->attach.attachedToStructure.pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->aFaces;
-               pCurOut = &sithMulti_g_message.data[12];*/
+                // Note: This is buggy as the attached pFace can be from any of the model's mesh and not from the first one.
+                const rdModel3Mesh* pMesh = pThing->attach.attachedToStructure.pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes;
+                int16_t faceIdx = pThing->attach.pFace - pMesh->aFaces;
+
+                // Fixed: Added
+                if ( faceIdx >= 0 && faceIdx < pMesh->numFaces ) {
+                    SITHDSS_PUSHINT16(faceIdx);
+                }
+                else
+                {
+                    // TODO: This is quick fix, a better solution would be to pack mesh index and face index in int16.
+                    //       Note, the vanilla engine doesn't handle -1 index on load and can crash the game.
+                    //       But we don't care as it could crash anyway since the index is invalid.
+                    SITHDSS_PUSHINT16(-1);
+                }
+
+                /**(uint16_t*)pCurOut = pThing->attach.pFace - pThing->attach.attachedToStructure.pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->aFaces;
+                pCurOut = &sithMulti_g_message.data[12];*/
             }
             else
             {
@@ -372,10 +388,20 @@ int J3DAPI sithDSSThing_ProcessAttachment(const SithMessage* pMsg)
         {
             int faceIdx = SITHDSS_POPINT16();
 
-            // TODO: [BUG] faceIdx can be -1 here
-            rdFace* pFaceAttached = &pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->aFaces[faceIdx];
-            rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->apVertices[*pFaceAttached->aVertices]);
-            pThing->attach.pFace = pFaceAttached;
+            // Fixed: Add null check and index bound check
+            if ( pThingAttached->renderData.data.pModel3 && faceIdx >= 0 && faceIdx < pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->numFaces )
+            {
+                rdFace* pFaceAttached = &pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->aFaces[faceIdx];
+                rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &pThingAttached->renderData.data.pModel3->aGeos[0].aMeshes->apVertices[*pFaceAttached->aVertices]);
+                pThing->attach.pFace = pFaceAttached;
+            }
+            else // Added
+            {
+                pThing->attach.flags &= ~SITH_ATTACH_THINGFACE;
+                if ( pThing->attach.flags == 0 ) {
+                    pThing->attach.flags |= SITH_ATTACH_THING;
+                }
+            }
         }
         else
         {
