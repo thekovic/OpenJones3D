@@ -414,19 +414,15 @@ void J3DAPI sithCogFunction_SetTimer(SithCog* pCog)
 void J3DAPI sithCogFunction_SetTimerEx(SithCog* pCog)
 {
     SithEventParams params;
-    int msWhen;
-    float when;
-
     params.param3 = sithCogExec_PopInt(pCog);
     params.param2 = sithCogExec_PopInt(pCog);
     params.param1 = sithCogExec_PopInt(pCog);
     params.idx = pCog->idx;
-    when = sithCogExec_PopFlex(pCog) * 1000.0f;
+    int msWhen = (int)(sithCogExec_PopFlex(pCog) * 1000.0f);
 
-    msWhen = (int)when;
     if ( msWhen >= 0 )
     {
-        sithEvent_CreateEvent(4u, &params, (int)when);
+        sithEvent_CreateEvent(4u, &params, msWhen);
     }
 }
 
@@ -435,9 +431,9 @@ void J3DAPI sithCogFunction_KillTimerEx(SithCog* pCog)
     int timerId = sithCogExec_PopInt(pCog);
     if ( timerId > 0 )
     {
-        SithEvent* pCurEvent = NULL;
+        SithEvent* pPrevEvent = NULL;
         SithEvent* pNextEvent = NULL;
-        for ( SithEvent* pPrevEvent = sithEvent_g_pFirstQueuedEvent; pCurEvent; pCurEvent = pNextEvent )
+        for ( SithEvent* pCurEvent = sithEvent_g_pFirstQueuedEvent; pCurEvent; pCurEvent = pNextEvent )
         {
             pNextEvent = pCurEvent->pNextEvent;
             if ( pCurEvent->taskNum == SITHCOG_TASKID && pCurEvent->params.idx == pCog->idx && pCurEvent->params.param1 == timerId )
