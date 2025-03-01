@@ -691,11 +691,7 @@ LABEL_30:
                 pCurChannel->maxRadius,
                 pCurChannel->envflags) )
             {
-                // Fixed: Added check for channel not being played far away. 
-                //        This prevents removing a looping sound
-                if ( (pCurChannel->flags & SOUND_CHANNEL_FAR) == 0 ) {
-                    Sound_StopChannel(pCurChannel->handle); // Fixed: Fixed bug to use correct channel handle; OG used count var
-                }
+                Sound_StopChannel(pCurChannel->handle); // Fixed: Fixed bug to use correct channel handle; OG used count var
             }
             else if ( (pCurChannel->flags & SOUND_CHANNEL_RESTART) != 0 )
             {

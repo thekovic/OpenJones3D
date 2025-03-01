@@ -11,6 +11,8 @@
 #include <std/General/stdPlatform.h>
 #include <std/General/stdUtil.h>
 
+#define SOUNDDRIVER_FARVOLUMETHRESHOLD 0.01f
+
 static float SoundDriver_maxVolume = 1.0f;
 static float Sound_defaultDistanceFactor = 0.30000001f;
 static float SoundDriver_defaultRolloffFactor = 1.0f;
@@ -91,8 +93,6 @@ void J3DAPI SoundDriver_RestoreSoundBufferData(LPDIRECTSOUNDBUFFER pDSBuf);
 
 void Driver_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
     J3D_HOOKFUNC(SoundDriver_Open);
     J3D_HOOKFUNC(SoundDriver_Close);
     J3D_HOOKFUNC(SoundDriver_SetMaxVolume);
@@ -134,191 +134,6 @@ void Driver_InstallHooks(void)
 
 void Driver_ResetGlobals(void)
 {}
-
-//int J3DAPI SoundDriver_Open(int bNoSound3D, int bGlobalFocus, HWND hwnd, LPDIRECTSOUND pDirectSound, SoundCalcListenerSoundMixFunc pfCalcListenerSoundMix, SoundDriverGetSoundBufferDataFunc pfGetSoundBufferData, tPrintfFunc pfLogError)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_Open, bNoSound3D, bGlobalFocus, hwnd, pDirectSound, pfCalcListenerSoundMix, pfGetSoundBufferData, pfLogError);
-//}
-//
-//void J3DAPI SoundDriver_Close()
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_Close);
-//}
-//
-//void J3DAPI SoundDriver_SetMaxVolume(float volume)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetMaxVolume, volume);
-//}
-
-//LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_CreateAndPlay(int samplesPerSec, int nBitsPerSample, unsigned int numChannels, const uint8_t* pSoundData, int dataSize, tSoundChannelFlag* pFlags, uint8_t* pAudioPtr1)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_CreateAndPlay, samplesPerSec, nBitsPerSample, numChannels, pSoundData, dataSize, pFlags, pAudioPtr1);
-//}
-
-//void J3DAPI SoundDriver_Release(LPDIRECTSOUNDBUFFER pDSBuf)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_Release, pDSBuf);
-//}
-//
-//void J3DAPI SoundDriver_Play(struct IDirectSoundBuffer* pDSBuf, int bLoop)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_Play, pDSBuf, bLoop);
-//}
-//
-//void J3DAPI SoundDriver_Stop(LPDIRECTSOUNDBUFFER pDSBuf)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_Stop, pDSBuf);
-//}
-//
-//void J3DAPI SoundDriver_SetVolume(LPDIRECTSOUNDBUFFER pDSBuf, float volume)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetVolume, pDSBuf, volume);
-//}
-//
-//float J3DAPI SoundDriver_GetVolume(LPDIRECTSOUNDBUFFER pDSBuf)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetVolume, pDSBuf);
-//}
-//
-//void J3DAPI SoundDriver_SetPan(LPDIRECTSOUNDBUFFER pDSoundBuf, float pan)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetPan, pDSoundBuf, pan);
-//}
-//
-//void J3DAPI SoundDriver_SetFrequency(LPDIRECTSOUNDBUFFER pDSBuf, float freq)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetFrequency, pDSBuf, freq);
-//}
-//
-//float J3DAPI SoundDriver_GetFrequency(LPDIRECTSOUNDBUFFER pDSBuf)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetFrequency, pDSBuf);
-//}
-//
-//int J3DAPI SoundDriver_GetCurrentPosition(LPDIRECTSOUNDBUFFER pDSoundBuf)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetCurrentPosition, pDSoundBuf);
-//}
-//
-//unsigned int J3DAPI SoundDriver_GetStatusAndCaps(LPDIRECTSOUNDBUFFER pDSBuffer)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetStatusAndCaps, pDSBuffer);
-//}
-
-//void J3DAPI SoundDriver_SetListenerPosition(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetListenerPosition, pPos, pVelocity, pTopOrient, pFrontOrient);
-//}
-//
-//void J3DAPI SoundDriver_ListenerCommitDeferred()
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_ListenerCommitDeferred);
-//}
-
-//void J3DAPI SoundDriver_SetPosAndVelocity(LPDIRECTSOUNDBUFFER pBuffer, float x, float y, float z, float velX, float velY, float velZ, float minDistance, float maxDistance)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetPosAndVelocity, pBuffer, x, y, z, velX, velY, velZ, minDistance, maxDistance);
-//}
-
-//int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, float y, float z, float volume, float pitch, tSoundChannelFlag* pChannelFlags, float minRadius, float maxRadius, SoundEnvFlags envflags)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_Update3DSound, ppDSBuf, x, y, z, volume, pitch, pChannelFlags, minRadius, maxRadius, envflags);
-//}
-
-//void J3DAPI SoundDriver_SetGlobals(float distanceFactor, float minDistance, float maxDistance, float rolloffFactor, float dopplerFactor)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetGlobals, distanceFactor, minDistance, maxDistance, rolloffFactor, dopplerFactor);
-//}
-
-//int J3DAPI SoundDriver_Use3DCaps()
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_Use3DCaps);
-//}
-//
-//LPDIRECTSOUND J3DAPI SoundDriver_GetDSound()
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetDSound);
-//}
-//
-//LPDIRECTSOUND J3DAPI SoundDriver_CreateDirectSound(int bNoSound3D)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_CreateDirectSound, bNoSound3D);
-//}
-//
-//void J3DAPI SoundDriver_ReleaseDirectSound(LPDIRECTSOUND pDSound)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_ReleaseDirectSound, pDSound);
-//}
-//
-//void J3DAPI SoundDriver_CreateListener()
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_CreateListener);
-//}
-//
-//void J3DAPI SoundDriver_ReleaseListener()
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_ReleaseListener);
-//}
-//
-//void J3DAPI SoundDriver_SetOuputFormat(LPDIRECTSOUND pDSound, uint32_t nSamplesPerSec, unsigned int nBitsPerSample, int numChannels)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_SetOuputFormat, pDSound, nSamplesPerSec, nBitsPerSample, numChannels);
-//}
-//
-//LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_GetPrimaryDSBuffer(LPDIRECTSOUND pDSound)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetPrimaryDSBuffer, pDSound);
-//}
-//
-//void J3DAPI SoundDriver_ReleasePrimaryDSBuffer()
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_ReleasePrimaryDSBuffer);
-//}
-//
-//int J3DAPI SoundDriver_GetDecibelVolume(float volume)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetDecibelVolume, volume);
-//}
-//
-//LONG J3DAPI SoundDriver_GetIntPan(float pan)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetIntPan, pan);
-//}
-//
-//float J3DAPI SoundDriver_GetVolumeFromDecibels(int dB)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_GetVolumeFromDecibels, dB);
-//}
-//
-//void J3DAPI SoundDriver_InitPanTable()
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_InitPanTable);
-//}
-//
-//HRESULT J3DAPI SoundDriver_DSCheckStatus(HRESULT code, int codeLine)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_DSCheckStatus, code, codeLine);
-//}
-//
-//void J3DAPI SoundDriver_CalcListeneSoundMix(float x, float y, float z, float volume, float pitch, float* newVolume, float* pan, float* newPitch, float minRadius, float maxRadius, SoundEnvFlags envflags)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_CalcListeneSoundMix, x, y, z, volume, pitch, newVolume, pan, newPitch, minRadius, maxRadius, envflags);
-//}
-//
-//double J3DAPI SoundDriver_CalcDistToListener(float x1, float y1, float z1, float x2, float y2, float z2)
-//{
-//    return J3D_TRAMPOLINE_CALL(SoundDriver_CalcDistToListener, x1, y1, z1, x2, y2, z2);
-//}
-
-//void J3DAPI SoundDriver_RestoreSoundBufferData(LPDIRECTSOUNDBUFFER pDSBuf)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_RestoreSoundBufferData, pDSBuf);
-//}
-
-//void J3DAPI SoundDriver_Sleep(unsigned int dwMilliseconds)
-//{
-//    J3D_TRAMPOLINE_CALL(SoundDriver_Sleep, dwMilliseconds);
-//}
 
 int J3DAPI SoundDriver_Open(int bNoSound3D, int bGlobalFocus, HWND hwnd, LPDIRECTSOUND pDirectSound, SoundCalcListenerSoundMixFunc pfCalcListenerSoundMix, SoundDriverGetSoundBufferDataFunc pfGetSoundBufferData, tPrintfFunc pfLogError)
 {
@@ -924,7 +739,9 @@ int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, floa
     if ( !b3DControl )
     {
         SoundDriver_CalcListeneSoundMix(x, y, z, volume, pitch, &newVolume, &pan, &newPitch, minRadius, maxRadius, envflags);
-        if ( newVolume < 0.01f && (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) != (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING) )
+        if ( newVolume < SOUNDDRIVER_FARVOLUMETHRESHOLD
+            && (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) != (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
+            && (*pChannelFlags & (SOUND_CHANNEL_FAR)) != (SOUND_CHANNEL_FAR) ) // Fixed: Added check for channel being played far away. This prevents removing a looping sound in the Sound_Update at far distance that is out of hearing range.
         {
             return 0;
         }
@@ -963,7 +780,7 @@ int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, floa
 
     if ( (*pChannelFlags & SOUND_CHANNEL_FAR) != 0 )
     {
-        if ( newVolume > 0.01f )
+        if ( newVolume > SOUNDDRIVER_FARVOLUMETHRESHOLD )
         {
             *pChannelFlags |= SOUND_CHANNEL_RESTART;
             return 1;
@@ -973,7 +790,7 @@ int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, floa
     // TODO: [BUG] Far sound should be also stopped here when newVolume <= 0
     else if ( (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == 3
         && (*pChannelFlags & SOUND_CHANNEL_3DSOUND) == SOUND_CHANNEL_3DSOUND
-        && newVolume < 0.01f )
+        && newVolume < SOUNDDRIVER_FARVOLUMETHRESHOLD )
     {
         SoundDriver_Stop(pDSBuf);
         if ( pDSBuf )
