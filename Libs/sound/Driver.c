@@ -787,8 +787,9 @@ int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, floa
         }
     }
 
-    // TODO: [BUG] Far sound should be also stopped here when newVolume <= 0
-    else if ( (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == 3
+    // Fixed: Always stop currently looping far sound when volume drops below SOUNDDRIVER_FARVOLUMETHESHOLD.
+    //        Originally, far marked looping sound was not stopped due to else if branch here.
+    if ( (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
         && (*pChannelFlags & SOUND_CHANNEL_3DSOUND) == SOUND_CHANNEL_3DSOUND
         && newVolume < SOUNDDRIVER_FARVOLUMETHRESHOLD )
     {
