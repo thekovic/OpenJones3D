@@ -11,19 +11,21 @@
 
 J3D_EXTERN_C_START
 
-void J3DAPI sithPathMove_SkipToFrame(SithThing* pThing, int frame, float velocity);
-int J3DAPI sithPathMove_MoveToFrame(SithThing* pThing, int frame, float velocity);
+void J3DAPI sithPathMove_SkipToFrame(SithThing* pThing, size_t frame, float velocity);
+void J3DAPI sithPathMove_MoveToFrame(SithThing* pThing, size_t frame, float velocity);
 void J3DAPI sithPathMove_RotatePivot(SithThing* pThing, const rdVector3* pOffset, const rdVector3* pRot, float rotTime);
-void J3DAPI sithPathMove_FollowNextPath(SithThing* pThing);
-double J3DAPI sithPathMove_MoveToPos(SithThing* pThing, SithPathFrame* pos);
+
+float J3DAPI sithPathMove_MoveToPos(SithThing* pThing, SithPathFrame* pos);
 void J3DAPI sithPathMove_RotateToPYR(SithThing* pThing, rdVector3* pyr, float time);
+
 void J3DAPI sithPathMove_Update(SithThing* pThing, float simTime);
-signed int J3DAPI sithPathMove_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
-void J3DAPI sithPathMove_SendMessageBlocked(SithThing* pThing);
-void J3DAPI sithPathMove_UpdatePath(SithThing* pThing);
+int J3DAPI sithPathMove_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+
 void J3DAPI sithPathMove_Finish(SithThing* pThing);
-signed int J3DAPI sithPathMove_PathMovePause(SithThing* pThing);
-signed int J3DAPI sithPathMove_PathMoveResume(SithThing* pThing);
+
+int J3DAPI sithPathMove_PathMovePause(SithThing* pThing);
+int J3DAPI sithPathMove_PathMoveResume(SithThing* pThing);
+
 void J3DAPI sithPathMove_Create(SithThing* pNewThing, const SithThing* pMarker, const rdVector3* pOffset);
 
 // Helper hooking functions

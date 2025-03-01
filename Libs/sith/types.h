@@ -2281,8 +2281,8 @@ typedef struct sSithPathFrame
 
 typedef struct sSithPathMoveInfo
 {
-    int sizeFrames;
-    int numFrames;
+    size_t sizeFrames;
+    size_t numFrames;
     SithPathFrame* aFrames;
     SithPathMoveMode mode;
     rdVector3 vecDeltaPos;
@@ -2294,11 +2294,12 @@ typedef struct sSithPathMoveInfo
     rdVector3 goalPYR;
     rdVector3 rotateToPYR;
     float rotDelta;
-    int numBlockedMoves;
-    int currentFrame;
-    int nextFrame;
-    int goalFrame;
+    size_t numBlockedMoves;
+    int currentFrame; // can be -1
+    size_t nextFrame;
+    size_t goalFrame;
 } SithPathMoveInfo;
+static_assert(sizeof(SithPathMoveInfo) == 144, "sizeof(SithPathMoveInfo) == 144");
 
 typedef struct sSithPhysicsInfo
 {
