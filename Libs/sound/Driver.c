@@ -135,6 +135,25 @@ void Driver_InstallHooks(void)
 void Driver_ResetGlobals(void)
 {}
 
+static void SoundDriver_LogError(const char* pFormat, ...)
+{
+    if ( SoundDriver_pfLogError )
+    {
+        va_list args;
+        va_start(args, pFormat);
+
+        // Create a new va_list for the function call
+        va_list argsCopy;
+        va_copy(argsCopy, args);
+
+        // Forward the variable arguments to SoundDriver_pfLogError
+        SoundDriver_pfLogError(pFormat, argsCopy);
+
+        va_end(argsCopy);
+        va_end(args);
+    }
+}
+
 int J3DAPI SoundDriver_Open(int bNoSound3D, int bGlobalFocus, HWND hwnd, LPDIRECTSOUND pDirectSound, SoundCalcListenerSoundMixFunc pfCalcListenerSoundMix, SoundDriverGetSoundBufferDataFunc pfGetSoundBufferData, tPrintfFunc pfLogError)
 {
     SoundDriver_pfLogError         = pfLogError;
@@ -344,10 +363,17 @@ LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_CreateAndPlay(size_t samplesPerSec, size_
                 if ( lpvAudioPtr2 )
                 {
                     uint8_t* pUncompressedData = (uint8_t*)malloc(dataSize);
-                    AudioLib_Uncompress(&compressor, pUncompressedData, ((tAudioCompressedData*)pSoundData)->compressedData, dataSize);
-                    memcpy(lpvAudioPtr1, pUncompressedData, dwAudioBytes1);
-                    memcpy(lpvAudioPtr2, &pUncompressedData[dwAudioBytes1], dwAudioBytes2);
-                    free(pUncompressedData);
+                    if ( pUncompressedData ) // Fixed: Added check for null ptr
+                    {
+                        AudioLib_Uncompress(&compressor, pUncompressedData, ((tAudioCompressedData*)pSoundData)->compressedData, dataSize);
+                        memcpy(lpvAudioPtr1, pUncompressedData, dwAudioBytes1);
+                        memcpy(lpvAudioPtr2, &pUncompressedData[dwAudioBytes1], dwAudioBytes2);
+                        free(pUncompressedData);
+                    }
+                    else
+                    {
+                        SoundDriver_LogError("SoundDriver: SoundDriver_CreateAndPlay Failed to allocate memory to uncompress data.");
+                    }
                 }
                 else
                 {
@@ -853,11 +879,7 @@ LPDIRECTSOUND J3DAPI SoundDriver_CreateDirectSound(int bNoSound3D)
     LPDIRECTSOUND pDSound = NULL;
     if ( DirectSoundCreate(NULL, &pDSound, NULL) != DS_OK )
     {
-        if ( SoundDriver_pfLogError )
-        {
-            SoundDriver_pfLogError("DirectSound: Original DS fails\n");
-        }
-
+        SoundDriver_LogError("DirectSound: Original DS fails\n");
         return NULL;
     }
 
@@ -869,11 +891,7 @@ LPDIRECTSOUND J3DAPI SoundDriver_CreateDirectSound(int bNoSound3D)
             IDirectSound_Release(pDSound);
         }
 
-        if ( SoundDriver_pfLogError )
-        {
-            SoundDriver_pfLogError("DirectSound: Set co-operative level fails!\n");
-        }
-
+        SoundDriver_LogError("DirectSound: Set co-operative level fails!\n");
         SoundDriver_bUse3DCaps = 0;
         return NULL;
     }
@@ -944,10 +962,7 @@ void J3DAPI SoundDriver_SetOuputFormat(LPDIRECTSOUND pDSound, uint32_t nSamplesP
     LPDIRECTSOUNDBUFFER pBuffer = SoundDriver_GetPrimaryDSBuffer(pDSound);
     if ( !pBuffer )
     {
-        if ( SoundDriver_pfLogError )
-        {
-            SoundDriver_pfLogError("Sound.DLL: SetOuputFormat: Grabbing primary buffer fails!\n");
-        }
+        SoundDriver_LogError("Sound.DLL: SetOuputFormat: Grabbing primary buffer fails!\n");
         return;
     }
 
@@ -1095,11 +1110,7 @@ HRESULT J3DAPI SoundDriver_DSCheckStatus(HRESULT code, size_t codeLine)
         return code;
     }
 
-    if ( SoundDriver_pfLogError )
-    {
-        SoundDriver_pfLogError("Sound.DLL Driver.C:%d Return value: %s\n", codeLine, pEntry->text);
-    }
-
+    SoundDriver_LogError("Sound.DLL Driver.C:%d Return value: %s\n", codeLine, pEntry->text);
     return code;
 }
 
@@ -1254,10 +1265,17 @@ void J3DAPI SoundDriver_RestoreSoundBufferData(LPDIRECTSOUNDBUFFER pDSBuf)
                 if ( lpvAudioPtr2 )
                 {
                     uint8_t* pUncompressedData = (uint8_t*)malloc(uncompressedSize);
-                    AudioLib_Uncompress(&compresor, pUncompressedData, ((tAudioCompressedData*)pSoundData)->compressedData, uncompressedSize);
-                    memcpy(lpvAudioPtr1, pUncompressedData, dwAudioBytes1);
-                    memcpy(lpvAudioPtr2, &pUncompressedData[dwAudioBytes1], dwAudioBytes2);
-                    free(pUncompressedData);
+                    if ( pUncompressedData ) // Fixed: Added check for null ptr 
+                    {
+                        AudioLib_Uncompress(&compresor, pUncompressedData, ((tAudioCompressedData*)pSoundData)->compressedData, uncompressedSize);
+                        memcpy(lpvAudioPtr1, pUncompressedData, dwAudioBytes1);
+                        memcpy(lpvAudioPtr2, &pUncompressedData[dwAudioBytes1], dwAudioBytes2);
+                        free(pUncompressedData);
+                    }
+                    else
+                    {
+                        SoundDriver_LogError("SoundDriver: SoundDriver_RestoreSoundBufferData Failed to allocate memory to uncompress data.");
+                    }
                 }
                 else
                 {

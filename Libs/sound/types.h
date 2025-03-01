@@ -127,7 +127,7 @@ typedef struct sAudioCompressorState
 typedef struct sAudioCompressedData
 {
     uint32_t uncompressedSize;
-    uint8_t compressedData[];
+    uint8_t compressedData[1];
 } tAudioCompressedData;
 
 struct sSoundSpatialInfo
