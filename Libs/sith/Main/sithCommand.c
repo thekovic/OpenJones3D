@@ -580,7 +580,6 @@ int J3DAPI sithCommand_Fly(const SithConsoleCommand* pFunc, const char* pArg)
         return 0;
     }
 
-
     if ( bEnable )
     {
         pPlayer->moveInfo.physics.flags |= SITH_PF_FLY;
@@ -588,9 +587,46 @@ int J3DAPI sithCommand_Fly(const SithConsoleCommand* pFunc, const char* pArg)
     }
     else
     {
-
         pPlayer->moveInfo.physics.flags &= ~SITH_PF_FLY;
         pPlayer->moveInfo.physics.flags |= SITH_PF_USEGRAVITY;
+    }
+
+    return 1;
+}
+
+int J3DAPI sithCommand_NoClip(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    if ( !sithWorld_g_pCurrentWorld || !sithWorld_g_pCurrentWorld->pLocalPlayer )
+    {
+        sithConsole_PrintString("No world.");
+        return 0;
+    }
+
+    SithThing* pPlayer = sithWorld_g_pCurrentWorld->pLocalPlayer;
+
+    if ( !pArg )
+    {
+        SITHCONSOLE_PRINTF("noclip %s", pPlayer->collide.type == 0 ? "on" : "off");
+        return 0;
+    }
+
+    bool bEnable;
+    if ( !sithCommand_ParseBool(pArg, &bEnable) )
+    {
+        sithConsole_PrintString("Invalid argument!");
+        return 0;
+    }
+
+    if ( bEnable )
+    {
+        pPlayer->collide.type = 0;
+    }
+    else
+    {
+        pPlayer->collide.type = 1;
     }
 
     return 1;
@@ -1126,6 +1162,7 @@ void sithCommand_RegisterCommands(void)
     sithConsole_RegisterCommand(sithCommand_IMP5, "imp5", SITHCONSOLE_DEVMODE); // Added: From debug version
 
     sithConsole_RegisterCommand(sithCommand_Fly, "fly", SITHCONSOLE_DEVMODE); // Added: From debug version
+    sithConsole_RegisterCommand(sithCommand_NoClip, "noclip", SITHCONSOLE_DEVMODE); // Added
 
     sithConsole_RegisterCommand(sithCommand_Players, "players", SITHCONSOLE_DEVMODE); // Added: From debug version
     sithConsole_RegisterCommand(sithCommand_PingPlayer, "ping", SITHCONSOLE_DEVMODE); // Added: From debug version
