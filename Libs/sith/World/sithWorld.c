@@ -109,8 +109,8 @@ void sithWorld_ResetGlobals(void)
       },
       {
         "soundclasses",
-        &sithSoundClass_CNDReadSoundClassSection,
-        &sithSoundClass_CNDWriteSoundClassSection
+        &sithSoundClass_ReadSoundClassesListBinary,
+        &sithSoundClass_WriteSoundClassesListBinary
       },
       {
         "cogcripts",

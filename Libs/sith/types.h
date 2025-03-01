@@ -33,6 +33,8 @@ J3D_EXTERN_C_START
 
 #define SITHINVENTORY_MAXTYPES 200u
 
+#define SITHSOUNDCLASS_MAXMODES 141u
+
 typedef enum eSithThingType
 {
     SITH_THING_FREE      = 0,
@@ -2248,15 +2250,17 @@ struct sSithSoundClassEntry
     float maxVolume;
     float minRadius;
     float maxRadius;
-    int numEntries;
+    size_t numEntries;
     SithSoundClassEntry* pNextMode;
 };
+static_assert(sizeof(SithSoundClassEntry) == 28, "sizeof(SithSoundClassEntry) == 28");
 
 typedef struct sSithSoundClass
 {
     char aName[64];
-    SithSoundClassEntry* aEntries[141];
+    SithSoundClassEntry* aEntries[SITHSOUNDCLASS_MAXMODES];
 } SithSoundClass;
+static_assert(sizeof(SithSoundClass) == 628, "sizeof(SithSoundClass) == 628");
 
 typedef struct sSithPuppetClassSubmode
 {
