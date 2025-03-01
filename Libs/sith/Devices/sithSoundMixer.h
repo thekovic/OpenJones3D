@@ -33,7 +33,9 @@ void J3DAPI sithSoundMixer_SetPitch(tSoundChannelHandle hChannel, float pitch); 
 void J3DAPI sithSoundMixer_SetPitchThing(const SithThing* pThing, unsigned int handle, float pitch); // handle is either track handle or sound handle
 void J3DAPI sithSoundMixer_SetVolumeThing(const SithThing* pThing, unsigned int handle, float volume); // handle is either track handle or sound handle
 void J3DAPI sithSoundMixer_FadeVolumeThing(const SithThing* pThing, unsigned int handle, float startVolume, float endVolume); // handle is either track handle or sound handle
+
 int J3DAPI sithSoundMixer_IsThingFadingVol(const SithThing* pThing, unsigned int handle); // handle is either track handle or sound handle
+bool J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, unsigned int handle); // Added: From debug version
 
 void sithSoundMixer_Update(void);
 

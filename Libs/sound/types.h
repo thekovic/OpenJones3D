@@ -42,10 +42,10 @@ typedef enum eSoundChannelFlag J3D_ENUM_TYPE(uint32_t)
         SOUND_CHANNEL_SWMIXING         = 0x400000,
         SOUND_CHANNEL_UNKNOWN_800000   = 0x800000,
         SOUND_CHANNEL_RESTART          = 0x1000000,
-        SOUND_CHANNEL_UNKNOWN_2000000  = 0x2000000,
+        SOUND_CHANNEL_STARTFAR         = 0x2000000, // this is used in sound module when looping sound is far away from initial camera position, so the sound doesn't play
         SOUND_CHANNEL_USE3DCAPS        = 0x4000000,
-        SOUND_CHANNEL_UNKNOWN_8000000  = 0x8000000,
-        SOUND_CHANNEL_UNKNOWN_10000000 = 0x10000000,
+        SOUND_CHANNEL_UNKNOWN_8000000  = 0x8000000, // Disables distance check for 3D sound
+        SOUND_CHANNEL_DISABLEHWMIXING  = 0x10000000,
 } tSoundChannelFlag;
 
 typedef enum eSoundEnvFlags
@@ -123,6 +123,12 @@ typedef struct sAudioCompressorState
     int16_t unknown3;
     int16_t unknown4;
 } tAudioCompressorState;
+
+typedef struct sAudioCompressedData
+{
+    uint32_t uncompressedSize;
+    uint8_t compressedData[];
+} tAudioCompressedData;
 
 struct sSoundSpatialInfo
 {

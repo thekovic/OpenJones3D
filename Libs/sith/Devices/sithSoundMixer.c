@@ -60,8 +60,7 @@ void sithSoundMixer_InstallHooks(void)
 }
 
 void sithSoundMixer_ResetGlobals(void)
-{
-}
+{}
 
 int sithSoundMixer_Startup(void)
 {
@@ -230,7 +229,7 @@ int J3DAPI sithSoundMixer_IsThingFadingVol(const SithThing* pThing, unsigned int
     return Sound_IsThingFadingVol(thingID, handle);
 }
 
-int J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, int handle)
+bool J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, unsigned int handle)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     return Sound_IsThingFadingPitch(thingID, handle);

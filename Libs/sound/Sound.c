@@ -11,7 +11,6 @@
 
 #define Sound_cacheBlockSize J3D_DECL_FAR_VAR(Sound_cacheBlockSize, int)
 #define Sound_maxVolume J3D_DECL_FAR_VAR(Sound_maxVolume, float)
-#define Sound_defaultDistanceFactor J3D_DECL_FAR_VAR(Sound_defaultDistanceFactor, float)
 #define Sound_pfGetThingInfoCallback J3D_DECL_FAR_VAR(Sound_pfGetThingInfoCallback, SoundGetThingInfoCallback)
 #define Sound_aFades J3D_DECL_FAR_ARRAYVAR(Sound_aFades, SoundFade(*)[48])
 #define Sound_nextHandle J3D_DECL_FAR_VAR(Sound_nextHandle, int)
@@ -130,8 +129,6 @@ void Sound_ResetGlobals(void)
     float Sound_maxVolume_tmp = 1.0f;
     memcpy(&Sound_maxVolume, &Sound_maxVolume_tmp, sizeof(Sound_maxVolume));
 
-    float Sound_defaultDistanceFactor_tmp = 0.30000001f;
-    memcpy(&Sound_defaultDistanceFactor, &Sound_defaultDistanceFactor_tmp, sizeof(Sound_defaultDistanceFactor));
 
     memset(&Sound_pfGetThingInfoCallback, 0, sizeof(Sound_pfGetThingInfoCallback));
     memset(&Sound_aFades, 0, sizeof(Sound_aFades));
@@ -682,7 +679,7 @@ LABEL_30:
                 );
             }
 
-            if ( !SoundDriver_Update(
+            if ( !SoundDriver_Update3DSound(
                 &pCurChannel->pDSoundBuffer,
                 pCurChannel->playPos.x,
                 pCurChannel->playPos.y,
