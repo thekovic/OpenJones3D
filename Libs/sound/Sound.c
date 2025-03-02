@@ -911,6 +911,11 @@ int J3DAPI Sound_Restore(tFileHandle fh)
 
             if ( Sound_startupState == SOUND_OPEN )
             {
+                // Fixed: Mark far sound as loop play sound
+                if ( (chflags & SOUND_CHANNEL_FAR) != 0 ) {
+                    chflags |= (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING);
+                }
+
                 if ( (chflags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) == (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND) )
                 {
                     tSoundChannelHandle hChannel = Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
@@ -939,196 +944,6 @@ int J3DAPI Sound_Restore(tFileHandle fh)
     // Read next handle and fades. 
     // Note, what's the point to read fades to system in case system is not opened? 
     return Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) == sizeof(uint32_t) && Sound_pHS->pFileRead(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);
-
-
-    //// sound module is opened
-    //uint32_t magic;
-    //if ( Sound_pHS->pFileRead(fh, &magic, sizeof(magic)) != sizeof(magic) )// section magic 
-    //{
-    //    return 0;
-    //}
-
-    //if ( magic != Sound_serMagic )
-    //{
-    //    // We're not at the ser sound position roll back position for sizeof(magic)
-    //    Sound_pHS->pFileSeek(fh, -sizeof(magic), 1);
-    //    return 0;
-    //}
-
-    //// Set initial listener position
-    //rdVector3 listnerPos;
-    //listnerPos.x = 100000.0f;
-    //listnerPos.y = 100000.0f;
-    //listnerPos.z = 100000.0f;
-    //Sound_StopAllSounds();
-    //Sound_Update(&listnerPos, NULL, NULL, NULL);
-
-    //// Read pause count
-    //if ( Sound_pHS->pFileRead(fh, &Sound_pausedRefCount, sizeof(uint32_t)) != sizeof(uint32_t) )
-    //{
-    //    return 0;
-    //}
-
-    //Sound_pausedRefCount = 0; // ??
-
-    //// Read delta time
-    //uint32_t pauseDeltaTime;
-    //if ( Sound_pHS->pFileRead(fh, &pauseDeltaTime, sizeof(pauseDeltaTime)) != sizeof(pauseDeltaTime) )
-    //{
-    //    return 0;
-    //}
-
-    //Sound_msecElapsed = SoundDriver_GetTimeMsec() - pauseDeltaTime;
-
-    //// Read pause delta time
-    //if ( Sound_pHS->pFileRead(fh, &Sound_msecPauseStartTime, 4) != 4 )
-    //{
-    //    return 0;
-    //}
-
-    //Sound_msecPauseStartTime += SoundDriver_GetTimeMsec();
-
-    //// Read first file name size
-    //if ( Sound_pHS->pFileRead(fh, &var, 4) != 4 )
-    //{
-    //    return 0;
-    //}
-
-    //while ( var )
-    //{
-    //    if ( var <= 256 )
-    //    {
-    //        // Read sound filename
-    //        nRead = Sound_pHS->pFileRead(fh, Sound_sndFilename, var);
-    //        if ( nRead != var )
-    //        {
-    //            return 0;
-    //        }
-
-    //        // Read sound bank num
-    //        if ( Sound_pHS->pFileRead(fh, &bankNum, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        // Read sound index
-    //        if ( Sound_pHS->pFileRead(fh, &var, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        // Read channel handle
-    //        if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( bankNum )                      // 1 - normal, 0 - static
-    //        {
-    //            hSnd = Sound_Load(Sound_sndFilename, &var);
-    //        }
-    //        else
-    //        {
-    //            hSnd = Sound_LoadStatic(Sound_sndFilename, &var);
-    //        }
-
-    //        // Read sound handle
-    //        if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &priority, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &thingId, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &posX, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &posY, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &posZ, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &volume, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &pitch, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &sampleRate, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &chflags, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &guid, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &minRadius, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &maxRadius, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( Sound_pHS->pFileRead(fh, &envflags, 4) != 4 )
-    //        {
-    //            return 0;
-    //        }
-
-    //        if ( (chflags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) == (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND) )
-    //        {
-    //            hChannel = Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
-    //            pChannel = Sound_GetChannel(hChannel);
-    //            if ( pChannel )
-    //            {
-    //                pChannel->thingId = thingId;
-    //                pChannel->flags |= SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND;
-    //            }
-    //        }
-
-    //        else if ( (chflags & SOUND_CHANNEL_3DSOUND) != 0 )
-    //        {
-    //            chflags |= SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING;
-    //            Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
-    //        }
-    //    }
-
-    //    // Read the next sound track filename size
-    //    if ( Sound_pHS->pFileRead(fh, &var, 4) != 4 )
-    //    {
-    //        return 0;
-    //    }
-    //}
-
-    //return Sound_pHS->pFileRead(fh, &Sound_nextHandle, 4) == 4 && Sound_pHS->pFileRead(fh, Sound_aFades, 1152) == 1152;// 1152 = sizeof(Fade) * 48
 }
 
 
@@ -1261,7 +1076,6 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
     int count = Sound_numChannels;
     tSoundChannel* pCurChannel = &Sound_apChannels[Sound_numChannels];
 
-LABEL_30:
     while ( 1 )
     {
         --pCurChannel;
@@ -1338,8 +1152,7 @@ LABEL_30:
                             {
                                 pChannel->flags &= ~SOUND_CHANNEL_RESTART;
                                 pChannel->handle = channel.handle;
-                                break;
-                                goto LABEL_30;
+                                break; // Should continue the while loop
                             }
                         }
                     }
@@ -1381,7 +1194,7 @@ LABEL_30:
                             {
                                 pChannel->flags &= ~SOUND_CHANNEL_RESTART;
                                 pChannel->handle = channel.handle;
-                                goto LABEL_30;
+                                break; // Should continue the while loop
                             }
                         }
                     }
