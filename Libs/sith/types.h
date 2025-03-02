@@ -2426,7 +2426,7 @@ struct sSithAIControlBlock
     SithAIClass* pClass;
     SithAIMode mode;
     SithAISubMode submode;
-    SithAIInstinctState aInstinctStates[16];
+    SithAIInstinctState aInstinctStates[SITHAI_MAXINSTINCTS];
     size_t numInstincts;
     uint32_t msecNextUpdate;
     rdVector3 goalLVec;
