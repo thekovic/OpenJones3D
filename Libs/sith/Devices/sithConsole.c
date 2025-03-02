@@ -294,13 +294,17 @@ int J3DAPI sithConsole_Help(const SithConsoleCommand* pFunc, const char* pArg)
     sithConsole_PrintString("The following commands are available:");
     for ( size_t i = 0; i < numRegistredCommands; ++i )
     {
-        if ( curPos + strlen(apCommands[i].aName) + 5 >= 56 )
+        const SithConsoleCommand* pCommand = &apCommands[i];
+        if ( (pCommand->flags & SITHCONSOLE_DEVMODE) == 0 || (consoleflags & SITHCONSOLE_DEVMODE) != 0 ) // Added
         {
-            sithConsole_PrintString(aLine);
-            curPos = 0;
-        }
+            if ( curPos + strlen(pCommand->aName) + 5 >= 56 )
+            {
+                sithConsole_PrintString(aLine);
+                curPos = 0;
+            }
 
-        curPos += sprintf_s(&aLine[curPos], STD_ARRAYLEN(aLine) - curPos, "    %s", apCommands[i].aName);
+            curPos += sprintf_s(&aLine[curPos], STD_ARRAYLEN(aLine) - curPos, "    %s", pCommand->aName);
+        }
     }
 
     sithConsole_PrintString(aLine);
