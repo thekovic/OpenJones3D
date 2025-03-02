@@ -9,6 +9,14 @@
 
 #include <std/General/stdUtil.h>
 
+#define SOUND_OPEN 3u
+
+static const uint32_t Sound_serMagic        = 0x12345678u;
+static const uint32_t Sound_serSoundListEnd = 0u;
+
+static char Sound_sndFilename[256] = { 0 };
+
+
 #define Sound_cacheBlockSize J3D_DECL_FAR_VAR(Sound_cacheBlockSize, int)
 #define Sound_maxVolume J3D_DECL_FAR_VAR(Sound_maxVolume, float)
 #define Sound_pfGetThingInfoCallback J3D_DECL_FAR_VAR(Sound_pfGetThingInfoCallback, SoundGetThingInfoCallback)
@@ -24,7 +32,7 @@
 #define Sound_msecPauseStartTime J3D_DECL_FAR_VAR(Sound_msecPauseStartTime, unsigned int)
 #define Sound_msecElapsed J3D_DECL_FAR_VAR(Sound_msecElapsed, unsigned int)
 #define Sound_bGlobalFocusBuf J3D_DECL_FAR_VAR(Sound_bGlobalFocusBuf, int)
-#define Sound_sndFilename J3D_DECL_FAR_ARRAYVAR(Sound_sndFilename, char(*)[256])
+//#define Sound_sndFilename J3D_DECL_FAR_ARRAYVAR(Sound_sndFilename, char(*)[256])
 #define Sound_bNoSoundCompression J3D_DECL_FAR_VAR(Sound_bNoSoundCompression, int)
 #define Sound_maxChannels J3D_DECL_FAR_VAR(Sound_maxChannels, int)
 #define Sound_bLoadEnabled J3D_DECL_FAR_VAR(Sound_bLoadEnabled, int)
@@ -56,8 +64,8 @@ void Sound_InstallHooks(void)
     // J3D_HOOKFUNC(Sound_Shutdown);
     // J3D_HOOKFUNC(Sound_Open);
     // J3D_HOOKFUNC(Sound_Close);
-    // J3D_HOOKFUNC(Sound_Save);
-    // J3D_HOOKFUNC(Sound_Restore);
+    J3D_HOOKFUNC(Sound_Save);
+    J3D_HOOKFUNC(Sound_Restore);
     // J3D_HOOKFUNC(Sound_Pause);
     // J3D_HOOKFUNC(Sound_Resume);
     // J3D_HOOKFUNC(Sound_Set3DGlobals);
@@ -143,7 +151,7 @@ void Sound_ResetGlobals(void)
     memset(&Sound_msecPauseStartTime, 0, sizeof(Sound_msecPauseStartTime));
     memset(&Sound_msecElapsed, 0, sizeof(Sound_msecElapsed));
     memset(&Sound_bGlobalFocusBuf, 0, sizeof(Sound_bGlobalFocusBuf));
-    memset(&Sound_sndFilename, 0, sizeof(Sound_sndFilename));
+    //memset(&Sound_sndFilename, 0, sizeof(Sound_sndFilename));
     memset(&Sound_bNoSoundCompression, 0, sizeof(Sound_bNoSoundCompression));
     memset(&Sound_maxChannels, 0, sizeof(Sound_maxChannels));
     memset(&Sound_bLoadEnabled, 0, sizeof(Sound_bLoadEnabled));
@@ -196,15 +204,15 @@ void J3DAPI Sound_Close()
     J3D_TRAMPOLINE_CALL(Sound_Close);
 }
 
-int J3DAPI Sound_Save(tFileHandle fh)
-{
-    return J3D_TRAMPOLINE_CALL(Sound_Save, fh);
-}
-
-int J3DAPI Sound_Restore(tFileHandle fh)
-{
-    return J3D_TRAMPOLINE_CALL(Sound_Restore, fh);
-}
+//int J3DAPI Sound_Save(tFileHandle fh)
+//{
+//    return J3D_TRAMPOLINE_CALL(Sound_Save, fh);
+//}
+//
+//int J3DAPI Sound_Restore(tFileHandle fh)
+//{
+//    return J3D_TRAMPOLINE_CALL(Sound_Restore, fh);
+//}
 
 void J3DAPI Sound_Pause()
 {
@@ -241,12 +249,12 @@ unsigned int J3DAPI Sound_GetMemoryUsage()
     return J3D_TRAMPOLINE_CALL(Sound_GetMemoryUsage);
 }
 
-tSoundHandle J3DAPI Sound_Load(const char* filePath, int* sndIdx)
+tSoundHandle J3DAPI Sound_Load(const char* filePath, uint32_t* sndIdx)
 {
     return J3D_TRAMPOLINE_CALL(Sound_Load, filePath, sndIdx);
 }
 
-tSoundHandle J3DAPI Sound_LoadStatic(const char* pFilename, int* idx)
+tSoundHandle J3DAPI Sound_LoadStatic(const char* pFilename, uint32_t* idx)
 {
     return J3D_TRAMPOLINE_CALL(Sound_LoadStatic, pFilename, idx);
 }
@@ -518,6 +526,612 @@ int J3DAPI Sound_ReadFile(tFileHandle fh, void* pData, unsigned int size)
     return J3D_TRAMPOLINE_CALL(Sound_ReadFile, fh, pData, size);
 }
 
+
+
+int J3DAPI Sound_Save(tFileHandle fh)
+{
+    if ( Sound_startupState < 1 )
+    {
+        Sound_pHS->pErrorPrint("Sound_Save: module is not initialized.\n");
+        return 0;
+    }
+
+    // section marker (header magic)
+    if ( Sound_pHS->pFileWrite(fh, &Sound_serMagic, sizeof(Sound_serMagic)) != sizeof(Sound_serMagic) )
+    {
+        static_assert(sizeof(Sound_serMagic) == 4, "sizeof(Sound_sermagic) == 4");
+        return 0;
+    }
+
+    if ( Sound_pHS->pFileWrite(fh, &Sound_pausedRefCount, sizeof(Sound_pausedRefCount)) != sizeof(Sound_pausedRefCount) )
+    {
+        static_assert(sizeof(Sound_pausedRefCount) == 4, "sizeof(Sound_pausedRefCount) == 4");
+        return 0;
+    }
+
+    const uint32_t curDetlatTime = Sound_GetDeltaTime();
+    if ( Sound_pHS->pFileWrite(fh, &curDetlatTime, sizeof(curDetlatTime)) != sizeof(curDetlatTime) )
+    {
+        static_assert(sizeof(curDetlatTime) == 4, "sizeof(curDetlatTime) == 4");
+        return 0;
+    }
+
+    const uint32_t curDetlatPauseTime = SoundDriver_GetTimeMsec() - Sound_msecPauseStartTime;
+    if ( Sound_pHS->pFileWrite(fh, &curDetlatPauseTime, sizeof(curDetlatPauseTime)) != sizeof(curDetlatPauseTime) )
+    {
+        static_assert(sizeof(curDetlatPauseTime) == 4, "sizeof(curDetlatPauseTime) == 4");
+        return 0;
+    }
+
+    int channelNum = Sound_numChannels;
+    tSoundChannel* pCurChannel = &Sound_apChannels[Sound_numChannels];
+
+    while ( 1 )
+    {
+        --pCurChannel;
+        if ( !channelNum-- )
+        {
+            break;
+        }
+
+        if ( pCurChannel->handle
+            && ((pCurChannel->flags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
+                || (pCurChannel->flags & SOUND_CHANNEL_FAR) != 0)
+            && (pCurChannel->flags & SOUND_CHANNEL_3DSOUND) != 0 )
+        {
+            SoundInfo* pSndInfo = Sound_soundbank_GetSoundInfo(pCurChannel->hSnd);
+            if ( pSndInfo )
+            {
+                uint8_t* aSndCache = soundbank_apSoundCache[pSndInfo->bankNum];
+
+                // TODO: Make sure name max len should be less or equal than STD_ARRAYLEN(Sound_sndFilename)
+                const uint32_t nameLen = strlen((const char*)&aSndCache[pSndInfo->filePathOffset]) + 1;
+                if ( Sound_pHS->pFileWrite(fh, &nameLen, sizeof(nameLen)) != sizeof(nameLen) )
+                {
+                    static_assert(sizeof(nameLen) == 4, "sizeof(nameLen) == 4");
+                    return 0;
+                }
+
+                // Write filename
+                if ( Sound_pHS->pFileWrite(fh, &aSndCache[pSndInfo->filePathOffset], nameLen) != nameLen )
+                {
+                    return 0;
+                }
+
+                // Read sound bank num
+                const uint32_t bankNum = pSndInfo->bankNum;
+                if ( Sound_pHS->pFileWrite(fh, &bankNum, sizeof(bankNum)) != sizeof(bankNum) )
+                {
+                    static_assert(sizeof(bankNum) == 4, "sizeof(bankNum) == 4");
+                    return 0;
+                }
+
+                // Read sound index
+                const uint32_t sndIdx = pSndInfo->idx;
+                if ( Sound_pHS->pFileWrite(fh, &sndIdx, sizeof(sndIdx)) != sizeof(sndIdx) )
+                {
+                    static_assert(sizeof(sndIdx) == 4, "sizeof(sndIdx) == 4");
+                    return 0;
+                }
+
+                const uint32_t hSnd = pSndInfo->hSnd;
+                if ( Sound_pHS->pFileWrite(fh, &hSnd, sizeof(hSnd)) != sizeof(hSnd) )
+                {
+                    static_assert(sizeof(hSnd) == 4, "sizeof(hSnd) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->handle, sizeof(pCurChannel->handle)) != sizeof(pCurChannel->handle) )
+                {
+                    static_assert(sizeof(pCurChannel->handle) == 4, "sizeof(pCurChannel->handle) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->priority, sizeof(pCurChannel->priority)) != sizeof(pCurChannel->priority) )
+                {
+                    static_assert(sizeof(pCurChannel->priority) == 4, "sizeof(pCurChannel->handle) == 4");
+
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->thingId, sizeof(pCurChannel->thingId)) != sizeof(pCurChannel->thingId) )
+                {
+                    static_assert(sizeof(pCurChannel->thingId) == 4, "sizeof(pCurChannel->thingId) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->playPos.x, sizeof(pCurChannel->playPos.x)) != sizeof(pCurChannel->playPos.x) )
+                {
+                    static_assert(sizeof(pCurChannel->playPos.x) == 4, "sizeof(pCurChannel->playPos.x) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->playPos.y, sizeof(pCurChannel->playPos.y)) != sizeof(pCurChannel->playPos.y) )
+                {
+                    static_assert(sizeof(pCurChannel->playPos.y) == 4, "sizeof(pCurChannel->playPos.y) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->playPos.z, sizeof(pCurChannel->playPos.z)) != sizeof(pCurChannel->playPos.z) )
+                {
+                    static_assert(sizeof(pCurChannel->playPos.z) == 4, "sizeof(pCurChannel->playPos.z) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->volume, sizeof(pCurChannel->volume)) != sizeof(pCurChannel->volume) )
+                {
+                    static_assert(sizeof(pCurChannel->volume) == 4, "sizeof(pCurChannel->volume) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->pitch, sizeof(pCurChannel->pitch)) != sizeof(pCurChannel->pitch) )
+                {
+                    static_assert(sizeof(pCurChannel->pitch) == 4, "sizeof(pCurChannel->pitch) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->sampleRate, sizeof(pCurChannel->sampleRate)) != sizeof(pCurChannel->sampleRate) )
+                {
+                    static_assert(sizeof(pCurChannel->sampleRate) == 4, "sizeof(pCurChannel->sampleRate) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->flags, sizeof(pCurChannel->flags)) != sizeof(pCurChannel->flags) )
+                {
+                    static_assert(sizeof(pCurChannel->flags) == 4, "sizeof(pCurChannel->flags) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->guid, sizeof(pCurChannel->guid)) != sizeof(pCurChannel->guid) )
+                {
+                    static_assert(sizeof(pCurChannel->guid) == 4, "sizeof(pCurChannel->guid) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->minRadius, sizeof(pCurChannel->minRadius)) != sizeof(pCurChannel->minRadius) )
+                {
+                    static_assert(sizeof(pCurChannel->minRadius) == 4, "sizeof(pCurChannel->minRadius) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->maxRadius, sizeof(pCurChannel->maxRadius)) != sizeof(pCurChannel->maxRadius) )
+                {
+                    static_assert(sizeof(pCurChannel->maxRadius) == 4, "sizeof(pCurChannel->maxRadius) == 4");
+                    return 0;
+                }
+
+                if ( Sound_pHS->pFileWrite(fh, &pCurChannel->envflags, sizeof(pCurChannel->envflags)) != sizeof(pCurChannel->envflags) )
+                {
+                    static_assert(sizeof(pCurChannel->envflags) == 4, "sizeof(pCurChannel->envflags) == 4");
+                    return 0;
+                }
+            }
+        }
+    }
+
+    // Marks end of list
+    if ( Sound_pHS->pFileWrite(fh, &Sound_serSoundListEnd, sizeof(Sound_serSoundListEnd)) != sizeof(Sound_serSoundListEnd) )
+    {
+        static_assert(sizeof(Sound_serSoundListEnd) == 4, "sizeof(Sound_serSoundListEnd) == 4");
+        return 0;
+    }
+
+    static_assert(sizeof(Sound_aFades) == 1152, "sizeof(Sound_aFades) == 1152");
+    return Sound_pHS->pFileWrite(fh, &Sound_nextHandle, sizeof(uint32_t)) == sizeof(uint32_t)
+        && Sound_pHS->pFileWrite(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);// sizeof(SoundFade) * 48
+}
+
+
+int J3DAPI Sound_Restore(tFileHandle fh)
+{
+    if ( Sound_startupState != SOUND_OPEN )
+    {
+        // Sound module is not opened, read out sound list anyway so the file read offset is moved to the end of sound section
+        Sound_pHS->pErrorPrint("Sound_Restore: module is not open.\n");
+    }
+
+    uint32_t magic;
+    if ( Sound_pHS->pFileRead(fh, &magic, sizeof(magic)) != sizeof(magic) )
+    {
+        return 0;
+    }
+
+    if ( magic != Sound_serMagic )
+    {
+        // We're not at the ser sound position roll back position for sizeof(magic)
+        Sound_pHS->pFileSeek(fh, -(int)sizeof(magic), 1);
+        return 0;
+    }
+
+    // Set initial listener position
+    if ( Sound_startupState == SOUND_OPEN )
+    {
+        rdVector3 listnerPos;
+        listnerPos.x = 100000.0f;
+        listnerPos.y = 100000.0f;
+        listnerPos.z = 100000.0f;
+        Sound_StopAllSounds();
+        Sound_Update(&listnerPos, NULL, NULL, NULL);
+    }
+
+    if ( Sound_pHS->pFileRead(fh, &Sound_pausedRefCount, sizeof(uint32_t)) != sizeof(uint32_t) )
+    {
+        return 0;
+    }
+
+    Sound_pausedRefCount = 0; // ???
+
+    uint32_t pauseDeltaTime;
+    if ( Sound_pHS->pFileRead(fh, &pauseDeltaTime, sizeof(pauseDeltaTime)) != sizeof(pauseDeltaTime) )
+    {
+        return 0;
+    }
+
+    Sound_msecElapsed = SoundDriver_GetTimeMsec() - pauseDeltaTime;
+
+    if ( Sound_pHS->pFileRead(fh, &Sound_msecPauseStartTime, sizeof(uint32_t)) != sizeof(uint32_t) )
+    {
+        return 0;
+    }
+
+    Sound_msecPauseStartTime += SoundDriver_GetTimeMsec();
+
+    // Read sound file name length
+    uint32_t filenameLen;
+    if ( Sound_pHS->pFileRead(fh, &filenameLen, sizeof(filenameLen)) != sizeof(filenameLen) )
+    {
+        return 0;
+    }
+
+    while ( filenameLen != Sound_serSoundListEnd )
+    {
+        if ( filenameLen <= STD_ARRAYLEN(Sound_sndFilename) )
+        {
+            // Read filename
+            if ( Sound_pHS->pFileRead(fh, Sound_sndFilename, filenameLen) != filenameLen )
+            {
+                return 0;
+            }
+
+            uint32_t bankNum;
+            if ( Sound_pHS->pFileRead(fh, &bankNum, sizeof(bankNum)) != sizeof(bankNum) )
+            {
+                return 0;
+            }
+
+            // Read sound index
+            uint32_t sndIdx;
+            if ( Sound_pHS->pFileRead(fh, &sndIdx, sizeof(sndIdx)) != sizeof(sndIdx) )
+            {
+                return 0;
+            }
+
+            // Read sound handle
+            if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) != sizeof(uint32_t) )
+            {
+                return 0;
+            }
+
+            tSoundHandle hSnd = 0;
+            if ( Sound_startupState == SOUND_OPEN )
+            {
+                if ( bankNum ) // 1 - normal, 0 - static
+                {
+                    hSnd = Sound_Load(Sound_sndFilename, &sndIdx);
+                }
+                else
+                {
+                    hSnd = Sound_LoadStatic(Sound_sndFilename, &sndIdx);
+                }
+            }
+
+            // Read channel handle
+            if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) != sizeof(uint32_t) )
+            {
+                return 0;
+            }
+
+            int32_t priority;
+            if ( Sound_pHS->pFileRead(fh, &priority, sizeof(priority)) != sizeof(priority) )
+            {
+                return 0;
+            }
+
+            int32_t thingId;
+            if ( Sound_pHS->pFileRead(fh, &thingId, sizeof(thingId)) != sizeof(thingId) )
+            {
+                return 0;
+            }
+
+            float posX;
+            if ( Sound_pHS->pFileRead(fh, &posX, sizeof(posX)) != sizeof(posX) )
+            {
+                return 0;
+            }
+
+            float posY;
+            if ( Sound_pHS->pFileRead(fh, &posY, sizeof(posY)) != sizeof(posY) )
+            {
+                return 0;
+            }
+
+            float posZ;
+            if ( Sound_pHS->pFileRead(fh, &posZ, sizeof(posY)) != sizeof(posY) )
+            {
+                return 0;
+            }
+
+            float volume;
+            if ( Sound_pHS->pFileRead(fh, &volume, sizeof(volume)) != sizeof(volume) )
+            {
+                return 0;
+            }
+
+            float pitch;
+            if ( Sound_pHS->pFileRead(fh, &pitch, sizeof(pitch)) != sizeof(pitch) )
+            {
+                return 0;
+            }
+
+            float sampleRate;
+            if ( Sound_pHS->pFileRead(fh, &sampleRate, sizeof(sampleRate)) != sizeof(sampleRate) )
+            {
+                return 0;
+            }
+
+            tSoundChannelFlag chflags;
+            if ( Sound_pHS->pFileRead(fh, &chflags, sizeof(int32_t)) != sizeof(int32_t) )
+            {
+                return 0;
+            }
+
+            int32_t guid;
+            if ( Sound_pHS->pFileRead(fh, &guid, sizeof(guid)) != sizeof(guid) )
+            {
+                return 0;
+            }
+
+            float minRadius;
+            if ( Sound_pHS->pFileRead(fh, &minRadius, sizeof(minRadius)) != sizeof(minRadius) )
+            {
+                return 0;
+            }
+
+            float maxRadius;
+            if ( Sound_pHS->pFileRead(fh, &maxRadius, sizeof(maxRadius)) != sizeof(maxRadius) )
+            {
+                return 0;
+            }
+
+            SoundEnvFlags envflags;
+            if ( Sound_pHS->pFileRead(fh, &envflags, sizeof(int32_t)) != sizeof(int32_t) )
+            {
+                return 0;
+            }
+
+            if ( Sound_startupState == SOUND_OPEN )
+            {
+                if ( (chflags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) == (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND) )
+                {
+                    tSoundChannelHandle hChannel = Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
+                    tSoundChannel* pChannel = Sound_GetChannel(hChannel);
+                    if ( pChannel )
+                    {
+                        pChannel->thingId = thingId;
+                        pChannel->flags |= SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND;
+                    }
+                }
+                else if ( (chflags & SOUND_CHANNEL_3DSOUND) != 0 )
+                {
+                    chflags |= SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING;
+                    Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
+                }
+            }
+        }
+
+        // Read next sound filename
+        if ( Sound_pHS->pFileRead(fh, &filenameLen, sizeof(filenameLen)) != sizeof(filenameLen) )
+        {
+            return 0;
+        }
+    }
+
+    // Read next handle and fades. 
+    // Note, what's the point to read fades to system in case system is not opened? 
+    return Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) == sizeof(uint32_t) && Sound_pHS->pFileRead(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);
+
+
+    //// sound module is opened
+    //uint32_t magic;
+    //if ( Sound_pHS->pFileRead(fh, &magic, sizeof(magic)) != sizeof(magic) )// section magic 
+    //{
+    //    return 0;
+    //}
+
+    //if ( magic != Sound_serMagic )
+    //{
+    //    // We're not at the ser sound position roll back position for sizeof(magic)
+    //    Sound_pHS->pFileSeek(fh, -sizeof(magic), 1);
+    //    return 0;
+    //}
+
+    //// Set initial listener position
+    //rdVector3 listnerPos;
+    //listnerPos.x = 100000.0f;
+    //listnerPos.y = 100000.0f;
+    //listnerPos.z = 100000.0f;
+    //Sound_StopAllSounds();
+    //Sound_Update(&listnerPos, NULL, NULL, NULL);
+
+    //// Read pause count
+    //if ( Sound_pHS->pFileRead(fh, &Sound_pausedRefCount, sizeof(uint32_t)) != sizeof(uint32_t) )
+    //{
+    //    return 0;
+    //}
+
+    //Sound_pausedRefCount = 0; // ??
+
+    //// Read delta time
+    //uint32_t pauseDeltaTime;
+    //if ( Sound_pHS->pFileRead(fh, &pauseDeltaTime, sizeof(pauseDeltaTime)) != sizeof(pauseDeltaTime) )
+    //{
+    //    return 0;
+    //}
+
+    //Sound_msecElapsed = SoundDriver_GetTimeMsec() - pauseDeltaTime;
+
+    //// Read pause delta time
+    //if ( Sound_pHS->pFileRead(fh, &Sound_msecPauseStartTime, 4) != 4 )
+    //{
+    //    return 0;
+    //}
+
+    //Sound_msecPauseStartTime += SoundDriver_GetTimeMsec();
+
+    //// Read first file name size
+    //if ( Sound_pHS->pFileRead(fh, &var, 4) != 4 )
+    //{
+    //    return 0;
+    //}
+
+    //while ( var )
+    //{
+    //    if ( var <= 256 )
+    //    {
+    //        // Read sound filename
+    //        nRead = Sound_pHS->pFileRead(fh, Sound_sndFilename, var);
+    //        if ( nRead != var )
+    //        {
+    //            return 0;
+    //        }
+
+    //        // Read sound bank num
+    //        if ( Sound_pHS->pFileRead(fh, &bankNum, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        // Read sound index
+    //        if ( Sound_pHS->pFileRead(fh, &var, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        // Read channel handle
+    //        if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( bankNum )                      // 1 - normal, 0 - static
+    //        {
+    //            hSnd = Sound_Load(Sound_sndFilename, &var);
+    //        }
+    //        else
+    //        {
+    //            hSnd = Sound_LoadStatic(Sound_sndFilename, &var);
+    //        }
+
+    //        // Read sound handle
+    //        if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &priority, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &thingId, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &posX, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &posY, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &posZ, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &volume, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &pitch, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &sampleRate, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &chflags, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &guid, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &minRadius, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &maxRadius, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( Sound_pHS->pFileRead(fh, &envflags, 4) != 4 )
+    //        {
+    //            return 0;
+    //        }
+
+    //        if ( (chflags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) == (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND) )
+    //        {
+    //            hChannel = Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
+    //            pChannel = Sound_GetChannel(hChannel);
+    //            if ( pChannel )
+    //            {
+    //                pChannel->thingId = thingId;
+    //                pChannel->flags |= SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND;
+    //            }
+    //        }
+
+    //        else if ( (chflags & SOUND_CHANNEL_3DSOUND) != 0 )
+    //        {
+    //            chflags |= SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING;
+    //            Sound_PlayPos(hSnd, volume, priority, chflags, posX, posY, posZ, guid, minRadius, maxRadius, envflags);
+    //        }
+    //    }
+
+    //    // Read the next sound track filename size
+    //    if ( Sound_pHS->pFileRead(fh, &var, 4) != 4 )
+    //    {
+    //        return 0;
+    //    }
+    //}
+
+    //return Sound_pHS->pFileRead(fh, &Sound_nextHandle, 4) == 4 && Sound_pHS->pFileRead(fh, Sound_aFades, 1152) == 1152;// 1152 = sizeof(Fade) * 48
+}
+
+
 bool J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
 {
     if ( (int)handle >= 1234 && (int)handle < 1112345 && (handle & 1) != 0 )
@@ -724,6 +1338,7 @@ LABEL_30:
                             {
                                 pChannel->flags &= ~SOUND_CHANNEL_RESTART;
                                 pChannel->handle = channel.handle;
+                                break;
                                 goto LABEL_30;
                             }
                         }
