@@ -60,7 +60,7 @@ void sithWorld_ResetGlobals(void)
     memcpy((char*)&sithWorld_aCopyrightSymbol, &sithWorld_aCopyrightSymbol_tmp, sizeof(sithWorld_aCopyrightSymbol));
 
     const CndSectionParser sithWorld_aCNDSectionParsers_tmp[17] = {
-      { "sounds", &sithSound_CNDReadSoundSection, &sithSound_CNDWriteSoundSection },
+      { "sounds", &sithSound_ReadSoundsListBinary, &sithSound_WriteSoundsListBinary },
       {
         "materials",
         &sithMaterial_LoadMaterialsBinary,

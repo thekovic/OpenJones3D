@@ -267,7 +267,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     stdStartup(&JonesMain_hs);
     rdSetServices(&JonesMain_hs);
     sithSetServices(&JonesMain_hs);
-    sithSound_InitializeSound(&JonesMain_hs);
+    sithSound_Initialize(&JonesMain_hs);
 
     // Fixed: Move initialization of JonesMain_circBuf here in case there is engine error and exiting happens sooner
     stdCircBuf_New(&JonesMain_circBuf, 4, 128);
@@ -1135,7 +1135,7 @@ void JonesMain_Shutdown(void)
     JonesFile_Shutdown();
 
     stdShutdown();
-    sithSound_UninitializeSound();
+    sithSound_Uninitialize();
     sithClearServices();
     rdClearServices();
     stdPlatform_ClearServices(&JonesMain_hs);

@@ -294,7 +294,7 @@ int J3DAPI Sound_SkipSoundFileSection(tFileHandle fh)
     return J3D_TRAMPOLINE_CALL(Sound_SkipSoundFileSection, fh);
 }
 
-tSoundHandle J3DAPI Sound_GetSoundHandle(int idx)
+tSoundHandle J3DAPI Sound_GetSoundHandle(uint32_t idx)
 {
     return J3D_TRAMPOLINE_CALL(Sound_GetSoundHandle, idx);
 }

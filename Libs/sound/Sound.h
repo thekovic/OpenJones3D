@@ -30,7 +30,7 @@ int J3DAPI Sound_ImportStaticBank(tFileHandle fh);
 size_t J3DAPI Sound_ExportNormalBank(tFileHandle fh);
 int J3DAPI Sound_ImportNormalBank(tFileHandle fh);
 int J3DAPI Sound_SkipSoundFileSection(tFileHandle fh);
-tSoundHandle J3DAPI Sound_GetSoundHandle(int idx);
+tSoundHandle J3DAPI Sound_GetSoundHandle(uint32_t idx);
 int J3DAPI Sound_GetSoundIndex(tSoundHandle hSnd);
 tSoundChannelHandle J3DAPI Sound_GetChannelHandle(int guid);
 int J3DAPI Sound_GetChannelGUID(tSoundChannelHandle hSndChannel);

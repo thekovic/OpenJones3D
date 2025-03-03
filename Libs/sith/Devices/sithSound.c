@@ -1,87 +1,284 @@
 #include "sithSound.h"
 #include <j3dcore/j3dhook.h>
-#include <sith/RTI/symbols.h>
 
-#define sithSound_bStartup J3D_DECL_FAR_VAR(sithSound_bStartup, int)
-#define sithSound_bSkipRestoringSounds J3D_DECL_FAR_VAR(sithSound_bSkipRestoringSounds, int)
+#include <sith/Devices/sithSoundMixer.h>
+#include <sith/RTI/symbols.h>
+#include <sith/World/sithSoundClass.h>
+#include <sith/World/sithWorld.h>
+
+#include <sound/Sound.h>
+
+#include <std/General/stdConffile.h>
+#include <std/General/stdMemory.h>
+#include <std/General/stdUtil.h>
+#include <std/Win95/stdWin95.h>
+
+static bool bStartup = false; // Added: Init to false
+static bool bSkipRestoringSounds;
 
 void sithSound_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(sithSound_InitializeSound);
-    // J3D_HOOKFUNC(sithSound_Startup);
-    // J3D_HOOKFUNC(sithSound_Shutdown);
-    // J3D_HOOKFUNC(sithSound_NDYReadSoundSection);
-    // J3D_HOOKFUNC(sithSound_CNDWriteSoundSection);
-    // J3D_HOOKFUNC(sithSound_CNDReadSoundSection);
-    // J3D_HOOKFUNC(sithSound_FreeWorldSounds);
-    // J3D_HOOKFUNC(sithSound_Load);
-    // J3D_HOOKFUNC(sithSound_SetSkipRestoringSounds);
+    J3D_HOOKFUNC(sithSound_Initialize);
+    J3D_HOOKFUNC(sithSound_Startup);
+    J3D_HOOKFUNC(sithSound_Shutdown);
+    J3D_HOOKFUNC(sithSound_ReadSoundsListText);
+    J3D_HOOKFUNC(sithSound_WriteSoundsListBinary);
+    J3D_HOOKFUNC(sithSound_ReadSoundsListBinary);
+    J3D_HOOKFUNC(sithSound_FreeWorldSounds);
+    J3D_HOOKFUNC(sithSound_Load);
+    J3D_HOOKFUNC(sithSound_SetSkipRestoringSounds);
 }
 
 void sithSound_ResetGlobals(void)
+{}
+
+int J3DAPI sithSound_Initialize(tHostServices* pHS)
 {
-    memset(&sithSound_bStartup, 0, sizeof(sithSound_bStartup));
-    memset(&sithSound_bSkipRestoringSounds, 0, sizeof(sithSound_bSkipRestoringSounds));
+    return Sound_Initialize(pHS);
 }
 
-int J3DAPI sithSound_InitializeSound(tHostServices* pHS)
+void sithSound_Uninitialize(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithSound_InitializeSound, pHS);
-}
-
-void sithSound_UninitializeSound(void)
-{
-    J3D_TRAMPOLINE_CALL(sithSound_UninitializeSound);
-}
-
-int J3DAPI sithSound_Startup(int bSound3D)
-{
-    return J3D_TRAMPOLINE_CALL(sithSound_Startup, bSound3D);
+    Sound_Uninitialize();
 }
 
 int sithSound_StartupSound(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithSound_StartupSound);
-}
-
-void sithSound_Shutdown(void)
-{
-    J3D_TRAMPOLINE_CALL(sithSound_Shutdown);
+    return Sound_Startup();
 }
 
 void sithSound_ShutdownSound(void)
 {
-    J3D_TRAMPOLINE_CALL(sithSound_ShutdownSound);
+    Sound_Shutdown();
 }
 
-int J3DAPI sithSound_NDYReadSoundSection(SithWorld* pWorld, int bSkip)
+int J3DAPI sithSound_Startup(int bSound3D)
 {
-    return J3D_TRAMPOLINE_CALL(sithSound_NDYReadSoundSection, pWorld, bSkip);
+    SITH_ASSERTREL(!bStartup);
+
+    int flags = 0;
+    if ( !bSound3D )
+    {
+        flags = 0x02;
+    }
+
+    const HWND hwnd = stdWin95_GetWindow();
+    Sound_Open(flags, SITHSOUND_MAXCHANNELS, sithSoundMixer_GetThingInfo, sithSoundMixer_CalcCameraRelativeSoundMix, hwnd);
+
+    Sound_Set3DGlobals(10.0f, 0.5f, 2.5f, 1.0f, 1.0f);
+    Sound_EnableLoad(1);
+
+    if ( sithSoundMixer_Startup() || sithSoundClass_Startup() )
+    {
+        SITHLOG_ERROR("stdSound_Startup failed (no hardware?).\n");
+        sithSound_Shutdown();
+        return 1;
+    }
+
+    bSkipRestoringSounds = false;
+    bStartup = true;
+    return 0;
 }
 
-int J3DAPI sithSound_CNDWriteSoundSection(tFileHandle fh, SithWorld* pWorld)
+void sithSound_Shutdown(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithSound_CNDWriteSoundSection, fh, pWorld);
+    sithSoundClass_Shutdown();
+    sithSoundMixer_Shutdown();
+    Sound_Close();
+
+    bSkipRestoringSounds = false;
+    bStartup = false;
 }
 
-int J3DAPI sithSound_CNDReadSoundSection(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSound_WriteSoundsListText(const SithWorld* pWorld)
 {
-    return J3D_TRAMPOLINE_CALL(sithSound_CNDReadSoundSection, fh, pWorld);
+    if ( stdConffile_WriteLine("###### Sound information  ######\n")
+        || stdConffile_WriteLine("SECTION: SOUNDS\n\n")
+        || stdConffile_Printf("World sounds %d\n\n", pWorld->numSounds + 80) )
+    {
+        return 1;
+    }
+
+    for ( uint32_t idx = 0; idx < pWorld->numSounds; ++idx )
+    {
+        tSoundHandle hSnd = Sound_GetSoundHandle(idx);
+        const char* pFilename = Sound_GetSoundFilename(hSnd);
+        if ( pFilename && stdConffile_Printf("%s\n", pFilename) )
+        {
+            return 1;
+        }
+    }
+
+    return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
+}
+
+int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip)
+{
+    SITH_ASSERTREL(pWorld);
+
+    if ( bSkip )
+    {
+        return 1;
+    }
+
+    sithWorld_UpdateLoadProgress(0.0f);
+
+    if ( !stdConffile_ReadArgs() || strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "sounds") )
+    {
+        sithSound_FreeWorldSounds(pWorld);
+        return 1;
+    }
+
+    size_t sizeSounds = atoi(stdConffile_g_entry.aArgs[2].argValue);
+    if ( !sizeSounds )
+    {
+        return 0;
+    }
+
+    pWorld->numSounds = 0;
+
+    size_t numSounds = 0;
+    char (*aFilenames)[64] = (char (*)[64])STDMALLOC(sizeSounds * 64);
+    if ( !aFilenames )
+    {
+        sithSound_FreeWorldSounds(pWorld);
+        return 1;
+    }
+
+    memset(aFilenames, 0, sizeSounds << 6);
+
+    const char (*pFilename)[64] = aFilenames;
+    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    {
+        ++numSounds;
+        stdUtil_Format((char* const)pFilename++, 64, "%s", stdConffile_g_entry.aArgs[0].argValue);
+    }
+
+    if ( bSkipRestoringSounds )
+    {
+        // TODO: [BUG] memory leak, aFilenames not freed
+        bSkipRestoringSounds = false;
+        return 0;
+    }
+
+    pFilename = aFilenames;
+    for ( size_t i = 0; i < numSounds; ++i )
+    {
+        sithSound_Load(pWorld, (const char*)pFilename++);
+    }
+
+    SITHLOG_STATUS("%d sounds loaded.\n", pWorld->numSounds);
+    stdMemory_Free(aFilenames);
+    return 0;
+}
+
+
+int J3DAPI sithSound_WriteSoundsListBinary(tFileHandle fh, SithWorld* pWorld)
+{
+    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
+    {
+        if ( !Sound_ExportStaticBank(fh) )
+        {
+            return 1;
+        }
+    }
+    else if ( !Sound_ExportNormalBank(fh) )
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+int J3DAPI sithSound_ReadSoundsListBinary(tFileHandle fh, SithWorld* pWorld)
+{
+    if ( bSkipRestoringSounds )
+    {
+        bSkipRestoringSounds = false;
+        return Sound_SkipSoundFileSection(fh) == 0;
+    }
+
+    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
+    {
+        if ( !Sound_ImportStaticBank(fh) )
+        {
+            return 1;
+        }
+    }
+    else if ( !Sound_ImportNormalBank(fh) )
+    {
+        return 1;
+    }
+
+    return 0;
 }
 
 void J3DAPI sithSound_FreeWorldSounds(SithWorld* pWorld)
 {
-    J3D_TRAMPOLINE_CALL(sithSound_FreeWorldSounds, pWorld);
+    SITH_ASSERTREL(pWorld != NULL);
+
+    if ( bSkipRestoringSounds )
+    {
+        Sound_StopAllSounds();
+    }
+    else
+    {
+        Sound_ResetBanks(pWorld->state & SITH_WORLD_STATE_STATIC);
+        pWorld->numSounds = 0;
+    }
 }
 
 tSoundHandle J3DAPI sithSound_Load(SithWorld* pWorld, const char* filename)
 {
-    return J3D_TRAMPOLINE_CALL(sithSound_Load, pWorld, filename);
+    SITH_ASSERTREL(filename != NULL);
+    SITH_ASSERTREL(pWorld);
+
+    if ( !bStartup )
+    {
+        return 0;
+    }
+
+    if ( !filename )
+    {
+        return 0;
+    }
+
+    if ( !strcmp(filename, "none") )
+    {
+        return 0;
+    }
+
+    char aPath[128];
+    STD_FORMAT(aPath, "%s%c%s", "sound", '\\', filename);
+
+    uint32_t sndIdx = pWorld->numSounds;
+    tSoundHandle hSnd;
+    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
+    {
+        sndIdx = SITHWORLD_STATICINDEX(sndIdx);
+        hSnd = Sound_LoadStatic(aPath, &sndIdx);
+    }
+    else
+    {
+        hSnd = Sound_Load(aPath, &sndIdx);
+    }
+
+    if ( !hSnd )
+    {
+        SITHLOG_ERROR("Could not open sound file '%s'.\n", aPath);
+        return 0;
+    }
+
+    sndIdx = SITHWORLD_FROM_STATICINDEX(sndIdx);
+    if ( sndIdx == pWorld->numSounds )
+    {
+        ++pWorld->numSounds;
+    }
+
+    return hSnd;
 }
 
 void J3DAPI sithSound_SetSkipRestoringSounds(int bSkip)
 {
-    J3D_TRAMPOLINE_CALL(sithSound_SetSkipRestoringSounds, bSkip);
+    bSkipRestoringSounds = bSkip != 0;
 }

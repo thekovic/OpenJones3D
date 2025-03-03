@@ -53,32 +53,33 @@ typedef enum eSoundEnvFlags
     SOUND_ENV_UNDERWATER = 0x1,
 } SoundEnvFlags;
 
-typedef unsigned int tSoundChannelHandle;
-typedef unsigned int tSoundHandle;
+typedef uint32_t tSoundChannelHandle;
+typedef uint32_t tSoundHandle;
 
 typedef struct sSoundThingInfo SoundThingInfo;
 typedef struct sSoundSpatialInfo SoundSpatialInfo;
 
 typedef int (J3DAPI* SoundGetThingInfoCallback)(int thingID, SoundThingInfo* pInfo);
 typedef void (J3DAPI* SoundCalcListenerSoundMixFunc)(const SoundSpatialInfo*, float* volume, float* pan, float* pitch);
-typedef uint8_t* (J3DAPI* SoundDriverGetSoundBufferDataFunc)(LPDIRECTSOUNDBUFFER pDSBuf, unsigned int* pSoundDataSize, unsigned int* pbCompressed);
+typedef uint8_t* (J3DAPI* SoundDriverGetSoundBufferDataFunc)(LPDIRECTSOUNDBUFFER pDSBuf, uint32_t* pSoundDataSize, uint32_t* pbCompressed);
 
 
 typedef struct sSoundInfo
 {
     tSoundHandle hSnd;
-    unsigned int bankNum;
-    unsigned int filePathOffset;
-    unsigned int nameOffset;
-    unsigned int dataOffset;
+    uint32_t bankNum;
+    uint32_t filePathOffset;
+    uint32_t nameOffset;
+    uint32_t dataOffset;
     uint8_t* pLipSyncData;
-    unsigned int sampleRate;
-    unsigned int sempleBitSize;
-    unsigned int numChannels;
-    unsigned int dataSize;
-    unsigned int bCompressed;
-    unsigned int idx;
+    uint32_t sampleRate;
+    uint32_t sempleBitSize;
+    uint32_t numChannels;
+    uint32_t dataSize;
+    uint32_t bCompressed;
+    uint32_t idx;
 } SoundInfo;
+static_assert(sizeof(SoundInfo) == 48, "sizeof(SoundInfo) == 48");
 
 typedef struct sSoundChannel
 {
@@ -104,9 +105,10 @@ typedef struct sSoundFade
     int bPitch;
     float startValue;
     float endValue;
-    unsigned int msecStartTime;
-    unsigned int msecEndTime;
+    uint32_t msecStartTime;
+    uint32_t msecEndTime;
 } SoundFade;
+static_assert(sizeof(SoundFade) == 24, "sizeof(SoundFade) == 24");
 
 struct sSoundThingInfo
 {
