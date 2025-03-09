@@ -30,11 +30,6 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
- #ifdef __APPLE__
-void build_eof_action();
-void yyerror( char* msg );
- #endif
-
 #ifndef lint
 static char rcsid[] =
     "@(#) $Header: /usr/fsys/odin/a/vern/flex/RCS/parse.y,v 2.7 90/06/27 23:48:31 vern Exp $ (LBL)";
@@ -45,6 +40,8 @@ static char rcsid[] =
 int pat, scnum, eps, headcnt, trailcnt, anyccl, lastchar, i, actvp, rulelen;
 int trlcontxt, xcluflg, cclsorted, varlength, variable_trail_rule;
 Char clower();
+void build_eof_action();
+void yyerror();
 
 static int madeany = false;  /* whether we've made the '.' character class */
 int previous_continued_action;	/* whether the previous rule's action was '|' */
@@ -338,13 +335,25 @@ rule            :  re2 re
 			    headcnt = 0;
 			    }
 
+			if ( varlength && headcnt == 0 )
+			    {
+			    /* again, see the comment in the rule for "re2 re"
+			     * above
+			     */
+			    add_accept( $1, num_rules | YY_TRAILING_HEAD_MASK );
+			    variable_trail_rule = true;
+			    }
+
+			else
+			    {
+			    if ( ! varlength )
+				headcnt = rulelen;
+
+			    ++rulelen;
+			    trailcnt = 1;
+			    }
+
 			trlcontxt = true;
-
-			if ( ! varlength )
-			    headcnt = rulelen;
-
-			++rulelen;
-			trailcnt = 1;
 
 			eps = mkstate( SYM_EPSILON );
 			$$ = link_machines( $1,
@@ -448,7 +457,15 @@ singleton       :  singleton '*'
 			else
 			    {
 			    if ( $3 == 0 )
-				$$ = mkopt( mkrep( $1, $3, $5 ) );
+				{
+				if ( $5 <= 0 )
+				    {
+				    synerr( "bad iteration values" );
+				    $$ = $1;
+				    }
+				else
+				    $$ = mkopt( mkrep( $1, 1, $5 ) );
+				}
 			    else
 				$$ = mkrep( $1, $3, $5 );
 			    }

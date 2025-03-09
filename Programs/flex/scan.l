@@ -119,7 +119,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			}
 
 
-^"%"[aeknopt]" ".*\n	{
+^"%"[aeknopt]{WS}.*\n	{
 #ifdef NOTDEF
 			fprintf( stderr,
 			     "old-style lex command at line %d ignored:\n\t%s",

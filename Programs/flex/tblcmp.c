@@ -368,7 +368,7 @@ int *state, numtrans;
 
     while ( 1 )		/* loops until a space is found */
 	{
-	if ( i + numecs > current_max_xpairs )
+	if ( i + numecs >= current_max_xpairs )
 	    expand_nxt_chk();
 
 	/* loops until space for end-of-buffer and action number are found */
@@ -389,7 +389,7 @@ int *state, numtrans;
 	    else
 		++i;
 
-	    if ( i + numecs > current_max_xpairs )
+	    if ( i + numecs >= current_max_xpairs )
 		expand_nxt_chk();
 	    }
 
@@ -476,7 +476,7 @@ void mkdeftbl()
 
     ++tblend; /* room for transition on end-of-buffer character */
 
-    if ( tblend + numecs > current_max_xpairs )
+    if ( tblend + numecs >= current_max_xpairs )
 	expand_nxt_chk();
 
     /* add in default end-of-buffer transition */
@@ -584,7 +584,7 @@ int numchars, statenum, deflink, totaltrans;
 		;
 	    }
 
-	if ( baseaddr + maxec - minec >= current_max_xpairs )
+	if ( baseaddr + maxec - minec + 1 >= current_max_xpairs )
 	    expand_nxt_chk();
 
 	for ( i = minec; i <= maxec; ++i )
@@ -598,7 +598,8 @@ int numchars, statenum, deflink, totaltrans;
 			      ++baseaddr )
 			    ;
 
-			if ( baseaddr + maxec - minec >= current_max_xpairs )
+			if ( baseaddr + maxec - minec + 1 >=
+			     current_max_xpairs )
 			    expand_nxt_chk();
 
 			/* reset the loop counter so we'll start all
@@ -620,7 +621,7 @@ int numchars, statenum, deflink, totaltrans;
     tblbase = baseaddr - minec;
     tbllast = tblbase + maxec;
 
-    if ( tbllast >= current_max_xpairs )
+    if ( tbllast + 1 >= current_max_xpairs )
 	expand_nxt_chk();
 
     base[statenum] = tblbase;

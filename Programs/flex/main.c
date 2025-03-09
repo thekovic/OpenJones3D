@@ -306,7 +306,7 @@ int status;
 	if ( usemecs )
 	    putc( 'm', stderr );
 
-	if ( strcmp( skelname, DEFAULT_SKELETON_FILE ) )
+	if ( skelname && strcmp( skelname, DEFAULT_SKELETON_FILE ) )
 	    fprintf( stderr, " -S%s", skelname );
 
 	putc( '\n', stderr );
@@ -424,6 +424,8 @@ char **argv;
     use_stdout = false;
 
     csize = DEFAULT_CSIZE;
+
+    starttime = flex_gettime();
 
     program_name = argv[0];
 
@@ -609,7 +611,6 @@ get_next_arg: /* used by -C and -S flags in lieu of a "continue 2" control */
     lastsc = 0;
 
     /* initialize the statistics */
-    starttime = flex_gettime();
 
     if ( (skelfile = fopen( skelname, "r" )) == NULL )
 	lerrsf( "can't open skeleton file %s", skelname );

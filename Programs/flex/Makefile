@@ -42,7 +42,7 @@
 DESTDIR =
 BINDIR = /usr/local
 LIBDIR = /usr/local/lib
-AUXDIR = .
+AUXDIR = /usr/local/lib
 MANDIR = /usr/man/manl
 MANEXT = l
 INSTALLMAN = man
@@ -109,7 +109,8 @@ first_flex:
 
 parse.h parse.c : parse.y
 	$(YACC) -d parse.y
-	@mv y.tab.c parse.c
+	@sed '/extern char.*malloc/d' <y.tab.c >parse.c
+	@rm -f y.tab.c
 	@mv y.tab.h parse.h
 
 scan.c : scan.l

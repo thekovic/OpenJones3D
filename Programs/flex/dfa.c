@@ -1012,9 +1012,9 @@ int symlist[];
 
 	if ( tch != SYM_EPSILON )
 	    {
-	    if ( tch < -lastccl || tch > csize )
+	    if ( tch < -lastccl || tch >= csize )
 		{
-		if ( tch > csize && tch <= CSIZE )
+		if ( tch >= csize && tch <= CSIZE )
 		    flexerror( "scanner requires -8 flag" );
 
 		else

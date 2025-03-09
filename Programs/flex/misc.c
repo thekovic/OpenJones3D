@@ -373,7 +373,7 @@ char msg[];
 
     {
     fprintf( stderr, "%s: fatal internal error, %s\n", program_name, msg );
-    flexend( 1 );
+    exit( 1 );
     }
 
 
@@ -621,7 +621,9 @@ Char array[];
 
     switch ( array[1] )
 	{
+#ifdef __STDC__
 	case 'a': return ( '\a' );
+#endif
 	case 'b': return ( '\b' );
 	case 'f': return ( '\f' );
 	case 'n': return ( '\n' );

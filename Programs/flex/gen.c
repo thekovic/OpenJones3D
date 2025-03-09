@@ -28,7 +28,7 @@
 
 #ifndef lint
 static char rcsid[] =
-    "@(#) $Header: /usr/helios/u0/vern/flex/RCS/gen.c,v 2.10 90/08/29 12:11:13 vern Exp $ (LBL)";
+    "@(#) $Header: /home/horse/u0/vern/flex/RCS/gen.c,v 2.12 91/03/28 12:01:38 vern Exp $ (LBL)";
 #endif
 
 #include "flexdef.h"
@@ -676,11 +676,7 @@ void gen_NUL_trans()
 
 	do_indent();
 
-	if ( interactive )
-	    printf( "yy_is_jam = (yy_base[yy_current_state] == %d);\n",
-		    jambase );
-	else
-	    printf( "yy_is_jam = (yy_current_state == %d);\n", jamstate );
+	printf( "yy_is_jam = (yy_current_state == %d);\n", jamstate );
 	}
 
     /* if we've entered an accepting state, backtrack; note that
@@ -799,7 +795,7 @@ void gentabs()
 
 		    if ( variable_trailing_context_rules &&
 			 ! (accnum & YY_TRAILING_HEAD_MASK) &&
-			 accnum > 0 &&
+			 accnum > 0 && accnum <= num_rules &&
 			 rule_type[accnum] == RULE_VARIABLE )
 			{
 			/* special hack to flag accepting number as part
@@ -1125,9 +1121,10 @@ void make_tables()
 	    puts( "static int yy_looking_for_trail_begin = 0;" );
 	    puts( "static int yy_full_lp;" );
 	    puts( "static int *yy_full_state;" );
-	    printf( "#define YY_TRAILING_MASK 0x%x\n", YY_TRAILING_MASK );
+	    printf( "#define YY_TRAILING_MASK 0x%x\n",
+		    (unsigned int) YY_TRAILING_MASK );
 	    printf( "#define YY_TRAILING_HEAD_MASK 0x%x\n",
-		    YY_TRAILING_HEAD_MASK );
+		    (unsigned int) YY_TRAILING_HEAD_MASK );
 	    }
 
 	puts( "#define REJECT \\" );
