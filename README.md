@@ -6,7 +6,7 @@
 
 ## Overview
 
-The project is an attempt to recreate the **Jones3D game engine**, originally used in the game *Indiana Jones and the Infernal Machine*. The project aims to reconstruct the engine function by function in C, based on analyzing the engine executable binary, alongside debug symbols, strings found in the engine, and from insights gained from related game engines such as Sith game engine and its derivatives (e.g., GrimE), and other similar projects like [OpenJKDF2](https://github.com/shinyquagsire23/OpenJKDF2).
+The project is an attempt to recreate the **Jones3D game engine**, originally used in the game *Indiana Jones and the Infernal Machine* (*Indiana Jones und der Turm von Babel*). The project aims to reconstruct the engine function by function in C, based on analyzing the engine executable binary, alongside debug symbols & strings found in the engine, and from insights gained from related game engines such as Sith game engine and its derivatives (e.g., GrimE), and other similar projects like [OpenJKDF2](https://github.com/shinyquagsire23/OpenJKDF2).
 
 This project does ***not*** include any original game assets. A valid copy of the game is required which can be purchased on [Steam](https://store.steampowered.com/app/904540?snr=2_9_100000_) or [GOG](https://www.gog.com/en/game/indiana_jones_and_the_infernal_machine). Additionally, the original CD version of Indy3D.exe version 1.0 is required.
 
@@ -21,7 +21,6 @@ This project does ***not*** include any original game assets. A valid copy of th
 1. Copy `Jones3D.exe` and `Jones3D.dll` into the `<game-install-folder>\Resource` folder alongside `Indy3D.exe`.
 2. Launch `Jones3D.exe`.  
    *Note: If the game is installed in a system-protected directory like *Program Files*, you may need to run `Jones3D.exe` with administrator rights*.
-
 
 ## Building
 
