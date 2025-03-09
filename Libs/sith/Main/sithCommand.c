@@ -49,7 +49,8 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
     // Added: Init to null and 0
     int* pFlags  = NULL;
     int newFlags = 0;
-    switch ( pFunc->flags & ~SITHCONSOLE_DEVMODE )
+    int cmdFlags = pFunc->flags & ~SITHCONSOLE_DEVMODE; // Added: Remove devmode flag
+    switch ( cmdFlags )
     {
         case 0:
             pFlags = &sithMain_g_sith_mode.debugModeFlags;
@@ -104,7 +105,7 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
             if ( bON )
             {
                 *pFlags |= newFlags;
-                if ( pFunc->flags == 4 ) // invul
+                if ( cmdFlags == 4 ) // invul
                 {
                     sithPlayer_g_bPlayerInvulnerable = 1;
                 }
@@ -112,7 +113,7 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
             else
             {
                 *pFlags &= ~newFlags;
-                if ( pFunc->flags == 4 )    // invul
+                if ( cmdFlags == 4 )    // invul
                 {
                     sithPlayer_g_bPlayerInvulnerable = 0;
                 }
