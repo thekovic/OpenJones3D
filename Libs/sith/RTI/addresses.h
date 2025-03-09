@@ -1274,7 +1274,7 @@
 #define sithExplosion_Initialize_ADDR 0x004ACF90
 #define sithExplosion_CreateSpriteThing_ADDR 0x004AD020
 #define sithExplosion_UpdateExpandFade_ADDR 0x004AD220
-#define sithExplosion_GetDeltaValue_ADDR 0x004AD700
+#define sithExplosion_Lerp_ADDR 0x004AD700
 #define sithExplosion_Update_ADDR 0x004AD730
 #define sithExplosion_MakeBlast_ADDR 0x004AD880
 #define sithExplosion_ParseArg_ADDR 0x004ADC80

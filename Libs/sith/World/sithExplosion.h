@@ -13,8 +13,9 @@ J3D_EXTERN_C_START
 
 void J3DAPI sithExplosion_Initialize(SithThing* pThing);
 void J3DAPI sithExplosion_CreateSpriteThing(SithThing* pThing);
+
 void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode);
-float J3DAPI sithExplosion_GetDeltaValue(float min, float max, float maxTime, float deltaTime);
+float J3DAPI sithExplosion_Lerp(float min, float max, float maxTime, float deltaTime);
 void J3DAPI sithExplosion_Update(SithThing* pThing, float secDeltaTime);
 void J3DAPI sithExplosion_MakeBlast(SithThing* pThing);
 int J3DAPI sithExplosion_ParseArg(StdConffileArg* pArg, SithThing* pThing, signed int adjNum);

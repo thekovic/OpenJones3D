@@ -1272,7 +1272,7 @@
 #define sithExplosion_Initialize_TYPE void (J3DAPI*)(SithThing*)
 #define sithExplosion_CreateSpriteThing_TYPE void (J3DAPI*)(SithThing*)
 #define sithExplosion_UpdateExpandFade_TYPE void (J3DAPI*)(SithExplosionInfo*)
-#define sithExplosion_GetDeltaValue_TYPE float (J3DAPI*)(float, float, float, float)
+#define sithExplosion_Lerp_TYPE float (J3DAPI*)(float, float, float, float)
 #define sithExplosion_Update_TYPE void (J3DAPI*)(SithThing*, float)
 #define sithExplosion_MakeBlast_TYPE void (J3DAPI*)(SithThing*)
 #define sithExplosion_ParseArg_TYPE int (J3DAPI*)(StdConffileArg*, SithThing*,  int)
