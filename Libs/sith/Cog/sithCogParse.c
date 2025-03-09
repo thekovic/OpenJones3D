@@ -198,7 +198,7 @@ int J3DAPI sithCogParse_ParseSectionCode(SithCogScript* pScript)
         yyrestart(fh);
     }
 
-    yylinenum = 1; // TODO: Should assign line number returned by stdConffile_GetLineNumber()
+    yylinenum = stdConffile_GetLineNumber(); // Fixed: Was set to 1 which resulted in wrong line number in case of an error.
     int ret = yyparse();
     if ( ret )
     {
