@@ -135,40 +135,27 @@ int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip)
         return 0;
     }
 
-    pWorld->numSounds = 0;
+    pWorld->numSounds = 0; // TODO: should this one be set to 0 before parsing size?
 
-    size_t numSounds = 0;
-    char (*aFilenames)[64] = (char (*)[64])STDMALLOC(sizeSounds * 64);
-    if ( !aFilenames )
+    // Fixed: Refactored to load sounds directly instead of first reading filenames into a cache list.
+    //        This also fixes a memory leak where the cache list wasn't freed when bSkipRestoringSounds = true.
+    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") ) // TODO: use strcmpi
     {
-        sithSound_FreeWorldSounds(pWorld);
-        return 1;
-    }
-
-    memset(aFilenames, 0, sizeSounds << 6);
-
-    const char (*pFilename)[64] = aFilenames;
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
-    {
-        ++numSounds;
-        stdUtil_Format((char* const)pFilename++, 64, "%s", stdConffile_g_entry.aArgs[0].argValue);
+        if ( !bSkipRestoringSounds )
+        {
+            sithSound_Load(pWorld, stdConffile_g_entry.aArgs[0].argValue);
+        }
     }
 
     if ( bSkipRestoringSounds )
     {
-        // TODO: [BUG] memory leak, aFilenames not freed
         bSkipRestoringSounds = false;
-        return 0;
     }
-
-    pFilename = aFilenames;
-    for ( size_t i = 0; i < numSounds; ++i )
+    else
     {
-        sithSound_Load(pWorld, (const char*)pFilename++);
+        SITHLOG_STATUS("%d sounds loaded.\n", pWorld->numSounds);
     }
 
-    SITHLOG_STATUS("%d sounds loaded.\n", pWorld->numSounds);
-    stdMemory_Free(aFilenames);
     return 0;
 }
 
