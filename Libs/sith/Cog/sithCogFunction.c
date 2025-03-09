@@ -1970,7 +1970,7 @@ void J3DAPI sithCogFunction_DebugLocalSymbols(SithCog* pCog)
 
             if ( !bPrint )
             {
-                switch ( pCurSym->val.type )
+                switch ( pCurSym->value.type )
                 {
                     case SITHCOG_VALUE_FLOAT:
                     {
@@ -1978,7 +1978,7 @@ void J3DAPI sithCogFunction_DebugLocalSymbols(SithCog* pCog)
                         STD_FORMAT(std_g_genBuffer, "  Symbol %d: '%s' ", pCurSym->id, pValStr);
 
                         size_t endOffs = strlen(std_g_genBuffer);
-                        stdUtil_Format(&std_g_genBuffer[endOffs], STD_ARRAYLEN(std_g_genBuffer) - strlen(std_g_genBuffer), " = %f\n", pCurSym->val.val.floatValue);
+                        stdUtil_Format(&std_g_genBuffer[endOffs], STD_ARRAYLEN(std_g_genBuffer) - strlen(std_g_genBuffer), " = %f\n", pCurSym->value.val.floatValue);
                         SITHLOG_DEBUG(std_g_genBuffer); // Changed: Changed to debug from error
                     } break;
                     case SITHCOG_VALUE_VECTOR:
@@ -1987,7 +1987,7 @@ void J3DAPI sithCogFunction_DebugLocalSymbols(SithCog* pCog)
                         STD_FORMAT(std_g_genBuffer, "  Symbol %d: '%s' ", pCurSym->id, pValStr);
 
                         size_t endOffs = strlen(std_g_genBuffer);
-                        stdUtil_Format(&std_g_genBuffer[endOffs], STD_ARRAYLEN(std_g_genBuffer) - strlen(std_g_genBuffer), " = %f %f %f\n", pCurSym->val.val.floatValue, pCurSym->val.val.vecValue.y, pCurSym->val.val.vecValue.z);
+                        stdUtil_Format(&std_g_genBuffer[endOffs], STD_ARRAYLEN(std_g_genBuffer) - strlen(std_g_genBuffer), " = %f %f %f\n", pCurSym->value.val.floatValue, pCurSym->value.val.vecValue.y, pCurSym->value.val.vecValue.z);
                         SITHLOG_DEBUG(std_g_genBuffer); // Changed: Changed to debug from error
                     } break;
                     case SITHCOG_VALUE_INT:
@@ -1996,7 +1996,7 @@ void J3DAPI sithCogFunction_DebugLocalSymbols(SithCog* pCog)
                         STD_FORMAT(std_g_genBuffer, "  Symbol %d: '%s' ", pCurSym->id, pValStr);
 
                         size_t endOffs = strlen(std_g_genBuffer);
-                        stdUtil_Format(&std_g_genBuffer[endOffs], STD_ARRAYLEN(std_g_genBuffer) - strlen(std_g_genBuffer), " = %d\n", pCurSym->val.val.intValue);
+                        stdUtil_Format(&std_g_genBuffer[endOffs], STD_ARRAYLEN(std_g_genBuffer) - strlen(std_g_genBuffer), " = %d\n", pCurSym->value.val.intValue);
                         SITHLOG_DEBUG(std_g_genBuffer); // Changed: Changed to debug from error
                     } break;
                 }

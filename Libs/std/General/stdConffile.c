@@ -52,19 +52,6 @@ void stdConffile_InstallHooks(void)
 
 void stdConffile_ResetGlobals(void)
 {
-    //memset(&stdConffile_aWriteFilename, 0, sizeof(stdConffile_aWriteFilename));
-    //memset(&aFilenameStack, 0, sizeof(aFilenameStack));
-    //memset(&apBufferStack, 0, sizeof(apBufferStack));
-    //memset(&linenumStack, 0, sizeof(linenumStack));
-    //memset(&stdConffile_pFilename, 0, sizeof(stdConffile_pFilename));
-    //memset(&aEntryStack, 0, sizeof(aEntryStack));
-    //memset(&openFileStack, 0, sizeof(openFileStack));
-    //memset(&stdConffile_linenum, 0, sizeof(stdConffile_linenum));
-    //memset(&stdConffile_bOpen, 0, sizeof(stdConffile_bOpen));
-    //memset(&stdConffile_openFile, 0, sizeof(stdConffile_openFile));
-    //memset(&stdConffile_writeFile, 0, sizeof(stdConffile_writeFile));
-    //memset(&stdConffile_stackLevel, 0, sizeof(stdConffile_stackLevel));
-
     memset(&stdConffile_g_entry, 0, sizeof(stdConffile_g_entry));
     memset(&stdConffile_g_aLine, 0, sizeof(stdConffile_g_aLine));
 }

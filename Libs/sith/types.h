@@ -17,6 +17,8 @@ J3D_EXTERN_C_START
 #define SITHMESSAGE_NUMTYPES  65u
 #define SITHMESSAGE_SENDTOALL ((DPID)-1)
 
+#define SITHCOGSCRIPT_MAXSYMREFS  256u
+
 #define SITHCOGEXEC_CALLSTACKSIZE 4u
 #define SITHCOGEXEC_STACKSIZE     256u
 
@@ -1142,42 +1144,6 @@ typedef enum eSithControlFunction
     SITHCONTROL_CHALK         = 57
 } SithControlFunction;
 
-typedef enum eSithCogExecOpcode
-{
-    SITHCOGEXEC_OPCODE_NOP        = 0x0,
-    SITHCOGEXEC_OPCODE_PUSHINT    = 0x1,
-    SITHCOGEXEC_OPCODE_PUSHFLOAT  = 0x2,
-    SITHCOGEXEC_OPCODE_PUSHSYMBOL = 0x3,
-    SITHCOGEXEC_OPCODE_ARRAYIDX   = 0x4,
-    SITHCOGEXEC_OPCODE_CALLFUNC   = 0x5,
-    SITHCOGEXEC_OPCODE_ASSIGN     = 0x6,
-    SITHCOGEXEC_OPCODE_PUSHVECTOR = 0x7,
-    SITHCOGEXEC_OPCODE_ADD        = 0x8,
-    SITHCOGEXEC_OPCODE_SUB        = 0x9,
-    SITHCOGEXEC_OPCODE_MUL        = 0xA,
-    SITHCOGEXEC_OPCODE_DIV        = 0xB,
-    SITHCOGEXEC_OPCODE_MOD        = 0xC,
-    SITHCOGEXEC_OPCODE_CMPFALSE   = 0xD,
-    SITHCOGEXEC_OPCODE_NEG        = 0xE,
-    SITHCOGEXEC_OPCODE_CMPGT      = 0xF,
-    SITHCOGEXEC_OPCODE_CMPLS      = 0x10,
-    SITHCOGEXEC_OPCODE_CMPEQ      = 0x11,
-    SITHCOGEXEC_OPCODE_CMPLE      = 0x12,
-    SITHCOGEXEC_OPCODE_CMPGE      = 0x13,
-    SITHCOGEXEC_OPCODE_CMPAND     = 0x14,
-    SITHCOGEXEC_OPCODE_CMPOR      = 0x15,
-    SITHCOGEXEC_OPCODE_CMPNE      = 0x16,
-    SITHCOGEXEC_OPCODE_AND        = 0x17,
-    SITHCOGEXEC_OPCODE_OR         = 0x18,
-    SITHCOGEXEC_OPCODE_XOR        = 0x19,
-    SITHCOGEXEC_OPCODE_JZ         = 0x1A,
-    SITHCOGEXEC_OPCODE_JNZ        = 0x1B,
-    SITHCOGEXEC_OPCODE_JMP        = 0x1C,
-    SITHCOGEXEC_OPCODE_RET        = 0x1D,
-    SITHCOGEXEC_OPCODE_UNUSED_30  = 0x1E,
-    SITHCOGEXEC_OPCODE_CALL       = 0x1F,
-} SithCogExecOpcode;
-
 typedef enum eSithCameraState
 {
     SITHCAMERA_STATE_CUTSCENE = 0x1,
@@ -1376,7 +1342,7 @@ typedef union sSithCogValue
     void* pointerValue;
     float floatValue;
     int intValue;
-    const char* pString;
+    char* pString;
     rdVector3 vecValue;
 } SithCogValue;
 static_assert(sizeof(SithCogValue) == 12, "sizeof(SithCogValue) == 12");
@@ -1391,9 +1357,9 @@ static_assert(sizeof(SithCogSymbolValue) == 16, "sizeof(SithCogSymbolValue) == 1
 typedef struct sSithCogSymbol
 {
     size_t id;
-    SithCogSymbolValue val;
+    SithCogSymbolValue value;
     uint32_t label;
-    const char* pName;
+    char* pName;
 } SithCogSymbol;
 static_assert(sizeof(SithCogSymbol) == 28, "sizeof(SithCogSymbol) == 28");
 
@@ -2154,8 +2120,8 @@ typedef struct sSithCogCallstackElement
 typedef struct sSithCogScriptMsgHandler
 {
     SithCogMsgType type;
-    int codeOffset;
-    int id;
+    int32_t codeOffset; // Can be < 0
+    uint32_t label;
 } SithCogScriptMsgHandler;
 
 typedef struct sSithCogSymbolRef
@@ -2164,10 +2130,11 @@ typedef struct sSithCogSymbolRef
     int bLocal;
     int linkId;
     int mask;
-    int symbolId;
+    size_t symbolId;
     char* pDescription;
     char aValue[64];
 } SithCogSymbolRef;
+static_assert(sizeof(SithCogSymbolRef) == 88, "sizeof(SithCogSymbolRef) == 88");
 
 typedef struct sSithCogScript
 {
@@ -2178,7 +2145,7 @@ typedef struct sSithCogScript
     SithCogSymbolTable* pSymbolTable;
     size_t numHandlers;
     SithCogScriptMsgHandler aHandlers[32];
-    SithCogSymbolRef aSymRefs[256];
+    SithCogSymbolRef aSymRefs[SITHCOGSCRIPT_MAXSYMREFS];
     size_t numSymbolRefs;
 } SithCogScript;
 static_assert(sizeof(SithCogScript) == 23000, "sizeof(SithCogScript) == 23000");
@@ -2191,9 +2158,9 @@ struct sSithCog
     SithCogStatus status;
     size_t execPos;
     int statusParams[2];
-    unsigned int msecPulseInterval;
-    unsigned int msecNextPulseTime;
-    unsigned int msecTimerTimeout;
+    uint32_t msecPulseInterval;
+    uint32_t msecNextPulseTime;
+    uint32_t msecTimerTimeout;
     int linkId;
     int senderIdx;
     SithCogSymbolRefType senderType;
@@ -2208,7 +2175,7 @@ struct sSithCog
     SithCogSymbolValue stack[SITHCOGEXEC_STACKSIZE];
     size_t stackSize;
     char aName[64];
-    char aSymRefValues[256][64];
+    char aSymRefValues[SITHCOGSCRIPT_MAXSYMREFS][64];
     SithCogSymbolValue* aHeap;
     size_t heapSize;
 };
@@ -2604,14 +2571,15 @@ static_assert(sizeof(CndSurfaceInfo) == 56, "sizeof(CndSurfaceInfo) == 56");
 
 struct sSithCogSyntaxNode
 {
-    int branchLabel;
-    int label;
+    uint32_t parentLabel;
+    uint32_t childLabel;
     SithCogSyntaxNode* pLeft;
     SithCogSyntaxNode* pRight;
-    int opcode;
+    int32_t opcode;
     int value;
     rdVector3 vecValue;
 };
+static_assert(sizeof(SithCogSyntaxNode) == 36, "sizeof(SithCogSyntaxNode) == 36");
 
 typedef struct sSithCogThingLink
 {

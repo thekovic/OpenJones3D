@@ -11,6 +11,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Enable solution folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
+
+
 # Configure the version header file
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/LIBS/j3dcore/j3d.h.in"
@@ -24,6 +27,7 @@ if (MSVC)
     add_compile_definitions("__BASE_FILE__=\"%(Filename)%(Extension)\"")
     add_compile_options(
         /utf-8
+        /Zc:__STDC__
         /Zc:__cplusplus
         /diagnostics:caret
         /sdl
@@ -44,3 +48,7 @@ add_subdirectory(Libs)
 
 # Add main project Jones3D
 add_subdirectory(Jones3D)
+
+if (JONES3D_BUILD_PROGRAMS)
+    add_subdirectory(Programs)
+endif()

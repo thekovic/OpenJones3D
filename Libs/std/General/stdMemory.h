@@ -14,11 +14,21 @@ J3D_EXTERN_C_START
 
 /**
  * @brief Macro for allocating memory using stdMemory_Malloc
- * @param size The size of memory to allocate in bytes
+ * @param size - The size of memory to allocate in bytes
  * @return Pointer to the allocated memory
 */
 #define STDMALLOC(size) \
     stdMemory_Malloc((size), J3D_FILE, __LINE__)
+
+/**
+ * @brief Macro for re-allocating memory using stdMemory_Realloc
+ * @brief data for re-allocating memory using stdMemory_Realloc
+ * @param data - Existing allocated data to re-alloc
+ * @param size - The size of memory to allocate in bytes
+ * @return Pointer to the newly allocated memory
+*/
+#define STDREALLOC(data, size) \
+    stdMemory_Realloc((data), (size), J3D_FILE, __LINE__)
 
 #define stdMemory_g_curState J3D_DECL_FAR_VAR(stdMemory_g_curState, tMemoryState)
 // extern tMemoryState stdMemory_g_curState;

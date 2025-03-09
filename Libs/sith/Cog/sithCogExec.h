@@ -9,6 +9,42 @@
 
 J3D_EXTERN_C_START
 
+typedef enum eSithCogExecOpcode
+{
+    SITHCOGEXEC_OPCODE_NOP        = 0,
+    SITHCOGEXEC_OPCODE_PUSHINT    = 1,
+    SITHCOGEXEC_OPCODE_PUSHFLOAT  = 2,
+    SITHCOGEXEC_OPCODE_PUSHSYMBOL = 3,
+    SITHCOGEXEC_OPCODE_ARRAYIDX   = 4,
+    SITHCOGEXEC_OPCODE_CALLFUNC   = 5,
+    SITHCOGEXEC_OPCODE_ASSIGN     = 6,
+    SITHCOGEXEC_OPCODE_PUSHVECTOR = 7,
+    SITHCOGEXEC_OPCODE_ADD        = 8,
+    SITHCOGEXEC_OPCODE_SUB        = 9,
+    SITHCOGEXEC_OPCODE_MUL        = 10,
+    SITHCOGEXEC_OPCODE_DIV        = 11,
+    SITHCOGEXEC_OPCODE_MOD        = 12,
+    SITHCOGEXEC_OPCODE_CMPFALSE   = 13,
+    SITHCOGEXEC_OPCODE_NEG        = 14,
+    SITHCOGEXEC_OPCODE_CMPGT      = 15,
+    SITHCOGEXEC_OPCODE_CMPLS      = 16,
+    SITHCOGEXEC_OPCODE_CMPEQ      = 17,
+    SITHCOGEXEC_OPCODE_CMPLE      = 18,
+    SITHCOGEXEC_OPCODE_CMPGE      = 19,
+    SITHCOGEXEC_OPCODE_CMPAND     = 20,
+    SITHCOGEXEC_OPCODE_CMPOR      = 21,
+    SITHCOGEXEC_OPCODE_CMPNE      = 22,
+    SITHCOGEXEC_OPCODE_AND        = 23,
+    SITHCOGEXEC_OPCODE_OR         = 24,
+    SITHCOGEXEC_OPCODE_XOR        = 25,
+    SITHCOGEXEC_OPCODE_JZ         = 26,
+    SITHCOGEXEC_OPCODE_JNZ        = 27,
+    SITHCOGEXEC_OPCODE_JMP        = 28,
+    SITHCOGEXEC_OPCODE_RET        = 29,
+    SITHCOGEXEC_OPCODE_UNUSED_30  = 30,
+    SITHCOGEXEC_OPCODE_CALL       = 31,
+} SithCogExecOpcode;
+
 void J3DAPI sithCogExec_Execute(SithCog* pCog);
 void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum);
 
@@ -36,7 +72,7 @@ void J3DAPI sithCogExec_PushInt(SithCog* pCog, int val);
 void J3DAPI sithCogExec_PushFlex(SithCog* pCog, float val);
 void J3DAPI sithCogExec_PushVector(SithCog* pCog, const rdVector3* vec);
 
-int32_t J3DAPI sithCogExec_GetOpCode(SithCog* pCog);
+SithCogExecOpcode J3DAPI sithCogExec_GetOpCode(SithCog* pCog);
 void J3DAPI sithCogExec_ResetStack(SithCog* pCog);
 void J3DAPI sithCogExec_PushCallstack(SithCog* pCog);
 void J3DAPI sithCogExec_PopCallstack(SithCog* pCog);

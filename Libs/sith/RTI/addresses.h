@@ -489,9 +489,9 @@
 #define sithCogParse_MakeLeafNode_ADDR 0x00453320
 #define sithCogParse_MakeVectorLeafNode_ADDR 0x00453340
 #define sithCogParse_MakeNode_ADDR 0x00453380
-#define sithCogParse_LexerGetSymbol_ADDR 0x004533B0
-#define sithCogParse_LexerSetStringLiteral_ADDR 0x004534F0
-#define sithCogParse_LexerSetVectorLiteral_ADDR 0x004535A0
+#define sithCogParse_LexerSetSymbol_ADDR 0x004533B0
+#define sithCogParse_LexerSetString_ADDR 0x004534F0
+#define sithCogParse_LexerSetVector_ADDR 0x004535A0
 #define sithCogParse_GetNextLabel_ADDR 0x00453610
 #define sithCogParse_GetNextNode_ADDR 0x00453650
 #define sithCogParse_ResetTreeNodes_ADDR 0x00453730
@@ -503,7 +503,7 @@
 #define sithCogParse_ParseInt_ADDR 0x004542F0
 #define sithCogParse_ParseVector_ADDR 0x004544D0
 #define sithCogParse_ParseMessage_ADDR 0x004546B0
-#define sithCogParse_InitScriptMessageHandlers_ADDR 0x00454790
+#define sithCogParse_ResolveMessageHandlers_ADDR 0x00454790
 #define sithMulti_CloseGame_ADDR 0x00454CD0
 #define sithMulti_CheckPlayers_ADDR 0x00454D30
 #define sithMulti_ProcessPlayerLost_ADDR 0x00454E70

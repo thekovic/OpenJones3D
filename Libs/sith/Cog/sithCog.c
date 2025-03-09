@@ -148,7 +148,7 @@ int sithCog_Startup(void)
         return 1;
     }
 
-    sithCog_g_pSymbolTable->firstId = 256; // Is this the SITHCOG_MAXSCRIPTS? 
+    sithCog_g_pSymbolTable->firstId = SITHCOG_GLOBALSYMBOLSTARTID;
 
     sithCog_Initialize();
     sithEvent_RegisterTask(SITHCOG_TASKID, sithCog_TimerEventTask, 0, SITHEVENT_TASKONDEMAND);
@@ -659,17 +659,17 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
 {
 
     SithCogSymbol* pSymbol = &pCog->pSymbolTable->aSymbols[pCog->pScript->aSymRefs[symIdx].symbolId];
-    int objectIdx = pSymbol->val.val.intValue;
+    int objectIdx = pSymbol->value.val.intValue;
     int refIdx    = objectIdx;
 
     switch ( pCog->pScript->aSymRefs[symIdx].type )
     {
         case SITHCOG_SYM_REF_FLEX:
-            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "%f", pSymbol->val.val.floatValue);
+            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "%f", pSymbol->value.val.floatValue);
             break;
 
         case SITHCOG_SYM_REF_VECTOR:
-            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "(%f/%f/%f)", pSymbol->val.val.floatValue, pSymbol->val.val.vecValue.y, pSymbol->val.val.vecValue.z);
+            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "(%f/%f/%f)", pSymbol->value.val.floatValue, pSymbol->value.val.vecValue.y, pSymbol->value.val.vecValue.z);
             break;
 
         case SITHCOG_SYM_REF_TEMPLATE:
@@ -709,7 +709,7 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
             }
             else
             {
-                numSounds = pSymbol->val.val.intValue;
+                numSounds = pSymbol->value.val.intValue;
             }
 
             objectIdx = numSounds;
@@ -749,7 +749,7 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
             }
             else
             {
-                numCogs = pSymbol->val.val.intValue;
+                numCogs = pSymbol->value.val.intValue;
             }
 
             objectIdx = numCogs;
@@ -1071,120 +1071,120 @@ int J3DAPI sithCog_ParseSymbolRef(SithWorld* pWorld, SithCogSymbol* pSymbol, con
     switch ( pRef->type )
     {
         case SITHCOG_SYM_REF_FLEX:
-            pSymbol->val.type = SITHCOG_VALUE_FLOAT;
-            pSymbol->val.val.floatValue = strtof(pString, NULL);
+            pSymbol->value.type = SITHCOG_VALUE_FLOAT;
+            pSymbol->value.val.floatValue = strtof(pString, NULL);
             return 0;
 
         case SITHCOG_SYM_REF_VECTOR:
         {
-            pSymbol->val.type = SITHCOG_VALUE_VECTOR;
+            pSymbol->value.type = SITHCOG_VALUE_VECTOR;
             float x, y, z;
             if ( sscanf_s(pString, "(%f/%f/%f)", &x, &y, &z) != 3 )
             {
                 SITHLOG_ERROR("Ref '%s' could not be read as a vector, line %d.\n", pString, stdConffile_GetLineNumber());
-                memset(&pSymbol->val.val, 0, sizeof(pSymbol->val.val));
+                memset(&pSymbol->value.val, 0, sizeof(pSymbol->value.val));
                 return 1;
             }
 
-            pSymbol->val.val.vecValue.x = x;
-            pSymbol->val.val.vecValue.y = y;
-            pSymbol->val.val.vecValue.z = z;
+            pSymbol->value.val.vecValue.x = x;
+            pSymbol->value.val.vecValue.y = y;
+            pSymbol->value.val.vecValue.z = z;
             return 0;
         }
 
         case SITHCOG_SYM_REF_MATERIAL:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             rdMaterial* pMat = sithMaterial_Load(pString);
             if ( !pMat )
             {
                 SITHLOG_ERROR("MaterialRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pMat->num;
+            pSymbol->value.val.intValue = pMat->num;
             return 0;
         }
 
         case SITHCOG_SYM_REF_SOUND:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             tSoundHandle hSnd = sithSound_Load(pWorld, pString);
             if ( hSnd == 0 )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("SoundRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = Sound_GetSoundIndex(hSnd);
+            pSymbol->value.val.intValue = Sound_GetSoundIndex(hSnd);
             return 0;
         }
 
         case SITHCOG_SYM_REF_TEMPLATE:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             SithThing* pTemplate = sithTemplate_GetTemplate(pString);
             if ( !pTemplate )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("TemplateRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pTemplate->idx;
+            pSymbol->value.val.intValue = pTemplate->idx;
             return 0;
         }
 
         case SITHCOG_SYM_REF_MODEL:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             rdModel3* pModel = sithModel_Load(pString, 1);
             if ( !pModel )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("ModelRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pModel->num;
+            pSymbol->value.val.intValue = pModel->num;
             return 0;
         }
 
         case SITHCOG_SYM_REF_KEYFRAME:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             rdKeyframe* pKeyframe = sithPuppet_LoadKeyframe(pString);
             if ( !pKeyframe )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("KeyframeRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pKeyframe->idx;
+            pSymbol->value.val.intValue = pKeyframe->idx;
             return 0;
         }
 
         case SITHCOG_SYM_REF_AICLASS:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             SithAIClass* pAIClass = sithAIClass_Load(pWorld, pString);
             if ( !pAIClass )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("AIClass '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pAIClass->num;
+            pSymbol->value.val.intValue = pAIClass->num;
             return 0;
         }
 
         default:
-            pSymbol->val.type = SITHCOG_VALUE_INT;
-            pSymbol->val.val.intValue = atoi(pString);
+            pSymbol->value.type = SITHCOG_VALUE_INT;
+            pSymbol->value.val.intValue = atoi(pString);
             return 0;
     }
 }
@@ -1193,7 +1193,7 @@ int J3DAPI sithCog_LinkCog(const SithWorld* pWorld, SithCog* pCog, const SithCog
 {
     SITH_ASSERTREL(pCog && pRef && pSymbol);
 
-    int index = pSymbol->val.val.intValue;
+    int index = pSymbol->value.val.intValue;
     if ( index < 0 )
     {
         return 1;
@@ -2079,13 +2079,13 @@ int J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
         }
 
         size_t curPos = strlen(std_g_genBuffer);
-        if ( pSymbol->val.type == SITHCOG_VALUE_FLOAT )
+        if ( pSymbol->value.type == SITHCOG_VALUE_FLOAT )
         {
-            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %f\n", pSymbol->val.val.floatValue);
+            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %f\n", pSymbol->value.val.floatValue);
         }
         else
         {
-            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %d\n", pSymbol->val.val.intValue);
+            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %d\n", pSymbol->value.val.intValue);
         }
 
         sithConsole_PrintString(std_g_genBuffer);

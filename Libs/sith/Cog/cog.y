@@ -12,12 +12,9 @@
 %token LE_OP GE_OP EQ_OP NE_OP
 %token AND_OP OR_OP
 %token TYPE_NAME
-
-%token UNK_269
-
+%nonassoc IFX
 %token IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN CALL
 
-%nonassoc IFX
 %nonassoc ELSE
 
 %union {
@@ -166,7 +163,7 @@ expression_statement
     ;
 
 selection_statement
-    : IF '(' expression ')' statement              {
+    : IF '(' expression ')' statement %prec IFX             {
                                                             SithCogSyntaxNode* tmp = sithCogParse_MakeNode($5.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             tmp->childLabel = sithCogParse_GetNextLabel();
                                                             SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp->childLabel);
