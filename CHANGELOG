@@ -1,12 +1,16 @@
 # v0.3
 General:
   - Fixed various bugs
+  - Fixed game crash on save game restore when an object is attached to a non-primary mesh face of a 3D model (45c8065) 
   - Fixed hiding console on cutscene start (27ca92b)
   - Added developer COG verbs (33f8f9d)
   - Added error log when popping invalid string from COG stack (34c9e20)
   - Rename debug mode flag `SITHDEBUG_AILOOK_FOR_TARGET_DISABLED` to `SITHDEBUG_AINOTARGET` (53b9091)
   - Changed argument order of debug print COG functions (a80ed30)
     Also changed the log level to debug.
+  - Added programs `yacc` & `flex` (d6f5be6 + b669ca8)
+  - Fixed yacc initial line number at the start of code parsing. 
+    This fixes line number in log when error is encountered.
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
@@ -16,21 +20,37 @@ General:
     * `DebugInt` (33f8f9d)
     * `DebugLocalSymbols` (33f8f9d)
     * `DebugWaitForKey` (33f8f9d)
+    * `sithSprite` (3f0d87f)
+    * `sithParticle` (3f0d87f)
+    * `sithPathMove` (8ba32fb)
   - Implemented `Print*` Cog functions (33f8f9d)
-  - Implemented:
+  - Implemented sound save & restore functions (4ab0c6f)
+  - Implemented modules:
     * `sithConsole` (7879d45)
     * `sithCommand` (4ec4941)
     * `sithCogFunction` (33f8f9d)
     * `sithCogFunctionSector` (e46c2ab)
     * `sithCogFunctionSurface` (40b6d38)
     * `sithCogFunctionSound` (2df2214)
+    * `sithAI` (ca79900)
+    * `sithAIAwareness` (d7f822f)
+    * `sithAIClass` (d7f822f)
+    * `sithPuppet` (a68d1a7)
+    * `sithTemplate` (a53d895)
+    * `SoundDriver` (0530afe)
+    * `sithSoundClass` (3d2d82d)
+    * `sithCogFunctionAI` (f6c8fb8)
+    * `sithSound` (5bbb9eb)
+    * `sithExplosion` (d15ac1c)
+    * `sithCogParse` (b669ca8)
+    * `sithCogYacc` (b669ca8)
     - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
     - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
     - Refactored `stdControl` module (fc4060c)
     - Added devmode logic to `sithConsole` module (57b685b)
       This enables commands flagged with `SITHCONSOLE_DEVMODE` flag to be available only
       when console flags have SITHCONSOLE_DEVMODE set.
-    - Added dev commands:
+    - Added Dev Console Commands:
     * `jumplevel` (e59ffab)
     * `radius` (e59ffab)
     * `pvs` (e59ffab)
@@ -51,7 +71,7 @@ General:
     * `noaishots`, `aistatus`, `ailist`, `cogpause` (9d399b0)
     * `pauseallcogs`, `matlist`, `activate`, `slowmo` (9d399b0)
     * `stopsound`, `wpdraw` (9d399b0)
-
+    * `noclip` (2d9f47a)
 
 Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
@@ -73,10 +93,14 @@ Display & Render:
   - Increased the size of store item icon to 48 (a8a32ff)
 
 Game play:
+  - Fixed incorrect removal of loop-playing far sound. (2a25add)
+    This ensures the loop-playing sound continues to play when the listener comes in sound hearing range.
   - Fixed submersion of dead thing in cold-water/lava (18d828d)
   - Fixed mouse sensitivity when in-editor mode (d25081f)
   - Added mouse button actions for fire/activate, jump, weapon toggle, and weapon selection when in-editor mode (d25081f)
   - Restricted developer/debug control keys to in-editor/dev mode only (d25081f)
+  - Fixed stop looping far sound when volume is below threshold (5a169d7)
+  - Fixed playing far sound on sound restore from savegame (b8a82d4)
 
 # v0.2
 General:
