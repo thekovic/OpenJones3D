@@ -2019,7 +2019,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
     }
 }
 
-void J3DAPI sithCog_ProcessCogs()
+void sithCog_ProcessCogs(void)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
     SITH_ASSERTREL(pWorld != ((void*)0));

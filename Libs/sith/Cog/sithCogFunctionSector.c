@@ -65,14 +65,10 @@ void J3DAPI sithCogFunctionSector_GetSectorLight(SithCog* pCog)
 
 void J3DAPI sithCogFunctionSector_SetSectorLight(SithCog* pCog)
 {
-    int bVec;
-    SithSector* pSector;
     rdVector3 color;
-    float timeDelta;
-
-    timeDelta = sithCogExec_PopFlex(pCog);
-    bVec = sithCogExec_PopVector(pCog, &color);
-    pSector = sithCogExec_PopSector(pCog);
+    float timeDelta     = sithCogExec_PopFlex(pCog);
+    int bVec            = sithCogExec_PopVector(pCog, &color);
+    SithSector* pSector = sithCogExec_PopSector(pCog);
     if ( !pSector || !bVec )
     {
         SITHLOG_ERROR("Cog %s: Illegal call to SectorLight().\n", pCog->aName);
@@ -94,11 +90,8 @@ void J3DAPI sithCogFunctionSector_SetSectorLight(SithCog* pCog)
 
 void J3DAPI sithCogFunctionSector_SetSectorAdjoins(SithCog* pCog)
 {
-    int bOn;
-    SithSector* pSector;
-
-    bOn = sithCogExec_PopInt(pCog);
-    pSector = sithCogExec_PopSector(pCog);
+    int bOn = sithCogExec_PopInt(pCog);
+    SithSector* pSector = sithCogExec_PopSector(pCog);
     if ( !pSector )
     {
         SITHLOG_ERROR("Cog %s: Illegal params in SetSectorAdjoins().\n", pCog->aName);
@@ -140,7 +133,7 @@ void J3DAPI sithCogFunctionSector_SetSectorSurfflags(SithCog* pCog)
 
 void J3DAPI sithCogFunctionSector_ClearSectorSurfflags(SithCog* pCog)
 {
-    int surfflags = sithCogExec_PopInt(pCog);
+    int surfflags       = sithCogExec_PopInt(pCog);
     SithSector* pSector = sithCogExec_PopSector(pCog);
     if ( !pSector || !surfflags )
     {
@@ -172,9 +165,7 @@ void J3DAPI sithCogFunctionSector_SetSectorColormap(SithCog* pCog)
 
 void J3DAPI sithCogFunctionSector_GetSectorThrust(SithCog* pCog)
 {
-    SithSector* pSector;
-
-    pSector = sithCogExec_PopSector(pCog);
+    SithSector* pSector = sithCogExec_PopSector(pCog);
     if ( !pSector )
     {
         SITHLOG_ERROR("Cog %s: Illegal call to GetSectorThrust().\n", pCog->aName);
@@ -215,7 +206,7 @@ void J3DAPI sithCogFunctionSector_SetSectorThrust(SithCog* pCog)
 void J3DAPI sithCogFunctionSector_SetSectorFlags(SithCog* pCog)
 {
     SithSectorFlag flags = sithCogExec_PopInt(pCog);
-    SithSector* pSector = sithCogExec_PopSector(pCog);
+    SithSector* pSector  = sithCogExec_PopSector(pCog);
     if ( !pSector || !flags )
     {
         SITHLOG_ERROR("Cog %s: Bad Args in SetSectorFlags().\n", pCog->aName);
@@ -471,6 +462,4 @@ void sithCogFunctionSector_InstallHooks(void)
 }
 
 void sithCogFunctionSector_ResetGlobals(void)
-{
-
-}
+{}

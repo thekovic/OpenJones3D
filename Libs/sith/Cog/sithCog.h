@@ -86,7 +86,7 @@ int J3DAPI sithCog_LoadCogScriptsBinary(tFileHandle fh, SithWorld* pWorld);
 SithCogScript* J3DAPI sithCog_LoadScript(SithWorld* pWorld, const char* pName); // Loads COG script
 
 void J3DAPI sithCog_ProcessCog(SithCog* pCog);
-void J3DAPI sithCog_ProcessCogs();
+void sithCog_ProcessCogs(void);
 int J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 // Maybe following should be all called register* functions

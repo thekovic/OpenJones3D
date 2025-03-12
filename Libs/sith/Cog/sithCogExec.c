@@ -240,7 +240,7 @@ int J3DAPI sithCogExec_PopInt(SithCog* pCog)
     value = *sithCogExec_GetSymbolValue(&retVal, pCog, &value);
     if ( value.type == SITHCOG_VALUE_FLOAT )
     {
-        return (int)rintf(value.val.floatValue);
+        return (int)value.val.floatValue;
     }
 
     if ( value.type == SITHCOG_VALUE_INT )
@@ -879,38 +879,38 @@ void J3DAPI sithCogExec_IntererOps(SithCog* pCog, int opcode)
     SithCogSymbolValue value;
     value.type = SITHCOG_VALUE_INT;
 
-    int a = sithCogExec_PopInt(pCog);
     int b = sithCogExec_PopInt(pCog);
+    int a = sithCogExec_PopInt(pCog);
 
     switch ( opcode )
     {
         case SITHCOGEXEC_OPCODE_CMPAND:
-            value.val.intValue = b && a;
+            value.val.intValue = a && b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPOR:
-            value.val.intValue = b || a;
+            value.val.intValue = a || b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPNE:
-            value.val.intValue = b != a;
+            value.val.intValue = a != b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_AND:
-            value.val.intValue = a & b;
+            value.val.intValue = b & a;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_OR:
-            value.val.intValue = a | b;
+            value.val.intValue = b | a;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_XOR:
-            value.val.intValue = a ^ b;
+            value.val.intValue = b ^ a;
             sithCogExec_PushStack(pCog, &value);
             break;
 
@@ -925,71 +925,71 @@ void J3DAPI sithCogExec_FloatOps(SithCog* pCog, int opcode)
     SithCogSymbolValue value;
     value.type = SITHCOG_VALUE_FLOAT;
 
-    float a = sithCogExec_PopFlex(pCog);
     float b = sithCogExec_PopFlex(pCog);
+    float a = sithCogExec_PopFlex(pCog);
 
     switch ( opcode )
     {
         case SITHCOGEXEC_OPCODE_ADD:
-            value.val.floatValue = b + a;
+            value.val.floatValue = a + b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_SUB:
-            value.val.floatValue = b - a;
+            value.val.floatValue = a - b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_MUL:
-            value.val.floatValue = b * a;
+            value.val.floatValue = a * b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_DIV:
-            if ( a == 0.0f )
+            if ( b == 0.0f )
             {
                 value.val.intValue = 0;
             }
             else
             {
-                value.val.floatValue = b / a;
+                value.val.floatValue = a / b;
             }
 
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_MOD:
-            value.val.floatValue = fmodf(b, a);
+            value.val.floatValue = fmodf(a, b);
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPGT:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b > (double)a;
+            value.val.intValue = a > (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPLS:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b < (double)a;
+            value.val.intValue = a < (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPEQ:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b == a;
+            value.val.intValue = a == b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPLE:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b <= (double)a;
+            value.val.intValue = a <= (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPGE:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b >= (double)a;
+            value.val.intValue = a >= (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
