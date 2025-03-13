@@ -14,7 +14,7 @@
 #define J3D_VERSION_FULL   "@PROJECT_NAME@ " J3D_VERSION_STRING
 
 #if defined(_MSC_VER) && defined(__INTELLISENSE__)
-    #define J3D_FILE "dummy.cpp"
+    #define J3D_FILE "dummy.c"
 #else
     #define J3D_FILE __FILE_NAME__
 #endif
