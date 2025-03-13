@@ -1,11 +1,8 @@
 %{
 #include <sith/Cog/sithCogExec.h>
-//#include <sith/Cog/sithCogParse.h>
 #include <sith/Main/sithMain.h>
 
 #include <stdio.h>
-
-
 %}
 
 %token IDENTIFIER CONSTANT_INT CONSTANT_FLOAT STRING_LITERAL VECTOR_LITERAL
@@ -26,8 +23,11 @@
 }
 
 %{
-    extern int yylex(void);
+extern int yylex(void);
 extern size_t yylinenum;
+static SithCogSyntaxNode* pBranchNode;
+static SithCogSyntaxNode* pConditionNode;
+
 uint32_t sithCogParse_GetNextLabel(void);
 uint32_t J3DAPI sithCogParse_GetSymbolLabel(size_t symbolId);
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeLeafNode(SithCogExecOpcode opcode, int symbolId);
@@ -50,7 +50,7 @@ primary_expression
 postfix_expression
     : primary_expression
     | postfix_expression '[' expression ']'                 { $$.pNode = sithCogParse_MakeNode($1.pNode, $3.pNode,  SITHCOGEXEC_OPCODE_ARRAYIDX, 0); }
-    | postfix_expression '(' ')'                            { $$.pNode = sithCogParse_MakeNode($1.pNode, 0,  SITHCOGEXEC_OPCODE_CALLFUNC, 0); }
+    | postfix_expression '(' ')'                            { $$.pNode = sithCogParse_MakeNode($1.pNode, NULL,  SITHCOGEXEC_OPCODE_CALLFUNC, 0); }
     | postfix_expression '(' argument_expression_list ')'   { $$.pNode = sithCogParse_MakeNode($3.pNode, $1.pNode,  SITHCOGEXEC_OPCODE_CALLFUNC, 0); }
     ;
 
@@ -142,8 +142,8 @@ statement
 
 labeled_statement
     : IDENTIFIER ':' statement                              { 
-                                                            $$.pNode = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0); 
-                                                            $$.pNode-> parentLabel = sithCogParse_GetSymbolLabel($1.intValue);
+                                                                $$.pNode = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0); 
+                                                                $$.pNode-> parentLabel = sithCogParse_GetSymbolLabel($1.intValue);
                                                             }
     ;
 
@@ -164,46 +164,46 @@ expression_statement
 
 selection_statement
     : IF '(' expression ')' statement %prec IFX             {
-                                                            SithCogSyntaxNode* tmp = sithCogParse_MakeNode($5.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                            tmp->childLabel = sithCogParse_GetNextLabel();
-                                                            SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp->childLabel);
-                                                            $$.pNode = sithCogParse_MakeNode(tmp2, tmp,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode = sithCogParse_MakeNode($5.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode->childLabel = sithCogParse_GetNextLabel();
+                                                                pConditionNode = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode->childLabel);
+                                                                $$.pNode = sithCogParse_MakeNode(pConditionNode, pBranchNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             }
     | IF '(' expression ')' statement ELSE statement        {
-                                                            SithCogSyntaxNode* tmp = sithCogParse_MakeNode($7.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                            tmp-> parentLabel = sithCogParse_GetNextLabel();
-                                                            tmp->childLabel = sithCogParse_GetNextLabel();
-                                                            SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp-> parentLabel);
-                                                            tmp2 = sithCogParse_MakeNode(tmp2, $5.pNode,  SITHCOGEXEC_OPCODE_JMP, tmp->childLabel);
-                                                            $$.pNode = sithCogParse_MakeNode(tmp2, tmp,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode = sithCogParse_MakeNode($7.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                pBranchNode->childLabel = sithCogParse_GetNextLabel();
+                                                                pConditionNode = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode-> parentLabel);
+                                                                pConditionNode = sithCogParse_MakeNode(pConditionNode, $5.pNode,  SITHCOGEXEC_OPCODE_JMP, pBranchNode->childLabel);
+                                                                $$.pNode = sithCogParse_MakeNode(pConditionNode, pBranchNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             }
     ;
 
 iteration_statement
     : WHILE '(' expression ')' statement                    {
-                                                            SithCogSyntaxNode* tmp = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, 0);// expression (cond)
-                                                            $$.pNode = sithCogParse_MakeNode(tmp, $5.pNode,  SITHCOGEXEC_OPCODE_JMP, 0);
-                                                            $$.pNode->childLabel = sithCogParse_GetNextLabel();
-                                                            $$.pNode-> parentLabel = sithCogParse_GetNextLabel();
-                                                            tmp->value = $$.pNode->childLabel;
-                                                            $$.pNode->value = $$.pNode-> parentLabel;
+                                                                pBranchNode = sithCogParse_MakeNode($3.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, 0);// expression (cond)
+                                                                $$.pNode = sithCogParse_MakeNode(pBranchNode, $5.pNode,  SITHCOGEXEC_OPCODE_JMP, 0);
+                                                                $$.pNode->childLabel = sithCogParse_GetNextLabel();
+                                                                $$.pNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                pBranchNode->value = $$.pNode->childLabel;
+                                                                $$.pNode->value = $$.pNode-> parentLabel;
                                                             }
     | DO statement WHILE '(' expression ')' ';'             {
-                                                            $$.pNode = sithCogParse_MakeNode($2.pNode, $5.pNode,  SITHCOGEXEC_OPCODE_JNZ, 0);
-                                                            $$.pNode-> parentLabel = sithCogParse_GetNextLabel();
-                                                            $$.pNode->value = $$.pNode-> parentLabel;
+                                                                $$.pNode = sithCogParse_MakeNode($2.pNode, $5.pNode,  SITHCOGEXEC_OPCODE_JNZ, 0);
+                                                                $$.pNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                $$.pNode->value = $$.pNode-> parentLabel;
                                                             }
     | FOR '(' expression_statement expression_statement expression ')' statement {
-                                                                                 SithCogSyntaxNode* tmp = sithCogParse_MakeNode($7.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                                                 tmp->childLabel = sithCogParse_GetNextLabel();
-                                                                                 
-                                                                                 SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode($4.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp->childLabel);
-                                                                                 tmp2-> parentLabel = sithCogParse_GetNextLabel();
-                                                                                 $$.pNode = sithCogParse_MakeNode(tmp, $5.pNode,  SITHCOGEXEC_OPCODE_JMP, tmp2-> parentLabel);
-                                                                                 tmp2->value = sithCogParse_GetNextLabel();
-                                                                                 $$.pNode->childLabel = tmp2->value;
-                                                                                 SithCogSyntaxNode* tmp3 = sithCogParse_MakeNode($3.pNode, tmp2,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                                                 $$.pNode = sithCogParse_MakeNode(tmp3, $$.pNode,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     pBranchNode = sithCogParse_MakeNode($7.pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     pBranchNode->childLabel = sithCogParse_GetNextLabel();
+                                                                                     
+                                                                                     pConditionNode = sithCogParse_MakeNode($4.pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode->childLabel);
+                                                                                     pConditionNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                                     $$.pNode = sithCogParse_MakeNode(pBranchNode, $5.pNode,  SITHCOGEXEC_OPCODE_JMP, pConditionNode-> parentLabel);
+                                                                                     pConditionNode->value = sithCogParse_GetNextLabel();
+                                                                                     $$.pNode->childLabel = pConditionNode->value;
+                                                                                     SithCogSyntaxNode* tmp3 = sithCogParse_MakeNode($3.pNode, pConditionNode,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     $$.pNode = sithCogParse_MakeNode(tmp3, $$.pNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                                                  }
     ;
 

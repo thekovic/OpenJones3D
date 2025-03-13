@@ -2,12 +2,9 @@
 char yysccsid[] = "@(#)yaccpar	1.4 (Berkeley) 02/25/90";
 #endif
 #include <sith//Cog//sithCogExec.h>
-/*#include <sith/Cog/sithCogParse.h>*/
 #include <sith//Main//sithMain.h>
 
 #include <stdio.h>
-
-
 typedef union {
     void *pointerValue;
     float floatValue;
@@ -15,8 +12,11 @@ typedef union {
     rdVector3 vecValue;
     SithCogSyntaxNode *pNode;
 } YYSTYPE;
-    extern int yylex(void);
+extern int yylex(void);
 extern size_t yylinenum;
+static SithCogSyntaxNode* pBranchNode;
+static SithCogSyntaxNode* pConditionNode;
+
 uint32_t sithCogParse_GetNextLabel(void);
 uint32_t J3DAPI sithCogParse_GetSymbolLabel(size_t symbolId);
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeLeafNode(SithCogExecOpcode opcode, int symbolId);
@@ -568,7 +568,7 @@ case 8:
 { yyval .pNode = sithCogParse_MakeNode(yyvsp[-3].pNode, yyvsp[-1].pNode,  SITHCOGEXEC_OPCODE_ARRAYIDX, 0); }
 break;
 case 9:
-{ yyval .pNode = sithCogParse_MakeNode(yyvsp[-2].pNode, 0,  SITHCOGEXEC_OPCODE_CALLFUNC, 0); }
+{ yyval .pNode = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_CALLFUNC, 0); }
 break;
 case 10:
 { yyval .pNode = sithCogParse_MakeNode(yyvsp[-1].pNode, yyvsp[-3].pNode,  SITHCOGEXEC_OPCODE_CALLFUNC, 0); }
@@ -641,8 +641,8 @@ case 45:
 break;
 case 52:
 { 
-                                                            yyval .pNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0); 
-                                                            yyval .pNode-> parentLabel = sithCogParse_GetSymbolLabel(yyvsp[-2].intValue);
+                                                                yyval .pNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0); 
+                                                                yyval .pNode-> parentLabel = sithCogParse_GetSymbolLabel(yyvsp[-2].intValue);
                                                             }
 break;
 case 53:
@@ -662,51 +662,51 @@ case 58:
 break;
 case 59:
 {
-                                                            SithCogSyntaxNode* tmp = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                            tmp->childLabel = sithCogParse_GetNextLabel();
-                                                            SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp->childLabel);
-                                                            yyval .pNode = sithCogParse_MakeNode(tmp2, tmp,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode->childLabel = sithCogParse_GetNextLabel();
+                                                                pConditionNode = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode->childLabel);
+                                                                yyval .pNode = sithCogParse_MakeNode(pConditionNode, pBranchNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             }
 break;
 case 60:
 {
-                                                            SithCogSyntaxNode* tmp = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                            tmp-> parentLabel = sithCogParse_GetNextLabel();
-                                                            tmp->childLabel = sithCogParse_GetNextLabel();
-                                                            SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode(yyvsp[-4].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp-> parentLabel);
-                                                            tmp2 = sithCogParse_MakeNode(tmp2, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JMP, tmp->childLabel);
-                                                            yyval .pNode = sithCogParse_MakeNode(tmp2, tmp,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                pBranchNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                pBranchNode->childLabel = sithCogParse_GetNextLabel();
+                                                                pConditionNode = sithCogParse_MakeNode(yyvsp[-4].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode-> parentLabel);
+                                                                pConditionNode = sithCogParse_MakeNode(pConditionNode, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JMP, pBranchNode->childLabel);
+                                                                yyval .pNode = sithCogParse_MakeNode(pConditionNode, pBranchNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             }
 break;
 case 61:
 {
-                                                            SithCogSyntaxNode* tmp = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, 0);/* expression (cond)*/
-                                                            yyval .pNode = sithCogParse_MakeNode(tmp, yyvsp[0].pNode,  SITHCOGEXEC_OPCODE_JMP, 0);
-                                                            yyval .pNode->childLabel = sithCogParse_GetNextLabel();
-                                                            yyval .pNode-> parentLabel = sithCogParse_GetNextLabel();
-                                                            tmp->value = yyval .pNode->childLabel;
-                                                            yyval .pNode->value = yyval .pNode-> parentLabel;
+                                                                pBranchNode = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, 0);/* expression (cond)*/
+                                                                yyval .pNode = sithCogParse_MakeNode(pBranchNode, yyvsp[0].pNode,  SITHCOGEXEC_OPCODE_JMP, 0);
+                                                                yyval .pNode->childLabel = sithCogParse_GetNextLabel();
+                                                                yyval .pNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                pBranchNode->value = yyval .pNode->childLabel;
+                                                                yyval .pNode->value = yyval .pNode-> parentLabel;
                                                             }
 break;
 case 62:
 {
-                                                            yyval .pNode = sithCogParse_MakeNode(yyvsp[-5].pNode, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JNZ, 0);
-                                                            yyval .pNode-> parentLabel = sithCogParse_GetNextLabel();
-                                                            yyval .pNode->value = yyval .pNode-> parentLabel;
+                                                                yyval .pNode = sithCogParse_MakeNode(yyvsp[-5].pNode, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JNZ, 0);
+                                                                yyval .pNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                yyval .pNode->value = yyval .pNode-> parentLabel;
                                                             }
 break;
 case 63:
 {
-                                                                                 SithCogSyntaxNode* tmp = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                                                 tmp->childLabel = sithCogParse_GetNextLabel();
-                                                                                 
-                                                                                 SithCogSyntaxNode* tmp2 = sithCogParse_MakeNode(yyvsp[-3].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, tmp->childLabel);
-                                                                                 tmp2-> parentLabel = sithCogParse_GetNextLabel();
-                                                                                 yyval .pNode = sithCogParse_MakeNode(tmp, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JMP, tmp2-> parentLabel);
-                                                                                 tmp2->value = sithCogParse_GetNextLabel();
-                                                                                 yyval .pNode->childLabel = tmp2->value;
-                                                                                 SithCogSyntaxNode* tmp3 = sithCogParse_MakeNode(yyvsp[-4].pNode, tmp2,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                                                 yyval .pNode = sithCogParse_MakeNode(tmp3, yyval .pNode,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     pBranchNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     pBranchNode->childLabel = sithCogParse_GetNextLabel();
+                                                                                     
+                                                                                     pConditionNode = sithCogParse_MakeNode(yyvsp[-3].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode->childLabel);
+                                                                                     pConditionNode-> parentLabel = sithCogParse_GetNextLabel();
+                                                                                     yyval .pNode = sithCogParse_MakeNode(pBranchNode, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JMP, pConditionNode-> parentLabel);
+                                                                                     pConditionNode->value = sithCogParse_GetNextLabel();
+                                                                                     yyval .pNode->childLabel = pConditionNode->value;
+                                                                                     SithCogSyntaxNode* tmp3 = sithCogParse_MakeNode(yyvsp[-4].pNode, pConditionNode,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     yyval .pNode = sithCogParse_MakeNode(tmp3, yyval .pNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                                                  }
 break;
 case 64:
