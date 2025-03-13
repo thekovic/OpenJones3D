@@ -3,6 +3,10 @@ General:
   - Fixed various bugs
   - Fixed game crash on save game restore when an object is attached to a non-primary mesh face of a 3D model (45c8065) 
   - Fixed hiding console on cutscene start (27ca92b)
+  - Fixed casting float to int (0ada120)
+    This fix ensures that:
+    * The correct integer values are popped from the COG execution stack.
+    * AI instinct parameters are correctly parsed when the AI class is parsed.
   - Added developer COG verbs (33f8f9d)
   - Added error log when popping invalid string from COG stack (34c9e20)
   - Rename debug mode flag `SITHDEBUG_AILOOK_FOR_TARGET_DISABLED` to `SITHDEBUG_AINOTARGET` (53b9091)
