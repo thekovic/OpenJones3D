@@ -664,7 +664,9 @@ case 59:
 {
                                                                 pBranchNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                                 pBranchNode->childLabel = sithCogParse_GetNextLabel();
+
                                                                 pConditionNode = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode->childLabel);
+
                                                                 yyval .pNode = sithCogParse_MakeNode(pConditionNode, pBranchNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             }
 break;
@@ -673,18 +675,22 @@ case 60:
                                                                 pBranchNode = sithCogParse_MakeNode(yyvsp[0].pNode, NULL,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                                 pBranchNode-> parentLabel = sithCogParse_GetNextLabel();
                                                                 pBranchNode->childLabel = sithCogParse_GetNextLabel();
+
                                                                 pConditionNode = sithCogParse_MakeNode(yyvsp[-4].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode-> parentLabel);
                                                                 pConditionNode = sithCogParse_MakeNode(pConditionNode, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JMP, pBranchNode->childLabel);
+
                                                                 yyval .pNode = sithCogParse_MakeNode(pConditionNode, pBranchNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                             }
 break;
 case 61:
 {
-                                                                pBranchNode = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, 0);/* expression (cond)*/
-                                                                yyval .pNode = sithCogParse_MakeNode(pBranchNode, yyvsp[0].pNode,  SITHCOGEXEC_OPCODE_JMP, 0);
+                                                                pConditionNode = sithCogParse_MakeNode(yyvsp[-2].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, 0);
+
+                                                                yyval .pNode = sithCogParse_MakeNode(pConditionNode, yyvsp[0].pNode,  SITHCOGEXEC_OPCODE_JMP, 0);
                                                                 yyval .pNode->childLabel = sithCogParse_GetNextLabel();
                                                                 yyval .pNode-> parentLabel = sithCogParse_GetNextLabel();
-                                                                pBranchNode->value = yyval .pNode->childLabel;
+
+                                                                pConditionNode->value = yyval .pNode->childLabel;
                                                                 yyval .pNode->value = yyval .pNode-> parentLabel;
                                                             }
 break;
@@ -702,11 +708,14 @@ case 63:
                                                                                      
                                                                                      pConditionNode = sithCogParse_MakeNode(yyvsp[-3].pNode, NULL,  SITHCOGEXEC_OPCODE_JZ, pBranchNode->childLabel);
                                                                                      pConditionNode-> parentLabel = sithCogParse_GetNextLabel();
+
                                                                                      yyval .pNode = sithCogParse_MakeNode(pBranchNode, yyvsp[-2].pNode,  SITHCOGEXEC_OPCODE_JMP, pConditionNode-> parentLabel);
+
                                                                                      pConditionNode->value = sithCogParse_GetNextLabel();
                                                                                      yyval .pNode->childLabel = pConditionNode->value;
-                                                                                     SithCogSyntaxNode* tmp3 = sithCogParse_MakeNode(yyvsp[-4].pNode, pConditionNode,  SITHCOGEXEC_OPCODE_NOP, 0);
-                                                                                     yyval .pNode = sithCogParse_MakeNode(tmp3, yyval .pNode,  SITHCOGEXEC_OPCODE_NOP, 0);
+
+                                                                                     SithCogSyntaxNode* pNode = sithCogParse_MakeNode(yyvsp[-4].pNode, pConditionNode,  SITHCOGEXEC_OPCODE_NOP, 0);
+                                                                                     yyval .pNode = sithCogParse_MakeNode(pNode, yyval .pNode,  SITHCOGEXEC_OPCODE_NOP, 0);
                                                                                  }
 break;
 case 64:
