@@ -24,7 +24,7 @@ configure_file(
 set(CMAKE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Release>:MultiThreaded>$<$<CONFIG:MinSizeRel>:MultiThreaded>")
 
 if (MSVC)
-    add_compile_definitions("__BASE_FILE__=\"%(Filename)%(Extension)\"")
+    add_compile_definitions("__FILE_NAME__=\"%(Filename)%(Extension)\"")
     add_compile_options(
         /utf-8
         /Zc:__STDC__

@@ -13,7 +13,11 @@
 #define J3D_VERSION_STRING "v@PROJECT_VERSION_PATCH@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
 #define J3D_VERSION_FULL   "@PROJECT_NAME@ " J3D_VERSION_STRING
 
-#define J3D_FILE __BASE_FILE__
+#if defined(_MSC_VER) && defined(__INTELLISENSE__)
+    #define J3D_FILE "dummy.c"
+#else
+    #define J3D_FILE __FILE_NAME__
+#endif
 
 #if defined(_M_X64) || defined(__x86_64__) || defined(_M_IA64) || defined(__ia64__) || defined(__aarch64__) || defined(__amd64)
     #define J3D_64BIT 1
