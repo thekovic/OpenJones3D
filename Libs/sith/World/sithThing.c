@@ -102,7 +102,7 @@ size_t sithThing_aFreeThingIdxs[2304];
 
 size_t sithThing_numUnsyncedThings;
 SithThing* sithThing_apUnsyncedThings[16];
-int sithThing_aSyncFlags[STD_ARRAYLEN(sithThing_apUnsyncedThings)];
+SithThingSyncFlags sithThing_aSyncFlags[STD_ARRAYLEN(sithThing_apUnsyncedThings)];
 
 tHashTable* sithThing_pParseHashtbl = NULL; // Added: Init to null
 
@@ -3759,7 +3759,7 @@ uint32_t J3DAPI sithThing_CalcThingChecksum(const SithThing* pTemplate, uint32_t
     return checksum;
 }
 
-void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
+void J3DAPI sithThing_SyncThing(SithThing* pThing, SithThingSyncFlags flags)
 {
     if ( sithMessage_g_outputstream )
     {
@@ -3767,7 +3767,7 @@ void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
         {
             if ( sithThing_apUnsyncedThings[i] == pThing )
             {
-                sithThing_aSyncFlags[i] |= syncFlags;
+                sithThing_aSyncFlags[i] |= flags;
                 return;
             }
         }
@@ -3779,7 +3779,7 @@ void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
         else
         {
             sithThing_apUnsyncedThings[sithThing_numUnsyncedThings] = pThing;
-            sithThing_aSyncFlags[sithThing_numUnsyncedThings++] = syncFlags;
+            sithThing_aSyncFlags[sithThing_numUnsyncedThings++] = flags;
         }
     }
 }
@@ -3788,25 +3788,25 @@ void sithThing_SyncThings(void)
 {
     for ( size_t i = 0; i < sithThing_numUnsyncedThings; ++i )
     {
-        if ( (sithThing_aSyncFlags[i] & 8) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_MOVEPOS) != 0 )
         {
             sithDSSThing_MovePos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0x01u);
         }
 
-        if ( (sithThing_aSyncFlags[i] & 4) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_FULL) != 0 )
         {
             sithDSSThing_FullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0xFFu);
             return;
         }
 
-        if ( (sithThing_aSyncFlags[i] & 2) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_STATE) != 0 )
         {
             sithDSSThing_UpdateState(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0xFFu);
         }
 
-        if ( (sithThing_aSyncFlags[i] & 1) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_POS) != 0 )
         {
-            sithDSSThing_Pos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0);
+            sithDSSThing_Pos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0x00);
         }
     }
 

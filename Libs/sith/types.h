@@ -100,6 +100,15 @@ typedef enum eSithThingMoveType
     SITH_MT_PATH    = 0x2,
 } SithThingMoveType;
 
+// Thing sync flags
+typedef enum eSithThingSyncFlags
+{
+    SITHTHING_SYNC_POS     = 0x01, // Current position & orientation + physics properties
+    SITHTHING_SYNC_STATE   = 0x02,
+    SITHTHING_SYNC_FULL    = 0x04,
+    SITHTHING_SYNC_MOVEPOS = 0x08, // Current position & orientation + move status
+} SithThingSyncFlags;
+
 typedef enum eSithSectorFlag
 {
     SITH_SECTOR_NOGRAVITY     = 0x1,

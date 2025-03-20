@@ -219,7 +219,7 @@
 #define sithThing_ParseThingArg_TYPE int (J3DAPI*)(StdConffileArg*, SithWorld*, SithThing*, int)
 #define sithThing_ParseType_TYPE int (J3DAPI*)(const char*)
 #define sithThing_ValidateThingPointer_TYPE int (J3DAPI*)(const SithWorld*, const SithThing*)
-#define sithThing_SyncThing_TYPE void (J3DAPI*)(SithThing*, int)
+#define sithThing_SyncThing_TYPE void (J3DAPI*)(SithThing*, SithThingSyncFlags)
 #define sithThing_SyncThings_TYPE void (*)(void)
 #define sithThing_CanSync_TYPE int (J3DAPI*)(const SithThing*)
 #define sithThing_GetThingMeshIndex_TYPE int (J3DAPI*)(const SithThing*, const char*)

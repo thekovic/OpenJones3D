@@ -1665,7 +1665,7 @@ void J3DAPI sithCogFunction_SetWeaponModel(SithCog* pCog)
     //    sithWeapon_SetWeaponModel(pThing, (SithWeaponId)typeId);
     //    if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
     //    {
-    //        sithThing_SyncThing(pThing, 2);
+    //        sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
     //    }
     //}
 
@@ -1679,7 +1679,7 @@ void J3DAPI sithCogFunction_SetWeaponModel(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
     {
-        sithThing_SyncThing(pThing, 2);
+        sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
     }
 }
 
@@ -1693,7 +1693,7 @@ void J3DAPI sithCogFunction_ResetWeaponModel(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
     {
-        sithThing_SyncThing(pThing, 2);
+        sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
     }
 }
 
@@ -1746,7 +1746,7 @@ void J3DAPI sithCogFunction_SetHolsterModel(SithCog* pCog)
     sithWeapon_SetHolsterModel(pThing, (SithWeaponId)weaponId, meshNum);
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
     {
-        sithThing_SyncThing(pThing, 2);
+        sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
     }
 }
 
@@ -1771,7 +1771,7 @@ void J3DAPI sithCogFunction_ResetHolsterModel(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
     {
-        sithThing_SyncThing(pThing, 2);
+        sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
     }
 }
 
