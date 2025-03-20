@@ -19,7 +19,7 @@ float J3DAPI sithPathMove_MoveToPos(SithThing* pThing, SithPathFrame* pos);
 void J3DAPI sithPathMove_RotateToPYR(SithThing* pThing, rdVector3* pyr, float time);
 
 void J3DAPI sithPathMove_Update(SithThing* pThing, float simTime);
-int J3DAPI sithPathMove_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithPathMove_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 
 void J3DAPI sithPathMove_Finish(SithThing* pThing);
 

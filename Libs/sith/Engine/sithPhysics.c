@@ -79,55 +79,55 @@ void sithPhysics_ResetGlobals(void)
 {
     int sithPhysics_bMineCarEngineRunFx_tmp = 1;
     memcpy(&sithPhysics_bMineCarEngineRunFx, &sithPhysics_bMineCarEngineRunFx_tmp, sizeof(sithPhysics_bMineCarEngineRunFx));
-    
+
     int sithPhysics_bMineCarEngineRumbleFx_tmp = 1;
     memcpy(&sithPhysics_bMineCarEngineRumbleFx, &sithPhysics_bMineCarEngineRumbleFx_tmp, sizeof(sithPhysics_bMineCarEngineRumbleFx));
-    
+
     int sithPhysics_bMineCarSparksFx_tmp = 1;
     memcpy(&sithPhysics_bMineCarSparksFx, &sithPhysics_bMineCarSparksFx_tmp, sizeof(sithPhysics_bMineCarSparksFx));
-    
+
     int sithPhysics_bMineCarClatterFx_tmp = 1;
     memcpy(&sithPhysics_bMineCarClatterFx, &sithPhysics_bMineCarClatterFx_tmp, sizeof(sithPhysics_bMineCarClatterFx));
-    
+
     int sithPhysics_bMineCarRailClackFx_tmp = 1;
     memcpy(&sithPhysics_bMineCarRailClackFx, &sithPhysics_bMineCarRailClackFx_tmp, sizeof(sithPhysics_bMineCarRailClackFx));
-    
+
     rdVector3 sithPhysics_vecMinecarSparkPosLeft_tmp = { { 0.050000001f }, { -0.039999999f }, { -0.090000004f } };
     memcpy(&sithPhysics_vecMinecarSparkPosLeft, &sithPhysics_vecMinecarSparkPosLeft_tmp, sizeof(sithPhysics_vecMinecarSparkPosLeft));
-    
+
     rdVector3 sithPhysics_vecMinecarSparkPosRight_tmp = { { -0.050000001f }, { -0.039999999f }, { -0.090000004f } };
     memcpy(&sithPhysics_vecMinecarSparkPosRight, &sithPhysics_vecMinecarSparkPosRight_tmp, sizeof(sithPhysics_vecMinecarSparkPosRight));
-    
+
     int sithPhysics_bUpdateTrackJeepEngineFx_tmp = 1;
     memcpy(&sithPhysics_bUpdateTrackJeepEngineFx, &sithPhysics_bUpdateTrackJeepEngineFx_tmp, sizeof(sithPhysics_bUpdateTrackJeepEngineFx));
-    
+
     float sithPhysics_truckMinSndPitch_tmp = 1.0f;
     memcpy(&sithPhysics_truckMinSndPitch, &sithPhysics_truckMinSndPitch_tmp, sizeof(sithPhysics_truckMinSndPitch));
-    
+
     float sithPhysics_truckMaxSndPitch_tmp = 2.0f;
     memcpy(&sithPhysics_truckMaxSndPitch, &sithPhysics_truckMaxSndPitch_tmp, sizeof(sithPhysics_truckMaxSndPitch));
-    
+
     float sithPhysics_truckMinSndVolume_tmp = 0.60000002f;
     memcpy(&sithPhysics_truckMinSndVolume, &sithPhysics_truckMinSndVolume_tmp, sizeof(sithPhysics_truckMinSndVolume));
-    
+
     int sithPhysics_bUpdateTrackTruckEngineFx_tmp = 1;
     memcpy(&sithPhysics_bUpdateTrackTruckEngineFx, &sithPhysics_bUpdateTrackTruckEngineFx_tmp, sizeof(sithPhysics_bUpdateTrackTruckEngineFx));
-    
+
     float sithPhysics_flt_538D04_tmp = 0.60000002f;
     memcpy(&sithPhysics_flt_538D04, &sithPhysics_flt_538D04_tmp, sizeof(sithPhysics_flt_538D04));
-    
+
     int sithPhysics_dword_538D2C_tmp = 1;
     memcpy(&sithPhysics_dword_538D2C, &sithPhysics_dword_538D2C_tmp, sizeof(sithPhysics_dword_538D2C));
-    
+
     int sithPhysics_dword_538D30_tmp = 1;
     memcpy(&sithPhysics_dword_538D30, &sithPhysics_dword_538D30_tmp, sizeof(sithPhysics_dword_538D30));
-    
+
     int sithPhysics_bJeepMoveFx_tmp = 1;
     memcpy(&sithPhysics_bJeepMoveFx, &sithPhysics_bJeepMoveFx_tmp, sizeof(sithPhysics_bJeepMoveFx));
-    
+
     int sithPhysics_dword_538D38_tmp = 1;
     memcpy(&sithPhysics_dword_538D38, &sithPhysics_dword_538D38_tmp, sizeof(sithPhysics_dword_538D38));
-    
+
     memset(&sithPhysics_dword_58540C, 0, sizeof(sithPhysics_dword_58540C));
     memset(&sithPhysics_flt_585410, 0, sizeof(sithPhysics_flt_585410));
 }
@@ -162,7 +162,7 @@ void J3DAPI sithPhysics_ApplyDrag(rdVector3* pVelocity, float drag, float mag, f
     J3D_TRAMPOLINE_CALL(sithPhysics_ApplyDrag, pVelocity, drag, mag, secDeltaTime);
 }
 
-signed int J3DAPI sithPhysics_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithPhysics_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     return J3D_TRAMPOLINE_CALL(sithPhysics_ParseArg, pArg, pThing, adjNum);
 }

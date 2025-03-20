@@ -30,7 +30,7 @@ void J3DAPI sithActor_UpdateAimJoints(SithThing* pThing); // Added
 
 void J3DAPI sithActor_DestroyActor(SithThing* pActor);
 void J3DAPI sithActor_DestroyCorpse(SithThing* pThing);
-int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithActor_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 
 // Helper hooking functions
 void sithActor_InstallHooks(void);

@@ -20,7 +20,7 @@ void J3DAPI sithParticle_FreeWorldParticles(SithWorld* pWorld);
 
 rdParticle* J3DAPI sithParticle_Load(SithWorld* pWorld, const char* pName);
 
-int J3DAPI sithParticle_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithParticle_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 void J3DAPI sithParticle_Update(SithThing* pThing, float secDeltaTime);
 void J3DAPI sithParticle_Initalize(SithThing* pThing);
 void J3DAPI sithParticle_DestroyParticle(SithThing* pThing);

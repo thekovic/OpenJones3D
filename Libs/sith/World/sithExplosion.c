@@ -430,7 +430,7 @@ void J3DAPI sithExplosion_MakeBlast(SithThing* pThing)
     }
 }
 
-int J3DAPI sithExplosion_ParseArg(StdConffileArg* pArg, SithThing* pThing, signed int adjNum)
+int J3DAPI sithExplosion_ParseArg(const StdConffileArg* pArg, SithThing* pThing, signed int adjNum)
 {
     SITH_ASSERTREL(pThing && pArg && (adjNum < SITHTHING_NUMADJECTIVES));
 

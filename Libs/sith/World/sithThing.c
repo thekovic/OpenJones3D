@@ -244,7 +244,7 @@ void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash);
 void J3DAPI sithThing_ExitWater(SithThing* pThing, int bNoSplash);
 void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld);
 
-int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum);
+int J3DAPI sithThing_ParseThingArg(const StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum);
 int J3DAPI sithThing_ParseType(const char* pType);
 int J3DAPI sithThing_ParseThingPlacement(SithWorld* pWorld);
 
@@ -3376,7 +3376,7 @@ parse_error:
     return 0;
 }
 
-int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum)
+int J3DAPI sithThing_ParseThingArg(const StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum)
 {
     switch ( adjNum )
     {

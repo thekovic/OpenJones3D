@@ -783,7 +783,7 @@ void J3DAPI sithActor_DestroyCorpse(SithThing* pThing)
     }
 }
 
-int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithActor_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     SithActorInfo* pActorInfo = &pThing->thingInfo.actorInfo;
     switch ( adjNum )
