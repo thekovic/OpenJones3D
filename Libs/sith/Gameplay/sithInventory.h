@@ -59,8 +59,8 @@ void J3DAPI sithInventory_SetInventoryDisabled(SithThing* pThing, size_t typeId,
 int J3DAPI sithInventory_IsBackpackItem(SithThing* pThing, size_t typeId);
 int J3DAPI sithInventory_IsWeapon(size_t typeID);
 
-double J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id);
-double J3DAPI sithInventory_GetInventoryMaximum(SithThing* pThing, size_t id);
+float J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id);
+float J3DAPI sithInventory_GetInventoryMaximum(SithThing* pThing, size_t id);
 
 void J3DAPI sithInventory_SetInventoryFlags(SithThing* pThing, size_t id, SithInventoryTypeFlag flags);
 SithInventoryTypeFlag J3DAPI sithInventory_GetInventoryFlags(const SithThing* pThing, size_t id); // Added
