@@ -691,10 +691,6 @@ void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles)
 {
     SITH_ASSERTREL(pThing && headAngles && ((pThing->type == SITH_THING_ACTOR) || (pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_CORPSE)));
 
-    /*flags = pThing->thingInfo.actorInfo.flags;
-    (flags & 0xFF) = flags & (SithActorFlag)~SITH_AF_VIEWCENTRED;
-    pThing->thingInfo.actorInfo.flags = flags;*/
-
     pThing->thingInfo.actorInfo.flags &= ~SITH_AF_VIEWCENTRED;
 
     rdVector_Copy3(&pThing->thingInfo.actorInfo.headPYR, headAngles);
@@ -703,27 +699,26 @@ void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles)
     {
         int lastNodeNum = pThing->renderData.data.pModel3->numHNodes - 1;
 
-        int neckNum = pThing->pPuppetClass->aJoints[1];
-        int hipNum = pThing->pPuppetClass->aJoints[2];
-        int aim1Num = pThing->pPuppetClass->aJoints[5];
-        int aim2Num = pThing->pPuppetClass->aJoints[6];
-
+        int neckNum = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_NECK];
         if ( neckNum >= 0 && neckNum <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[neckNum].pitch = headAngles->pitch * 0.5f;
             pThing->renderData.apTweakedAngles[neckNum].yaw = headAngles->yaw;
         }
 
+        int hipNum  = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_HIP];
         if ( hipNum >= 0 && hipNum <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[hipNum].pitch = headAngles->pitch * 0.5f;
         }
 
+        int aim1Num = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIM1];
         if ( aim1Num >= 0 && aim1Num <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[aim1Num].pitch = headAngles->pitch * 0.30000001f;
         }
 
+        int aim2Num = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIM2];
         if ( aim2Num >= 0 && aim2Num <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[aim2Num].pitch = headAngles->pitch * 0.30000001f;
@@ -736,13 +731,13 @@ void J3DAPI sithActor_UpdateAimJoints(SithThing* pThing)
     SITH_ASSERTREL(pThing && ((pThing->type == SITH_THING_ACTOR) || (pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_CORPSE)));
     if ( pThing->pPuppetClass )
     {
-        int aimPitchNum = pThing->pPuppetClass->aJoints[7];
-        int aimYawNum = pThing->pPuppetClass->aJoints[8];
+        int aimPitchNum = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIMPITCH];
         if ( aimPitchNum >= 0 )
         {
             pThing->renderData.apTweakedAngles[aimPitchNum].pitch = pThing->thingInfo.actorInfo.headPYR.pitch;
         }
 
+        int aimYawNum   = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIMYAW];
         if ( aimYawNum >= 0 )
         {
             pThing->renderData.apTweakedAngles[aimYawNum].yaw = pThing->thingInfo.actorInfo.headPYR.yaw;
@@ -774,7 +769,7 @@ void J3DAPI sithActor_DestroyCorpse(SithThing* pThing)
     // Fyi, here we can make the actor corpse to not disappear
     if ( pThing->renderFrame + 1 == sithMain_g_frameNumber )
     {
-        // If in camera view, extend life for 3 sec
+        // In camera view, extend life for 3 sec
         pThing->msecLifeLeft = 3000;
     }
     else
