@@ -18,11 +18,10 @@
 #include <stdio.h>
 
 static SithGameStatistics* jonesInventory_pGameStatistics;
-static size_t jonesInventory_msecStatisticsGameTime;
+static uint32_t jonesInventory_msecStatisticsGameTime;
 
 void jonesInventory_InstallHooks(void)
 {
-
     J3D_HOOKFUNC(jonesInventory_Open);
     J3D_HOOKFUNC(jonesInventory_Load);
     J3D_HOOKFUNC(jonesInventory_Close);
@@ -41,10 +40,7 @@ void jonesInventory_InstallHooks(void)
 }
 
 void jonesInventory_ResetGlobals(void)
-{
-    memset(&jonesInventory_pGameStatistics, 0, sizeof(jonesInventory_pGameStatistics));
-    memset(&jonesInventory_msecStatisticsGameTime, 0, sizeof(jonesInventory_msecStatisticsGameTime));
-}
+{}
 
 int jonesInventory_Open(void)
 {
@@ -257,7 +253,7 @@ int jonesInventory_GetTotalIQPoints(void)
     return jonesInventory_pGameStatistics->totalIQPoints + 10 * numFoundTreasures / 10 - hintPenalty;// TODO: same here
 }
 
-void J3DAPI jonesInventory_AdvanceStatistics()
+void jonesInventory_AdvanceStatistics(void)
 {
     jonesInventory_UpdateGameTimeStatistics(sithTime_g_msecGameTime);
     if ( sithGamesave_LockGameStatistics() )
@@ -310,7 +306,7 @@ void jonesInventory_AdvanceFoundTreasuresStatistics()
     }
 }
 
-void J3DAPI jonesInventory_UpdateGameTimeStatistics(unsigned int msecTime)
+void J3DAPI jonesInventory_UpdateGameTimeStatistics(uint32_t msecTime)
 {
     if ( sithGamesave_LockGameStatistics() )
     {
@@ -333,29 +329,48 @@ void J3DAPI jonesInventory_UpdateGameTimeStatistics(unsigned int msecTime)
     }
 }
 
-void J3DAPI jonesInventory_UpdateLevelStatisticTime(int elapsedSec, SithLevelStatistic* pLevelStats, unsigned int msecNewTime, int msecPreviousTime)
+void J3DAPI jonesInventory_UpdateLevelStatisticTime(uint32_t elapsedSec, SithLevelStatistic* pLevelStats, uint32_t msecNewTime, uint32_t msecPreviousTime)
 {
     uint32_t msecNewElapsed;
     if ( msecNewTime >= jonesInventory_msecStatisticsGameTime )
     {
-        msecNewElapsed = msecNewTime + 1000 * elapsedSec - msecPreviousTime;
+        msecNewElapsed = (int)msecNewTime + 1000 * (int)elapsedSec - (int)msecPreviousTime;
     }
     else
     {
         msecNewElapsed = msecNewTime + 1000 * elapsedSec - msecPreviousTime - 1;
     }
 
-    pLevelStats->elapsedTime = ((int)(msecNewElapsed / 60000 % 60// minutes
-        + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8))) % 60) | ((msecNewElapsed / 3600000// hours
-            + (pLevelStats->elapsedTime >> 8)
-            + (int)(msecNewElapsed / 60000 % 60// minutes
-                + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8)))
-            / 60) << 8);
+    //pLevelStats->elapsedTime = ((int)(msecNewElapsed / 60000 % 60// minutes
+    //    + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8))) % 60) | ((msecNewElapsed / 3600000// hours
+    //        + (pLevelStats->elapsedTime >> 8)
+    //        + (int)(msecNewElapsed / 60000 % 60// minutes
+    //            + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8)))
+    //        / 60) << 8);
+
+    // Extract old hours and minutes from elapsedTime.
+    uint8_t oldMinutes = pLevelStats->elapsedTime & 0xFF; // lower 8 bits
+    uint8_t oldHours   = pLevelStats->elapsedTime >> 8;   // upper 8 bits
+
+    // Calculate new time components from msecNewElapsed.
+    uint8_t newMinutes = (msecNewElapsed / 60000) % 60;  // minutes portion
+    uint8_t newHours   = msecNewElapsed / 3600000;       // hours portion
+
+    // Sum the minutes and compute carry for hours.
+    uint16_t totalMinutes = oldMinutes + newMinutes;
+    uint8_t carryHours = totalMinutes / 60;
+    totalMinutes %= 60;
+
+    // Calculate total hours.
+    uint8_t totalHours = oldHours + newHours + carryHours;
+
+    // Pack the hours and minutes back into a single integer.
+    pLevelStats->elapsedTime = (totalHours << 8) | totalMinutes;
 
     pLevelStats->curElapsedSec = msecNewElapsed / 1000 % 60;
 }
 
-void jonesInventory_ResetStatisticsGameTime()
+void jonesInventory_ResetStatisticsGameTime(void)
 {
     jonesInventory_msecStatisticsGameTime = sithTime_g_msecGameTime;
 }
