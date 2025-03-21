@@ -61,7 +61,7 @@ void J3DAPI rdVector_Cross3Acc(rdVector3* dest, const rdVector3* v2); // Added
 
 /**
  * @brief Calculates scalar triple product.
-     i.e.: the dot product of the cross product of vectors `a` and `b` with vector `c`.
+     i.e.: (`a` cross `b`) dot `c`
  *
  * @param a - Pointer to the first input vector.
  * @param b - Pointer to the second input vector.
@@ -78,6 +78,24 @@ float J3DAPI rdVector_Normalize2Acc(rdVector2* vec);
 float J3DAPI rdVector_Normalize3Acc(rdVector3* vec);
 float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src);
 float J3DAPI rdVector_Normalize4Acc(rdVector4* vec);
+
+/**
+ * @brief Linearly interpolates between two 3D vectors.
+ * @param dest - Pointer to the destination vector.
+ * @param a - Pointer to the first input vector.
+ * @param b - Pointer to the second input vector.
+ * @param t - The interpolation factor.
+ */
+void rdVector_Lerp3(rdVector3* dest, const rdVector3* a, const rdVector3* b, float t); // Added
+
+/**
+ * @brief Linearly interpolates between two 4D vectors.
+ * @param dest - Pointer to the destination vector.
+ * @param a - Pointer to the first input vector.
+ * @param b - Pointer to the second input vector.
+ * @param t - The interpolation factor.
+ */
+void rdVector_Lerp4(rdVector4* dest, const rdVector4* a, const rdVector4* b, float t); // Added
 
 void J3DAPI rdVector_Rotate3(rdVector3* vec, const rdVector3* pivot, const rdVector3* pyr);
 void J3DAPI rdVector_Rotate3Acc(rdVector3* vec, const rdVector3* pyr);
@@ -265,6 +283,21 @@ inline float J3DAPI rdVector_CrossDot3(const rdVector3* a, const rdVector3* b, c
     return (a->y * b->z - b->y * a->z) * c->x
         + (a->z * b->x - b->z * a->x) * c->y
         + (a->x * b->y - b->x * a->y) * c->z;
+}
+
+inline void rdVector_Lerp3(rdVector3* dest, const rdVector3* a, const rdVector3* b, float t)
+{
+    dest->x = a->x + (b->x - a->x) * t;
+    dest->y = a->y + (b->y - a->y) * t;
+    dest->z = a->z + (b->z - a->z) * t;
+}
+
+inline void rdVector_Lerp4(rdVector4* dest, const rdVector4* a, const rdVector4* b, float t)
+{
+    dest->x = a->x + (b->x - a->x) * t;
+    dest->y = a->y + (b->y - a->y) * t;
+    dest->z = a->z + (b->z - a->z) * t;
+    dest->w = a->w + (b->w - a->w) * t;
 }
 
 // Helper hooking functions

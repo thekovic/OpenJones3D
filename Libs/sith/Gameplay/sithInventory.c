@@ -467,7 +467,7 @@ int J3DAPI sithInventory_IsWeapon(size_t typeID)
     return (sithInventory_g_aTypes[typeID].flags & SITHINVENTORY_TYPE_WEAPON) != 0;
 }
 
-double J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id)
+float J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id)
 {
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(id < STD_ARRAYLEN(sithInventory_g_aTypes));
@@ -476,7 +476,7 @@ double J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id)
     return sithInventory_g_aTypes[id].min;
 }
 
-double J3DAPI sithInventory_GetInventoryMaximum(SithThing* pThing, size_t id)
+float J3DAPI sithInventory_GetInventoryMaximum(SithThing* pThing, size_t id)
 {
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(id < STD_ARRAYLEN(sithInventory_g_aTypes));

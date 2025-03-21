@@ -444,7 +444,7 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
     sithThing_RemoveThing(sithWorld_g_pCurrentWorld, pWeapon);
 }
 
-int J3DAPI sithWeapon_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     switch ( adjNum )
     {

@@ -100,6 +100,15 @@ typedef enum eSithThingMoveType
     SITH_MT_PATH    = 0x2,
 } SithThingMoveType;
 
+// Thing sync flags
+typedef enum eSithThingSyncFlags
+{
+    SITHTHING_SYNC_POS     = 0x01, // Current position & orientation + physics properties
+    SITHTHING_SYNC_STATE   = 0x02,
+    SITHTHING_SYNC_FULL    = 0x04,
+    SITHTHING_SYNC_MOVEPOS = 0x08, // Current position & orientation + move status
+} SithThingSyncFlags;
+
 typedef enum eSithSectorFlag
 {
     SITH_SECTOR_NOGRAVITY     = 0x1,
@@ -250,9 +259,10 @@ typedef enum eSithCollisionType
 
 typedef enum eSithCollideType
 {
-    SITH_COLLIDE_NONE   = 0,
-    SITH_COLLIDE_SPHERE = 1,
-    SITH_COLLIDE_FACE   = 3,
+    SITH_COLLIDE_NONE     = 0,
+    SITH_COLLIDE_SPHERE   = 1,
+    SITH_COLLIDE_FACE     = 3,
+    SITH_COLLIDE_NUMTYPES = 4,
 } SithCollideType;
 
 typedef enum eSithAnimateFlags J3D_ENUM_TYPE(uint32_t)

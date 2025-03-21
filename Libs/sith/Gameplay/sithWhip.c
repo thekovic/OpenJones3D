@@ -322,13 +322,13 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing)
         }
         else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, 0) )
         {
-            sithThing_SyncThing(pThing, 0x08);
+            sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
             pThing->moveInfo.pathMovement.vecDeltaPos.y = sithTime_g_fps + pThing->thingInfo.actorInfo.maxRotVelocity;
         }
 
         else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, 0) )
         {
-            sithThing_SyncThing(pThing, 0x08);
+            sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
             pThing->moveInfo.pathMovement.vecDeltaPos.y = -1.0f * sithTime_g_fps + pThing->thingInfo.actorInfo.maxRotVelocity * -1.0f;
         }
         else

@@ -122,7 +122,7 @@ int J3DAPI sithParticle_AllocWorldParticles(SithWorld* pWorld, size_t size)
     return 0;
 }
 
-int J3DAPI sithParticle_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithParticle_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     switch ( adjNum )
     {
