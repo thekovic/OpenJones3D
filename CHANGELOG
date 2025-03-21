@@ -3,6 +3,9 @@ General:
   - Fixed various bugs
   - Fixed game crash on save game restore when an object is attached to a non-primary mesh face of a 3D model (45c8065) 
   - Fixed hiding console on cutscene start (27ca92b)
+  - Fixed light range in `ThingLight` / `SetThingLight` COG functions (e9d4167) 
+    This fix ensures that the light range is correctly set when the COG function is called.
+    Fixes light flickering bug when camera is facing and is near the light source.
   - Fixed casting float to int (0ada120)
     This fix ensures that:
     * The correct integer values are popped from the COG execution stack.
@@ -15,6 +18,8 @@ General:
   - Added programs `yacc` & `flex` (d6f5be6 + b669ca8)
   - Fixed yacc initial line number at the start of code parsing. 
     This fixes line number in log when error is encountered.
+  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed on the execution stack on error. (e9d4167)
+    This fixes corruption of the COG's execution stack when an error occurs.
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
@@ -48,6 +53,8 @@ General:
     * `sithExplosion` (d15ac1c)
     * `sithCogParse` (b669ca8)
     * `sithCogYacc` (b669ca8)
+    * `sithCogFunctionPlayer` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
+    * `sithCogFunctionThing` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
     - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
     - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
     - Refactored `stdControl` module (fc4060c)
@@ -76,6 +83,7 @@ General:
     * `pauseallcogs`, `matlist`, `activate`, `slowmo` (9d399b0)
     * `stopsound`, `wpdraw` (9d399b0)
     * `noclip` (2d9f47a)
+    * `print` (44e28c5)
 
 Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
