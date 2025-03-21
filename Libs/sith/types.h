@@ -95,9 +95,9 @@ typedef enum eSithThingFlag
 
 typedef enum eSithThingMoveType
 {
-    SITH_MT_NONE    = 0x0,
-    SITH_MT_PHYSICS = 0x1,
-    SITH_MT_PATH    = 0x2,
+    SITH_MT_NONE    = 0,
+    SITH_MT_PHYSICS = 1,
+    SITH_MT_PATH    = 2,
 } SithThingMoveType;
 
 // Thing sync flags
@@ -2250,9 +2250,10 @@ typedef struct sSithPuppetClassSubmode
 typedef struct sSithPuppetClass
 {
     char aName[64];
-    SithPuppetClassSubmode aModes[24][84];
+    SithPuppetClassSubmode aModes[SITH_PUPPET_NUMMOVEMODES * SITH_PUPPET_NUMARMEDMODES][SITH_PUPPET_NUMSUBMODES];
     int aJoints[10];
 } SithPuppetClass;
+static_assert(sizeof(SithPuppetClass) == 32360, "sizeof(SithPuppetClass) == 32360");
 
 typedef struct sSithPathFrame
 {
@@ -2371,7 +2372,7 @@ struct sSithThing
     rdThing renderData;
     rdVector3 transformedPos;
     SithThingLight light;
-    int renderFrame;
+    size_t renderFrame;
     SithSoundClass* pSoundClass;
     SithPuppetClass* pPuppetClass;
     SithPuppetState* pPuppetState;
@@ -3039,15 +3040,16 @@ typedef struct sCndSurfaceVertInfo
 
 typedef struct sSithLevelStatistic
 {
-    int elapsedTime;
-    int numFoundTreasures;
-    int numSeenHints;
+    uint32_t elapsedTime;
+    size_t numFoundTreasures;
+    size_t numSeenHints;
     int difficultyPenalty;
-    int curElapsedSec;
-    int numIQUpdates;
+    uint32_t curElapsedSec;
+    size_t numIQUpdates;
     int levelStartIQPoints;
     int iqPoints;
 } SithLevelStatistic;
+static_assert(sizeof(SithLevelStatistic) == 32, "sizeof(SithLevelStatistic) == 42");
 
 typedef struct sSithGameStatistics
 {

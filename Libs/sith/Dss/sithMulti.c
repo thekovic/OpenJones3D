@@ -262,7 +262,7 @@ int J3DAPI sithMulti_Ping(DPID idTo)
     return sithMessage_SendMessage(&sithMulti_g_message, idTo, 1u, 0);
 }
 
-int J3DAPI sithMulti_GetPlayerIndexByID(int playerID)
+int J3DAPI sithMulti_GetPlayerIndexByID(DPID playerID)
 {
     for ( size_t i = 0; i < sithPlayer_g_numPlayers; ++i )
     {

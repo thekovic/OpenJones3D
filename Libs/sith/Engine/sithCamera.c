@@ -453,7 +453,7 @@ void J3DAPI sithCamera_Free(SithCamera* pCamera)
 
 void J3DAPI sithCamera_FreeEntry(SithCamera* pCamera)
 {
-    SITH_ASSERTREL(pCamera != ((void*)0));
+    SITH_ASSERTREL(pCamera != NULL);
     rdCamera_FreeEntry(&pCamera->rdCamera);
 }
 
@@ -466,7 +466,7 @@ void J3DAPI sithCamera_SetCameraCanvas(SithCamera* pCamera, float aspect, rdCanv
 
 int J3DAPI sithCamera_SetCurrentCamera(SithCamera* pCamera)
 {
-    SITH_ASSERTREL(pCamera != ((void*)0));
+    SITH_ASSERTREL(pCamera != NULL);
 
     sithCamera_g_pCurCamera   = pCamera;
     sithCamera_g_bCurCameraSet = 1;
@@ -521,7 +521,7 @@ int sithCamera_SetCurrentToCycleCamera(void)
 // Found in dbg version
 int J3DAPI SithCamera_sub_44ACCA(SithCamera* pTargetCamera, float time)
 {
-    SITH_ASSERTREL(pTargetCamera != ((void*)0));
+    SITH_ASSERTREL(pTargetCamera != NULL);
     SITH_ASSERTREL(time >= 0.0f);
     if ( sithCamera_g_pCurCamera && pTargetCamera->unknown1 < (unsigned int)sithCamera_g_pCurCamera->unknown1 )
     {
@@ -637,13 +637,13 @@ void sithCamera_RestoreExtCamera(void)
 
 SithThing* J3DAPI sithCamera_GetPrimaryFocus(const SithCamera* pCamera)
 {
-    SITH_ASSERTREL(pCamera != ((void*)0));
+    SITH_ASSERTREL(pCamera != NULL);
     return pCamera->pPrimaryFocusThing;
 }
 
 SithThing* J3DAPI sithCamera_GetSecondaryFocus(const SithCamera* pCamera)
 {
-    SITH_ASSERTREL(pCamera != ((void*)0));
+    SITH_ASSERTREL(pCamera != NULL);
     return pCamera->pSecondaryFocusThing;
 }
 
@@ -692,7 +692,7 @@ SithSector* J3DAPI sithCamera_SearchSectorInRadius(int a1, SithSector* pSector, 
 
         if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) != 0 )
         {
-            SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != ((void*)0));
+            SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
             pFoundSector = pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector;
         }
 

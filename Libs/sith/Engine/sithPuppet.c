@@ -67,7 +67,7 @@ static tHashTable* sithPuppet_pHashtblSubmodes;
 static tHashTable* sithPuppet_pClassHashtable;
 static tHashTable* sithPuppet_pKeyHashtable;
 
-static const char* sithPuppet_aStrSubModes[84] =
+static const char* sithPuppet_aStrSubModes[SITH_PUPPET_NUMSUBMODES] =
 {
     "--RESERVED--",
     "stand",
@@ -281,6 +281,7 @@ void J3DAPI sithPuppet_New(SithThing* pThing)
     if ( !pThing->pPuppetState )
     {
         pThing->pPuppetClass = NULL;
+        return; // Fixed: Added return to prevent writting to and accessing null pointer
     }
 
     memset(pThing->pPuppetState, 0, sizeof(SithPuppetState));
@@ -2594,7 +2595,7 @@ int J3DAPI sithPuppet_LoadPuppetClassEntry(SithPuppetClass* pClass, const char* 
         {
             SITHLOG_ERROR("Bad line encountered line %d.\n", stdConffile_GetLineNumber());
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argName, "mode") )
+        else if ( strcmp(stdConffile_g_entry.aArgs[0].argName, "mode") == 0 )
         {
             modeNum = atoi(stdConffile_g_entry.aArgs[0].argValue);
             SITH_ASSERTREL((modeNum >= 0) && (modeNum < (SITH_PUPPET_NUMARMEDMODES * SITH_PUPPET_NUMMOVEMODES)));
@@ -2607,12 +2608,12 @@ int J3DAPI sithPuppet_LoadPuppetClassEntry(SithPuppetClass* pClass, const char* 
                 memcpy(pClass->aModes[modeNum], pClass->aModes[basedOn], sizeof(pClass->aModes[modeNum]));
             }
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "joints") )
+        else if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "joints") == 0 )
         {
-            while ( stdConffile_ReadArgs() && stdConffile_g_entry.numArgs && strcmp(stdConffile_g_entry.aArgs[0].argName, "end") )
+            while ( stdConffile_ReadArgs() && stdConffile_g_entry.numArgs && strcmp(stdConffile_g_entry.aArgs[0].argName, "end") != 0 )
             {
                 size_t jointNum = atoi(stdConffile_g_entry.aArgs[0].argName);
-                int jointId  = atoi(stdConffile_g_entry.aArgs[0].argValue);
+                int jointId     = atoi(stdConffile_g_entry.aArgs[0].argValue);
                 if ( jointNum >= STD_ARRAYLEN(pClass->aJoints) )
                 {
                     SITHLOG_ERROR("Joint id %d out of range, line %d, file %s.\n", jointNum, stdConffile_GetLineNumber(), stdConffile_GetFilename());
@@ -3291,7 +3292,7 @@ int J3DAPI sithPuppet_StopMode(SithThing* pThing, SithPuppetSubMode submode, flo
 {
     SITH_ASSERTREL(pThing && pThing->pPuppetState && pThing->renderData.pPuppet);
 
-    if ( !pThing->pPuppetClass || submode >= SITH_PUPPET_NUMSUBMODES )
+    if ( !pThing->pPuppetClass || (size_t)submode >= SITH_PUPPET_NUMSUBMODES ) // Fixed: cast submode to unsigned to catch negative OOB
     {
         return 1;
     }

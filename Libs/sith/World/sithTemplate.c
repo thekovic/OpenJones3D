@@ -1,8 +1,6 @@
 #include "sithTemplate.h"
 #include <j3dcore/j3dhook.h>
 
-#include <rdroid/Primitives/rdModel3.h>>
-
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithThing.h>
 #include <sith/World/sithWorld.h>
@@ -11,6 +9,8 @@
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
+
+#include <rdroid/Engine/rdThing.h>
 
 #define SITHTEMPLAT_MAXFILETEMPLATES   3072u
 #define SITHTEMPLAT_MAXCACHEDTEMPLATES 1024u
