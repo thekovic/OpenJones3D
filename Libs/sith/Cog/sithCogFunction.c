@@ -47,6 +47,11 @@ void J3DAPI sithCogFunction_EnablePrint(bool bEnable)
     bPrintEnabled = bEnable;
 }
 
+bool sithCogFunction_IsPrintEnabled(void)
+{
+    return bPrintEnabled;
+}
+
 void J3DAPI EnablePrint(SithCog* pCog)
 {
     int curPrint = bPrintEnabled ? 1 : 0;

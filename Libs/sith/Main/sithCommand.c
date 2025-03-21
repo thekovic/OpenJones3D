@@ -5,6 +5,7 @@
 #include <sith/AI/sithAI.h>
 #include <sith/AI/sithAIUtil.h>
 #include <sith/Cog/sithCog.h>
+#include <sith/Cog/sithCogFunction.h>
 #include <sith/Devices/sithConsole.h>
 #include <sith/Devices/sithSoundMixer.h>
 #include <sith/Dss/sithMulti.h>
@@ -1095,6 +1096,26 @@ int J3DAPI sithCommand_WpDraw(const SithConsoleCommand* pFunc, const char* pArg)
     return 1;
 }
 
+int J3DAPI sithCommand_Print(const SithConsoleCommand* pFunc, const char* pArg)
+{
+    J3D_UNUSED(pFunc);
+    if ( pArg )
+    {
+        bool bEnable;
+        if ( !sithCommand_ParseBool(pArg, &bEnable) )
+        {
+            sithConsole_PrintString("Invalid argument!");
+            return 0;
+        }
+
+        sithCogFunction_EnablePrint(bEnable);
+    }
+    else
+    {
+        SITHCONSOLE_PRINTF("print %s", sithCogFunction_IsPrintEnabled() ? "on" : "off");
+    }
+}
+
 const char* J3DAPI sithCommand_CipherText(const char* pText)
 {
     // Function goes over all characters of text and xor each char with 34 (22h)
@@ -1202,4 +1223,5 @@ void sithCommand_RegisterCommands(void)
     sithConsole_RegisterCommand(sithCommand_DebugMode, "slowmo", 6 | SITHCONSOLE_DEVMODE); // Added: From debug version
     sithConsole_RegisterCommand(sithCommand_StopSounds, "stopsounds", SITHCONSOLE_DEVMODE); // Added: From debug version
     sithConsole_RegisterCommand(sithCommand_WpDraw, "wpdraw", SITHCONSOLE_DEVMODE); // Added: From debug version
+    sithConsole_RegisterCommand(sithCommand_Print, "print", SITHCONSOLE_DEVMODE); // Added: New command
 }
