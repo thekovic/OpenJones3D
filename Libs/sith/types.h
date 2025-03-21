@@ -259,9 +259,10 @@ typedef enum eSithCollisionType
 
 typedef enum eSithCollideType
 {
-    SITH_COLLIDE_NONE   = 0,
-    SITH_COLLIDE_SPHERE = 1,
-    SITH_COLLIDE_FACE   = 3,
+    SITH_COLLIDE_NONE     = 0,
+    SITH_COLLIDE_SPHERE   = 1,
+    SITH_COLLIDE_FACE     = 3,
+    SITH_COLLIDE_NUMTYPES = 4,
 } SithCollideType;
 
 typedef enum eSithAnimateFlags J3D_ENUM_TYPE(uint32_t)
