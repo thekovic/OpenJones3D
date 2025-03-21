@@ -15,6 +15,7 @@ J3D_EXTERN_C_START
 
 #define SITH_RAND() ((double)rand() * (1.0 / RAND_MAX))
 #define SITH_RANDF() ((float)SITH_RAND())
+
 #define SITHLOG_DEBUG(format, ...) \
     J3DLOG_DEBUG(sith_g_pHS, format, ##__VA_ARGS__)
 
@@ -44,13 +45,13 @@ J3D_EXTERN_C_START
 
 // TODO: Rename all to be prefixed only by 'sith'
 
-#define sithMain_g_frameNumber J3D_DECL_FAR_VAR(sithMain_g_frameNumber, int)
+#define sithMain_g_frameNumber J3D_DECL_FAR_VAR(sithMain_g_frameNumber, size_t)
 // extern int sithMain_g_frameNumber;
 
 #define sithMain_g_sith_mode J3D_DECL_FAR_VAR(sithMain_g_sith_mode, SithMode)
 // extern SithMode sithMain_g_sith_mode;
 
-#define sithMain_g_curRenderTick J3D_DECL_FAR_VAR(sithMain_g_curRenderTick, unsigned int)
+#define sithMain_g_curRenderTick J3D_DECL_FAR_VAR(sithMain_g_curRenderTick, size_t)
 // extern unsigned int sithMain_g_curRenderTick;
 
 void J3DAPI sithSetServices(tHostServices* pHS);

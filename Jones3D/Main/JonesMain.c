@@ -1338,12 +1338,13 @@ void JonesMain_PrintFramerate(void)
 
             STD_FORMAT(
                 std_g_genBuffer,
-                "%02.2fHz A:%d S:%d P:%d T:%d", // Changed: Fixed typo 'Z' -> 'T'
+                "%02.2fHz A:%d S:%d P:%d T:%d L:%d", // Changed: Fixed typo 'Z' -> 'T'; Added: num lights
                 JonesMain_frameRate,
                 sithRender_g_numVisibleAdjoins,
                 sithRender_g_numVisibleSectors,
                 sithRender_g_numAlphaThingPoly + sithRender_g_numThingPolys + sithRender_g_numAlphaArchPolys + sithRender_g_numArchPolys,
-                sithRender_g_numDrawnThings
+                sithRender_g_numDrawnThings,
+                sithCamera_g_pCurCamera->rdCamera.numLights // Added
             );
 
             JonesConsole_PrintTextWithID(JONESCONSOLE_FRAMERATEID, std_g_genBuffer);

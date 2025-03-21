@@ -33,19 +33,19 @@ void rdPuppet_InstallHooks(void)
 }
 
 void rdPuppet_ResetGlobals(void)
-{
-}
+{}
 
 rdPuppet* J3DAPI rdPuppet_New(rdThing* pParent)
 {
     rdPuppet* pPuppet = (rdPuppet*)STDMALLOC(sizeof(rdPuppet));
-    memset(pPuppet, 0, sizeof(rdPuppet));
-
     if ( !pPuppet )
     {
         RDLOG_ERROR("Error allocating memory for rdPuppet.\n");
         return NULL;
     }
+
+    // Fixed: Moved memset after null pointer check to avoid write to null ptr
+    memset(pPuppet, 0, sizeof(rdPuppet));
 
     rdPuppet_NewEntry(pPuppet, pParent);
     pParent->pPuppet = pPuppet;
@@ -54,7 +54,7 @@ rdPuppet* J3DAPI rdPuppet_New(rdThing* pParent)
 
 void J3DAPI rdPuppet_NewEntry(rdPuppet* pPuppet, rdThing* parent)
 {
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
 
     // TODO: make dynamic allocation of tracks and rdPuppetTrack::aCurKfNodeEntryNums
 
@@ -86,14 +86,14 @@ void J3DAPI rdPuppet_FreeEntry(rdPuppet* pPuppet)
 
 void J3DAPI rdPuppet_SetPause(rdPuppet* pPuppet, bool bPaused)
 {
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
     pPuppet->bPaused = bPaused;
 }
 
 int J3DAPI rdPuppet_AddTrack(rdPuppet* pPuppet, rdKeyframe* pKFTrack, int lowPriority, int highPriority)
 {
-    RD_ASSERTREL(pPuppet != ((void*)0));
-    RD_ASSERTREL(pKFTrack != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
+    RD_ASSERTREL(pKFTrack != NULL);
 
     // Find non-playing track
     size_t track;
@@ -107,7 +107,7 @@ int J3DAPI rdPuppet_AddTrack(rdPuppet* pPuppet, rdKeyframe* pKFTrack, int lowPri
         for ( track = 0; track < RDPUPPET_TRACK_FADEOUT; ++track )
         {
             if ( (pPuppet->aTracks[track].status & RDPUPPET_TRACK_FADEOUT) != 0
-              && (pPuppet->aTracks[track].status & (RDPUPPET_TRACK_FADEOUT_PAUSE_ON_LAST_FRAME | RDPUPPET_TRACK_PAUSE_ON_LAST_FRAME)) == 0 )
+                && (pPuppet->aTracks[track].status & (RDPUPPET_TRACK_FADEOUT_PAUSE_ON_LAST_FRAME | RDPUPPET_TRACK_PAUSE_ON_LAST_FRAME)) == 0 )
             {
                 rdPuppet_RemoveTrack(pPuppet, track);
                 break;
@@ -134,8 +134,8 @@ int J3DAPI rdPuppet_AddTrack(rdPuppet* pPuppet, rdKeyframe* pKFTrack, int lowPri
 void J3DAPI rdPuppet_RemoveTrack(rdPuppet* pPuppet, int32_t track)
 {
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != ((void*)0));
-    //RD_ASSERTREL(pTrack != ((void*)0)); // TODO: ???
+    RD_ASSERTREL(pPuppet != NULL);
+    //RD_ASSERTREL(pTrack != NULL); // TODO: ???
 
     if ( pPuppet->aTracks[track].pfCallback )
     {
@@ -165,10 +165,10 @@ void J3DAPI rdPuppet_SetCallback(rdPuppet* pPuppet, int32_t track, rdPuppetTrack
 int J3DAPI rdPuppet_PlayTrack(rdPuppet* pPuppet, int32_t track)
 {
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
-    RD_ASSERTREL(pTrack != ((void*)0)); // TODO: What's the point of this check?
+    RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->status |= RDPUPPET_TRACK_PLAYING;
     pTrack->status &= ~RDPUPPET_TRACK_PAUSED;
@@ -179,10 +179,10 @@ int J3DAPI rdPuppet_PlayTrack(rdPuppet* pPuppet, int32_t track)
 int J3DAPI rdPuppet_FadeInTrack(rdPuppet* pPuppet, int32_t track, float speed)
 {
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
-    RD_ASSERTREL(pTrack != ((void*)0)); // TODO: What's the point of this check?
+    RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->status &= ~RDPUPPET_TRACK_FADEOUT;
     pTrack->status |= RDPUPPET_TRACK_FADEIN | RDPUPPET_TRACK_PLAYING;
@@ -202,10 +202,10 @@ int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float speed)
 {
 
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
-    RD_ASSERTREL(pTrack != ((void*)0)); // TODO: What's the point of this check?
+    RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->status &= ~RDPUPPET_TRACK_FADEIN;
     pTrack->status |= RDPUPPET_TRACK_FADEOUT;
@@ -224,20 +224,20 @@ int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float speed)
 void J3DAPI rdPuppet_SetTrackSpeed(rdPuppet* pPuppet, int32_t track, float fps)
 {
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks))); // Added
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track];
-    RD_ASSERTREL(pTrack != ((void*)0)); // TODO: What's the point of this check?
+    RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
     pTrack->fps = fps;
 }
 
 void J3DAPI rdPuppet_SetTrackNoise(rdPuppet* pPuppet, int32_t track, float noise)
 {
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
-    RD_ASSERTREL(pTrack != ((void*)0)); // TODO: What's the point of this check?
+    RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->noise = noise;
     if ( noise == 0.0f )
@@ -252,11 +252,11 @@ void J3DAPI rdPuppet_SetTrackNoise(rdPuppet* pPuppet, int32_t track, float noise
 
 void J3DAPI rdPuppet_SetTrackPriority(rdPuppet* pPuppet, int32_t track, int lowPri, int heighPri)
 {
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track];
-    RD_ASSERTREL(pTrack != ((void*)0)); // TODO: What's the point of this check?
+    RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
     pTrack->lowPriority  = lowPri;
     pTrack->highPriority = heighPri;
 }
@@ -344,7 +344,7 @@ void J3DAPI rdPuppet_AdvanceTrack(rdPuppet* pPuppet, int32_t track, float frames
                 for ( size_t i = 0; pTrack->pKFTrack && i < numMarkers; ++i )
                 {
                     if ( pTrack->pKFTrack->aMarkerFrames[i] > (double)pTrack->prevFrame
-                      || pTrack->pKFTrack->aMarkerFrames[i] <= (double)pTrack->curFrame )
+                        || pTrack->pKFTrack->aMarkerFrames[i] <= (double)pTrack->curFrame )
                     {
                         pTrack->pfCallback(pPuppet->pThing->pThing, track, pTrack->pKFTrack->aMarkerTypes[i]);
                     }
@@ -373,7 +373,7 @@ void J3DAPI rdPuppet_AdvanceTrack(rdPuppet* pPuppet, int32_t track, float frames
 
 int J3DAPI rdPuppet_UpdateTracks(rdPuppet* pPuppet, float secDeltaTime)
 {
-    RD_ASSERTREL(pPuppet != ((void*)0));
+    RD_ASSERTREL(pPuppet != NULL);
     if ( pPuppet->bPaused )
     {
         return 0;
@@ -521,9 +521,9 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
             {
                 int priority = (pNode->type & pTrack->pKFTrack->type) != 0 ? pTrack->highPriority : pTrack->lowPriority;
                 if ( (pTrack->status & RDPUPPET_TRACK_PLAYING) != 0
-                  && pTrack->pKFTrack->aNodes[pNode->num].numEntries
-                  && priority >= lowPri
-                  && (priority >= highPri || playSpeed < 1.0f) )
+                    && pTrack->pKFTrack->aNodes[pNode->num].numEntries
+                    && priority >= lowPri
+                    && (priority >= highPri || playSpeed < 1.0f) )
                 {
                     if ( pTrack->pKFTrack->numJoints <= pNode->num )
                     {

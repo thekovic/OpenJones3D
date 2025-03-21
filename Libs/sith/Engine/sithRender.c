@@ -950,9 +950,9 @@ void sithRender_BuildDynamicLights(void)
                     if ( dist < (double)pLight->maxRadius )
                     {
                         float att = dist * attenuationMax;
-                        aVertDynamicLights[vertIdx].red   = pLight->color.red - att + aVertDynamicLights[vertIdx].red;
-                        aVertDynamicLights[vertIdx].green = pLight->color.green - att + aVertDynamicLights[vertIdx].green;
-                        aVertDynamicLights[vertIdx].blue  = pLight->color.blue - att + aVertDynamicLights[vertIdx].blue;
+                        aVertDynamicLights[vertIdx].red   += pLight->color.red - att;
+                        aVertDynamicLights[vertIdx].green += pLight->color.green - att;
+                        aVertDynamicLights[vertIdx].blue  += pLight->color.blue - att;
                     }
 
                     rdMath_ClampVector3Acc((rdVector3*)&aVertDynamicLights[vertIdx], 0.0f, 1.0f);

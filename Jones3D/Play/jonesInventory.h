@@ -11,7 +11,7 @@ J3D_EXTERN_C_START
 
 int jonesInventory_Open(void);
 int J3DAPI jonesInventory_Load(const char* pFilename);
-void J3DAPI jonesInventory_Close();
+void jonesInventory_Close(void);
 int J3DAPI jonesInventory_ActivateItem(SithThing* pThing, int typeId);
 int J3DAPI jonesInventory_UseItem(SithThing* pPlayer, unsigned int typeId);
 int jonesInventory_ResetGameStatistics(void);
@@ -19,11 +19,11 @@ size_t jonesInventory_GetMaxDifficultyLevel(void);
 void jonesInventory_UpdateSolvedHintsStatistics(void);
 void J3DAPI jonesInventory_UpdateIQPoints(size_t difficulty);
 int jonesInventory_GetTotalIQPoints(void);
-void J3DAPI jonesInventory_AdvanceStatistics();
+void jonesInventory_AdvanceStatistics(void);
 void jonesInventory_AdvanceFoundTreasuresStatistics();
-void J3DAPI jonesInventory_UpdateGameTimeStatistics(unsigned int msecTime);
-void J3DAPI jonesInventory_UpdateLevelStatisticTime(int elapsedSec, SithLevelStatistic* pLevelStats, unsigned int msecNewTime, int msecPreviousTime);
-void jonesInventory_ResetStatisticsGameTime();
+void J3DAPI jonesInventory_UpdateGameTimeStatistics(uint32_t msecTime);
+void J3DAPI jonesInventory_UpdateLevelStatisticTime(uint32_t elapsedSec, SithLevelStatistic* pLevelStats, uint32_t msecNewTime, uint32_t msecPreviousTime);
+void jonesInventory_ResetStatisticsGameTime(void);
 
 // Helper hooking functions
 void jonesInventory_InstallHooks(void);
