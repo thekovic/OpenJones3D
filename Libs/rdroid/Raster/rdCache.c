@@ -82,13 +82,6 @@ void rdCache_AdvanceFrame(void)
     rdCache_numUsedAlphaVertices = 0;
 }
 
-D3DTLVERTEX* rdCache_GetVertexPointer(int index) {
-    if ( index >= 0 && index < RDCACHE_VERTBUFFERSIZE ) {
-        return &rdCache_aHWVertices[index];
-    }
-    return NULL;
-}
-
 int J3DAPI rdCache_GetFrameNum()
 {
     return rdCache_frameNum;

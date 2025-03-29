@@ -30,8 +30,6 @@ void J3DAPI rdCache_SendWireframeFaceListToHardware(size_t numPolys, rdCacheProc
 
 void J3DAPI rdCache_AddToTextureCache(tSystemTexture* pTexture, StdColorFormatType format);
 
-D3DTLVERTEX* rdCache_GetVertexPointer(int index); // Added
-
 // Helper hooking functions
 void rdCache_InstallHooks(void);
 void rdCache_ResetGlobals(void);
