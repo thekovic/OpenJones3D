@@ -87,7 +87,7 @@ static int JonesHud_bRestoreGameStatistics;
 static int JonesHud_bItemActivated;
 static int JonesHud_bExitActivated;
 
-static char JonesHud_aSlectedNdsFilePath[128];
+static char JonesHud_aSlectedNdsFilePath[JONESCONFIG_GAMESAVE_FILEPATHSIZE];
 
 static const float JonesHud_invMenuDefaultZ = -0.102f;
 static float JonesHud_invMenuMinZ           = 0.0f;
@@ -111,9 +111,9 @@ static int JonesHud_levelStartIQPoints;
 
 static rdFont* JonesHud_pMenuFont = NULL;
 
-static float JonesHud_healthIndScale    = 0.0;
-static float JonesHud_enduranceIndScale = 0.0; // Added
-static float JonesHud_aCosSinTable[24][2]= { 0 };
+static float JonesHud_healthIndScale            = 0.0;
+static float JonesHud_enduranceIndScale         = 0.0; // Added
+static float JonesHud_aCosSinTable[24][2]       = { 0 };
 static float JonesHud_aCosSinTableScaled[24][2] = { 0 };
 
 static int JonesHud_curWhoopsSndFxIdx = -1;
@@ -139,8 +139,8 @@ static HANDLE JonesHud_hProcessHelp;
 // Keyboard state vars
 static int JonesHud_bKeyStateUpdated;
 static int JonesHud_curKeyId = -1;
-static int JonesHud_msecLastKeyPressTime;
-static int JonesHud_aActivateKeyIds[8] = { 0 };
+static uint32_t JonesHud_msecLastKeyPressTime;
+static size_t JonesHud_aActivateKeyIds[JONESCONTROL_ACTION_MAXBINDS] = { 0 };
 
 // Health indicator vars
 static int JonesHud_bHealthIndFadeSet;
@@ -2099,10 +2099,13 @@ void JonesHud_MenuMoveUp(void)
     }
 }
 
-void J3DAPI JonesHud_BindActivateControlKeys(int* aKeyIds, int numKeys)
+void J3DAPI JonesHud_BindActivateControlKeys(const size_t* aKeyIds, size_t numKeys)
 {
+    // Added
+    STD_ASSERT(aKeyIds);
+
     memset(JonesHud_aActivateKeyIds, 0, sizeof(JonesHud_aActivateKeyIds)); // Fixed: 0 all elements pf array
-    for ( int i = 0; i < numKeys; ++i )
+    for ( size_t i = 0; i < J3DMIN(numKeys, STD_ARRAYLEN(JonesHud_aActivateKeyIds)); ++i ) // Added: Clamp to array size
     {
         JonesHud_aActivateKeyIds[i] = aKeyIds[i];
     }
@@ -2782,28 +2785,12 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
 
 void JonesHud_MenuActivateItem(void)
 {
-    HWND hwnd;
-    int32_t bItemDisable;
-    SithGameStatistics* pStatistics;
-    DWORD exitCode;
-    float volume;
-    int bNo3DSound;
-    int bReverseSound;
-    StdDisplayEnvironment* pDisplayEnv;
-    JonesDisplaySettings* pDSettings;
-    char aFilePath[128];
-    char aMsg[256];
-    const char* pNoSaveFormat;
-    char aSaveGameFilename[128];
-    tSoundHandle hSndInfo;
-    int v23;
-
     if ( !JonesHud_pCurSelectedMenuItem || !sithPlayer_g_pLocalPlayerThing )
     {
         return;
     }
 
-    bItemDisable = 0;
+    int32_t bItemDisable = 0;
     if ( (sithInventory_g_aTypes[JonesHud_pCurSelectedMenuItem->inventoryID].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
     {
         bItemDisable = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.pPlayer->aItems[JonesHud_pCurSelectedMenuItem->inventoryID].status & SITHINVENTORY_ITEM_DISABLED;
@@ -2856,7 +2843,7 @@ void JonesHud_MenuActivateItem(void)
                 {
                     if ( sithWorld_g_pCurrentWorld )
                     {
-                        hSndInfo = sithSound_Load(sithWorld_g_pCurrentWorld, "riv_raft_repair.wav"); // inflate sound fx
+                        tSoundHandle hSndInfo = sithSound_Load(sithWorld_g_pCurrentWorld, "riv_raft_repair.wav"); // inflate sound fx
                         if ( hSndInfo )
                         {
                             JonesHud_hCurSndChannel = sithSoundMixer_PlaySound(hSndInfo, 1.0f, 0.0f, SOUNDPLAY_PLAYONCE);
@@ -2868,6 +2855,7 @@ void JonesHud_MenuActivateItem(void)
             {
                 // Item couldn't be activated, play whoops indy voice
                 int sndIdx = 0;
+                int v23 = 0;
                 do
                 {
                     do
@@ -2892,26 +2880,28 @@ void JonesHud_MenuActivateItem(void)
     switch ( JonesHud_pCurSelectedMenuItem->id )
     {
         case JONESHUD_MENU_UNKNOWN_124:
-        case JONESHUD_MENU_IQ:                  // Show game statistics
+        case JONESHUD_MENU_IQ: // Show game statistics
+        {
             jonesInventory_UpdateSolvedHintsStatistics();
             jonesInventory_UpdateGameTimeStatistics(sithTime_g_msecGameTime);
-            pStatistics = sithGamesave_GetGameStatistics();
+            SithGameStatistics* pStatistics = sithGamesave_GetGameStatistics();
             if ( pStatistics && sithGamesave_LockGameStatistics() )
             {
                 pStatistics->aLevelStatistic[pStatistics->curLevelNum].iqPoints = jonesInventory_GetTotalIQPoints() - JonesHud_levelStartIQPoints;
-                hwnd = stdWin95_GetWindow();
+                HWND hwnd = stdWin95_GetWindow();
                 jonesConfig_ShowStatisticsDialog(hwnd, pStatistics);
                 sithGamesave_UnlockGameStatistics();
             }
 
             dlgResult = 2;
-            break;
+        } break;
 
-        case JONESHUD_MENU_HELP:                // help
+        case JONESHUD_MENU_HELP: // help
             // TODO: Help menu item is not put in place in ResetMenuitems
             //       so this scope could be skipped
             if ( JonesHud_hProcessHelp )
             {
+                DWORD exitCode;
                 GetExitCodeProcess(JonesHud_hProcessHelp, &exitCode);
                 if ( exitCode != STILL_ACTIVE )
                     //if ( exitCode != 259 )
@@ -2924,12 +2914,13 @@ void JonesHud_MenuActivateItem(void)
             dlgResult = 2;
             break;
 
-        case JONESHUD_MENU_SAVE_GAME:           // save game
+        case JONESHUD_MENU_SAVE_GAME: // save game
+        {
             if ( jonesCog_g_bEnableGamesave )
             {
                 JonesHud_RestoreTreasuresStatistics();
-                memset(aFilePath, 0, sizeof(aFilePath));
-                hwnd = stdWin95_GetWindow();
+                char aFilePath[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
+                HWND hwnd = stdWin95_GetWindow();
                 dlgResult = jonesConfig_GetSaveGameFilePath(hwnd, aFilePath);
                 if ( dlgResult == 1 )
                 {
@@ -2938,13 +2929,14 @@ void JonesHud_MenuActivateItem(void)
                 }
             }
 
-            break;
+        } break;
 
         case JONESHUD_MENU_LOAD_GAME:
+        {
             if ( jonesCog_g_bEnableGamesave )   // load game
             {
                 memset(JonesHud_aSlectedNdsFilePath, 0, sizeof(JonesHud_aSlectedNdsFilePath));
-                hwnd = stdWin95_GetWindow();
+                HWND hwnd = stdWin95_GetWindow();
                 dlgResult = jonesConfig_GetLoadGameFilePath(hwnd, JonesHud_aSlectedNdsFilePath);
                 if ( dlgResult == 1 )
                 {
@@ -2960,48 +2952,55 @@ void JonesHud_MenuActivateItem(void)
                 }
             }
 
-            break;
+        } break;
 
-        case JONESHUD_MENU_GAME_SETTINGS:       // game play options
-            hwnd = stdWin95_GetWindow();
+        case JONESHUD_MENU_GAME_SETTINGS: // game play options
+        {
+            HWND hwnd = stdWin95_GetWindow();
             dlgResult = jonesConfig_ShowGamePlayOptions(hwnd);
-            break;
+        } break;
 
         case JONESHUD_MENU_CONTROLS_SETTINGS:   // control options
-            hwnd = stdWin95_GetWindow();
+        {
+            HWND hwnd = stdWin95_GetWindow();
             dlgResult = jonesConfig_ShowControlOptions(hwnd);
-            break;
+        } break;
 
         case JONESHUD_MENU_DISPLAY_SETTINGS:    // display settings
-            pDSettings = JonesMain_GetDisplaySettings();
-            pDisplayEnv = JonesMain_GetDisplayEnvironment();
-            hwnd = stdWin95_GetWindow();
+        {
+            JonesDisplaySettings* pDSettings   = JonesMain_GetDisplaySettings();
+            StdDisplayEnvironment* pDisplayEnv = JonesMain_GetDisplayEnvironment();
+            HWND hwnd = stdWin95_GetWindow();
             dlgResult = jonesConfig_ShowDisplaySettingsDialog(hwnd, pDisplayEnv, pDSettings);
             if ( dlgResult == 1 )
             {
                 JonesMain_RefreshDisplayDevice();
             }
 
-            break;
+        } break;
 
-        case JONESHUD_MENU_SOUND_SETTINGS:      // sound settings
-            volume = Sound_GetMaxVolume();
-            bNo3DSound = Sound_Get3DHWState();
-            bReverseSound = wuRegistry_GetIntEx("ReverseSound", 0);
-            hwnd = stdWin95_GetWindow();
-            dlgResult = jonesConfig_ShowSoundSettingsDialog(hwnd, &volume);
+        case JONESHUD_MENU_SOUND_SETTINGS: // sound settings
+        {
+            JonesSoundSettingsDialogData sndDlgdata;
+            sndDlgdata.maxSoundVolume = Sound_GetMaxVolume();
+            sndDlgdata.b3DHWSupport   = Sound_Get3DHWState();
+            sndDlgdata.bReverseSound  = wuRegistry_GetIntEx("ReverseSound", 0);
+
+            HWND hwnd = stdWin95_GetWindow();
+            dlgResult = jonesConfig_ShowSoundSettingsDialog(hwnd, &sndDlgdata);
             if ( dlgResult == 1 )
             {
-                Sound_SetMaxVolume(volume);
-                Sound_Set3DHWState(bNo3DSound);
-                Sound_SetReverseSound(bReverseSound);
+                Sound_SetMaxVolume(sndDlgdata.maxSoundVolume);
+                Sound_Set3DHWState(sndDlgdata.b3DHWSupport);
+                Sound_SetReverseSound(sndDlgdata.bReverseSound);
             }
 
-            break;
+        } break;
 
-        case JONESHUD_MENU_EXIT:                // exit
-            memset(aSaveGameFilename, 0, sizeof(aSaveGameFilename));
-            hwnd = stdWin95_GetWindow();
+        case JONESHUD_MENU_EXIT: // exit
+        {
+            char aSaveGameFilename[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
+            HWND hwnd = stdWin95_GetWindow();
             dlgResult = jonesConfig_ShowExitGameDialog(hwnd, aSaveGameFilename);
             if ( dlgResult == 2 )
             {
@@ -3015,12 +3014,11 @@ void JonesHud_MenuActivateItem(void)
                     sithGamesave_Save(aSaveGameFilename, 1);
                     if ( sithGamesave_Process() )
                     {
-                        pNoSaveFormat = jonesString_GetString("JONES_STR_NOSAVE");
+                        const char* pNoSaveFormat = jonesString_GetString("JONES_STR_NOSAVE");
                         if ( pNoSaveFormat )
                         {
-                            memset(aMsg, 0, sizeof(aMsg));
+                            char aMsg[256] = { 0 };
                             STD_FORMAT(aMsg, pNoSaveFormat, aSaveGameFilename);
-                            //sprintf(aMsg, pNoSaveFormat, aSaveGameFilename);
                             hwnd = stdWin95_GetWindow();
                             jonesConfig_ShowMessageDialog(hwnd, "JONES_STR_EXIT", aMsg, 141);
                         }
@@ -3035,7 +3033,7 @@ void JonesHud_MenuActivateItem(void)
                 }
             }
 
-            break;
+        } break;
 
         default:
             break;
@@ -3882,7 +3880,7 @@ void J3DAPI JonesHud_ShowGameOverDialog(int bPlayDiedMusic)
     const char* pErrorText;
     int hSnd;
     tSoundChannelHandle hSndChannel;
-    char aFilename[128];
+    char aFilename[JONESCONFIG_GAMESAVE_FILEPATHSIZE];
 
     hSndChannel = 0;
     hSnd = 0;
@@ -3909,7 +3907,7 @@ void J3DAPI JonesHud_ShowGameOverDialog(int bPlayDiedMusic)
             sithSoundMixer_StopSound(JonesHud_hCurSndChannel);
         }
 
-        if ( strlen(aFilename) )
+        if ( strlen(aFilename) > 0 )
         {
             JonesHud_bRestoreGameStatistics = 1;
             sithSoundMixer_StopAll();
@@ -4268,10 +4266,10 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     else if ( JonesHud_bSkipUpdateCredits // At credits end
         && !JonesHud_bEndingCredits
         && (!JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
-            || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
+        || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
             || JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
             && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
-            && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
+                && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
     {
         if ( hSndChannel )
         {

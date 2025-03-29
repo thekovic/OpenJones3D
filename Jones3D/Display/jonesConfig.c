@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include "jonesConfig.h"
 #include <j3dcore/j3dhook.h>
 
@@ -22,14 +21,17 @@
 #include <sith/Engine/sithRender.h>
 #include <sith/Gameplay/sithOverlayMap.h>
 #include <sith/Gameplay/sithPlayer.h>
+#include <sith/Main/sithString.h>
 #include <sith/World/sithModel.h>
 #include <sith/World/sithVoice.h>
 #include <sith/World/sithWorld.h>
 
 #include <std/General/std.h>
+#include <std/General/stdBmp.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
+#include <std/Win95/std3D.h>
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
 #include <std/Win95/stdWin95.h>
@@ -39,12 +41,90 @@
 #include <w32util/wuRegistry.h>
 
 #include <math.h>
+#include <windowsx.h>
+
+// Joystick AXIS key IDs
+#define JONESCONFIG_JOYAXISKID_UP       0x8000u
+#define JONESCONFIG_JOYAXISKID_RIGHT    0x8001u
+#define JONESCONFIG_JOYAXISKID_DOWN     0x8002u
+#define JONESCONFIG_JOYAXISKID_LEFT     0x8003u
+#define JONESCONFIG_JOYAXISKID_TWISTL   0x8004u
+#define JONESCONFIG_JOYAXISKID_TWISTR   0x8005u
+#define JONESCONFIG_JOYAXISKID_AIR      0x8006u
+#define JONESCONFIG_JOYAXISKID_GROUND   0x8007u
+#define JONESCONFIG_NUM_JOYAXISKIDS     8u
+
+#define JONESCONFIG_CONTROLSTRING_MAXLEN 256u
 
 #define JONESCONFIG_NOFONTSCALEMASK 1119
 #define JONESCONFIG_NOFONTSCALE(dlgID) MAKELONG(dlgID, JONESCONFIG_NOFONTSCALEMASK)
-#define JONES_CONTROL_ACTION_COUNT 37
-#define SHIWORD(x) ((int16_t)((uint32_t)(x) >> 16))
-#define BYTE1(x) (((x) >> 8) & 0xFF)
+
+typedef struct sJonesConfigControlAction
+{
+    const size_t numBinds;
+    const size_t* aBindings;
+} JonesConfigControlAction;
+
+typedef struct sJonesMessageDialogData
+{
+    int iconID;
+    char aTitle[256];
+    char aText[256];
+    HICON hPrevIcon;
+} JonesMessageDialogData;
+
+typedef struct sJonesCreateControlSchemeDialogData
+{
+    char aNewSchemeName[128];
+    HWND hSchemeList;
+} JonesCreateControlSchemeDialogData;
+
+typedef struct sJonesEditControlSchemeDialogData
+{
+    JonesControlsScheme* aSchemes;
+    int numSchemes;
+    HWND hCurList;
+    int curListID;
+    JonesControlsScheme* pDefaultShceme;
+} JonesEditControlSchemeDialogData;
+
+typedef struct sJonesAssignKeyDialogData
+{
+    size_t actionId;
+    JonesControlsScheme* pScheme;
+    char aControlName[256];
+    size_t controlId;
+    int listID;
+    int bLocked;
+} JonesAssignKeyDialogData;
+static_assert(sizeof(JonesAssignKeyDialogData) == 276, "sizeof(JonesAssignKeyDialogData) == 276");
+
+typedef struct sJonesReAssignKeyDialogData
+{
+    JonesAssignKeyDialogData* pAssignKeyData;
+    int index;
+    size_t offset;
+    size_t actionId;
+    HWND hAssignKeyDlg;
+} JonesReAssignKeyDialogData;
+
+
+typedef struct sJonesDisplaySettingsVideoMode
+{
+    char aResolutionText[256];
+    int colorDepthFlags;
+    int aColorDepthVideoModes[5];
+} JonesDisplaySettingsVideoMode;
+
+typedef struct sJonesDisplaySettingsDialogData
+{
+    JonesDisplaySettings* pSettings;
+    StdDisplayEnvironment* pDisplayEnv;
+    JonesDisplaySettingsVideoMode* aVideoModes;
+    const JonesDisplaySettingsVideoMode** aCurColorDepthResolutions;
+    size_t numCurColorDepthResolutions;
+    size_t numVideoModes;
+} JonesDisplaySettingsDialogData;
 
 typedef struct sLoadGameDialogData
 {
@@ -74,56 +154,97 @@ typedef struct sJonesDialogFontScaleMetrics
 } JonesDialogSize;
 static_assert(sizeof(JonesDialogSize) == 12, "sizeof(JonesDialogSize) == 12");
 
-static const JonesDialogSize jonesConfig_aDialogSizes[21] = {
-   { 164, 368, 232 },
-   { 112, 260, 252 },
-   { 111, 408, 218 },
-   { 116, 297, 95 },
-   { 115, 549, 367 },
-   { 117, 309, 103 },
-   { 120, 282, 152 },
-   { 114, 238, 285 },
-   { 148, 440, 393 },
-   { 113, 351, 206 },
-   { 211, 266, 103 },
-   { 163, 282, 90 },
-   { 214, 282, 90 },
-   { 121, 282, 90 },
-   { 150, 249, 100 },
-   { 233, 344, 180 },
-   { 190, 538, 297 },
-   { 212, 280, 74 },
-   { 159, 583, 330 }, // Changed: height to 330 from 250
-   { 154, 579, 332 }, // Changed: height to 332 from 252
-   { 167, 279, 75 }
-};
 
-// jonesConfig_DrawStatisticDialogIQPoints
-static const StdRect jonesConfig_aNumberGlyphMetrics[10] =
-{
-  { 11, 2, 44, 45 },
-  { 49, 2, 69, 45 },
-  { 78, 2, 106, 45 },
-  { 110, 2, 138, 45 },
-  { 11, 76, 44, 120 },
-  { 45, 76, 75, 120 },
-  { 77, 76, 107, 120 },
-  { 11, 150, 45, 194 },
-  { 45, 150, 75, 194 },
-  { 76, 150, 107, 194 }
-};
+
+// Module vars
+static int jonesConfig_bStartup = 0; // Fixed: Added init. to 0
+
+static HBITMAP jonesConfig_apDialogIcons[6];
+static char jonesConfig_aKeySetsDirPath[128] = { 0 }; // Fixed: Added init. to 0
+
+static int jonesConfig_bTextMetricInited;
+static ABC jonesConfig_aGlyphMetrics[256] = { 0 };
+static TEXTMETRICA jonesConfig_textMetric;
+
+// Message dialog
+HFONT jonesConfig_hFontMessageDialog = NULL; // Fixed: Added init. to NULL
 
 // Game save dialog
 static HFONT jonesConfig_hFontSaveGameDlg = NULL;
+
+// Override game save/load message box dialog
+HFONT jonesConfig_hFontGameSaveMsgBox = NULL; // Fixed: Added init. to NULL
 
 // Game load dialog
 static HFONT jonesConfig_hFontLoadGameDlg = NULL;
 
 // Game play options dialog
 static HFONT jonesConfig_hFontGamePlayOptionsDlg = NULL;
+static int jonesConfig_gamePlayOptions_bDefaultRun;
 
 // Exit game dialog
 static HFONT jonesConfig_hFontExitDlg = NULL;
+
+// Control options dialog
+static HFONT jonesConfig_hFontControlOptions = NULL; // Fixed: Added init. to NULL
+
+static JonesControlsConfig jonesConfig_controlOptions_curControlConfig = { 0 };
+static JonesControlsScheme* jonesConfig_controlOptions_pCurNewScheme;
+
+// Create control scheme
+HFONT jonesConfig_hFontCreateControlSchemeDlg = NULL; // Fixed: Added init. to NULL
+
+// Edit control scheme dialog
+HFONT jonesConfig_hFontEditControlShceme = NULL; // Fixed: Added init. to NULL
+
+// Assign key control options dialog
+HFONT jonesConfig_hFontAssignKeyDlg = NULL; // Fixed: Added init. to NULL
+int jonesConfig_assignKey_bControlsActive;
+
+// Re-assign key control options dialog
+HFONT jonesConfig_hFontReassignKeyDlg = NULL; // Fixed: Added init. to NULL
+
+// Display settings dialog
+static HFONT jonesConfig_hFontDisplaySettingsDlg = NULL; // Fixed: Added init. to NULL
+static int jonesConfig_displaySettings_bUpdateSliderText = 1;
+
+// Advance display settings dialog
+static HFONT jonesConfig_hFontAdvanceDisplaySettingsDialog = NULL; // Fixed: Added init. to NULL
+static Std3DMipmapFilterType jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+static int jonesConfig_advanceDisplaySettings_perfLevel = 4;
+
+// Sound settings dialog
+static HFONT jonesConfig_hFontSoundSettings = NULL; // Fixed: Added init. to NULL
+static tSoundChannelHandle jonesConfig_soundSettings_hSndChannel;
+static int jonesConfig_soundSettings_curSoundVolume;
+
+// Game overr dialog
+static HFONT jonesConfig_hFontGameOverDialog = NULL; // Fixed: Added init. to NULL
+
+// Game statistics dialog
+static HFONT jonesConfig_hFontGameStatisticsDialog = NULL; // Fixed: Added init. to NULL
+int jonesConfig_gameStatistics_curLevelNum;
+
+static const char* jonesConfig_gameStatistics__aLevelNames[JONESLEVEL_NUMLEVELS - 1] = // not including the general load level
+{
+    "JONES_STR_CYN",
+    "JONES_STR_BAB",
+    "JONES_STR_RIV",
+    "JONES_STR_SHS",
+    "JONES_STR_LAG",
+    "JONES_STR_VOL",
+    "JONES_STR_TEM",
+    "JONES_STR_JEP",
+    "JONES_STR_TEO",
+    "JONES_STR_OLV",
+    "JONES_STR_SEA",
+    "JONES_STR_PYR",
+    "JONES_STR_SOL",
+    "JONES_STR_NUB",
+    "JONES_STR_INF",
+    "JONES_STR_AET",
+    "JONES_STR_PRU"
+};
 
 // Chapter completed dialog
 static int jonesConfig_prevLevelNum = -1;
@@ -136,66 +257,776 @@ static HFONT jonesConfig_hFontPurchaseMessageBox;
 // CD dialog
 static HFONT jonesConfig_hFontDialogInsertCD;
 
-//#define jonesConfig_aNumberGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aNumberGlyphMetrics, StdRect(*)[10])
-#define jonesConfig_apDialogIconFiles J3D_DECL_FAR_ARRAYVAR(jonesConfig_apDialogIconFiles, char*(*)[6])
-#define jonesConfig_aLevelNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aLevelNames, const char*(*)[17])
-#define jonesConfig_JONES_STR_SUMMERY J3D_DECL_FAR_VAR(jonesConfig_JONES_STR_SUMMERY, const char*)
-#define jonesConfig_aJonesControlActionNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aJonesControlActionNames, const char*(*)[37])
-#define jonesConfig_aJonesCapControlActionNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aJonesCapControlActionNames, const char*(*)[37])
-#define jonesConfig_aDfltKeySets J3D_DECL_FAR_ARRAYVAR(jonesConfig_aDfltKeySets, int*(*)[3])
-#define jonesConfig_aDfltKeySetNames J3D_DECL_FAR_ARRAYVAR(jonesConfig_aDfltKeySetNames, const char*(*)[3])
-#define jonesConfig_aControlKeyStrings J3D_DECL_FAR_ARRAYVAR(jonesConfig_aControlKeyStrings, const char*(*)[223])
-// #define jonesConfig_aDialogSizes J3D_DECL_FAR_ARRAYVAR(jonesConfig_aDialogSizes, JonesDialogSize(*)[21])
-#define jonesConfig_dword_511954 J3D_DECL_FAR_VAR(jonesConfig_dword_511954, int)
-#define jonesConfig_dword_511958 J3D_DECL_FAR_VAR(jonesConfig_dword_511958, int)
-#define jonesConfig_perfLevel J3D_DECL_FAR_VAR(jonesConfig_perfLevel, int)
-//#define jonesConfig_prevLevelNum J3D_DECL_FAR_VAR(jonesConfig_prevLevelNum, int)
-#define jonesConfig_dword_5510B8 J3D_DECL_FAR_VAR(jonesConfig_dword_5510B8, int)
-#define jonesConfig_dword_5510BC J3D_DECL_FAR_VAR(jonesConfig_dword_5510BC, int)
-#define jonesConfig_dword_5510C0 J3D_DECL_FAR_VAR(jonesConfig_dword_5510C0, int)
-#define jonesConfig_dword_5510C4 J3D_DECL_FAR_VAR(jonesConfig_dword_5510C4, int)
-#define jonesConfig_curControlConfig J3D_DECL_FAR_VAR(jonesConfig_curControlConfig, JonesControlsConfig)
-#define jonesConfig_dword_5510E0 J3D_DECL_FAR_VAR(jonesConfig_dword_5510E0, int)
-#define jonesConfig_aGlyphMetrics J3D_DECL_FAR_ARRAYVAR(jonesConfig_aGlyphMetrics, ABC(*)[256])
-#define jonesConfig_textMetric J3D_DECL_FAR_VAR(jonesConfig_textMetric, TEXTMETRICA)
-#define jonesConfig_dword_551D20 J3D_DECL_FAR_VAR(jonesConfig_dword_551D20, unsigned int)
-#define jonesConfig_apDialogIcons J3D_DECL_FAR_ARRAYVAR(jonesConfig_apDialogIcons, HBITMAP(*)[6])
-#define jonesConfig_pKeySetsDirPath J3D_DECL_FAR_ARRAYVAR(jonesConfig_pKeySetsDirPath, char(*)[128])
-#define jonesConfig_bDefaultRun J3D_DECL_FAR_VAR(jonesConfig_bDefaultRun, UINT)
-#define jonesConfig_curLevelNum J3D_DECL_FAR_VAR(jonesConfig_curLevelNum, int)
-#define jonesConfig_bStartup J3D_DECL_FAR_VAR(jonesConfig_bStartup, int)
-#define jonesConfig_dword_551DCC J3D_DECL_FAR_VAR(jonesConfig_dword_551DCC, int)
-#define jonesConfig_hdo_551DD0 J3D_DECL_FAR_VAR(jonesConfig_hdo_551DD0, HGDIOBJ)
-//#define jonesConfig_hFontSaveGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontSaveGameDlg, HFONT)
-//#define jonesConfig_hFontExitDlg J3D_DECL_FAR_VAR(jonesConfig_hFontExitDlg, HFONT)
-#define jonesConfig_hFontGameSaveMsgBox J3D_DECL_FAR_VAR(jonesConfig_hFontGameSaveMsgBox, HFONT)
-//#define jonesConfig_hFontLoadGameDlg J3D_DECL_FAR_VAR(jonesConfig_hFontLoadGameDlg, HFONT)
-//#define jonesConfig_hFontGamePlayOptionsDlg J3D_DECL_FAR_VAR(jonesConfig_hFontGamePlayOptionsDlg, HFONT)
-#define jonesConfig_hFontControlOptions J3D_DECL_FAR_VAR(jonesConfig_hFontControlOptions, HFONT)
-#define jonesConfig_dword_551DEC J3D_DECL_FAR_VAR(jonesConfig_dword_551DEC, void*)
-#define jonesConfig_hFontCreateControlSchemeDlg J3D_DECL_FAR_VAR(jonesConfig_hFontCreateControlSchemeDlg, HFONT)
-#define jonesConfig_hFontEditControlShceme J3D_DECL_FAR_VAR(jonesConfig_hFontEditControlShceme, HFONT)
-#define jonesConfig_hFontAssignKeyDlg J3D_DECL_FAR_VAR(jonesConfig_hFontAssignKeyDlg, HFONT)
-#define jonesConfig_bControlsActive J3D_DECL_FAR_VAR(jonesConfig_bControlsActive, int)
-#define jonesConfig_hFontReassignKeyDlg J3D_DECL_FAR_VAR(jonesConfig_hFontReassignKeyDlg, HFONT)
-#define jonesConfig_hFontDisplaySettingsDlg J3D_DECL_FAR_VAR(jonesConfig_hFontDisplaySettingsDlg, HFONT)
-#define jonesConfig_hFontAdvanceDisplaySettingsDialog J3D_DECL_FAR_VAR(jonesConfig_hFontAdvanceDisplaySettingsDialog, HFONT)
-#define jonesConfig_hFontSoundSettings J3D_DECL_FAR_VAR(jonesConfig_hFontSoundSettings, HFONT)
-#define jonesConfig_hSndChannel J3D_DECL_FAR_VAR(jonesConfig_hSndChannel, tSoundChannelHandle)
-#define jonesConfig_dword_551E14 J3D_DECL_FAR_VAR(jonesConfig_dword_551E14, int)
-#define jonesConfig_hFontGameOverDialog J3D_DECL_FAR_VAR(jonesConfig_hFontGameOverDialog, HFONT)
-#define jonesConfig_dword_551E1C J3D_DECL_FAR_VAR(jonesConfig_dword_551E1C, HGDIOBJ)
-//#define jonesConfig_hFontLevelCopletedDialog J3D_DECL_FAR_VAR(jonesConfig_hFontLevelCopletedDialog, HFONT)
-//#define jonesConfig_hFontStoreDialog J3D_DECL_FAR_VAR(jonesConfig_hFontStoreDialog, HFONT)
-//#define jonesConfig_hFontPurchaseMessageBox J3D_DECL_FAR_VAR(jonesConfig_hFontPurchaseMessageBox, HFONT)
-//#define jonesConfig_hFontDialogInsertCD J3D_DECL_FAR_VAR(jonesConfig_hFontDialogInsertCD, HFONT)
+// Control keyset scheme serialization vars
+static size_t jonesConfig_maxControlStrLen       = 0u;
+static size_t jonesConfig_maxControlWords        = 0u;
+static size_t jonesConfig_maxControlPaddedStrLen = 0u;
+static size_t jonesConfig_maxActionStrLen        = 0u;
+static size_t jonesConfig_maxActionWords         = 0u;
+static size_t jonesConfig_maxActionPaddedStrLen  = 0u; // Fixed: Init to 0
+
+
+static const JonesDialogSize jonesConfig_aDialogSizes[21] =
+{
+    { 164, 368, 232 },
+    { 112, 260, 252 },
+    { 111, 408, 218 },
+    { 116, 297, 95 },
+    { 115, 549, 367 },
+    { 117, 309, 103 },
+    { 120, 282, 152 },
+    { 114, 238, 285 },
+    { 148, 440, 393 },
+    { 113, 351, 206 },
+    { 211, 266, 103 },
+    { 163, 282, 90 },
+    { 214, 282, 90 },
+    { 121, 282, 90 },
+    { 150, 249, 100 },
+    { 233, 344, 180 },
+    { 190, 538, 297 },
+    { 212, 280, 74 },
+    { 159, 583, 330 }, // Changed: height to 330 from 250
+    { 154, 579, 332 }, // Changed: height to 332 from 252
+    { 167, 279, 75 }
+};
+
+// jonesConfig_DrawStatisticDialogIQPoints
+static const StdRect jonesConfig_aNumberGlyphMetrics[10] =
+{
+    { 11, 2, 44, 45 },
+    { 49, 2, 69, 45 },
+    { 78, 2, 106, 45 },
+    { 110, 2, 138, 45 },
+    { 11, 76, 44, 120 },
+    { 45, 76, 75, 120 },
+    { 77, 76, 107, 120 },
+    { 11, 150, 45, 194 },
+    { 45, 150, 75, 194 },
+    { 76, 150, 107, 194 }
+};
+
+static const char* jonesConfig_apDialogIconFiles[6] =
+{
+    "iq.bmp",
+    "iqMask.bmp",
+    "iqOverlay.bmp",
+    "numbers.bmp",
+    "exit.bmp",
+    "exitmask.bmp"
+};
+
+
+// Keyboard default keysets
+
+static const size_t aActionWalkFwdKeys[2]     = { DIK_UP   , JONESCONFIG_JOYAXISKID_UP };
+static const size_t aActionWalkBackKeys[2]    = { DIK_DOWN , JONESCONFIG_JOYAXISKID_DOWN };
+static const size_t aActionTurnLeftKeys[2]    = { DIK_LEFT , JONESCONFIG_JOYAXISKID_LEFT };
+static const size_t aActionTurnRightKeys[2]   = { DIK_RIGHT, JONESCONFIG_JOYAXISKID_RIGHT };
+static const size_t aActionStepLeftKeys[1]    = { DIK_A };
+static const size_t aActionStepRightKeys[1]   = { DIK_S };
+static const size_t aActionCrawlKeys[1]       = { DIK_C };
+static const size_t aActionRunKeys[2]         = { DIK_LSHIFT, DIK_RSHIFT };
+static const size_t aActionRollKeys[1]        = { DIK_Z };
+static const size_t aActionJumpKeys[4]        = { DIK_X, DIK_LMENU, DIK_RMENU, STDCONTROL_JOYSTICK_GETBUTTON(0, 1) };
+static const size_t aActionLookKeys[2]        = { DIK_INSERT, DIK_NUMPAD0 };
+static const size_t aActionActivateKeys[3]    = { DIK_LCONTROL, DIK_RCONTROL, STDCONTROL_JOYSTICK_GETBUTTON(0, 0) };
+static const size_t aActionToggleMapKeys[1]   = { DIK_SPACE };
+static const size_t aActionPrevWeaponKeys[1]  = { DIK_COMMA };
+static const size_t aActionNextWeaponKeys[1]  = { DIK_PERIOD };
+static const size_t aActionToggleLightKeys[1] = { DIK_L };
+static const size_t aActionFistsKeys[1]       = { DIK_0 };
+static const size_t aActionWhipKeys[1]        = { DIK_1 };
+static const size_t aActionMauserKeys[1]      = { DIK_4 };
+static const size_t aActionPPSH41Keys[1]      = { DIK_7 };
+static const size_t aActionPistolKeys[1]      = { DIK_2 };
+static const size_t aActionSimonovKeys[1]     = { DIK_5 };
+static const size_t aActionTokarevKeys[1]     = { DIK_3 };
+static const size_t aActionToz34Keys[1]       = { DIK_8 };
+static const size_t aActionBazookaKeys[1]     = { DIK_9 };
+static const size_t aActionMacheteKeys[1]     = { DIK_6 };
+static const size_t aActionSatchelKeys[1]     = { DIK_P };
+static const size_t aActionGrenadeKeys[1]     = { DIK_G };
+static const size_t aActionMapKeys[1]         = { DIK_M };
+static const size_t aActionInterfaceKeys[1]   = { DIK_I };
+static const size_t aActionHealthKeys[1]      = { DIK_H };
+static const size_t aActionIMP1Keys[1]        = { DIK_Q };
+static const size_t aActionIMP2Keys[1]        = { DIK_W };
+static const size_t aActionIMP3Keys[1]        = { DIK_E };
+static const size_t aActionIMP4Keys[1]        = { DIK_R };
+static const size_t aActionIMP5Keys[1]        = { DIK_T };
+static const size_t aActionChalk[1]           = { DIK_K };
+
+static const JonesConfigControlAction jonesConfig_aDefaultControlSet[JONESCONTROL_ACTION_NUMACTIONS] =
+{
+    { STD_ARRAYLEN(aActionWalkFwdKeys)    , aActionWalkFwdKeys     },
+    { STD_ARRAYLEN(aActionWalkBackKeys)   , aActionWalkBackKeys    },
+    { STD_ARRAYLEN(aActionTurnLeftKeys)   , aActionTurnLeftKeys    },
+    { STD_ARRAYLEN(aActionTurnRightKeys)  , aActionTurnRightKeys   },
+    { STD_ARRAYLEN(aActionStepLeftKeys)   , aActionStepLeftKeys    },
+    { STD_ARRAYLEN(aActionStepRightKeys)  , aActionStepRightKeys   },
+    { STD_ARRAYLEN(aActionCrawlKeys)      , aActionCrawlKeys       },
+    { STD_ARRAYLEN(aActionRunKeys)        , aActionRunKeys         },
+    { STD_ARRAYLEN(aActionRollKeys)       , aActionRollKeys        },
+    { STD_ARRAYLEN(aActionJumpKeys)       , aActionJumpKeys        },
+    { STD_ARRAYLEN(aActionLookKeys)       , aActionLookKeys        },
+    { STD_ARRAYLEN(aActionActivateKeys)   , aActionActivateKeys    },
+    { STD_ARRAYLEN(aActionToggleMapKeys)  , aActionToggleMapKeys   },
+    { STD_ARRAYLEN(aActionPrevWeaponKeys) , aActionPrevWeaponKeys  },
+    { STD_ARRAYLEN(aActionNextWeaponKeys) , aActionNextWeaponKeys  },
+    { STD_ARRAYLEN(aActionToggleLightKeys), aActionToggleLightKeys },
+    { STD_ARRAYLEN(aActionFistsKeys)      , aActionFistsKeys       },
+    { STD_ARRAYLEN(aActionWhipKeys)       , aActionWhipKeys        },
+    { STD_ARRAYLEN(aActionMauserKeys)     , aActionMauserKeys      },
+    { STD_ARRAYLEN(aActionPPSH41Keys)     , aActionPPSH41Keys      },
+    { STD_ARRAYLEN(aActionPistolKeys)     , aActionPistolKeys      },
+    { STD_ARRAYLEN(aActionSimonovKeys)    , aActionSimonovKeys     },
+    { STD_ARRAYLEN(aActionTokarevKeys)    , aActionTokarevKeys     },
+    { STD_ARRAYLEN(aActionToz34Keys)      , aActionToz34Keys       },
+    { STD_ARRAYLEN(aActionBazookaKeys)    , aActionBazookaKeys     },
+    { STD_ARRAYLEN(aActionMacheteKeys)    , aActionMacheteKeys     },
+    { STD_ARRAYLEN(aActionSatchelKeys)    , aActionSatchelKeys     },
+    { STD_ARRAYLEN(aActionGrenadeKeys)    , aActionGrenadeKeys     },
+    { STD_ARRAYLEN(aActionMapKeys)        , aActionMapKeys         },
+    { STD_ARRAYLEN(aActionInterfaceKeys)  , aActionInterfaceKeys   },
+    { STD_ARRAYLEN(aActionHealthKeys)     , aActionHealthKeys      },
+    { STD_ARRAYLEN(aActionIMP1Keys)       , aActionIMP1Keys        },
+    { STD_ARRAYLEN(aActionIMP2Keys)       , aActionIMP2Keys        },
+    { STD_ARRAYLEN(aActionIMP3Keys)       , aActionIMP3Keys        },
+    { STD_ARRAYLEN(aActionIMP4Keys)       , aActionIMP4Keys        },
+    { STD_ARRAYLEN(aActionIMP5Keys)       , aActionIMP5Keys        },
+    { STD_ARRAYLEN(aActionChalk)          , aActionChalk           }
+};
+
+// Joystick 2 Axis 4 buttons default keysets
+
+static const size_t aActionCrawlJoyButtons[2]     = { DIK_C, STDCONTROL_JOYSTICK_GETBUTTON(0, 2) };
+static const size_t aActionInterfaceJoyButtons[2] = { DIK_I, STDCONTROL_JOYSTICK_GETBUTTON(0, 3) };
+
+static const JonesConfigControlAction jonesConfig_aDfault2Axis4Button[JONESCONTROL_ACTION_NUMACTIONS] =
+{
+    { STD_ARRAYLEN(aActionWalkFwdKeys)        , aActionWalkFwdKeys },
+    { STD_ARRAYLEN(aActionWalkBackKeys)       , aActionWalkBackKeys },
+    { STD_ARRAYLEN(aActionTurnLeftKeys)       , aActionTurnLeftKeys },
+    { STD_ARRAYLEN(aActionTurnRightKeys)      , aActionTurnRightKeys },
+    { STD_ARRAYLEN(aActionStepLeftKeys)       , aActionStepLeftKeys },
+    { STD_ARRAYLEN(aActionStepRightKeys)      , aActionStepRightKeys },
+    { STD_ARRAYLEN(aActionCrawlJoyButtons)    , aActionCrawlJoyButtons },
+    { STD_ARRAYLEN(aActionRunKeys)            , aActionRunKeys },
+    { STD_ARRAYLEN(aActionRollKeys)           , aActionRollKeys },
+    { STD_ARRAYLEN(aActionJumpKeys)           , aActionJumpKeys },
+    { STD_ARRAYLEN(aActionLookKeys)           , aActionLookKeys },
+    { STD_ARRAYLEN(aActionActivateKeys)       , aActionActivateKeys },
+    { STD_ARRAYLEN(aActionToggleMapKeys)      , aActionToggleMapKeys },
+    { STD_ARRAYLEN(aActionPrevWeaponKeys)     , aActionPrevWeaponKeys },
+    { STD_ARRAYLEN(aActionNextWeaponKeys)     , aActionNextWeaponKeys },
+    { STD_ARRAYLEN(aActionToggleLightKeys)    , aActionToggleLightKeys },
+    { STD_ARRAYLEN(aActionFistsKeys)          , aActionFistsKeys },
+    { STD_ARRAYLEN(aActionWhipKeys)           , aActionWhipKeys },
+    { STD_ARRAYLEN(aActionMauserKeys)         , aActionMauserKeys },
+    { STD_ARRAYLEN(aActionPPSH41Keys)         , aActionPPSH41Keys },
+    { STD_ARRAYLEN(aActionPistolKeys)         , aActionPistolKeys },
+    { STD_ARRAYLEN(aActionSimonovKeys)        , aActionSimonovKeys },
+    { STD_ARRAYLEN(aActionTokarevKeys)        , aActionTokarevKeys },
+    { STD_ARRAYLEN(aActionToz34Keys)          , aActionToz34Keys },
+    { STD_ARRAYLEN(aActionBazookaKeys)        , aActionBazookaKeys },
+    { STD_ARRAYLEN(aActionMacheteKeys)        , aActionMacheteKeys },
+    { STD_ARRAYLEN(aActionSatchelKeys)        , aActionSatchelKeys },
+    { STD_ARRAYLEN(aActionGrenadeKeys)        , aActionGrenadeKeys },
+    { STD_ARRAYLEN(aActionMapKeys)            , aActionMapKeys },
+    { STD_ARRAYLEN(aActionInterfaceJoyButtons), aActionInterfaceJoyButtons },
+    { STD_ARRAYLEN(aActionHealthKeys)         , aActionHealthKeys },
+    { STD_ARRAYLEN(aActionIMP1Keys)           , aActionIMP1Keys },
+    { STD_ARRAYLEN(aActionIMP2Keys)           , aActionIMP2Keys },
+    { STD_ARRAYLEN(aActionIMP3Keys)           , aActionIMP3Keys },
+    { STD_ARRAYLEN(aActionIMP4Keys)           , aActionIMP4Keys },
+    { STD_ARRAYLEN(aActionIMP5Keys)           , aActionIMP5Keys },
+    { STD_ARRAYLEN(aActionChalk)              , aActionChalk }
+};
+
+// Joystick 2 Axis 8 buttons default keysets
+
+static const size_t aActionRollJoyButtons[2]         = { DIK_CAPITAL, STDCONTROL_JOYSTICK_GETBUTTON(0, 4) };
+static const size_t aActionNextWeaponJoyButtons[2]   = { DIK_PERIOD, STDCONTROL_JOYSTICK_GETBUTTON(0, 5) };
+static const size_t aActionToggleWeaponJoyButtons[2] = { DIK_SPACE, STDCONTROL_JOYSTICK_GETBUTTON(0, 6) };
+static const size_t aActionLookJoyButtons[3]         = { DIK_INSERT, DIK_NUMPAD0, STDCONTROL_JOYSTICK_GETBUTTON(0, 7) };
+
+static const JonesConfigControlAction jonesConfig_aDefault2Axis8Button[JONESCONTROL_ACTION_NUMACTIONS] =
+{
+    { STD_ARRAYLEN(aActionWalkFwdKeys)           , aActionWalkFwdKeys            },
+    { STD_ARRAYLEN(aActionWalkBackKeys)          , aActionWalkBackKeys           },
+    { STD_ARRAYLEN(aActionTurnLeftKeys)          , aActionTurnLeftKeys           },
+    { STD_ARRAYLEN(aActionTurnRightKeys)         , aActionTurnRightKeys          },
+    { STD_ARRAYLEN(aActionStepLeftKeys)          , aActionStepLeftKeys           },
+    { STD_ARRAYLEN(aActionStepRightKeys)         , aActionStepRightKeys          },
+    { STD_ARRAYLEN(aActionCrawlJoyButtons)       , aActionCrawlJoyButtons        },
+    { STD_ARRAYLEN(aActionRunKeys)               , aActionRunKeys                },
+    { STD_ARRAYLEN(aActionRollJoyButtons)        , aActionRollJoyButtons         },
+    { STD_ARRAYLEN(aActionJumpKeys)              , aActionJumpKeys               },
+    { STD_ARRAYLEN(aActionLookJoyButtons)        , aActionLookJoyButtons         },
+    { STD_ARRAYLEN(aActionActivateKeys)          , aActionActivateKeys           },
+    { STD_ARRAYLEN(aActionToggleWeaponJoyButtons), aActionToggleWeaponJoyButtons },
+    { STD_ARRAYLEN(aActionPrevWeaponKeys)        , aActionPrevWeaponKeys         },
+    { STD_ARRAYLEN(aActionNextWeaponJoyButtons)  , aActionNextWeaponJoyButtons   },
+    { STD_ARRAYLEN(aActionToggleLightKeys)       , aActionToggleLightKeys        },
+    { STD_ARRAYLEN(aActionFistsKeys)             , aActionFistsKeys              },
+    { STD_ARRAYLEN(aActionWhipKeys)              , aActionWhipKeys               },
+    { STD_ARRAYLEN(aActionMauserKeys)            , aActionMauserKeys             },
+    { STD_ARRAYLEN(aActionPPSH41Keys)            , aActionPPSH41Keys             },
+    { STD_ARRAYLEN(aActionPistolKeys)            , aActionPistolKeys             },
+    { STD_ARRAYLEN(aActionSimonovKeys)           , aActionSimonovKeys            },
+    { STD_ARRAYLEN(aActionTokarevKeys)           , aActionTokarevKeys            },
+    { STD_ARRAYLEN(aActionToz34Keys)             , aActionToz34Keys              },
+    { STD_ARRAYLEN(aActionBazookaKeys)           , aActionBazookaKeys            },
+    { STD_ARRAYLEN(aActionMacheteKeys)           , aActionMacheteKeys            },
+    { STD_ARRAYLEN(aActionSatchelKeys)           , aActionSatchelKeys            },
+    { STD_ARRAYLEN(aActionGrenadeKeys)           , aActionGrenadeKeys            },
+    { STD_ARRAYLEN(aActionMapKeys)               , aActionMapKeys                },
+    { STD_ARRAYLEN(aActionInterfaceJoyButtons)   , aActionInterfaceJoyButtons    },
+    { STD_ARRAYLEN(aActionHealthKeys)            , aActionHealthKeys             },
+    { STD_ARRAYLEN(aActionIMP1Keys)              , aActionIMP1Keys               },
+    { STD_ARRAYLEN(aActionIMP2Keys)              , aActionIMP2Keys               },
+    { STD_ARRAYLEN(aActionIMP3Keys)              , aActionIMP3Keys               },
+    { STD_ARRAYLEN(aActionIMP4Keys)              , aActionIMP4Keys               },
+    { STD_ARRAYLEN(aActionIMP5Keys)              , aActionIMP5Keys               },
+    { STD_ARRAYLEN(aActionChalk)                 , aActionChalk                  }
+};
+
+// Side Winder Gamepad default keysets found in debug version
+
+static const size_t aActionToggleStepLeftSideWinderGamePadButtons[2]  = { DIK_LBRACKET, STDCONTROL_JOYSTICK_GETBUTTON(0, 6) };
+static const size_t aActionToggleStepRightSideWinderGamePadButtons[2] = { DIK_RBRACKET, STDCONTROL_JOYSTICK_GETBUTTON(0, 7) };
+static const size_t aActionToggleCrawlSideWinderGamePadButtons[2]     = { DIK_C       , STDCONTROL_JOYSTICK_GETBUTTON(0, 2) };
+static const size_t aActionToggleRunSideWinderGamePadButtons[2]       = { DIK_CAPITAL , STDCONTROL_JOYSTICK_GETBUTTON(0, 3) };
+static const size_t aActionLookSideWinderGamePadButtons[3]            = { DIK_INSERT  , DIK_NUMPAD0, STDCONTROL_JOYSTICK_GETBUTTON(0, 5) };
+static const size_t aActionToggleWeaponSideWinderGamePadButtons[2]    = { DIK_SPACE   , STDCONTROL_JOYSTICK_GETBUTTON(0, 9) };
+static const size_t aActionNextWeaponSideWinderGamePad[2]             = { DIK_PERIOD  , STDCONTROL_JOYSTICK_GETBUTTON(0, 4) };
+static const size_t aActionToggleInterfaceSideWinderGamePadButtons[2] = { DIK_I       , STDCONTROL_JOYSTICK_GETBUTTON(0, 8) };
+
+static const JonesConfigControlAction jonesConfig_aDefaultSideWinderGamepad[JONESCONTROL_ACTION_NUMACTIONS] =
+{
+    { STD_ARRAYLEN(aActionWalkFwdKeys)                            , aActionWalkFwdKeys    },
+    { STD_ARRAYLEN(aActionWalkBackKeys)                           , aActionWalkBackKeys  },
+    { STD_ARRAYLEN(aActionTurnLeftKeys)                           , aActionTurnLeftKeys  },
+    { STD_ARRAYLEN(aActionTurnRightKeys)                          , aActionTurnRightKeys },
+    { STD_ARRAYLEN(aActionToggleStepLeftSideWinderGamePadButtons) , aActionToggleStepLeftSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionToggleStepRightSideWinderGamePadButtons), aActionToggleStepRightSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionToggleCrawlSideWinderGamePadButtons)    , aActionToggleCrawlSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionToggleRunSideWinderGamePadButtons)      , aActionToggleRunSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionRollKeys)                               , aActionRollKeys      },
+    { STD_ARRAYLEN(aActionJumpKeys)                               , aActionJumpKeys      },
+    { STD_ARRAYLEN(aActionLookSideWinderGamePadButtons)           , aActionLookSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionActivateKeys)                           , aActionActivateKeys  },
+    { STD_ARRAYLEN(aActionToggleWeaponSideWinderGamePadButtons)   , aActionToggleWeaponSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionPrevWeaponKeys)                         , aActionPrevWeaponKeys},
+    { STD_ARRAYLEN(aActionNextWeaponSideWinderGamePad)            , aActionNextWeaponSideWinderGamePad},
+    { STD_ARRAYLEN(aActionToggleLightKeys)                        , aActionToggleLightKeys},
+    { STD_ARRAYLEN(aActionFistsKeys)                              , aActionFistsKeys    },
+    { STD_ARRAYLEN(aActionWhipKeys)                               , aActionWhipKeys     },
+    { STD_ARRAYLEN(aActionMauserKeys)                             , aActionMauserKeys   },
+    { STD_ARRAYLEN(aActionPPSH41Keys)                             , aActionPPSH41Keys   },
+    { STD_ARRAYLEN(aActionPistolKeys)                             , aActionPistolKeys   },
+    { STD_ARRAYLEN(aActionSimonovKeys)                            , aActionSimonovKeys  },
+    { STD_ARRAYLEN(aActionTokarevKeys)                            , aActionTokarevKeys  },
+    { STD_ARRAYLEN(aActionToz34Keys)                              , aActionToz34Keys    },
+    { STD_ARRAYLEN(aActionBazookaKeys)                            , aActionBazookaKeys  },
+    { STD_ARRAYLEN(aActionMacheteKeys)                            , aActionMacheteKeys  },
+    { STD_ARRAYLEN(aActionSatchelKeys)                            , aActionSatchelKeys  },
+    { STD_ARRAYLEN(aActionGrenadeKeys)                            , aActionGrenadeKeys  },
+    { STD_ARRAYLEN(aActionMapKeys)                                , aActionMapKeys      },
+    { STD_ARRAYLEN(aActionToggleInterfaceSideWinderGamePadButtons), aActionToggleInterfaceSideWinderGamePadButtons},
+    { STD_ARRAYLEN(aActionHealthKeys)                             , aActionHealthKeys   },
+    { STD_ARRAYLEN(aActionIMP1Keys)                               , aActionIMP1Keys     },
+    { STD_ARRAYLEN(aActionIMP2Keys)                               , aActionIMP2Keys     },
+    { STD_ARRAYLEN(aActionIMP3Keys)                               , aActionIMP3Keys     },
+    { STD_ARRAYLEN(aActionIMP4Keys)                               , aActionIMP4Keys     },
+    { STD_ARRAYLEN(aActionIMP5Keys)                               , aActionIMP5Keys     },
+    { STD_ARRAYLEN(aActionChalk)                                  , aActionChalk        }
+};
+
+// Default key sets
+static const JonesConfigControlAction* jonesConfig_aDfltKeySets[] = {
+    jonesConfig_aDefaultControlSet,
+    jonesConfig_aDfault2Axis4Button,
+    jonesConfig_aDefault2Axis8Button
+};
+
+#define JONESCONFIG_NUMDEFAULTCONTROLSCHEMES STD_ARRAYLEN(jonesConfig_aDfltKeySets)
+
+static const char* jonesConfig_aDfltKeySetNames[JONESCONFIG_NUMDEFAULTCONTROLSCHEMES] = {
+    "JONES_STR_DFLTKEY",
+    "JONES_STR_DFLT2A4B",
+    "JONES_STR_DFLT2A8B"
+};
+
+// The action string names
+static const char* jonesConfig_aJonesControlActionNames[JONESCONTROL_ACTION_NUMACTIONS] =
+{
+    "JONES_STR_WLKFWD",
+    "JONES_STR_WLKBK",
+    "JONES_STR_TRNLFT",
+    "JONES_STR_TRNRGHT",
+    "JONES_STR_STPLFT",
+    "JONES_STR_STPRGHT",
+    "JONES_STR_CRAWL",
+    "JONES_STR_RUN",
+    "JONES_STR_ROLL",
+    "JONES_STR_JUMP",
+    "JONES_STR_LOOK",
+    "JONES_STR_ACT",
+    "JONES_STR_TGLWEAP",
+    "JONES_STR_PREVWEAP",
+    "JONES_STR_NEXTWEAP",
+    "JONES_STR_TGLLGHT",
+    "JONES_STR_FISTS",
+    "JONES_STR_WHIP",
+    "JONES_STR_MAUSER",
+    "JONES_STR_PPSH41",
+    "JONES_STR_PISTOL",
+    "JONES_STR_SIMONOV",
+    "JONES_STR_TOKEREV",
+    "JONES_STR_TOZ34",
+    "JONES_STR_BAZOOKA",
+    "JONES_STR_MACHETE",
+    "JONES_STR_SATCHEL",
+    "JONES_STR_GRENADE",
+    "JONES_STR_MAP",
+    "JONES_STR_INTERFACE",
+    "JONES_STR_HEALTH",
+    "JONES_STR_IMP1",
+    "JONES_STR_IMP2",
+    "JONES_STR_IMP3",
+    "JONES_STR_IMP4",
+    "JONES_STR_IMP5",
+    "JONES_STR_CHALK"
+};
+
+static const char* jonesConfig_aJonesCapControlActionNames[JONESCONTROL_ACTION_NUMACTIONS] =
+{
+    "JONES_STR_CAPS_WLKFWD",
+    "JONES_STR_CAPS_WLKBK",
+    "JONES_STR_CAPS_TRNLFT",
+    "JONES_STR_CAPS_TRNRGHT",
+    "JONES_STR_CAPS_STPLFT",
+    "JONES_STR_CAPS_STPRGHT",
+    "JONES_STR_CAPS_CRAWL",
+    "JONES_STR_CAPS_RUN",
+    "JONES_STR_CAPS_ROLL",
+    "JONES_STR_CAPS_JUMP",
+    "JONES_STR_CAPS_LOOK",
+    "JONES_STR_CAPS_ACT",
+    "JONES_STR_CAPS_TGLWEAP",
+    "JONES_STR_CAPS_PREVWEAP",
+    "JONES_STR_CAPS_NEXTWEAP",
+    "JONES_STR_CAPS_TGLLGHT",
+    "JONES_STR_CAPS_FISTS",
+    "JONES_STR_CAPS_WHIP",
+    "JONES_STR_CAPS_MAUSER",
+    "JONES_STR_CAPS_PPSH41",
+    "JONES_STR_CAPS_PISTOL",
+    "JONES_STR_CAPS_SIMONOV",
+    "JONES_STR_CAPS_TOKEREV",
+    "JONES_STR_CAPS_TOZ34",
+    "JONES_STR_CAPS_BAZOOKA",
+    "JONES_STR_CAPS_MACHETE",
+    "JONES_STR_CAPS_SATCHEL",
+    "JONES_STR_CAPS_GRENADE",
+    "JONES_STR_CAPS_MAP",
+    "JONES_STR_CAPS_INTERFACE",
+    "JONES_STR_CAPS_HEALTH",
+    "JONES_STR_CAPS_IMP1",
+    "JONES_STR_CAPS_IMP2",
+    "JONES_STR_CAPS_IMP3",
+    "JONES_STR_CAPS_IMP4",
+    "JONES_STR_CAPS_IMP5",
+    "JONES_STR_CAPS_CHALK"
+};
+
+
+// Key control sting names
+static const char* jonesConfig_aControlKeyStrings[223] =
+{
+    NULL,
+    "JONES_STR_ESCAPE",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "0",
+    "JONES_STR_MINUS",
+    "JONES_STR_EQUAL",
+    "JONES_STR_BACK",
+    "JONES_STR_TAB",
+    "Q",
+    "W",
+    "E",
+    "R",
+    "T",
+    "Y",
+    "U",
+    "I",
+    "O",
+    "P",
+    "JONES_STR_LEFT_BRCKT",
+    "JONES_STR_RIGHT_BRCKT",
+    "JONES_STR_ENTER",
+    "JONES_STR_LEFT_CTRL",
+    "A",
+    "S",
+    "D",
+    "F",
+    "G",
+    "H",
+    "J",
+    "K",
+    "L",
+    ";",
+    "'",
+    "`",
+    "JONES_STR_LEFT_SHIFT",
+    "\\",
+    "Z",
+    "X",
+    "C",
+    "V",
+    "B",
+    "N",
+    "M",
+    "JONES_STR_COMMA",
+    ".",
+    "/",
+    "JONES_STR_RIGHT_SHIFT",
+    "JONES_STR_NUMPAD_MULT",
+    "JONES_STR_LEFT_ALT",
+    "JONES_STR_SPACE",
+    "JONES_STR_CAPS",
+    "JONES_STR_F1",
+    "JONES_STR_F2",
+    "JONES_STR_F3",
+    "JONES_STR_F4",
+    "JONES_STR_F5",
+    "JONES_STR_F6",
+    "JONES_STR_F7",
+    "JONES_STR_F8",
+    "JONES_STR_F9",
+    "JONES_STR_F10",
+    "JONES_STR_NUMLOCK",
+    "JONES_STR_SCROLL",
+    "JONES_STR_NUMPAD_7",
+    "JONES_STR_NUMPAD_8",
+    "JONES_STR_NUMPAD_9",
+    "JONES_STR_NUMPAD_MINUS",
+    "JONES_STR_NUMPAD_4",
+    "JONES_STR_NUMPAD_5",
+    "JONES_STR_NUMPAD_6",
+    "JONES_STR_NUMPAD_PLUS",
+    "JONES_STR_NUMPAD_1",
+    "JONES_STR_NUMPAD_2",
+    "JONES_STR_NUMPAD_3",
+    "JONES_STR_NUMPAD_0",
+    "JONES_STR_NUMPAD_DOT",
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_F11",
+    "JONES_STR_F12",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_F13",
+    "JONES_STR_F14",
+    "JONES_STR_F15",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_NUMPAD_EQL",
+    NULL,
+    NULL,
+    NULL,
+    "@",
+    ":",
+    "__",
+    NULL,
+    "STOP",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_NUMPAD_ENTER",
+    "JONES_STR_RIGHT_CTRL",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_NUMPAD_COMMA",
+    NULL,
+    "JONES_STR_NUMPAD_DIV",
+    NULL,
+    "JONES_STR_SYSRQ",
+    "JONES_STR_RIGHT_ALT",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_HOME",
+    "JONES_STR_UPARRW",
+    "JONES_STR_PAGEUP",
+    NULL,
+    "JONES_STR_LEFTARRW",
+    NULL,
+    "JONES_STR_RGHTARRW",
+    NULL,
+    "JONES_STR_END",
+    "JONES_STR_DNARRW",
+    "JONES_STR_PGDN",
+    "JONES_STR_INSERT",
+    "JONES_STR_DELETE",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    "JONES_STR_LEFT_WND",
+    "JONES_STR_RIGHT_WND",
+    "JONES_STR_APPS",
+    NULL
+};
+
+
+int jonesConfig_InitKeySetsPath(void);
+int jonesConfig_InitKeyActions(void);
+
+void J3DAPI jonesConfig_ControlToString(size_t controlId, char* pDest);
+
+JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void);
+int J3DAPI jonesConfig_LoadControlScheme(const char* pFilePath, JonesControlsScheme* pConfig);
+int J3DAPI jonesConfig_ParseArgumentIndex(size_t* argNum, const StdConffileEntry* pEntry, size_t a3, const char** apStringList, size_t size);
+int J3DAPI jonesConfig_GetStringListIndex(char* pValue, const char** apStringList, size_t size);
+int J3DAPI jonesConfig_ParseJoystickControlId(size_t* pArgNum, const StdConffileEntry* pEntry);
+int J3DAPI jonesConfig_SetDefaultControlScheme(JonesControlsScheme* pScheme, size_t num);
+void J3DAPI jonesConfig_BindControls(JonesControlsScheme* pConfig);
+void J3DAPI jonesConfig_BindJoystickControl(SithControlFunction functionId, size_t controlId);
+void J3DAPI jonesConfig_FreeControlScheme(JonesControlsScheme* pScheme);
+void J3DAPI jonesConfig_FreeControlConfigEntry(JonesControlsConfig* pConfig);
+
+HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID);
+HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgResNum, float* pFontScale);
+void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont);
+BOOL CALLBACK jonesConfig_ResetWindowFontCallback(HWND hWnd, LPARAM lparam);
+BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam);
+void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hCtrl, JonesDialogFontInfo* pFontInfo);
+void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect);
+void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo);
+
+UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOfn);
+LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_ShowOverwriteSaveGameDlg(HWND hWnd, const char* aFilePath);
+INT_PTR CALLBACK jonesConfig_SaveGameMsgBoxProc(HWND hWnd, UINT umsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_GameSaveSetData(HWND hDlg, int a2, GameSaveMsgBoxData* pData);
+
+INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam);
+
+void* J3DAPI jonesConfig_sub_405F60(HWND hWnd);
+UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd);
+BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pofn);
+LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+int J3DAPI jonesConfig_ShowCreateControlSchemeDialog(HWND hWnd, JonesCreateControlSchemeDialogData* pData);
+INT_PTR CALLBACK jonesConfig_CreateControlSchemeProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam);
+int J3DAPI jonesConfig_InitCreateControlScheme(HWND hDlg, int a2, JonesCreateControlSchemeDialogData* pData);
+void J3DAPI jonesConfig_CreateControlScheme_Handle_WM_COMMAND(HWND hWnd, int nResult);
+
+int J3DAPI jonesConfig_ShowEditControlShemeDialog(HWND hWnd, JonesEditControlSchemeDialogData* pData);
+INT_PTR CALLBACK jonesConfig_EditControlSchemeProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitEditControlSchemeDlg(HWND hDlg, int a2, JonesEditControlSchemeDialogData* pData);
+void J3DAPI jonesConfig_EditControlScheme_SetListColumn(HWND hWnd, const char* pJSText);
+void J3DAPI jonesConfig_EditControlScheme_SetListScheme(HWND hWnd, int a2, JonesControlsScheme* pScheme);
+void J3DAPI jonesConfig_EditControlScheme_Handle_WM_COMMAND(HWND hWnd, int ctrlID);
+void J3DAPI jonesConfig_EditControlScheme_EditAssignment(HWND hDlg, HWND hListCtrl, int listID, JonesControlsScheme* pScheme);
+int J3DAPI jonesConfig_EditControlScheme_GetSelectedListItemBinding(HWND hDlg, HWND hListCtrl, JonesControlsScheme* pScheme, size_t* pItemIdx, size_t* pBindIdx);
+void J3DAPI jonesConfig_EditControlScheme_AddAssignment(HWND hDlg, HWND hListCtrl, int listID, JonesControlsScheme* pScheme);
+void J3DAPI jonesConfig_EditControlScheme_DeleteAssignment(HWND hDlg, HWND hListCtrl, int listID, JonesControlsScheme* pScheme);
+
+int J3DAPI jonesConfig_ShowAssignKeyDialog(HWND hWnd, JonesAssignKeyDialogData* pData);
+int J3DAPI jonesConfig_AssignKey_CheckBindForKey(JonesControlsScheme* pScheme, size_t keyControlID, size_t* pFunctionId, int listID, size_t* pOffset);
+INT_PTR CALLBACK jonesConfig_AssignKeyDlgProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam);
+int J3DAPI jonesConfig_InitAssignKeyDlg(HWND hDlg, int a2, JonesAssignKeyDialogData* pData);
+void J3DAPI jonesConfig_AssignControlKey_ReadKey(HWND hWnd);
+int J3DAPI jonesConfig_AssignControlKey_ReadJoyAxisKey(JonesAssignKeyDialogData* pData);
+void J3DAPI jonesConfig_AssignKeyDlg_HandleWM_COMMAND(HWND hWnd, int ctrlID);
+
+int J3DAPI jonesConfig_ShowReassignKeyMsgBox(HWND hWnd, JonesReAssignKeyDialogData* pData);
+INT_PTR CALLBACK jonesConfig_ReassignKeyDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitReassignKeyDialog(HWND hDlg, int a2, JonesReAssignKeyDialogData* pData);
+void J3DAPI jonesConfig_ReassignKeyDlg_HandleWM_COMMAND(HWND hWnd, unsigned int cntrlId);
+
+BOOL CALLBACK jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void J3DAPI jonesConfig_InitMessageDialogIcon(HWND hWnd, JonesMessageDialogData* pData);
+int J3DAPI jonesConfig_InitMessageDialogData(HWND hDlg, int a2, JonesMessageDialogData* pData);
+int J3DAPI jonesConfig_SetTextControl(HWND hDlg, HWND hWnd, const char* aText);
+void J3DAPI jonesConfig_MessageDialog_HandleWM_COMMAND(HWND hDlg, int nResult);
 
 void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult);
 
+INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam);
+void J3DAPI jonesConfig_HandleWM_HSCROLL(HWND hDlg, HWND hWnd, uint16_t sbValue);
+int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg);
+void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t controlID);
+
+int J3DAPI jonesConfig_CopyControlConfig(JonesControlsConfig* pSrc, JonesControlsConfig* pDst);
+JonesControlsScheme* J3DAPI jonesConfig_CloneControlSchemesList(JonesControlsScheme* aSchemes, size_t start, size_t numSchemes);
+
+int jonesConfig_ControlOptions_InitControlsConfig(void);
+int J3DAPI jonesConfig_ControlOptions_LoadAllControlSchemes(JonesControlsConfig* pConfig);
+int J3DAPI jonesConfig_ControlOptions_SetAllDefaultControlSchemes(JonesControlsConfig* pConfig);
+INT_PTR CALLBACK jonesConfig_ControlOptionsDialogProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+int J3DAPI jonesConfig_InitControlOptionsDialog(HWND hDlg, int a2, JonesControlsConfig* pConfig);
+void J3DAPI jonesConfig_ControlOptions_HandleWM_COMMAND(HWND hWnd, int ctrlID, LPARAM lParam, unsigned int notificationCode);
+int J3DAPI jonesConfig_ControlOptions_WriteScheme(JonesControlsScheme* pScheme);
+int J3DAPI jonesConfig_ControlOptions_UpdateButtons(HWND hDlg);
+void J3DAPI jonesConfig_ControlOptions_DeleteScheme(HWND hDlg, JonesControlsConfig* pConfig);
+void J3DAPI jonesConfig_ControlOptions_EditSelectedScheme(HWND hDlg, JonesControlsConfig* a2);
+JonesControlsScheme* J3DAPI jonesConfig_GetDefaultControlScheme(JonesControlsConfig* pConfig);
+void J3DAPI jonesConfig_ControlOptions_CreateNewScheme(HWND hDlg, JonesControlsConfig* pConfig, JonesControlsScheme* pNewScheme);
+
+INT_PTR CALLBACK jonesConfig_DisplaySettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplaySettingsDialogData* pData);
+int J3DAPI jonesConfig_DisplaySettings_GetVideoModeNum(const JonesDisplaySettingsVideoMode* pVideoMode, const char* pText, size_t numVideoModes);
+void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, LPARAM a3, int notifyCode);
+
+int J3DAPI jonesConfig_ShowAdvanceDisplaySettings(HWND hWnd, JonesDisplaySettingsDialogData* pData);
+INT_PTR CALLBACK jonesConfig_AdvanceDisplaySettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(const StdDisplayInfo* pDisplayInfo, const JonesDisplaySettings* pSettings, int bpp);
+int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplaySettingsDialogData* pData);
+void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int ctrlID, int a3, int notifyCode);
+
+INT_PTR CALLBACK jonesConfig_SoundSettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitSoundSettingsDialog(HWND hDlg, int a2, JonesSoundSettingsDialogData* pData);
+void J3DAPI jonesConfig_SoundSettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, int notifyCode);
+
+INT_PTR CALLBACK jonesConfig_GameOverDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void J3DAPI jonesConfig_LoadGameGetLastSavedGamePath(char* pPath, unsigned int size);
+int J3DAPI jonesConfig_GameOverDialogInit(HWND hDlg, int a2, GameOverDialogData* pData);
+void J3DAPI jonesConfig_GameOverDialog_HandleWM_COMMAND(HWND hWnd, uint16_t ctrlID);
+
+INT_PTR CALLBACK jonesConfig_StatisticsDialogProc(HWND hwnd, UINT uMsg, WPARAM wPAram, LPARAM lParam);
+int J3DAPI jonesConfig_sub_40D100(int a1, HWND hWnd, int a3, int a4);
+int J3DAPI jonesConfig_DrawImageOnDialogItem(HWND hDlg, HDC hdcWnd, HDC hdcCtrl, int nIDDlgItem, HBITMAP hImage, HBITMAP hMask);
+int J3DAPI jonesConfig_SetStatisticsDialogForLevel(HWND hDlg, int levelNum, int* a3);
+void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageInfo** ppImageInfo, int dlgID, int iqpoints);
+int J3DAPI jonesConfig_InitStatisticDialog(HWND hDlg, int a2, int* pData);
+void J3DAPI jonesConfig_StatisticProc_HandleWM_COMMAND(HWND hWnd, int16_t wParam);
+
+int CALLBACK jonesConfig_LevelCompletedDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCompletedDialogState* pState);
+void J3DAPI jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(HWND hWnd, int wParam);
+
+int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsState, int a4);
+int CALLBACK jonesConfig_StoreDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+int J3DAPI jonesConfig_StoreHandleDragEvent(HWND hwnd, HWND hDlgCtrl);
+void J3DAPI jonesConfig_StoreDialog_HandleWM_MBUTTONUP(HWND hWnd);
+BOOL J3DAPI jonesConfig_StoreDialog_HandleWM_MOUSEFIRST(HWND hWnd);
+int J3DAPI jonesConfig_InitStoreDialog(HWND hDlg, int a2, tStoreCartState* pCart);
+int J3DAPI jonesConfig_StoreInitItemIcons(HWND hWnd, tStoreCartState* pCart);
+void J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName);
+void J3DAPI jonesConfig_StoreInitItemList(HWND hWnd, int* apItemsState, int listID);
+void J3DAPI jonesConfig_UpdateBalances(HWND hDlg, tStoreCartState* pCart);
+void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart);
+void J3DAPI jonesConfig_RemoveStoreCartItem(HWND hDlg, tStoreCartState* pCart);
+void J3DAPI jonesConfig_StoreDialog_HandleWM_COMMAND(HWND hWnd, WPARAM wParam);
+void J3DAPI jonesConfig_ClearStoreCart(HWND hDlg, tStoreCartState* pCart);
+
+int J3DAPI jonesConfig_ShowPurchaseMessageBox(HWND hWnd, tStoreCartState* dwInitParam);
+INT_PTR CALLBACK jonesConfig_PurchaseMessageBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState* pCart);
+
+INT_PTR CALLBACK jonesConfig_DialogInsertCDProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int J3DAPI jonesConfig_InitDialogInsertCD(HWND hDlg, int a2, int cdNum);
+int J3DAPI jonesConfig_InsertCD_HandleWM_COMMAND(HWND hWnd, int nResult);
+
 void jonesConfig_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
     J3D_HOOKFUNC(jonesConfig_Startup);
     J3D_HOOKFUNC(jonesConfig_InitKeySetsPath);
     J3D_HOOKFUNC(jonesConfig_InitKeyActions);
@@ -203,15 +1034,15 @@ void jonesConfig_InstallHooks(void)
     J3D_HOOKFUNC(jonesConfig_ControlToString);
     J3D_HOOKFUNC(jonesConfig_ShowMessageDialog);
     J3D_HOOKFUNC(jonesConfig_MessageDialogProc);
-    J3D_HOOKFUNC(jonesConfig_sub_4025F0);
-    J3D_HOOKFUNC(jonesConfig_sub_402670);
+    J3D_HOOKFUNC(jonesConfig_InitMessageDialogIcon);
+    J3D_HOOKFUNC(jonesConfig_InitMessageDialogData);
     J3D_HOOKFUNC(jonesConfig_SetTextControl);
-    J3D_HOOKFUNC(jonesConfig_sub_402A90);
-    J3D_HOOKFUNC(jonesConfig_NewControlScheme);
-    J3D_HOOKFUNC(jonesConfig_LoadConstrolsScheme);
-    J3D_HOOKFUNC(jonesConfig_GetEntryIndex);
-    J3D_HOOKFUNC(jonesConfig_GetValueIndex);
-    J3D_HOOKFUNC(jonesConfig_GetControllerKeySchemeIndex);
+    J3D_HOOKFUNC(jonesConfig_MessageDialog_HandleWM_COMMAND);
+    J3D_HOOKFUNC(jonesConfig_LoadActiveControlScheme);
+    J3D_HOOKFUNC(jonesConfig_LoadControlScheme);
+    J3D_HOOKFUNC(jonesConfig_ParseArgumentIndex);
+    J3D_HOOKFUNC(jonesConfig_GetStringListIndex);
+    J3D_HOOKFUNC(jonesConfig_ParseJoystickControlId);
     J3D_HOOKFUNC(jonesConfig_SetDefaultControlScheme);
     J3D_HOOKFUNC(jonesConfig_BindControls);
     J3D_HOOKFUNC(jonesConfig_BindJoystickControl);
@@ -249,57 +1080,57 @@ void jonesConfig_InstallHooks(void)
     J3D_HOOKFUNC(jonesConfig_FreeControlConfigEntry);
     J3D_HOOKFUNC(jonesConfig_ShowControlOptions);
     J3D_HOOKFUNC(jonesConfig_CopyControlConfig);
-    J3D_HOOKFUNC(jonesConfig_CopyControlSchemes);
-    J3D_HOOKFUNC(jonesConfig_InitControlsConfig);
-    J3D_HOOKFUNC(jonesConfig_LoadControlsSchemesFromSystem);
-    J3D_HOOKFUNC(jonesConfig_SetDefaultControlSchemes);
-    J3D_HOOKFUNC(jonesConfig_ControlOptionsProc);
-    J3D_HOOKFUNC(jonesConfig_InitControlOptionsDlg);
+    J3D_HOOKFUNC(jonesConfig_CloneControlSchemesList);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_InitControlsConfig);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_LoadAllControlSchemes);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_SetAllDefaultControlSchemes);
+    J3D_HOOKFUNC(jonesConfig_ControlOptionsDialogProc);
+    J3D_HOOKFUNC(jonesConfig_InitControlOptionsDialog);
     J3D_HOOKFUNC(jonesConfig_ControlOptions_HandleWM_COMMAND);
-    J3D_HOOKFUNC(jonesConfig_WriteScheme);
-    J3D_HOOKFUNC(jonesConfig_sub_407F60);
-    J3D_HOOKFUNC(jonesConfig_sub_408000);
-    J3D_HOOKFUNC(jonesConfig_sub_408260);
-    J3D_HOOKFUNC(jonesConfig_sub_408400);
-    J3D_HOOKFUNC(jonesConfig_CreateNewSchemeAction);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_WriteScheme);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_UpdateButtons);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_DeleteScheme);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_EditSelectedScheme);
+    J3D_HOOKFUNC(jonesConfig_GetDefaultControlScheme);
+    J3D_HOOKFUNC(jonesConfig_ControlOptions_CreateNewScheme);
     J3D_HOOKFUNC(jonesConfig_ShowCreateControlSchemeDialog);
     J3D_HOOKFUNC(jonesConfig_CreateControlSchemeProc);
     J3D_HOOKFUNC(jonesConfig_InitCreateControlScheme);
     J3D_HOOKFUNC(jonesConfig_CreateControlScheme_Handle_WM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowEditControlShemeDialog);
-    J3D_HOOKFUNC(jonesConfig_EditControlSchemProc);
+    J3D_HOOKFUNC(jonesConfig_EditControlSchemeProc);
     J3D_HOOKFUNC(jonesConfig_InitEditControlSchemeDlg);
-    J3D_HOOKFUNC(jonesConfig_sub_408ED0);
-    J3D_HOOKFUNC(jonesConfig_sub_408FC0);
-    J3D_HOOKFUNC(jonesConfig_sub_409200);
-    J3D_HOOKFUNC(jonesConfig_sub_409530);
-    J3D_HOOKFUNC(jonesConfig_sub_4096F0);
-    J3D_HOOKFUNC(jonesConfig_sub_4097D0);
-    J3D_HOOKFUNC(jonesConfig_sub_409BC0);
-    J3D_HOOKFUNC(jonesConfig_AssignKeyAction);
-    J3D_HOOKFUNC(jonesConfig_sub_409F70);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_SetListColumn);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_SetListScheme);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_Handle_WM_COMMAND);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_EditAssignment);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_GetSelectedListItemBinding);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_AddAssignment);
+    J3D_HOOKFUNC(jonesConfig_EditControlScheme_DeleteAssignment);
+    J3D_HOOKFUNC(jonesConfig_ShowAssignKeyDialog);
+    J3D_HOOKFUNC(jonesConfig_AssignKey_CheckBindForKey);
     J3D_HOOKFUNC(jonesConfig_AssignKeyDlgProc);
-    J3D_HOOKFUNC(jonesConfig_sub_40A1A0);
-    J3D_HOOKFUNC(jonesConfig_AssignControlKey);
-    J3D_HOOKFUNC(jonesConfig_sub_40A500);
+    J3D_HOOKFUNC(jonesConfig_InitAssignKeyDlg);
+    J3D_HOOKFUNC(jonesConfig_AssignControlKey_ReadKey);
+    J3D_HOOKFUNC(jonesConfig_AssignControlKey_ReadJoyAxisKey);
     J3D_HOOKFUNC(jonesConfig_AssignKeyDlg_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowReassignKeyMsgBox);
     J3D_HOOKFUNC(jonesConfig_ReassignKeyDialogProc);
-    J3D_HOOKFUNC(jonesConfig_SetReassignKeyDialogText);
-    J3D_HOOKFUNC(jonesConfig_sub_40AA10);
+    J3D_HOOKFUNC(jonesConfig_InitReassignKeyDialog);
+    J3D_HOOKFUNC(jonesConfig_ReassignKeyDlg_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowDisplaySettingsDialog);
     J3D_HOOKFUNC(jonesConfig_DisplaySettingsDialogProc);
-    J3D_HOOKFUNC(jonesConfig_sub_40AE90);
-    J3D_HOOKFUNC(jonesConfig_sub_40B530);
-    J3D_HOOKFUNC(jonesConfig_sub_40B5A0);
+    J3D_HOOKFUNC(jonesConfig_InitDisplaySettingsDialog);
+    J3D_HOOKFUNC(jonesConfig_DisplaySettings_GetVideoModeNum);
+    J3D_HOOKFUNC(jonesConfig_DisplaySettings_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowAdvanceDisplaySettings);
-    J3D_HOOKFUNC(jonesConfig_AdvanceDisplaySettingsDialog);
-    J3D_HOOKFUNC(jonesConfig_sub_40BC40);
-    J3D_HOOKFUNC(jonesConfig_sub_40BCD0);
-    J3D_HOOKFUNC(jonesConfig_sub_40C090);
+    J3D_HOOKFUNC(jonesConfig_AdvanceDisplaySettingsDialogProc);
+    J3D_HOOKFUNC(jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP);
+    J3D_HOOKFUNC(jonesConfig_InitAdvanceDisplaySettingsDialog);
+    J3D_HOOKFUNC(jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowSoundSettingsDialog);
     J3D_HOOKFUNC(jonesConfig_SoundSettingsDialogProc);
-    J3D_HOOKFUNC(jonesConfig_sub_40C650);
+    J3D_HOOKFUNC(jonesConfig_InitSoundSettingsDialog);
     J3D_HOOKFUNC(jonesConfig_SoundSettings_HandleWM_COMMAND);
     J3D_HOOKFUNC(jonesConfig_ShowGameOverDialog);
     J3D_HOOKFUNC(jonesConfig_GameOverDialogProc);
@@ -343,609 +1174,104 @@ void jonesConfig_InstallHooks(void)
 }
 
 void jonesConfig_ResetGlobals(void)
-{
-    /*StdRect jonesConfig_aNumberGlyphMetrics_tmp[10] = {
-      { 11, 2, 44, 45 },
-      { 49, 2, 69, 45 },
-      { 78, 2, 106, 45 },
-      { 110, 2, 138, 45 },
-      { 11, 76, 44, 120 },
-      { 45, 76, 75, 120 },
-      { 77, 76, 107, 120 },
-      { 11, 150, 45, 194 },
-      { 45, 150, 75, 194 },
-      { 76, 150, 107, 194 }
-    };
-    memcpy(&jonesConfig_aNumberGlyphMetrics, &jonesConfig_aNumberGlyphMetrics_tmp, sizeof(jonesConfig_aNumberGlyphMetrics));*/
-
-    char* jonesConfig_apDialogIconFiles_tmp[6] = {
-      "iq.bmp",
-      "iqMask.bmp",
-      "iqOverlay.bmp",
-      "numbers.bmp",
-      "exit.bmp",
-      "exitmask.bmp"
-    };
-    memcpy(&jonesConfig_apDialogIconFiles, &jonesConfig_apDialogIconFiles_tmp, sizeof(jonesConfig_apDialogIconFiles));
-
-    const char* jonesConfig_aLevelNames_tmp[17] = {
-      "JONES_STR_CYN",
-      "JONES_STR_BAB",
-      "JONES_STR_RIV",
-      "JONES_STR_SHS",
-      "JONES_STR_LAG",
-      "JONES_STR_VOL",
-      "JONES_STR_TEM",
-      "JONES_STR_JEP",
-      "JONES_STR_TEO",
-      "JONES_STR_OLV",
-      "JONES_STR_SEA",
-      "JONES_STR_PYR",
-      "JONES_STR_SOL",
-      "JONES_STR_NUB",
-      "JONES_STR_INF",
-      "JONES_STR_AET",
-      "JONES_STR_PRU"
-    };
-    memcpy((char**)&jonesConfig_aLevelNames, &jonesConfig_aLevelNames_tmp, sizeof(jonesConfig_aLevelNames));
-
-    const char* jonesConfig_JONES_STR_SUMMERY_tmp = "JONES_STR_SUMMARY";
-    memcpy((char**)&jonesConfig_JONES_STR_SUMMERY, &jonesConfig_JONES_STR_SUMMERY_tmp, sizeof(jonesConfig_JONES_STR_SUMMERY));
-
-    const char* jonesConfig_aJonesControlActionNames_tmp[37] = {
-      "JONES_STR_WLKFWD",
-      "JONES_STR_WLKBK",
-      "JONES_STR_TRNLFT",
-      "JONES_STR_TRNRGHT",
-      "JONES_STR_STPLFT",
-      "JONES_STR_STPRGHT",
-      "JONES_STR_CRAWL",
-      "JONES_STR_RUN",
-      "JONES_STR_ROLL",
-      "JONES_STR_JUMP",
-      "JONES_STR_LOOK",
-      "JONES_STR_ACT",
-      "JONES_STR_TGLWEAP",
-      "JONES_STR_PREVWEAP",
-      "JONES_STR_NEXTWEAP",
-      "JONES_STR_TGLLGHT",
-      "JONES_STR_FISTS",
-      "JONES_STR_WHIP",
-      "JONES_STR_MAUSER",
-      "JONES_STR_PPSH41",
-      "JONES_STR_PISTOL",
-      "JONES_STR_SIMONOV",
-      "JONES_STR_TOKEREV",
-      "JONES_STR_TOZ34",
-      "JONES_STR_BAZOOKA",
-      "JONES_STR_MACHETE",
-      "JONES_STR_SATCHEL",
-      "JONES_STR_GRENADE",
-      "JONES_STR_MAP",
-      "JONES_STR_INTERFACE",
-      "JONES_STR_HEALTH",
-      "JONES_STR_IMP1",
-      "JONES_STR_IMP2",
-      "JONES_STR_IMP3",
-      "JONES_STR_IMP4",
-      "JONES_STR_IMP5",
-      "JONES_STR_CHALK"
-    };
-    memcpy((char**)&jonesConfig_aJonesControlActionNames, &jonesConfig_aJonesControlActionNames_tmp, sizeof(jonesConfig_aJonesControlActionNames));
-
-    const char* jonesConfig_aJonesCapControlActionNames_tmp[37] = {
-      "JONES_STR_CAPS_WLKFWD",
-      "JONES_STR_CAPS_WLKBK",
-      "JONES_STR_CAPS_TRNLFT",
-      "JONES_STR_CAPS_TRNRGHT",
-      "JONES_STR_CAPS_STPLFT",
-      "JONES_STR_CAPS_STPRGHT",
-      "JONES_STR_CAPS_CRAWL",
-      "JONES_STR_CAPS_RUN",
-      "JONES_STR_CAPS_ROLL",
-      "JONES_STR_CAPS_JUMP",
-      "JONES_STR_CAPS_LOOK",
-      "JONES_STR_CAPS_ACT",
-      "JONES_STR_CAPS_TGLWEAP",
-      "JONES_STR_CAPS_PREVWEAP",
-      "JONES_STR_CAPS_NEXTWEAP",
-      "JONES_STR_CAPS_TGLLGHT",
-      "JONES_STR_CAPS_FISTS",
-      "JONES_STR_CAPS_WHIP",
-      "JONES_STR_CAPS_MAUSER",
-      "JONES_STR_CAPS_PPSH41",
-      "JONES_STR_CAPS_PISTOL",
-      "JONES_STR_CAPS_SIMONOV",
-      "JONES_STR_CAPS_TOKEREV",
-      "JONES_STR_CAPS_TOZ34",
-      "JONES_STR_CAPS_BAZOOKA",
-      "JONES_STR_CAPS_MACHETE",
-      "JONES_STR_CAPS_SATCHEL",
-      "JONES_STR_CAPS_GRENADE",
-      "JONES_STR_CAPS_MAP",
-      "JONES_STR_CAPS_INTERFACE",
-      "JONES_STR_CAPS_HEALTH",
-      "JONES_STR_CAPS_IMP1",
-      "JONES_STR_CAPS_IMP2",
-      "JONES_STR_CAPS_IMP3",
-      "JONES_STR_CAPS_IMP4",
-      "JONES_STR_CAPS_IMP5",
-      "JONES_STR_CAPS_CHALK"
-    };
-    memcpy((char**)&jonesConfig_aJonesCapControlActionNames, &jonesConfig_aJonesCapControlActionNames_tmp, sizeof(jonesConfig_aJonesCapControlActionNames));
-
-    // TODO: define keysets and uncomment
-    /*int *jonesConfig_aDfltKeySets_tmp[3] = {
-      &jonesConfig_aDfltKeyboardSets,
-      &jonesConfig_aDflt2a4b,
-      &jonesConfig_aDflt2a8b
-    };
-    memcpy(&jonesConfig_aDfltKeySets, &jonesConfig_aDfltKeySets_tmp, sizeof(jonesConfig_aDfltKeySets));*/
-
-    const char* jonesConfig_aDfltKeySetNames_tmp[3] = { "JONES_STR_DFLTKEY", "JONES_STR_DFLT2A4B", "JONES_STR_DFLT2A8B" };
-    memcpy((char**)&jonesConfig_aDfltKeySetNames, &jonesConfig_aDfltKeySetNames_tmp, sizeof(jonesConfig_aDfltKeySetNames));
-
-    const char* jonesConfig_aControlKeyStrings_tmp[223] = {
-      NULL,
-      "JONES_STR_ESCAPE",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "0",
-      "JONES_STR_MINUS",
-      "JONES_STR_EQUAL",
-      "JONES_STR_BACK",
-      "JONES_STR_TAB",
-      "Q",
-      "W",
-      "E",
-      "R",
-      "T",
-      "posY",
-      "U",
-      "I",
-      "O",
-      "P",
-      "JONES_STR_LEFT_BRCKT",
-      "JONES_STR_RIGHT_BRCKT",
-      "JONES_STR_ENTER",
-      "JONES_STR_LEFT_CTRL",
-      "A",
-      "S",
-      "D",
-      "F",
-      "G",
-      "H",
-      "J",
-      "K",
-      "L",
-      ";",
-      "'",
-      "`",
-      "JONES_STR_LEFT_SHIFT",
-      "\\",
-      "Z",
-      "X",
-      "C",
-      "V",
-      "B",
-      "N",
-      "M",
-      "JONES_STR_COMMA",
-      ".",
-      "/",
-      "JONES_STR_RIGHT_SHIFT",
-      "JONES_STR_NUMPAD_MULT",
-      "JONES_STR_LEFT_ALT",
-      "JONES_STR_SPACE",
-      "JONES_STR_CAPS",
-      "JONES_STR_F1",
-      "JONES_STR_F2",
-      "JONES_STR_F3",
-      "JONES_STR_F4",
-      "JONES_STR_F5",
-      "JONES_STR_F6",
-      "JONES_STR_F7",
-      "JONES_STR_F8",
-      "JONES_STR_F9",
-      "JONES_STR_F10",
-      "JONES_STR_NUMLOCK",
-      "JONES_STR_SCROLL",
-      "JONES_STR_NUMPAD_7",
-      "JONES_STR_NUMPAD_8",
-      "JONES_STR_NUMPAD_9",
-      "JONES_STR_NUMPAD_MINUS",
-      "JONES_STR_NUMPAD_4",
-      "JONES_STR_NUMPAD_5",
-      "JONES_STR_NUMPAD_6",
-      "JONES_STR_NUMPAD_PLUS",
-      "JONES_STR_NUMPAD_1",
-      "JONES_STR_NUMPAD_2",
-      "JONES_STR_NUMPAD_3",
-      "JONES_STR_NUMPAD_0",
-      "JONES_STR_NUMPAD_DOT",
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_F11",
-      "JONES_STR_F12",
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_F13",
-      "JONES_STR_F14",
-      "JONES_STR_F15",
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_NUMPAD_EQL",
-      NULL,
-      NULL,
-      NULL,
-      "@",
-      ":",
-      "__",
-      NULL,
-      "STOP",
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_NUMPAD_ENTER",
-      "JONES_STR_RIGHT_CTRL",
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_NUMPAD_COMMA",
-      NULL,
-      "JONES_STR_NUMPAD_DIV",
-      NULL,
-      "JONES_STR_SYSRQ",
-      "JONES_STR_RIGHT_ALT",
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_HOME",
-      "JONES_STR_UPARRW",
-      "JONES_STR_PAGEUP",
-      NULL,
-      "JONES_STR_LEFTARRW",
-      NULL,
-      "JONES_STR_RGHTARRW",
-      NULL,
-      "JONES_STR_END",
-      "JONES_STR_DNARRW",
-      "JONES_STR_PGDN",
-      "JONES_STR_INSERT",
-      "JONES_STR_DELETE",
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      "JONES_STR_LEFT_WND",
-      "JONES_STR_RIGHT_WND",
-      "JONES_STR_APPS",
-      NULL
-    };
-    memcpy((char**)&jonesConfig_aControlKeyStrings, &jonesConfig_aControlKeyStrings_tmp, sizeof(jonesConfig_aControlKeyStrings));
-
-    /*   JonesDialogSize jonesConfig_aFontScaleFactors_tmp[21] = {
-         { 164, 368, 232 },
-         { 112, 260, 224 },
-         { 111, 408, 218 },
-         { 116, 297, 95 },
-         { 115, 549, 367 },
-         { 117, 309, 103 },
-         { 120, 282, 152 },
-         { 114, 238, 285 },
-         { 148, 440, 393 },
-         { 113, 351, 206 },
-         { 211, 266, 103 },
-         { 163, 282, 90 },
-         { 214, 282, 90 },
-         { 121, 282, 90 },
-         { 150, 249, 100 },
-         { 233, 344, 180 },
-         { 190, 538, 297 },
-         { 212, 280, 74 },
-         { 159, 583, 250 },
-         { 154, 579, 252 },
-         { 167, 279, 75 }
-       };
-       memcpy(&jonesConfig_aDialogSizes, &jonesConfig_aFontScaleFactors_tmp, sizeof(jonesConfig_aDialogSizes));*/
-
-    int jonesConfig_dword_511954_tmp = 1;
-    memcpy(&jonesConfig_dword_511954, &jonesConfig_dword_511954_tmp, sizeof(jonesConfig_dword_511954));
-
-    int jonesConfig_dword_511958_tmp = 1;
-    memcpy(&jonesConfig_dword_511958, &jonesConfig_dword_511958_tmp, sizeof(jonesConfig_dword_511958));
-
-    int jonesConfig_perfLevel_tmp = 4;
-    memcpy(&jonesConfig_perfLevel, &jonesConfig_perfLevel_tmp, sizeof(jonesConfig_perfLevel));
-
-    /*int jonesConfig_prevLevelNum_tmp = -1;
-    memcpy(&jonesConfig_prevLevelNum, &jonesConfig_prevLevelNum_tmp, sizeof(jonesConfig_prevLevelNum));*/
-
-
-    jonesConfig_dword_5510B8 = 0;
-    jonesConfig_dword_5510BC = 0;
-    jonesConfig_dword_5510C0 = 0;
-    jonesConfig_dword_5510C4 = 0;
-    JonesControlsConfig jonesConfig_curControlConfig_tmp = { NULL, 0, 0, 0, 0, NULL };
-    memcpy(&jonesConfig_curControlConfig, &jonesConfig_curControlConfig_tmp, sizeof(jonesConfig_curControlConfig));
-
-    jonesConfig_dword_5510E0 = 0;
-    ABC jonesConfig_aGlyphMetrics_tmp[256] = {
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0, 0u, 0 },
-      { 0,  }
-    };
-    memcpy(&jonesConfig_aGlyphMetrics, &jonesConfig_aGlyphMetrics_tmp, sizeof(jonesConfig_aGlyphMetrics));
-
-    memset(&jonesConfig_textMetric, 0, sizeof(jonesConfig_textMetric));
-    memset(&jonesConfig_dword_551D20, 0, sizeof(jonesConfig_dword_551D20));
-    memset(&jonesConfig_apDialogIcons, 0, sizeof(jonesConfig_apDialogIcons));
-    memset(&jonesConfig_pKeySetsDirPath, 0, sizeof(jonesConfig_pKeySetsDirPath));
-    memset(&jonesConfig_bDefaultRun, 0, sizeof(jonesConfig_bDefaultRun));
-    memset(&jonesConfig_curLevelNum, 0, sizeof(jonesConfig_curLevelNum));
-    memset(&jonesConfig_bStartup, 0, sizeof(jonesConfig_bStartup));
-    memset(&jonesConfig_dword_551DCC, 0, sizeof(jonesConfig_dword_551DCC));
-    memset(&jonesConfig_hdo_551DD0, 0, sizeof(jonesConfig_hdo_551DD0));
-   // memset(&jonesConfig_hFontSaveGameDlg, 0, sizeof(jonesConfig_hFontSaveGameDlg));
-    //memset(&jonesConfig_hFontExitDlg, 0, sizeof(jonesConfig_hFontExitDlg));
-    memset(&jonesConfig_hFontGameSaveMsgBox, 0, sizeof(jonesConfig_hFontGameSaveMsgBox));
-    memset(&jonesConfig_hFontLoadGameDlg, 0, sizeof(jonesConfig_hFontLoadGameDlg));
-    //memset(&jonesConfig_hFontGamePlayOptionsDlg, 0, sizeof(jonesConfig_hFontGamePlayOptionsDlg));
-    memset(&jonesConfig_hFontControlOptions, 0, sizeof(jonesConfig_hFontControlOptions));
-    memset(&jonesConfig_dword_551DEC, 0, sizeof(jonesConfig_dword_551DEC));
-    memset(&jonesConfig_hFontCreateControlSchemeDlg, 0, sizeof(jonesConfig_hFontCreateControlSchemeDlg));
-    memset(&jonesConfig_hFontEditControlShceme, 0, sizeof(jonesConfig_hFontEditControlShceme));
-    memset(&jonesConfig_hFontAssignKeyDlg, 0, sizeof(jonesConfig_hFontAssignKeyDlg));
-    memset(&jonesConfig_bControlsActive, 0, sizeof(jonesConfig_bControlsActive));
-    memset(&jonesConfig_hFontReassignKeyDlg, 0, sizeof(jonesConfig_hFontReassignKeyDlg));
-    memset(&jonesConfig_hFontDisplaySettingsDlg, 0, sizeof(jonesConfig_hFontDisplaySettingsDlg));
-    memset(&jonesConfig_hFontAdvanceDisplaySettingsDialog, 0, sizeof(jonesConfig_hFontAdvanceDisplaySettingsDialog));
-    memset(&jonesConfig_hFontSoundSettings, 0, sizeof(jonesConfig_hFontSoundSettings));
-    memset(&jonesConfig_hSndChannel, 0, sizeof(jonesConfig_hSndChannel));
-    memset(&jonesConfig_dword_551E14, 0, sizeof(jonesConfig_dword_551E14));
-    memset(&jonesConfig_hFontGameOverDialog, 0, sizeof(jonesConfig_hFontGameOverDialog));
-    memset(&jonesConfig_dword_551E1C, 0, sizeof(jonesConfig_dword_551E1C));
-    /*memset(&jonesConfig_hFontLevelCopletedDialog, 0, sizeof(jonesConfig_hFontLevelCopletedDialog));
-    memset(&jonesConfig_hFontStoreDialog, 0, sizeof(jonesConfig_hFontStoreDialog));
-    memset(&jonesConfig_hFontPurchaseMessageBox, 0, sizeof(jonesConfig_hFontPurchaseMessageBox));
-    memset(&jonesConfig_hFontDialogInsertCD, 0, sizeof(jonesConfig_hFontDialogInsertCD));*/
-
-}
+{}
 
 int jonesConfig_Startup(void)
 {
-    int result; // eax
-    int idx; // esi
-    HBITMAP hBmp; // eax
-    int options; // eax
-    JonesControlsScheme* pConfig; // eax
-    JonesControlsScheme* pConfig_1; // esi
-    HBITMAP* v6; // edi
-    char szIconFilePath[128]; // [esp+Ch] [ebp-80h] BYREF
-
     if ( jonesConfig_bStartup )
     {
         return 1;
     }
 
-    idx = 0;
-    while ( 1 )
+    for ( size_t i = 0; i < STD_ARRAYLEN(jonesConfig_apDialogIcons); ++i )
     {
-        stdFnames_MakePath(szIconFilePath, 128, "misc", jonesConfig_apDialogIconFiles[idx]);
-        hBmp = stdBmp_Load(szIconFilePath);
-        jonesConfig_apDialogIcons[idx] = hBmp;
-        if ( !hBmp )
+        char aIconPath[128];
+        STD_MAKEPATH(aIconPath, "misc", jonesConfig_apDialogIconFiles[i]);
+
+        jonesConfig_apDialogIcons[i] = stdBmp_Load(aIconPath);
+        if ( !jonesConfig_apDialogIcons[i] )
         {
-            break;
-        }
-
-        if ( ++idx >= 6 )
-        {
-            result = jonesConfig_InitKeySetsPath();
-            if ( !result )
+            for ( size_t j = 0; j < i; ++j )
             {
-                return result;
+                DeleteObject(jonesConfig_apDialogIcons[j]);
             }
 
-            result = jonesConfig_InitKeyActions();
-            if ( !result )
-            {
-                return result;
-            }
-
-            memset(jonesConfig_aGlyphMetrics, 0, sizeof(jonesConfig_aGlyphMetrics));
-            memset(&jonesConfig_textMetric, 0, sizeof(jonesConfig_textMetric));
-
-            jonesConfig_dword_551DCC = 0;
-
-            jonesConfig_bDefaultRun = wuRegistry_GetIntEx("Default Run", 0);
-            options = sithControl_g_controlOptions;
-            if ( jonesConfig_bDefaultRun )
-            {
-                options = (options & 0xFF00) | ((sithControl_g_controlOptions | 2) & 0xFF);
-            }
-            else
-            {
-                options = (options & 0xFF00) | (sithControl_g_controlOptions & ~2 & 0xFF);
-            }
-
-            sithControl_g_controlOptions = options;
-            jonesConfig_curLevelNum = 0;
-            pConfig = jonesConfig_NewControlScheme();
-            pConfig_1 = pConfig;
-            if ( pConfig )
-            {
-                jonesConfig_BindControls(pConfig);
-                jonesConfig_FreeControlScheme(pConfig_1);
-            }
-
-            result = 1;
-            jonesConfig_bStartup = 1;
-            return result;
+            STDLOG_ERROR("Couldn't load bitmap %s.\n", aIconPath);
+            return 0;
         }
     }
 
-    if ( idx > 0 )
+    if ( !jonesConfig_InitKeySetsPath() )
     {
-        v6 = jonesConfig_apDialogIcons;
-        do
-        {
-            DeleteObject(*v6++);
-            --idx;
-        } while ( idx );
+        return 0;
     }
 
-    STDLOG_ERROR("Couldn't load bitmap %s.\n", szIconFilePath);
-    return 0;
+    if ( !jonesConfig_InitKeyActions() )
+    {
+        return 0;
+    }
+
+    memset(jonesConfig_aGlyphMetrics, 0, sizeof(jonesConfig_aGlyphMetrics));
+    memset(&jonesConfig_textMetric, 0, sizeof(jonesConfig_textMetric));
+
+    jonesConfig_bTextMetricInited = 0;
+
+    jonesConfig_gamePlayOptions_bDefaultRun = wuRegistry_GetIntEx("Default Run", 0);
+
+    if ( jonesConfig_gamePlayOptions_bDefaultRun )
+    {
+        sithControl_g_controlOptions |= 2u; // run flag
+    }
+    else
+    {
+        sithControl_g_controlOptions &= ~2;
+    }
+
+    // Init cur level num
+    jonesConfig_gameStatistics_curLevelNum = 0;
+
+    JonesControlsScheme* pConfig = jonesConfig_LoadActiveControlScheme();
+    if ( pConfig )
+    {
+        jonesConfig_BindControls(pConfig);
+        jonesConfig_FreeControlScheme(pConfig);
+    }
+
+    jonesConfig_bStartup = 1;
+    return 1;
 }
 
-int J3DAPI jonesConfig_InitKeySetsPath()
+int jonesConfig_InitKeySetsPath(void)
 {
-    wchar_t* pwKeySets; // eax
-    wchar_t* v1; // ebx
-    char* pKeySets; // esi
-    unsigned int len; // kr04_4
-    char v5; // [esp+Bh] [ebp-81h]
-    char aInstallPath[128]; // [esp+Ch] [ebp-80h] BYREF
-
-    pwKeySets = sithString_GetString("SITHSTRING_KEYSETS");
-    v1 = pwKeySets;
+    wchar_t* pwKeySets = sithString_GetString("SITHSTRING_KEYSETS");
     if ( !pwKeySets )
     {
         return 0;
     }
 
+    char* pKeySets = stdUtil_ToAString(pwKeySets);
 
-    pKeySets = stdUtil_ToAString(pwKeySets);
-    memset(aInstallPath, 0, sizeof(aInstallPath));
-    wuRegistry_GetStr("Install Path", aInstallPath, 0x80u, std_g_aEmptyString);
+    char aInstallPath[128] = { 0 };
+    wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
+
     if ( pKeySets )
     {
-        len = strlen(aInstallPath) + 1;
+        size_t len = strlen(aInstallPath) + 1;
         if ( len == 1 )
         {
-            sprintf(jonesConfig_pKeySetsDirPath, "..\\\\%s", pKeySets);
+            STD_FORMAT(jonesConfig_aKeySetsDirPath, "..\\\\%s", pKeySets);
             stdMemory_Free(pKeySets);
             return 1;
         }
         else
         {
-            if ( *(&v5 + len - 1) == '\\' )     // TODO: fix => if ( aInstallPath[len - 1] == '\\' )
+            if ( aInstallPath[len - 1] == '\\' )
             {
-                sprintf(jonesConfig_pKeySetsDirPath, "%s%s", aInstallPath, pKeySets);
+                STD_FORMAT(jonesConfig_aKeySetsDirPath, "%s%s", aInstallPath, pKeySets);
             }
             else
             {
-                sprintf(jonesConfig_pKeySetsDirPath, "%s\\%s", aInstallPath, pKeySets);
+                STD_FORMAT(jonesConfig_aKeySetsDirPath, "%s\\%s", aInstallPath, pKeySets);
             }
 
             stdMemory_Free(pKeySets);
@@ -954,1273 +1280,1118 @@ int J3DAPI jonesConfig_InitKeySetsPath()
     }
     else
     {
-        STDLOG_ERROR("Couldn't find string %s in lookup table.\n", pwKeySets);                               // TODO: [BUG] zero passd to %s; should probably be pwKeySets
-        stdMemory_Free(v1);
+        STDLOG_ERROR("Couldn't find string %s in lookup table.\n", 0); // TODO: [BUG] zero passed as %s
+        stdMemory_Free(pwKeySets); // pwKeySets is null value but is allocated on heap in sithString_GetString
         return 0;
     }
 }
 
-int J3DAPI jonesConfig_InitKeyActions()
+int jonesConfig_InitKeyActions(void)
 {
-    const char** pJSAction; // ebx
-    const char* pActionName; // eax
-    char* v2; // eax
-    int v3; // esi
-    unsigned int v4; // kr0C_4
-    signed int controlId; // ebx
-    int v6; // esi
-    char* i; // eax
-    int v8; // esi
-    unsigned int v9; // kr10_4
-    int result; // eax
-    int v11; // [esp+0h] [ebp-30Ch] BYREF
-    char aControlStr[256]; // [esp+Ch] [ebp-300h] BYREF
-    char aActionName[512]; // [esp+10Ch] [ebp-200h] BYREF
+    jonesConfig_maxActionWords  = 0;
+    jonesConfig_maxActionStrLen = 0;
 
-    jonesConfig_dword_5510E0 = 0;
-    jonesConfig_dword_5510C4 = 0;
-    pJSAction = jonesConfig_aJonesCapControlActionNames;
+    jonesConfig_maxControlWords  = 0; // Fixed: Assign 0
+    jonesConfig_maxControlStrLen = 0; // Fixed: Assign 0
 
-    // Change to for loop
-    for ( int i = 0; i < JONES_CONTROL_ACTION_COUNT; i++ )
+    for ( size_t i = 0; i < STD_ARRAYLEN(jonesConfig_aJonesCapControlActionNames); ++i )
     {
-        pActionName = jonesString_GetString(*pJSAction);
+        const char* pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[i]);
         if ( !pActionName )
         {
             return 0;
         }
 
-        strcpy(aActionName, pActionName);
+        char aActionName[512] = { 0 }; // Fixed: Init. to 0
+        STD_STRCPY(aActionName, pActionName);
 
-        v2 = aActionName;
-        v3 = 0;
-        if ( &v11 != (int*)0xFFFFFEF4 )
+        size_t len = 0;
+        char* pCurActionWord = aActionName;
+        while ( pCurActionWord )
         {
-            do
+            pCurActionWord = strchr(pCurActionWord, ' ');
+            if ( pCurActionWord )
             {
-                v2 = strchr(v2, ' ');
-                if ( v2 )
-                {
-                    ++v2;
-                }
+                ++pCurActionWord;
+            }
 
-                ++v3;
-            } while ( v2 );
+            ++len;
         }
 
-        if ( v3 > jonesConfig_dword_5510E0 )
+        if ( len > jonesConfig_maxActionWords )
         {
-            jonesConfig_dword_5510E0 = v3;
+            jonesConfig_maxActionWords = len;
         }
 
-        v4 = strlen(aActionName) + 1;
-        if ( (int)(v4 - 1) > jonesConfig_dword_5510C4 )
+        len = strlen(aActionName);
+        if ( len > jonesConfig_maxActionStrLen )
         {
-            jonesConfig_dword_5510C4 = v4 - 1;
+            jonesConfig_maxActionStrLen = len;
         }
-
-        ++pJSAction;
     }
 
-    for ( controlId = 0; controlId < 656; ++controlId )
+    for ( size_t i = 0; i < STDCONTROL_MAX_KEYID + JONESCONFIG_NUM_JOYAXISKIDS + 4; ++i ) // 656 =  STDCONTROL_MAX_KEYID + JONESCONFIG_NUM_JOYAXISKIDS + 4
     {
-        memset(aControlStr, 0, sizeof(aControlStr));
-        switch ( controlId )
+        char aControlStr[JONESCONFIG_CONTROLSTRING_MAXLEN] = { 0 };
+        switch ( i )
         {
             case 644:
-                jonesConfig_ControlToString(0x8000u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_UP, aControlStr);
                 break;
 
             case 645:
-                jonesConfig_ControlToString(0x8002u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_DOWN, aControlStr);
                 break;
 
             case 646:
-                jonesConfig_ControlToString(0x8003u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_LEFT, aControlStr);
                 break;
 
             case 647:
-                jonesConfig_ControlToString(0x8001u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_RIGHT, aControlStr);
                 break;
 
             case 648:
-                jonesConfig_ControlToString(0x8006u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_AIR, aControlStr);
                 break;
 
             case 649:
-                jonesConfig_ControlToString(0x8007u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_GROUND, aControlStr);
                 break;
 
             case 650:
-                jonesConfig_ControlToString(0x8004u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_TWISTL, aControlStr);
                 break;
 
             case 651:
-                jonesConfig_ControlToString(0x8005u, aControlStr);
+                jonesConfig_ControlToString(JONESCONFIG_JOYAXISKID_TWISTR, aControlStr);
                 break;
 
             default:
-                jonesConfig_ControlToString(controlId, aControlStr);
+                jonesConfig_ControlToString(i, aControlStr);
                 break;
         }
 
-        v6 = 0;
-        for ( i = aControlStr; i; ++v6 )
+        size_t len = 0;
+        char* pCurControlWord = aControlStr;
+        while ( pCurControlWord )
         {
-            i = strchr(i, ' ');
-            if ( i )
+            pCurControlWord = strchr(pCurControlWord, ' ');
+            if ( pCurControlWord )
             {
-                ++i;
+                ++pCurControlWord;
             }
+
+            ++len;
         }
 
-
-        if ( v6 > jonesConfig_dword_5510BC )
+        if ( len > jonesConfig_maxControlWords )
         {
-            jonesConfig_dword_5510BC = v6;
+            jonesConfig_maxControlWords = len;
         }
 
-        v8 = jonesConfig_dword_5510B8;
-        v9 = strlen(aControlStr) + 1;
-        if ( (int)(v9 - 1) > jonesConfig_dword_5510B8 )
+        len = strlen(aControlStr);
+        if ( len > jonesConfig_maxControlStrLen )
         {
-            v8 = v9 - 1;
-            jonesConfig_dword_5510B8 = v9 - 1;
+            jonesConfig_maxControlStrLen = len;
         }
     }
 
-    jonesConfig_dword_551D20 = jonesConfig_dword_5510C4 - jonesConfig_dword_5510C4 % 5 + 5;
-    result = 1;
-    jonesConfig_dword_5510C0 = v8 - v8 % 5 + 5;
-    return result;
+    jonesConfig_maxActionPaddedStrLen  = 5 - jonesConfig_maxActionStrLen % 5 + jonesConfig_maxActionStrLen;
+    jonesConfig_maxControlPaddedStrLen = 5 - jonesConfig_maxControlStrLen % 5 + jonesConfig_maxControlStrLen;
+    return 1;
 }
 
 void jonesConfig_Shutdown(void)
 {
-    HBITMAP* hdi; // esi
+    jonesConfig_FreeControlConfigEntry(&jonesConfig_controlOptions_curControlConfig);
 
-    jonesConfig_FreeControlConfigEntry(&jonesConfig_curControlConfig);
-    hdi = jonesConfig_apDialogIcons;
-    do
+    for ( size_t i = 0; i < 2; i++ ) // TODO: Bug? Why only 2?
     {
-        DeleteObject(*hdi);
-        *hdi++ = 0;
-    } while ( (int)hdi < (int)&jonesConfig_apDialogIcons[2] );// TODO: Fix range loop to not compare against the address
+        DeleteObject(jonesConfig_apDialogIcons[i]);
+    }
 
-    if ( jonesConfig_pKeySetsDirPath )
+    if ( *jonesConfig_aKeySetsDirPath )
     {
-        memset(jonesConfig_pKeySetsDirPath, 0, sizeof(jonesConfig_pKeySetsDirPath));
+        memset(jonesConfig_aKeySetsDirPath, 0, sizeof(jonesConfig_aKeySetsDirPath));
     }
 }
 
-void J3DAPI jonesConfig_ControlToString(unsigned int controlId, char* pDest)
+void J3DAPI jonesConfig_ControlToString(size_t controlId, char* pDest)
 {
-    const char* pJonesString; // edx
-    const char* pControlStr; // edi
-
-    pJonesString = 0;
     if ( !pDest )
     {
+        // TODO: maybe log?
         return;
     }
 
-    memset(pDest, 0, 256u);
+    memset(pDest, 0, JONESCONFIG_CONTROLSTRING_MAXLEN);
 
-    if ( controlId <= 0x8000 )
+    char* pJonesString = NULL;
+    if ( controlId < JONESCONFIG_JOYAXISKID_UP )
     {
-        if ( controlId == 0x8000 )
+        switch ( controlId )
         {
-            pJonesString = "JONES_STR_JOYUP";
-        }
-        else
-        {
-            switch ( controlId )
+            case DIK_ESCAPE:
+                pJonesString = "JONES_STR_ESCAPE";
+                break;
+
+            case DIK_1:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "1");
+                break;
+
+            case DIK_2:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "2");
+                break;
+
+            case DIK_3:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "3");
+                break;
+
+            case DIK_4:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "4");
+                break;
+
+            case DIK_5:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "5");
+                break;
+
+            case DIK_6:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "6");
+                break;
+
+            case DIK_7:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "7");
+                break;
+
+            case DIK_8:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "8");
+                break;
+
+            case DIK_9:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "9");
+                break;
+
+            case DIK_0:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "0");
+                break;
+
+            case DIK_MINUS:
+                pJonesString = "JONES_STR_MINUS";
+                break;
+
+            case DIK_EQUALS:
+                pJonesString = "JONES_STR_EQUAL";
+                break;
+
+            case DIK_BACK:
+                pJonesString = "JONES_STR_BACK";
+                break;
+
+            case DIK_TAB:
+                pJonesString = "JONES_STR_TAB";
+                break;
+
+            case DIK_Q:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "Q");
+                break;
+
+            case DIK_W:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "W");
+                break;
+
+            case DIK_E:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "E");
+                break;
+
+            case DIK_R:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "R");
+                break;
+
+            case DIK_T:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "T");
+                break;
+
+            case DIK_Y:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "Y");
+                break;
+
+            case DIK_U:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "U");
+                break;
+
+            case DIK_I:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "I");
+                break;
+
+            case DIK_O:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "O");
+                break;
+
+            case DIK_P:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "P");
+                break;
+
+            case DIK_LBRACKET:
+                pJonesString = "JONES_STR_LEFT_BRCKT";
+                break;
+
+            case DIK_RBRACKET:
+                pJonesString = "JONES_STR_RIGHT_BRCKT";
+                break;
+
+            case DIK_RETURN:
+                pJonesString = "JONES_STR_ENTER";
+                break;
+
+            case DIK_LCONTROL:
+                pJonesString = "JONES_STR_LEFT_CTRL";
+                break;
+
+            case DIK_A:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "A");
+                break;
+
+            case DIK_S:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "S");
+                break;
+
+            case DIK_D:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "D");
+                break;
+
+            case DIK_F:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "F");
+                break;
+
+            case DIK_G:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "G");
+                break;
+
+            case DIK_H:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "H");
+                break;
+
+            case DIK_J:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "J");
+                break;
+
+            case DIK_K:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "K");
+                break;
+
+            case DIK_L:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "L");
+                break;
+
+            case DIK_SEMICOLON:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, ";");
+                break;
+
+            case DIK_APOSTROPHE:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "'");
+                break;
+
+            case DIK_GRAVE:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "`");
+                break;
+
+            case DIK_LSHIFT:
+                pJonesString = "JONES_STR_LEFT_SHIFT";
+                break;
+
+            case DIK_BACKSLASH:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "\\");
+                break;
+
+            case DIK_Z:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "Z");
+                break;
+
+            case DIK_X:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "X");
+                break;
+
+            case DIK_C:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "C");
+                break;
+
+            case DIK_V:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "V");
+                break;
+
+            case DIK_B:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "B");
+                break;
+
+            case DIK_N:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "N");
+                break;
+
+            case DIK_M:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "M");
+                break;
+
+            case DIK_COMMA:
+                pJonesString = "JONES_STR_COMMA";
+                break;
+
+            case DIK_PERIOD:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, ".");
+                break;
+
+            case DIK_SLASH:
+                stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, "/");
+                break;
+
+            case DIK_RSHIFT:
+                pJonesString = "JONES_STR_RIGHT_SHIFT";
+                break;
+
+            case DIK_MULTIPLY:
+                pJonesString = "JONES_STR_NUMPAD_MULT";
+                break;
+
+            case DIK_LMENU:
+                pJonesString = "JONES_STR_LEFT_ALT";
+                break;
+
+            case DIK_SPACE:
+                pJonesString = "JONES_STR_SPACE";
+                break;
+
+            case DIK_CAPITAL:
+                pJonesString = "JONES_STR_CAPS";
+                break;
+
+            case DIK_F1:
+                pJonesString = "JONES_STR_F1";
+                break;
+
+            case DIK_F2:
+                pJonesString = "JONES_STR_F2";
+                break;
+
+            case DIK_F3:
+                pJonesString = "JONES_STR_F3";
+                break;
+
+            case DIK_F4:
+                pJonesString = "JONES_STR_F4";
+                break;
+
+            case DIK_F5:
+                pJonesString = "JONES_STR_F5";
+                break;
+
+            case DIK_F6:
+                pJonesString = "JONES_STR_F6";
+                break;
+
+            case DIK_F7:
+                pJonesString = "JONES_STR_F7";
+                break;
+
+            case DIK_F8:
+                pJonesString = "JONES_STR_F8";
+                break;
+
+            case DIK_F9:
+                pJonesString = "JONES_STR_F9";
+                break;
+
+            case DIK_F10:
+                pJonesString = "JONES_STR_F10";
+                break;
+
+            case DIK_NUMLOCK:
+                pJonesString = "JONES_STR_NUMLOCK";
+                break;
+
+            case DIK_NUMPAD7:
+                pJonesString = "JONES_STR_NUMPAD_7";
+                break;
+
+            case DIK_NUMPAD8:
+                pJonesString = "JONES_STR_NUMPAD_8";
+                break;
+
+            case DIK_NUMPAD9:
+                pJonesString = "JONES_STR_NUMPAD_9";
+                break;
+
+            case DIK_SUBTRACT:
+                pJonesString = "JONES_STR_NUMPAD_MINUS";
+                break;
+
+            case DIK_NUMPAD4:
+                pJonesString = "JONES_STR_NUMPAD_4";
+                break;
+
+            case DIK_NUMPAD5:
+                pJonesString = "JONES_STR_NUMPAD_5";
+                break;
+
+            case DIK_NUMPAD6:
+                pJonesString = "JONES_STR_NUMPAD_6";
+                break;
+
+            case DIK_ADD:
+                pJonesString = "JONES_STR_NUMPAD_PLUS";
+                break;
+
+            case DIK_NUMPAD1:
+                pJonesString = "JONES_STR_NUMPAD_1";
+                break;
+
+            case DIK_NUMPAD2:
+                pJonesString = "JONES_STR_NUMPAD_2";
+                break;
+
+            case DIK_NUMPAD3:
+                pJonesString = "JONES_STR_NUMPAD_3";
+                break;
+
+            case DIK_NUMPAD0:
+                pJonesString = "JONES_STR_NUMPAD_0";
+                break;
+
+            case DIK_DECIMAL:
+                pJonesString = "JONES_STR_NUMPAD_DOT";
+                break;
+
+            case DIK_F11:
+                pJonesString = "JONES_STR_F11";
+                break;
+
+            case DIK_F12:
+                pJonesString = "JONES_STR_F12";
+                break;
+
+            case DIK_F13:
+                pJonesString = "JONES_STR_F13";
+                break;
+
+            case DIK_F14:
+                pJonesString = "JONES_STR_F14";
+                break;
+
+            case DIK_F15:
+                pJonesString = "JONES_STR_F15";
+                break;
+
+            case DIK_NUMPADEQUALS:
+                pJonesString = "JONES_STR_NUMPAD_EQL";
+                break;
+
+            case DIK_NUMPADENTER:
+                pJonesString = "JONES_STR_NUMPAD_ENTER";
+                break;
+
+            case DIK_RCONTROL:
+                pJonesString = "JONES_STR_RIGHT_CTRL";
+                break;
+
+            case DIK_NUMPADCOMMA:
+                pJonesString = "JONES_STR_NUMPAD_COMMA";
+                break;
+
+            case DIK_DIVIDE:
+                pJonesString = "JONES_STR_NUMPAD_DIV";
+                break;
+
+            case DIK_RMENU:
+                pJonesString = "JONES_STR_RIGHT_ALT";
+                break;
+
+            case DIK_HOME:
+                pJonesString = "JONES_STR_HOME";
+                break;
+
+            case DIK_UP:
+                pJonesString = "JONES_STR_UPARRW";
+                break;
+
+            case DIK_PRIOR:
+                pJonesString = "JONES_STR_PAGEUP";
+                break;
+
+            case DIK_LEFT:
+                pJonesString = "JONES_STR_LEFTARRW";
+                break;
+
+            case DIK_RIGHT:
+                pJonesString = "JONES_STR_RGHTARRW";
+                break;
+
+            case DIK_END:
+                pJonesString = "JONES_STR_END";
+                break;
+
+            case DIK_DOWN:
+                pJonesString = "JONES_STR_DNARRW";
+                break;
+
+            case DIK_NEXT:
+                pJonesString = "JONES_STR_PGDN";
+                break;
+
+            case DIK_INSERT:
+                pJonesString = "JONES_STR_INSERT";
+                break;
+
+            case DIK_DELETE:
+                pJonesString = "JONES_STR_DELETE";
+                break;
+
+            case DIK_LWIN:
+                pJonesString = "JONES_STR_LEFT_WND";
+                break;
+
+            case DIK_RWIN:
+                pJonesString = "JONES_STR_RIGHT_WND";
+                break;
+
+            default:
             {
-                case 1u:
-                    pJonesString = "JONES_STR_ESCAPE";
-                    break;
-
-                case 2u:
-                    *(WORD*)pDest = *(WORD*)"1";
-                    break;
-
-                case 3u:
-                    *(WORD*)pDest = *(WORD*)"2";
-                    break;
-
-                case 4u:
-                    *(WORD*)pDest = *(WORD*)"3";
-                    break;
-
-                case 5u:
-                    *(WORD*)pDest = *(WORD*)"4";
-                    break;
-
-                case 6u:
-                    *(WORD*)pDest = *(WORD*)"5";
-                    break;
-
-                case 7u:
-                    *(WORD*)pDest = *(WORD*)"6";
-                    break;
-
-                case 8u:
-                    *(WORD*)pDest = *(WORD*)"7";
-                    break;
-
-                case 9u:
-                    *(WORD*)pDest = *(WORD*)"8";
-                    break;
-
-                case 10u:
-                    *(WORD*)pDest = *(WORD*)"9";
-                    break;
-
-                case 11u:
-                    *(WORD*)pDest = *(WORD*)"0";
-                    break;
-
-                case 12u:
-                    pJonesString = "JONES_STR_MINUS";
-                    break;
-
-                case 13u:
-                    pJonesString = "JONES_STR_EQUAL";
-                    break;
-
-                case 14u:
-                    pJonesString = "JONES_STR_BACK";
-                    break;
-
-                case 15u:
-                    pJonesString = "JONES_STR_TAB";
-                    break;
-
-                case 16u:
-                    *(WORD*)pDest = *(WORD*)"Q";
-                    break;
-
-                case 17u:
-                    *(WORD*)pDest = *(WORD*)"W";
-                    break;
-
-                case 18u:
-                    *(WORD*)pDest = *(WORD*)"E";
-                    break;
-
-                case 19u:
-                    *(WORD*)pDest = *(WORD*)"R";
-                    break;
-
-                case 20u:
-                    *(WORD*)pDest = *(WORD*)"T";
-                    break;
-
-                case 21u:
-                    *(WORD*)pDest = *(WORD*)"Y";
-                    break;
-
-                case 22u:
-                    *(WORD*)pDest = *(WORD*)"U";
-                    break;
-
-                case 23u:
-                    *(WORD*)pDest = *(WORD*)"I";
-                    break;
-
-                case 24u:
-                    *(WORD*)pDest = *(WORD*)"O";
-                    break;
-
-                case 25u:
-                    *(WORD*)pDest = *(WORD*)"P";
-                    break;
-
-                case 26u:
-                    pJonesString = "JONES_STR_LEFT_BRCKT";
-                    break;
-
-                case 27u:
-                    pJonesString = "JONES_STR_RIGHT_BRCKT";
-                    break;
-
-                case 28u:
-                    pJonesString = "JONES_STR_ENTER";
-                    break;
-
-                case 29u:
-                    pJonesString = "JONES_STR_LEFT_CTRL";
-                    break;
-
-                case 30u:
-                    *(WORD*)pDest = *(WORD*)"A";
-                    break;
-
-                case 31u:
-                    *(WORD*)pDest = *(WORD*)"S";
-                    break;
-
-                case 32u:
-                    *(WORD*)pDest = *(WORD*)"D";
-                    break;
-
-                case 33u:
-                    *(WORD*)pDest = *(WORD*)"F";
-                    break;
-
-                case 34u:
-                    *(WORD*)pDest = *(WORD*)"G";
-                    break;
-
-                case 35u:
-                    *(WORD*)pDest = *(WORD*)"H";
-                    break;
-
-                case 36u:
-                    *(WORD*)pDest = *(WORD*)"J";
-                    break;
-
-                case 37u:
-                    *(WORD*)pDest = *(WORD*)"K";
-                    break;
-
-                case 38u:
-                    *(WORD*)pDest = *(WORD*)"L";
-                    break;
-
-                case 39u:
-                    *(WORD*)pDest = *(WORD*)";";
-                    break;
-
-                case 40u:
-                    *(WORD*)pDest = *(WORD*)"'";
-                    break;
-
-                case 41u:
-                    *(WORD*)pDest = *(WORD*)"`";
-                    break;
-
-                case 42u:
-                    pJonesString = "JONES_STR_LEFT_SHIFT";
-                    break;
-
-                case 43u:
-                    *(WORD*)pDest = *(WORD*)"\\";
-                    break;
-
-                case 44u:
-                    *(WORD*)pDest = *(WORD*)"Z";
-                    break;
-
-                case 45u:
-                    *(WORD*)pDest = *(WORD*)"X";
-                    break;
-
-                case 46u:
-                    *(WORD*)pDest = *(WORD*)"C";
-                    break;
-
-                case 47u:
-                    *(WORD*)pDest = *(WORD*)"V";
-                    break;
-
-                case 48u:
-                    *(WORD*)pDest = *(WORD*)"B";
-                    break;
-
-                case 49u:
-                    *(WORD*)pDest = *(WORD*)"N";
-                    break;
-
-                case 50u:
-                    *(WORD*)pDest = *(WORD*)"M";
-                    break;
-
-                case 51u:
-                    pJonesString = "JONES_STR_COMMA";
-                    break;
-
-                case 52u:
-                    *(WORD*)pDest = *(WORD*)".";
-                    break;
-
-                case 53u:
-                    *(WORD*)pDest = *(WORD*)"/";
-                    break;
-
-                case 54u:
-                    pJonesString = "JONES_STR_RIGHT_SHIFT";
-                    break;
-
-                case 55u:
-                    pJonesString = "JONES_STR_NUMPAD_MULT";
-                    break;
-
-                case 56u:
-                    pJonesString = "JONES_STR_LEFT_ALT";
-                    break;
-
-                case 57u:
-                    pJonesString = "JONES_STR_SPACE";
-                    break;
-
-                case 58u:
-                    pJonesString = "JONES_STR_CAPS";
-                    break;
-
-                case 59u:
-                    pJonesString = "JONES_STR_F1";
-                    break;
-
-                case 60u:
-                    pJonesString = "JONES_STR_F2";
-                    break;
-
-                case 61u:
-                    pJonesString = "JONES_STR_F3";
-                    break;
-
-                case 62u:
-                    pJonesString = "JONES_STR_F4";
-                    break;
-
-                case 63u:
-                    pJonesString = "JONES_STR_F5";
-                    break;
-
-                case 64u:
-                    pJonesString = "JONES_STR_F6";
-                    break;
-
-                case 65u:
-                    pJonesString = "JONES_STR_F7";
-                    break;
-
-                case 66u:
-                    pJonesString = "JONES_STR_F8";
-                    break;
-
-                case 67u:
-                    pJonesString = "JONES_STR_F9";
-                    break;
-
-                case 68u:
-                    pJonesString = "JONES_STR_F10";
-                    break;
-
-                case 69u:
-                    pJonesString = "JONES_STR_NUMLOCK";
-                    break;
-
-                case 71u:
-                    pJonesString = "JONES_STR_NUMPAD_7";
-                    break;
-
-                case 72u:
-                    pJonesString = "JONES_STR_NUMPAD_8";
-                    break;
-
-                case 73u:
-                    pJonesString = "JONES_STR_NUMPAD_9";
-                    break;
-
-                case 74u:
-                    pJonesString = "JONES_STR_NUMPAD_MINUS";
-                    break;
-
-                case 75u:
-                    pJonesString = "JONES_STR_NUMPAD_4";
-                    break;
-
-                case 76u:
-                    pJonesString = "JONES_STR_NUMPAD_5";
-                    break;
-
-                case 77u:
-                    pJonesString = "JONES_STR_NUMPAD_6";
-                    break;
-
-                case 78u:
-                    pJonesString = "JONES_STR_NUMPAD_PLUS";
-                    break;
-
-                case 79u:
-                    pJonesString = "JONES_STR_NUMPAD_1";
-                    break;
-
-                case 80u:
-                    pJonesString = "JONES_STR_NUMPAD_2";
-                    break;
-
-                case 81u:
-                    pJonesString = "JONES_STR_NUMPAD_3";
-                    break;
-
-                case 82u:
-                    pJonesString = "JONES_STR_NUMPAD_0";
-                    break;
-
-                case 83u:
-                    pJonesString = "JONES_STR_NUMPAD_DOT";
-                    break;
-
-                case 87u:
-                    pJonesString = "JONES_STR_F11";
-                    break;
-
-                case 88u:
-                    pJonesString = "JONES_STR_F12";
-                    break;
-
-                case 100u:
-                    pJonesString = "JONES_STR_F13";
-                    break;
-
-                case 101u:
-                    pJonesString = "JONES_STR_F14";
-                    break;
-
-                case 102u:
-                    pJonesString = "JONES_STR_F15";
-                    break;
-
-                case 141u:
-                    pJonesString = "JONES_STR_NUMPAD_EQL";
-                    break;
-
-                case 156u:
-                    pJonesString = "JONES_STR_NUMPAD_ENTER";
-                    break;
-
-                case 157u:
-                    pJonesString = "JONES_STR_RIGHT_CTRL";
-                    break;
-
-                case 179u:
-                    pJonesString = "JONES_STR_NUMPAD_COMMA";
-                    break;
-
-                case 181u:
-                    pJonesString = "JONES_STR_NUMPAD_DIV";
-                    break;
-
-                case 184u:
-                    pJonesString = "JONES_STR_RIGHT_ALT";
-                    break;
-
-                case 199u:
-                    pJonesString = "JONES_STR_HOME";
-                    break;
-
-                case 200u:
-                    pJonesString = "JONES_STR_UPARRW";
-                    break;
-
-                case 201u:
-                    pJonesString = "JONES_STR_PAGEUP";
-                    break;
-
-                case 203u:
-                    pJonesString = "JONES_STR_LEFTARRW";
-                    break;
-
-                case 205u:
-                    pJonesString = "JONES_STR_RGHTARRW";
-                    break;
-
-                case 207u:
-                    pJonesString = "JONES_STR_END";
-                    break;
-
-                case 208u:
-                    pJonesString = "JONES_STR_DNARRW";
-                    break;
-
-                case 209u:
-                    pJonesString = "JONES_STR_PGDN";
-                    break;
-
-                case 210u:
-                    pJonesString = "JONES_STR_INSERT";
-                    break;
-
-                case 211u:
-                    pJonesString = "JONES_STR_DELETE";
-                    break;
-
-                case 219u:
-                    pJonesString = "JONES_STR_LEFT_WND";
-                    break;
-
-                case 220u:
-                    pJonesString = "JONES_STR_RIGHT_WND";
-                    break;
-
-                default:
-                    goto LABEL_117;
-            }
+            joystick_controls:
+                if ( controlId < STDCONTROL_JOYSTICK_FIRTPOVCID || controlId > STDCONTROL_JOYSTICK_LASTPOVCID || STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) != 0 )
+                {
+                    if ( controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == 2 )
+                    {
+                        pJonesString = "JONES_STR_HATRIGHT";
+                    }
+                    else if ( controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == 3 )
+                    {
+                        pJonesString = "JONES_STR_HATDOWN";
+                    }
+                    else if ( controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == 1 )
+                    {
+                        pJonesString = "JONES_STR_HATUP";
+                    }
+                    else if ( controlId >= STDCONTROL_JOYSTICK_FIRSTKID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID )
+                    {
+                        pJonesString = "JONES_STR_JOYSTICK";
+                    }
+                }
+                else
+                {
+                    // Index 0
+                    pJonesString = "JONES_STR_HATLEFT";
+                }
+            } break;
         }
+    }
+    else
+    {
+        switch ( controlId )
+        {
+            case JONESCONFIG_JOYAXISKID_UP:
+                pJonesString = "JONES_STR_JOYUP";
+                break;
 
-        goto LABEL_133;
+            case JONESCONFIG_JOYAXISKID_RIGHT:
+                pJonesString = "JONES_STR_JOYRIGHT";
+                break;
+
+            case JONESCONFIG_JOYAXISKID_DOWN:
+                pJonesString = "JONES_STR_JOYDOWN";
+                break;
+
+            case JONESCONFIG_JOYAXISKID_LEFT:
+                pJonesString = "JONES_STR_JOYLEFT";
+                break;
+
+            case JONESCONFIG_JOYAXISKID_TWISTL:
+                pJonesString = "JONES_STR_JOYTWISTL";
+                break;
+
+            case JONESCONFIG_JOYAXISKID_TWISTR:
+                pJonesString = "JONES_STR_JOYTWISTR";
+                break;
+
+            // Note missing handling of JONESCONFIG_JOYAXISKID_AIR and JONESCONFIG_JOYAXISKID_GROUND
+
+            default:
+                goto joystick_controls;
+        }
     }
 
-    switch ( controlId )
+    if ( pJonesString )
     {
-        case 0x8001u:
-            pJonesString = "JONES_STR_JOYRIGHT";
-            goto LABEL_133;
-
-        case 0x8002u:
-            pJonesString = "JONES_STR_JOYDOWN";
-            goto LABEL_133;
-
-        case 0x8003u:
-            pJonesString = "JONES_STR_JOYLEFT";
-            goto LABEL_133;
-
-        case 0x8004u:
-            pJonesString = "JONES_STR_JOYTWISTL";
-            goto LABEL_133;
-
-        case 0x8005u:
-            pJonesString = "JONES_STR_JOYTWISTR";
-            goto LABEL_133;
-
-        default:
-        LABEL_117:
-            if ( controlId < 288 )
+        const char* pControlStr = jonesString_GetString(pJonesString);
+        if ( pControlStr )
+        {
+            if ( controlId < STDCONTROL_MAX_KEYBOARD_BUTTONS
+                || controlId > STDCONTROL_JOYSTICK_LASTPOVCID
+                || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRLEFT
+                || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRUP
+                || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRRIGHT
+                || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRDOWN )
             {
-                goto LABEL_130;
-            }
-
-            if ( controlId > 639 || (controlId & 3) != 0 )
-            {
-                if ( controlId <= 639 && (controlId & 3) == 2 )
+                if ( controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRLEFT
+                    || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRUP
+                    || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRRIGHT
+                    || controlId >= STDCONTROL_JOYSTICK_FIRTPOVCID && controlId <= STDCONTROL_JOYSTICK_LASTPOVCID && STDCONTROL_JOYSTICK_GETPOVDIRECTIONINDEX(controlId) == STDCONTROL_JOYSTICK_POVDIRDOWN )
                 {
-                    pJonesString = "JONES_STR_HATRIGHT";
-                }
-
-                else if ( controlId <= 639 && (controlId & 3) == 3 )
-                {
-                    pJonesString = "JONES_STR_HATDOWN";
+                    // Joystick POV 
+                    stdUtil_Format(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, pControlStr, STDCONTROL_JOYSTICK_GETPOVINDEX(controlId) + 1);
                 }
                 else
                 {
-                    if ( controlId > 639 || (controlId & 3) != 1 )
-                    {
-                    LABEL_130:
-                        if ( controlId >= 256 && controlId <= 639 )
-                        {
-                            pJonesString = "JONES_STR_JOYSTICK";
-                        }
-
-                        goto LABEL_133;
-                    }
-
-                    pJonesString = "JONES_STR_HATUP";
+                    // Regular key or joystick stick move
+                    stdUtil_StringCopy(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, pControlStr);
                 }
             }
             else
             {
-                pJonesString = "JONES_STR_HATLEFT";
+                // Joystick button
+                stdUtil_Format(pDest, JONESCONFIG_CONTROLSTRING_MAXLEN, pControlStr, STDCONTROL_JOYSTICK_GETBUTTONINDEX(controlId) + 1);
             }
-
-        LABEL_133:
-            if ( !pJonesString )
-            {
-                return;
-            }
-
-            pControlStr = jonesString_GetString(pJonesString);
-            if ( !pControlStr )
-            {
-                return;
-            }
-
-            if ( controlId < 256 || controlId > 287 )
-            {
-                if ( controlId >= 288
-                    && (controlId <= 639 && (controlId & 3) == 0
-                        || controlId <= 639 && (controlId & 3) == 1
-                        || controlId <= 639 && (controlId & 3) == 2
-                        || controlId <= 639 && (controlId & 3) == 3) )
-                {
-                    sprintf(pDest, pControlStr, ((((controlId - 256) % 48) >> 2) & 7) + 1);
-                }
-                else
-                {
-                    strcpy(pDest, pControlStr);
-                }
-            }
-            else
-            {
-                sprintf(pDest, pControlStr, (controlId - 256) % 48 + 1);
-            }
-
-            return;
+        }
     }
 }
 
 int J3DAPI jonesConfig_ShowMessageDialog(HWND hWnd, const char* pTitle, const char* pText, int iconID)
 {
-    char dwInitParam[520]; // [esp+Ch] [ebp-208h] BYREF
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE); // ???
 
-    GetWindowLongA(hWnd, GWL_HINSTANCE);
-    memset(dwInitParam, 0, sizeof(dwInitParam));
-    *(DWORD*)dwInitParam = iconID;
-    strcpy(&dwInitParam[260], pText);
-    strcpy(&dwInitParam[4], pTitle);
-    return JonesDialog_ShowDialog((LPCSTR)121, hWnd, jonesConfig_MessageDialogProc, (LPARAM)dwInitParam);
+    JonesMessageDialogData data = { 0 };
+    data.iconID = iconID;
+    STD_STRCPY(data.aTitle, pTitle);
+    STD_STRCPY(data.aText, pText);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(121), hWnd, jonesConfig_MessageDialogProc, (LPARAM)&data);
 }
 
-BOOL CALLBACK jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM a4)
+BOOL CALLBACK jonesConfig_MessageDialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    LONG WindowLongA; // ebx
-    HWND hDlgItem; // esi
-    void* v7; // ebp
-    int v8; // [esp+10h] [ebp-4h]
-
-    if ( uMsg == WM_DESTROY )
+    switch ( uMsg )
     {
-        WindowLongA = GetWindowLongA(hwnd, 8);
-        hDlgItem = GetDlgItem(hwnd, 1201);
-        jonesConfig_ResetDialogFont(hwnd, (HFONT)jonesConfig_hdo_551DD0);
-        if ( !WindowLongA || !hDlgItem )
+        case WM_DESTROY:
         {
-            return 1;
+            JonesMessageDialogData* pData = (JonesMessageDialogData*)GetWindowLongPtr(hwnd, DWL_USER);
+            HWND hIconCtrl = GetDlgItem(hwnd, 1201);
+            jonesConfig_ResetDialogFont(hwnd, jonesConfig_hFontMessageDialog);
+
+            if ( pData )
+            {
+                if ( hIconCtrl )
+                {
+                    HICON hCurIcon = Static_GetIcon(hIconCtrl, NULL);
+                    Static_SetIcon(hIconCtrl, pData->hPrevIcon);
+                    DeleteObject(hCurIcon);
+                }
+            }
+
+            return TRUE;
         }
-
-        v7 = (void*)SendMessageA(hDlgItem, STM_GETICON, 0, 0);
-        SendMessageA(hDlgItem, STM_SETICON, *(DWORD*)(WindowLongA + 516), 0);
-        DeleteObject(v7);
-        return 1;
-    }
-
-    else if ( uMsg == WM_INITDIALOG )
-    {
-        SetWindowTextA(hwnd, (LPCSTR)(a4 + 4));
-        jonesConfig_sub_4025F0(hwnd, (unsigned __int16*)a4);
-        jonesConfig_hdo_551DD0 = jonesConfig_InitDialog(hwnd, 0, 121);
-        v8 = jonesConfig_sub_402670(hwnd, wParam, (unsigned __int16*)a4);
-        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return v8;
-    }
-    else
-    {
-        if ( uMsg == WM_COMMAND )
+        case WM_INITDIALOG:
         {
-            jonesConfig_sub_402A90(hwnd, (unsigned __int16)wParam);
-        }
+            JonesMessageDialogData* pData = (JonesMessageDialogData*)lParam;
+            SetWindowText(hwnd, pData->aTitle);
+            jonesConfig_InitMessageDialogIcon(hwnd, pData);
+            jonesConfig_hFontMessageDialog = (HGDIOBJ)jonesConfig_InitDialog(hwnd, 0, 121);
+            int inited = jonesConfig_InitMessageDialogData(hwnd, wParam, pData);
 
-        return 0;
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return inited;
+        }
+        case WM_COMMAND:
+            jonesConfig_MessageDialog_HandleWM_COMMAND(hwnd, LOWORD(wParam));
+            return FALSE;
+
+        default:
+            return FALSE;
     }
+
 }
 
-void J3DAPI jonesConfig_sub_4025F0(HWND hWnd, uint16_t* a2)
+void J3DAPI jonesConfig_InitMessageDialogIcon(HWND hWnd, JonesMessageDialogData* pData)
 {
-    HINSTANCE hInstance; // eax
-    HANDLE hImage; // ebx
-    HWND DlgItem; // eax
-    HWND v5; // esi
-    HWND hWnda; // [esp+10h] [ebp+4h]
-
-    hInstance = (HINSTANCE)GetWindowLongA(hWnd, GWL_HINSTANCE);
-    if ( a2 )
+    HINSTANCE hInstance = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    if ( pData )
     {
-        hImage = LoadImageA(hInstance, (LPCSTR)*a2, IMAGE_ICON, 64, 64, 0);
-        DlgItem = GetDlgItem(hWnd, 1201);
-        v5 = DlgItem;
-        if ( DlgItem )
+        HANDLE hImage = LoadImage(hInstance, MAKEINTRESOURCE(pData->iconID), IMAGE_ICON, 64, 64, LR_DEFAULTCOLOR);
+        HWND hImageCtrl = GetDlgItem(hWnd, 1201);
+        if ( hImageCtrl )
         {
             if ( hImage )
             {
-                hWnda = (HWND)SendMessageA(DlgItem, STM_GETICON, 0, 0);
-                SendMessageA(v5, STM_SETICON, (WPARAM)hImage, 0);
-                *((DWORD*)a2 + 129) = hWnda;
+                HICON hIcon = Static_GetIcon(hImageCtrl, 0);
+                Static_SetIcon(hImageCtrl, hImage);
+                pData->hPrevIcon = hIcon;
             }
         }
     }
 }
 
-int J3DAPI jonesConfig_sub_402670(HWND hDlg, int a2, uint16_t* dwNewLong)
+int J3DAPI jonesConfig_InitMessageDialogData(HWND hDlg, int a2, JonesMessageDialogData* pData)
 {
-    HWND DlgItem; // ebx
+    J3D_UNUSED(a2);
 
-    DlgItem = GetDlgItem(hDlg, 1075);
-    GetDC(DlgItem);
-    if ( !dwNewLong )
+    HWND hTextCtrl = GetDlgItem(hDlg, 1075);
+    GetDC(hTextCtrl); // TODO: ??
+    if ( !pData )
     {
         return 0;
     }
 
-    jonesConfig_sub_4025F0(hDlg, dwNewLong);
-    jonesConfig_SetTextControl(hDlg, DlgItem, (const char*)dwNewLong + 260);
-    SetWindowLongA(hDlg, DWL_USER, (LONG)dwNewLong);
+    jonesConfig_InitMessageDialogIcon(hDlg, pData);
+    jonesConfig_SetTextControl(hDlg, hTextCtrl, pData->aText);
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
     return 1;
 }
 
-int J3DAPI jonesConfig_SetTextControl(HWND hDlg, HWND hWnd, const char* aText)
+int J3DAPI jonesConfig_SetTextControl(HWND hDlg, HWND hTextCtrl, const char* aText)
 {
-    HDC hdc; // esi
-    HFONT hFont; // eax
-    const char* v5; // ebx
-    const char* v6; // esi
-    char* v7; // ebx
-    int v8; // ebp
-    unsigned int v9; // kr0C_4
-    signed int v10; // edi
-    bool v11; // zf
-    int i; // edx
-    int v13; // edx
-    int v14; // esi
-    int v15; // ebp
-    int v16; // edi
-    int v17; // ebx
-    HWND v18; // ebx
-    int v20; // [esp+0h] [ebp-174h]
-    int v21; // [esp+18h] [ebp-15Ch]
-    int SystemMetrics; // [esp+18h] [ebp-15Ch]
-    int v23; // [esp+1Ch] [ebp-158h]
-    int v24; // [esp+1Ch] [ebp-158h]
-    int v25; // [esp+20h] [ebp-154h]
-    int v26; // [esp+20h] [ebp-154h]
-    HWND DlgItem; // [esp+24h] [ebp-150h]
-    struct tagRECT Rect; // [esp+28h] [ebp-14Ch] BYREF
-    struct tagRECT v29; // [esp+38h] [ebp-13Ch] BYREF
-    struct tagRECT v30; // [esp+48h] [ebp-12Ch] BYREF
-    int X; // [esp+58h] [ebp-11Ch]
-    int Y; // [esp+5Ch] [ebp-118h]
-    HWND v33; // [esp+60h] [ebp-114h]
-    struct tagRECT v34; // [esp+64h] [ebp-110h] BYREF
-    char v35[256]; // [esp+74h] [ebp-100h] BYREF
-
-    hdc = GetDC(hWnd);
-    hFont = (HFONT)SendMessageA(hWnd, WM_GETFONT, 0, 0);
+    HDC hdc = GetDC(hTextCtrl);
+    HFONT hFont = (HFONT)SendMessage(hTextCtrl, WM_GETFONT, 0, 0);
     SelectObject(hdc, hFont);
 
-    if ( !jonesConfig_dword_551DCC )
+    if ( !jonesConfig_bTextMetricInited )
     {
         memset(jonesConfig_aGlyphMetrics, 0, sizeof(jonesConfig_aGlyphMetrics));
         memset(&jonesConfig_textMetric, 0, sizeof(jonesConfig_textMetric));
-        GetTextMetricsA(hdc, &jonesConfig_textMetric);
-        GetCharABCWidthsA(
-            hdc,
-            jonesConfig_textMetric.tmFirstChar,
-            jonesConfig_textMetric.tmLastChar,
-            jonesConfig_aGlyphMetrics);
-        jonesConfig_dword_551DCC = 1;
+        GetTextMetrics(hdc, (LPTEXTMETRICA)&jonesConfig_textMetric);
+        GetCharABCWidths(hdc, jonesConfig_textMetric.tmFirstChar, jonesConfig_textMetric.tmLastChar, jonesConfig_aGlyphMetrics);
+        jonesConfig_bTextMetricInited = 1;
     }
 
-    v21 = 0;
-    GetWindowRect(hDlg, &Rect);
+    RECT rectWnd;
+    GetWindowRect(hDlg, &rectWnd);
+    LONG dlgX = rectWnd.left;
+    LONG dlgY = rectWnd.top;
 
-    X = Rect.left;
-    Y = Rect.top;
-    GetWindowRect(hWnd, &Rect);
-    v5 = aText;
-    v25 = Rect.right - Rect.left;
+    GetWindowRect(hTextCtrl, &rectWnd);
+    LONG maxWidth = rectWnd.right - rectWnd.left;
+
+    size_t numLines = 0;
+    const char* pCurPos = aText;
     do
     {
-        v6 = v5;
-        v7 = strchr(v5, '\n');
-        memset(v35, 0, sizeof(v35));
-        if ( v7 )
+        const char* pStart = pCurPos;
+        pCurPos = strchr(pCurPos, '\n');
+
+        char aLine[256] = { 0 };
+        if ( pCurPos )
         {
-            strncpy(v35, v6, v7 - v6);
+            STD_STRNCPY(aLine, pStart, pCurPos - pStart);
         }
         else
         {
-            strcpy(v35, v6);
+            STD_STRCPY(aLine, pStart);
         }
 
-        v8 = 0;
-        v9 = strlen(v35) + 1;
-        v10 = 0;
-        v11 = v9 == 1;
-        v23 = 0;
-        if ( (int)(v9 - 1) > 0 )
+        size_t lineLen = strlen(aLine);
+        size_t lineWidth = 0;
+        for ( size_t i = 0; i < lineLen; ++i )
         {
-            for ( i = jonesConfig_textMetric.tmFirstChar; ; i = jonesConfig_textMetric.tmFirstChar )
+            const ABC* pCharMetric = &jonesConfig_aGlyphMetrics[(uint8_t)aLine[i] - jonesConfig_textMetric.tmFirstChar];
+            lineWidth += abs(pCharMetric->abcB)
+                + abs(pCharMetric->abcA)
+                + abs(pCharMetric->abcC);
+        }
+
+        if ( lineLen || !pCurPos )
+        {
+            numLines += (int32_t)ceil((double)lineWidth / (double)maxWidth);
+        }
+        else
+        {
+            ++numLines;
+        }
+
+        if ( pCurPos )
+        {
+            if ( strlen(++pCurPos) == 0 )
             {
-                v13 = (unsigned __int8)v35[v10++] - i;
-                v8 += abs(jonesConfig_aGlyphMetrics[v13].abcA)
-                    + abs(jonesConfig_aGlyphMetrics[v13].abcB)
-                    + abs(jonesConfig_aGlyphMetrics[v13].abcC);
-                if ( v10 >= (int)(v9 - 1) )
-                {
-                    break;
-                }
+                pCurPos = NULL;
             }
-
-            v23 = v8;
-            v11 = v9 == 1;
         }
+    } while ( pCurPos );
 
-        if ( v11 && v7 )
-        {
-            ++v21;
-        }
-        else
-        {
-            v21 += (__int64)ceil((double)v23 / (double)v25);
-        }
-
-        if ( !v7 )
-        {
-            break;
-        }
-
-        v5 = v7 + 1;
-        if ( !strlen(v5) )
-        {
-            v5 = 0;
-        }
-    } while ( v5 );
-
-    v14 = Rect.top + v21 * (jonesConfig_textMetric.tmHeight + jonesConfig_textMetric.tmExternalLeading) - Rect.bottom;
-    if ( v14 > 0 )
+    LONG yOffset = numLines * (jonesConfig_textMetric.tmExternalLeading + jonesConfig_textMetric.tmHeight) - (rectWnd.bottom - rectWnd.top);
+    if ( yOffset > 0 )
     {
-        DlgItem = GetDlgItem(hDlg, 1);
-        v33 = GetDlgItem(hDlg, 2);
+        int heightCaption = GetSystemMetrics(SM_CYCAPTION);
+        int frameSize = 2 * GetSystemMetrics(SM_CYDLGFRAME);
 
-        SystemMetrics = GetSystemMetrics(4);
-        v15 = 2 * GetSystemMetrics(8);
+        HWND hOkBtn = GetDlgItem(hDlg, 1);
+        RECT rectBtn;
+        GetWindowRect(hOkBtn, &rectBtn);
+        rectBtn.top += yOffset;
 
-        GetWindowRect(DlgItem, &v29);
-        v29.top += v14;
+        RECT rectDlg;
+        GetWindowRect(hDlg, &rectDlg);
 
-        GetWindowRect(hDlg, &v30);
+        int btnX = rectBtn.left - rectDlg.left;
+        int btnY = rectBtn.top - rectDlg.top - (frameSize + heightCaption);
 
-        v26 = v29.left - v30.left;
-        v29.bottom += v14;
-        v24 = Rect.left - v30.left;
-        Rect.bottom += v14;
-        v30.bottom += v14;
-        v16 = v29.top - v30.top - SystemMetrics - v15;
-        v17 = Rect.top - v30.top - SystemMetrics - v15;
 
-        MoveWindow(hDlg, X, Y, v30.right - v30.left, v30.bottom - v30.top, 1);
-        MoveWindow(DlgItem, v26, v16, v29.right - v29.left, v29.bottom - v29.top, 1);
-        MoveWindow(hWnd, v24, v17, Rect.right - Rect.left, Rect.bottom - Rect.top, 1);
+        int textX = rectWnd.left - rectDlg.left;
+        int textY = rectWnd.top - rectDlg.top - (frameSize + heightCaption);
 
-        v18 = v33;
-        if ( v33 )
+        rectDlg.bottom += yOffset;
+        rectBtn.bottom += yOffset;
+        rectWnd.bottom += yOffset;
+
+        MoveWindow(hDlg, dlgX, dlgY, rectDlg.right - rectDlg.left, rectDlg.bottom - rectDlg.top, 1);
+        MoveWindow(hOkBtn, btnX, btnY, rectBtn.right - rectBtn.left, rectBtn.bottom - rectBtn.top, 1);
+        MoveWindow(hTextCtrl, textX, textY, rectWnd.right - rectWnd.left, rectWnd.bottom - rectWnd.top, 1);
+
+        HWND hNoBtn = GetDlgItem(hDlg, 2);
+        if ( hNoBtn )
         {
-            GetWindowRect(v33, &v34);
-            v34.bottom += v14;
-            v20 = v34.bottom - (v14 + v34.top);
-            v34.top += v14;
-            MoveWindow(v18, v34.left - v30.left, v34.top - v30.top - SystemMetrics - v15, v34.right - v34.left, v20, 1);
+            RECT rectNoBtn;
+            GetWindowRect(hNoBtn, &rectNoBtn);
+            rectNoBtn.top += yOffset;
+
+            int btnNoY = rectNoBtn.top - rectDlg.top - (frameSize + heightCaption);
+
+            rectNoBtn.bottom += yOffset;
+            MoveWindow(hNoBtn, rectNoBtn.left - rectDlg.left, btnNoY, rectNoBtn.right - rectNoBtn.left, rectNoBtn.bottom - rectNoBtn.top, 1);
         }
     }
 
-    SetWindowTextA(hWnd, aText);
+    SetWindowText(hTextCtrl, aText);
     return ShowWindow(hDlg, 1);
 }
 
-BOOL J3DAPI jonesConfig_sub_402A90(HWND hDlg, int nResult)
+void J3DAPI jonesConfig_MessageDialog_HandleWM_COMMAND(HWND hDlg, int nResult)
 {
-    BOOL result; // eax
-
-    result = nResult;
     if ( nResult > 0 && nResult <= 2 )
     {
-        return EndDialog(hDlg, nResult);
+        EndDialog(hDlg, nResult);
     }
-
-    return result;
 }
 
-JonesControlsScheme* J3DAPI jonesConfig_NewControlScheme()
+JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void)
 {
-    JonesControlsScheme* pConfig; // esi
-    int keysetNum; // ebx
-    const char** pKeySetJS; // ebp
-    const char* pName; // eax
-    int MaxJoystickButtons; // eax
-    int v6; // eax
-    int v7; // ebp
-    const char* String; // eax
-    const char* v9; // ebx
-    JonesControlsScheme* pConfig_1; // [esp+10h] [ebp-18Ch]
-    LPSTR pFilePart; // [esp+18h] [ebp-184h] BYREF
-    CHAR aConfigFilename[128]; // [esp+1Ch] [ebp-180h] BYREF
-    CHAR aBuffer[128]; // [esp+9Ch] [ebp-100h] BYREF
-    char aKFGPath[128]; // [esp+11Ch] [ebp-80h] BYREF
+    JonesControlsScheme* pScheme = (JonesControlsScheme*)STDMALLOC(sizeof(JonesControlsScheme));
+    if ( !pScheme )
+    {
+        return NULL;
+    }
 
-    memset(aConfigFilename, 0, sizeof(aConfigFilename));
-    pConfig = (JonesControlsScheme*)STDMALLOC(sizeof(JonesControlsScheme));
-    pConfig_1 = pConfig;
-    if ( !pConfig )
+    memset(pScheme, 0, sizeof(JonesControlsScheme));
+
+    char aPath[128] = { 0 };
+
+    // Find active control scheme in system
+    char aFilename[128] = { 0 };
+    wuRegistry_GetStr("Configuration", aFilename, STD_ARRAYLEN(aFilename), "");
+    if ( strlen(aFilename) )
+    {
+        // Load config scheme to new scheme
+        char aFilePath[128] = { 0 };
+        STD_FORMAT(aFilePath, "%s\\%s%s", jonesConfig_aKeySetsDirPath, aFilename, ".kfg");
+
+        LPSTR pFilePart;
+        SearchPath(jonesConfig_aKeySetsDirPath, aFilename, ".kfg", STD_ARRAYLEN(aPath), aPath, &pFilePart);
+        if ( strlen(aPath) && jonesConfig_LoadControlScheme(aFilePath, pScheme) )
+        {
+            return pScheme;
+        }
+
+        // Load failed, try to make new scheme to default scheme based on config scheme name
+        for ( size_t i = 0; i < STD_ARRAYLEN(jonesConfig_aDfltKeySetNames); i++ )
+        {
+            const char* pDfltKeyset = jonesString_GetString(jonesConfig_aDfltKeySetNames[i]);
+            if ( !pDfltKeyset )
+            {
+                goto error;
+            }
+
+            STD_STRCPY(pScheme->aName, pDfltKeyset);
+
+            if ( streq(aFilename, pDfltKeyset) )
+            {
+                if ( strlen(aPath) != 0 && jonesConfig_SetDefaultControlScheme(pScheme, i) )
+                {
+                    return pScheme;
+                }
+                else
+                {
+                    // Fixed: Fixed potential infinitive loop, when aPath len == 0 or jonesConfig_SetDefaultControlScheme fails
+                    break;
+                }
+            }
+        }
+
+        // Clear keyset config 
+        wuRegistry_SaveStr("Configuration", "");
+        goto error;
+    }
+
+    // TODO: Hmm why is this check here? Should be already handled in above scope.
+    if ( strlen(aFilename) && strlen(aPath) )
+    {
+        return pScheme;
+    }
+
+    // Ok we have no scheme configured, let's load default
+    size_t schemeIdx = 0;
+    size_t maxJoyButtons = stdControl_GetMaxJoystickButtons();
+    if ( maxJoyButtons == 4 )
+    {
+        schemeIdx = 1;
+    }
+    else if ( maxJoyButtons == 8 )
+    {
+        schemeIdx = 2;
+    }
+
+    const char* pDfltKeyset = jonesString_GetString(jonesConfig_aDfltKeySetNames[schemeIdx]);
+    if ( pDfltKeyset )
+    {
+        STD_STRCPY(pScheme->aName, pDfltKeyset);
+        if ( jonesConfig_SetDefaultControlScheme(pScheme, schemeIdx) )
+        {
+            wuRegistry_SaveStr("Configuration", pDfltKeyset);
+            return pScheme;
+        }
+    }
+
+error:
+    jonesConfig_FreeControlScheme(pScheme);
+    return NULL;
+}
+
+int J3DAPI jonesConfig_LoadControlScheme(const char* pFilePath, JonesControlsScheme* pConfig)
+{
+     // Function loads kfg file to pData
+
+     // Altered: Moved this check before stdConffile_Open
+    if ( !pConfig || !pFilePath )
     {
         return 0;
     }
-
-    memset(aBuffer, 0, sizeof(aBuffer));
-    memset(pConfig, 0, sizeof(JonesControlsScheme));
-
-    wuRegistry_GetStr("Configuration", aConfigFilename, 128u, std_g_aEmptyString);
-    if ( strlen(aConfigFilename) )
-    {
-        memset(aKFGPath, 0, sizeof(aKFGPath));
-        sprintf(aKFGPath, "%s\\%s%s", jonesConfig_pKeySetsDirPath, aConfigFilename, ".kfg");
-
-        memset(aBuffer, 0, sizeof(aBuffer));
-        SearchPathA(jonesConfig_pKeySetsDirPath, aConfigFilename, ".kfg", 128u, aBuffer, &pFilePart);
-
-        if ( strlen(aBuffer) && jonesConfig_LoadConstrolsScheme(aKFGPath, pConfig) )
-        {
-            return pConfig;
-        }
-
-        keysetNum = 0;
-        while ( keysetNum < 3 )  // Replace pointer comparison with simple counter check
-        {
-            pName = jonesString_GetString(jonesConfig_aDfltKeySetNames[keysetNum]);
-            if ( !pName )
-            {
-                goto LABEL_17;
-            }
-            strcpy(pConfig->aName, pName);
-            if ( !strcmp(aConfigFilename, pName) )
-            {
-                if ( !strlen(aBuffer) )
-                {
-                    pConfig = pConfig_1;
-                    if ( jonesConfig_SetDefaultControlScheme(pConfig_1, keysetNum) )
-                    {
-                        return pConfig;
-                    }
-                }
-            }
-            else
-            {
-                ++keysetNum;
-            }
-        }
-        wuRegistry_SaveStr("Configuration", std_g_aEmptyString);
-        goto LABEL_16;
-    }
-
-    if ( strlen(aConfigFilename) && strlen(aBuffer) )
-    {
-        return pConfig;
-    }
-
-    MaxJoystickButtons = stdControl_GetMaxJoystickButtons();
-    if ( MaxJoystickButtons == 4 )
-    {
-        v7 = 1;
-    }
-    else
-    {
-        v6 = -(MaxJoystickButtons != 8);
-        v6 &= ~1;
-        v7 = v6 + 2;
-    }
-
-    String = jonesString_GetString(jonesConfig_aDfltKeySetNames[v7]);
-    v9 = String;
-    if ( String )
-    {
-        strcpy(pConfig->aName, String);
-        if ( jonesConfig_SetDefaultControlScheme(pConfig, v7) )
-        {
-            wuRegistry_SaveStr("Configuration", v9);
-            return pConfig;
-        }
-
-    LABEL_16:
-        pConfig = pConfig_1;
-    }
-
-LABEL_17:
-    jonesConfig_FreeControlScheme(pConfig);
-    return 0;
-}
-
-int J3DAPI jonesConfig_LoadConstrolsScheme(const char* pFilePath, JonesControlsScheme* pConfig)
-{
-    JonesControlsScheme* pConfig_1; // ebp
-    int v3; // ebx
-    int actionIdx; // eax
-    int v5; // eax
-    int* pKeyAction; // esi
-    int bController; // edi
-    int bKeyboard; // ebp
-    int keyIdx; // eax
-    int controllerKey; // eax
-    int v11; // ecx
-    int v12; // edx
-    const char* pFaultyActionName; // eax
-    const char* String; // eax
-    HWND Window; // eax
-    int (*pAction)[9]; // eax
-    int argNum; // [esp+10h] [ebp-510h] BYREF
-    int v19; // [esp+14h] [ebp-50Ch]
-    int actionCount; // [esp+18h] [ebp-508h]
-    int actionIdx_1; // [esp+1Ch] [ebp-504h]
-    char aErrorStr[256]; // [esp+20h] [ebp-500h] BYREF
-    char aErrorActionName[512]; // [esp+120h] [ebp-400h] BYREF
-    char aErrorFormat[512]; // [esp+320h] [ebp-200h] BYREF
-
-
-    // Function loads kfg file to pConfig
 
     if ( !stdConffile_Open(pFilePath) )
     {
         return 0;
     }
 
-    pConfig_1 = pConfig;
-    if ( !pConfig )
-    {
-        return 0;
-    }
-
-    if ( !pFilePath )
-    {
-        return 0;
-    }
-
     memset(pConfig->aName, 0, sizeof(pConfig->aName));
-    strncpy(pConfig->aName, pFilePath, strlen(pFilePath) - 4);// -4 removes .kfg extension
-    v3 = 0;
+    STD_STRNCPY(pConfig->aName, pFilePath, strlen(pFilePath) - 4);// -4 removes .kfg extension
 
-    stdConffile_ReadArgs();                     // skip first comment line
+    size_t bindNum = 0;
+
+    stdConffile_ReadArgs(); // Skip first comment line
     stdConffile_ReadArgs();
 
-    if ( stdConffile_g_entry.numArgs && !_strnicmp(stdConffile_g_entry.aArgs[0].argName, "1", 128u) )// 1 mark shceme is enabled
+    if ( stdConffile_g_entry.numArgs && strneqi(stdConffile_g_entry.aArgs[0].argName, "1", 128u) )// 1 mark scheme is enabled
     {
-        stdConffile_ReadArgs();                 // Skip header line
+        stdConffile_ReadArgs(); // Skip header line
 
-        actionCount = 0;
-        while ( 1 )
+        size_t actionCount = 0;
+
+        for ( size_t i = 0; i < STD_ARRAYLEN(pConfig->aActions); ++i )
         {
-            argNum = 0;
+            size_t argNum = 0;
             if ( !stdConffile_ReadArgs() )
             {
                 break;
             }
 
-            actionIdx = jonesConfig_GetEntryIndex(
-                &argNum,
-                &stdConffile_g_entry,
-                jonesConfig_dword_5510E0,
-                jonesConfig_aJonesControlActionNames,
-                37);
-            actionIdx_1 = actionIdx;
+            int actionIdx = jonesConfig_ParseArgumentIndex(&argNum, &stdConffile_g_entry, jonesConfig_maxActionWords, jonesConfig_aJonesControlActionNames, STD_ARRAYLEN(jonesConfig_aJonesControlActionNames));
             if ( actionIdx == -1 )
             {
                 break;
             }
 
-            // TODO: Fix offsets
-            v5 = 9 * actionIdx;                 // 9 is size of JonesControlSchemeEntry in ints
-            v3 = 1;
-            pKeyAction = pConfig_1->aActions[v5 / 9u];// TODO: maybe pKeyAction is a struct like JonesControlSchemeAction
-            *pKeyAction = 0;
-            if ( (JonesControlsScheme*)((char*)pConfig_1 + 4 * v5) != (JonesControlsScheme*)-4 )// TODO: Fix this if statement to if( pEntry != 0
+            bindNum = 1; // Note, at index 0 the num of bindings state is stored
+            pConfig->aActions[actionIdx][0] = 0; // Reset number of bindings state
+
+            // Removed: As paActionBindings was pointer to fixed size array
+            //int (*paActionBindings)[9] = &pScheme->aActions[actionIdx];
+            //if ( paActionBindings )
+
+            while ( 1 )
             {
-                while ( 1 )
+                if ( argNum >= stdConffile_g_entry.numArgs )
                 {
-                    if ( argNum >= stdConffile_g_entry.numArgs )
-                    {
-                        pConfig_1 = pConfig;
-                        goto LABEL_18;
-                    }
-
-                    bController = 0;
-                    bKeyboard = 0;
-                    v19 = argNum;
-                    keyIdx = jonesConfig_GetEntryIndex(
-                        &argNum,
-                        &stdConffile_g_entry,
-                        jonesConfig_dword_5510BC,
-                        jonesConfig_aControlKeyStrings,
-                        223);
-
-                    pKeyAction[v3] = keyIdx;
-
-                    if ( keyIdx != -1 )
-                    {
-                        bKeyboard = 1;          // eventually flag 0x100
-                    }
-                    else
-                    {
-                        // We couldn't find control key num, try searching by control mouse button num, gamepad & joystick button num
-                        argNum = v19;
-                        controllerKey = jonesConfig_GetControllerKeySchemeIndex(&argNum, &stdConffile_g_entry);
-                        pKeyAction[v3] = controllerKey;
-                        if ( controllerKey == -1 )
-                        {
-                            goto LABEL_30;
-                        }
-
-                        bController = 1;        // eventually flag 0x10000
-                        ++argNum;
-                    }
-
-                    v11 = *pKeyAction;
-                    v12 = *pKeyAction & 0xFF0000;
-                    v19 = v3 + 1;
-                    *pKeyAction = (bController + bKeyboard + (unsigned __int8)v11) | ((bKeyboard << 8) + (v11 & 0xFF00)) | (v12 + (bController << 16));
-                    if ( (unsigned __int8)((bController + bKeyboard + v11) | v12) > 8u )
-                    {
-                        break;
-                    }
-
-                    v3 = v19;
+                    break;
                 }
 
+                uint8_t bController = 0;
+                uint8_t bKeyboard = 0;
 
-                // We've exceeded the number of key mappings
-                pFaultyActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[actionIdx_1]);
-                if ( pFaultyActionName )
+                int keyIdx = jonesConfig_ParseArgumentIndex(&argNum, &stdConffile_g_entry, jonesConfig_maxControlWords, jonesConfig_aControlKeyStrings, STD_ARRAYLEN(jonesConfig_aControlKeyStrings));
+                pConfig->aActions[actionIdx][bindNum] = keyIdx;
+
+                if ( keyIdx != -1 )
                 {
-                    strcpy(aErrorActionName, pFaultyActionName);
+                    bKeyboard = 1;
                 }
                 else
                 {
-                    memset(aErrorActionName, 0, sizeof(aErrorActionName));
+                    // We couldn't find control key num, try searching by control mouse button num, gamepad & joystick button num
+                    --argNum; // Has to be decremented as jonesConfig_ParseArgumentIndex increments it
+                    int controllerKey = jonesConfig_ParseJoystickControlId(&argNum, &stdConffile_g_entry);
+                    pConfig->aActions[actionIdx][bindNum] = controllerKey;
+
+                    if ( controllerKey == -1 )
+                    {
+                        goto error;
+                    }
+
+                    bController = 1;
+                    ++argNum;
                 }
 
-                String = jonesString_GetString("JONES_STR_EXCEED");
-                if ( String )
+                bindNum++;
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS(pConfig->aActions[actionIdx], bKeyboard, bController);
+
+                if ( JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[actionIdx]) > JONESCONTROL_ACTION_MAXBINDS ) // TODO: is this a bug? Shouldn't it be GT or EQ?
                 {
-                    strcpy(aErrorFormat, String);
-                }
-                else
-                {
-                    memset(aErrorFormat, 0, sizeof(aErrorFormat));
-                }
+                    static_assert(STD_ARRAYLEN(pConfig->aActions[actionIdx]) == 9, "STD_ARRAYLEN(pConfig->aActions[actionIdx]) == 9");
+                    // We've exceeded the number of key mappings
 
-                memset(aErrorStr, 0, sizeof(aErrorStr));
-                if ( aErrorFormat[0] && aErrorActionName[0] )
-                {
-                    sprintf(aErrorStr, aErrorFormat, aErrorActionName);
-                    Window = stdWin95_GetWindow();
-                    jonesConfig_ShowMessageDialog(Window, "JONES_STR_CTRL_OPTS", aErrorStr, 145);
+                    char aErrorActionName[512] = { 0 };
+                    const char* pFaultyActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[actionIdx]);
+                    if ( pFaultyActionName )
+                    {
+                        STD_STRCPY(aErrorActionName, pFaultyActionName);
+                    }
+
+                    char aErrorFormat[512] = { 0 };
+                    const char* pErrorText = jonesString_GetString("JONES_STR_EXCEED");
+                    if ( pErrorText )
+                    {
+                        STD_STRCPY(aErrorFormat, pErrorText);
+                    }
+
+                    if ( aErrorFormat[0] && aErrorActionName[0] )
+                    {
+                        char aErrorStr[256] = { 0 };
+                        STD_FORMAT(aErrorStr, aErrorFormat, aErrorActionName);
+                        jonesConfig_ShowMessageDialog(stdWin95_GetWindow(), "JONES_STR_CTRL_OPTS", aErrorStr, 145);
+                    }
+
+                    goto error;
                 }
-
-                v3 = v19;
-                break;
-            }
-
-        LABEL_18:
-            if ( ++actionCount >= 37 )          // max 37, TODO: make sizeof(JonesConfig.aEntries) / sizeof(JonesConfig.aEntries[0]), or make a macro
-            {
-                stdConffile_Close();
-                return 1;
             }
         }
+
+        // Success
+        stdConffile_Close();
+        return 1;
     }
 
-LABEL_30:
+error:
     memset(pConfig->aName, 0, sizeof(pConfig->aName));
-    if ( v3 > 0 )
+    for ( size_t i = 0; i < bindNum; ++i ) // TODO: Hmm is it ok using binNum here? Shouldn't it use actionCount, or just memset the whole array?
     {
-        pAction = pConfig->aActions;
+        if ( pConfig->aActions[i][0] )
+        {
+            memset(pConfig->aActions[i], 0, STD_ARRAYLEN(pConfig->aActions[i]));
+        }
+    }
+    // Old code
+    /*if ( bindNum > 0 )
+    {
+        pAction = pData->aActions;
         do
         {
             if ( pAction )
@@ -2231,68 +2402,48 @@ LABEL_30:
             }
 
             ++pAction;
-            --v3;
-        } while ( v3 );
-    }
+            --bindNum;
+        } while ( bindNum );
+    }*/
 
     stdConffile_Close();
     return 0;
 }
 
-int J3DAPI jonesConfig_GetEntryIndex(int* argNum, StdConffileEntry* pEntry, int a3, const char** apStringList, int size)
+int J3DAPI jonesConfig_ParseArgumentIndex(size_t* argNum, const StdConffileEntry* pEntry, size_t a3, const char** apStringList, size_t size)
 {
-    int result; // eax
-    char aValue[256]; // [esp+4h] [ebp-100h] BYREF
+    J3D_UNUSED(a3);
 
-    strncpy(aValue, pEntry->aArgs[*argNum].argName, 256u);
-    result = jonesConfig_GetValueIndex(aValue, apStringList, size);
+    char aValue[256] = { 0 }; // Fixed: Init to 0
+    STD_STRCPY(aValue, pEntry->aArgs[*argNum].argName);
+    int result = jonesConfig_GetStringListIndex(aValue, apStringList, size);
+
     ++*argNum;
     return result;
 }
 
-int J3DAPI jonesConfig_GetValueIndex(char* pValue, const char** apStringList, int size)
+int J3DAPI jonesConfig_GetStringListIndex(char* pValue, const char** aStringList, size_t size)
 {
-    char* pVal; // ebp
-    const char* pStr; // eax
-    const char* pStr_1; // esi
-    int entryNum; // [esp+10h] [ebp-4h]
-
-    entryNum = 0;
-    if ( size == 223 )                          // if the list is list of keys, TODO: kill this nonsense and make case insensitive comparison
+    if ( size == STD_ARRAYLEN(jonesConfig_aControlKeyStrings) ) // if the list is list of keys, TODO: kill this nonsense and make case insensitive comparison
     {
-        pVal = strupr(pValue);
-    }
-    else
-    {
-        pVal = pValue;
+        stdUtil_ToUpper(pValue);
     }
 
-    if ( size > 0 )
+    for ( size_t index = 0; index < size; index++ )
     {
-        while ( 1 )
+        if ( aStringList[index] )
         {
-            if ( *apStringList )
+            const char* pStr = jonesString_GetString(aStringList[index]);
+            if ( pStr )
             {
-                pStr = jonesString_GetString(*apStringList);
-                pStr_1 = pStr;
-                if ( pStr )
+                if ( strneqi(pValue, pStr, strlen(pStr)) && strlen(pStr) == strlen(pValue) )
                 {
-                    if ( !_strnicmp(pVal, pStr, strlen(pStr)) && strlen(pStr_1) == strlen(pVal) )
-                    {
-                        return entryNum;
-                    }
-                }
-
-                else if ( !_strnicmp(pVal, *apStringList, strlen(pVal)) && strlen(pVal) == strlen(*apStringList) )
-                {
-                    return entryNum;
+                    return index;
                 }
             }
-
-            ++apStringList;
-            if ( ++entryNum >= size )
+            else if ( strneqi(pValue, aStringList[index], strlen(pValue)) && strlen(pValue) == strlen(aStringList[index]) )
             {
-                return -1;
+                return index;
             }
         }
     }
@@ -2300,389 +2451,311 @@ int J3DAPI jonesConfig_GetValueIndex(char* pValue, const char** apStringList, in
     return -1;
 }
 
-int J3DAPI jonesConfig_GetControllerKeySchemeIndex(int* pArgNum, StdConffileEntry* pEntry)
+int J3DAPI jonesConfig_ParseJoystickControlId(size_t* pArgNum, const StdConffileEntry* pEntry)
 {
+    int controlId = -1;
 
-    const char* pStrButton; // eax
-    int* argNum; // ebx
-    char* pBtnNumStr; // eax
-    StdConffileArg* v5; // edx
-    signed int v6; // ebx
-    char* v7; // eax
-    const char* String; // eax
-    const char* v9; // eax
-    const char* v10; // eax
-    const char* v11; // eax
-    int v12; // eax
-    const char* v13; // eax
-    const char* v14; // eax
-    const char* v15; // eax
-    const char* v16; // eax
-    const char* v17; // eax
-    const char* v18; // eax
-    int result; // eax
-    int ctrlBtnNum; // [esp+10h] [ebp-D04h]
-    char v21[256]; // [esp+14h] [ebp-D00h] BYREF
-    char Dest[512]; // [esp+114h] [ebp-C00h] BYREF
-    char v23[512]; // [esp+314h] [ebp-A00h] BYREF
-    char v24[512]; // [esp+514h] [ebp-800h] BYREF
-    char v25[512]; // [esp+714h] [ebp-600h] BYREF
-    char v26[512]; // [esp+914h] [ebp-400h] BYREF
-    char v27[512]; // [esp+B14h] [ebp-200h] BYREF
-
-    // First check if key name is 'BUTTON x' where x is it's number. and set the button number
-    ctrlBtnNum = -1;
-    pStrButton = jonesString_GetString("JONES_STR_CAPS_BUTTON");
-    if ( pStrButton )
+    const char* pButtonFormat = jonesString_GetString("JONES_STR_CAPS_BUTTON");// "BUTTON"
+    if ( pButtonFormat )
     {
-        argNum = pArgNum;
-        if ( !_strnicmp(pEntry->aArgs[*pArgNum].argName, pStrButton, strlen(pStrButton)) )
+        size_t formatLen = strlen(pButtonFormat);
+        if ( strneqi(pEntry->aArgs[*pArgNum].argName, pButtonFormat, formatLen) )
         {
-            pBtnNumStr = strpbrk(pEntry->aArgs[*pArgNum].argName, "0123456789");
-            if ( pBtnNumStr )
+            char* pArg2 = strpbrk(pEntry->aArgs[*pArgNum].argName, "0123456789");
+            if ( pArg2 )
             {
-                ctrlBtnNum = atoi(pBtnNumStr) + 255;
+                int btnNum = atoi(pArg2) - 1;
+                controlId = STDCONTROL_JOYSTICK_GETBUTTON(0, btnNum);
             }
         }
     }
-    else
+
+    if ( controlId == -1 )
     {
-        argNum = pArgNum;
-    }
 
-    if ( ctrlBtnNum == -1 )
-    {
-        memset(Dest, 0, 0x100u);
-        memset(v21, 0, sizeof(v21));
-        v5 = &pEntry->aArgs[*argNum];
-        strcpy(v21, v5->argName);
-        v6 = strcspn(v5->argName, "0123456789");
-        v21[v6] = 0;
-        if ( v6 > 0 )
+        char aArgText[256] = { 0 };
+        STD_STRCPY(aArgText, pEntry->aArgs[*pArgNum].argName);
+
+        size_t btnNum = strcspn(aArgText, "0123456789");
+        aArgText[btnNum] = '\0';
+
+        if ( btnNum > 0 )
         {
-            v6 = atoi(&pEntry->aArgs[*pArgNum].argName[v6]) - 1;
+            btnNum = atoi(&pEntry->aArgs[*pArgNum].argName[btnNum]) - 1;
         }
 
-        v7 = strchr(pEntry->aArgs[*pArgNum].argName, ' ');
-        if ( v7 )
+        char aHatFormat[256] = { 0 };
+        char* pArg2 = strchr(pEntry->aArgs[*pArgNum].argName, ' ');
+        if ( pArg2 )
         {
-            sprintf(Dest, "%s%%i %s", v21, v7 + 1);
+            STD_FORMAT(aHatFormat, "%s%%i %s", aArgText, pArg2 + 1);
         }
 
-        String = jonesString_GetString("JONES_STR_HATUP");
-        if ( String )
+        char aForward[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_HATUP");// "HAT%i UP"
+        if ( pButtonFormat )
         {
-            strcpy(v23, String);
-        }
-        else
-        {
-            memset(v23, 0, sizeof(v23));
+            STD_STRCPY(aForward, pButtonFormat);
         }
 
-        v9 = jonesString_GetString("JONES_STR_HATDOWN");
-        if ( v9 )
+        char aBackward[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_HATDOWN");// "HAT%i DOWN"
+        if ( pButtonFormat )
         {
-            strcpy(v26, v9);
-        }
-        else
-        {
-            memset(v26, 0, sizeof(v26));
+            STD_STRCPY(aBackward, pButtonFormat);
         }
 
-        v10 = jonesString_GetString("JONES_STR_HATLEFT");
-        if ( v10 )
+        char aLeft[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_HATLEFT");// "HAT%i LEFT"
+        if ( pButtonFormat )
         {
-            strcpy(v24, v10);
-        }
-        else
-        {
-            memset(v24, 0, sizeof(v24));
+            STD_STRCPY(aLeft, pButtonFormat);
         }
 
-        v11 = jonesString_GetString("JONES_STR_HATRIGHT");
-        if ( v11 )
+        char aRight[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_HATRIGHT");// "HAT%i RIGHT"
+        if ( pButtonFormat )
         {
-            strcpy(v25, v11);
-        }
-        else
-        {
-            memset(v25, 0, sizeof(v25));
+            STD_STRCPY(aRight, pButtonFormat);
         }
 
-        if ( !v23[0] || !v26[0] || !v24[0] || !v25[0] || !strlen(Dest) )
+        if ( aForward[0] && aBackward[0] && aLeft[0] && aRight[0] && strlen(aHatFormat) )
         {
-            goto LABEL_37;
-        }
-
-        if ( !_strnicmp(Dest, v23, strlen(v23)) )
-        {
-            v12 = 4 * v6 + 289;
-        }
-
-        else if ( !_strnicmp(Dest, v26, strlen(v26)) )
-        {
-            v12 = 4 * v6 + 291;
-        }
-
-        else if ( !_strnicmp(Dest, v24, strlen(v24)) )
-        {
-            v12 = 4 * v6 + 288;
-        }
-        else
-        {
-            if ( _strnicmp(Dest, v25, strlen(v25)) )
+            size_t formatLen = strlen(aForward);
+            if ( strneqi(aHatFormat, aForward, formatLen) )
             {
-            LABEL_37:
-                argNum = pArgNum;
-                goto LABEL_38;
-            }
-
-            v12 = 4 * v6 + 290;
-        }
-
-        ctrlBtnNum = v12;
-        goto LABEL_37;
-    }
-
-LABEL_38:
-    if ( ctrlBtnNum == -1 )
-    {
-        v13 = jonesString_GetString("JONES_STR_JOYTWISTL");
-        if ( v13 )
-        {
-            strcpy(Dest, v13);
-        }
-        else
-        {
-            memset(Dest, 0, sizeof(Dest));
-        }
-
-        v14 = jonesString_GetString("JONES_STR_JOYTWISTR");
-        if ( v14 )
-        {
-            strcpy(v27, v14);
-        }
-        else
-        {
-            memset(v27, 0, sizeof(v27));
-        }
-
-        memset(v21, 0, sizeof(v21));
-        sprintf(v21, "%s", pEntry->aArgs[*argNum].argName);
-        if ( !_strnicmp(v21, Dest, strlen(Dest)) )
-        {
-            ctrlBtnNum = 32772;
-        }
-
-        else if ( !_strnicmp(v21, v27, strlen(v27)) )
-        {
-            ctrlBtnNum = 0x8005;
-        }
-
-        if ( ctrlBtnNum == -1 )
-        {
-            v15 = jonesString_GetString("JONES_STR_JOYUP");
-            if ( v15 )
-            {
-                strcpy(v23, v15);
+                controlId = STDCONTROL_JOYSTICK_GETPOVUP(0, btnNum);
             }
             else
             {
-                memset(v23, 0, sizeof(v23));
-            }
-
-            v16 = jonesString_GetString("JONES_STR_JOYDOWN");
-            if ( v16 )
-            {
-                strcpy(v26, v16);
-            }
-            else
-            {
-                memset(v26, 0, sizeof(v26));
-            }
-
-            v17 = jonesString_GetString("JONES_STR_JOYLEFT");
-            if ( v17 )
-            {
-                strcpy(v24, v17);
-            }
-            else
-            {
-                memset(v24, 0, sizeof(v24));
-            }
-
-            v18 = jonesString_GetString("JONES_STR_JOYRIGHT");
-            if ( v18 )
-            {
-                strcpy(v25, v18);
-            }
-            else
-            {
-                memset(v25, 0, sizeof(v25));
-            }
-
-            if ( !_strnicmp(pEntry->aArgs[*argNum].argName, v23, strlen(v23)) )
-            {
-                ctrlBtnNum = 0x8000;
-            }
-
-            else if ( !_strnicmp(pEntry->aArgs[*argNum].argName, v26, strlen(v26)) )
-            {
-                ctrlBtnNum = 0x8002;
-            }
-
-            else if ( !_strnicmp(pEntry->aArgs[*argNum].argName, v24, strlen(v24)) )
-            {
-                ctrlBtnNum = 0x8003;
-            }
-
-            else if ( !_strnicmp(pEntry->aArgs[*argNum].argName, v25, strlen(v25)) )
-            {
-                ctrlBtnNum = 0x8001;
+                formatLen = strlen(aBackward);
+                if ( strneqi(aHatFormat, aBackward, formatLen) )
+                {
+                    controlId = STDCONTROL_JOYSTICK_GETPOVDOWN(0, btnNum);
+                }
+                else
+                {
+                    formatLen = strlen(aLeft);
+                    if ( strneqi(aHatFormat, aLeft, formatLen) )
+                    {
+                        controlId = STDCONTROL_JOYSTICK_GETPOVLEFT(0, btnNum);
+                    }
+                    else
+                    {
+                        formatLen = strlen(aRight);
+                        if ( strneqi(aHatFormat, aRight, formatLen) )
+                        {
+                            controlId = STDCONTROL_JOYSTICK_GETPOVRIGHT(0, btnNum);
+                        }
+                    }
+                }
             }
         }
     }
 
-    result = ctrlBtnNum;
-    if ( ctrlBtnNum > -1 )
+    if ( controlId == -1 )
     {
-        ++*argNum;
+        char aTwistList[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_JOYTWISTL");// "TWISTL"
+        if ( pButtonFormat )
+        {
+            STD_STRCPY(aTwistList, pButtonFormat);
+        }
+
+        char aTwistRight[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_JOYTWISTR");// "TWISTR"
+        if ( pButtonFormat )
+        {
+            STD_STRCPY(aTwistRight, pButtonFormat);
+        }
+
+        char aArgText[256] = { 0 };
+        STD_FORMAT(aArgText, "%s", pEntry->aArgs[*pArgNum].argName);
+
+        size_t formatLen = strlen(aTwistList);
+        if ( strneqi(aArgText, aTwistList, formatLen) )
+        {
+            controlId = JONESCONFIG_JOYAXISKID_TWISTL;
+        }
+        else
+        {
+            formatLen = strlen(aTwistRight);
+            if ( strneqi(aArgText, aTwistRight, formatLen) )
+            {
+                controlId = JONESCONFIG_JOYAXISKID_TWISTR;
+            }
+        }
     }
 
-    return result;
+    if ( controlId == -1 )
+    {
+        char aForward[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_JOYUP");// "FORWARD"
+        if ( pButtonFormat )
+        {
+            STD_STRCPY(aForward, pButtonFormat);
+        }
 
+        char aBackward[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_JOYDOWN");// "BACKWARD"
+        if ( pButtonFormat )
+        {
+            STD_STRCPY(aBackward, pButtonFormat);
+        }
+
+        char aLeft[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_JOYLEFT");// "LEFT"
+        if ( pButtonFormat )
+        {
+            STD_STRCPY(aLeft, pButtonFormat);
+        }
+
+        char aRight[512] = { 0 };
+        pButtonFormat = jonesString_GetString("JONES_STR_JOYRIGHT");// "RIGHT"
+        if ( pButtonFormat )
+        {
+            STD_STRCPY(aRight, pButtonFormat);
+        }
+
+        size_t formatLen = strlen(aForward);
+        if ( strneqi(pEntry->aArgs[*pArgNum].argName, aForward, formatLen) )
+        {
+            controlId = JONESCONFIG_JOYAXISKID_UP;
+        }
+        else
+        {
+            formatLen = strlen(aBackward);
+            if ( strneqi(pEntry->aArgs[*pArgNum].argName, aBackward, formatLen) )
+            {
+                controlId = JONESCONFIG_JOYAXISKID_DOWN;
+            }
+            else
+            {
+                formatLen = strlen(aLeft);
+                if ( strneqi(pEntry->aArgs[*pArgNum].argName, aLeft, formatLen) )
+                {
+                    controlId = JONESCONFIG_JOYAXISKID_LEFT;
+                }
+                else
+                {
+                    formatLen = strlen(aRight);
+                    if ( strneqi(pEntry->aArgs[*pArgNum].argName, aRight, formatLen) )
+                    {
+                        controlId = JONESCONFIG_JOYAXISKID_RIGHT;
+                    }
+                }
+            }
+        }
+    }
+
+    if ( controlId > -1 )
+    {
+        ++*pArgNum;
+    }
+
+    return controlId;
 }
 
-int J3DAPI jonesConfig_SetDefaultControlScheme(JonesControlsScheme* pScheme, int num)
+int J3DAPI jonesConfig_SetDefaultControlScheme(JonesControlsScheme* pScheme, size_t num)
 {
-    const char* pName; // eax
-    int v3; // edx
-    int (*aActions)[9]; // ecx
-    int* v5; // eax
-    int i; // esi
-    unsigned int v7; // eax
-    int v8; // edi
-    int v9; // eax
-
-    pName = jonesString_GetString(jonesConfig_aDfltKeySetNames[num]);
-    if ( !pName )
+    const char* pDefaultKeySetName = jonesString_GetString(jonesConfig_aDfltKeySetNames[num]);
+    if ( !pDefaultKeySetName )
     {
         return 0;
     }
 
-    strcpy(pScheme->aName, pName);
+    STD_STRCPY(pScheme->aName, pDefaultKeySetName);
 
-    v3 = 0;
-    aActions = pScheme->aActions;
-    do
+    for ( size_t i = 0; i < JONESCONTROL_ACTION_NUMACTIONS; ++i )
     {
-        (*aActions)[0] = 0;
-        v5 = jonesConfig_aDfltKeySets[num];
-        for ( i = 1; i <= v5[v3]; v5 = jonesConfig_aDfltKeySets[num] )
+        size_t* pAction = pScheme->aActions[i];
+        *pAction = 0;
+
+        for ( size_t j = 1; j <= jonesConfig_aDfltKeySets[num][i].numBinds; ++j )
         {
-            v7 = *(DWORD*)(v5[v3 + 1] + 4 * i - 4);
-            (*aActions)[i] = v7;
-            if ( (v7 < 256 || v7 > 639) && (v7 < 32768 || v7 > 32775) )
+            pAction[j] = jonesConfig_aDfltKeySets[num][i].aBindings[j - 1];
+            if ( (pAction[j] < STDCONTROL_MAX_KEYBOARD_BUTTONS || pAction[j] > STDCONTROL_JOYSTICK_LASTPOVCID)
+                && (pAction[j] < JONESCONFIG_JOYAXISKID_UP || pAction[j] > JONESCONFIG_JOYAXISKID_GROUND) )
             {
-                v8 = ((unsigned __int8)(*aActions)[0] + 1) | (((*aActions)[0] & 0xFF00) + 256);
-                v9 = (*aActions)[0] & 0xFF0000;
+                // keyboard
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS_KEYBOARD(pScheme->aActions[i], +1);
             }
             else
             {
-                v8 = (((*aActions)[0] & 0xFF0000) + 0x10000) | (*aActions)[0] & 0xFF00;
-                v9 = (unsigned __int8)(*aActions)[0] + 1;
+                // joystick controller
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS_CONTROLLER(pScheme->aActions[i], +1);
             }
-
-            ++i;
-            (*aActions)[0] = v9 | v8;
         }
-
-        v3 += 2;
-        ++aActions;
-    } while ( v3 < 74 );
+    }
 
     return 1;
 }
 
 void J3DAPI jonesConfig_BindControls(JonesControlsScheme* pConfig)
 {
-    SithControlFunction i; // esi
-    SithControlFunction functionId; // esi
-    int v3; // ebx
-    int v4; // edx
-    unsigned int controlId; // eax
-    int v6; // edi
-    char* v7; // ebp
-    unsigned int* v8; // ebx
-    int v9; // ecx
-    int v10; // edi
-    char* v11; // ebx
-    unsigned int* v12; // ebp
-    int j; // [esp+10h] [ebp-14h]
-    int bJoystickControl; // [esp+14h] [ebp-10h]
-    int v15; // [esp+18h] [ebp-Ch]
-    int* v16; // [esp+1Ch] [ebp-8h]
-    int v17; // [esp+1Ch] [ebp-8h]
-    int bMouseControl; // [esp+20h] [ebp-4h]
+    JonesControlActions actionId;
 
-    bMouseControl = wuRegistry_GetIntEx("Mouse Control", 0);
-    bJoystickControl = wuRegistry_GetIntEx("Joystick Control", 0);
+    int bMouse    = wuRegistry_GetIntEx("Mouse Control", 0);
+    int bJoystick = wuRegistry_GetIntEx("Joystick Control", 0);
+
     if ( pConfig )
     {
-        JonesMain_BindToggleMenuControlKeys(&pConfig->aActions[29][1], (unsigned __int8)pConfig->aActions[29][0]);// pConfig->aActions[29][0] & 0xFF
-        JonesHud_BindActivateControlKeys(&pConfig->aActions[11][1], (unsigned __int8)pConfig->aActions[11][0]);// pConfig->aActions[11][0] & 0xFF
+        // Bind toggle menu keys
+        JonesMain_BindToggleMenuControlKeys(&pConfig->aActions[JONESCONTROL_ACTION_INTERFACE][1],
+            JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[JONESCONTROL_ACTION_INTERFACE])
+        );
 
-        for ( i = SITHCONTROL_WSELECT0; i <= SITHCONTROL_WSELECT16; ++i )
+        // Bind toggle menu keys
+        JonesHud_BindActivateControlKeys(&pConfig->aActions[JONESCONTROL_ACTION_ACTIVATE][1],
+            JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[JONESCONTROL_ACTION_ACTIVATE])
+        );
+
+        for ( SithControlFunction fctnID = SITHCONTROL_WSELECT0; fctnID <= SITHCONTROL_WSELECT16; ++fctnID )
         {
-            sithControl_UnbindFunction(i);
+            sithControl_UnbindFunction(fctnID);
         }
 
-        for ( j = 0; j < 37; ++j )
+        for ( actionId = JONESCONTROL_ACTION_WALKFORWARD; actionId < JONESCONTROL_ACTION_NUMACTIONS; ++actionId )
         {
-            functionId = -1;
-            if ( j == 11 || j == 2 || j == 3 )
+            SithControlFunction functionId = -1;
+
+            if ( actionId == JONESCONTROL_ACTION_ACTIVATE || actionId == JONESCONTROL_ACTION_TURNLEFT || actionId == JONESCONTROL_ACTION_TURNRIGHT )
             {
-                v9 = 1;
-                v17 = 1;
-                if ( j <= 3 )
+                size_t curBindNum = 1;
+                size_t numActionBinds = 3;
+                if ( actionId <= JONESCONTROL_ACTION_TURNRIGHT )
                 {
-                    v15 = 2;
-                }
-                else
-                {
-                    v15 = 3;
+                    numActionBinds = 2;
                 }
 
-                do
+                while ( curBindNum <= numActionBinds )
                 {
-                    if ( j == 2 )
+                    if ( actionId == JONESCONTROL_ACTION_TURNLEFT )
                     {
-                        if ( v9 == 1 )
+                        if ( curBindNum == 1 )
                         {
                             functionId = SITHCONTROL_LEFT;
                         }
-
-                        else if ( v9 == 2 )
+                        else if ( curBindNum == 2 )
                         {
                             functionId = SITHCONTROL_TURNLEFT;
                         }
                     }
-
-                    else if ( j == 3 )
+                    else if ( actionId == JONESCONTROL_ACTION_TURNRIGHT )
                     {
-                        if ( v9 == 1 )
+                        if ( curBindNum == 1 )
                         {
                             functionId = SITHCONTROL_RIGHT;
                         }
 
-                        else if ( v9 == 2 )
+                        else if ( curBindNum == 2 )
                         {
                             functionId = SITHCONTROL_TURNRIGHT;
                         }
                     }
                     else
                     {
-                        switch ( v9 )
+                        switch ( curBindNum )
                         {
                             case 1:
                                 functionId = SITHCONTROL_ACT2;
@@ -2701,90 +2774,197 @@ void J3DAPI jonesConfig_BindControls(JonesControlsScheme* pConfig)
                     if ( functionId != -1 )
                     {
                         sithControl_UnbindFunction(functionId);
-                        v10 = 1;
-                        v11 = (char*)pConfig + 36 * j;
-                        if ( (unsigned __int8)*((DWORD*)v11 + 1) )
+
+                        // TODO: This must be a bug checking i is LT or EQ, most likely should be LT
+                        for ( size_t i = 1; i <= JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[actionId]); ++i )
                         {
-                            v12 = (unsigned int*)(v11 + 8);
-                            do
+                            if ( pConfig->aActions[actionId][i] >= STDCONTROL_JOYSTICK_FIRSTKID && pConfig->aActions[actionId][i] <= STDCONTROL_JOYSTICK_LASTPOVCID
+                                || pConfig->aActions[actionId][i] >= STDCONTROL_JOYSTICK_FIRSTKID )
                             {
-                                if ( *v12 < 256 )// keyboard
+                                // We have joystick key bind
+                                if ( bJoystick )
                                 {
-                                    sithControl_BindControl(functionId, *v12, (SithControlBindFlag)0);
+                                    jonesConfig_BindJoystickControl(functionId, pConfig->aActions[actionId][i]);
                                 }
-
-                                else if ( bJoystickControl )
-                                {
-                                    jonesConfig_BindJoystickControl(functionId, *v12);
-                                }
-
-                                ++v10;
-                                ++v12;
-                            } while ( v10 <= (unsigned __int8)*((DWORD*)v11 + 1) );
+                            }
+                            else
+                            {
+                                // keyboard key bind
+                                sithControl_BindControl(functionId, pConfig->aActions[actionId][i], (SithControlBindFlag)0);
+                            }
                         }
                     }
 
-                    v9 = ++v17;
-                } while ( v17 <= v15 );
+                    ++curBindNum;
+                }
             }
 
-            else if ( j < 16 || j == 28 || j == 29 )
+            else if ( actionId >= JONESCONTROL_ACTION_FISTS && actionId != JONESCONTROL_ACTION_MAP && actionId != JONESCONTROL_ACTION_INTERFACE )
             {
-                switch ( j )
+                if ( JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[actionId]) ) // TODO: this is kinda useless
                 {
-                    case 0:
+                    // TODO: This must be a bug checking i is LT or EQ, most likely should be LT
+                    for ( size_t i = 1; i <= JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[actionId]); ++i )
+                    {
+                        switch ( actionId )
+                        {
+                            case JONESCONTROL_ACTION_FISTS:
+                                functionId = SITHCONTROL_WSELECT0;
+                                break;
+
+                            case JONESCONTROL_ACTION_WHIP:
+                                functionId = SITHCONTROL_WSELECT1;
+                                break;
+
+                            case JONESCONTROL_ACTION_MAUSER:
+                                functionId = SITHCONTROL_WSELECT4;
+                                break;
+
+                            case JONESCONTROL_ACTION_PPSH41:
+                                functionId = SITHCONTROL_WSELECT7;
+                                break;
+
+                            case JONESCONTROL_ACTION_PISTOL:
+                                functionId = SITHCONTROL_WSELECT2;
+                                break;
+
+                            case JONESCONTROL_ACTION_SIMONOV:
+                                functionId = SITHCONTROL_WSELECT5;
+                                break;
+
+                            case JONESCONTROL_ACTION_TOKEREV:
+                                functionId = SITHCONTROL_WSELECT3;
+                                break;
+
+                            case JONESCONTROL_ACTION_TOZ34:
+                                functionId = SITHCONTROL_WSELECT8;
+                                break;
+
+                            case JONESCONTROL_ACTION_BAZOOKA:
+                                functionId = SITHCONTROL_WSELECT9;
+                                break;
+
+                            case JONESCONTROL_ACTION_MACHETE:
+                                functionId = SITHCONTROL_WSELECT6;
+                                break;
+
+                            case JONESCONTROL_ACTION_SATCHEL:
+                                functionId = SITHCONTROL_WSELECT11;
+                                break;
+
+                            case JONESCONTROL_ACTION_GRENADE:
+                                functionId = SITHCONTROL_WSELECT10;
+                                break;
+
+                            case JONESCONTROL_ACTION_HEALTH:
+                                functionId = SITHCONTROL_HEALTH;
+                                break;
+
+                            case JONESCONTROL_ACTION_IMP1:
+                                functionId = SITHCONTROL_WSELECT12;
+                                break;
+
+                            case JONESCONTROL_ACTION_IMP2:
+                                functionId = SITHCONTROL_WSELECT13;
+                                break;
+
+                            case JONESCONTROL_ACTION_IMP3:
+                                functionId = SITHCONTROL_WSELECT14;
+                                break;
+
+                            case JONESCONTROL_ACTION_IMP4:
+                                functionId = SITHCONTROL_WSELECT15;
+                                break;
+
+                            case JONESCONTROL_ACTION_IMP5:
+                                functionId = SITHCONTROL_WSELECT16;
+                                break;
+
+                            case JONESCONTROL_ACTION_CHALK:
+                                functionId = SITHCONTROL_CHALK;
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        if ( functionId != -1 )
+                        {
+                            if ( pConfig->aActions[actionId][i] >= STDCONTROL_JOYSTICK_FIRSTKID && pConfig->aActions[actionId][i] <= STDCONTROL_JOYSTICK_LASTPOVCID
+                                || pConfig->aActions[actionId][i] >= STDCONTROL_JOYSTICK_FIRSTKID )
+                            {
+                                // We have joystick key bind
+                                if ( bJoystick )
+                                {
+                                    jonesConfig_BindJoystickControl(functionId, pConfig->aActions[actionId][i]);
+                                }
+                            }
+                            else
+                            {
+                                // We have keyboard key bind
+                                sithControl_BindControl(functionId, pConfig->aActions[actionId][i], (SithControlBindFlag)0);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                switch ( actionId )
+                {
+                    case JONESCONTROL_ACTION_WALKFORWARD:
                         functionId = SITHCONTROL_FORWARD;
                         break;
 
-                    case 1:
+                    case JONESCONTROL_ACTION_WALKBACK:
                         functionId = SITHCONTROL_BACK;
                         break;
 
-                    case 4:
+                    case JONESCONTROL_ACTION_STEPLEFT:
                         functionId = SITHCONTROL_STPLEFT;
                         break;
 
-                    case 5:
+                    case JONESCONTROL_ACTION_STEPRIGHT:
                         functionId = SITHCONTROL_STPRIGHT;
                         break;
 
-                    case 6:
+                    case JONESCONTROL_ACTION_CRAWL:
                         functionId = SITHCONTROL_CRAWLTOGGLE;
                         break;
 
-                    case 7:
+                    case JONESCONTROL_ACTION_RUN:
                         functionId = SITHCONTROL_ACT1;
                         break;
 
-                    case 8:
+                    case JONESCONTROL_ACTION_ROLL:
                         functionId = SITHCONTROL_ACT3;
                         break;
 
-                    case 9:
+                    case JONESCONTROL_ACTION_JUMP:
                         functionId = SITHCONTROL_JUMP;
                         break;
 
-                    case 10:
+                    case JONESCONTROL_ACTION_LOOK:
                         functionId = SITHCONTROL_LOOK;
                         break;
 
-                    case 12:
+                    case JONESCONTROL_ACTION_TOGGLEWEAPON:
                         functionId = SITHCONTROL_WEAPONTOGGLE;
                         break;
 
-                    case 13:
+                    case JONESCONTROL_ACTION_PREVWEAPON:
                         functionId = SITHCONTROL_PREVWEAPON;
                         break;
 
-                    case 14:
+                    case JONESCONTROL_ACTION_NEXTWEAPON:
                         functionId = SITHCONTROL_NEXTWEAPON;
                         break;
 
-                    case 15:
+                    case JONESCONTROL_ACTION_TOGGLELIGHT:
                         functionId = SITHCONTROL_LIGHTERTOGGLE;
                         break;
 
-                    case 28:
+                    case JONESCONTROL_ACTION_MAP:
                         functionId = SITHCONTROL_MAP;
                         break;
 
@@ -2800,5381 +2980,109 @@ void J3DAPI jonesConfig_BindControls(JonesControlsScheme* pConfig)
                         sithControl_UnbindFunction(SITHCONTROL_RUNFWD);
                     }
 
-                    v6 = 1;
-                    v7 = (char*)pConfig + 36 * j;
-                    if ( (unsigned __int8)*((DWORD*)v7 + 1) )
+                    // TODO: This must be a bug checking i is LT or EQ, most likely should be LT
+                    for ( size_t i = 1; i <= JONESCONTROL_ACTION_GETNUMBINDS(pConfig->aActions[actionId]); ++i )
                     {
-                        v8 = (unsigned int*)(v7 + 8);
-                        do
+                        if ( pConfig->aActions[actionId][i] >= STDCONTROL_JOYSTICK_FIRSTKID && pConfig->aActions[actionId][i] <= STDCONTROL_JOYSTICK_LASTPOVCID
+                            || pConfig->aActions[actionId][i] >= STDCONTROL_JOYSTICK_FIRSTKID )
                         {
-                            if ( *v8 < 256 )    // keyboard
+                            if ( bJoystick )
                             {
-                                sithControl_BindControl(functionId, *v8, (SithControlBindFlag)0);
+                                jonesConfig_BindJoystickControl(functionId, pConfig->aActions[actionId][i]);
                             }
-
-                            else if ( bJoystickControl )
-                            {
-                                jonesConfig_BindJoystickControl(functionId, *v8);
-                            }
-
-                            ++v6;
-                            ++v8;
-                        } while ( v6 <= (unsigned __int8)*((DWORD*)v7 + 1) );
-                    }
-                }
-            }
-            else
-            {
-                v16 = pConfig->aActions[j];
-                if ( (unsigned __int8)*v16 )
-                {
-                    v3 = 1;
-                    if ( (unsigned __int8)*v16 )
-                    {
-                        do
+                        }
+                        else
                         {
-                            switch ( j )
-                            {
-                                case 16:
-                                    functionId = SITHCONTROL_WSELECT0;
-                                    break;
-
-                                case 17:
-                                    functionId = SITHCONTROL_WSELECT1;
-                                    break;
-
-                                case 18:
-                                    functionId = SITHCONTROL_WSELECT4;
-                                    break;
-
-                                case 19:
-                                    functionId = SITHCONTROL_WSELECT7;
-                                    break;
-
-                                case 20:
-                                    functionId = SITHCONTROL_WSELECT2;
-                                    break;
-
-                                case 21:
-                                    functionId = SITHCONTROL_WSELECT5;
-                                    break;
-
-                                case 22:
-                                    functionId = SITHCONTROL_WSELECT3;
-                                    break;
-
-                                case 23:
-                                    functionId = SITHCONTROL_WSELECT8;
-                                    break;
-
-                                case 24:
-                                    functionId = SITHCONTROL_WSELECT9;
-                                    break;
-
-                                case 25:
-                                    functionId = SITHCONTROL_WSELECT6;
-                                    break;
-
-                                case 26:
-                                    functionId = SITHCONTROL_WSELECT11;
-                                    break;
-
-                                case 27:
-                                    functionId = SITHCONTROL_WSELECT10;
-                                    break;
-
-                                case 30:
-                                    functionId = SITHCONTROL_HEALTH;
-                                    break;
-
-                                case 31:
-                                    functionId = SITHCONTROL_WSELECT12;
-                                    break;
-
-                                case 32:
-                                    functionId = SITHCONTROL_WSELECT13;
-                                    break;
-
-                                case 33:
-                                    functionId = SITHCONTROL_WSELECT14;
-                                    break;
-
-                                case 34:
-                                    functionId = SITHCONTROL_WSELECT15;
-                                    break;
-
-                                case 35:
-                                    functionId = SITHCONTROL_WSELECT16;
-                                    break;
-
-                                case 36:
-                                    functionId = SITHCONTROL_CHALK;
-                                    break;
-
-                                default:
-                                    break;
-                            }
-
-                            if ( functionId != -1 )
-                            {
-                                v4 = v3 + 8 * j;
-                                controlId = pConfig->aActions[0][v4 + j];
-                                if ( controlId < 256 )// keyboard, up to 256
-                                {
-                                    // controlId is DIK num here
-                                    sithControl_BindControl(functionId, controlId, (SithControlBindFlag)0);
-                                }
-
-                                else if ( bJoystickControl )
-                                {
-                                    jonesConfig_BindJoystickControl(functionId, pConfig->aActions[0][v4 + j]);
-                                }
-                            }
-
-                            ++v3;
-                        } while ( v3 <= (unsigned __int8)*v16 );
+                            sithControl_BindControl(functionId, pConfig->aActions[actionId][i], (SithControlBindFlag)0);
+                        }
                     }
                 }
             }
         }
 
-        jonesConfig_EnableMouseControl(bMouseControl);
-        if ( !bJoystickControl )
+        jonesConfig_EnableMouseControl(bMouse);
+        if ( !bJoystick )
         {
             sithControl_UnbindJoystickAxes();
         }
     }
 }
 
-void J3DAPI jonesConfig_BindJoystickControl(SithControlFunction functionId, int controlId)
+void J3DAPI jonesConfig_BindJoystickControl(SithControlFunction functionId, size_t controlId)
 {
-    int numJoysticks; // ecx
-    int v3; // edi
-    SithControlFunction v4; // esi
-    unsigned int v5; // esi
-    int v6; // edi
-    int v7; // ebp
-    SithControlFunction v8; // ebx
-    int numJoysticks_1; // [esp+10h] [ebp-4h]
+    int axis = -1;
+    int flags = 0; // Fixed: Init to 0
 
-    numJoysticks = stdControl_GetNumJoysticks();
-    numJoysticks_1 = numJoysticks;
     switch ( controlId )
     {
-        case 32768:
-            v3 = 1;
-            v4 = STDCONTROL_AID_NEGATIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_UP:
+            axis  = STDCONTROL_JOYSTICK_AXIS_Y;
+            flags = STDCONTROL_AID_NEGATIVE_AXIS;
             break;
 
-        case 32769:
-            v3 = 0;
-            v4 = STDCONTROL_AID_POSITIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_RIGHT:
+            axis  = STDCONTROL_JOYSTICK_AXIS_X;
+            flags = STDCONTROL_AID_POSITIVE_AXIS;
             break;
 
-        case 32770:
-            v3 = 1;
-            v4 = STDCONTROL_AID_POSITIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_DOWN:
+            axis  = STDCONTROL_JOYSTICK_AXIS_Y;
+            flags = STDCONTROL_AID_POSITIVE_AXIS;
             break;
 
-        case 32771:
-            v3 = 0;
-            v4 = STDCONTROL_AID_NEGATIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_LEFT:
+            axis  = STDCONTROL_JOYSTICK_AXIS_X;
+            flags = STDCONTROL_AID_NEGATIVE_AXIS;
             break;
 
-        case 32772:
-            v3 = 5;
-            v4 = STDCONTROL_AID_NEGATIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_TWISTL:
+            axis  = STDCONTROL_JOYSTICK_AXIS_RZ;
+            flags = STDCONTROL_AID_NEGATIVE_AXIS;
             break;
 
-        case 32773:
-            v3 = 5;
-            v4 = STDCONTROL_AID_POSITIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_TWISTR:
+            axis  = STDCONTROL_JOYSTICK_AXIS_RZ;
+            flags = STDCONTROL_AID_POSITIVE_AXIS;
             break;
 
-        case 32774:
-            v3 = 2;
-            v4 = STDCONTROL_AID_NEGATIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_AIR:
+            axis  = STDCONTROL_JOYSTICK_AXIS_Z;
+            flags = STDCONTROL_AID_NEGATIVE_AXIS;
             break;
 
-        case 32775:
-            v3 = 2;
-            v4 = STDCONTROL_AID_POSITIVE_AXIS;
+        case JONESCONFIG_JOYAXISKID_GROUND:
+            axis  = STDCONTROL_JOYSTICK_AXIS_Z;
+            flags = STDCONTROL_AID_POSITIVE_AXIS;
             break;
-
         default:
-            v4 = functionId;
-            v3 = -1;
+            axis = -1;
             break;
     }
 
-    if ( v3 == -1 )
+    const size_t numJoysticks = stdControl_GetNumJoysticks();
+    if ( axis == -1 )
     {
-        if ( numJoysticks > 0 )
+        // Bind joystick button
+        for ( size_t joyNum = 0; joyNum < numJoysticks; ++joyNum )
         {
-            v5 = (controlId - 256) % 0x30u + 256;
-            v6 = numJoysticks;
-            do
-            {
-                sithControl_BindControl(functionId, v5, (SithControlBindFlag)0);
-                v5 += 48;
-                --v6;
-            } while ( v6 );
+            // Note, controlID has to be unpacked to button number due to binding cid to specific joystick
+            sithControl_BindControl(functionId, STDCONTROL_JOYSTICK_GETBUTTON(joyNum, STDCONTROL_JOYSTICK_GETBUTTONINDEX(controlId)), (SithControlBindFlag)0);
         }
     }
     else
     {
-        v7 = 0;
-        if ( numJoysticks > 0 )
+        for ( size_t joyNum = 0; (int)joyNum < numJoysticks; ++joyNum )
         {
-            v8 = functionId;
-            do
+            sithControl_BindAxis(functionId, STDCONTROL_GET_JOYSTICK_AXIS(joyNum, axis) | flags, (SithControlBindFlag)0);
+            if ( functionId == SITHCONTROL_FORWARD && !stdControl_IsGamePad(joyNum) )
             {
-                sithControl_BindAxis(v8, v3 | v4, (SithControlBindFlag)0);
-                if ( v8 == SITHCONTROL_FORWARD && !stdControl_IsGamePad(v7) )
-                {
-                    v4 |= STDCONTROL_AID_LOW_SENSITIVITY;
-                    v8 = SITHCONTROL_RUNFWD;
-                    sithControl_BindAxis(SITHCONTROL_RUNFWD, v3 | v4, (SithControlBindFlag)0);
-                }
-
-                ++v7;
-                v3 += 6;
-            } while ( v7 < numJoysticks_1 );
-        }
-    }
-}
-
-//HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitDialog, hWnd, hFont, dlgID);
-//}
-
-//HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgResNum, float* pFontScale)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_CreateDialogFont, hWnd, bWindowMode, dlgResNum, pFontScale);
-//}
-//
-//void J3DAPI jonesConfig_ResetDialogFont(HWND hWndParent, HFONT hFont)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_ResetDialogFont, hWndParent, hFont);
-//}
-//
-//int __stdcall jonesConfig_SetWindowFontCallback(HWND hWnd, LPARAM lparam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_SetWindowFontCallback, hWnd, lparam);
-//}
-//
-//BOOL __stdcall jonesConfig_SetPositionAndTextCallback(HWND hwnd, JonesDialogFontInfo* lparam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_SetPositionAndTextCallback, hwnd, lparam);
-//}
-//
-//void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hwnd, JonesDialogFontInfo* pFontInfo)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_SetWindowFontAndPosition, hwnd, pFontInfo);
-//}
-//
-//void J3DAPI jonesConfig_GetWindowScreenRect(HWND hWnd, LPRECT lpRect)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_GetWindowScreenRect, hWnd, lpRect);
-//}
-//
-//void J3DAPI jonesConfig_SetDialogTitleAndPosition(HWND hWnd, JonesDialogFontInfo* pDlgFontInfo)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_SetDialogTitleAndPosition, hWnd, pDlgFontInfo);
-//}
-
-//int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_GetSaveGameFilePath, hWnd, pOutFilePath);
-//}
-
-//UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameDialogHookProc, hDlg, msg, wParam, lParam);
-//}
-//
-//int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA lpOfn)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameDialogInit, hDlg, a2, lpOfn);
-//}
-
-//LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_SaveGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
-//}
-
-int J3DAPI jonesConfig_ShowOverwriteSaveGameDlg(HWND hWnd, const char* aFilePath)
-{
-    GameSaveMsgBoxData data; // [esp+0h] [ebp-8h] BYREF
-
-    data.dialogID = 214;
-    data.pNdsFilePath = aFilePath;
-    return JonesDialog_ShowDialog((LPCSTR)214, hWnd, jonesConfig_SaveGameMsgBoxProc, (LPARAM)&data);
-}
-
-//int J3DAPI jonesConfig_ShowExitGameDialog(HWND hWnd, char* pSaveGameFilePath)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowExitGameDialog, hWnd, pSaveGameFilePath);
-//}
-//
-//INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ExitGameDlgProc, hWnd, uMsg, wparam, lparam);
-//}
-
-INT_PTR CALLBACK jonesConfig_SaveGameMsgBoxProc(HWND hWnd, UINT umsg, WPARAM wParam, LPARAM lParam)
-{
-    int bSuccess; // edi
-
-    if ( umsg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontGameSaveMsgBox);
-        return 1;
-    }
-
-    else if ( umsg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontGameSaveMsgBox = jonesConfig_InitDialog(hWnd, 0, *(DWORD*)lParam);// (GameSaveMsgBoxData *)lparam->dialogID
-        bSuccess = jonesConfig_GameSaveSetData(hWnd, wParam, (GameSaveMsgBoxData*)lParam);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return bSuccess;
-    }
-    else
-    {
-        if ( umsg == WM_COMMAND )
-        {
-            jonesConfig_MsgBoxDlg_HandleWM_COMMAND(hWnd, (unsigned __int16)wParam);
-        }
-
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_GameSaveSetData(HWND hDlg, int a2, GameSaveMsgBoxData* pData)
-{
-    const char* pNdsFilePath; // ebx
-    const char* pOverwriteText; // edx
-    const char* pProgressText; // eax MAPDST
-    HWND hMsgTextCntrl; // eax MAPDST
-    char aText[256]; // [esp+4h] [ebp-100h] BYREF
-
-    if ( !pData )
-    {
-        return 0;
-    }
-
-    if ( pData->dialogID == 163 )               // if  load game message box
-    {
-        pProgressText = jonesString_GetString("JONES_STR_PROGRESS1");
-        if ( pProgressText )
-        {
-            hMsgTextCntrl = GetDlgItem(hDlg, 1126);
-            jonesConfig_SetTextControl(hDlg, hMsgTextCntrl, pProgressText);
-        }
-    }
-
-    else if ( pData->dialogID == 214 )          // if save game overwrite message box
-    {
-        pNdsFilePath = pData->pNdsFilePath;
-        pOverwriteText = jonesString_GetString("JONES_STR_OVERWRITE");
-        if ( pOverwriteText )
-        {
-            memset(aText, 0, sizeof(aText));
-            sprintf(aText, pOverwriteText, pNdsFilePath + 4);
-            hMsgTextCntrl = GetDlgItem(hDlg, 1197);
-            jonesConfig_SetTextControl(hDlg, hMsgTextCntrl, aText);
-        }
-    }
-
-    SetWindowLongA(hDlg, DWL_USER, (LONG)pData);
-    return 1;
-}
-
-void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult)
-{
-    GameSaveMsgBoxData* pData; // eax
-
-    pData = (GameSaveMsgBoxData*)GetWindowLongA(hWnd, DWL_USER);
-    if ( nResult > 0 )
-    {
-        if ( nResult <= 2 )
-        {
-            goto LABEL_7;
-        }
-
-        if ( nResult != 1187 )
-        {
-            return;
-        }
-
-        if ( pData->dialogID == 211 && jonesConfig_GetSaveGameFilePath(hWnd, (char*)pData->pNdsFilePath) != 1 )// in exit dialoge save game button was clicked
-        {
-            EndDialog(hWnd, 2);
-        }
-        else
-        {
-        LABEL_7:
-            EndDialog(hWnd, nResult);
-        }
-    }
-}
-
-//int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_GetLoadGameFilePath, hWnd, pDestNdsPath);
-//}
-
-void* J3DAPI jonesConfig_sub_405F60(HWND hWnd)
-{
-    return (void*)GetWindowLongA(hWnd, DWL_USER);
-}
-
-//UINT_PTR __stdcall jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lparam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameDialogHookProc, hDlg, uMsg, wParam, lparam);
-//}
-
-int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd)
-{
-    GameSaveMsgBoxData data; // [esp+0h] [ebp-8h] BYREF
-
-    data.pNdsFilePath = 0;
-    data.dialogID = 163;
-    return JonesDialog_ShowDialog((LPCSTR)163, hWnd, jonesConfig_SaveGameMsgBoxProc, (LPARAM)&data);
-}
-
-//int J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAMEA pofn)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameDialogInit, hDlg, a2, pofn);
-//}
-
-//LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_LoadGameThumbnailPaintProc, hWnd, uMsg, wParam, lParam);
-//}
-
-//int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowGamePlayOptions, hWnd);
-//}
-//
-//INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsProc, hWnd, msg, wparam, lparam);
-//}
-//
-//LRESULT J3DAPI jonesConfig_HandleWM_HSCROLL(HWND hDlg, HWND hWnd, int a3)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_HandleWM_HSCROLL, hDlg, hWnd, a3);
-//}
-//
-//int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptionsInitDlg, hDlg);
-//}
-//
-//int J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, int nResult)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_GamePlayOptions_HandleWM_COMMAND, hDlg, nResult);
-//}
-
-//void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_EnableMouseControl, bEnable);
-//}
-
-void J3DAPI jonesConfig_FreeControlScheme(JonesControlsScheme* pConfig)
-{
-    int v1; // ecx
-    JonesControlAction* pEntry; // eax
-
-    v1 = 37;
-    pEntry = (JonesControlAction*)pConfig->aActions;
-    do
-    {
-        if ( pEntry )
-        {
-            pEntry->unknown0 = 0;
-            pEntry->aUnknown1[0] = 0;
-            pEntry->aUnknown1[1] &= ~0xFF; // Clears the low byte
-        }
-
-        ++pEntry;
-        --v1;
-    } while ( v1 );
-
-    stdMemory_Free(pConfig);
-}
-
-void J3DAPI jonesConfig_FreeControlConfigEntry(JonesControlsConfig* pConfig)
-{
-    int v1; // ebp
-    int v2; // edi
-    JonesControlsScheme* v3; // eax
-    int (*aActions)[9]; // eax
-    int v5; // ecx
-
-    v1 = 0;
-    if ( pConfig->numSchemes > 0 )
-    {
-        v2 = 0;
-        do
-        {
-            v3 = &pConfig->aSchemes[v2];
-            if ( v3 )
-            {
-                aActions = v3->aActions;
-                v5 = 37;
-                do
-                {
-                    if ( aActions )
-                    {
-                        (*aActions)[0] = 0;
-                        (*aActions)[1] = 0;
-                        (*aActions)[2] &= ~0xFF;
-                    }
-
-                    ++aActions;
-                    --v5;
-                } while ( v5 );
-            }
-
-            ++v1;
-            ++v2;
-        } while ( v1 < pConfig->numSchemes );
-    }
-
-    if ( pConfig->unknown2 )
-    {
-        stdMemory_Free((void*)pConfig->unknown2);
-        pConfig->unknown2 = 0;
-    }
-
-    if ( pConfig->aSchemes )
-    {
-        stdMemory_Free(pConfig->aSchemes);
-        pConfig->aSchemes = 0;
-    }
-}
-
-int J3DAPI jonesConfig_ShowControlOptions(HWND hWnd)
-{
-    int v1; // esi
-    int bEnableControl; // eax
-    JonesControlsConfig data; // [esp+8h] [ebp-18h] BYREF
-
-    if ( !jonesConfig_InitControlsConfig() )
-    {
-        return 2;
-    }
-
-    memset(&data, 0, sizeof(data));
-    if ( !jonesConfig_CopyControlConfig(&jonesConfig_curControlConfig, &data) )
-    {
-        return 2;
-    }
-
-    GetWindowLongA(hWnd, GWL_HINSTANCE);        // ???
-    v1 = JonesDialog_ShowDialog((LPCSTR)111, hWnd, jonesConfig_ControlOptionsProc, (LPARAM)&data);
-    if ( v1 == 1 )
-    {
-        wuRegistry_SaveStr("Configuration", data.aSchemes[data.selectedShemeIdx].aName);
-        jonesConfig_BindControls(&data.aSchemes[data.selectedShemeIdx]);
-
-        jonesConfig_FreeControlConfigEntry(&data);
-        jonesConfig_FreeControlConfigEntry(&jonesConfig_curControlConfig);
-        jonesConfig_curControlConfig.numSchemes = 0;
-        bEnableControl = wuRegistry_GetIntEx("Mouse Control", 0);
-        jonesConfig_EnableMouseControl(bEnableControl);
-        return 1;
-    }
-    else
-    {
-        jonesConfig_FreeControlConfigEntry(&data);
-        return v1;
-    }
-}
-
-int J3DAPI jonesConfig_CopyControlConfig(JonesControlsConfig* pSrc, JonesControlsConfig* pDst)
-{
-    int result; // eax
-    JonesControlsConfig* pDst_1; // ebx
-    JonesControlsScheme* aCpySchemes; // edi
-    int v5; // esi
-    JonesControlsScheme* aSchemes; // eax
-
-    if ( !pSrc )
-    {
-        return 0;
-    }
-
-    pDst_1 = pDst;
-    if ( !pDst )
-    {
-        result = (int)STDMALLOC(0x18u);
-        if ( (pDst_1 = (JonesControlsConfig*)result) == 0 )
-        {
-            return result;
-        }
-    }
-
-    pDst_1->numSchemes = pSrc->numSchemes;
-    pDst_1->selectedShemeIdx = pSrc->selectedShemeIdx;
-
-    aCpySchemes = jonesConfig_CopyControlSchemes(pSrc->aSchemes, 0, pSrc->numSchemes);
-    if ( aCpySchemes || !pSrc->aSchemes )
-    {
-        if ( pDst_1->aSchemes )
-        {
-            jonesConfig_FreeControlConfigEntry(pDst_1);
-            pDst_1->aSchemes = 0;
-        }
-
-        pDst_1->aSchemes = aCpySchemes;
-        v5 = 10 - pSrc->numSchemes % 10;
-        if ( v5 <= 0 || v5 >= 10 )
-        {
-            return 1;
-        }
-
-        aSchemes = (JonesControlsScheme*)STDREALLOC(
-            aCpySchemes,
-            sizeof(JonesControlsScheme) * (v5 + pSrc->numSchemes));
-        pDst_1->aSchemes = aSchemes;
-        memset(&aSchemes[pSrc->numSchemes], 0, 4 * ((sizeof(JonesControlsScheme) * v5) >> 2));
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-
-    return result;
-}
-
-JonesControlsScheme* J3DAPI jonesConfig_CopyControlSchemes(JonesControlsScheme* aSchemes, int start, int sizeScheme)
-{
-    JonesControlsScheme* aDstSchemes; // ebp
-    int v4; // ecx
-    int v5; // ebx
-    JonesControlsScheme* pScheme; // edx
-    JonesControlAction* pSrcAction; // eax
-    JonesControlAction* pDstAction; // edi
-    int* p_unknown0; // edx
-    int v10; // esi
-    int* v11; // ecx
-    bool v12; // zf
-    int v14; // [esp+10h] [ebp-8h]
-    JonesControlsScheme* v15; // [esp+14h] [ebp-4h]
-    int aSchemesa; // [esp+1Ch] [ebp+4h]
-    JonesControlsScheme* starta; // [esp+20h] [ebp+8h]
-    int sizeSchemea; // [esp+24h] [ebp+Ch]
-
-    aDstSchemes = (JonesControlsScheme*)STDMALLOC(1464 * sizeScheme);
-    v15 = aDstSchemes;
-    if ( !aDstSchemes || !aSchemes )
-    {
-        return 0;
-    }
-
-    memset(aDstSchemes, 0, 1464 * sizeScheme);
-    v4 = sizeScheme + start;
-    if ( start >= sizeScheme + start )
-    {
-        return aDstSchemes;
-    }
-
-    v5 = 1464 * start;
-    sizeSchemea = 1464 * start;
-    pScheme = (JonesControlsScheme*)aSchemes[start].aActions;// TODO: Fix offsets
-    v14 = v4 - start;
-    starta = pScheme;
-    do
-    {
-        aSchemesa = 37;
-        strcpy(&aDstSchemes->aName[sizeSchemea - v5], CONTAINING_RECORD(pScheme, JonesControlsScheme, aActions)->aName);// TODO: Fix offsets
-        pSrcAction = (JonesControlAction*)pScheme;// TODO: Fix offsets to ->aActions
-        pDstAction = (JonesControlAction*)((char*)aDstSchemes->aActions + sizeSchemea - v5);// TODO: Fix idex
-        do
-        {
-            p_unknown0 = &pDstAction->unknown0;
-            v10 = 0;
-            pDstAction->unknown0 = 0;
-            pDstAction->aUnknown1[0] = 0;
-            pDstAction->aUnknown1[1] &= ~0xFF;
-            v11 = &pSrcAction->unknown0;
-            do
-            {
-                ++v10;
-                *p_unknown0++ = *v11++;
-            } while ( v10 <= (unsigned __int8)pSrcAction->unknown0 );
-
-            aDstSchemes = v15;
-            ++pSrcAction;
-            ++pDstAction;
-            --aSchemesa;
-        } while ( aSchemesa );
-
-        sizeSchemea += 1464;
-        pScheme = starta + 1;
-        v12 = v14 == 1;
-        ++starta;
-        --v14;
-    } while ( !v12 );
-
-    return aDstSchemes;
-}
-
-int J3DAPI jonesConfig_InitControlsConfig()
-{
-    JonesControlsConfig config; // [esp+4h] [ebp-18h] BYREF
-
-    memset(&config, 0, sizeof(config));
-    config.selectedShemeIdx = -1;
-    if ( jonesConfig_SetDefaultControlSchemes(&config) && jonesConfig_LoadControlsSchemesFromSystem(&config) )
-    {
-        if ( jonesConfig_CopyControlConfig(&config, &jonesConfig_curControlConfig) )
-        {
-            jonesConfig_FreeControlConfigEntry(&config);
-            return 1;
-        }
-        else
-        {
-            jonesConfig_FreeControlConfigEntry(&jonesConfig_curControlConfig);
-            jonesConfig_FreeControlConfigEntry(&config);
-            return 0;
-        }
-    }
-    else
-    {
-        jonesConfig_FreeControlConfigEntry(&config);
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_LoadControlsSchemesFromSystem(JonesControlsConfig* pConfig)
-{
-    HANDLE hFile; // ebx
-    JonesControlsScheme* aSchemes; // edx
-    CHAR Buffer[128]; // [esp+10h] [ebp-1C0h] BYREF
-    WIN32_FIND_DATAA FindFileData; // [esp+90h] [ebp-140h] BYREF
-
-    memset(Buffer, 0, sizeof(Buffer));
-    GetCurrentDirectoryA(128u, Buffer);
-    if ( !SetCurrentDirectoryA(jonesConfig_pKeySetsDirPath) )
-    {
-        return 1;
-    }
-
-    hFile = FindFirstFileA("*.kfg", &FindFileData);
-    if ( hFile == (HANDLE)INVALID_HANDLE_VALUE )
-    {
-    LABEL_10:
-        SetCurrentDirectoryA(Buffer);
-        return 1;
-    }
-
-    while ( 1 )
-    {
-        if ( !(pConfig->numSchemes % 10) )
-        {
-            pConfig->aSchemes = (JonesControlsScheme*)STDREALLOC(
-                pConfig->aSchemes,
-                sizeof(JonesControlsScheme) * (pConfig->numSchemes + 10));
-        }
-
-        aSchemes = pConfig->aSchemes;
-        if ( !aSchemes )
-        {
-            break;
-        }
-
-        if ( jonesConfig_LoadConstrolsScheme(FindFileData.cFileName, &aSchemes[pConfig->numSchemes]) )
-        {
-            ++pConfig->numSchemes;
-        }
-
-        if ( !FindNextFileA(hFile, &FindFileData) )
-        {
-            FindClose(hFile);
-            goto LABEL_10;
-        }
-    }
-
-    SetCurrentDirectoryA(Buffer);
-    return 0;
-}
-
-int J3DAPI jonesConfig_SetDefaultControlSchemes(JonesControlsConfig* pConfig)
-{
-    int cfgNum; // edi
-    JonesControlsScheme* aSchemes; // edx
-    JonesControlsScheme* pScheme; // eax
-
-    cfgNum = 0;
-    while ( 1 )
-    {
-        if ( !(pConfig->numSchemes % 10) )
-        {
-            pConfig->aSchemes = (JonesControlsScheme*)STDREALLOC(
-                pConfig->aSchemes,
-                sizeof(JonesControlsScheme) * (pConfig->numSchemes + 10));
-        }
-
-        aSchemes = pConfig->aSchemes;
-        if ( !aSchemes )
-        {
-            break;
-        }
-
-        pScheme = &aSchemes[pConfig->numSchemes];
-        if ( !pScheme || !jonesConfig_SetDefaultControlScheme(pScheme, cfgNum) )
-        {
-            break;
-        }
-
-        ++cfgNum;
-        ++pConfig->numSchemes;
-        if ( cfgNum >= 3 )
-        {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-INT_PTR __stdcall jonesConfig_ControlOptionsProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
-{
-    int res; // edi
-
-    if ( umsg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hwnd, jonesConfig_hFontControlOptions);
-        return 1;
-    }
-
-    else if ( umsg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontControlOptions = jonesConfig_InitDialog(hwnd, 0, 111);
-        res = jonesConfig_InitControlOptionsDlg(hwnd, wparam, (JonesControlsConfig*)lparam);
-        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return res;
-    }
-    else
-    {
-        if ( umsg == WM_COMMAND )
-        {
-            jonesConfig_ControlOptions_HandleWM_COMMAND(hwnd, (unsigned __int16)wparam, lparam, SHIWORD(wparam));
-        }
-
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_InitControlOptionsDlg(HWND hDlg, int a2, JonesControlsConfig* pConfig)
-{
-    int MaxJoystickButtons; // eax
-    const char* pSelectedName; // eax
-    HWND v5; // ebp
-    HWND(__stdcall * pfGetDlgItem)(HWND, int); // edi
-    HWND lbControlCfgList; // esi
-    HWND lbControlCfgList_2; // eax
-    int v9; // ebp
-    const char* pConfigName; // ebp
-    bool bLoop; // cc
-    const char* String; // esi
-    HWND btnDelScheme; // eax
-    HWND btnEditSheme; // eax
-    HWND v15; // esi
-    int Int; // eax
-    HWND v17; // edi
-    int v18; // eax
-    int i; // [esp+10h] [ebp-A8h]
-    int schemeNum; // [esp+14h] [ebp-A4h]
-    HWND lbControlCfgList_1; // [esp+18h] [ebp-A0h]
-    HDC hdcList; // [esp+1Ch] [ebp-9Ch]
-    SIZE textSize; // [esp+20h] [ebp-98h] BYREF
-    RECT rectList; // [esp+28h] [ebp-90h] BYREF
-    char aSelectedConfigName[128]; // [esp+38h] [ebp-80h] BYREF
-
-    if ( pConfig->selectedShemeIdx == -1 )
-    {
-        memset(aSelectedConfigName, 0, sizeof(aSelectedConfigName));
-        wuRegistry_GetStr("Configuration", aSelectedConfigName, 128u, std_g_aEmptyString);
-        if ( !strlen(aSelectedConfigName) )
-        {
-            MaxJoystickButtons = stdControl_GetMaxJoystickButtons();
-            if ( MaxJoystickButtons == 4 )
-            {
-                pSelectedName = jonesString_GetString(jonesConfig_aDfltKeySetNames[1]);
-            }
-            else
-            {
-                pSelectedName = MaxJoystickButtons == 8
-                    ? jonesString_GetString(jonesConfig_aDfltKeySetNames[2])
-                    : jonesString_GetString(jonesConfig_aDfltKeySetNames[0]);
-            }
-
-            if ( pSelectedName )
-            {
-                strcpy(aSelectedConfigName, pSelectedName);
-            }
-        }
-    }
-
-    v5 = hDlg;
-    pfGetDlgItem = GetDlgItem;
-    pConfig->selectedShemeIdx = 0;
-    lbControlCfgList = GetDlgItem(hDlg, 1047);
-    lbControlCfgList_1 = lbControlCfgList;
-
-    lbControlCfgList_2 = GetDlgItem(hDlg, 1047);// ?? why another call for the same control
-    hdcList = GetDC(lbControlCfgList_2);
-
-    schemeNum = 0;
-    if ( pConfig->numSchemes > 0 )
-    {
-        v9 = 0;
-        for ( i = 0; ; v9 = i )
-        {
-            SendMessageA(lbControlCfgList, LB_ADDSTRING, 0, (LPARAM)&pConfig->aSchemes->aName[v9]);
-            *(int*)((char*)&pConfig->aSchemes->unknown0 + v9) = 0;
-            pConfigName = &pConfig->aSchemes->aName[v9];
-            if ( !strcmp(aSelectedConfigName, pConfigName) )
-            {
-                pConfig->selectedShemeIdx = schemeNum;
-            }
-
-            GetTextExtentPointA(hdcList, pConfigName, strlen(pConfigName), &textSize);
-            if ( textSize.cx > (int)pConfig->unknown0 )
-            {
-                pConfig->unknown0 = (void*)textSize.cx;
-            }
-
-            bLoop = ++schemeNum < pConfig->numSchemes;
-            i += 1464;
-            if ( !bLoop )
-            {
-                break;
-            }
-
-            lbControlCfgList = lbControlCfgList_1;
-        }
-
-        v5 = hDlg;
-        lbControlCfgList = lbControlCfgList_1;
-        pfGetDlgItem = GetDlgItem;
-    }
-
-    GetClientRect(lbControlCfgList, &rectList);
-    if ( rectList.right - rectList.left < (int)pConfig->unknown0 )
-    {
-        SendMessageA(lbControlCfgList, LB_SETHORIZONTALEXTENT, (WPARAM)pConfig->unknown0, 0);
-    }
-
-    SendMessageA(lbControlCfgList, LB_SETCURSEL, pConfig->selectedShemeIdx, 0);
-    if ( pConfig->selectedShemeIdx < 3 )
-    {
-        String = jonesString_GetString("JONES_STR_VIEW_SCHEME");
-        btnDelScheme = pfGetDlgItem(v5, 1022);  // delete scheme
-        EnableWindow(btnDelScheme, 0);
-        if ( String )
-        {
-            btnEditSheme = pfGetDlgItem(v5, 1028);
-            SetWindowTextA(btnEditSheme, String);
-        }
-    }
-
-    v15 = pfGetDlgItem(v5, 1053);
-    Int = wuRegistry_GetIntEx("Mouse Control", 0);
-    SendMessageA(v15, 0xF1u, Int, 0);
-    v17 = pfGetDlgItem(v5, 1054);
-    if ( stdControl_GetNumJoysticks() )
-    {
-        v18 = wuRegistry_GetIntEx("Joystick Control", 0);
-        SendMessageA(v17, 0xF1u, v18, 0);
-    }
-    else
-    {
-        EnableWindow(v17, 0);
-    }
-
-    SetWindowLongA(v5, 8, (LONG)pConfig);
-    return 1;
-}
-
-void J3DAPI jonesConfig_ControlOptions_HandleWM_COMMAND(HWND hWnd, int ctrlID, int a3, int16_t a4)
-{
-    JonesControlsConfig* pConfig_1; // eax
-    int v6; // ebx
-    JonesControlsConfig* pConfig; // esi
-    HWND cbMouse; // eax
-    HWND cbJoystick; // eax
-    int v10; // ebx
-    int v11; // ebp
-    void* unknown2; // eax
-    int schemeNum; // ebx
-    const char* pErrorStr; // eax
-    const char* String; // eax
-    JonesControlsScheme* pScheme; // esi
-    HWND DlgItem; // eax
-    LRESULT v18; // ebx
-    int bJoystickEnabled; // [esp+10h] [ebp-4h]
-    int hWnda; // [esp+18h] [ebp+4h]
-    int a4a; // [esp+24h] [ebp+10h]
-
-    pConfig_1 = (JonesControlsConfig*)GetWindowLongA(hWnd, DWL_USER);
-    v6 = ctrlID;
-    pConfig = pConfig_1;
-    if ( ctrlID > 1022 )
-    {
-        switch ( ctrlID )
-        {
-            case 1028:
-                goto LABEL_38;                  // edit scheme
-
-            case 1029:                          // new config scheme
-                jonesConfig_CreateNewSchemeAction(hWnd, pConfig_1);
-                return;
-
-            case 1047:
-                DlgItem = GetDlgItem(hWnd, 1047);
-                v18 = SendMessageA(DlgItem, 0x188u, 0, 0);
-                jonesConfig_sub_407F60(hWnd);
-                pConfig->selectedShemeIdx = v18;
-                if ( a4 == 2 )
-                {
-                LABEL_38:
-                    jonesConfig_sub_408260(hWnd, pConfig);
-                }
-
-                break;
-        }
-    }
-    else
-    {
-        switch ( ctrlID )
-        {
-            case 1022:                          // delete config scheme
-                jonesConfig_sub_408000(hWnd, (int)pConfig_1);
-                return;
-
-            case 1:                             // ok btn clicked
-                cbMouse = GetDlgItem(hWnd, 1053);
-                a4a = SendMessageA(cbMouse, BM_GETCHECK, 0, 0);
-
-                cbJoystick = GetDlgItem(hWnd, 1054);
-                bJoystickEnabled = SendMessageA(cbJoystick, BM_GETCHECK, 0, 0);
-
-                v10 = 0;
-                if ( pConfig->unknown1 > 0 )
-                {
-                    v11 = 0;
-                    do
-                    {
-                        remove((LPCSTR)(v11 + pConfig->unknown2));
-                        ++v10;
-                        v11 += 128;
-                    } while ( v10 < pConfig->unknown1 );
-                }
-
-                unknown2 = (void*)pConfig->unknown2;
-                pConfig->unknown1 = 0;
-                if ( unknown2 )
-                {
-                    stdMemory_Free(unknown2);
-                    pConfig->unknown2 = 0;
-                }
-
-                if ( jonesConfig_CopyControlConfig(pConfig, &jonesConfig_curControlConfig) )
-                {
-                    hWnda = 3;
-                    if ( pConfig->numSchemes > 3 )
-                    {
-                        schemeNum = 3;
-                        do
-                        {
-                            if ( pConfig->aSchemes[schemeNum].unknown0 == 1
-                                && !jonesConfig_WriteScheme(&pConfig->aSchemes[schemeNum]) )
-                            {
-                                pErrorStr = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
-                                if ( pErrorStr )
-                                {
-                                    jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", pErrorStr, 145);
-                                    InvalidateRect(hWnd, 0, 1);
-                                }
-                            }
-
-                            ++schemeNum;
-                            ++hWnda;
-                        } while ( hWnda < pConfig->numSchemes );
-                    }
-                }
-                else
-                {
-                    String = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
-                    if ( String )
-                    {
-                        jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", String, 145);
-                        InvalidateRect(hWnd, 0, 1);
-                    }
-
-                    ctrlID = 2;
-                }
-
-                wuRegistry_SaveIntEx("Mouse Control", a4a);
-                wuRegistry_SaveIntEx("Joystick Control", bJoystickEnabled);
-
-                if ( bJoystickEnabled )
-                {
-                    pScheme = jonesConfig_NewControlScheme();
-                    if ( pScheme )
-                    {
-                        JonesControl_EnableJoystickAxes();
-                        jonesConfig_BindControls(pScheme);
-                        jonesConfig_FreeControlScheme(pScheme);
-                    }
-                }
-                else
-                {
-                    sithControl_UnbindJoystickAxes();
-                }
-
-                v6 = ctrlID;
-                break;
-
-            case 2:                             // cacnel btn clicked
-                break;
-
-            default:
-                return;
-        }
-
-        if ( jonesConfig_dword_551DEC )
-        {
-            stdMemory_Free(jonesConfig_dword_551DEC);
-            jonesConfig_dword_551DEC = 0;
-        }
-
-        EndDialog(hWnd, v6);
-    }
-}
-
-int J3DAPI jonesConfig_WriteScheme(JonesControlsScheme* pScheme)
-{
-    size_t v1; // eax
-    void* v2; // ebx
-    unsigned int v3; // ecx
-    char* v4; // esi
-    FILE* pFile; // ebp
-    const char* String; // eax
-    const char* v7; // eax
-    unsigned int v8; // eax
-    unsigned int v9; // esi
-    const char* v10; // eax
-    const char** v11; // eax
-    int (*aActions)[9]; // esi
-    const char* v13; // eax
-    unsigned int v14; // eax
-    unsigned int v15; // edx
-    int (*v16)[9]; // esi
-    unsigned int v17; // eax
-    unsigned int v18; // edx
-    bool v19; // cc
-    char* Format; // [esp+10h] [ebp-320h]
-    unsigned int* v22; // [esp+14h] [ebp-31Ch]
-    int (*v23)[9]; // [esp+18h] [ebp-318h]
-    const char** v24; // [esp+1Ch] [ebp-314h]
-    int v25; // [esp+20h] [ebp-310h]
-    struct _SECURITY_ATTRIBUTES SecurityAttributes; // [esp+24h] [ebp-30Ch] BYREF
-    CHAR aCurDir[128]; // [esp+30h] [ebp-300h] BYREF
-    char v28[256]; // [esp+B0h] [ebp-280h] BYREF
-    char aKfgPath[128]; // [esp+1B0h] [ebp-180h] BYREF
-    char pDest[256]; // [esp+230h] [ebp-100h] BYREF
-
-    if ( !SetCurrentDirectoryA(jonesConfig_pKeySetsDirPath) )
-    {
-        SecurityAttributes.lpSecurityDescriptor = 0;
-        SecurityAttributes.nLength = 12;
-        SecurityAttributes.bInheritHandle = 1;
-        CreateDirectoryA(jonesConfig_pKeySetsDirPath, &SecurityAttributes);
-
-        memset(aCurDir, 0, sizeof(aCurDir));
-        GetCurrentDirectoryA(128u, aCurDir);
-
-        SetCurrentDirectoryA(jonesConfig_pKeySetsDirPath);
-    }
-
-    v1 = jonesConfig_dword_551D20;
-    if ( (int)jonesConfig_dword_551D20 <= jonesConfig_dword_5510C0 )
-    {
-        v1 = jonesConfig_dword_5510C0;
-    }
-
-    v2 = STDMALLOC(v1);
-    if ( !v2 )
-    {
-        return 0;
-    }
-
-    v3 = jonesConfig_dword_5510C0;
-    if ( (int)jonesConfig_dword_551D20 > jonesConfig_dword_5510C0 )
-    {
-        v3 = jonesConfig_dword_551D20;
-    }
-
-    memset(v2, 0x20u, v3);
-
-    v4 = (char*)STDMALLOC(jonesConfig_dword_5510C4 + jonesConfig_dword_5510B8);
-    Format = v4;
-    if ( v4 )
-    {
-        memset(v4, 0, jonesConfig_dword_5510B8 + jonesConfig_dword_5510C4);
-        memset(aKfgPath, 0, sizeof(aKfgPath));
-        sprintf(aKfgPath, "%s%s", pScheme->aName, ".kfg");
-
-        pFile = fopen(aKfgPath, "wt+");
-        if ( pFile )
-        {
-            String = jonesString_GetString("JONES_STR_HEADING");
-            if ( String )
-            {
-                fprintf(pFile, String);
-                fprintf(pFile, "\n");
-                sprintf((char*)&SecurityAttributes, "%s\n\n", "1");
-                fprintf(pFile, (const char*)&SecurityAttributes);
-                memset(v4, 0, jonesConfig_dword_5510C4 + jonesConfig_dword_5510B8);
-                v7 = jonesString_GetString("JONES_STR_ACTIONS");
-                if ( v7 )
-                {
-                    strcpy(v4, v7);
-                    v8 = jonesConfig_dword_551D20;
-                    v9 = jonesConfig_dword_551D20 - strlen(v4);
-                    if ( (int)jonesConfig_dword_551D20 <= jonesConfig_dword_5510C0 )
-                    {
-                        v8 = jonesConfig_dword_5510C0;
-                    }
-
-                    memset(v2, 0, v8);
-                    memset(v2, 0x20u, v9);
-                    strcat(Format, (const char*)v2);
-                    v10 = jonesString_GetString("JONES_STR_KEYS");
-                    if ( v10 )
-                    {
-                        strcat(Format, v10);
-                        fprintf(pFile, Format);
-                        fprintf(pFile, "\n\n");
-                        v11 = jonesConfig_aJonesControlActionNames;
-                        v24 = jonesConfig_aJonesControlActionNames;
-                        aActions = pScheme->aActions;
-                        v23 = pScheme->aActions;
-                        while ( 1 )
-                        {
-                            v13 = jonesString_GetString(*v11);
-                            if ( !aActions || !v13 )
-                            {
-                                break;
-                            }
-
-                            memset(v28, 0, sizeof(v28));
-                            _snprintf(v28, 256u, "\"%s\"", v13);
-                            fprintf(pFile, v28);
-
-                            v14 = jonesConfig_dword_551D20;
-                            v15 = jonesConfig_dword_551D20 - strlen(v28);
-                            if ( (int)jonesConfig_dword_551D20 <= jonesConfig_dword_5510C0 )
-                            {
-                                v14 = jonesConfig_dword_5510C0;
-                            }
-
-                            memset(v2, 0, v14);
-                            memset(v2, 0x20u, v15);
-                            fprintf(pFile, (const char*)v2);
-                            v16 = v23;
-                            v25 = 1;
-                            if ( (unsigned __int8)(*v23)[0] )
-                            {
-                                v22 = (unsigned int*)&(*v23)[1];
-                                do
-                                {
-                                    memset(pDest, 0, sizeof(pDest));
-                                    jonesConfig_ControlToString(*v22, pDest);
-                                    _snprintf(v28, 0x100u, "\"%s\"", pDest);
-                                    fprintf(pFile, v28);
-                                    v17 = jonesConfig_dword_5510C0;
-                                    v18 = jonesConfig_dword_5510C0 - strlen(pDest);
-                                    if ( (int)jonesConfig_dword_551D20 > jonesConfig_dword_5510C0 )
-                                    {
-                                        v17 = jonesConfig_dword_551D20;
-                                    }
-
-                                    memset(v2, 0, v17);
-                                    memset(v2, 0x20u, v18);
-                                    fprintf(pFile, (const char*)v2);
-                                    v16 = v23;
-                                    ++v22;
-                                    ++v25;
-                                } while ( v25 <= (unsigned __int8)(*v23)[0] );
-                            }
-
-                            fprintf(pFile, "\n");
-                            v11 = v24 + 1;
-                            aActions = v16 + 1;
-                            v19 = (v24 + 1 - jonesConfig_aJonesControlActionNames) < JONES_CONTROL_ACTION_COUNT;
-                            v23 = aActions;
-                            ++v24;
-                            if ( !v19 )
-                            {
-                                fclose(pFile);
-                                SetCurrentDirectoryA(aCurDir);
-                                stdMemory_Free(v2);
-                                stdMemory_Free(Format);
-                                return 1;
-                            }
-                        }
-                    }
-
-                    v4 = Format;
-                }
-            }
-
-            fclose(pFile);
-            SetCurrentDirectoryA(aCurDir);
-            stdMemory_Free(v2);
-            stdMemory_Free(v4);
-        }
-        else
-        {
-            SetCurrentDirectoryA(aCurDir);
-            stdMemory_Free(v4);
-            stdMemory_Free(v2);
-        }
-    }
-    else
-    {
-        stdMemory_Free(v2);
-    }
-
-    return 0;
-
-}
-
-int J3DAPI jonesConfig_sub_407F60(HWND hDlg)
-{
-    HWND DlgItem; // eax
-    LRESULT v2; // ebx
-    HWND v3; // ebp
-    const char* v4; // eax
-    HWND v5; // eax
-    const char* String; // eax
-    HWND v8; // eax
-
-    DlgItem = GetDlgItem(hDlg, 1047);
-    v2 = SendMessageA(DlgItem, 0x188u, 0, 0);
-    v3 = GetDlgItem(hDlg, 1028);
-    if ( v2 >= 3 )
-    {
-        String = jonesString_GetString("JONES_STR_EDIT_SCHEME");
-        if ( String )
-        {
-            SetWindowTextA(v3, String);
-        }
-
-        v8 = GetDlgItem(hDlg, 1022);
-        return EnableWindow(v8, 1);
-    }
-    else
-    {
-        v4 = jonesString_GetString("JONES_STR_VIEW_SCHEME");
-        if ( v4 )
-        {
-            SetWindowTextA(v3, v4);
-        }
-
-        v5 = GetDlgItem(hDlg, 1022);
-        return EnableWindow(v5, 0);
-    }
-}
-
-LRESULT J3DAPI jonesConfig_sub_408000(HWND hDlg, int a2)
-{
-    WPARAM v2; // esi
-    LRESULT result; // eax
-    int v4; // edx
-    const char* i; // edi
-    int v6; // eax
-    int v7; // edx
-    int v8; // edx
-    int v9; // esi
-    int v10; // eax
-    int v11; // edx
-    HWND DlgItem; // eax
-    WPARAM v13; // [esp-8h] [ebp-124h]
-    int v14; // [esp+10h] [ebp-10Ch]
-    int v15; // [esp+14h] [ebp-108h]
-    HWND hWnd; // [esp+18h] [ebp-104h]
-    char lParam[128]; // [esp+1Ch] [ebp-100h] BYREF
-    char Dest[128]; // [esp+9Ch] [ebp-80h] BYREF
-
-    v14 = 0;
-    hWnd = GetDlgItem(hDlg, 1047);
-    v2 = SendMessageA(hWnd, 0x188u, 0, 0);
-    memset(lParam, 0, sizeof(lParam));
-    SendMessageA(hWnd, 0x189u, v2, (LPARAM)lParam);
-    result = SendMessageA(hWnd, 0x182u, v2, 0);
-    v4 = *(DWORD*)(a2 + 12);
-    if ( v4 <= 0 )
-    {
-        return result;
-    }
-
-    for ( i = (const char*)(*(DWORD*)(a2 + 20) + 1336); strcmp(i, lParam); i += 1464 )
-    {
-        result = ++v14;
-        if ( v14 >= v4 )
-        {
-            return result;
-        }
-    }
-
-    if ( !(*(DWORD*)(a2 + 4) % 10) )
-    {
-        *(DWORD*)(a2 + 8) = STDREALLOC(
-            *(void**)(a2 + 8),
-            (*(DWORD*)(a2 + 4) + 10) << 7);
-    }
-
-    if ( *(DWORD*)(1464 * v14 + *(DWORD*)(a2 + 20)) != 1 )
-    {
-        memset(Dest, 0, sizeof(Dest));
-        sprintf(Dest, "%s\\%s%s", jonesConfig_pKeySetsDirPath, lParam, ".kfg");
-        strcpy((char*)(((*(DWORD*)(a2 + 4))++ << 7) + *(DWORD*)(a2 + 8)), Dest);
-    }
-
-    v6 = 0;
-    do
-    {
-        v7 = v6 + 1464 * v14;
-        v6 += 36;
-        v8 = v7 + *(DWORD*)(a2 + 20) + 4;
-        *(DWORD*)v8 = 0;
-        *(DWORD*)(v8 + 4) = 0;
-        *(BYTE*)(v8 + 8) = 0;
-    } while ( v6 < 1332 );
-
-    v9 = v14;
-    v10 = *(DWORD*)(a2 + 12);
-    v15 = v14;
-    if ( v14 < v10 )
-    {
-        v11 = 1464 * v14;
-        do
-        {
-            if ( v9 == v10 - 1 )
-            {
-                memset((void*)(*(DWORD*)(a2 + 20) + v11), 0, 0x5B8u);
-            }
-            else
-            {
-                memcpy((void*)(v11 + *(DWORD*)(a2 + 20)), (const void*)(v11 + *(DWORD*)(a2 + 20) + 1464), 0x5B8u);
-                v9 = v15;
-            }
-
-            v10 = *(DWORD*)(a2 + 12);
-            ++v9;
-            v11 += 1464;
-            v15 = v9;
-        } while ( v9 < v10 );
-
-        v9 = v14;
-    }
-
-    result = *(DWORD*)(a2 + 16);
-    if ( v9 == result )
-    {
-        v13 = result - 1 < 0 ? 0 : result - 1;
-        *(DWORD*)(a2 + 16) = v13;
-        result = SendMessageA(hWnd, 0x186u, v13, 0);
-        if ( *(int*)(a2 + 16) < 3 )
-        {
-            DlgItem = GetDlgItem(hDlg, 1022);
-            result = EnableWindow(DlgItem, 0);
-        }
-    }
-
-    -- * (DWORD*)(a2 + 12);
-    return result;
-}
-
-void J3DAPI jonesConfig_sub_408260(HWND hDlg, JonesControlsConfig* a2)
-{
-    HWND DlgItem; // esi
-    WPARAM v3; // edx
-    int v4; // ebp
-    char* aName; // edx
-    JonesControlsScheme* aSchemes; // eax
-    int v7; // eax
-    int v8; // ecx
-    int v9; // edx
-    int v10; // ebx
-    void* a1[5]; // [esp+10h] [ebp-94h] BYREF
-    char lParam[128]; // [esp+24h] [ebp-80h] BYREF
-
-    DlgItem = GetDlgItem(hDlg, 1047);
-    v3 = SendMessageA(DlgItem, 0x188u, 0, 0);
-    memset(lParam, 0, sizeof(lParam));
-    v4 = 0;
-    SendMessageA(DlgItem, 0x189u, v3, (LPARAM)lParam);
-    if ( a2->numSchemes > 0 )
-    {
-        aName = a2->aSchemes->aName;
-        while ( strcmp(aName, lParam) )
-        {
-            ++v4;
-            aName += 1464;
-            if ( v4 >= a2->numSchemes )
-            {
-                goto LABEL_7;
-            }
-        }
-
-        aSchemes = a2->aSchemes;
-        a1[2] = 0;
-        a1[3] = 0;
-        a1[0] = jonesConfig_CopyControlSchemes(aSchemes, v4, 1);
-        a1[1] = (void*)v4;
-        a1[4] = jonesConfig_sub_408400(a2);
-    }
-
-LABEL_7:
-    if ( v4 != a2->numSchemes )
-    {
-        if ( jonesConfig_ShowEditControlShemeDialog(hDlg, a1) == 1 )
-        {
-            InvalidateRect(hDlg, 0, 1);
-            a2->aSchemes[v4].unknown0 = *(DWORD*)a1[0];
-            if ( a2->aSchemes[v4].unknown0 )
-            {
-                v7 = 4;
-                v8 = 1464 * v4 + 4;
-                do
-                {
-                    v9 = 9;
-                    do
-                    {
-                        v8 += 4;
-                        v10 = *(DWORD*)((char*)a1[0] + v7);
-                        v7 += 4;
-                        *(DWORD*)((char*)a2->aSchemes + v8 - 4) = v10;
-                        --v9;
-                    } while ( v9 );
-                } while ( v7 < 1336 );
-            }
-
-            stdMemory_Free(a1[0]);
-        }
-        else
-        {
-            jonesConfig_FreeControlScheme((JonesControlsScheme*)a1[0]);
-        }
-    }
-}
-
-JonesControlsScheme* J3DAPI jonesConfig_sub_408400(JonesControlsConfig* pConfig)
-{
-    int numButtons; // eax
-    const char* String; // eax
-    int v3; // edi
-    JonesControlsScheme* i; // ebp
-    JonesControlsScheme* pConfiga; // [esp+14h] [ebp+4h]
-
-    numButtons = stdControl_GetMaxJoystickButtons();
-    if ( numButtons == 4 )
-    {
-        String = jonesString_GetString(jonesConfig_aDfltKeySetNames[1]);
-    }
-
-    else if ( numButtons == 8 )
-    {
-        String = jonesString_GetString(jonesConfig_aDfltKeySetNames[2]);
-    }
-    else
-    {
-        String = jonesString_GetString(jonesConfig_aDfltKeySetNames[0]);
-    }
-
-    if ( !String )
-    {
-        return 0;
-    }
-
-    v3 = 0;
-    pConfiga = pConfig->aSchemes;
-    for ( i = (JonesControlsScheme*)pConfiga->aName; strcmp((const char*)i, String); ++i )
-    {
-        if ( ++v3 >= 3 )
-        {
-            return 0;
-        }
-    }
-
-    return &pConfiga[v3];
-}
-
-void J3DAPI jonesConfig_CreateNewSchemeAction(HWND hDlg, JonesControlsConfig* pConfig)
-{
-    JonesControlsScheme* v2; // edx
-    const char* v3; // eax
-    int numSchemes; // edx
-    int selectedIdx; // ebp
-    const char* aName; // edx
-    int v7; // eax
-    int v8; // ebp
-    int v9; // eax
-    int v10; // esi
-    int v11; // edx
-    HWND v12; // esi
-    HDC hdc; // edx
-    int v14; // eax
-    int v15; // ecx
-    int v16; // edx
-    int v17; // edi
-    const char* String; // eax
-    int v19; // [esp+10h] [ebp-B8h]
-    int v20; // [esp+14h] [ebp-B4h]
-    int a1[6]; // [esp+18h] [ebp-B0h] BYREF
-    RECT Rect; // [esp+34h] [ebp-94h] BYREF
-    char aSchemeName[128]; // [esp+44h] [ebp-84h] BYREF
-    HWND DlgItem; // [esp+C4h] [ebp-4h]
-    JonesControlsScheme* pBytes; // [esp+D4h] [ebp+Ch]
-
-    memset(aSchemeName, 0, sizeof(aSchemeName));
-    DlgItem = GetDlgItem(hDlg, 1047);
-    if ( jonesConfig_ShowCreateControlSchemeDialog(hDlg, aSchemeName) == 1 )
-    {
-        InvalidateRect(hDlg, 0, 1);
-        v2 = jonesConfig_CopyControlSchemes(pConfig->aSchemes, 0, 1);
-        pBytes = v2;
-        if ( v2 )
-        {
-            strcpy(v2->aName, aSchemeName);
-            a1[0] = (int)v2;
-            numSchemes = pConfig->numSchemes;
-            a1[2] = 0;
-            a1[1] = numSchemes;
-            a1[3] = 0;
-            a1[4] = (int)jonesConfig_sub_408400(pConfig);
-            if ( jonesConfig_ShowEditControlShemeDialog(hDlg, a1) == 1 )
-            {
-                InvalidateRect(hDlg, 0, 1);
-                selectedIdx = 3;
-                v20 = 3;
-                if ( pConfig->numSchemes > 3 )
-                {
-                    aName = pConfig->aSchemes[3].aName;// TODO: fix offsets
-                    do
-                    {
-                        if ( strcmp(aSchemeName, aName) < 0 )
-                        {
-                            break;
-                        }
-
-                        ++selectedIdx;
-                        aName += 1464;
-                    } while ( selectedIdx < pConfig->numSchemes );
-
-                    v20 = selectedIdx;
-                }
-
-                if ( !(pConfig->numSchemes % 10) )
-                {
-                    pConfig->aSchemes = (JonesControlsScheme*)STDREALLOC(
-                        pConfig->aSchemes,
-                        1464 * (pConfig->numSchemes + 10));
-                }
-
-                if ( pConfig->aSchemes )
-                {
-                    v7 = pConfig->numSchemes - 1;
-                    if ( v7 >= selectedIdx )
-                    {
-                        v8 = v7;
-                        v19 = pConfig->numSchemes - v20;
-                        do
-                        {
-                            strcpy(pConfig->aSchemes[v8 + 1].aName, pConfig->aSchemes[v8].aName);
-                            v9 = v8 * 1464 + 1468;
-                            v10 = 37;
-                            do
-                            {
-                                v11 = 9;
-                                do
-                                {
-                                    v9 += 4;
-                                    --v11;
-                                    *(DWORD*)((char*)pConfig->aSchemes + v9 - 4) = *(DWORD*)((char*)&pConfig->aSchemes[-1]
-                                        + v9
-                                        - 4);
-                                } while ( v11 );
-
-                                --v10;
-                            } while ( v10 );
-
-                            --v8;
-                            --v19;
-                        } while ( v19 );
-
-                        selectedIdx = v20;
-                    }
-
-                    v12 = GetDlgItem(hDlg, 1047);
-                    SendMessageA(v12, LB_INSERTSTRING, selectedIdx, (LPARAM)aSchemeName);
-                    SendMessageA(v12, LB_SETCURSEL, selectedIdx, 0);
-                    pConfig->selectedShemeIdx = selectedIdx;
-
-                    hdc = GetDC(v12);
-                    GetTextExtentPointA(hdc, aSchemeName, strlen(aSchemeName), (LPSIZE)&a1[5]);// TODO: make new var for 4th param
-                    if ( a1[5] > (int)pConfig->unknown0 )
-                    {
-                        pConfig->unknown0 = (void*)a1[5];
-                        GetClientRect(v12, &Rect);
-                        if ( Rect.right - Rect.left < a1[5] )
-                        {
-                            SendMessageA(v12, LB_SETHORIZONTALEXTENT, a1[5], 0);
-                        }
-                    }
-
-                    pConfig->aSchemes[selectedIdx].unknown0 = *(DWORD*)a1[0];
-                    strcpy(pConfig->aSchemes[selectedIdx].aName, (const char*)(a1[0] + 1336));
-                    v14 = 4;
-                    v15 = 1464 * selectedIdx + 4;
-                    do
-                    {
-                        v16 = 9;
-                        do
-                        {
-                            v15 += 4;
-                            v17 = *(DWORD*)(a1[0] + v14);
-                            v14 += 4;
-                            *(DWORD*)((char*)pConfig->aSchemes + v15 - 4) = v17;
-                            --v16;
-                        } while ( v16 );
-                    } while ( v14 < 1336 );
-
-                    stdMemory_Free((void*)a1[0]);
-                    ++pConfig->numSchemes;
-                }
-                else
-                {
-                    String = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
-                    if ( String )
-                    {
-                        jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", String, 145);
-                        InvalidateRect(hDlg, 0, 1);
-                    }
-                }
-            }
-            else
-            {
-                stdMemory_Free(pBytes);
-            }
-        }
-        else
-        {
-            v3 = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
-            if ( v3 )
-            {
-                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", v3, 145);
-                InvalidateRect(hDlg, 0, 1);
+                flags |= STDCONTROL_AID_LOW_SENSITIVITY;
+                functionId = SITHCONTROL_RUNFWD;
+                sithControl_BindAxis(SITHCONTROL_RUNFWD, STDCONTROL_GET_JOYSTICK_AXIS(joyNum, axis) | flags, (SithControlBindFlag)0);
             }
         }
     }
 }
-
-int J3DAPI jonesConfig_ShowCreateControlSchemeDialog(HWND hWnd, char* pDstSchemeName)
-{
-    GetWindowLongA(hWnd, GWL_HINSTANCE);
-    return JonesDialog_ShowDialog((LPCSTR)116, hWnd, jonesConfig_CreateControlSchemeProc, (LPARAM)pDstSchemeName);
-}
-
-INT_PTR __stdcall jonesConfig_CreateControlSchemeProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    int ControlScheme; // edi
-
-    if ( msg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontCreateControlSchemeDlg);
-        return 1;
-    }
-
-    else if ( msg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontCreateControlSchemeDlg = jonesConfig_InitDialog(hWnd, 0, 116);
-        ControlScheme = jonesConfig_InitCreateControlScheme(hWnd, wparam, (char*)lparam);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return ControlScheme;
-    }
-    else
-    {
-        if ( msg == WM_COMMAND )
-        {
-            jonesConfig_CreateControlScheme_Handle_WM_COMMAND(hWnd, wparam);
-        }
-
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_InitCreateControlScheme(HWND hDlg, int a2, char* pSchemeName)
-{
-    HWND ebSchemeName; // esi
-
-    ebSchemeName = GetDlgItem(hDlg, 1052);
-    SetFocus(ebSchemeName);
-    SendMessageA(ebSchemeName, EM_SETLIMITTEXT, 60u, 0);
-    SetWindowLongA(hDlg, DWL_USER, (LONG)pSchemeName);
-    return 0;
-}
-
-void J3DAPI jonesConfig_CreateControlScheme_Handle_WM_COMMAND(HWND hWnd, int16_t nResult)
-{
-    HWND v2; // esi
-    char* pControlSchemeName; // ebx
-    HWND ebSchemeName; // ebp
-    const char* v5; // edx
-    WPARAM v6; // ebp
-    LRESULT v7; // eax
-    const char* v8; // eax
-    const char* String; // eax
-    signed int v10; // [esp+10h] [ebp-208h]
-    HWND v11; // [esp+14h] [ebp-204h]
-    CHAR aName[128]; // [esp+18h] [ebp-200h] BYREF
-    char lParam[128]; // [esp+98h] [ebp-180h] BYREF
-    char Dest[256]; // [esp+118h] [ebp-100h] BYREF
-
-    v2 = hWnd;
-    pControlSchemeName = (char*)GetWindowLongA(hWnd, DWL_USER);
-    if ( nResult != 1 )
-    {
-        if ( nResult != 2 )
-        {
-            return;
-        }
-
-        goto LABEL_15;
-    }
-
-    ebSchemeName = GetDlgItem(hWnd, 1052);
-    memset(aName, 0, sizeof(aName));
-    v11 = ebSchemeName;
-    GetWindowTextA(ebSchemeName, aName, 128);
-    if ( strlen(aName) == strcspn(aName, "/:\\\"?<>*|+") )
-    {
-        v6 = 0;
-        memset(lParam, 0, sizeof(lParam));
-        v7 = SendMessageA(*((HWND*)pControlSchemeName + 32), LB_GETCOUNT, 0, 0);
-        v10 = v7;
-        if ( v7 <= 0 )
-        {
-        LABEL_13:
-            if ( v6 == v7 )
-            {
-                GetWindowTextA(v11, pControlSchemeName, 128);
-            }
-
-        LABEL_15:
-            EndDialog(v2, nResult);
-            return;
-        }
-
-        while ( 1 )
-        {
-            SendMessageA(*((HWND*)pControlSchemeName + 32), 0x189u, v6, (LPARAM)lParam);
-            if ( !strcmp(aName, lParam) )
-            {
-                break;
-            }
-
-            if ( !strlen(aName) )
-            {
-                String = jonesString_GetString("JONES_STR_NO_SCHEME");
-                if ( !String )
-                {
-                    return;
-                }
-
-                jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", String, 145);
-                InvalidateRect(hWnd, 0, 1);
-                return;
-            }
-
-            v7 = v10;
-            if ( (int)++v6 >= v10 )
-            {
-                v2 = hWnd;
-                goto LABEL_13;
-            }
-        }
-
-        v8 = jonesString_GetString("JONES_STR_DUP_SCHEME");
-        if ( v8 )
-        {
-            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", v8, 145);
-            InvalidateRect(hWnd, 0, 1);
-        }
-
-        SetWindowTextA(v11, std_g_aEmptyString);
-    }
-    else
-    {
-        v5 = jonesString_GetString("JONES_STR_INVALIDFILE");
-        if ( v5 )
-        {
-            memset(Dest, 0, sizeof(Dest));
-            sprintf(Dest, v5, aName);
-            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", Dest, 145);
-            InvalidateRect(hWnd, 0, 1);
-        }
-
-        SetWindowTextA(ebSchemeName, std_g_aEmptyString);
-    }
-}
-
-int J3DAPI jonesConfig_ShowEditControlShemeDialog(HWND hWnd, void* dwInitParam)
-{
-    GetWindowLongA(hWnd, GWL_HINSTANCE);
-    return JonesDialog_ShowDialog((LPCSTR)115, hWnd, jonesConfig_EditControlSchemProc, (LPARAM)dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_EditControlSchemProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    int inited; // ebx
-    LONG WindowLongA; // esi
-    int v7; // eax
-
-    inited = 1;
-    if ( msg <= WM_NOTIFY )
-    {
-        if ( msg != WM_NOTIFY )
-        {
-            if ( msg != WM_DESTROY )
-            {
-                return 0;
-            }
-
-            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontEditControlShceme);
-            return 1;
-        }
-
-        WindowLongA = GetWindowLongA(hWnd, 8);
-        if ( *(DWORD*)(lparam + 8) != -2 )
-        {
-            return inited;
-        }
-
-        v7 = *(DWORD*)(lparam + 4);
-        if ( v7 == 1005 )
-        {
-            *(DWORD*)(WindowLongA + 8) = GetDlgItem(hWnd, 1005);
-            *(DWORD*)(WindowLongA + 12) = 1005;
-            return 1;
-        }
-
-        if ( v7 != 1006 )
-        {
-            return inited;
-        }
-
-        *(DWORD*)(WindowLongA + 8) = GetDlgItem(hWnd, 1006);
-        *(DWORD*)(WindowLongA + 12) = 1006;
-        return 1;
-    }
-
-    if ( msg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontEditControlShceme = jonesConfig_InitDialog(hWnd, 0, 115);
-        inited = jonesConfig_InitEditControlSchemeDlg(hWnd, wparam, (void*)lparam);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return inited;
-    }
-
-    if ( msg != WM_COMMAND )
-    {
-        return 0;
-    }
-
-    jonesConfig_sub_409200(hWnd, (unsigned __int16)wparam);
-    return 0;
-}
-
-int J3DAPI jonesConfig_InitEditControlSchemeDlg(HWND hDlg, int a2, void* dwNewLong)
-{
-    HWND DlgItem; // edi
-    HWND v4; // ebp
-    const char* String; // eax
-    HWND v6; // eax
-    HWND v7; // eax
-    HWND v8; // eax
-    HWND v9; // eax
-    HWND v10; // eax
-    HWND v11; // eax
-    char Dest[256]; // [esp+10h] [ebp-100h] BYREF
-
-    DlgItem = GetDlgItem(hDlg, 1005);
-    v4 = GetDlgItem(hDlg, 1006);
-    jonesConfig_sub_408ED0(DlgItem, "JONES_STR_MAPKEY");
-    jonesConfig_sub_408FC0(DlgItem, 1005, *(JonesControlsScheme**)dwNewLong);
-    jonesConfig_sub_408ED0(v4, "JONES_STR_MAPBUTTON");
-    jonesConfig_sub_408FC0(v4, 1006, *(JonesControlsScheme**)dwNewLong);
-    memset(Dest, 0, sizeof(Dest));
-    String = jonesString_GetString("JONES_STR_SETTINGS");
-    if ( String )
-    {
-        sprintf(Dest, String, *(DWORD*)dwNewLong + 1336);
-        v6 = GetDlgItem(hDlg, 1049);
-        SetWindowTextA(v6, Dest);
-    }
-
-    if ( *((int*)dwNewLong + 1) < 3 )
-    {
-        v7 = GetDlgItem(hDlg, 1056);
-        EnableWindow(v7, 0);
-
-        v8 = GetDlgItem(hDlg, 1046);
-        EnableWindow(v8, 0);
-
-        v9 = GetDlgItem(hDlg, 1038);
-        EnableWindow(v9, 0);
-
-        v10 = GetDlgItem(hDlg, 1);
-        EnableWindow(v10, 0);
-
-        v11 = GetDlgItem(hDlg, 1099);
-        EnableWindow(v11, 0);
-    }
-
-    SetWindowLongA(hDlg, 8, (LONG)dwNewLong);
-    return 1;
-}
-
-LRESULT J3DAPI jonesConfig_sub_408ED0(HWND hWnd, char* pKey)
-{
-    HWND v2; // ebx
-    int v3; // esi
-    double v4; // st7
-    int width; // [esp+Ch] [ebp-34h] BYREF
-    struct tagRECT Rect; // [esp+10h] [ebp-30h] BYREF
-    LPARAM lParam[2]; // [esp+20h] [ebp-20h] BYREF
-    int v9; // [esp+28h] [ebp-18h]
-    const char* String; // [esp+2Ch] [ebp-14h]
-    int v11; // [esp+30h] [ebp-10h]
-    int v12; // [esp+34h] [ebp-Ch]
-
-    v2 = hWnd;
-    GetClientRect(hWnd, &Rect);
-    v3 = Rect.right - Rect.left - GetSystemMetrics(2);
-    lParam[0] = 15;
-    v11 = 256;
-    lParam[1] = 0;
-    stdDisplay_GetBackBufferSize((unsigned int*)&width, (unsigned int*)&hWnd);// TODO: make new var for last param
-    v4 = (double)(int)hWnd * 0.002083333333333333;
-    if ( v4 > 1.0 )
-    {
-        v4 = 1.0;
-    }
-
-    String = jonesString_GetString("JONES_STR_FCTN");
-    v9 = v3 - (__int64)(v4 * 105.0);
-    v12 = 0;
-    SendMessageA(v2, LVM_INSERTCOLUMNA, 0, (LPARAM)lParam);
-    if ( pKey )
-    {
-        String = jonesString_GetString(pKey);
-    }
-
-    v12 = 1;
-    v9 = (__int64)(v4 * 105.0);
-    return SendMessageA(v2, LVM_INSERTCOLUMNA, 1u, (LPARAM)lParam);
-}
-
-const char** J3DAPI jonesConfig_sub_408FC0(HWND hWnd, int a2, JonesControlsScheme* a3)
-{
-    const char** result; // eax
-    int (*aActions)[9]; // edi
-    WPARAM v5; // ebx
-    signed int v6; // esi
-    int v7; // eax
-    LPARAM v8; // [esp+10h] [ebp-194h]
-    signed int* v9; // [esp+14h] [ebp-190h]
-    int v10; // [esp+18h] [ebp-18Ch]
-    int (*v11)[9]; // [esp+1Ch] [ebp-188h]
-    const char** pActionName; // [esp+20h] [ebp-184h]
-    int v13; // [esp+24h] [ebp-180h]
-    CHAR* String; // [esp+28h] [ebp-17Ch]
-    LVITEM item; // [esp+2Ch] [ebp-178h] BYREF
-    LPARAM v16[10]; // [esp+54h] [ebp-150h] BYREF
-    LPARAM v17[10]; // [esp+7Ch] [ebp-128h] BYREF
-    char pDest[256]; // [esp+A4h] [ebp-100h] BYREF
-
-    result = jonesConfig_aJonesControlActionNames;
-    aActions = a3->aActions;
-    item.mask = 13;
-    item.cchTextMax = 256;
-    item.state = 0;
-    item.stateMask = 0;
-    v5 = 0;
-    v8 = 0;
-    pActionName = jonesConfig_aJonesControlActionNames;
-    v11 = a3->aActions;
-    // Rewrite as for loop
-    for ( int i = 0; i < JONES_CONTROL_ACTION_COUNT; i++ )
-    {
-        v10 = 0;
-        String = (CHAR*)jonesString_GetString(*result);
-        v13 = 1;
-        if ( (unsigned __int8)(*aActions)[0] )
-        {
-            v9 = &(*aActions)[1];
-            do
-            {
-                v6 = *v9;
-                v7 = a2;
-                item.iItem = v5;
-                item.iSubItem = 0;
-                item.pszText = String;
-                if ( a2 == 1005 && (v6 < 256 || v6 > 639) && (v6 < 0x8000 || v6 > 0x8007)
-                    || a2 == 1006 && (v6 >= 256 && v6 <= 639 || v6 >= 0x8000 && v6 <= 0x8007) )
-                {
-                    if ( a2 == 1006 )
-                    {
-                        ++v10;
-                    }
-
-                    item.lParam = v8 | (v6 << 16);
-                    SendMessageA(hWnd, LVM_INSERTITEMA, 0, (LPARAM)&item);
-                    memset(pDest, 0, sizeof(pDest));
-                    jonesConfig_ControlToString(v6, pDest);
-
-                    v17[2] = 1;
-                    v17[5] = (LPARAM)pDest;
-                    SendMessageA(hWnd, LVM_SETITEMTEXTA, v5, (LPARAM)v17);
-                    v7 = a2;
-                    aActions = v11;
-                    ++v5;
-                }
-
-                ++v9;
-                ++v13;
-            } while ( v13 <= (unsigned __int8)(*aActions)[0] );
-        }
-        else
-        {
-            v7 = a2;
-        }
-
-        if ( !v10 && v7 == 1006 )
-        {
-            item.lParam = v8;
-            SendMessageA(hWnd, LVM_INSERTITEMA, 0, (LPARAM)&item);
-            memset(pDest, 0, sizeof(pDest));
-            v16[2] = 1;
-            v16[5] = (LPARAM)pDest;
-            SendMessageA(hWnd, LVM_SETITEMTEXTA, v5, (LPARAM)v16);
-            aActions = v11;
-            ++v5;
-        }
-
-        v11 = ++aActions;
-        ++v8;
-        result = ++pActionName;
-    }
-
-    return result;
-}
-
-char J3DAPI jonesConfig_sub_409200(HWND hWnd, int nResult)
-{
-    HWND v2; // esi
-    LONG pData; // eax
-    int v4; // ecx
-    LONG v5; // ebp
-    const char** v6; // ebx
-    const char* String; // eax
-    int i; // edi
-    int v9; // eax
-    int v10; // edx
-    DWORD* v11; // ecx
-    char* v12; // esi
-    HWND v14; // [esp+10h] [ebp-408h]
-    HWND DlgItem; // [esp+10h] [ebp-408h]
-    HWND v16; // [esp+14h] [ebp-404h]
-    char v17[512]; // [esp+18h] [ebp-400h] BYREF
-    char Dest[512]; // [esp+218h] [ebp-200h] BYREF
-
-    v2 = hWnd;
-    pData = GetWindowLongA(hWnd, DWL_USER);
-    v4 = nResult;
-    v5 = pData;
-    if ( nResult > 1038 )
-    {
-        pData = (pData & ~0xFF) | ((nResult - 22) & 0xFF);
-        if ( nResult == 1046 )
-        {
-            if ( *(int*)(v5 + 4) >= 3 )
-            {
-                char temp = jonesConfig_sub_4097D0(hWnd, *(HWND*)(v5 + 8), *(DWORD*)(v5 + 12), *(DWORD*)v5);
-                pData = (pData & ~0xFF) | ((int)temp & 0xFF);
-            }
-        }
-        else
-        {
-            pData = (pData & ~0xFF) | ((nResult - 32) & 0xFF);
-            if ( nResult == 1056 )
-            {
-                if ( *(int*)(v5 + 4) >= 3 )
-                {
-                    LPARAM temp = jonesConfig_sub_409530(hWnd, *(HWND*)(v5 + 8), *(DWORD*)(v5 + 12), *(DWORD*)v5);
-                    pData = (pData & ~0xFF) | (temp & 0xFF);
-                }
-            }
-            else
-            {
-                pData = (pData & ~0xFF) | ((nResult - 75) & 0xFF);
-                if ( nResult == 1099 )
-                {
-                    DlgItem = GetDlgItem(hWnd, 1005);
-                    v16 = GetDlgItem(hWnd, 1006);
-                    for ( i = 0; i < 1332; i += 36 )
-                    {
-                        v9 = *(DWORD*)v5 + i + 4;
-                        v10 = 0;
-                        v11 = (DWORD*)(i + *(DWORD*)(v5 + 16) + 4);
-                        *(DWORD*)v9 = 0;
-                        *(DWORD*)(v9 + 4) = 0;
-                        *(BYTE*)(v9 + 8) = 0;
-                        v12 = (char*)v11 - v9;
-                        do
-                        {
-                            ++v10;
-                            *(DWORD*)v9 = *(DWORD*)&v12[v9];
-                            v9 += 4;
-                        } while ( v10 <= (unsigned __int8)*v11 );
-                    }
-
-                    SendMessageA(DlgItem, 0x1009u, 0, 0);
-                    SendMessageA(v16, 0x1009u, 0, 0);
-                    jonesConfig_sub_408FC0(DlgItem, 1005, *(JonesControlsScheme**)v5);
-                    pData = (pData & ~0xFF) | ((unsigned __int8)jonesConfig_sub_408FC0(v16, 1006, *(JonesControlsScheme**)v5) & 0xFF);
-                }
-            }
-        }
-    }
-
-    else if ( nResult == 1038 )
-    {
-        if ( *(int*)(pData + 4) >= 3 )
-        {
-            LPARAM temp = jonesConfig_sub_409BC0(
-                (int)hWnd,
-                *(HWND*)(pData + 8),
-                *(DWORD*)(pData + 12),
-                *(DWORD*)pData);
-
-            pData = (pData & ~0xFF) | (temp & 0xFF);
-        }
-    }
-    else
-    {
-        if ( nResult != 1 )
-        {
-            pData = (pData & ~0xFF) | ((nResult - 2) & 0xFF);
-
-            if ( nResult != 2 )
-            {
-                return pData;
-            }
-
-            goto LABEL_15;
-        }
-
-        v14 = 0;
-        memset(v17, 0, sizeof(v17));
-        v6 = jonesConfig_aJonesCapControlActionNames;
-
-        // Rewrote as for loop
-        for ( int i = 0; i < JONES_CONTROL_ACTION_COUNT; i++ )
-        {
-            if ( !*((BYTE*)v14 + *(DWORD*)v5 + 4)
-                && ((int)v6 < (int)&jonesConfig_aJonesCapControlActionNames[16]
-                    || (int)v6 > (int)&jonesConfig_aJonesCapControlActionNames[24]) )
-            {
-                strcat(v17, jonesString_GetString(*v6));
-                strcat(v17, "\n");
-                v2 = hWnd;
-            }
-
-            ++v6;
-            v14 += 9;
-        }
-
-        if ( !strlen(v17) )
-        {
-            **(DWORD**)v5 = 1;
-            v4 = 1;
-
-        LABEL_15:
-            pData = (pData & ~0xFF) | (EndDialog(v2, v4) & 0xFF);
-            return pData;
-        }
-
-        memset(Dest, 0, sizeof(Dest));
-        String = jonesString_GetString("JONES_STR_NO_MAPNG");
-        sprintf(Dest, "%s\n", String);
-        strcat(Dest, v17);
-        jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", Dest, 145);
-        pData = (pData & ~0xFF) | (InvalidateRect(hWnd, 0, 1) & 0xFF);
-    }
-
-    return pData;
-}
-
-LPARAM J3DAPI jonesConfig_sub_409530(HWND hWnd, HWND a2, int a3, int a4)
-{
-    LPARAM result; // eax
-    LPARAM* v5; // esi
-    int v6; // ecx
-    HWND v7; // [esp+Ch] [ebp-16Ch] BYREF
-    LPARAM v8; // [esp+10h] [ebp-168h] BYREF
-    LPARAM v9[10]; // [esp+14h] [ebp-164h] BYREF
-    LPARAM lParam[10]; // [esp+3Ch] [ebp-13Ch] BYREF
-    DWORD dwInitParam[69]; // [esp+64h] [ebp-114h] BYREF
-
-    memset(dwInitParam, 0, sizeof(dwInitParam));
-    dwInitParam[1] = a4;
-    dwInitParam[0] = jonesConfig_sub_4096F0((int)hWnd, a2, a4, &v7, &v8);
-    dwInitParam[67] = a3;
-    if ( dwInitParam[0] >= 0 )
-    {
-        result = jonesConfig_AssignKeyAction(hWnd, dwInitParam);
-        if ( result == 1 )
-        {
-            v5 = (LPARAM*)(a4 + 36 * dwInitParam[0] + 4);
-            result = InvalidateRect(hWnd, 0, 1);
-            if ( v5 )
-            {
-                v7 = (HWND)SendMessageA(a2, 0x100Cu, 0xFFFFFFFF, 2);
-                lParam[2] = 1;
-                lParam[5] = (LPARAM)&dwInitParam[2];
-                SendMessageA(a2, 0x102Eu, (WPARAM)v7, (LPARAM)lParam);
-                v9[0] = 4;
-                v9[1] = (LPARAM)v7;
-                v9[2] = 0;
-                v9[8] = dwInitParam[0] | (dwInitParam[66] << 16);
-                SendMessageA(a2, 0x1006u, 0, (LPARAM)v9);
-                result = v8;
-                v5[v8 + 1] = dwInitParam[66];
-                if ( dwInitParam[67] != 1005 || (result = *v5, BYTE1(*v5)) )
-                {
-                    if ( dwInitParam[67] == 1006 )
-                    {
-                        result = *v5;
-                        if ( (*v5 & 0xFF0000) == 0 )
-                        {
-                            result = (unsigned __int8)*v5 + 1;
-                            *v5 = result | *v5 & 0xFF00 | 0x10000;
-                        }
-                    }
-                }
-                else
-                {
-                    result = (unsigned __int8)*v5 + 1;
-                    v6 = result | *v5 & 0xFF0000;
-                    //BYTE1(v6) = BYTE1(result) | 1;
-                    v6 = (v6 & ~(0xFF << 8)) | ((((result >> 8) & 0xFF) | 1) << 8);
-                    *v5 = v6;
-                }
-            }
-        }
-    }
-    else
-    {
-        result = (LPARAM)jonesString_GetString("JONES_STR_NOKEYACTION");
-        if ( result )
-        {
-            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", (const char*)result, 145);
-            return InvalidateRect(hWnd, 0, 1);
-        }
-    }
-
-    return result;
-}
-
-int J3DAPI jonesConfig_sub_4096F0(int a1, HWND hWnd, int a3, HWND* a4, uint32_t* a5)
-{
-    unsigned int i; // [esp+0h] [ebp-40h]
-    HWND v7; // [esp+4h] [ebp-3Ch]
-    int v8; // [esp+8h] [ebp-38h]
-    int v9; // [esp+Ch] [ebp-34h]
-    unsigned int v10; // [esp+10h] [ebp-30h]
-    LPARAM lParam[8]; // [esp+14h] [ebp-2Ch] BYREF
-    int v12 = 0; // [esp+34h] [ebp-Ch]
-    DWORD* v13; // [esp+3Ch] [ebp-4h]
-
-    if ( !hWnd || !a1 || !a3 )
-    {
-        return -1;
-    }
-
-    v7 = (HWND)SendMessageA(hWnd, 0x100Cu, 0xFFFFFFFF, 2);
-    if ( (int)v7 < 0 )
-    {
-        return -1;
-    }
-
-    lParam[0] = 4;
-    lParam[1] = (LPARAM)v7;
-    lParam[2] = 0;
-    SendMessageA(hWnd, 0x1005u, 0, (LPARAM)lParam);
-    v8 = (unsigned __int16)0; // v12 uninitialized, TODO: FIX?
-    v10 = (0 & 0xFFFF0000) >> 16; // Set v12 to 0 because uninitialized, TODO: FIX?
-    v9 = 0;
-    v13 = (DWORD*)(a3 + 36 * (unsigned __int16)v12 + 4);
-    for ( i = 1; i <= (unsigned __int8)*v13 && v13[i] != v10; ++i )
-    {
-        ++v9;
-    }
-
-    if ( v10 && (unsigned __int8)*v13 && i > (unsigned __int8)*v13 )
-    {
-        return -1;
-    }
-
-    if ( a4 )
-    {
-        *a4 = v7;
-    }
-
-    if ( a5 )
-    {
-        *a5 = v9;
-    }
-
-    return v8;
-}
-
-char J3DAPI jonesConfig_sub_4097D0(HWND a1, HWND hWnd, int a3, int a4)
-{
-    const char* String; // eax
-    int v5; // ebx
-    const char* v6; // eax
-    const char* v7; // eax
-    int v8; // eax
-    LRESULT v9; // ebp
-    int i; // eax
-    const char* v11; // eax
-    int v12; // eax
-    int v13; // edx
-    int v14; // edx
-    LPARAM lParam; // [esp+10h] [ebp-664h] BYREF
-    WPARAM wParam; // [esp+14h] [ebp-660h]
-    int v18; // [esp+18h] [ebp-65Ch]
-    int v19; // [esp+1Ch] [ebp-658h]
-    int v20; // [esp+20h] [ebp-654h]
-    const char* v21; // [esp+24h] [ebp-650h]
-    int v22; // [esp+28h] [ebp-64Ch]
-    int v23; // [esp+30h] [ebp-644h]
-    LPARAM v24[10]; // [esp+38h] [ebp-63Ch] BYREF
-    DWORD dwInitParam[69]; // [esp+60h] [ebp-614h] BYREF
-    char Dest[256]; // [esp+174h] [ebp-500h] BYREF
-    char v27[512]; // [esp+274h] [ebp-400h] BYREF
-    char Format[512]; // [esp+474h] [ebp-200h] BYREF
-
-    memset(dwInitParam, 0, sizeof(dwInitParam));
-
-    lParam = 4;
-    v18 = 0;
-    wParam = SendMessageA(hWnd, LVM_GETNEXTITEM, 0xFFFFFFFF, 2);
-    if ( (wParam & 0x80000000) != 0 )
-    {
-        String = jonesString_GetString("JONES_STR_NOKEYACTION");
-        if ( !String )
-        {
-            return (char)String;
-        }
-
-        jonesConfig_ShowMessageDialog(a1, "JONES_STR_CTRL_OPTS", String, 145);
-
-        //LOBYTE(String) = InvalidateRect(a1, 0, 1);
-        //return (char)String;
-
-        // Can't set low byte of const char*
-        // Low byte is essentially first char of String
-        // Return cast to char directly, hopefully correct?
-        return (char)InvalidateRect(a1, 0, 1);
-    }
-
-    SendMessageA(hWnd, LVM_GETITEMA, 0, (LPARAM)&lParam);
-    dwInitParam[0] = (unsigned __int16)0; // v23 uninitialized, TODO: FIX?
-    dwInitParam[1] = a4;
-    dwInitParam[67] = a3;
-    String = (const char*)jonesConfig_AssignKeyAction(a1, dwInitParam);
-    if ( String != (const char*)1 )
-    {
-        return (char)String;
-    }
-
-    v5 = a4 + 36 * dwInitParam[0] + 4;
-    InvalidateRect(a1, 0, 1);
-    if ( !v5 )
-    {
-        String = jonesString_GetString("JONES_STR_NO_MEM_ASGNMNT");
-        if ( !String )
-        {
-            return (char)String;
-        }
-
-        jonesConfig_ShowMessageDialog(a1, "JONES_STR_CTRL_OPTS", String, 145);
-
-    LABEL_31:
-        //LOBYTE(String) = InvalidateRect(a1, 0, 1);
-        //return (char)String;
-        return (char)InvalidateRect(a1, 0, 1);
-    }
-
-    if ( *(BYTE*)v5 == 8 )
-    {
-        memset(Dest, 0, sizeof(Dest));
-        v6 = jonesString_GetString("JONES_STR_EXCEED");
-        if ( v6 )
-        {
-            strcpy(Format, v6);
-        }
-        else
-        {
-            memset(Format, 0, sizeof(Format));
-        }
-
-        v7 = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[dwInitParam[0]]);
-        if ( v7 )
-        {
-            strcpy(v27, v7);
-        }
-        else
-        {
-            memset(v27, 0, sizeof(v27));
-        }
-
-        //LOBYTE(String) = Format[0];
-        if ( Format[0] )
-        {
-            //LOBYTE(String) = v27[0];
-            if ( v27[0] )
-            {
-                sprintf(Dest, Format, v27);
-                jonesConfig_ShowMessageDialog(a1, "JONES_STR_CTRL_OPTS", Dest, 145);
-                goto LABEL_31;
-            }
-        }
-    }
-    else
-    {
-        if ( a3 == 1005 )
-        {
-            v8 = *(unsigned __int8*)(v5 + 1);
-        }
-        else
-        {
-            v8 = *(unsigned __int8*)(v5 + 2);
-        }
-
-        if ( v8 <= 0 )
-        {
-            lParam = 4;
-            v23 = dwInitParam[0] | (dwInitParam[66] << 16);
-            SendMessageA(hWnd, LVM_SETITEMA, 0, (LPARAM)&lParam);
-        }
-        else
-        {
-            v9 = SendMessageA(hWnd, LVM_GETITEMCOUNT, 0, 0);
-            for ( i = dwInitParam[0]; dwInitParam[0] == (unsigned __int16)0; i = dwInitParam[0] ) // set v23 to 0 because uninitialized, TODO: FIX?
-            {
-                if ( (int)wParam >= v9 )
-                {
-                    break;
-                }
-
-                ++wParam;
-                SendMessageA(hWnd, LVM_GETITEMA, 0, (LPARAM)&lParam);
-            }
-
-            v11 = jonesString_GetString(jonesConfig_aJonesControlActionNames[i]);
-            if ( v11 )
-            {
-                v21 = v11;
-                lParam = 13;
-                v19 = 0;
-                v20 = 0;
-                v22 = 256;
-                v23 = dwInitParam[0] | (dwInitParam[66] << 16);
-                SendMessageA(hWnd, LVM_INSERTITEMA, 0, (LPARAM)&lParam);
-            }
-        }
-
-        v24[4] = 3;
-        v24[3] = 3;
-        SendMessageA(hWnd, LVM_SETITEMSTATE, wParam, (LPARAM)v24);
-        v24[2] = 1;
-        v24[5] = (LPARAM)&dwInitParam[2];
-        SendMessageA(hWnd, LVM_SETITEMTEXTA, wParam, (LPARAM)v24);
-        *(DWORD*)(v5 + 4 * (unsigned __int8)*(DWORD*)v5 + 4) = dwInitParam[66];
-        v12 = *(DWORD*)v5;
-        if ( a3 == 1005 )
-        {
-            v13 = (unsigned __int8)v12 + 1;
-            String = (const char*)(v12 & 0xFF0000);
-            *(DWORD*)v5 = (unsigned int)String | v13 | ((*(DWORD*)v5 & 0xFF00) + 256);
-        }
-        else
-        {
-            v14 = (v12 & 0xFF0000) + 0x10000;
-            String = (const char*)((unsigned __int8)*(DWORD*)v5 + 1);
-            *(DWORD*)v5 = (unsigned int)String | v14 | *(DWORD*)v5 & 0xFF00;
-        }
-    }
-
-    return (char)String;
-}
-
-LPARAM J3DAPI jonesConfig_sub_409BC0(int a1, HWND hWnd, int a3, int a4)
-{
-    int v4; // ebx
-    HWND v5; // ebp
-    LPARAM result; // eax
-    LPARAM v7; // edi
-    int* v8; // esi
-    int v9; // ecx
-    DWORD* v10; // eax
-    int v11; // eax
-    int v12; // edx
-    int v13; // edx
-    LPARAM v14[10]; // [esp+10h] [ebp-50h] BYREF
-    LPARAM lParam[10]; // [esp+38h] [ebp-28h] BYREF
-
-    v4 = a4;
-    v5 = hWnd;
-    result = jonesConfig_sub_4096F0(a1, hWnd, a4, &hWnd, &a1);
-    v7 = result;
-    if ( result < 0 )
-    {
-        return result;
-    }
-
-    if ( a3 == 1005 )
-    {
-        v8 = (int*)(v4 + 36 * result + 4);
-        result = *(unsigned __int8*)(v4 + 36 * result + 5);
-    }
-    else
-    {
-        result = *(unsigned __int8*)(v4 + 36 * result + 6);
-        v8 = (int*)(v4 + 36 * v7 + 4);
-    }
-
-    if ( !result )
-    {
-        return result;
-    }
-
-    if ( result <= 1 )
-    {
-        lParam[2] = 1;
-        lParam[5] = (LPARAM)std_g_aEmptyString;
-        SendMessageA(v5, 0x102Eu, (WPARAM)hWnd, (LPARAM)lParam);
-        v14[0] = 4;
-        v14[1] = (LPARAM)hWnd;
-        v14[2] = 0;
-        v14[8] = v7;
-        SendMessageA(v5, 0x1006u, 0, (LPARAM)v14);
-        v4 = a4;
-    }
-    else
-    {
-        SendMessageA(v5, 0x1008u, (WPARAM)hWnd, 0);
-    }
-
-    v9 = a1 + 1;
-    if ( a1 + 1 < (unsigned __int8)*v8 )
-    {
-        v10 = (DWORD*)(v4 + 4 * (v9 + 8 * v7 + v7) + 4);
-        do
-        {
-            ++v9;
-            *v10 = v10[1];
-            ++v10;
-        } while ( v9 < (unsigned __int8)*v8 );
-    }
-
-    v11 = *v8;
-    if ( a3 == 1005 )
-    {
-        v12 = (unsigned __int8)v11 - 1;
-        result = v11 & 0xFF0000;
-        *v8 = result | v12 | ((*v8 & 0xFF00) - 256);
-    }
-    else
-    {
-        v13 = (v11 & 0xFF0000) - 0x10000;
-        result = (unsigned __int8)*v8 - 1;
-        *v8 = result | v13 | *v8 & 0xFF00;
-    }
-
-    return result;
-}
-
-int J3DAPI jonesConfig_AssignKeyAction(HWND hWnd, uint32_t* dwInitParam)
-{
-    int v2; // esi
-    int v3; // edi
-    int result; // eax
-    const char* String; // eax
-    const char* v6; // eax
-    unsigned int controlId; // edx
-    int v8; // [esp+10h] [ebp-620h]
-    int v9; // [esp+14h] [ebp-61Ch] BYREF
-    int v10; // [esp+18h] [ebp-618h] BYREF
-    LPARAM v11[5]; // [esp+1Ch] [ebp-614h] BYREF
-    char aStr[256]; // [esp+30h] [ebp-600h] BYREF
-    char aControlStr[256]; // [esp+130h] [ebp-500h] BYREF
-    char v14[512]; // [esp+230h] [ebp-400h] BYREF
-    char v15[512]; // [esp+430h] [ebp-200h] BYREF
-
-    v8 = 1;
-    GetWindowLongA(hWnd, GWL_HINSTANCE);
-    memset(dwInitParam + 2, 0, 256u);
-    dwInitParam[66] = 0;
-    v2 = JonesDialog_ShowDialog((LPCSTR)117, hWnd, jonesConfig_AssignKeyDlgProc, (LPARAM)dwInitParam);
-    if ( v2 == 2 )
-    {
-        return v2;
-    }
-
-    while ( 1 )
-    {
-        v3 = jonesConfig_sub_409F70(dwInitParam[1], dwInitParam[66], &v9, dwInitParam[67], &v10);
-        if ( v9 == *dwInitParam )
-        {
-            break;
-        }
-
-        if ( v3 > -1 )
-        {
-            v11[3] = v9;
-            v11[0] = (LPARAM)dwInitParam;
-            v11[1] = v3;
-            v11[2] = v10;
-            v11[4] = (LPARAM)hWnd;
-            v8 = jonesConfig_ShowReassignKeyMsgBox(hWnd, (LPARAM)v11);
-        }
-
-        if ( v2 != 1 || v3 <= -1 || v8 == 1 )
-        {
-            return v2;
-        }
-
-        memset(dwInitParam + 2, 0, 0x100u);
-        dwInitParam[66] = 0;
-        result = JonesDialog_ShowDialog((LPCSTR)117, hWnd, jonesConfig_AssignKeyDlgProc, (LPARAM)dwInitParam);
-        v2 = result;
-        if ( result == 2 )
-        {
-            return result;
-        }
-    }
-
-    String = jonesString_GetString("JONES_STR_SAMEMAP");
-    if ( String )
-    {
-        strcpy(v15, String);
-    }
-    else
-    {
-        memset(v15, 0, sizeof(v15));
-    }
-
-    v6 = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[*dwInitParam]);
-    if ( v6 )
-    {
-        strcpy(v14, v6);
-    }
-    else
-    {
-        memset(v14, 0, sizeof(v14));
-    }
-
-    if ( !v15[0] || !v14[0] )
-    {
-        return 2;
-    }
-
-    controlId = dwInitParam[66];
-    memset(aStr, 0, sizeof(aStr));
-    memset(aControlStr, 0, sizeof(aControlStr));
-    jonesConfig_ControlToString(controlId, aControlStr);
-    sprintf(aStr, "\"%s\" %s %s.", aControlStr, v15, v14);
-    jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", aStr, 145);
-    return 2;
-}
-
-int J3DAPI jonesConfig_sub_409F70(int a1, int a2, int* a3, int a4, int* a5)
-{
-    DWORD* i; // ebp
-    int v6; // ebx
-    unsigned int v7; // esi
-    int offset; // edi
-    unsigned int* v9; // ecx
-    unsigned int v10; // eax
-    unsigned int v11; // eax
-    int idx; // [esp+10h] [ebp-8h]
-    int function; // [esp+14h] [ebp-4h]
-
-    idx = -1;
-    function = 0;
-    for ( i = (DWORD*)(a1 + 4); ; i += 9 )
-    {
-        v6 = *i;
-        v7 = 1;
-        offset = 0;
-        if ( (unsigned __int8)*i )
-        {
-            break;
-        }
-
-    LABEL_17:
-        if ( !BYTE1(v6) && a4 == 1005 || (v6 & 0xFF0000) == 0 && a4 == 1006 )
-        {
-            ++idx;
-        }
-
-        if ( ++function >= 37 )
-        {
-            return -1;
-        }
-    }
-
-    v9 = i + 1;
-    while ( 1 )
-    {
-        if ( a4 == 1006 && ((v10 = *v9, *v9 >= 0x100) && v10 <= 0x27F || v10 >= 0x8000 && v10 <= 0x8007)
-            || a4 == 1005 && ((v11 = *v9, *v9 < 0x100) || v11 > 0x27F) && (v11 < 0x8000 || v11 > 0x8007) )
-        {
-            ++idx;
-        }
-
-        if ( a2 == *v9 )
-        {
-            break;
-        }
-
-        ++offset;
-        ++v7;
-        ++v9;
-        if ( v7 > (unsigned __int8)*i )
-        {
-            goto LABEL_17;
-        }
-    }
-
-    *a3 = function;
-    *a5 = offset;
-    STDLOG_STATUS("index: %i function: %i offset: %i\n", idx, function, offset);
-    return idx;
-}
-
-INT_PTR __stdcall jonesConfig_AssignKeyDlgProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    int v5; // esi
-    LONG pData; // eax
-
-    if ( msg <= WM_INITDIALOG )
-    {
-        if ( msg == WM_INITDIALOG )
-        {
-            jonesConfig_hFontAssignKeyDlg = jonesConfig_InitDialog(hWnd, 0, 117);
-            v5 = jonesConfig_sub_40A1A0(hWnd, wparam, (DWORD*)lparam);
-            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-            return v5;
-        }
-
-        if ( msg != WM_DESTROY )
-        {
-            return 0;
-        }
-
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontAssignKeyDlg);
-        return 1;
-    }
-
-    if ( msg == WM_COMMAND )
-    {
-        jonesConfig_AssignKeyDlg_HandleWM_COMMAND(hWnd, (unsigned __int16)wparam);
-        return 0;
-    }
-    else
-    {
-        if ( msg != WM_TIMER )
-        {
-            return 0;
-        }
-
-        pData = GetWindowLongA(hWnd, DWL_USER);
-        if ( !pData || *(DWORD*)(pData + 272) )
-        {
-            return 1;
-        }
-
-        jonesConfig_AssignControlKey(hWnd);
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_sub_40A1A0(HWND hDlg, int a2, uint32_t* dwNewLong)
-{
-    const char* String; // eax
-    HWND DlgItem; // eax
-    const char* v5; // eax
-    HWND v6; // eax
-    const CHAR* v8; // [esp-4h] [ebp-14h]
-    const CHAR* v9; // [esp-4h] [ebp-14h]
-
-    if ( dwNewLong[67] == 1006 )
-    {
-        String = jonesString_GetString("JONES_STR_NEXTBUTTON");
-        if ( String )
-        {
-            v8 = String;
-            DlgItem = GetDlgItem(hDlg, 1054);
-            SetWindowTextA(DlgItem, v8);
-        }
-    }
-
-    v5 = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[*dwNewLong]);
-    if ( v5 )
-    {
-        v9 = v5;
-        v6 = GetDlgItem(hDlg, 1055);
-        SetWindowTextA(v6, v9);
-    }
-
-    SetTimer(hDlg, 1u, 0x64u, 0);
-    SetWindowLongA(hDlg, 8, (LONG)dwNewLong);
-    return 1;
-}
-
-void J3DAPI jonesConfig_AssignControlKey(HWND hWnd)
-{
-    int pSomeControleStruct; // esi
-    int bJoystickControl; // ebx
-    unsigned int controlId; // ebx
-    int v4; // eax
-    const char* String; // eax
-    void* v6; // edi
-    const char* v7; // eax
-    const char* v8; // eax
-    int numKeyPressed; // [esp+10h] [ebp-104h] BYREF
-    char Dest[256]; // [esp+14h] [ebp-100h] BYREF
-
-    pSomeControleStruct = GetWindowLongA(hWnd, DWL_USER);// TODO: Reconstruct struct
-    bJoystickControl = wuRegistry_GetIntEx("Joystick Control", 0);
-
-    jonesConfig_bControlsActive = stdControl_ControlsActive();
-    stdControl_SetActivation(1);
-    stdControl_ReadControls();
-
-    if ( bJoystickControl
-        && *(DWORD*)(pSomeControleStruct + 268) == 1006
-        && jonesConfig_sub_40A500(pSomeControleStruct) )
-    {
-        stdControl_SetActivation(jonesConfig_bControlsActive);
-
-    LABEL_29:
-        KillTimer(hWnd, 1u);
-        EndDialog(hWnd, 1);
-        return;
-    }
-
-    controlId = 0;
-    while ( !stdControl_ReadKey(controlId, &numKeyPressed) )
-    {
-        if ( ++controlId >= 644 )
-        {
-            return;
-        }
-    }
-
-    v4 = *(DWORD*)(pSomeControleStruct + 268);
-    if ( v4 == 1005 && controlId >= 256 && controlId <= 639 )
-    {
-        String = jonesString_GetString("JONES_STR_KEYONLY");
-        goto LABEL_18;
-    }
-
-    if ( v4 == 1006 && (controlId < 256 || controlId > 639) )
-    {
-        String = jonesString_GetString("JONES_STR_BUTTONONLY");
-
-    LABEL_18:
-        if ( !String )
-        {
-            return;
-        }
-
-        *(DWORD*)(pSomeControleStruct + 272) = 1;
-        jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", String, 145);
-        *(DWORD*)(pSomeControleStruct + 272) = 0;
-        InvalidateRect(hWnd, 0, 1);
-        return;
-    }
-
-    v6 = (void*)(pSomeControleStruct + 8);
-    jonesConfig_ControlToString(controlId, (char*)(pSomeControleStruct + 8));
-    *(DWORD*)(pSomeControleStruct + 264) = controlId;
-    switch ( controlId )
-    {
-        case DIK_ESCAPE:
-        case DIK_MINUS:
-        case DIK_EQUALS:
-        case DIK_F4:
-            v7 = jonesString_GetString("JONES_STR_NO_MAP");
-            if ( !v7 )
-            {
-                goto LABEL_27;
-            }
-
-            sprintf(Dest, v7, pSomeControleStruct + 8);
-            *(DWORD*)(pSomeControleStruct + 272) = 1;
-            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", Dest, 145);
-            *(DWORD*)(pSomeControleStruct + 272) = 0;
-            memset(v6, 0, 256u);
-            break;
-
-        case DIK_1:
-        case DIK_2:
-        case DIK_3:
-        case DIK_4:
-        case DIK_5:
-        case DIK_6:
-        case DIK_7:
-        case DIK_8:
-        case DIK_9:
-        case DIK_0:
-            if ( *(int*)pSomeControleStruct >= 16 && *(int*)pSomeControleStruct <= 27 )
-            {
-                goto LABEL_28;
-            }
-
-            v8 = jonesString_GetString("JONES_STR_NO_KEYMAP_NUM");
-            if ( v8 )
-            {
-                sprintf(Dest, v8, pSomeControleStruct + 8);
-                *(DWORD*)(pSomeControleStruct + 272) = 1;
-                jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", Dest, 145);
-                *(DWORD*)(pSomeControleStruct + 272) = 0;
-                InvalidateRect(hWnd, 0, 1);
-            }
-
-        LABEL_27:
-            memset(v6, 0, 0x100u);
-            break;
-
-        default:
-        LABEL_28:
-            stdControl_SetActivation(jonesConfig_bControlsActive);
-            goto LABEL_29;
-    }
-}
-
-int J3DAPI jonesConfig_sub_40A500(int a1)
-{
-    int NumJoysticks; // eax
-    int v2; // ebp
-    int i; // edi
-    int v5; // [esp+10h] [ebp-Ch]
-    char v6[4]; // [esp+14h] [ebp-8h] BYREF
-    int v7; // [esp+18h] [ebp-4h]
-
-    NumJoysticks = stdControl_GetNumJoysticks();
-    v2 = 0;
-    v7 = NumJoysticks;
-    if ( !NumJoysticks )
-    {
-        return 0;
-    }
-
-    v5 = 0;
-    if ( NumJoysticks <= 0 )
-    {
-        return 0;
-    }
-
-    while ( 2 )
-    {
-        for ( i = 0; i <= 5; ++i )
-        {
-            if ( stdControl_ReadAxisAsKey((i + v2) | 0x80000000, (int*)v6) )
-            {
-                if ( i )
-                {
-                    if ( i == 1 )
-                    {
-                        *(DWORD*)(a1 + 264) = 32770;
-                    }
-
-                    else if ( i == 5 )
-                    {
-                        *(DWORD*)(a1 + 264) = 32773;
-                    }
-                }
-                else
-                {
-                    *(DWORD*)(a1 + 264) = 32769;
-                }
-
-                if ( *(DWORD*)(a1 + 264) )
-                {
-                    goto LABEL_24;
-                }
-            }
-
-            else if ( stdControl_ReadAxisAsKey((i + v2) | 0xC0000000, (int*)v6) )
-            {
-                if ( i )
-                {
-                    if ( i == 1 )
-                    {
-                        *(DWORD*)(a1 + 264) = 0x8000;
-                    }
-
-                    else if ( i == 5 )
-                    {
-                        *(DWORD*)(a1 + 264) = 32772;
-                    }
-                }
-                else
-                {
-                    *(DWORD*)(a1 + 264) = 32771;
-                }
-
-                if ( *(DWORD*)(a1 + 264) )
-                {
-                LABEL_24:
-                    jonesConfig_ControlToString(*(DWORD*)(a1 + 264), (char*)(a1 + 8));
-                    return 1;
-                }
-            }
-        }
-
-        v2 += 6;
-        if ( ++v5 < v7 )
-        {
-            continue;
-        }
-
-        return 0;
-    }
-}
-
-void J3DAPI jonesConfig_AssignKeyDlg_HandleWM_COMMAND(HWND hWnd, int a2)
-{
-    if ( a2 == 2 )
-    {
-        KillTimer(hWnd, 1u);
-        EndDialog(hWnd, 2);
-    }
-}
-
-int J3DAPI jonesConfig_ShowReassignKeyMsgBox(HWND hWnd, LPARAM dwInitParam)
-{
-    GetWindowLongA(hWnd, GWL_HINSTANCE);        // ??
-    return JonesDialog_ShowDialog((LPCSTR)120, hWnd, jonesConfig_ReassignKeyDialogProc, dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_ReassignKeyDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    int v5; // edi
-
-    if ( uMsg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontReassignKeyDlg);
-        return 1;
-    }
-
-    else if ( uMsg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontReassignKeyDlg = jonesConfig_InitDialog(hWnd, 0, 120);
-        v5 = jonesConfig_SetReassignKeyDialogText(hWnd, wParam, (void*)lParam);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return v5;
-    }
-    else
-    {
-        if ( uMsg == WM_COMMAND )
-        {
-            jonesConfig_sub_40AA10(hWnd, (unsigned __int16)wParam);
-        }
-
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_SetReassignKeyDialogText(HWND hDlg, int a2, void* dwNewLong)
-{
-    DWORD* v3; // ebx
-    const char* pTitle; // esi
-    HWND DlgItem; // edi
-    const char* pMapFromStr; // eax
-    const char* pToControlName; // eax
-    HWND hwndControl; // esi
-    const char* v9; // eax
-    const char* v10; // eax
-    HWND v11; // esi
-    CHAR aBuffer[256]; // [esp+10h] [ebp-700h] BYREF
-    char aControlText[256]; // [esp+110h] [ebp-600h] BYREF
-    char aCaptionFormat[512]; // [esp+210h] [ebp-500h] BYREF
-    char aControlName[512]; // [esp+410h] [ebp-300h] BYREF
-    CHAR String[256]; // [esp+610h] [ebp-100h] BYREF
-
-    v3 = *(DWORD**)dwNewLong;
-    memset(aControlText, 0, sizeof(aControlText));
-    memset(aBuffer, 0, sizeof(aBuffer));
-    jonesConfig_ControlToString(v3[66], aBuffer);
-
-    sprintf(aControlText, "\"%s\" ", aBuffer);
-    pTitle = jonesString_GetString("JONES_STR_NEWMAP");
-    if ( pTitle )
-    {
-        DlgItem = GetDlgItem(hDlg, 1066);
-        sprintf(String, pTitle, aControlText);
-        SetWindowTextA(DlgItem, String);
-    }
-
-    memset(aControlText, 0, sizeof(aControlText));
-
-    pMapFromStr = jonesString_GetString("JONES_STR_FROM");
-    if ( pMapFromStr )
-    {
-        strcpy(aCaptionFormat, pMapFromStr);
-    }
-    else
-    {
-        memset(aCaptionFormat, 0, sizeof(aCaptionFormat));
-    }
-
-    pToControlName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[*((DWORD*)dwNewLong + 3)]);
-    if ( pToControlName )
-    {
-        strcpy(aControlName, pToControlName);
-    }
-    else
-    {
-        memset(aControlName, 0, sizeof(aControlName));
-    }
-
-    if ( aCaptionFormat[0] && aControlName[0] )
-    {
-        hwndControl = GetDlgItem(hDlg, 1073);
-        sprintf(aControlText, aCaptionFormat, aControlName);
-        SetWindowTextA(hwndControl, aControlText);
-    }
-
-    memset(aBuffer, 0, sizeof(aBuffer));
-    v9 = jonesString_GetString("JONES_STR_TO");
-    if ( v9 )
-    {
-        strcpy(aCaptionFormat, v9);
-    }
-    else
-    {
-        memset(aCaptionFormat, 0, sizeof(aCaptionFormat));
-    }
-
-    v10 = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[*v3]);
-    if ( v10 )
-    {
-        strcpy(aControlName, v10);
-    }
-    else
-    {
-        memset(aControlName, 0, sizeof(aControlName));
-    }
-
-    if ( aCaptionFormat[0] && aControlName[0] )
-    {
-        v11 = GetDlgItem(hDlg, 1072);
-        sprintf(aBuffer, aCaptionFormat, aControlName);
-        SetWindowTextA(v11, aBuffer);
-    }
-
-    SetWindowLongA(hDlg, 8, (LONG)dwNewLong);
-    return 1;
-}
-
-int J3DAPI jonesConfig_sub_40AA10(HWND hWnd, int nResult)
-{
-    LONG WindowLongA; // edi
-    int result; // eax
-    int v4; // esi
-    HWND DlgItem; // ebp
-    LPARAM v6; // eax
-    int v7; // edx
-    LPARAM v8; // ecx
-    int v9; // eax
-    int i; // ecx
-    int v11; // eax
-    int v12; // eax
-    int v13; // edi
-    int* v14; // ecx
-    int v15; // edx
-    int v16; // eax
-    WPARAM v17; // [esp-8h] [ebp-68h]
-    LPARAM lParam[10]; // [esp+10h] [ebp-50h] BYREF
-    LPARAM v19[10]; // [esp+38h] [ebp-28h] BYREF
-
-    WindowLongA = GetWindowLongA(hWnd, 8);
-    result = *(DWORD*)WindowLongA;
-    v4 = *(DWORD*)(*(DWORD*)WindowLongA + 4);
-    if ( nResult == 1 )
-    {
-        DlgItem = GetDlgItem(*(HWND*)(WindowLongA + 16), *(DWORD*)(result + 268));
-        v6 = *(DWORD*)(WindowLongA + 12);
-        if ( *(DWORD*)(*(DWORD*)WindowLongA + 268) == 1005 )
-        {
-            v7 = *(unsigned __int8*)(v4 + 36 * v6 + 5);
-        }
-        else
-        {
-            v7 = *(unsigned __int8*)(v4 + 36 * v6 + 6);
-        }
-
-        if ( v7 <= 1 )
-        {
-            if ( v7 == 1 )
-            {
-                v8 = *(DWORD*)(WindowLongA + 4);
-                lParam[0] = 4;
-                lParam[1] = v8;
-                lParam[2] = 0;
-                lParam[8] = v6;
-                SendMessageA(DlgItem, 0x1006u, 0, (LPARAM)lParam);
-                v17 = *(DWORD*)(WindowLongA + 4);
-                v19[2] = 1;
-                v19[5] = (LPARAM)std_g_aEmptyString;
-                SendMessageA(DlgItem, 0x102Eu, v17, (LPARAM)v19);
-            }
-        }
-        else
-        {
-            SendMessageA(DlgItem, 0x1008u, *(DWORD*)(WindowLongA + 4), 0);
-        }
-
-        v9 = *(DWORD*)(WindowLongA + 12);
-        for ( i = *(DWORD*)(WindowLongA + 8) + 1;
-            i < (unsigned __int8)*(DWORD*)(v4 + 36 * v9 + 4);
-            v9 = *(DWORD*)(WindowLongA + 12) )
-        {
-            v11 = i + 8 * v9 + v9;
-            ++i;
-            *(DWORD*)(v4 + 4 * v11 + 4) = *(DWORD*)(v4 + 4 * v11 + 8);
-        }
-
-        v12 = *(DWORD*)WindowLongA;
-        v13 = *(DWORD*)(WindowLongA + 12);
-        v14 = (int*)(v4 + 36 * v13 + 4);
-        if ( *(DWORD*)(v12 + 268) == 1005 )
-        {
-            v15 = ((unsigned __int8)*(DWORD*)(v4 + 36 * v13 + 4) - 1) | ((*(DWORD*)(v4 + 36 * v13 + 4) & 0xFF00)
-                - 256);
-            v16 = *(DWORD*)(v4 + 36 * v13 + 4) & 0xFF0000;
-        }
-        else
-        {
-            v15 = ((*v14 & 0xFF0000) - 0x10000) | *v14 & 0xFF00;
-            v16 = (unsigned __int8)*v14 - 1;
-        }
-
-        *v14 = v16 | v15;
-        return EndDialog(hWnd, nResult);
-    }
-
-    if ( nResult == 2 )
-    {
-        return EndDialog(hWnd, nResult);
-    }
-
-    return result;
-}
-
-int J3DAPI jonesConfig_ShowDisplaySettingsDialog(HWND hWnd, StdDisplayEnvironment* pDisplayEnv, JonesDisplaySettings* pDSettings)
-{
-    int Int; // eax
-    int windowMode; // edx
-    int v6; // ebp
-    int displayDeviceNum; // ecx
-    int height; // eax
-    int videoModeNum; // edx
-    rdGeometryMode geoMode; // eax
-    Std3DMipmapFilterType filter; // ecx
-    int width; // edx
-    int bBuffering; // ecx
-    int bFog; // edx
-    rdLightMode lightMode; // ecx
-    int bClearBackBuffer; // edx
-    int v17; // edi
-    int v18; // eax
-    int result; // eax
-    int v20; // eax
-    int v21; // ecx
-    int v22; // edx
-    int v23; // eax
-    Std3DMipmapFilterType v24; // ecx
-    int v25; // edx
-    int v26; // eax
-    int v27; // ecx
-    int v28; // edx
-    rdGeometryMode v29; // eax
-    rdLightMode v30; // ecx
-    int v31; // edx
-    LPARAM dwInitParam[2]; // [esp+10h] [ebp-50h] BYREF
-    void* a1; // [esp+18h] [ebp-48h]
-    void* pBytes; // [esp+1Ch] [ebp-44h]
-    int v35; // [esp+20h] [ebp-40h]
-    int v36; // [esp+24h] [ebp-3Ch]
-    int v37; // [esp+28h] [ebp-38h]
-    int bDualMonitor; // [esp+2Ch] [ebp-34h]
-    int v39; // [esp+30h] [ebp-30h]
-    int v40; // [esp+34h] [ebp-2Ch]
-    int device3DNum; // [esp+38h] [ebp-28h]
-    Std3DMipmapFilterType v42; // [esp+3Ch] [ebp-24h]
-    int v43; // [esp+40h] [ebp-20h]
-    int v44; // [esp+44h] [ebp-1Ch]
-    int v45; // [esp+48h] [ebp-18h]
-    int v46; // [esp+4Ch] [ebp-14h]
-    rdGeometryMode v47; // [esp+50h] [ebp-10h]
-    rdLightMode v48; // [esp+54h] [ebp-Ch]
-    int v49; // [esp+58h] [ebp-8h]
-    float hWnda; // [esp+64h] [ebp+4h]
-
-    GetWindowLongA(hWnd, -6);
-    dwInitParam[0] = (LPARAM)pDSettings;
-    dwInitParam[1] = (LPARAM)pDisplayEnv;
-    a1 = 0;
-    pBytes = 0;
-    v35 = 0;
-    v36 = 0;
-    hWnda = sithRender_g_fogDensity;
-    Int = wuRegistry_GetInt("Performance Level", 4);
-    windowMode = pDSettings->bWindowMode;
-    v6 = Int;
-    displayDeviceNum = pDSettings->displayDeviceNum;
-    bDualMonitor = pDSettings->bDualMonitor;
-    device3DNum = pDSettings->device3DNum;
-    height = pDSettings->height;
-    v37 = windowMode;
-    videoModeNum = pDSettings->videoModeNum;
-    v44 = height;
-    geoMode = pDSettings->geoMode;
-    v39 = displayDeviceNum;
-    filter = pDSettings->filter;
-    v40 = videoModeNum;
-    width = pDSettings->width;
-    v47 = geoMode;
-    v42 = filter;
-    bBuffering = pDSettings->bBuffering;
-    v43 = width;
-    bFog = pDSettings->bFog;
-    v45 = bBuffering;
-    lightMode = pDSettings->lightMode;
-    v46 = bFog;
-    bClearBackBuffer = pDSettings->bClearBackBuffer;
-    v48 = lightMode;
-    v49 = bClearBackBuffer;
-
-    v17 = JonesDialog_ShowDialog((LPCSTR)114, hWnd, jonesConfig_DisplaySettingsDialogProc, (LPARAM)dwInitParam);
-    if ( a1 )
-    {
-        stdMemory_Free(a1);
-    }
-
-    if ( pBytes )
-    {
-        stdMemory_Free(pBytes);
-    }
-
-    if ( v17 == 1 )
-    {
-        v18 = wuRegistry_GetIntEx("Mouse Control", 0);
-        jonesConfig_EnableMouseControl(v18);
-        return 1;
-    }
-    else
-    {
-        sithRender_g_fogDensity = hWnda;
-        wuRegistry_SaveInt("Performance Level", v6);
-        v20 = bDualMonitor;
-        v21 = v39;
-        pDSettings->bWindowMode = v37;
-        v22 = v40;
-        pDSettings->bDualMonitor = v20;
-        v23 = device3DNum;
-        pDSettings->displayDeviceNum = v21;
-        v24 = v42;
-        pDSettings->videoModeNum = v22;
-        v25 = v43;
-        pDSettings->device3DNum = v23;
-        v26 = v44;
-        pDSettings->filter = v24;
-        v27 = v45;
-        pDSettings->width = v25;
-        v28 = v46;
-        pDSettings->height = v26;
-        v29 = v47;
-        pDSettings->bBuffering = v27;
-        v30 = v48;
-        pDSettings->bFog = v28;
-        v31 = v49;
-        pDSettings->geoMode = v29;
-        result = v17;
-        pDSettings->lightMode = v30;
-        pDSettings->bClearBackBuffer = v31;
-    }
-
-    return result;
-}
-
-INT_PTR __stdcall jonesConfig_DisplaySettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    int v5; // esi
-    LONG WindowLongA; // ebx
-    HWND DlgItem; // eax
-    LRESULT v8; // edi
-    HWND v9; // eax
-
-    if ( uMsg <= WM_INITDIALOG )
-    {
-        if ( uMsg == WM_INITDIALOG )
-        {
-            jonesConfig_hFontDisplaySettingsDlg = jonesConfig_InitDialog(hWnd, 0, 114);
-            v5 = jonesConfig_sub_40AE90(hWnd, wParam, (int*)lParam);
-            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-            return v5;
-        }
-
-        if ( uMsg != 2 )
-        {
-            return 0;
-        }
-
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontDisplaySettingsDlg);
-        return 1;
-    }
-
-    if ( uMsg == WM_COMMAND )
-    {
-        jonesConfig_sub_40B5A0(hWnd, (unsigned __int16)wParam, lParam, HIWORD(wParam));
-        return 0;
-    }
-    else
-    {
-        if ( uMsg != WM_HSCROLL )
-        {
-            return 0;
-        }
-
-        if ( !jonesConfig_dword_511954 )
-        {
-            return 1;
-        }
-
-        WindowLongA = GetWindowLongA(hWnd, 8);
-        jonesConfig_HandleWM_HSCROLL(hWnd, (HWND)lParam, (unsigned __int16)wParam);
-        DlgItem = GetDlgItem(hWnd, 1050);
-        v8 = SendMessageA(DlgItem, 0x400u, 0, 0);
-        v9 = GetDlgItem(hWnd, 1097);
-        SetWindowTextA(v9, (LPCSTR)(*(DWORD*)(WindowLongA + 8) + 280 * v8));
-        return 1;
-    }
-}
-
-int J3DAPI jonesConfig_sub_40AE90(HWND hDlg, int a2, int* dwNewLong)
-{
-    int v3; // ebp
-    int v4; // esi
-    void* v5; // edi
-    int v6; // edi
-    const char* v7; // edx
-    DWORD* v8; // eax
-    int v9; // eax
-    int v10; // ebp
-    int v11; // eax
-    const char* v12; // eax
-    BYTE* v13; // eax
-    int v14; // edi
-    WPARAM v15; // esi
-    DWORD* v16; // eax
-    void* v17; // eax
-    unsigned int v18; // esi
-    HWND v19; // eax
-    char* v20; // edi
-    unsigned int v21; // edx
-    char* v22; // edi
-    char v23; // cl
-    int v24; // edx
-    unsigned int v25; // eax
-    int v26; // ebp
-    HWND v27; // edi
-    HWND v28; // edi
-    int v30; // [esp+10h] [ebp-284h]
-    int v31; // [esp+10h] [ebp-284h]
-    HWND hWnd; // [esp+14h] [ebp-280h]
-    int hWnda; // [esp+14h] [ebp-280h]
-    int lParam; // [esp+18h] [ebp-27Ch]
-    HWND DlgItem; // [esp+1Ch] [ebp-278h]
-    int v36; // [esp+20h] [ebp-274h]
-    int v37; // [esp+24h] [ebp-270h]
-    int v38; // [esp+28h] [ebp-26Ch]
-    int v39; // [esp+2Ch] [ebp-268h]
-    int v40; // [esp+30h] [ebp-264h]
-    unsigned int v41; // [esp+30h] [ebp-264h]
-    int v42; // [esp+34h] [ebp-260h]
-    int v43; // [esp+38h] [ebp-25Ch]
-    int v44; // [esp+3Ch] [ebp-258h]
-    WPARAM v45; // [esp+40h] [ebp-254h]
-    int v46[20]; // [esp+44h] [ebp-250h] BYREF
-    char Dest[256]; // [esp+94h] [ebp-200h] BYREF
-    CHAR String[256]; // [esp+194h] [ebp-100h] BYREF
-
-    v3 = *dwNewLong;
-    v4 = dwNewLong[1];
-    v42 = *dwNewLong;
-    v43 = v4;
-    lParam = -1;
-    hWnd = GetDlgItem(hDlg, 1);
-    DlgItem = GetDlgItem(hDlg, 1094);
-    SendMessageA(DlgItem, 0x14Bu, 0, 0);
-    if ( dwNewLong[2] )
-    {
-        stdMemory_Free((void*)dwNewLong[2]);
-        dwNewLong[2] = 0;
-        dwNewLong[5] = 0;
-    }
-
-    v5 = STDMALLOC(280 * *(DWORD*)(688 * *(DWORD*)(v3 + 8) + *(DWORD*)(v4 + 4) + 672));
-    dwNewLong[2] = (int)v5;
-    if ( !v5 )
-    {
-        return 0;
-    }
-
-    memset(v5, 0, 280 * *(DWORD*)(688 * *(DWORD*)(v3 + 8) + *(DWORD*)(v4 + 4) + 672));
-    if ( dwNewLong[3] )
-    {
-        stdMemory_Free((void*)dwNewLong[3]);
-        dwNewLong[3] = 0;
-        dwNewLong[4] = 0;
-    }
-
-    v6 = *(DWORD*)(v4 + 4) + 688 * *(DWORD*)(v3 + 8);
-    v37 = v6;
-    if ( *(DWORD*)(v6 + 256) )
-    {
-        EnableWindow(hWnd, 1);
-        EnableWindow(DlgItem, 1);
-    }
-    else
-    {
-        EnableWindow(hWnd, 0);
-        EnableWindow(DlgItem, 0);
-    }
-
-    memcpy(v46, (const void*)(*(DWORD*)(v6 + 676) + 80 * *(DWORD*)(v3 + 12)), sizeof(v46));
-    hWnda = 0;
-    v30 = 0;
-    if ( *(DWORD*)(688 * *(DWORD*)(v3 + 8) + *(DWORD*)(v4 + 4) + 672) )
-    {
-        v36 = 0;
-        while ( 1 )
-        {
-            v7 = jonesString_GetString("JONES_STR_BYPIXELS");
-            memset(Dest, 0, sizeof(Dest));
-            if ( v7 )
-            {
-                sprintf(
-                    Dest,
-                    v7,
-                    *(DWORD*)(*(DWORD*)(v37 + 676) + v36 + 4),
-                    *(DWORD*)(*(DWORD*)(v37 + 676) + v36 + 8));
-            }
-
-            v8 = (DWORD*)(*(DWORD*)(v37 + 676) + v36);
-            if ( *v8 != 1065353216 || v8[1] < 0x200u || v8[2] < 0x180u || !jonesConfig_sub_40BC40(v37, v3, v8[7]) )
-            {
-                goto LABEL_37;
-            }
-
-            v9 = jonesConfig_sub_40B530((const char*)dwNewLong[2], Dest, dwNewLong[5]);
-            v10 = v9;
-            if ( v9 != -1 )
-            {
-                break;
-            }
-
-        LABEL_36:
-            v3 = v42;
-
-        LABEL_37:
-            v36 += 80;
-            if ( (unsigned int)++v30 >= *(DWORD*)(688 * *(DWORD*)(v3 + 8) + *(DWORD*)(v43 + 4) + 672) )
-            {
-                goto LABEL_38;
-            }
-        }
-
-        if ( v9 == dwNewLong[5] )
-        {
-            strcpy((char*)(dwNewLong[2] + 280 * v9), Dest);
-            ++dwNewLong[5];
-        }
-
-        v11 = *(DWORD*)(*(DWORD*)(v37 + 676) + v36 + 28);
-        switch ( v11 )
-        {
-            case 16:
-                v38 = 2;
-                v39 = 4;
-                v12 = jonesString_GetString("JONES_STR_16BBP");
-                if ( !v12 )
-                {
-                    goto LABEL_29;
-                }
-
-                break;
-
-            case 24:
-                v38 = 3;
-                v39 = 8;
-                v12 = jonesString_GetString("JONES_STR_24BBP");
-                if ( !v12 )
-                {
-                    goto LABEL_29;
-                }
-
-                break;
-
-            case 32:
-                v38 = 4;
-                v39 = 16;
-                v12 = jonesString_GetString("JONES_STR_32BBP");
-                if ( !v12 )
-                {
-                    goto LABEL_29;
-                }
-
-                break;
-
-            default:
-                goto LABEL_29;
-        }
-
-        sprintf(Dest, v12);
-
-    LABEL_29:
-        v13 = (BYTE*)(dwNewLong[2] + 280 * v10 + 256);
-        *v13 |= v39;
-        *(DWORD*)(dwNewLong[2] + 4 * (v38 + 70 * v10) + 260) = v30;
-        if ( SendMessageA(DlgItem, 0x14Cu, 0, (LPARAM)Dest) == -1 )
-        {
-            v14 = v38 | (v39 << 16);
-            v44 = v14;
-            v15 = SendMessageA(DlgItem, 0x143u, 0, (LPARAM)Dest);
-            v45 = v15;
-            SendMessageA(DlgItem, 0x151u, v15, v14);
-        }
-        else
-        {
-            v15 = v45;
-            v14 = v44;
-        }
-
-        v16 = (DWORD*)(*(DWORD*)(v37 + 676) + v36);
-        if ( v16[1] == v46[1] && v16[2] == v46[2] && v16[7] == v46[7] )
-        {
-            lParam = v10;
-            v40 = v14;
-            SendMessageA(DlgItem, 0x14Eu, v15, 0);
-            hWnda = 1;
-        }
-
-        goto LABEL_36;
-    }
-
-LABEL_38:
-    v17 = STDMALLOC(4 * dwNewLong[5]);
-    dwNewLong[3] = (int)v17;
-    if ( !v17 )
-    {
-        return 0;
-    }
-
-    if ( hWnda )
-    {
-        v18 = v40;
-    }
-    else
-    {
-        lParam = 0;
-        v18 = *(unsigned __int8*)(dwNewLong[2] + 256) << 16;
-    }
-
-    v19 = GetDlgItem(hDlg, 1097);
-    GetWindowTextA(v19, String, 256);
-    v20 = (char*)dwNewLong[3];
-    v21 = 4 * dwNewLong[5];
-    memset(v20, 0, 4 * (v21 >> 2));
-    v22 = &v20[4 * (v21 >> 2)];
-    v23 = v21;
-    v24 = 0;
-    memset(v22, 0, v23 & 3);
-    if ( dwNewLong[5] > 0 )
-    {
-        v31 = 0;
-        v25 = HIWORD(v18);
-        v41 = HIWORD(v18);
-        do
-        {
-            v26 = dwNewLong[2] + v31;
-            if ( (*(BYTE*)(v26 + 256) & (unsigned __int8)v25) != 0 )
-            {
-                if ( strlen(String) && !strcmp(String, (const char*)(dwNewLong[2] + v31)) )
-                {
-                    lParam = dwNewLong[4];
-                }
-
-                else if ( lParam == v24 )
-                {
-                    lParam = dwNewLong[4];
-                }
-
-                *(DWORD*)(dwNewLong[3] + 4 * dwNewLong[4]++) = v26;
-                v25 = (v25 & 0xFFFFFF00) | (v41 & 0xFF);
-            }
-
-            ++v24;
-            v31 += 280;
-        } while ( v24 < dwNewLong[5] );
-    }
-
-    v27 = GetDlgItem(hDlg, 1050);
-    SendMessageA(v27, 0x406u, 1u, (unsigned __int16)(*((WORD*)dwNewLong + 8) - 1) << 16);
-    SendMessageA(v27, 0x405u, 1u, lParam);
-    SendMessageA(v27, 0x414u, 1u, 0);
-    v28 = GetDlgItem(hDlg, 1097);
-    SetWindowTextA(v28, *(LPCSTR*)(dwNewLong[3] + 4 * lParam));
-    SendMessageA(v28, 0x415u, 0, 1);
-    if ( !hWnda )
-    {
-        SendMessageA(DlgItem, 0x14Eu, 0, 0);
-    }
-
-    SetWindowLongA(hDlg, 8, (LONG)dwNewLong);
-    return 1;
-}
-
-int J3DAPI jonesConfig_sub_40B530(const char* a1, const char* a2, int a3)
-{
-    int i; // ebp
-
-    if ( !a2 )
-    {
-        return -1;
-    }
-
-    for ( i = 0; i < a3; a1 += 280 )
-    {
-        if ( !strcmp(a1, a2) )
-        {
-            break;
-        }
-
-        ++i;
-    }
-
-    return i;
-}
-
-int J3DAPI jonesConfig_sub_40B5A0(HWND hWnd, int nResult, int a3, int a4)
-{
-    LONG WindowLongA; // ebp
-    int result; // eax
-    DWORD* v6; // esi
-    int v7; // edi
-    HWND v8; // eax
-    WPARAM v9; // eax
-    int v10; // ecx
-    int v11; // edx
-    HWND v12; // esi
-    WPARAM v13; // edi
-    const char* v14; // esi
-    HWND v15; // ebx
-    char* v16; // edi
-    unsigned int v17; // edx
-    char* v18; // edi
-    char v19; // cl
-    int v20; // edx
-    int v21; // eax
-    int v22; // esi
-    HWND v23; // esi
-    void(__stdcall * v24)(HWND, UINT, WPARAM, LPARAM); // ebx
-    WPARAM v25; // eax
-    unsigned int v26; // esi
-    int v27; // eax
-    int v28; // edx
-    unsigned int v29; // eax
-    int v30; // esi
-    float v31; // [esp+0h] [ebp-128h]
-    LPARAM lParamb; // [esp+14h] [ebp-114h]
-    LRESULT lParam; // [esp+14h] [ebp-114h]
-    LPARAM lParama; // [esp+14h] [ebp-114h]
-    HWND DlgItem; // [esp+18h] [ebp-110h]
-    HWND v36; // [esp+18h] [ebp-110h]
-    HWND v37; // [esp+18h] [ebp-110h]
-    HWND v38; // [esp+1Ch] [ebp-10Ch]
-    HWND v39; // [esp+1Ch] [ebp-10Ch]
-    HWND v40; // [esp+20h] [ebp-108h]
-    HWND v41; // [esp+20h] [ebp-108h]
-    LPARAM v42; // [esp+24h] [ebp-104h]
-    char Dest[256]; // [esp+28h] [ebp-100h] BYREF
-
-    WindowLongA = GetWindowLongA(hWnd, 8);
-    result = nResult;
-    v6 = *(DWORD**)WindowLongA;
-    v7 = *(DWORD*)(WindowLongA + 4);
-    if ( nResult <= 1093 )
-    {
-        switch ( nResult )
-        {
-            case 1093:
-                jonesConfig_ShowAdvanceDisplaySettings(hWnd, WindowLongA);
-                return InvalidateRect(hWnd, 0, 1);
-
-            case 1:
-                DlgItem = GetDlgItem(hWnd, 1094);
-                v8 = GetDlgItem(hWnd, 1050);
-                lParamb = SendMessageA(v8, 0x400u, 0, 0);
-                v9 = SendMessageA(DlgItem, 0x147u, 0, 0);
-                v10 = *(DWORD*)(*(DWORD*)(*(DWORD*)(WindowLongA + 12) + 4 * lParamb)
-                    + 4 * (unsigned __int16)SendMessageA(DlgItem, 0x150u, v9, 0)
-                    + 260);
-                v11 = v6[2];
-                v6[3] = v10;
-                v6[6] = *(DWORD*)(*(DWORD*)(*(DWORD*)(v7 + 4) + 688 * v11 + 676) + 80 * v10 + 4);
-                v6[7] = *(DWORD*)(*(DWORD*)(*(DWORD*)(v7 + 4) + 688 * v11 + 676) + 80 * v6[3] + 8);
-                wuRegistry_SaveStr("Display", (const char*)(*(DWORD*)(v7 + 4) + 688 * v11 + 128));
-                wuRegistry_SaveStr(
-                    "3D Device",
-                    (const char*)(*(DWORD*)(688 * v6[2] + *(DWORD*)(v7 + 4) + 684) + 872 * v6[4] + 180));
-
-                wuRegistry_SaveInt("Width", v6[6]);
-                wuRegistry_SaveInt("Height", v6[7]);
-                wuRegistry_SaveInt(
-                    "BPP",
-                    *(DWORD*)(*(DWORD*)(688 * v6[2] + *(DWORD*)(v7 + 4) + 676) + 80 * v6[3] + 28));
-
-                v31 = sithRender_g_fogDensity * 0.0099999998;
-                wuRegistry_SaveFloat("Fog Density", v31);
-
-                wuRegistry_SaveIntEx("Buffering", v6[8]);
-                wuRegistry_SaveIntEx("Fog", v6[9]);
-                std3D_EnableFog(v6[9], sithRender_g_fogDensity);
-
-                if ( sithWorld_g_pCurrentWorld )
-                {
-                    sithWorld_g_pCurrentWorld->state |= SITH_WORLD_STATE_UPDATE_FOG;
-                }
-
-                wuRegistry_SaveInt("Filter", v6[5]);
-                result = 1;
-                break;
-
-            case 2:
-                break;
-
-            default:
-                return result;
-        }
-
-        return EndDialog(hWnd, result);
-    }
-
-    result = nResult - 1094;
-    if ( nResult == 1094 )
-    {
-        if ( a4 == 1 )
-        {
-            v23 = GetDlgItem(hWnd, 1094);
-            v39 = GetDlgItem(hWnd, 1050);
-            v24 = (void(__stdcall*)(HWND, UINT, WPARAM, LPARAM))SendMessageA;
-            v37 = GetDlgItem(hWnd, 1097);
-            v25 = SendMessageA(v23, 0x147u, 0, 0);
-            v26 = SendMessageA(v23, 0x150u, v25, 0);
-            memset(Dest, 0, sizeof(Dest));
-            memset(*(void**)(WindowLongA + 12), 0, 4 * *(DWORD*)(WindowLongA + 16));
-            GetWindowTextA(v37, Dest, 256);
-            v27 = *(DWORD*)(WindowLongA + 20);
-            v28 = 0;
-            *(DWORD*)(WindowLongA + 16) = 0;
-            lParama = 0;
-            if ( v27 > 0 )
-            {
-                v29 = HIWORD(v26);
-                v41 = (HWND)HIWORD(v26);
-                do
-                {
-                    v30 = *(DWORD*)(WindowLongA + 8) + v28;
-                    if ( (*(BYTE*)(v30 + 256) & (unsigned __int8)v29) != 0 )
-                    {
-                        if ( !strcmp(Dest, (const char*)(*(DWORD*)(WindowLongA + 8) + v28)) )
-                        {
-                            v42 = *(DWORD*)(WindowLongA + 16);
-                        }
-
-                        *(DWORD*)(*(DWORD*)(WindowLongA + 12) + 4 * (*(DWORD*)(WindowLongA + 16))++) = v30;
-                        v29 = (v29 & 0xFFFFFF00) | ((BYTE)v41 & 0xFF);
-                    }
-
-                    v28 += 280;
-                    ++lParama;
-                } while ( lParama < *(DWORD*)(WindowLongA + 20) );
-
-                v24 = (void(__stdcall*)(HWND, UINT, WPARAM, LPARAM))SendMessageA;
-            }
-
-            v24(v39, 0x406u, 1u, (unsigned __int16)(*(WORD*)(WindowLongA + 16) - 1) << 16);
-            v24(v39, 0x405u, 1u, v42);          // TODO: check v42 is initialized
-            v24(v39, 0x414u, 1u, 0);
-            return SetWindowTextA(v37, *(LPCSTR*)(*(DWORD*)(WindowLongA + 12) + 4 * v42));
-        }
-    }
-    else
-    {
-        result = nResult - 1099;
-        if ( nResult == 1099 )
-        {
-            v12 = GetDlgItem(hWnd, 1094);
-            v13 = 0;
-            lParam = SendMessageA(v12, 0x146u, 0, 0);
-            if ( lParam > 0 )
-            {
-                while ( (unsigned int)SendMessageA(v12, 0x150u, v13, 0) >> 16 != 4 )
-                {
-                    if ( (int)++v13 >= lParam )
-                    {
-                        goto LABEL_18;
-                    }
-                }
-
-                SendMessageA(v12, 0x14Eu, v13, 0);
-            }
-
-        LABEL_18:
-            CheckDlgButton(hWnd, 1095, 0);
-            result = (int)jonesString_GetString("JONES_STR_BYPIXELS");
-            v14 = (const char*)result;
-            if ( result )
-            {
-                v40 = GetDlgItem(hWnd, 1050);
-                v15 = GetDlgItem(hWnd, 1097);
-                memset(Dest, 0, sizeof(Dest));
-                v38 = v15;
-                sprintf(Dest, v14, 640, 480);
-                SetWindowTextA(v15, Dest);
-                v16 = *(char**)(WindowLongA + 12);
-                v17 = 4 * *(DWORD*)(WindowLongA + 16);
-                memset(v16, 0, 4 * (v17 >> 2));
-                v18 = &v16[4 * (v17 >> 2)];
-                v19 = v17;
-                v20 = 0;
-                v36 = 0;
-                memset(v18, 0, v19 & 3);
-                v21 = *(DWORD*)(WindowLongA + 20);
-                *(DWORD*)(WindowLongA + 16) = 0;
-                if ( v21 > 0 )
-                {
-                    do
-                    {
-                        v22 = *(DWORD*)(WindowLongA + 8) + v20;
-                        if ( (*(BYTE*)(v22 + 256) & 4) != 0 )
-                        {
-                            if ( !strcmp(Dest, (const char*)(*(DWORD*)(WindowLongA + 8) + v20)) )
-                            {
-                                lParam = *(DWORD*)(WindowLongA + 16);
-                            }
-
-                            *(DWORD*)(*(DWORD*)(WindowLongA + 12) + 4 * (*(DWORD*)(WindowLongA + 16))++) = v22;
-                        }
-
-                        v20 += 280;
-                        v36 = (HWND)((char*)v36 + 1);
-                    } while ( (int)v36 < *(DWORD*)(WindowLongA + 20) );
-
-                    v15 = v38;
-                }
-
-                SendMessageA(v40, 0x406u, 1u, (unsigned __int16)(*(WORD*)(WindowLongA + 16) - 1) << 16);
-                SendMessageA(v40, 0x405u, 1u, lParam);
-                SendMessageA(v40, 0x414u, 1u, 0);
-                return SetWindowTextA(v15, *(LPCSTR*)(*(DWORD*)(WindowLongA + 12) + 4 * lParam));
-            }
-        }
-    }
-
-    return result;
-}
-
-uint32_t J3DAPI jonesConfig_ShowAdvanceDisplaySettings(HWND hWnd, LPARAM dwInitParam)
-{
-    return JonesDialog_ShowDialog((LPCSTR)148, hWnd, jonesConfig_AdvanceDisplaySettingsDialog, dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_AdvanceDisplaySettingsDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    int v5; // edi
-
-    if ( uMsg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontAdvanceDisplaySettingsDialog);
-        return 1;
-    }
-
-    else if ( uMsg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontAdvanceDisplaySettingsDialog = jonesConfig_InitDialog(hWnd, 0, 148);
-        v5 = jonesConfig_sub_40BCD0(hWnd, wParam, (DWORD*)lParam);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return v5;
-    }
-    else
-    {
-        if ( uMsg == WM_COMMAND )
-        {
-            jonesConfig_sub_40C090(hWnd, (unsigned __int16)wParam, lParam, HIWORD(wParam));
-        }
-
-        return 0;
-    }
-}
-
-int J3DAPI jonesConfig_sub_40BC40(int a1, int a2, int a3)
-{
-    if ( !a1 )
-    {
-        return 0;
-    }
-
-    switch ( a3 )
-    {
-        case 16:
-            return *(DWORD*)(*(DWORD*)(a1 + 684) + 872 * *(DWORD*)(a2 + 16) + 472) & 0x400;
-
-        case 24:
-            return *(DWORD*)(*(DWORD*)(a1 + 684) + 872 * *(DWORD*)(a2 + 16) + 472) & 0x200;
-
-        case 32:
-            return *(DWORD*)(*(DWORD*)(a1 + 684) + 872 * *(DWORD*)(a2 + 16) + 472) & 0x100;
-    }
-
-    return 0;
-}
-
-int J3DAPI jonesConfig_sub_40BCD0(HWND hDlg, int a2, uint32_t* dwNewLong)
-{
-    unsigned int* v3; // edi
-    unsigned int v4; // ebx
-    HWND DlgItem; // ebp
-    int v6; // eax
-    WPARAM v7; // edi
-    HWND v8; // ebp
-    DWORD* v9; // edi
-    DWORD* v10; // ebx
-    WPARAM v11; // ebx
-    int v12; // eax
-    LPARAM v13; // edi
-    HWND v14; // ebx
-    void(__stdcall * v15)(HWND, int, int, int); // ebp
-    int v16; // eax
-    int v17; // eax
-    int Int; // eax
-    int v19; // eax
-    HWND v20; // edi
-    LPARAM lParam; // [esp+10h] [ebp-214h]
-    LPARAM lParama; // [esp+10h] [ebp-214h]
-    unsigned int* v24; // [esp+14h] [ebp-210h]
-    int v25; // [esp+14h] [ebp-210h]
-    DWORD* v26; // [esp+18h] [ebp-20Ch]
-    DWORD* v27; // [esp+1Ch] [ebp-208h]
-    int v28; // [esp+20h] [ebp-204h]
-    char Dest[256]; // [esp+24h] [ebp-200h] BYREF
-    CHAR String[256]; // [esp+124h] [ebp-100h] BYREF
-
-    v3 = (unsigned int*)dwNewLong[1];
-    v26 = (DWORD*)*dwNewLong;
-    v24 = v3;
-    v4 = 0;
-    DlgItem = GetDlgItem(hDlg, 1084);
-    SendMessageA(DlgItem, 0x14Bu, 0, 0);
-    if ( *v3 )
-    {
-        lParam = 0;
-        do
-        {
-            memset(Dest, 0, sizeof(Dest));
-            v6 = lParam + v24[1];
-            if ( *(DWORD*)(v6 + 256) == 1 )
-            {
-                sprintf(Dest, "%s", (const char*)(v6 + 128));
-                v7 = SendMessageA(DlgItem, 0x143u, 0, (LPARAM)Dest);
-                SendMessageA(DlgItem, 0x151u, v7, v4);
-                if ( v4 == v26[2] )
-                {
-                    SendMessageA(DlgItem, 0x14Eu, v7, 0);
-                }
-            }
-
-            ++v4;
-            lParam += 688;
-        } while ( v4 < *v24 );
-    }
-
-    v8 = GetDlgItem(hDlg, 1085);
-    memset(String, 0, sizeof(String));
-    GetWindowTextA(v8, String, 256);
-    SendMessageA(v8, 0x14Bu, 0, 0);
-    v9 = v26;
-    v10 = (DWORD*)(688 * v26[2] + v24[1]);
-    v27 = v10;
-    if ( v10[64] )
-    {
-        EnableWindow(v8, 1);
-        v28 = 0;
-        lParama = 0;
-        if ( v10[170] )
-        {
-            v25 = 0;
-            while ( 1 )
-            {
-                memset(Dest, 0, sizeof(Dest));
-                sprintf(Dest, "%s", (const char*)(v25 + v10[171] + 180));
-                v11 = SendMessageA(v8, 0x143u, 0, (LPARAM)Dest);
-                SendMessageA(v8, 0x151u, v11, lParama);
-                v12 = strcmp(String, Dest);
-                v13 = lParama;
-                if ( !v12 || v26[4] == lParama )
-                {
-                    SendMessageA(v8, 0x14Eu, v11, 0);
-                    v28 = 1;
-                    v26[4] = lParama;
-                }
-
-                ++lParama;
-                v25 += 872;
-                if ( (unsigned int)(v13 + 1) >= v27[170] )
-                {
-                    break;
-                }
-
-                v10 = v27;
-            }
-
-            v9 = v26;
-        }
-
-        if ( !v28 )
-        {
-            SendMessageA(v8, 0x14Eu, 0, 0);
-            v9[4] = 0;
-        }
-    }
-    else
-    {
-        EnableWindow(v8, 0);
-    }
-
-    if ( v9[8] )
-    {
-        v14 = hDlg;
-        v15 = (void(__stdcall*)(HWND, int, int, int))CheckRadioButton;
-        CheckRadioButton(hDlg, 1091, 1092, 1092);
-    }
-    else
-    {
-        v15 = (void(__stdcall*)(HWND, int, int, int))CheckRadioButton;
-        CheckRadioButton(hDlg, 1091, 1092, 1091);
-        v14 = hDlg;
-    }
-
-    v16 = v9[5];
-    if ( v16 )
-    {
-        v17 = v16 - 1;
-        if ( v17 )
-        {
-            if ( v17 == 1 )
-            {
-                v15(v14, 1088, 1090, 1090);
-            }
-        }
-        else
-        {
-            v15(v14, 1088, 1090, 1089);
-        }
-    }
-    else
-    {
-        v15(v14, 1088, 1090, 1088);
-    }
-
-    Int = wuRegistry_GetInt("Performance Level", 4);
-    if ( Int )
-    {
-        v19 = Int - 2;
-        if ( v19 )
-        {
-            if ( v19 == 2 )
-            {
-                v15(v14, 1093, 1095, 1095);
-            }
-        }
-        else
-        {
-            v15(v14, 1093, 1095, 1094);
-        }
-    }
-    else
-    {
-        v15(v14, 1093, 1095, 1093);
-    }
-
-    CheckDlgButton(v14, 1051, v9[9]);
-    v20 = GetDlgItem(v14, 1216);
-    SendMessageA(v20, 0x406u, 1u, (LPARAM)rdCache_GetVertexPointer(4792));
-    SendMessageA(v20, 0x414u, 5u, 0);
-    SendMessageA(v20, 0x405u, 1u, (__int64)sithRender_g_fogDensity);
-    SendMessageA(v20, 0x415u, 0, 5);
-    SetWindowLongA(v14, 8, (LONG)dwNewLong);
-    return 1;
-}
-
-int J3DAPI jonesConfig_sub_40C090(HWND hWnd, int nResult, int a3, int a4)
-{
-    int* WindowLongA; // ebx
-    int result; // eax
-    int v6; // edi
-    HWND v7; // eax
-    HWND v8; // eax
-    double v9; // st7
-    const char* String; // eax
-    HWND v11; // ebp
-    WPARAM v12; // eax
-    HWND v13; // eax
-    HWND DlgItem; // ebp
-    WPARAM v15; // eax
-    HWND nResulta; // [esp+18h] [ebp+8h]
-    HWND nResultb; // [esp+18h] [ebp+8h]
-
-    WindowLongA = (int*)GetWindowLongA(hWnd, 8);
-    result = nResult;
-    v6 = *WindowLongA;
-    if ( nResult > 1084 )
-    {
-        result = nResult - 1085;
-        switch ( nResult )
-        {
-            case 1085:
-                if ( a4 == 1 )
-                {
-                    DlgItem = GetDlgItem(hWnd, 1084);
-                    nResultb = GetParent(hWnd);
-                    v15 = SendMessageA(DlgItem, 0x147u, 0, 0);
-                    *(DWORD*)(v6 + 16) = SendMessageA(DlgItem, 0x150u, v15, 0);
-                    jonesConfig_sub_40BCD0(hWnd, 0, WindowLongA);
-                    result = jonesConfig_sub_40AE90(nResultb, 0, WindowLongA);
-                }
-
-                break;
-
-            case 1088:
-                result = CheckRadioButton(hWnd, 1088, 1090, 1088);
-                jonesConfig_dword_511958 = 0;
-                break;
-
-            case 1089:
-                result = CheckRadioButton(hWnd, 1088, 1090, 1089);
-                jonesConfig_dword_511958 = 1;
-                break;
-
-            case 1090:
-                result = CheckRadioButton(hWnd, 1088, 1090, 1090);
-                jonesConfig_dword_511958 = 2;
-                break;
-
-            case 1091:
-                result = CheckRadioButton(hWnd, 1091, 1092, 1091);
-                *(DWORD*)(v6 + 32) = 0;
-                break;
-
-            case 1092:
-                result = CheckRadioButton(hWnd, 1091, 1092, 1092);
-                *(DWORD*)(v6 + 32) = 1;
-                break;
-
-            case 1093:
-                result = CheckRadioButton(hWnd, 1093, 1095, 1093);
-                jonesConfig_perfLevel = 0;
-                break;
-
-            case 1094:
-                result = CheckRadioButton(hWnd, 1093, 1095, 1094);
-                jonesConfig_perfLevel = 2;
-                break;
-
-            case 1095:
-                result = CheckRadioButton(hWnd, 1093, 1095, 1095);
-                jonesConfig_perfLevel = 4;
-                break;
-
-            case 1099:
-                CheckDlgButton(hWnd, 1051, 1u);
-                *(DWORD*)(v6 + 36) = 1;
-                sithRender_g_fogDensity = 100.0;
-                v13 = GetDlgItem(hWnd, 1216);
-                SendMessageA(v13, 0x405u, 1u, 100);
-                CheckRadioButton(hWnd, 1093, 1095, 1095);
-                jonesConfig_perfLevel = 4;
-                CheckRadioButton(hWnd, 1091, 1092, 1091);
-                *(DWORD*)(v6 + 32) = 0;
-                result = CheckRadioButton(hWnd, 1088, 1090, 1089);
-                jonesConfig_dword_511958 = 1;
-                break;
-
-            default:
-                return result;
-        }
-    }
-    else
-    {
-        if ( nResult != 1084 )
-        {
-            if ( nResult == 1 )
-            {
-                v7 = GetDlgItem(hWnd, 1051);
-                *(DWORD*)(v6 + 36) = SendMessageA(v7, BM_GETCHECK, 0, 0);
-                v8 = GetDlgItem(hWnd, 1216);
-                v9 = (double)SendMessageA(v8, WM_USER, 0, 0);
-                sithRender_g_fogDensity = v9;
-                *(float*)(v6 + 52) = v9 * 0.0099999998;
-
-                wuRegistry_SaveInt("Performance Level", jonesConfig_perfLevel);
-                jonesConfig_perfLevel = 4;
-                if ( JonesMain_HasStarted() && jonesConfig_perfLevel != wuRegistry_GetInt("Performance Level", 4) )
-                {
-                    String = jonesString_GetString("JONES_STR_PERFORMANCE");
-                    if ( String )
-                    {
-                        jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_DPLY_OPTS", String, 136);
-                        InvalidateRect(hWnd, 0, 1);
-                    }
-                }
-
-                result = 1;
-                *(DWORD*)(v6 + 20) = jonesConfig_dword_511958;
-                jonesConfig_dword_511958 = 1;
-            }
-
-            else if ( nResult != 2 )
-            {
-                return result;
-            }
-
-            return EndDialog(hWnd, result);
-        }
-
-        if ( a4 == 1 )
-        {
-            v11 = GetDlgItem(hWnd, 1084);
-            nResulta = GetParent(hWnd);
-            v12 = SendMessageA(v11, CB_GETCURSEL, 0, 0);
-            *(DWORD*)(v6 + 8) = SendMessageA(v11, CB_GETITEMDATA, v12, 0);
-            jonesConfig_sub_40BCD0(hWnd, 0, WindowLongA);
-            return jonesConfig_sub_40AE90(nResulta, 0, WindowLongA);
-        }
-    }
-
-    return result;
-}
-
-int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, float* dwInitParam)
-{
-    GetWindowLongA(hWnd, GWL_HINSTANCE);
-    return JonesDialog_ShowDialog((LPCSTR)113, hWnd, jonesConfig_SoundSettingsDialogProc, (LPARAM)dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_SoundSettingsDialogProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-    int v5; // ebp
-    tSoundHandle hSndFile; // edi
-    HWND hDlgItem; // eax
-    LRESULT v8; // esi
-    float volume; // [esp+0h] [ebp-1Ch]
-
-    if ( msg <= WM_INITDIALOG )
-    {
-        if ( msg == WM_INITDIALOG )
-        {
-            jonesConfig_hFontSoundSettings = jonesConfig_InitDialog(hWnd, 0, 113);
-            v5 = jonesConfig_sub_40C650(hWnd, wparam, lparam);
-            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-            return v5;
-        }
-
-        if ( msg != 2 )
-        {
-            return 0;
-        }
-
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontSoundSettings);
-        return 1;
-    }
-
-    if ( msg == WM_COMMAND )
-    {
-        jonesConfig_SoundSettings_HandleWM_COMMAND(hWnd, (unsigned __int16)wparam);
-        return 0;
-    }
-    else
-    {
-        if ( msg != WM_HSCROLL )
-        {
-            return 0;
-        }
-
-        jonesConfig_HandleWM_HSCROLL(hWnd, (HWND)lparam, (unsigned __int16)wparam);
-        if ( (WORD)wparam != 8 )
-        {
-            return 1;
-        }
-
-        hSndFile = Sound_GetSoundHandle(0x8039);
-        if ( jonesConfig_hSndChannel && (Sound_GetChannelFlags(jonesConfig_hSndChannel) & SOUND_CHANNEL_PLAYING) != 0 )
-        {
-            sithSoundMixer_StopSound(jonesConfig_hSndChannel);
-        }
-
-        jonesConfig_hSndChannel = 0;
-        if ( !hSndFile )
-        {
-            return 1;
-        }
-
-        hDlgItem = GetDlgItem(hWnd, 1050);
-        v8 = SendMessageA(hDlgItem, 0x400u, 0, 0);
-        if ( jonesConfig_dword_551E14 == v8 )
-        {
-            return 1;
-        }
-
-        volume = (double)v8 * 0.01;
-        jonesConfig_hSndChannel = sithSoundMixer_PlaySound(hSndFile, volume, 0.0, (SoundPlayFlag)0);
-        jonesConfig_dword_551E14 = v8;
-        return 1;
-    }
-}
-
-int J3DAPI jonesConfig_sub_40C650(HWND hDlg, int a2, LONG dwNewLong)
-{
-    HWND DlgItem; // edi
-    HWND v4; // ebx
-    void(__stdcall * v5)(HWND, int, UINT); // edi
-    LONG v6; // ebx
-
-    DlgItem = GetDlgItem(hDlg, 1050);
-    SendMessageA(DlgItem, 0x406u, 1u, (LPARAM)rdCache_GetVertexPointer(4792)); // Created accessor function in rdCache.c
-    SendMessageA(DlgItem, 0x414u, 0x11u, 0);
-    SendMessageA(DlgItem, 0x405u, 1u, (__int64)(*(float*)dwNewLong * 100.0));
-    SendMessageA(DlgItem, 0x415u, 0, 5);
-    v4 = GetDlgItem(hDlg, 1118);
-    if ( Sound_Has3DHW() )
-    {
-        v6 = dwNewLong;
-        v5 = (void(__stdcall*)(HWND, int, UINT))CheckDlgButton;
-        CheckDlgButton(hDlg, 1118, *(DWORD*)(dwNewLong + 4) != 0);
-    }
-    else
-    {
-        v5 = (void(__stdcall*)(HWND, int, UINT))CheckDlgButton;
-        CheckDlgButton(hDlg, 1118, 0);
-        EnableWindow(v4, 0);
-        v6 = dwNewLong;
-    }
-
-    GetDlgItem(hDlg, 1051);
-    v5(hDlg, 1051, *(DWORD*)(v6 + 8));
-    SetWindowLongA(hDlg, 8, v6);
-    return 1;
-}
-
-int J3DAPI jonesConfig_SoundSettings_HandleWM_COMMAND(HWND hWnd, int nResult)
-{
-    LONG WindowLongA; // esi
-    int result; // eax
-    HWND DlgItem; // eax
-    HWND v6; // eax
-    HWND v7; // eax
-    int v8; // eax
-    float hWnda; // [esp+14h] [ebp+4h]
-
-    WindowLongA = GetWindowLongA(hWnd, 8);
-    if ( nResult == 1 )
-    {
-        DlgItem = GetDlgItem(hWnd, 1050);
-        hWnda = (double)SendMessageA(DlgItem, 0x400u, 0, 0) * 0.01;
-        *(float*)WindowLongA = hWnda;
-        v6 = GetDlgItem(hWnd, 1118);
-        *(DWORD*)(WindowLongA + 4) = SendMessageA(v6, 0xF2u, 0, 0);
-        wuRegistry_SaveFloat("Sound Volume", hWnda);
-        wuRegistry_SaveIntEx("Sound 3D", *(DWORD*)(WindowLongA + 4));
-        v7 = GetDlgItem(hWnd, 1051);
-        v8 = SendMessageA(v7, 0xF2u, 0, 0);
-        *(DWORD*)(WindowLongA + 8) = v8;
-        wuRegistry_SaveIntEx("ReverseSound", v8);
-        return EndDialog(hWnd, nResult);
-    }
-
-    result = nResult - 2;
-    if ( nResult == 2 )
-    {
-        return EndDialog(hWnd, nResult);
-    }
-
-    return result;
-}
-
-int J3DAPI jonesConfig_ShowGameOverDialog(HWND hWnd, char* pRestoreFilename, tSoundHandle hSndGameOVerMus, tSoundChannelHandle* pSndChnlMus)
-{
-    GameOverDialogData data; // [esp+0h] [ebp-10h] BYREF
-
-    data.result = 0;
-    data.pRestoreFilename = pRestoreFilename;
-    data.sndChnlMusic = 0;
-    data.hSndMusic = 0;
-    data.sndChnlMusic = *pSndChnlMus;
-    data.hSndMusic = hSndGameOVerMus;
-    JonesDialog_ShowDialog((LPCSTR)150, hWnd, jonesConfig_GameOverDialogProc, (LPARAM)&data);
-    return data.result;
-}
-
-INT_PTR __stdcall jonesConfig_GameOverDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    int bSuccess; // edi
-
-    if ( uMsg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontGameOverDialog);
-        return 1;
-    }
-
-    else if ( uMsg == WM_INITDIALOG )
-    {
-        jonesConfig_hFontGameOverDialog = jonesConfig_InitDialog(hWnd, 0, 150);
-        bSuccess = jonesConfig_GameOverDialogInit(hWnd, wParam, (GameOverDialogData*)lParam);
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-        return bSuccess;
-    }
-    else
-    {
-        if ( uMsg == WM_COMMAND )
-        {
-            jonesConfig_GameOverDialog_HandleWM_COMMAND(hWnd, wParam);
-        }
-
-        return 0;
-    }
-}
-
-void J3DAPI jonesConfig_LoadGameGetLastSavedGamePath(char* pPath, unsigned int size)
-{
-    const char* pLastFilename; // eax MAPDST
-    int filenameSize; // ecx
-    const char* pCurText; // esi
-    const char* pFilePrefix; // eax
-    const char* pSaveGamesDir; // eax
-    const char* lpszSaveGamesDir; // [esp-18h] [ebp-12Ch]
-    const char* pNdsLevenFilename; // [esp-4h] [ebp-118h]
-    char* pFilePart; // [esp+10h] [ebp-104h] BYREF
-    char aPath[128]; // [esp+14h] [ebp-100h] BYREF
-    char aLastFilePath[128]; // [esp+94h] [ebp-80h] BYREF
-
-    pLastFilename = sithGamesave_GetLastFilename();
-    if ( pLastFilename && strlen(pLastFilename) )
-    {
-        filenameSize = strlen(pLastFilename);
-        pCurText = &pLastFilename[filenameSize - 1];
-        if ( filenameSize >= 0 )
-        {
-            while ( *pCurText != '\\' )
-            {
-                --pCurText;
-                if ( --filenameSize < 0 )
-                {
-                    goto LABEL_8;
-                }
-            }
-
-            ++pCurText;
-        }
-
-    LABEL_8:
-        if ( pCurText )
-        {
-            memset(aLastFilePath, 0, sizeof(aLastFilePath));
-            memset(aPath, 0, sizeof(aPath));
-            strncpy(aLastFilePath, pLastFilename, pCurText - pLastFilename);
-            strncpy(aPath, pCurText, strlen(pCurText));
-            SearchPathA(aLastFilePath, aPath, 0, 128u, pPath, &pFilePart);
-        }
-        else
-        {
-            lpszSaveGamesDir = sithGetSaveGamesDir();
-            SearchPathA(lpszSaveGamesDir, pLastFilename, 0, 128u, pPath, &pFilePart);
-        }
-    }
-
-    if ( !strlen(pPath) )
-    {
-        memset(aPath, 0, sizeof(aPath));
-        memset(pPath, 0, size);
-        if ( sithWorld_g_pCurrentWorld )
-        {
-            pNdsLevenFilename = sithGetCurrentWorldSaveName();
-            pFilePrefix = sithGetAutoSaveFilePrefix();
-            sprintf(aPath, "%s%s", pFilePrefix, pNdsLevenFilename);
-            stdFnames_ChangeExt(aPath, "nds");
-            pSaveGamesDir = sithGetSaveGamesDir();
-            SearchPathA(pSaveGamesDir, aPath, 0, 128u, pPath, &pFilePart);
-        }
-    }
-}
-
-int J3DAPI jonesConfig_GameOverDialogInit(HWND hDlg, int a2, GameOverDialogData* pData)
-{
-    const char* pFilePrefix; // eax
-    const char* aPath; // eax
-    HWND hBtn; // eax
-    tSoundHandle hSnd; // eax
-    const char* pNdsFilename; // [esp-4h] [ebp-118h]
-    LPSTR pFilePart; // [esp+10h] [ebp-104h] BYREF
-    char aFilename[128]; // [esp+14h] [ebp-100h] BYREF
-    CHAR aFilePath[128]; // [esp+94h] [ebp-80h] BYREF
-
-    memset(aFilePath, 0, sizeof(aFilePath));
-    memset(aFilename, 0, sizeof(aFilename));
-    if ( sithWorld_g_pCurrentWorld )
-    {
-        pNdsFilename = sithGetCurrentWorldSaveName();
-        pFilePrefix = sithGetAutoSaveFilePrefix();
-        sprintf(aFilename, "%s%s", pFilePrefix, pNdsFilename);
-        stdFnames_ChangeExt(aFilename, "nds");
-        aPath = sithGetSaveGamesDir();
-        SearchPathA(aPath, aFilename, 0, 128u, aFilePath, &pFilePart);
-    }
-
-    if ( !strlen(aFilePath) )
-    {
-        // Disable restart btn
-        hBtn = GetDlgItem(hDlg, 1177);          // Restart
-        EnableWindow(hBtn, 0);
-    }
-
-    hSnd = pData->hSndMusic;
-    if ( hSnd )
-    {
-        pData->sndChnlMusic = sithSoundMixer_PlaySound(hSnd, 1.0, 0.0, (SoundPlayFlag)0);
-    }
-
-    strcpy(pData->pRestoreFilename, aFilePath);
-    SetWindowLongA(hDlg, DWL_USER, (LONG)pData);
-    return 1;
-}
-
-void J3DAPI jonesConfig_GameOverDialog_HandleWM_COMMAND(HWND hWnd, uint16_t wParam)
-{
-    GameOverDialogData* pData; // eax
-
-    pData = (GameOverDialogData*)GetWindowLongA(hWnd, DWL_USER);
-    switch ( wParam )
-    {
-        case 1177u:
-            pData->result = 1177;               // restart
-            EndDialog(hWnd, 1);
-            break;
-
-        case 1178u:
-            pData->result = 1178;               // load game
-            if ( jonesConfig_GetLoadGameFilePath(hWnd, pData->pRestoreFilename) == 1 )
-            {
-                InvalidateRect(hWnd, 0, 1);
-                EndDialog(hWnd, 1);
-            }
-
-            break;
-
-        case 1179u:
-            pData->result = 1179;
-            EndDialog(hWnd, 1);
-            break;
-    }
-}
-
-int J3DAPI jonesConfig_ShowStatisticsDialog(HWND hWnd, SithGameStatistics* pStatistics)
-{
-    int dwInitParam[3]; // [esp+0h] [ebp-20h] BYREF
-    JonesDialogImageInfo imageInfo; // [esp+Ch] [ebp-14h] BYREF
-
-    if ( !pStatistics )
-    {
-        return 2;
-    }
-
-    memset(&imageInfo, 0, sizeof(imageInfo));
-    dwInitParam[1] = (int)pStatistics;
-    dwInitParam[0] = (int)&imageInfo;
-    return JonesDialog_ShowDialog((LPCSTR)164, hWnd, jonesConfig_StatisticsDialogProc, (LPARAM)dwInitParam);
-}
-
-INT_PTR __stdcall jonesConfig_StatisticsDialogProc(HWND hwnd, UINT uMsg, WPARAM wPAram, LPARAM lParam)
-{
-    INT_PTR result; // eax
-    HWND textStatistict; // edi
-    const char* pTitleText; // eax MAPDST
-    int inited; // ebp
-    void* pData_1; // eax
-    HDC* v9; // esi
-    HBRUSH SolidBrush; // eax
-    int* pData; // edi
-    HWND hScroll; // ebp
-    int scrollPos; // ebx
-    int levelNum; // ebp
-    int MaxPos; // [esp+10h] [ebp-48h] BYREF
-    int MinPos; // [esp+14h] [ebp-44h] BYREF
-    struct tagRECT Rect; // [esp+18h] [ebp-40h] BYREF
-    DRAWITEMSTRUCT drawitemData; // [esp+28h] [ebp-30h] BYREF
-    const char* pSummeryText; // [esp+5Ch] [ebp+4h]
-    HWND hTextStatTitle; // [esp+60h] [ebp+8h]
-    WPARAM iqpoints; // [esp+64h] [ebp+Ch]
-
-    if ( uMsg > WM_CLOSE )
-    {
-        switch ( uMsg )
-        {
-            case WM_DRAWITEM:
-                pData_1 = (void*)GetWindowLongA(hwnd, DWL_USER);
-                v9 = *(HDC**)pData_1;
-                if ( !*(DWORD*)(*(DWORD*)pData_1 + 16) )
-                {
-                    v9[4] = (HDC)GetBkColor(*(HDC*)(lParam + 24));
-                }
-
-                GetClientRect(*(HWND*)(lParam + 20), &Rect);
-                SolidBrush = CreateSolidBrush((COLORREF)v9[4]);
-                FillRect(*(HDC*)(lParam + 24), &Rect, SolidBrush);
-                SetStretchBltMode(*(HDC*)(lParam + 24), STRETCH_HALFTONE);
-                jonesConfig_DrawImageOnDialogItem(
-                    hwnd,
-                    *v9,
-                    *(HDC*)(lParam + 24),
-                    wPAram,
-                    jonesConfig_apDialogIcons[0],// iq.bmp
-                    jonesConfig_apDialogIcons[1]);// iq_mask.bmp
-                result = 1;
-                break;
-
-            case WM_INITDIALOG:
-                textStatistict = GetDlgItem(hwnd, 1158);
-                jonesConfig_dword_551E1C = jonesConfig_InitDialog(hwnd, 0, 164);
-                pTitleText = jonesString_GetString(jonesConfig_JONES_STR_SUMMERY);// "JONES_STR_SUMMARY"
-                if ( pTitleText )
-                {
-                    SetWindowTextA(textStatistict, pTitleText);
-                }
-
-                inited = jonesConfig_InitStatisticDialog(hwnd, wPAram, (int*)lParam);
-                SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);// TODO: 2nd is HWND_TOPMOST
-                result = inited;
-                break;
-
-            case WM_COMMAND:
-                jonesConfig_StatisticProc_HandleWM_COMMAND(hwnd, wPAram);
-                result = 0;
-                break;
-
-            case WM_HSCROLL:
-                pData = (int*)GetWindowLongA(hwnd, DWL_USER);
-                hScroll = GetDlgItem(hwnd, 1162);
-                hTextStatTitle = GetDlgItem(hwnd, 1158);
-                jonesConfig_sub_40D100((int)hwnd, (HWND)lParam, (unsigned __int16)wPAram, SHIWORD(wPAram));
-                scrollPos = GetScrollPos(hScroll, 2);
-                if ( scrollPos != pData[2] )
-                {
-                    GetScrollRange(hScroll, SB_CTL, &MinPos, &MaxPos);
-                    if ( scrollPos == MaxPos )
-                    {
-                        pSummeryText = jonesString_GetString(jonesConfig_JONES_STR_SUMMERY);// "JONES_STR_SUMMARY"
-                        levelNum = 17;
-                        iqpoints = jonesInventory_GetTotalIQPoints();
-                        pTitleText = pSummeryText;
-                    }
-                    else
-                    {
-                        if ( scrollPos == jonesConfig_curLevelNum && jonesConfig_curLevelNum > 0 )
-                        {
-                            pTitleText = jonesString_GetString(jonesConfig_aLevelNames[16]);
-                        }
-                        else
-                        {
-                            pTitleText = jonesString_GetString(jonesConfig_aLevelNames[scrollPos]);
-                        }
-
-                        levelNum = scrollPos;
-                        iqpoints = *(DWORD*)(32 * scrollPos + pData[1] + 44);// pData[1] -> JonesGameStatistics*
-                    }
-
-                    if ( pTitleText )
-                    {
-                        SetWindowTextA(hTextStatTitle, pTitleText);
-                    }
-
-                    else if ( scrollPos == jonesConfig_curLevelNum && jonesConfig_curLevelNum > 0 )
-                    {
-                        SetWindowTextA(hTextStatTitle, jonesConfig_aLevelNames[16]);
-                    }
-                    else
-                    {
-                        SetWindowTextA(hTextStatTitle, jonesConfig_aLevelNames[levelNum]);
-                    }
-
-                    jonesConfig_SetStatisticsDialogForLevel(hwnd, levelNum, pData);
-                    jonesConfig_DrawStatisticDialogIQPoints(hwnd, (JonesDialogImageInfo**)pData, 164, iqpoints);
-
-                    drawitemData.CtlType = ODT_BUTTON;
-                    drawitemData.CtlID = 1220;
-                    drawitemData.itemID = 0;
-                    drawitemData.itemAction = 1;
-                    drawitemData.itemState = 0;
-                    drawitemData.hwndItem = GetDlgItem(hwnd, 1220);
-                    drawitemData.hDC = GetDC(drawitemData.hwndItem);
-
-                    GetClientRect(drawitemData.hwndItem, &drawitemData.rcItem);
-
-                    drawitemData.itemData = 0;
-
-                    SendMessageA(hwnd, WM_DRAWITEM, 1220u, (LPARAM)&drawitemData);
-                    ReleaseDC(drawitemData.hwndItem, drawitemData.hDC);
-                    pData[2] = scrollPos;
-                }
-
-                result = 1;
-                break;
-
-            default:
-                return 0;
-        }
-    }
-
-    else if ( uMsg == WM_CLOSE )
-    {
-        EndDialog(hwnd, 2);
-        return 0;
-    }
-
-    else if ( uMsg == WM_DESTROY )
-    {
-        jonesConfig_ResetDialogFont(hwnd, (HFONT)jonesConfig_dword_551E1C);
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-
-    return result;
-}
-
-int J3DAPI jonesConfig_sub_40D100(int a1, HWND hWnd, int a3, int a4)
-{
-    int result; // eax
-    int v5; // [esp+0h] [ebp-44h]
-    int v6; // [esp+4h] [ebp-40h]
-    int v7; // [esp+8h] [ebp-3Ch]
-    int v8; // [esp+Ch] [ebp-38h]
-    LPARAM lParam[7]; // [esp+14h] [ebp-30h] BYREF
-    int v10; // [esp+30h] [ebp-14h]
-    LPARAM v11; // [esp+34h] [ebp-10h]
-    int v12; // [esp+38h] [ebp-Ch]
-    LPARAM v13; // [esp+3Ch] [ebp-8h]
-    int nPos; // [esp+40h] [ebp-4h]
-
-    nPos = -1;
-    lParam[1] = 23;
-    SendMessageA(hWnd, 0xEAu, 0, (LPARAM)lParam);
-    v10 = lParam[2];
-    v12 = lParam[3];
-    v13 = lParam[5];
-    v11 = lParam[4];
-    result = a3;
-    switch ( a3 )
-    {
-        case 0:
-            if ( v10 <= v13 - 1 )
-            {
-                v8 = v13 - 1;
-            }
-            else
-            {
-                v8 = v10;
-            }
-
-            result = v8;
-            nPos = v8;
-            break;
-
-        case 1:
-            if ( v12 >= v13 + 1 )
-            {
-                result = v13 + 1;
-                v7 = v13 + 1;
-            }
-            else
-            {
-                v7 = v12;
-            }
-
-            nPos = v7;
-            break;
-
-        case 2:
-            if ( v10 <= v13 - v11 )
-            {
-                v6 = v13 - v11;
-            }
-            else
-            {
-                result = v10;
-                v6 = v10;
-            }
-
-            nPos = v6;
-            break;
-
-        case 3:
-            if ( v12 >= v11 + v13 )
-            {
-                v5 = v11 + v13;
-            }
-            else
-            {
-                v5 = v12;
-            }
-
-            result = v5;
-            nPos = v5;
-            break;
-
-        case 4:
-        case 5:
-            nPos = a4;
-            break;
-
-        case 6:
-            nPos = v10;
-            break;
-
-        case 7:
-            nPos = v12;
-            break;
-
-        default:
-            break;
-    }
-
-    if ( nPos >= 0 )
-    {
-        return SetScrollPos(hWnd, 2, nPos, 1);
-    }
-
-    return result;
-}
-
-//void J3DAPI jonesConfig_UpdateCurrentLevelNum()
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_UpdateCurrentLevelNum);
-//}
-//
-//int J3DAPI jonesConfig_DrawImageOnDialogItem(HWND hDlg, HDC hdcWnd, HDC hdcCtrl, int nIDDlgItem, HBITMAP hImage, HBITMAP hMask)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_DrawImageOnDialogItem, hDlg, hdcWnd, hdcCtrl, nIDDlgItem, hImage, hMask);
-//}
-
-int J3DAPI jonesConfig_SetStatisticsDialogForLevel(HWND hDlg, int levelNum, int* a3)
-{
-    int v3; // esi
-    int v4; // edx
-    HWND hTextTimePassed; // eax
-    HWND hTextLvlFinished; // eax
-    HWND hTextTreasuresFound; // eax
-    HWND hTextHintsSeen; // eax
-    HWND hTextDifficultyDrop; // eax
-    SithLevelStatistic* pLevelStatistics; // [esp+10h] [ebp-108h]
-    SithGameStatistics* pStatistics; // [esp+14h] [ebp-104h]
-    char aText[256]; // [esp+18h] [ebp-100h] BYREF
-
-    pStatistics = (SithGameStatistics*)a3[1];
-    pLevelStatistics = &pStatistics->aLevelStatistic[levelNum];
-    v3 = pLevelStatistics->elapsedTime >> 8;
-    v4 = pLevelStatistics->elapsedTime ^ (v3 << 8);
-    memset(aText, 0, sizeof(aText));
-    if ( v4 >= 10 )
-    {
-        sprintf(aText, "%i : %i ", v3, v4);
-    }
-    else
-    {
-        sprintf(aText, "%i : 0%i ", v3, v4);
-    }
-
-    hTextTimePassed = GetDlgItem(hDlg, 1153);
-    SetWindowTextA(hTextTimePassed, aText);
-
-    memset(aText, 0, sizeof(aText));
-    sprintf(aText, "%i ", pStatistics->curLevelNum);
-    hTextLvlFinished = GetDlgItem(hDlg, 1152);
-    SetWindowTextA(hTextLvlFinished, aText);
-
-    memset(aText, 0, sizeof(aText));
-    sprintf(aText, "%i ", pStatistics->aLevelStatistic[levelNum].numFoundTreasures);
-    hTextTreasuresFound = GetDlgItem(hDlg, 1154);
-    SetWindowTextA(hTextTreasuresFound, aText);
-
-    memset(aText, 0, sizeof(aText));
-    sprintf(aText, "%i ", pStatistics->aLevelStatistic[levelNum].numSeenHints);
-    hTextHintsSeen = GetDlgItem(hDlg, 1155);
-    SetWindowTextA(hTextHintsSeen, aText);
-
-    memset(aText, 0, sizeof(aText));
-    sprintf(aText, "%i ", pStatistics->aLevelStatistic[levelNum].difficultyPenalty);
-    hTextDifficultyDrop = GetDlgItem(hDlg, 1156);
-    return SetWindowTextA(hTextDifficultyDrop, aText);
-}
-
-//void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageInfo** ppImageInfo, int dlgID, int iqpoints)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_DrawStatisticDialogIQPoints, hwnd, ppImageInfo, dlgID, iqpoints);
-//}
-
-int J3DAPI jonesConfig_InitStatisticDialog(HWND hDlg, int a2, int* pData)
-{
-    HDC* v4; // ebp
-    HWND DlgItem; // eax
-    HDC DC; // eax
-    HWND v7; // eax
-    HDC v8; // eax
-    int iqPoints; // eax
-    HWND v10; // eax
-    HWND hScrl; // eax
-    SCROLLINFO scrlInfo; // [esp+10h] [ebp-1Ch] BYREF
-    SithGameStatistics* pDataa; // [esp+38h] [ebp+Ch]
-
-    v4 = (HDC*)*pData;
-    pDataa = (SithGameStatistics*)pData[1];
-    DlgItem = GetDlgItem(hDlg, 1135);
-    DC = GetDC(DlgItem);
-    *v4 = CreateCompatibleDC(DC);
-    v7 = GetDlgItem(hDlg, 1135);
-    v8 = GetDC(v7);
-    v4[1] = CreateCompatibleDC(v8);
-    iqPoints = jonesInventory_GetTotalIQPoints();
-    jonesConfig_DrawStatisticDialogIQPoints(hDlg, (JonesDialogImageInfo**)pData, 164, iqPoints);
-    if ( !pDataa->curLevelNum )
-    {
-        v10 = GetDlgItem(hDlg, 1133);
-        EnableWindow(v10, 0);
-    }
-
-    jonesConfig_SetStatisticsDialogForLevel(hDlg, 17, pData);
-
-    scrlInfo.cbSize = sizeof(SCROLLINFO);
-    scrlInfo.fMask = SIF_TRACKPOS | SIF_DISABLENOSCROLL | SIF_POS | SIF_PAGE | SIF_RANGE;// aka SIF_ALL
-    scrlInfo.nMin = 0;
-    scrlInfo.nMax = pDataa->curLevelNum + 1;
-    scrlInfo.nPage = 1;
-    scrlInfo.nPos = scrlInfo.nMax;
-    hScrl = GetDlgItem(hDlg, 1162);
-    SendMessageA(hScrl, SBM_SETSCROLLINFO, TRUE, (LPARAM)&scrlInfo);
-
-    pData[2] = scrlInfo.nMax;
-    SetWindowLongA(hDlg, DWL_USER, (LONG)pData);
-    return 1;
-}
-
-void J3DAPI jonesConfig_StatisticProc_HandleWM_COMMAND(HWND hWnd, int16_t wParam)
-{
-    int v2; // esi
-    HDC v3; // [esp-8h] [ebp-14h]
-
-    v2 = *(DWORD*)GetWindowLongA(hWnd, DWL_USER);
-    if ( wParam > 0 && wParam <= 2 )
-    {
-        DeleteObject(*(HGDIOBJ*)(v2 + 8));
-        v3 = *(HDC*)v2;
-        *(DWORD*)(v2 + 8) = 0;
-        DeleteDC(v3);
-        DeleteDC(*(HDC*)(v2 + 4));
-        EndDialog(hWnd, wParam);
-    }
-}
-//
-//int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* apItemsState, int a4, int elapsedTime, int qiPoints, int numFoundTrasures, int foundTrasureValue, int totalTreasureValue)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowLevelCompletedDialog, hWnd, pBalance, apItemsState, a4, elapsedTime, qiPoints, numFoundTrasures, foundTrasureValue, totalTreasureValue);
-//}
-//
-//int __stdcall jonesConfig_LevelCompletedDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_LevelCompletedDialogProc, hWnd, uMsg, wParam, lParam);
-//}
-//
-//int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCompletedDialogState* pState)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitLevelCompletedDialog, hDlg, wParam, pState);
-//}
-//
-//void J3DAPI jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND(HWND hWnd, int wParam)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_ChapterCompleteDialog_HandleWM_COMMAND, hWnd, wParam);
-//}
-//
-//int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsState, int a4)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowStoreDialog, hWnd, pBalance, pItemsState, a4);
-//}
-//
-//int __stdcall jonesConfig_StoreDialogProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialogProc, hwnd, msg, wparam, lparam);
-//}
-//
-//int J3DAPI jonesConfig_StoreHandleDragEvent(HWND hwnd, HWND hDlgCtrl)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreHandleDragEvent, hwnd, hDlgCtrl);
-//}
-//
-//void J3DAPI jonesConfig_StoreDialog_HandleWM_MBUTTONUP(HWND hWnd)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_MBUTTONUP, hWnd);
-//}
-//
-//BOOL J3DAPI jonesConfig_StoreDialog_HandleWM_MOUSEFIRST(HWND hWnd)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_MOUSEFIRST, hWnd);
-//}
-//
-//int J3DAPI jonesConfig_InitStoreDialog(HWND hDlg, int a2, tStoreCartState* pCart)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitStoreDialog, hDlg, a2, pCart);
-//}
-//
-//int J3DAPI jonesConfig_StoreInitItemIcons(HWND hWnd, tStoreCartState* pCart)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreInitItemIcons, hWnd, pCart);
-//}
-//
-//LRESULT J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_StoreSetListColumns, hList, pColumnName);
-//}
-//
-//void J3DAPI jonesConfig_StoreInitItemList(HWND hWnd, int* apItemsState, int listID)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_StoreInitItemList, hWnd, apItemsState, listID);
-//}
-//
-//void J3DAPI jonesConfig_UpdateBalances(HWND hDlg, tStoreCartState* pCart)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_UpdateBalances, hDlg, pCart);
-//}
-//
-//void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_AddStoreCartItem, hDlg, pCart);
-//}
-//
-//void J3DAPI jonesConfig_RemoveStoreCartItem(HWND hDlg, tStoreCartState* pCart)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_RemoveStoreCartItem, hDlg, pCart);
-//}
-//
-//void J3DAPI jonesConfig_StoreDialog_HandleWM_COMMAND(HWND hWnd, WPARAM wParam)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_StoreDialog_HandleWM_COMMAND, hWnd, wParam);
-//}
-//
-//void J3DAPI jonesConfig_ClearStoreCart(HWND hDlg, tStoreCartState* pCart)
-//{
-//    J3D_TRAMPOLINE_CALL(jonesConfig_ClearStoreCart, hDlg, pCart);
-//}
-//
-//int J3DAPI jonesConfig_ShowPurchaseMessageBox(HWND hWnd, tStoreCartState* dwInitParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowPurchaseMessageBox, hWnd, dwInitParam);
-//}
-//
-//INT_PTR __stdcall jonesConfig_PurchaseMessageBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_PurchaseMessageBoxProc, hWnd, uMsg, wParam, lParam);
-//}
-//
-//int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState* pCart)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitPurchaseMessageBox, hDlg, a2, pCart);
-//}
-//
-//int J3DAPI jonesConfig_ShowDialogInsertCD(HWND hWnd, LPARAM dwInitParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_ShowDialogInsertCD, hWnd, dwInitParam);
-//}
-//
-//INT_PTR __stdcall jonesConfig_DialogInsertCDProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_DialogInsertCDProc, hWnd, uMsg, wParam, lParam);
-//}
-//
-//int J3DAPI jonesConfig_InitDialogInsertCD(HWND hDlg, int a2, int cdNum)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_InitDialogInsertCD, hDlg, a2, cdNum);
-//}
-//
-//int J3DAPI jonesConfig_InsertCD_HandleWM_COMMAND(HWND hWnd, int nResult)
-//{
-//    return J3D_TRAMPOLINE_CALL(jonesConfig_InsertCD_HandleWM_COMMAND, hWnd, nResult);
-//}
 
 HFONT J3DAPI jonesConfig_InitDialog(HWND hWnd, HFONT hFont, int dlgID)
 {
@@ -8252,7 +3160,7 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
         }
     }
 
-    double scale = 1.0; // Added: Init to 1.0
+    double scale = 1.0f; // Added: Init to 1.0f
     if ( dialogRefHeight > 0 ) {
         scale = (dialogRefHeight / (double)rect.bottom) * dpiScale; // Added: scale by dpi
     }
@@ -8426,7 +3334,7 @@ BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
     GetClassName(hCtrl, aClassName, 256);
 
     CHAR aText[256] = { 0 };
-    if ( strncmpi(aClassName, "BUTTON", STD_ARRAYLEN(aClassName)) == 0 )
+    if ( strneqi(aClassName, "BUTTON", STD_ARRAYLEN(aClassName)) )
     {
         GetWindowText(hCtrl, aText, STD_ARRAYLEN(aText));
         LPCSTR pText = jonesString_GetString(aText);
@@ -8437,7 +3345,7 @@ BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
 
         return TRUE;
     }
-    else if ( strncmpi(aClassName, "STATIC", STD_ARRAYLEN(aClassName)) == 0 )
+    else if ( strneqi(aClassName, "STATIC", STD_ARRAYLEN(aClassName)) )
     {
         GetWindowText(hCtrl, aText, STD_ARRAYLEN(aText));
         if ( strchr(aText, '%') )
@@ -8528,10 +3436,10 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hCtrl, JonesDialogFontInfo
                 }
             }
 
-            //if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail )
+            //if ( (!hPrevIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail )
             {
                 double fontScaleX = pFontInfo->fontScaleX;
-             /*   if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
+             /*   if ( hPrevIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
                 {
                     fontScaleX = (double)heightDesktop / RD_REF_HEIGHT;
                 }*/
@@ -8539,10 +3447,10 @@ void J3DAPI jonesConfig_SetWindowFontAndPosition(HWND hCtrl, JonesDialogFontInfo
                 rectWindow.bottom = (LONG)((double)(rectWindow.bottom - rectWindow.top) * fontScaleX) + rectWindow.top;
             }
 
-            //if ( (!hIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail && !hwndResumeBtn )
+            //if ( (!hPrevIcon || heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH) && !hwndThumbnail && !hwndResumeBtn )
             {
                 double fontScaleY = pFontInfo->fontScaleY;
-               /* if ( hIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
+               /* if ( hPrevIcon && heightDesktop < (size_t)RD_REF_HEIGHT && widthDesktop < (size_t)RD_REF_WIDTH )
                 {
                     fontScaleY = (double)widthDesktop / RD_REF_WIDTH;
                 }*/
@@ -8757,12 +3665,12 @@ int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
 
     memset(&ofn.lpstrCustomFilter, 0, 12);
 
-    char aFilename[128] = { 0 };
+    char aFilename[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
     aFilename[0]        = 0;
     ofn.lpstrFile       = aFilename;
     ofn.nMaxFile        = STD_ARRAYLEN(aFilename);
 
-    char aFileTitle[128] = { 0 };
+    char aFileTitle[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
     ofn.lpstrFileTitle   = aFileTitle;
     ofn.nMaxFileTitle    = STD_ARRAYLEN(aFileTitle);
 
@@ -8800,7 +3708,7 @@ int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
     }
 
     stdFnames_ChangeExt(ofn.lpstrFile, "nds");
-    stdUtil_StringCopy(pOutFilePath, 128u, ofn.lpstrFile);
+    stdUtil_StringCopy(pOutFilePath, JONESCONFIG_GAMESAVE_FILEPATHSIZE, ofn.lpstrFile);
     return 1;
 }
 
@@ -8894,7 +3802,7 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                             pFilename = NULL;
                         }
 
-                        if ( (SetCurrentDirectory(aSearchPath) || strlen(aPath)) && (!pFilename || strcmp(pFilename, pOfNotify->lpOFN->lpstrDefExt) == 0) )
+                        if ( (SetCurrentDirectory(aSearchPath) || strlen(aPath)) && (!pFilename || streq(pFilename, pOfNotify->lpOFN->lpstrDefExt)) )
                         {
                             SetCurrentDirectory(aCurDir);
                             bValidFile = true;
@@ -8928,7 +3836,7 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                         STD_FORMAT(aQuckSaveFilename, "%s.%s", pQuickSavePrefix, pOfNotify->lpOFN->lpstrDefExt);
 
                         stdFnames_ChangeExt(aFilename, pOfNotify->lpOFN->lpstrDefExt); // Fixed: Added .nds extension to filename here to make sure filename "QUICKSAVE" without ".nds" extension doesn't slip over
-                        if ( strcmpi(aFilename, aQuckSaveFilename) == 0 )
+                        if ( streqi(aFilename, aQuckSaveFilename) )
                         {
                             bValidFile = false;
                         }
@@ -9003,9 +3911,9 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOf
 
     hThumbnail = GetDlgItem(hDlg, 1125); // ??
     pData->pfThumbnailProc = GetWindowLongPtr(hThumbnail, GWL_WNDPROC);
-    SetWindowLongPtr(hThumbnail, GWL_WNDPROC, (LONG)jonesConfig_SaveGameThumbnailPaintProc);
+    SetWindowLongPtr(hThumbnail, GWL_WNDPROC, (LONG_PTR)jonesConfig_SaveGameThumbnailPaintProc);
 
-    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pData);
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
 
     RECT thumbRect;
     GetClientRect(hThumbnail, &thumbRect);
@@ -9033,7 +3941,7 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOf
         GetWindowRect(hThumbnail, &thumbWndRect);
 
         // Added: Added padding. This should fix drawing all components right of file list
-        const int pad = (int)ceil(10.0 * dpiScale);
+        const int pad = (int)ceil(10.0f * dpiScale);
         MoveWindow(hDlg,
             dlgWndRect.left,
             dlgWndRect.top,
@@ -9044,7 +3952,7 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOf
 
         MoveWindow(
             hThumbnail,
-            (thumbWndRect.left - dlgWndRect.left) + (thumbRect.left - thumbWndRect.left), // Added: x + borderSize (thumbRect.left - thumbWndRect.left)... This should fix rendering image on different DPIs
+            (thumbWndRect.left - dlgWndRect.left) + (thumbRect.left - thumbWndRect.left), // Added: dlgX + borderSize (thumbRect.left - thumbWndRect.left)... This should fix rendering image on different DPIs
             thumbWndRect.top - dlgWndRect.top,
             thumbWidth + thumbWndRect.right - thumbWndRect.left,
             thumbHeight + thumbWndRect.bottom - thumbWndRect.top,
@@ -9077,64 +3985,110 @@ LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WP
     return 0;
 }
 
-int J3DAPI jonesConfig_ShowExitGameDialog(HWND hWnd, char* pSaveGameFilePath)
+int J3DAPI jonesConfig_ShowOverwriteSaveGameDlg(HWND hWnd, const char* aFilePath)
 {
     GameSaveMsgBoxData data;
-    data.dialogID = 211;
-    data.pNdsFilePath = pSaveGameFilePath;
-    return JonesDialog_ShowDialog((LPCSTR)211, hWnd, jonesConfig_ExitGameDlgProc, (LPARAM)&data);
+    data.dialogID     = 214;
+    data.pNdsFilePath = aFilePath;
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(214), hWnd, jonesConfig_SaveGameMsgBoxProc, (LPARAM)&data);
 }
 
-INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK jonesConfig_SaveGameMsgBoxProc(HWND hWnd, UINT umsg, WPARAM wParam, LPARAM lParam)
 {
-    switch ( uMsg )
+    int bSuccess;
+
+    if ( umsg == WM_DESTROY )
     {
-        case WM_INITDIALOG:
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontGameSaveMsgBox);
+        return 1;
+    }
+
+    else if ( umsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontGameSaveMsgBox = jonesConfig_InitDialog(hWnd, 0, ((GameSaveMsgBoxData*)lParam)->dialogID);
+        bSuccess = jonesConfig_GameSaveSetData(hWnd, wParam, (GameSaveMsgBoxData*)lParam);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+        return bSuccess;
+    }
+    else
+    {
+        if ( umsg == WM_COMMAND )
         {
-            RECT rectWnd;
-            GetClientRect(hWnd, &rectWnd);
-            jonesConfig_GetWindowScreenRect(hWnd, &rectWnd);
-
-            RECT rectWndIcon;
-            HWND hIcon = GetDlgItem(hWnd, 1182);
-
-            // Added: Make hIcon to be drawn by hWnd -> WM_DRAWITEM
-            SetWindowLong(hIcon, GWL_STYLE, GetWindowLong(hIcon, GWL_STYLE) | SS_OWNERDRAW);
-
-            GetWindowRect(hIcon, &rectWndIcon);
-            MoveWindow(hIcon, rectWndIcon.top - rectWnd.top, rectWndIcon.left - rectWnd.left, 96, 96, TRUE); // Changed: Shange icon size to 96 from 64
-
-            GameSaveMsgBoxData* pGSData = (GameSaveMsgBoxData*)lparam;
-            jonesConfig_hFontExitDlg = jonesConfig_InitDialog(hWnd, 0, pGSData->dialogID);
-
-            int result = jonesConfig_GameSaveSetData(hWnd, wparam, pGSData);
-            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-            return result;
-        }
-        case WM_COMMAND:
-            jonesConfig_MsgBoxDlg_HandleWM_COMMAND(hWnd, (unsigned __int16)wparam);
-            return 0;
-        case WM_DESTROY:
-            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontExitDlg);
-            return 1;
-        case WM_DRAWITEM: // Added: Fixes icon drawing
-        {
-            LPDRAWITEMSTRUCT pdis = (LPDRAWITEMSTRUCT)lparam;
-            if ( pdis->CtlID == 1182 )
-            {
-                HDC hmemdc = CreateCompatibleDC(pdis->hDC);
-                SetStretchBltMode(pdis->hDC, STRETCH_HALFTONE);
-                jonesConfig_DrawImageOnDialogItem(hWnd, hmemdc, pdis->hDC, 1182, jonesConfig_apDialogIcons[4], jonesConfig_apDialogIcons[5]); // exit and exitmask bmps
-                DeleteDC(hmemdc);
-                return TRUE;
-            }
-            return FALSE;
+            jonesConfig_MsgBoxDlg_HandleWM_COMMAND(hWnd, (uint16_t)wParam);
         }
 
-        default:
-            return 0;
+        return 0;
     }
 }
+
+int J3DAPI jonesConfig_GameSaveSetData(HWND hDlg, int a2, GameSaveMsgBoxData* pData)
+{
+    J3D_UNUSED(a2);
+
+    const char* pNdsFilePath;
+    const char* pOverwriteText;
+    const char* pProgressText;
+    HWND hMsgTextCntrl;
+    char aText[256];
+
+    if ( !pData )
+    {
+        return 0;
+    }
+
+    if ( pData->dialogID == 163 ) // if  load game message box
+    {
+        pProgressText = jonesString_GetString("JONES_STR_PROGRESS1");
+        if ( pProgressText )
+        {
+            hMsgTextCntrl = GetDlgItem(hDlg, 1126);
+            jonesConfig_SetTextControl(hDlg, hMsgTextCntrl, pProgressText);
+        }
+    }
+    else if ( pData->dialogID == 214 ) // if save game overwrite message box
+    {
+        pNdsFilePath = pData->pNdsFilePath;
+        pOverwriteText = jonesString_GetString("JONES_STR_OVERWRITE");
+        if ( pOverwriteText )
+        {
+            memset(aText, 0, sizeof(aText));
+            STD_FORMAT(aText, pOverwriteText, pNdsFilePath + 4);
+            hMsgTextCntrl = GetDlgItem(hDlg, 1197);
+            jonesConfig_SetTextControl(hDlg, hMsgTextCntrl, aText);
+        }
+    }
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_MsgBoxDlg_HandleWM_COMMAND(HWND hWnd, int nResult)
+{
+    GameSaveMsgBoxData* pData = (GameSaveMsgBoxData*)GetWindowLongPtr(hWnd, DWL_USER);
+    if ( nResult > 0 )
+    {
+        if ( nResult <= 2 )
+        {
+            EndDialog(hWnd, nResult);
+            return;
+        }
+
+        if ( nResult != 1187 )
+        {
+            return;
+        }
+
+        if ( pData->dialogID == 211 && jonesConfig_GetSaveGameFilePath(hWnd, (char*)pData->pNdsFilePath) != 1 )// in exit dialoge save game button was clicked
+        {
+            EndDialog(hWnd, 2);
+        }
+        else
+        {
+            EndDialog(hWnd, nResult);
+        }
+    }
+}
+
 
 int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
 {
@@ -9174,7 +4128,7 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
     ofn.lpstrFilter       = aFilterStr;
     ofn.lpstrCustomFilter = NULL;
 
-    char aLastFile[128] = { 0 };
+    char aLastFile[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
     const char* pLastFile = sithGamesave_GetLastFilename();
     if ( pLastFile ) {
         STD_STRCPY(aLastFile, pLastFile);
@@ -9186,9 +4140,9 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
         aLastFile[0] = 0;
     }
 
-    char szFileTitle[128] = { 0 };
-    ofn.lpstrFileTitle  = szFileTitle;
-    ofn.nMaxFileTitle   = STD_ARRAYLEN(szFileTitle);
+    char aFileTitle[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
+    ofn.lpstrFileTitle  = aFileTitle;
+    ofn.nMaxFileTitle   = STD_ARRAYLEN(aFileTitle);
 
     ofn.lpstrInitialDir = sithGetSaveGamesDir();
     ofn.lpstrTitle      = aLoadGameStr;
@@ -9224,15 +4178,20 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
     if ( bHasFilePath )
     {
         stdFnames_ChangeExt(ofn.lpstrFile, "nds");
-        stdUtil_StringCopy(pDestNdsPath, 128, ofn.lpstrFile);
+        stdUtil_StringCopy(pDestNdsPath, JONESCONFIG_GAMESAVE_FILEPATHSIZE, ofn.lpstrFile);
     }
     else
     {
         stdFnames_ChangeExt(data.aFilePath, "nds");
-        stdUtil_StringCopy(pDestNdsPath, 128, data.aFilePath);
+        stdUtil_StringCopy(pDestNdsPath, JONESCONFIG_GAMESAVE_FILEPATHSIZE, data.aFilePath);
     }
 
     return 1;
+}
+
+void* J3DAPI jonesConfig_sub_405F60(HWND hWnd)
+{
+    return (void*)GetWindowLongPtr(hWnd, DWL_USER);
 }
 
 UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -9415,7 +4374,7 @@ UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                             pExt = pData->aFilePath + strlen(pData->aFilePath) - 3;
                         }
 
-                        if ( pExt && strcmp(pExt, "nds") == 0 )
+                        if ( pExt && streq(pExt, "nds") )
                         {
                             // Load thumbnail of newly selected nds file
                             if ( pData->hThumbnail )
@@ -9460,48 +4419,13 @@ UINT_PTR CALLBACK jonesConfig_LoadGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
     return FALSE;
 }
 
-LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+int J3DAPI jonesConfig_ShowLoadGameWarningMsgBox(HWND hWnd)
 {
-    HWND hwndParent = (HWND)GetWindowLongPtr(hWnd, GWL_HWNDPARENT);
-    LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hwndParent, DWL_USER);
-    if ( !pData ) // Fixed: Moved null check to the top
-    {
-        return 1;
-    }
+    GameSaveMsgBoxData data;
 
-    if ( uMsg != WM_PAINT )
-    {
-        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam);
-    }
-
-    if ( !pData->hThumbnail )
-    {
-        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
-    }
-
-    if ( !pData->bFolderSel )
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, (LPPAINTSTRUCT)&ps);
-        SetStretchBltMode(hdc, STRETCH_HALFTONE);
-        jonesConfig_DrawImageOnDialogItem(hwndParent, pData->hdcThumbnail, hdc, 1163, pData->hThumbnail, NULL);// 1163 - thumbnail picture edit control
-        EndPaint(hWnd, &ps);
-        return 0;
-    }
-
-    pData->bFolderSel = 0;
-
-    // TODO: useless scope, found only in debug version
-#ifdef J3D_DEBUG
-    if ( !pData->hThumbnail )
-    {
-        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
-    }
-#endif
-
-    DeleteObject((HGDIOBJ)pData->hThumbnail);
-    pData->hThumbnail = NULL;
-    return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+    data.pNdsFilePath = 0;
+    data.dialogID = 163;
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(163), hWnd, jonesConfig_SaveGameMsgBoxProc, (LPARAM)&data);
 }
 
 BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pofn)
@@ -9577,7 +4501,7 @@ BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pof
         dlgWinRect.left,
         dlgWinRect.top,
         thmbWidth + dlgWinRect.right - dlgWinRect.left,
-        (LONG)ceil(11.0 * dpiScale) + dlgWinRect.bottom - dlgWinRect.top, // Added: Added padding  11 * dpiScale. This should fix drawing all components right of file list
+        (LONG)ceil(11.0f * dpiScale) + dlgWinRect.bottom - dlgWinRect.top, // Added: Added padding  11 * dpiScale. This should fix drawing all components right of file list
         TRUE
     );
 
@@ -9611,10 +4535,54 @@ BOOL J3DAPI jonesConfig_LoadGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME pof
     return TRUE;
 }
 
+LRESULT CALLBACK jonesConfig_LoadGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    HWND hwndParent = (HWND)GetWindowLongPtr(hWnd, GWL_HWNDPARENT);
+    LoadGameDialogData* pData = (LoadGameDialogData*)GetWindowLongPtr(hwndParent, DWL_USER);
+    if ( !pData ) // Fixed: Moved null check to the top
+    {
+        return 1;
+    }
+
+    if ( uMsg != WM_PAINT )
+    {
+        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam);
+    }
+
+    if ( !pData->hThumbnail )
+    {
+        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+    }
+
+    if ( !pData->bFolderSel )
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, (LPPAINTSTRUCT)&ps);
+        SetStretchBltMode(hdc, STRETCH_HALFTONE);
+        jonesConfig_DrawImageOnDialogItem(hwndParent, pData->hdcThumbnail, hdc, 1163, pData->hThumbnail, NULL);// 1163 - thumbnail picture edit control
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
+
+    pData->bFolderSel = 0;
+
+    // TODO: useless scope, found only in debug version
+#ifdef J3D_DEBUG
+    if ( !pData->hThumbnail )
+    {
+        return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+    }
+#endif
+
+    DeleteObject((HGDIOBJ)pData->hThumbnail);
+    pData->hThumbnail = NULL;
+    return CallWindowProc((WNDPROC)pData->pfThubnailProc, hWnd, uMsg, wParam, lParam); // Added: Should fix rendering of file list on Windows 11
+}
+
 int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd)
 {
     GetWindowLongPtr(hWnd, GWL_HINSTANCE); // TODO: useless
-    return JonesDialog_ShowDialog(MAKEINTRESOURCEA(112), hWnd, jonesConfig_GamePlayOptionsProc, 0);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(112), hWnd, jonesConfig_GamePlayOptionsProc, 0);
 }
 
 INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -9673,7 +4641,7 @@ INT_PTR CALLBACK jonesConfig_GamePlayOptionsProc(HWND hWnd, UINT uMsg, WPARAM wP
         if ( pDifficultyStr )
         {
             HWND hDifText = GetDlgItem(hWnd, 1215); // Difficulty text control
-            SetWindowTextA(hDifText, pDifficultyStr);
+            SetWindowText(hDifText, pDifficultyStr);
         }
 
         return 1;
@@ -9740,20 +4708,20 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     // Shot Text option
     HWND hCBShowText = GetDlgItem(hDlg, 1052);
     int bShowText = sithVoice_GetShowText();
-    SendMessage(hCBShowText, BM_SETCHECK, bShowText, 0);
+    Button_SetCheck(hCBShowText, bShowText);
 
     // Show Hints option
     HWND hCBShowHints = GetDlgItem(hDlg, 1051);
     int bShowHints = sithOverlayMap_GetShowHints();
-    SendMessage(hCBShowHints, BM_SETCHECK, bShowHints, 0);
+    Button_SetCheck(hCBShowHints, bShowHints);
 
     // RotateMap option
     HWND hCBRotateMap = GetDlgItem(hDlg, 1204);
     int  bRotateMap = sithOverlayMap_GetMapRotation();
-    SendMessage(hCBRotateMap, BM_SETCHECK, bRotateMap, 0);
+    Button_SetCheck(hCBRotateMap, bRotateMap);
 
     // Default to Run option
-    CheckDlgButton(hDlg, 1202, jonesConfig_bDefaultRun);// CB default run
+    CheckDlgButton(hDlg, 1202, jonesConfig_gamePlayOptions_bDefaultRun);// CB default run
 
     // Added: Check box "High Poly Objects"
     // Get the position of the base checkbox
@@ -9768,7 +4736,7 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     int x = pt.x;
     int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + 14;
 
-    // Create the checkbox
+    // Create the Hi-Poly checkbox
     HWND hCBHiPoly = CreateWindow(
         "BUTTON",               // Class name for button/checkbox
         "JONES_STR_HIPOLY",     // Text displayed on the checkbox
@@ -9780,7 +4748,7 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
         hDlg,                  // Parent window handle (the dialog)
         (HMENU)1053,           // Control ID
         GetModuleHandle(NULL), // Instance handle
-        NULL                   // Additional creation data
+        NULL                   // Additional creation config
     );
     J3D_UNUSED(hCBHiPoly);
 
@@ -9832,7 +4800,7 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     if ( pDifficultyStr )
     {
         HWND  hDifText = GetDlgItem(hDlg, 1215); // Difficulty text control
-        SetWindowTextA(hDifText, pDifficultyStr);
+        SetWindowText(hDifText, pDifficultyStr);
     }
 
 
@@ -9865,7 +4833,7 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
     {
         // Get & save show text option
         HWND hCBShowText = GetDlgItem(hDlg, 1052);
-        int bShowText = SendMessage(hCBShowText, BM_GETSTATE, 0, 0);
+        int bShowText = Button_GetState(hCBShowText);
         sithVoice_ShowText(bShowText);
 
         bShowText = sithVoice_GetShowText();
@@ -9873,14 +4841,15 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
 
         // Get & save map rotation option
         HWND hCBMapRotate = GetDlgItem(hDlg, 1204);
-        int bRotateMap = SendMessage(hCBMapRotate, BM_GETSTATE, 0, 0);
+        int bRotateMap = Button_GetState(hCBMapRotate);
         sithOverlayMap_EnableMapRotation(bRotateMap);
 
         bRotateMap = sithOverlayMap_GetMapRotation();
         wuRegistry_SaveIntEx("Map Rotation", bRotateMap);
+
         // Get & save show hint option
         HWND hCBShowHints = GetDlgItem(hDlg, 1051);
-        int bShowHints = SendMessage(hCBShowHints, BM_GETSTATE, 0, 0);
+        int bShowHints = Button_GetState(hCBShowHints);
         sithOverlayMap_SetShowHints(bShowHints);
 
         bShowHints = sithOverlayMap_GetShowHints();
@@ -9895,10 +4864,10 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
 
         // Get & save default to run option
         HWND hCBRun = GetDlgItem(hDlg, 1202);
-        jonesConfig_bDefaultRun = SendMessage(hCBRun, BM_GETCHECK, 0, 0);
-        wuRegistry_SaveIntEx("Default Run", jonesConfig_bDefaultRun);
+        jonesConfig_gamePlayOptions_bDefaultRun = Button_GetCheck(hCBRun);
+        wuRegistry_SaveIntEx("Default Run", jonesConfig_gamePlayOptions_bDefaultRun);
 
-        if ( jonesConfig_bDefaultRun )
+        if ( jonesConfig_gamePlayOptions_bDefaultRun )
         {
             sithControl_g_controlOptions |= 0x02;
         }
@@ -9953,11 +4922,3692 @@ void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
     }
 }
 
-void jonesConfig_UpdateCurrentLevelNum(void)
+void J3DAPI jonesConfig_FreeControlScheme(JonesControlsScheme* pScheme)
 {
-    jonesConfig_curLevelNum = JonesMain_GetCurrentLevelNum();
+    for ( size_t i = 0; i < STD_ARRAYLEN(pScheme->aActions); ++i )
+    {
+        //if ( (JonesControlsScheme *)((char *)pScheme + 36 * i) != (JonesControlsScheme *)-4 )
+        {
+            memset(pScheme->aActions[i], 0, STD_ARRAYLEN(pScheme->aActions[i]));
+        }
+    }
+
+    stdMemory_Free(pScheme);
 }
 
+void J3DAPI jonesConfig_FreeControlConfigEntry(JonesControlsConfig* pConfig)
+{
+    for ( size_t i = 0; i < pConfig->numSchemes; ++i )
+    {
+        JonesControlsScheme* pScheme = &pConfig->aSchemes[i];
+        if ( pScheme )
+        {
+            for ( size_t j = 0; j < STD_ARRAYLEN(pScheme->aActions); ++j )
+            {
+                //if ( (JonesControlsScheme*)((char*)pScheme + 36 * j) != (JonesControlsScheme*)-4 )
+                {
+                    memset(pScheme->aActions[j], 0, STD_ARRAYLEN(pScheme->aActions[j]));
+                }
+            }
+        }
+    }
+
+    if ( pConfig->paDeleteSchemes )
+    {
+        stdMemory_Free(pConfig->paDeleteSchemes);
+        pConfig->paDeleteSchemes = NULL;
+    }
+
+    if ( pConfig->aSchemes )
+    {
+        stdMemory_Free(pConfig->aSchemes);
+        pConfig->aSchemes = NULL;
+    }
+}
+
+int J3DAPI jonesConfig_CopyControlConfig(JonesControlsConfig* pSrc, JonesControlsConfig* pDst)
+{
+    if ( !pSrc )
+    {
+        return 0;
+    }
+
+    if ( !pDst )
+    {
+        pDst = (JonesControlsConfig*)STDMALLOC(sizeof(JonesControlsConfig));
+        if ( !pDst )
+        {
+            return 0;
+        }
+    }
+
+    pDst->numSchemes       = pSrc->numSchemes;
+    pDst->selectedShemeIdx = pSrc->selectedShemeIdx;
+
+    JonesControlsScheme* apSchemes = jonesConfig_CloneControlSchemesList(pSrc->aSchemes, 0, pSrc->numSchemes);
+    if ( !apSchemes && pSrc->aSchemes )
+    {
+        return 0;
+    }
+
+    if ( pDst->aSchemes )
+    {
+        jonesConfig_FreeControlConfigEntry(pDst);
+        pDst->aSchemes = NULL;
+    }
+
+    pDst->aSchemes = apSchemes;
+
+    size_t bufSize = 10 - pSrc->numSchemes % 10;
+    if ( bufSize <= 0 || bufSize >= 10 )
+    {
+        return 1;
+    }
+
+    pDst->aSchemes = (JonesControlsScheme*)STDREALLOC(pDst->aSchemes, sizeof(JonesControlsScheme) * (bufSize + pSrc->numSchemes));
+    memset(&pDst->aSchemes[pSrc->numSchemes], 0, sizeof(JonesControlsScheme) * bufSize);
+    return 1;
+}
+
+JonesControlsScheme* J3DAPI jonesConfig_CloneControlSchemesList(JonesControlsScheme* aSchemes, size_t start, size_t numSchemes)
+{
+    JonesControlsScheme* aNewSchemes = (JonesControlsScheme*)STDMALLOC(sizeof(JonesControlsScheme) * numSchemes);
+    if ( !aNewSchemes || !aSchemes )
+    {
+        return 0;
+    }
+
+    memset(aNewSchemes, 0, sizeof(JonesControlsScheme) * numSchemes);
+
+    for ( size_t i = start; i < numSchemes + start; ++i )
+    {
+        STD_STRCPY(aNewSchemes[i - start].aName, aSchemes[i].aName);
+
+        for ( size_t j = 0; j < STD_ARRAYLEN(aSchemes[i].aActions); ++j )
+        {
+            memset(aNewSchemes[i - start].aActions[j], 0, STD_ARRAYLEN(aNewSchemes[i - start].aActions[j]));
+            for ( size_t k = 0; k <= JONESCONTROL_ACTION_GETNUMBINDS(aSchemes[i].aActions[j]); ++k )
+            {
+                aNewSchemes[i - start].aActions[j][k] = aSchemes[i].aActions[j][k];
+            }
+        }
+    }
+
+    return aNewSchemes;
+}
+
+int J3DAPI jonesConfig_ShowControlOptions(HWND hWnd)
+{
+    if ( !jonesConfig_ControlOptions_InitControlsConfig() )
+    {
+        return 2;
+    }
+
+    JonesControlsConfig config = { 0 };
+    if ( !jonesConfig_CopyControlConfig(&jonesConfig_controlOptions_curControlConfig, &config) )
+    {
+        return 2;
+    }
+
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE); // ???
+
+    int result = JonesDialog_ShowDialog(MAKEINTRESOURCE(111), hWnd, jonesConfig_ControlOptionsDialogProc, (LPARAM)&config);
+    if ( result == 1 )
+    {
+        // Added: Make sure we have valid index
+        if ( config.numSchemes <= config.selectedShemeIdx )
+        {
+            // Maybe add log
+            return 2; // cancel
+        }
+
+        // Set and bind selected scheme as active game control set
+        wuRegistry_SaveStr("Configuration", config.aSchemes[config.selectedShemeIdx].aName);
+        jonesConfig_BindControls(&config.aSchemes[config.selectedShemeIdx]);
+
+        jonesConfig_FreeControlConfigEntry(&config);
+        jonesConfig_FreeControlConfigEntry(&jonesConfig_controlOptions_curControlConfig);
+        jonesConfig_controlOptions_curControlConfig.numSchemes = 0;
+
+        // Enable disable mouse
+        int bMouseEnabled = wuRegistry_GetIntEx("Mouse Control", 0);
+        jonesConfig_EnableMouseControl(bMouseEnabled);
+    }
+    else
+    {
+        jonesConfig_FreeControlConfigEntry(&config);
+    }
+
+    return result;
+}
+
+int jonesConfig_ControlOptions_InitControlsConfig(void)
+{
+    JonesControlsConfig config = { 0 };
+    config.selectedShemeIdx = -1;
+
+    if ( !jonesConfig_ControlOptions_SetAllDefaultControlSchemes(&config) || !jonesConfig_ControlOptions_LoadAllControlSchemes(&config) )
+    {
+        jonesConfig_FreeControlConfigEntry(&config);
+        return 0;
+    }
+    else if ( !jonesConfig_CopyControlConfig(&config, &jonesConfig_controlOptions_curControlConfig) )
+    {
+        jonesConfig_FreeControlConfigEntry(&jonesConfig_controlOptions_curControlConfig);
+        jonesConfig_FreeControlConfigEntry(&config);
+        return 0;
+    }
+    else
+    {
+        jonesConfig_FreeControlConfigEntry(&config);
+        return 1;
+    }
+}
+
+int J3DAPI jonesConfig_ControlOptions_LoadAllControlSchemes(JonesControlsConfig* pConfig)
+{
+    char aCurDir[128] = { 0 };
+    GetCurrentDirectory(STD_ARRAYLEN(aCurDir), aCurDir);
+    if ( !SetCurrentDirectory(jonesConfig_aKeySetsDirPath) )
+    {
+        return 1;
+    }
+
+    WIN32_FIND_DATAA fileData;
+    HANDLE hFile = FindFirstFile("*.kfg", &fileData);
+    if ( hFile == INVALID_HANDLE_VALUE )
+    {
+        SetCurrentDirectory(aCurDir);
+        return 1;
+    }
+
+    while ( 1 )
+    {
+        if ( (pConfig->numSchemes % 10) == 0 )
+        {
+            pConfig->aSchemes = (JonesControlsScheme*)STDREALLOC(pConfig->aSchemes, sizeof(JonesControlsScheme) * (pConfig->numSchemes + 10));
+        }
+
+        if ( !pConfig->aSchemes )
+        {
+            break;
+        }
+
+        if ( jonesConfig_LoadControlScheme(fileData.cFileName, &pConfig->aSchemes[pConfig->numSchemes]) )
+        {
+            ++pConfig->numSchemes;
+        }
+
+        if ( !FindNextFile(hFile, &fileData) )
+        {
+            FindClose(hFile);
+            SetCurrentDirectory(aCurDir);
+            return 1;
+        }
+    }
+
+    SetCurrentDirectory(aCurDir);
+    return 0;
+}
+
+int J3DAPI jonesConfig_ControlOptions_SetAllDefaultControlSchemes(JonesControlsConfig* pConfig)
+{
+    for ( size_t i = 0; i < JONESCONFIG_NUMDEFAULTCONTROLSCHEMES; i++ )
+    {
+        if ( !(pConfig->numSchemes % 10) )
+        {
+            pConfig->aSchemes = (JonesControlsScheme*)STDREALLOC(pConfig->aSchemes, sizeof(JonesControlsScheme) * (pConfig->numSchemes + 10));
+        }
+
+        if ( !pConfig->aSchemes )
+        {
+            return 0;
+        }
+
+        JonesControlsScheme* pScheme = &pConfig->aSchemes[pConfig->numSchemes];
+        if ( !pScheme || !jonesConfig_SetDefaultControlScheme(pScheme, i) )
+        {
+            return 0;
+        }
+
+        ++pConfig->numSchemes;
+    }
+
+    return 1;
+}
+
+INT_PTR CALLBACK jonesConfig_ControlOptionsDialogProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+{
+
+    if ( umsg == WM_DESTROY )
+    {
+        jonesConfig_ResetDialogFont(hwnd, jonesConfig_hFontControlOptions);
+        return 1;
+    }
+    else if ( umsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontControlOptions = jonesConfig_InitDialog(hwnd, 0, 111);
+        int res = jonesConfig_InitControlOptionsDialog(hwnd, wparam, (JonesControlsConfig*)lparam);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+        return res;
+    }
+    else
+    {
+        if ( umsg == WM_COMMAND )
+        {
+            jonesConfig_ControlOptions_HandleWM_COMMAND(hwnd, LOWORD(wparam), lparam, HIWORD(wparam));
+        }
+
+        return 0;
+    }
+}
+
+int J3DAPI jonesConfig_InitControlOptionsDialog(HWND hDlg, int a2, JonesControlsConfig* pConfig)
+{
+    J3D_UNUSED(a2);
+
+    char aSelectedCfgName[128] = { 0 };
+    if ( pConfig->selectedShemeIdx == -1 )
+    {
+        wuRegistry_GetStr("Configuration", aSelectedCfgName, STD_ARRAYLEN(aSelectedCfgName), "");
+        if ( strlen(aSelectedCfgName) == 0 )
+        {
+            // Load default config
+            const char* pDfltKeyset = NULL;
+            size_t maxJoyButtons = stdControl_GetMaxJoystickButtons();
+            if ( maxJoyButtons == 4 )
+            {
+                pDfltKeyset = jonesString_GetString(jonesConfig_aDfltKeySetNames[1]);
+            }
+            else
+            {
+                pDfltKeyset = maxJoyButtons == 8
+                    ? jonesString_GetString(jonesConfig_aDfltKeySetNames[2])
+                    : jonesString_GetString(jonesConfig_aDfltKeySetNames[0]);
+            }
+
+            if ( pDfltKeyset )
+            {
+                STD_STRCPY(aSelectedCfgName, pDfltKeyset);
+            }
+        }
+    }
+
+    pConfig->selectedShemeIdx = 0;
+
+    HWND hDlgItem = GetDlgItem(hDlg, 1047);
+    HDC hCfgListDC = GetDC(hDlgItem);
+
+    for ( size_t i = 0; i < pConfig->numSchemes; ++i )
+    {
+        ListBox_AddString(hDlgItem, pConfig->aSchemes[i].aName);
+
+        pConfig->aSchemes[i].bModified = 0;
+        if ( streq(aSelectedCfgName, pConfig->aSchemes[i].aName) )
+        {
+            pConfig->selectedShemeIdx = i;
+        }
+
+        SIZE sz;
+        size_t nameLen = strlen(pConfig->aSchemes[i].aName);
+        GetTextExtentPoint(hCfgListDC, pConfig->aSchemes[i].aName, nameLen, &sz);
+        if ( sz.cx > pConfig->maxNameLen )
+        {
+            pConfig->maxNameLen = sz.cx;
+        }
+    }
+
+    RECT rectList;
+    GetClientRect(hDlgItem, &rectList);
+    if ( rectList.right - rectList.left < pConfig->maxNameLen )
+    {
+        ListBox_SetHorizontalExtent(hDlgItem, pConfig->maxNameLen);
+    }
+
+    ListBox_SetCurSel(hDlgItem, pConfig->selectedShemeIdx);
+
+    if ( pConfig->selectedShemeIdx < JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )
+    {
+        // We have only default scheme, disable view scheme button
+        const char* pButtonText = jonesString_GetString("JONES_STR_VIEW_SCHEME");
+        hDlgItem = GetDlgItem(hDlg, 1022);
+        EnableWindow(hDlgItem, 0);
+        if ( pButtonText )
+        {
+            hDlgItem = GetDlgItem(hDlg, 1028);
+            SetWindowText(hDlgItem, pButtonText);
+        }
+    }
+
+    // Mouse checkbox
+    hDlgItem = GetDlgItem(hDlg, 1053);
+    int bMouseEnabled = wuRegistry_GetIntEx("Mouse Control", 0);
+    Button_SetCheck(hDlgItem, bMouseEnabled);
+
+    // Joystick checkbox
+    hDlgItem = GetDlgItem(hDlg, 1054);
+    if ( stdControl_GetNumJoysticks() )
+    {
+        int bJoystickEnabled = wuRegistry_GetIntEx("Joystick Control", 0);
+        Button_SetCheck(hDlgItem, bJoystickEnabled);
+    }
+    else
+    {
+        EnableWindow(hDlgItem, 0);
+    }
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pConfig);
+    return 1;
+}
+
+void J3DAPI jonesConfig_ControlOptions_HandleWM_COMMAND(HWND hWnd, int ctrlID, LPARAM lParam, unsigned int notificationCode)
+{
+    J3D_UNUSED(lParam);
+
+    JonesControlsConfig* pConfig = (JonesControlsConfig*)GetWindowLongA(hWnd, DWL_USER);
+
+    if ( ctrlID > 1022 ) // delete button
+    {
+        switch ( ctrlID )
+        {
+            case 1028: // Edit Scheme button clicked
+                jonesConfig_ControlOptions_EditSelectedScheme(hWnd, pConfig);
+                break;
+
+            case 1029: // New Scheme button clicked
+                jonesConfig_ControlOptions_CreateNewScheme(hWnd, pConfig, jonesConfig_controlOptions_pCurNewScheme);
+                return;
+
+            case 1047: // list control notification
+            {
+                HWND hDlgList = GetDlgItem(hWnd, 1047);
+
+                pConfig->selectedShemeIdx = ListBox_GetCurSel(hDlgList);
+                jonesConfig_ControlOptions_UpdateButtons(hWnd);
+
+                if ( notificationCode == LBN_DBLCLK )
+                {
+                    jonesConfig_ControlOptions_EditSelectedScheme(hWnd, pConfig);
+                }
+                break;
+            }
+        }
+    }
+    else
+    {
+        switch ( ctrlID )
+        {
+            case 1022: // delete scheme button
+                jonesConfig_ControlOptions_DeleteScheme(hWnd, pConfig);
+                return;
+
+            case 1: // OK button
+            {
+                HWND hCBMouseCtrl = GetDlgItem(hWnd, 1053);
+                int bMouseEnabled = Button_GetCheck(hCBMouseCtrl);
+
+                HWND hCBKoyCtrl = GetDlgItem(hWnd, 1054);
+                int bJoyEnabled = Button_GetCheck(hCBKoyCtrl);
+
+                // Delete pending scheme files to be removed
+                for ( size_t i = 0; i < pConfig->numDeleteSchemes; ++i )
+                {
+                    remove(pConfig->paDeleteSchemes[i]);
+                }
+
+                pConfig->numDeleteSchemes = 0;
+                if ( pConfig->paDeleteSchemes )
+                {
+                    stdMemory_Free(pConfig->paDeleteSchemes);
+                    pConfig->paDeleteSchemes = NULL;
+                }
+
+                // Set current selected scheme as current game control set
+                if ( !jonesConfig_CopyControlConfig(pConfig, &jonesConfig_controlOptions_curControlConfig) )
+                {
+                    const char* pErrorText = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
+                    if ( pErrorText )
+                    {
+                        jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", pErrorText, 145);
+                        InvalidateRect(hWnd, 0, 1);
+                    }
+
+                    // Due to error cancel set to cancel action
+                    ctrlID = 2; // cancel
+                }
+                else
+                {
+                    // Write modified schemes to file
+                    for ( size_t i = JONESCONFIG_NUMDEFAULTCONTROLSCHEMES; i < pConfig->numSchemes; ++i )
+                    {
+                        if ( pConfig->aSchemes[i].bModified == 1 && !jonesConfig_ControlOptions_WriteScheme(&pConfig->aSchemes[i]) )
+                        {
+                            const char* pErrorText = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
+                            if ( pErrorText )
+                            {
+                                jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", pErrorText, 145); // 145 - typewriter icon
+                                InvalidateRect(hWnd, 0, 1);
+                            }
+                        }
+                    }
+                }
+
+                // Save mouse/joystick settings
+                wuRegistry_SaveIntEx("Mouse Control", bMouseEnabled);
+                wuRegistry_SaveIntEx("Joystick Control", bJoyEnabled);
+
+                if ( bJoyEnabled )
+                {
+                    // Load current active scheme from file
+                    JonesControlsScheme* pActiveScheme = jonesConfig_LoadActiveControlScheme();
+                    if ( pActiveScheme )
+                    {
+                        JonesControl_EnableJoystickAxes();
+                        jonesConfig_BindControls(pActiveScheme);// TODO: why this has to be done here? Note, same is done when this dialog closes
+                        jonesConfig_FreeControlScheme(pActiveScheme);
+                    }
+                }
+                else
+                {
+                    sithControl_UnbindJoystickAxes();
+                }
+
+            } break;
+
+            case 2: // Cancel button
+                break;
+
+            default:
+                return;
+        }
+
+        // Delete any new scheme
+        if ( jonesConfig_controlOptions_pCurNewScheme )
+        {
+            stdMemory_Free(jonesConfig_controlOptions_pCurNewScheme);
+            jonesConfig_controlOptions_pCurNewScheme = NULL;
+        }
+
+        EndDialog(hWnd, ctrlID);
+    }
+}
+
+int J3DAPI jonesConfig_ControlOptions_WriteScheme(JonesControlsScheme* pScheme)
+{
+    // Change cur dir to control config dir
+    char aCurDir[128] = { 0 };
+    if ( !SetCurrentDirectory(jonesConfig_aKeySetsDirPath) )
+    {
+        SECURITY_ATTRIBUTES secattr = { 0 };
+        secattr.nLength              = sizeof(SECURITY_ATTRIBUTES);
+        secattr.lpSecurityDescriptor = NULL;
+        secattr.bInheritHandle       = 1;
+        CreateDirectory(jonesConfig_aKeySetsDirPath, &secattr);
+
+        GetCurrentDirectory(STD_ARRAYLEN(aCurDir), aCurDir);
+        SetCurrentDirectory(jonesConfig_aKeySetsDirPath);
+    }
+
+    char* pPadding;
+    if ( jonesConfig_maxActionPaddedStrLen <= jonesConfig_maxControlPaddedStrLen )
+    {
+        pPadding = (char*)STDMALLOC(jonesConfig_maxControlPaddedStrLen);
+    }
+    else
+    {
+        pPadding = (char*)STDMALLOC(jonesConfig_maxActionPaddedStrLen);
+    }
+
+    if ( !pPadding )
+    {
+        return 0;
+    }
+
+    if ( jonesConfig_maxActionPaddedStrLen <= jonesConfig_maxControlPaddedStrLen )
+    {
+        memset(pPadding, ' ', jonesConfig_maxControlPaddedStrLen);
+    }
+    else
+    {
+        memset(pPadding, ' ', jonesConfig_maxActionPaddedStrLen);
+    }
+
+    const size_t maxColumnTextLen = jonesConfig_maxControlStrLen + jonesConfig_maxActionStrLen;
+    char* pColumnTitleText = (char*)STDMALLOC(maxColumnTextLen);
+    if ( !pColumnTitleText )
+    {
+        stdMemory_Free(pPadding);
+        return 0;
+    }
+
+    memset(pColumnTitleText, 0, maxColumnTextLen);
+
+    char aKfgParh[128] = { 0 };
+    STD_FORMAT(aKfgParh, "%s%s", pScheme->aName, ".kfg");
+
+    FILE* pFile = fopen(aKfgParh, "wt+");
+    if ( !pFile )
+    {
+        SetCurrentDirectory(aCurDir);
+        stdMemory_Free(pColumnTitleText);
+        stdMemory_Free(pPadding);
+        return 0;
+    }
+
+    // Write heading text
+    const char* pJonesString = jonesString_GetString("JONES_STR_HEADING");
+    if ( !pJonesString )
+    {
+        goto error;
+    }
+
+    fprintf(pFile, pJonesString);
+    fprintf(pFile, "\n");
+
+    // Write enabled line
+    char aEnabledLine[12] = { 0 }; // Added_ Init to 0
+    STD_FORMAT(aEnabledLine, "%s\n\n", "1");
+    fprintf(pFile, aEnabledLine);
+
+    // Write column text "Actions :"
+    memset(pColumnTitleText, 0, maxColumnTextLen);
+
+    pJonesString = jonesString_GetString("JONES_STR_ACTIONS");
+    if ( !pJonesString )
+    {
+        goto error;
+    }
+
+    stdUtil_StringCopy(pColumnTitleText, maxColumnTextLen, pJonesString);
+
+    size_t numPadding = jonesConfig_maxActionPaddedStrLen - strlen(pColumnTitleText);
+    if ( jonesConfig_maxActionPaddedStrLen <= jonesConfig_maxControlPaddedStrLen )
+    {
+        memset(pPadding, 0, jonesConfig_maxControlPaddedStrLen);
+    }
+    else
+    {
+        memset(pPadding, 0, jonesConfig_maxActionPaddedStrLen);
+    }
+
+    memset(pPadding, ' ', numPadding);
+    stdUtil_StringCat(pColumnTitleText, maxColumnTextLen, pPadding);
+
+    // Write column text "Keys:"
+    pJonesString = jonesString_GetString("JONES_STR_KEYS");
+    if ( !pJonesString )
+    {
+        goto error;
+    }
+
+    // Write column header line
+    stdUtil_StringCat(pColumnTitleText, maxColumnTextLen, pJonesString);
+    fprintf(pFile, pColumnTitleText);
+    fprintf(pFile, "\n\n");
+
+    // Now go over actions and write the key config per action
+    for ( size_t i = 0; i < STD_ARRAYLEN(pScheme->aActions); ++i )
+    {
+        int (*aBindings)[9] = (int (*)[9])pScheme->aActions[i];
+
+      // Write action name
+        pJonesString = jonesString_GetString(jonesConfig_aJonesControlActionNames[i]);
+        if ( !aBindings || !pJonesString )
+        {
+            goto error;
+        }
+
+        char aActionControlLine[256] = { 0 };
+        STD_FORMAT(aActionControlLine, "\"%s\"", pJonesString);
+        fprintf(pFile, aActionControlLine);
+
+        // Write padding
+        numPadding = jonesConfig_maxActionPaddedStrLen - strlen(aActionControlLine);
+        if ( jonesConfig_maxActionPaddedStrLen <= jonesConfig_maxControlPaddedStrLen )
+        {
+            memset(pPadding, 0, jonesConfig_maxControlPaddedStrLen);
+        }
+        else
+        {
+            memset(pPadding, 0, jonesConfig_maxActionPaddedStrLen);
+        }
+
+        memset(pPadding, ' ', numPadding);
+        fprintf(pFile, pPadding);
+
+        // Now go over action's bindings and write them to file
+        for ( size_t j = 1; j <= (uint8_t)(*aBindings)[0]; ++j )
+        {
+            char aControlText[JONESCONFIG_CONTROLSTRING_MAXLEN] = { 0 };
+            jonesConfig_ControlToString((*aBindings)[j], aControlText);
+
+            STD_FORMAT(aActionControlLine, "\"%s\"", aControlText);
+            fprintf(pFile, aActionControlLine);
+
+            // Write padding
+            numPadding = jonesConfig_maxControlPaddedStrLen - strlen(aControlText);
+            if ( jonesConfig_maxActionPaddedStrLen <= jonesConfig_maxControlPaddedStrLen )
+            {
+                memset(pPadding, 0, jonesConfig_maxControlPaddedStrLen);
+            }
+            else
+            {
+                memset(pPadding, 0, jonesConfig_maxActionPaddedStrLen);
+            }
+
+            memset(pPadding, ' ', numPadding);
+            fprintf(pFile, pPadding);
+        }
+
+        fprintf(pFile, "\n");
+    }
+
+    // Close file and set cur dir to previous dir
+    fclose(pFile);
+    SetCurrentDirectory(aCurDir);
+
+    stdMemory_Free(pPadding);
+    stdMemory_Free(pColumnTitleText);
+    return 1;
+
+error:
+    if ( pFile )
+    {
+        fclose(pFile);
+    }
+
+    SetCurrentDirectory(aCurDir);
+    stdMemory_Free(pPadding);
+    stdMemory_Free(pColumnTitleText);
+    return 0;
+}
+
+int J3DAPI jonesConfig_ControlOptions_UpdateButtons(HWND hDlg)
+{
+    HWND hListCtrl = GetDlgItem(hDlg, 1047);
+    int selIdx = ListBox_GetCurSel(hListCtrl);
+    if ( selIdx < JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )
+    {
+        // Only default schemes are available,
+        // set edit button to view and disable delete button
+        const char* pText = jonesString_GetString("JONES_STR_VIEW_SCHEME");
+        if ( pText )
+        {
+            HWND hEditBtnCtrl = GetDlgItem(hDlg, 1028);
+            SetWindowText(hEditBtnCtrl, pText);
+        }
+
+        HWND hDelBtnCtrl = GetDlgItem(hDlg, 1022);
+        return EnableWindow(hDelBtnCtrl, 0);
+    }
+    else
+    {
+        // Ok we have custom schemes enable delete button
+        const char* pText = jonesString_GetString("JONES_STR_EDIT_SCHEME");
+        if ( pText )
+        {
+            HWND hEditBtnCtrl = GetDlgItem(hDlg, 1028);
+            SetWindowText(hEditBtnCtrl, pText);
+        }
+
+        HWND hDelBtnCtrl = GetDlgItem(hDlg, 1022);
+        return EnableWindow(hDelBtnCtrl, 1);
+    }
+}
+
+void J3DAPI jonesConfig_ControlOptions_DeleteScheme(HWND hDlg, JonesControlsConfig* pConfig)
+{
+    HWND hListCtrl = GetDlgItem(hDlg, 1047); // list of schemes in control options dialog
+
+    char aSchemeName[128] = { 0 };
+    int selIdx = ListBox_GetCurSel(hListCtrl);
+    ListBox_GetText(hListCtrl, selIdx, aSchemeName);
+    ListBox_DeleteString(hListCtrl, selIdx);
+
+    size_t schemeNum = 0;
+    while ( schemeNum < pConfig->numSchemes )
+    {
+        if ( streq(pConfig->aSchemes[schemeNum].aName, aSchemeName) )
+        {
+            if ( (pConfig->numDeleteSchemes % 10) == 0 )
+            {
+                pConfig->paDeleteSchemes = (char (*)[128])STDREALLOC(
+                    pConfig->paDeleteSchemes,
+                    (pConfig->numDeleteSchemes + 10) * 128
+                );
+            }
+
+            if ( pConfig->aSchemes[schemeNum].bModified != 1 )
+            {
+                char aPath[128] = { 0 };
+                STD_FORMAT(aPath, "%s\\%s%s", jonesConfig_aKeySetsDirPath, aSchemeName, ".kfg");
+                STD_STRCPY(pConfig->paDeleteSchemes[pConfig->numDeleteSchemes], aPath);
+                ++pConfig->numDeleteSchemes;
+            }
+
+            for ( size_t i = 0; i < STD_ARRAYLEN(pConfig->aSchemes[schemeNum].aActions); ++i )
+            {
+                memset(pConfig->aSchemes[schemeNum].aActions[i], 0, STD_ARRAYLEN(pConfig->aSchemes[schemeNum].aActions[i]));
+            }
+
+            for ( size_t j = schemeNum; j < (signed int)pConfig->numSchemes; ++j )
+            {
+                if ( j == pConfig->numSchemes - 1 )
+                {
+                    memset(&pConfig->aSchemes[j], 0, sizeof(pConfig->aSchemes[j]));
+                }
+                else
+                {
+                    memcpy(&pConfig->aSchemes[j], &pConfig->aSchemes[j + 1], sizeof(pConfig->aSchemes[j]));
+                }
+            }
+
+            if ( schemeNum == pConfig->selectedShemeIdx )
+            {
+                size_t newSelIdx = pConfig->selectedShemeIdx - 1 >= 0 ? pConfig->selectedShemeIdx - 1 : 0;
+                pConfig->selectedShemeIdx = newSelIdx;
+
+                ListBox_SetCurSel(hListCtrl, pConfig->selectedShemeIdx);
+
+                if ( pConfig->selectedShemeIdx < JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )// Are we left only with default schemes?
+                {
+                    // Disable delete button
+                    HWND hBtnDelCtrl = GetDlgItem(hDlg, 1022);
+                    EnableWindow(hBtnDelCtrl, 0);
+                }
+            }
+
+            --pConfig->numSchemes;
+            return;
+        }
+
+        ++schemeNum;
+    }
+}
+
+void J3DAPI jonesConfig_ControlOptions_EditSelectedScheme(HWND hDlg, JonesControlsConfig* pConfig)
+{
+    HWND hListCtrl = GetDlgItem(hDlg, 1047); // list of scheme names in control options
+
+    // Get selected scheme name
+    char aSchemeName[128] = { 0 };
+    size_t selIdx = ListBox_GetCurSel(hListCtrl);
+    ListBox_GetText(hListCtrl, selIdx, aSchemeName);
+
+    size_t start = 0;
+    JonesEditControlSchemeDialogData editdata = { 0 };
+    while ( start < pConfig->numSchemes )
+    {
+        if ( streq(pConfig->aSchemes[start].aName, aSchemeName) )
+        {
+            memset(&editdata, 0, sizeof(editdata));
+            editdata.aSchemes       = jonesConfig_CloneControlSchemesList(pConfig->aSchemes, start, 1);
+            editdata.numSchemes     = start;
+            editdata.pDefaultShceme = jonesConfig_GetDefaultControlScheme(pConfig);
+            break;
+        }
+
+        ++start;
+    }
+
+    if ( start != pConfig->numSchemes )
+    {
+        if ( jonesConfig_ShowEditControlShemeDialog(hDlg, &editdata) == 1 )
+        {
+            InvalidateRect(hDlg, 0, 1);
+            pConfig->aSchemes[start].bModified = editdata.aSchemes->bModified;
+            if ( pConfig->aSchemes[start].bModified )
+            {
+                for ( size_t i = 0; i < STD_ARRAYLEN(pConfig->aSchemes[start].aActions); ++i )
+                {
+                    for ( size_t j = 0; j < STD_ARRAYLEN(pConfig->aSchemes[start].aActions[i]); ++j )
+                    {
+                        pConfig->aSchemes[start].aActions[i][j] = editdata.aSchemes->aActions[i][j];
+                    }
+                }
+            }
+
+            stdMemory_Free(editdata.aSchemes);
+            editdata.aSchemes = NULL;
+        }
+        else
+        {
+            jonesConfig_FreeControlScheme(editdata.aSchemes);
+        }
+    }
+}
+
+JonesControlsScheme* J3DAPI jonesConfig_GetDefaultControlScheme(JonesControlsConfig* pConfig)
+{
+    size_t numButtons = stdControl_GetMaxJoystickButtons();
+
+    const char* pSchemeName;
+    if ( numButtons == 4 )
+    {
+        pSchemeName = jonesString_GetString(jonesConfig_aDfltKeySetNames[1]);
+    }
+    else if ( numButtons == 8 )
+    {
+        pSchemeName = jonesString_GetString(jonesConfig_aDfltKeySetNames[2]);
+    }
+    else
+    {
+        // Keyboard 
+        pSchemeName = jonesString_GetString(jonesConfig_aDfltKeySetNames[0]);
+    }
+
+    if ( pSchemeName )
+    {
+        for ( size_t i = 0; i < JONESCONFIG_NUMDEFAULTCONTROLSCHEMES; ++i ) // 3 default schemes
+        {
+            if ( streq(pConfig->aSchemes[i].aName, pSchemeName) )
+            {
+                return &pConfig->aSchemes[i];
+            }
+        }
+    }
+
+    return NULL;
+}
+
+void J3DAPI jonesConfig_ControlOptions_CreateNewScheme(HWND hDlg, JonesControlsConfig* pConfig, JonesControlsScheme* pNewScheme)
+{
+    // Show dialog for user to enter new scheme filename
+    JonesCreateControlSchemeDialogData newSchemeDlgData = { 0 };
+    newSchemeDlgData.hSchemeList = GetDlgItem(hDlg, 1047);
+    if ( jonesConfig_ShowCreateControlSchemeDialog(hDlg, &newSchemeDlgData) != 1 )
+    {
+        return;
+    }
+
+    InvalidateRect(hDlg, 0, 1);
+
+    pNewScheme = jonesConfig_CloneControlSchemesList(pConfig->aSchemes, 0, 1);
+    if ( !pNewScheme )
+    {
+        const char* pErrorText = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
+        if ( pErrorText )
+        {
+            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145); // 145 - typewriter icon
+            InvalidateRect(hDlg, 0, 1);
+        }
+        return;
+    }
+
+    STD_STRCPY(pNewScheme->aName, newSchemeDlgData.aNewSchemeName);
+
+    JonesEditControlSchemeDialogData data = { 0 };
+    data.aSchemes       = pNewScheme;
+    data.numSchemes     = pConfig->numSchemes;
+    data.pDefaultShceme = jonesConfig_GetDefaultControlScheme(pConfig);
+
+    if ( jonesConfig_ShowEditControlShemeDialog(hDlg, &data) != 1 )
+    {
+        stdMemory_Free(pNewScheme);
+        return;
+    }
+
+    InvalidateRect(hDlg, 0, 1);
+
+    // Get list position for the new scheme based on alphabetical order
+    size_t schemeIdx;
+    for ( schemeIdx = JONESCONFIG_NUMDEFAULTCONTROLSCHEMES; // 3 - first index after default schemes
+        schemeIdx < pConfig->numSchemes
+        && strcmp(newSchemeDlgData.aNewSchemeName, pConfig->aSchemes[schemeIdx].aName) >= 0;
+        ++schemeIdx )
+    {
+        ;
+    }
+
+    // Allocate additional scheme list buffer
+    if ( (pConfig->numSchemes % 10) == 0 )
+    {
+        pConfig->aSchemes = (JonesControlsScheme*)STDREALLOC(pConfig->aSchemes, sizeof(JonesControlsScheme) * (pConfig->numSchemes + 10));
+    }
+
+    if ( !pConfig->aSchemes )
+    {
+
+        const char* pErrorText = jonesString_GetString("JONES_STR_NO_MEM_SCHEME");
+        if ( pErrorText )
+        {
+            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145); // 145 - typewriter icon
+            InvalidateRect(hDlg, 0, 1);
+        }
+        return;
+    }
+
+    // Make space in config list to insert new scheme by shifting existing schemes for 1 place
+    for ( size_t i = pConfig->numSchemes - 1; i >= schemeIdx; --i )
+    {
+        STD_STRCPY(pConfig->aSchemes[i + 1].aName, pConfig->aSchemes[i].aName);
+        for ( size_t j = 0; j < STD_ARRAYLEN(pConfig->aSchemes[i + 1].aActions); ++j )
+        {
+            for ( size_t k = 0; k < STD_ARRAYLEN(pConfig->aSchemes[i + 1].aActions[j]); ++k )
+            {
+                pConfig->aSchemes[i + 1].aActions[j][k] = pConfig->aSchemes[i].aActions[j][k];
+            }
+        }
+    }
+
+    // Insert new scheme name in list control
+    HWND hSchemeList = GetDlgItem(hDlg, 1047);
+    ListBox_InsertString(hSchemeList, schemeIdx, newSchemeDlgData.aNewSchemeName);
+    ListBox_SetCurSel(hSchemeList, schemeIdx);
+
+    pConfig->selectedShemeIdx = schemeIdx;
+
+    // Resize increase width of list for the new scheme name to fit in row
+    SIZE sz;
+    HDC hdc = GetDC(hSchemeList);
+    size_t nameLen = strlen(newSchemeDlgData.aNewSchemeName);
+    GetTextExtentPoint(hdc, newSchemeDlgData.aNewSchemeName, nameLen, &sz);
+
+    if ( sz.cx > pConfig->maxNameLen )
+    {
+        pConfig->maxNameLen = sz.cx;
+
+        RECT rectSchemeList;
+        GetClientRect(hSchemeList, &rectSchemeList);
+        if ( rectSchemeList.right - rectSchemeList.left < sz.cx )
+        {
+            ListBox_SetHorizontalExtent(hSchemeList, sz.cx);
+        }
+    }
+
+    // Insert new scheme in config list
+    pConfig->aSchemes[schemeIdx].bModified = data.aSchemes->bModified;
+    STD_STRCPY(pConfig->aSchemes[schemeIdx].aName, data.aSchemes->aName);
+
+    for ( size_t i = 0; i < STD_ARRAYLEN(pConfig->aSchemes[schemeIdx].aActions); ++i )
+    {
+        for ( size_t j = 0; j < STD_ARRAYLEN(pConfig->aSchemes[schemeIdx].aActions[i]); ++j )
+        {
+            pConfig->aSchemes[schemeIdx].aActions[i][j] = data.aSchemes->aActions[i][j];
+        }
+    }
+
+    stdMemory_Free(data.aSchemes);
+    data.aSchemes = NULL;
+    ++pConfig->numSchemes;
+}
+
+int J3DAPI jonesConfig_ShowCreateControlSchemeDialog(HWND hWnd, JonesCreateControlSchemeDialogData* pData)
+{
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(116), hWnd, jonesConfig_CreateControlSchemeProc, (LPARAM)pData);
+}
+
+INT_PTR CALLBACK jonesConfig_CreateControlSchemeProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+    switch ( msg )
+    {
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontCreateControlSchemeDlg);
+            break;
+
+        case WM_INITDIALOG:
+        {
+            jonesConfig_hFontCreateControlSchemeDlg = jonesConfig_InitDialog(hWnd, 0, 116);
+            int res = jonesConfig_InitCreateControlScheme(hWnd, wparam, (JonesCreateControlSchemeDialogData*)lparam);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return res;
+        }
+
+        case WM_COMMAND:
+            jonesConfig_CreateControlScheme_Handle_WM_COMMAND(hWnd, LOWORD(wparam));
+            return 0;
+
+        default:
+            return 0;
+    }
+
+    return 1;
+}
+
+int J3DAPI jonesConfig_InitCreateControlScheme(HWND hDlg, int a2, JonesCreateControlSchemeDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    HWND hEditCtrl = GetDlgItem(hDlg, 1052);
+    SetFocus(hEditCtrl);
+    Edit_LimitText(hEditCtrl, 60);
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pData);
+    return 0; // should it return 1 ?
+}
+
+void J3DAPI jonesConfig_CreateControlScheme_Handle_WM_COMMAND(HWND hDlg, int ctrlID)
+{
+    JonesCreateControlSchemeDialogData* pData = (JonesCreateControlSchemeDialogData*)GetWindowLongA(hDlg, DWL_USER);
+
+    if ( ctrlID != 1 ) // ok button
+    {
+        if ( ctrlID == 2 ) // cancel button
+        {
+            EndDialog(hDlg, ctrlID);
+            return;
+        }
+        return;
+    }
+
+    HWND hEditCtrl = GetDlgItem(hDlg, 1052);
+
+    CHAR aName[128] = { 0 };
+    Edit_GetText(hEditCtrl, aName, STD_ARRAYLEN(aName));
+
+    size_t nameLen = strlen(aName);
+
+    // Check if name is empty
+    // Altered: This check was done within while loop
+    if ( nameLen == 0 )
+    {
+        const char* pErrorText = jonesString_GetString("JONES_STR_NO_SCHEME");
+        if ( !pErrorText )
+        {
+            return;
+        }
+
+        jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145); // 145 - typewriter icon
+        InvalidateRect(hDlg, 0, 1);
+        return;
+    }
+
+    if ( strcspn(aName, "/:\\\"?<>*|+") != nameLen )
+    {
+        // Bad file name format
+        const char* pErrorText = jonesString_GetString("JONES_STR_INVALIDFILE");
+        if ( pErrorText )
+        {
+            char aErrorText[256] = { 0 };
+            STD_FORMAT(aErrorText, pErrorText, aName);
+            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", aErrorText, 145); // 145 - typewriter icon
+            InvalidateRect(hDlg, 0, 1);
+        }
+
+        Edit_SetText(hEditCtrl, ""); // empty string
+        return;
+    }
+
+    int itemIdx = 0;
+    int numSchemes = ListBox_GetCount(pData->hSchemeList);
+    while ( itemIdx < numSchemes )
+    {
+        // Check if scheme with same name already exists
+        char aSchemeName[128] = { 0 };
+        ListBox_GetText(pData->hSchemeList, itemIdx, aSchemeName);
+        if ( streq(aName, aSchemeName) )
+        {
+            const char* pErrorText = jonesString_GetString("JONES_STR_DUP_SCHEME");
+            if ( pErrorText )
+            {
+                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145); // 145 - typewriter icon
+                InvalidateRect(hDlg, 0, 1);
+            }
+
+            Edit_SetText(hEditCtrl, ""); // empty string
+            return;
+        }
+
+        ++itemIdx;
+    }
+
+    // Ok name check has passed, assign new name to dlg data and close dialog
+    if ( itemIdx == numSchemes )
+    {
+        Edit_GetText(hEditCtrl, pData->aNewSchemeName, STD_ARRAYLEN(pData->aNewSchemeName));
+    }
+
+    EndDialog(hDlg, ctrlID);
+    return;
+}
+
+int J3DAPI jonesConfig_ShowEditControlShemeDialog(HWND hWnd, JonesEditControlSchemeDialogData* pData)
+{
+    GetWindowLongA(hWnd, GWL_HINSTANCE);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(115), hWnd, jonesConfig_EditControlSchemeProc, (LPARAM)pData);
+}
+
+INT_PTR CALLBACK jonesConfig_EditControlSchemeProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    if ( uMsg > WM_NOTIFY )
+    {
+        if ( uMsg != WM_INITDIALOG )
+        {
+            if ( uMsg != WM_COMMAND )
+            {
+                return 0;
+            }
+
+            jonesConfig_EditControlScheme_Handle_WM_COMMAND(hWnd, (uint16_t)wParam);
+            return 0;
+        }
+
+        jonesConfig_hFontEditControlShceme = jonesConfig_InitDialog(hWnd, 0, 115);
+        int result = jonesConfig_InitEditControlSchemeDlg(hWnd, wParam, (JonesEditControlSchemeDialogData*)lParam);
+
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+        return result;
+    }
+    else
+    {
+        if ( uMsg == WM_NOTIFY )
+        {
+            NMHDR* pNM = (NMHDR*)lParam;
+            if ( pNM->code != NM_CLICK )// -2 NM_CLICK
+            {
+                return 1;
+            }
+
+            // Update cur selected list state
+            JonesEditControlSchemeDialogData* pData = (JonesEditControlSchemeDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+            if ( pNM->idFrom == 1005 )
+            {
+                pData->hCurList = GetDlgItem(hWnd, 1005);
+                pData->curListID = 1005;
+            }
+            else if ( pNM->idFrom == 1006 )
+            {
+                pData->hCurList = GetDlgItem(hWnd, 1006);
+                pData->curListID = 1006;
+            }
+
+            return 1;
+        }
+
+        if ( uMsg != WM_DESTROY )
+        {
+            return 0;
+        }
+
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontEditControlShceme);
+    }
+
+    return 1;
+}
+
+int J3DAPI jonesConfig_InitEditControlSchemeDlg(HWND hDlg, int a2, JonesEditControlSchemeDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    // Set keyboard binding list
+    HWND hKeyListCtrl = GetDlgItem(hDlg, 1005);
+    jonesConfig_EditControlScheme_SetListColumn(hKeyListCtrl, "JONES_STR_MAPKEY");
+    jonesConfig_EditControlScheme_SetListScheme(hKeyListCtrl, 1005, pData->aSchemes);
+
+    // Set controller (joystick/gamepad) binding list
+    HWND hControlListCtrl = GetDlgItem(hDlg, 1006);
+    jonesConfig_EditControlScheme_SetListColumn(hControlListCtrl, "JONES_STR_MAPBUTTON");
+    jonesConfig_EditControlScheme_SetListScheme(hControlListCtrl, 1006, pData->aSchemes);
+
+    char aGBText[256] = { 0 };
+    const char* pGBText = jonesString_GetString("JONES_STR_SETTINGS");
+    if ( pGBText )
+    {
+        STD_FORMAT(aGBText, pGBText, pData->aSchemes->aName);
+        HWND hGBCtrl = GetDlgItem(hDlg, 1049); // settings group box
+        SetWindowText(hGBCtrl, aGBText);
+    }
+
+    if ( pData->numSchemes < JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )
+    {
+        // We have only default schemes, disable modify buttons
+
+        HWND hEditBtn = GetDlgItem(hDlg, 1056);
+        EnableWindow(hEditBtn, 0);
+
+        HWND hAddBtn = GetDlgItem(hDlg, 1046);
+        EnableWindow(hAddBtn, 0);
+
+        HWND hDelBtn = GetDlgItem(hDlg, 1038);
+        EnableWindow(hDelBtn, 0);
+
+        HWND hOkBtn = GetDlgItem(hDlg, 1);
+        EnableWindow(hOkBtn, 0);
+
+        HWND hDefltBtn = GetDlgItem(hDlg, 1099);
+        EnableWindow(hDefltBtn, 0);
+    }
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_EditControlScheme_SetListColumn(HWND hCtrl, const char* pJSText)
+{
+    RECT rect;
+    GetClientRect(hCtrl, &rect);
+    int ctrlWidth = rect.right - rect.left;
+
+    int width = ctrlWidth - GetSystemMetrics(SM_CXVSCROLL);
+
+    uint32_t gameWidth, gameHeight;
+    stdDisplay_GetBackBufferSize(&gameWidth, &gameHeight);
+
+    float ratio = 1.0f;
+    if ( (float)gameHeight / RD_REF_HEIGHT <= 1.0f ) // TODO: maybe remove this check to also upscale
+    {
+        ratio = (float)gameHeight / RD_REF_HEIGHT;
+    }
+
+    int spacing = (int32_t)(105.0f * ratio);
+
+    LVCOLUMNA column;
+    column.mask       = LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
+    column.cchTextMax = 256;
+    column.fmt        = LVCFMT_LEFT;
+    column.pszText    = jonesString_GetString("JONES_STR_FCTN");
+    column.iSubItem   = 0;
+    column.cx         = width - spacing;
+    ListView_InsertColumn(hCtrl, 0, &column);
+
+    if ( pJSText )
+    {
+        column.pszText = jonesString_GetString(pJSText);
+    }
+
+    column.iSubItem = 1;
+    column.cx       = spacing;
+    ListView_InsertColumn(hCtrl, 1, &column);
+}
+
+void J3DAPI jonesConfig_EditControlScheme_SetListScheme(HWND hCtrl, int ctrlID, JonesControlsScheme* pScheme)
+{
+    LVITEM item;
+    item.mask       = LVIF_STATE | LVIF_PARAM | LVIF_TEXT;
+    item.cchTextMax = 256;
+    item.state      = 0;
+    item.stateMask  = 0;
+
+    size_t itemNum = 0;
+    for ( size_t i = 0; i < STD_ARRAYLEN(jonesConfig_aJonesControlActionNames); ++i )
+    {
+        size_t numControllers = 0;
+        const char* pActionName = jonesString_GetString(jonesConfig_aJonesControlActionNames[i]);
+
+        for ( size_t bindNum = 1; bindNum <= (uint8_t)pScheme->aActions[i][0]; ++bindNum ) // Note, bindNum must start at 1 as 0 indes ix num bindings state
+        {
+            int keyid = pScheme->aActions[i][bindNum];
+            item.iItem    = itemNum;
+            item.iSubItem = 0;
+            item.pszText  = (LPSTR)pActionName;
+
+            if ( ctrlID == 1005 // 1005 - keyboard list
+                && (keyid < STDCONTROL_MAX_KEYBOARD_BUTTONS || keyid > STDCONTROL_JOYSTICK_LASTPOVCID) && (keyid < JONESCONFIG_JOYAXISKID_UP || keyid > JONESCONFIG_JOYAXISKID_GROUND)
+                || ctrlID == 1006 // controller list
+                && (keyid >= STDCONTROL_JOYSTICK_FIRSTKID && keyid <= STDCONTROL_JOYSTICK_LASTPOVCID || keyid >= JONESCONFIG_JOYAXISKID_UP && keyid <= JONESCONFIG_JOYAXISKID_GROUND) )
+            {
+                if ( ctrlID == 1006 ) // Control List
+                {
+                    ++numControllers;
+                }
+
+                item.lParam = i | (keyid << 16);
+                ListView_InsertItem(hCtrl, &item);
+
+                char aControlText[256] = { 0 };
+                jonesConfig_ControlToString(keyid, aControlText);
+                ListView_SetItemText(hCtrl, itemNum++, 1, aControlText);
+            }
+        }
+
+        if ( !numControllers && ctrlID == 1006 )   // Control List
+        {
+            item.lParam = i;
+            ListView_InsertItem(hCtrl, &item);
+
+            char aControlText[256] = { 0 };
+            ListView_SetItemText(hCtrl, itemNum++, 1, aControlText);
+        }
+    }
+}
+void J3DAPI jonesConfig_EditControlScheme_Handle_WM_COMMAND(HWND hDlg, int ctrlID)
+{
+    JonesEditControlSchemeDialogData* pData = (JonesEditControlSchemeDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+
+    switch ( ctrlID )
+    {
+        case 1046: // Add button
+            if ( pData->numSchemes >= JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )
+            {
+                jonesConfig_EditControlScheme_AddAssignment(hDlg, pData->hCurList, pData->curListID, pData->aSchemes);
+            }
+            break;
+
+        case 1056: // Edit button
+            if ( pData->numSchemes >= JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )
+            {
+                jonesConfig_EditControlScheme_EditAssignment(hDlg, pData->hCurList, pData->curListID, pData->aSchemes);
+            }
+            break;
+
+        case 1099: // Default scheme button
+        {
+            HWND hKeyListCtrl     = GetDlgItem(hDlg, 1005);
+            HWND hControlListCtrl = GetDlgItem(hDlg, 1006);
+
+            // Copy default scheme
+            for ( size_t i = 0; i < STD_ARRAYLEN(pData->aSchemes->aActions); ++i )
+            {
+                memset(pData->aSchemes->aActions[i], 0, STD_ARRAYLEN(pData->aSchemes->aActions[i])); // Clear existing bindings
+                for ( size_t j = 0; j <= JONESCONTROL_ACTION_GETNUMBINDS(pData->pDefaultShceme->aActions[i]); ++j )
+                {
+                    pData->aSchemes->aActions[i][j] = pData->pDefaultShceme->aActions[i][j];
+                }
+            }
+
+            // Reset list controls
+            ListView_DeleteAllItems(hKeyListCtrl);
+            ListView_DeleteAllItems(hControlListCtrl);
+
+            // Init list controls with changed scheme
+            jonesConfig_EditControlScheme_SetListScheme(hKeyListCtrl, 1005, pData->aSchemes); // Key list
+            jonesConfig_EditControlScheme_SetListScheme(hControlListCtrl, 1006, pData->aSchemes); // Controller  list
+        } break;
+
+        case 1038: // ctrlID == 1038 - Delete scheme button
+            if ( pData->numSchemes >= JONESCONFIG_NUMDEFAULTCONTROLSCHEMES )
+            {
+                jonesConfig_EditControlScheme_DeleteAssignment(hDlg, pData->hCurList, pData->curListID, pData->aSchemes);
+            }
+            break;
+
+        case 2: // Cancel button
+            EndDialog(hDlg, ctrlID);
+            return;
+
+        case 1: // Save button
+        {
+            // Check that all required actions have key bindings
+            char aActionName[512] = { 0 };
+            for ( size_t i = 0; i < STD_ARRAYLEN(pData->aSchemes->aActions); ++i )
+            {
+                if ( JONESCONTROL_ACTION_GETNUMBINDS(pData->aSchemes->aActions[i]) == 0 && (i < JONESCONTROL_ACTION_FISTS || i > JONESCONTROL_ACTION_BAZOOKA) ) // 16 - 24 are weapons keys
+                {
+                    const char* pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[i]);
+                    STD_STRCAT(aActionName, pActionName);
+                    STD_STRCAT(aActionName, "\n");
+                }
+            }
+
+            // If there was an error aActionName len != 0
+            if ( strlen(aActionName) )
+            {
+                char aErrorText[512] = { 0 };
+                const char* pErrorText = jonesString_GetString("JONES_STR_NO_MAPNG");
+                STD_FORMAT(aErrorText, "%s\n", pErrorText);
+
+                STD_STRCAT(aErrorText, aActionName);
+                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", aErrorText, 145);// 145 - typewrite icon
+                InvalidateRect(hDlg, 0, 1);
+                return;
+            }
+
+            pData->aSchemes->bModified = 1;
+            EndDialog(hDlg, ctrlID);
+            return;
+        }
+    };
+}
+
+void J3DAPI jonesConfig_EditControlScheme_EditAssignment(HWND hDlg, HWND hListCtrl, int listID, JonesControlsScheme* pScheme)
+{
+    size_t bindIdx, itemIdx;
+    JonesAssignKeyDialogData assignkeyData = { 0 };
+    assignkeyData.pScheme  = pScheme;
+    assignkeyData.actionId = jonesConfig_EditControlScheme_GetSelectedListItemBinding(hDlg, hListCtrl, pScheme, &itemIdx, &bindIdx);
+    assignkeyData.listID   = listID;
+
+    if ( assignkeyData.actionId < 0 )
+    {
+        const char* pErrorText = jonesString_GetString("JONES_STR_NOKEYACTION");
+        if ( pErrorText )
+        {
+            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145);// 145 - typewriter icon
+            InvalidateRect(hDlg, 0, 1);
+        }
+        return;
+    }
+
+    if ( jonesConfig_ShowAssignKeyDialog(hDlg, &assignkeyData) == 1 )
+    {
+        InvalidateRect(hDlg, 0, 1);
+
+        if ( JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[assignkeyData.actionId]) )
+        {
+            itemIdx = ListView_GetNextItem(hListCtrl, -1, LVNI_SELECTED); // TODO: why do another call, and not use value of itemIdx returned by above func?
+            ListView_SetItemText(hListCtrl, itemIdx, 1, assignkeyData.aControlName);
+
+            LVITEM item;
+            item.mask     = LVIF_PARAM;
+            item.iItem    = itemIdx;
+            item.iSubItem = 0;
+            item.lParam   = assignkeyData.actionId | (assignkeyData.controlId << 16);
+            ListView_SetItem(hListCtrl, &item);
+
+            // Assign new key biding
+            pScheme->aActions[assignkeyData.actionId][bindIdx + 1] = assignkeyData.controlId; // Note, bindIdx must be incremented as it starts with 0, and index 0 points to num binds state
+
+            // Update num key binds only if 0
+            if ( assignkeyData.listID == 1005 && !JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(pScheme->aActions[assignkeyData.actionId]) )
+            {
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS_KEYBOARD(pScheme->aActions[assignkeyData.actionId], +1);
+            }
+            else if ( assignkeyData.listID == 1006 && !JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(pScheme->aActions[assignkeyData.actionId]) )
+            {
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS_CONTROLLER(pScheme->aActions[assignkeyData.actionId], +1);
+            }
+
+        }
+    }
+}
+
+int J3DAPI jonesConfig_EditControlScheme_GetSelectedListItemBinding(HWND hDlg, HWND hListCtrl, JonesControlsScheme* pScheme, size_t* pItemIdx, size_t* pBindIdx)
+{
+    if ( !hListCtrl || !hDlg || !pScheme )
+    {
+        return -1;
+    }
+
+    int itemIdx = ListView_GetNextItem(hListCtrl, -1, LVNI_SELECTED);
+    if ( itemIdx < 0 )
+    {
+        return -1;
+    }
+
+    LVITEM item;
+    item.mask     = LVIF_PARAM;
+    item.iItem    = itemIdx;
+    item.iSubItem = 0;
+    ListView_GetItem(hListCtrl, &item);
+
+    size_t actionId  = LOWORD(item.lParam);
+    size_t controlId = HIWORD(item.lParam);// key binding controlID (kid or cid)
+    size_t bindIdx = 0;
+
+    STD_ASSERT(actionId < JONESCONTROL_ACTION_NUMACTIONS); // Added
+
+    size_t i;
+    for ( i = 1; i <= JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[actionId]) // TODO, should check be < rather than <=
+        && pScheme->aActions[actionId][i] != controlId; ++i )
+    {
+        ++bindIdx;
+    }
+
+    if ( controlId
+        && JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[actionId])
+        && i > JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[actionId]) )
+    {
+        return -1;
+    }
+
+    if ( pItemIdx )
+    {
+        *pItemIdx = itemIdx;
+    }
+
+    if ( pBindIdx )
+    {
+        *pBindIdx = bindIdx;
+    }
+
+    return actionId;
+}
+
+void J3DAPI jonesConfig_EditControlScheme_AddAssignment(HWND hDlg, HWND hListCtrl, int listID, JonesControlsScheme* pScheme)
+{
+    LVITEM item;
+    item.mask     = LVIF_PARAM;
+    item.iSubItem = 0;
+    item.iItem    = ListView_GetNextItem(hListCtrl, -1, LVNI_SELECTED);
+    if ( item.iItem < 0 )
+    {
+        const char* pErrorText = (char*)jonesString_GetString("JONES_STR_NOKEYACTION");
+        if ( pErrorText )
+        {
+            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145); // 145 - typwrite icon
+            InvalidateRect(hDlg, 0, 1);
+        }
+        return;
+    }
+
+    ListView_GetItem(hListCtrl, &item);
+
+    JonesAssignKeyDialogData data = { 0 };
+    data.actionId = LOWORD(item.lParam);
+    data.pScheme  = pScheme;
+    data.listID   = listID;
+    if ( jonesConfig_ShowAssignKeyDialog(hDlg, &data) == 1 )
+    {
+        InvalidateRect(hDlg, 0, 1);
+
+        STD_ASSERT(data.actionId < JONESCONTROL_ACTION_NUMACTIONS); // Added
+        if ( JONESCONTROL_ACTION_HASMAXBINDS(pScheme->aActions[data.actionId]) ) // Fixed: Changed to GT or EQ was EQ
+        {
+            // We exceed max number of action key bindings
+
+            char aErrorText[512] = { 0 };
+            const char* pErrorText = jonesString_GetString("JONES_STR_EXCEED");
+            if ( pErrorText )
+            {
+                STD_STRCPY(aErrorText, pErrorText);
+            }
+
+
+            char aActioName[512] = { 0 };
+            const char* pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[data.actionId]);
+            if ( pActionName )
+            {
+                STD_STRCPY(aActioName, pActionName);
+            }
+
+            if ( aErrorText[0] && aActioName[0] )
+            {
+                char aMsgText[256] = { 0 };
+                STD_FORMAT(aMsgText, aErrorText, aActioName);
+                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", aMsgText, 145);
+                InvalidateRect(hDlg, 0, 1);
+            }
+            return;
+        }
+
+        // Removed: Useless check, as &pScheme->aActions[data.actionId] (was pBinds) is pointer to fixed array
+        //else if ( !&pScheme->aActions[data.actionId] )
+        //{
+        //    const char* pErrorText = jonesString_GetString("JONES_STR_NO_MEM_ASGNMNT");
+        //    if ( pErrorText )
+        //    {
+        //        jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_CTRL_OPTS", pErrorText, 145);
+        //        InvalidateRect(hDlg, 0, 1);
+        //    }
+        //}
+
+        int numBinds = (listID == 1005)
+            ? JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(pScheme->aActions[data.actionId])
+            : JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(pScheme->aActions[data.actionId]);
+        if ( numBinds <= 0 )
+        {
+            item.mask   = LVIF_PARAM;
+            item.lParam = MAKELONG(data.actionId, data.controlId);
+            ListView_GetItem(hListCtrl, &item);
+        }
+        else
+        {
+            int numItems = ListView_GetItemCount(hListCtrl);
+            while ( data.actionId == LOWORD(item.lParam) && item.iItem < numItems )
+            {
+                ++item.iItem;
+                ListView_GetItem(hListCtrl, &item);
+            }
+
+            const char* pActionName = jonesString_GetString(jonesConfig_aJonesControlActionNames[data.actionId]);
+            if ( pActionName )
+            {
+                item.mask       = LVIF_STATE | LVIF_PARAM | LVIF_TEXT;
+                item.state      = 0;
+                item.stateMask  = 0;
+                item.pszText    = (LPSTR)pActionName;
+                item.cchTextMax = 256;
+                item.lParam     = MAKELONG(data.actionId, data.controlId);
+                ListView_InsertItem(hListCtrl, &item);
+            }
+        }
+
+        ListView_SetItemState(hListCtrl, item.iItem, 3, 3);
+        ListView_SetItemText(hListCtrl, item.iItem, 1, data.aControlName);
+
+       // Assign nex key binding
+        STD_ASSERT(data.actionId < JONESCONTROL_ACTION_NUMACTIONS); // Added
+        JONES_CONTROLACTION_ADDNEXTKEYBIND(pScheme->aActions[data.actionId], data.controlId);
+         //pBinds[(uint8_t)*pBinds + 1] = data.controlId;
+
+        // Update num bindings state
+        if ( listID == 1005 ) // key list
+        {
+            JONESCONTROL_ACTION_UPDATENUMBINDINGS_KEYBOARD(pScheme->aActions[data.actionId], +1);
+        }
+        else // controller list
+        {
+            JONESCONTROL_ACTION_UPDATENUMBINDINGS_CONTROLLER(pScheme->aActions[data.actionId], +1);
+
+        }
+
+       /* if ( listID == 1005 )
+        {
+            v4 = ((uint8_t)*pBinds + 1) | ((((*pBinds & 0xFF00u) >> 8) + 1) << 8) | ((*pBinds & 0xFF0000u) >> 16 << 16);
+        }
+        else
+        {
+            v4 = ((uint8_t)*pBinds + 1) | ((*pBinds & 0xFF00u) >> 8 << 8) | ((((*pBinds & 0xFF0000u) >> 16) + 1) << 16);
+        }*/
+    }
+}
+
+void jonesConfig_EditControlScheme_DeleteAssignment(HWND hDlg, HWND hListCtrl, int listID, JonesControlsScheme* pScheme)
+{
+    size_t itemIdx, bndIdx;
+    int actionIdx = jonesConfig_EditControlScheme_GetSelectedListItemBinding(hDlg, hListCtrl, pScheme, &itemIdx, &bndIdx);
+    if ( actionIdx >= 0 )
+    {
+        size_t numBinds = listID == 1005 // if keyboard list
+            ? JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(pScheme->aActions[actionIdx])
+            : JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(pScheme->aActions[actionIdx]);
+        if ( numBinds )
+        {
+            if ( numBinds <= 1 )
+            {
+                ListView_SetItemText(hListCtrl, itemIdx, 1, "");
+
+                LVITEM item;
+                item.mask     = LVIF_PARAM;
+                item.iItem    = itemIdx;
+                item.iSubItem = 0;
+                item.lParam   = actionIdx;
+                ListView_SetItem(hListCtrl, &item);
+            }
+            else
+            {
+                ListView_DeleteItem(hListCtrl, itemIdx);
+            }
+
+            STD_ASSERT(actionIdx < JONESCONTROL_ACTION_NUMACTIONS); // Added
+            for ( size_t i = bndIdx + 1; i < JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[actionIdx]); ++i )
+            {
+                pScheme->aActions[actionIdx][i] = pScheme->aActions[actionIdx][i + 1];
+            }
+
+            if ( listID == 1005 ) // Keyboard list
+            {
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS_KEYBOARD(pScheme->aActions[actionIdx], -1);
+            }
+            else // Controller list
+            {
+                JONESCONTROL_ACTION_UPDATENUMBINDINGS_CONTROLLER(pScheme->aActions[actionIdx], -1);
+            }
+        }
+    }
+}
+int J3DAPI jonesConfig_ShowAssignKeyDialog(HWND hWnd, JonesAssignKeyDialogData* pData)
+{
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE); // ??
+
+    int remapDlgResult = 1; // OK button
+    int mapKeyDlgResult, index;
+    do
+    {
+        memset(pData->aControlName, 0, sizeof(pData->aControlName));
+
+        pData->controlId = 0;
+        mapKeyDlgResult = JonesDialog_ShowDialog(MAKEINTRESOURCE(117), hWnd, jonesConfig_AssignKeyDlgProc, (LPARAM)pData);
+        if ( mapKeyDlgResult == 2 ) // Cancel
+        {
+            break;
+        }
+
+        size_t actionID, offset;
+        index = jonesConfig_AssignKey_CheckBindForKey(pData->pScheme, pData->controlId, &actionID, pData->listID, &offset);
+        if ( actionID == pData->actionId )
+        {
+            char aErrorText[512] = { 0 };
+            const char* pErrorText = jonesString_GetString("JONES_STR_SAMEMAP");
+            if ( pErrorText )
+            {
+                STD_STRCPY(aErrorText, pErrorText);
+            }
+            else
+            {
+                memset(aErrorText, 0, sizeof(aErrorText));
+            }
+
+            char aActionName[512] = { 0 };
+            const char* pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[pData->actionId]);
+            if ( pActionName )
+            {
+                STD_STRCPY(aActionName, pActionName);
+            }
+
+            if ( !aErrorText[0] || !aActionName[0] )
+            {
+                return 2;
+            }
+
+            char aControlName[256] = { 0 };
+            jonesConfig_ControlToString(pData->controlId, aControlName);
+
+            char aMsgText[256] = { 0 };
+            STD_FORMAT(aMsgText, "\"%s\" %s %s.", aControlName, aErrorText, aActionName);
+            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", aMsgText, 145);
+            return 2;
+        }
+
+        // If index > -1 then there is already key assigned for some action.
+        // Show reassign msg box
+        if ( index > -1 )
+        {
+            JonesReAssignKeyDialogData redata;
+            redata.pAssignKeyData = pData;
+            redata.index          = index;
+            redata.actionId       = actionID;
+            redata.offset         = offset;
+            redata.hAssignKeyDlg  = hWnd;
+            remapDlgResult = jonesConfig_ShowReassignKeyMsgBox(hWnd, &redata);
+        }
+    } while ( mapKeyDlgResult == 1 && index > -1 && remapDlgResult != 1 );
+
+    return mapKeyDlgResult;
+}
+
+int J3DAPI jonesConfig_AssignKey_CheckBindForKey(JonesControlsScheme* pScheme, size_t keyControlID, size_t* pFunctionId, int listID, size_t* pOffset)
+{
+    int index = -1;
+    for ( size_t function = 0; function < STD_ARRAYLEN(pScheme->aActions); ++function )
+    {
+        size_t offset = 0;
+        for ( size_t bindIndx = 1; bindIndx <= JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[function]); ++bindIndx )
+        {
+            if ( listID == 1006 // controller list
+                && ((unsigned int)pScheme->aActions[function][bindIndx] >= STDCONTROL_JOYSTICK_FIRSTKID && (unsigned int)pScheme->aActions[function][bindIndx] <= STDCONTROL_JOYSTICK_LASTPOVCID
+                    || (unsigned int)pScheme->aActions[function][bindIndx] >= JONESCONFIG_JOYAXISKID_UP && (unsigned int)pScheme->aActions[function][bindIndx] <= JONESCONFIG_JOYAXISKID_GROUND) )
+            {
+                ++index;
+            }
+            else if ( listID == 1005 // key list
+                && ((unsigned int)pScheme->aActions[function][bindIndx] < STDCONTROL_MAX_KEYBOARD_BUTTONS || (unsigned int)pScheme->aActions[function][bindIndx] > STDCONTROL_JOYSTICK_LASTPOVCID)
+                && ((unsigned int)pScheme->aActions[function][bindIndx] < JONESCONFIG_JOYAXISKID_UP || (unsigned int)pScheme->aActions[function][bindIndx] > JONESCONFIG_JOYAXISKID_GROUND) )
+            {
+                ++index;
+            }
+
+            if ( keyControlID == pScheme->aActions[function][bindIndx] )
+            {
+                // We found existing binding for keyID
+                *pFunctionId = function;
+                *pOffset = offset;
+                STDLOG_STATUS("index: %i function: %i offset: %i\n", index, function, offset);
+                return index;
+            }
+
+            ++offset;
+        }
+
+        if ( !JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(pScheme->aActions[function]) && listID == 1005 // key list
+            || !JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(pScheme->aActions[function]) && listID == 1006 ) // controller list
+        {
+            ++index;
+        }
+    }
+
+    return -1;
+}
+
+INT_PTR CALLBACK jonesConfig_AssignKeyDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    if ( uMsg > WM_INITDIALOG )
+    {
+        if ( uMsg == WM_COMMAND )
+        {
+            jonesConfig_AssignKeyDlg_HandleWM_COMMAND(hWnd, (uint16_t)wParam);
+            return 0;
+        }
+
+        if ( uMsg != WM_TIMER )
+        {
+            return 0;
+        }
+
+        // Timer
+        JonesAssignKeyDialogData* pData = (JonesAssignKeyDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+        if ( !pData || pData->bLocked )
+        {
+            return 1;
+        }
+
+        jonesConfig_AssignControlKey_ReadKey(hWnd);
+        return 0;
+    }
+
+    if ( uMsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontAssignKeyDlg = jonesConfig_InitDialog(hWnd, 0, 117);
+        int inited = jonesConfig_InitAssignKeyDlg(hWnd, wParam, (JonesAssignKeyDialogData*)lParam);
+
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+        return inited;
+    }
+    else
+    {
+        if ( uMsg != WM_DESTROY )
+        {
+            return 0;
+        }
+
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontAssignKeyDlg);
+    }
+
+    return 1;
+}
+
+int J3DAPI jonesConfig_InitAssignKeyDlg(HWND hDlg, int a2, JonesAssignKeyDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    if ( pData->listID == 1006 )
+    {
+        const char* pText = jonesString_GetString("JONES_STR_NEXTBUTTON");
+        if ( pText )
+        {
+            HWND hNextKeyCaptionCtrl = GetDlgItem(hDlg, 1054);
+            SetWindowText(hNextKeyCaptionCtrl, pText);
+        }
+    }
+
+    const char* pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[pData->actionId]);
+    if ( pActionName )
+    {
+        HWND hActionTextCtrl = GetDlgItem(hDlg, 1055);
+        SetWindowText(hActionTextCtrl, pActionName);
+    }
+
+    SetTimer(hDlg, 1u, 100u, 0); // Set timer to periodically check for pressed key
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_AssignControlKey_ReadKey(HWND hWnd)
+{
+    // Function checks if any of the key was pressed, and that case assings kid to pData->mapKeyDlgResult  and ends dialog
+
+    JonesAssignKeyDialogData* pData = (JonesAssignKeyDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+
+    int bJoyEnabled = wuRegistry_GetIntEx("Joystick Control", 0);
+    int bGotKy = 0;
+
+    // Read controls
+    jonesConfig_assignKey_bControlsActive = stdControl_ControlsActive();
+    stdControl_SetActivation(1);
+    stdControl_ReadControls();
+
+    // Check if any of the axis were moved
+    if ( bJoyEnabled && pData->listID == 1006 && jonesConfig_AssignControlKey_ReadJoyAxisKey(pData) ) // 1006 - controller list
+    {
+        stdControl_SetActivation(jonesConfig_assignKey_bControlsActive);
+        bGotKy = 1;
+        KillTimer(hWnd, 1u);
+        EndDialog(hWnd, 1);
+        return;
+    }
+
+    // Ok let's check if button was pressed
+    for ( size_t keyNum = 0; keyNum < STDCONTROL_MAX_KEYID; ++keyNum )
+    {
+        int bJustPressd;
+        if ( stdControl_ReadKey(keyNum, &bJustPressd) )
+        {
+            // 1005 - key list
+            if ( pData->listID == 1005
+                && (keyNum >= STDCONTROL_JOYSTICK_FIRSTKID
+                    && keyNum <= STDCONTROL_JOYSTICK_LASTPOVCID
+                    || keyNum >= JONESCONFIG_JOYAXISKID_UP && keyNum <= JONESCONFIG_JOYAXISKID_GROUND) )
+            {
+                const char* pMsgText = jonesString_GetString("JONES_STR_KEYONLY");
+                if ( pMsgText )
+                {
+                    pData->bLocked = 1;
+                    jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", pMsgText, 145); // 145 - typewriter icon
+                    pData->bLocked = 0;
+                    InvalidateRect(hWnd, 0, 1);
+                }
+                return;
+            }
+            else if ( pData->listID == 1006 // Controller list
+                && (keyNum < STDCONTROL_JOYSTICK_FIRSTKID || keyNum > STDCONTROL_JOYSTICK_LASTPOVCID)
+                && (keyNum < JONESCONFIG_JOYAXISKID_UP || keyNum > JONESCONFIG_JOYAXISKID_GROUND) )
+            {
+                const char* pMsgText = jonesString_GetString("JONES_STR_BUTTONONLY");
+                if ( pMsgText )
+                {
+                    pData->bLocked = 1;
+                    jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", pMsgText, 145); // 145 - typewriter icon
+                    pData->bLocked = 0;
+                    InvalidateRect(hWnd, 0, 1);
+                }
+                return;
+            }
+            else
+            {
+                jonesConfig_ControlToString(keyNum, pData->aControlName);
+                pData->controlId = keyNum;
+                switch ( keyNum )
+                {
+                    case DIK_ESCAPE:
+                    case DIK_MINUS:
+                    case DIK_EQUALS:
+                    case DIK_F4:
+                    {
+                        // Non mappable key, skip
+                        const char* pMsgText = jonesString_GetString("JONES_STR_NO_MAP");
+                        if ( pMsgText )
+                        {
+                            char aMsgText[256] = { 0 }; // Added: Init to 0
+                            STD_FORMAT(aMsgText, pMsgText, pData->aControlName);
+
+                            pData->bLocked = 1;
+                            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", aMsgText, 145); // 145 - typewriter icon
+                            pData->bLocked = 0;
+                        }
+
+                        memset(pData->aControlName, 0, sizeof(pData->aControlName));
+                        return;
+                    }
+                    case DIK_1:
+                    case DIK_2:
+                    case DIK_3:
+                    case DIK_4:
+                    case DIK_5:
+                    case DIK_6:
+                    case DIK_7:
+                    case DIK_8:
+                    case DIK_9:
+                    case DIK_0:
+                    {
+                        if ( pData->actionId >= JONESCONTROL_ACTION_BAZOOKA && pData->actionId <= JONESCONTROL_ACTION_GRENADE ) // 16 - fist; 27 - grenade
+                        {
+                           // Got Key close dialog
+                            stdControl_SetActivation(jonesConfig_assignKey_bControlsActive);
+                            bGotKy = 1;
+                            KillTimer(hWnd, 1u);
+                            EndDialog(hWnd, 1);
+                        }
+
+                        // Only weapon key and we have non-weapon action
+                        const char* pMsgText = jonesString_GetString("JONES_STR_NO_KEYMAP_NUM");
+                        if ( pMsgText )
+                        {
+                            char aMsgText[256] = { 0 }; // Added: Init to 0
+                            STD_FORMAT(aMsgText, pMsgText, pData->aControlName);
+
+                            pData->bLocked = 1;
+                            jonesConfig_ShowMessageDialog(hWnd, "JONES_STR_CTRL_OPTS", aMsgText, 145); // 145 - typewriter icon
+                            pData->bLocked = 0;
+                            InvalidateRect(hWnd, 0, 1);
+                        }
+
+                        memset(pData->aControlName, 0, sizeof(pData->aControlName));
+                        return;
+                    }
+                    default:
+                    {
+                       // Got Key close dialog
+                        stdControl_SetActivation(jonesConfig_assignKey_bControlsActive);
+                        bGotKy = 1;
+                        KillTimer(hWnd, 1u);
+                        EndDialog(hWnd, 1);
+                        return;
+                    }
+                }
+            }
+
+            return;
+        }
+    }
+}
+
+int J3DAPI jonesConfig_AssignControlKey_ReadJoyAxisKey(JonesAssignKeyDialogData* pData)
+{
+    size_t numJoysticks = stdControl_GetNumJoysticks();
+    if ( !numJoysticks )
+    {
+        return 0;
+    }
+
+    for ( size_t joyNum = 0; joyNum < numJoysticks; ++joyNum )
+    {
+        for ( size_t axisNum = 0; axisNum < STDCONTROL_JOYSTICK_NUMAXES; ++axisNum )
+        {
+            int bJustPressd;
+            if ( stdControl_ReadAxisAsKey(STDCONTROL_GET_JOYSTICK_AXIS(joyNum, axisNum) | STDCONTROL_AID_POSITIVE_AXIS, &bJustPressd) )
+            {
+                if ( axisNum )
+                {
+                    if ( axisNum == STDCONTROL_JOYSTICK_AXIS_Y )
+                    {
+                        pData->controlId = JONESCONFIG_JOYAXISKID_DOWN;
+                    }
+
+                    else if ( axisNum == STDCONTROL_JOYSTICK_AXIS_RZ )
+                    {
+                        pData->controlId = JONESCONFIG_JOYAXISKID_TWISTR;
+                    }
+                }
+                else
+                {
+                    // axisNum == STDCONTROL_JOYSTICK_AXIS_X
+                    pData->controlId = JONESCONFIG_JOYAXISKID_RIGHT;
+                }
+
+                if ( pData->controlId )
+                {
+                    jonesConfig_ControlToString(pData->controlId, pData->aControlName);
+                    return 1;
+                }
+            }
+            else if ( stdControl_ReadAxisAsKey(STDCONTROL_GET_JOYSTICK_AXIS(joyNum, axisNum) | STDCONTROL_AID_NEGATIVE_AXIS, &bJustPressd) )
+            {
+                if ( axisNum )
+                {
+                    if ( axisNum == STDCONTROL_JOYSTICK_AXIS_Y )
+                    {
+                        pData->controlId = JONESCONFIG_JOYAXISKID_UP;
+                    }
+
+                    else if ( axisNum == STDCONTROL_JOYSTICK_AXIS_RZ )
+                    {
+                        pData->controlId = JONESCONFIG_JOYAXISKID_TWISTL;
+                    }
+                }
+                else
+                {
+                    // axisNum == STDCONTROL_JOYSTICK_AXIS_X
+                    pData->controlId = JONESCONFIG_JOYAXISKID_LEFT;
+                }
+
+                if ( pData->controlId )
+                {
+                    jonesConfig_ControlToString(pData->controlId, pData->aControlName);
+                    return 1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+void J3DAPI jonesConfig_AssignKeyDlg_HandleWM_COMMAND(HWND hWnd, int ctrlID)
+{
+    if ( ctrlID == 2 )
+    {
+        KillTimer(hWnd, 1u);
+        EndDialog(hWnd, 2);
+    }
+}
+
+int J3DAPI jonesConfig_ShowReassignKeyMsgBox(HWND hWnd, JonesReAssignKeyDialogData* pData)
+{
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(120), hWnd, jonesConfig_ReassignKeyDialogProc, (LPARAM)pData);
+}
+
+INT_PTR CALLBACK jonesConfig_ReassignKeyDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontReassignKeyDlg);
+            return 1;
+        case WM_INITDIALOG:
+        {
+            jonesConfig_hFontReassignKeyDlg = jonesConfig_InitDialog(hWnd, 0, 120);
+            int result  = jonesConfig_InitReassignKeyDialog(hWnd, wParam, (JonesReAssignKeyDialogData*)lParam);
+
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return result;
+        }
+        case WM_COMMAND:
+            jonesConfig_ReassignKeyDlg_HandleWM_COMMAND(hWnd, (uint16_t)wParam);
+            return 0;
+        default:
+            return 0;
+    }
+}
+
+int J3DAPI jonesConfig_InitReassignKeyDialog(HWND hDlg, int a2, JonesReAssignKeyDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    char aControlName[256] = { 0 };
+    jonesConfig_ControlToString(pData->pAssignKeyData->controlId, aControlName);
+
+    char aText[256] = { 0 };
+    STD_FORMAT(aText, "\"%s\" ", aControlName);
+
+    const char* pText = jonesString_GetString("JONES_STR_NEWMAP");
+    if ( pText )
+    {
+        char aNewMapText[256] = { 0 };
+        STD_FORMAT(aNewMapText, pText, aText);
+
+        HWND hTextCtrl = GetDlgItem(hDlg, 1066);
+        SetWindowText(hTextCtrl, aNewMapText);
+    }
+
+    char aFormat[512] = { 0 };
+    pText = jonesString_GetString("JONES_STR_FROM");
+    if ( pText )
+    {
+        STD_STRCPY(aFormat, pText);
+    }
+    else
+    {
+        memset(aFormat, 0, sizeof(aFormat));
+    }
+
+    char aActionName[512] = { 0 };
+    const char* pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[pData->actionId]);
+    if ( pActionName )
+    {
+        STD_STRCPY(aActionName, pActionName);
+    }
+    else
+    {
+        memset(aActionName, 0, sizeof(aActionName));
+    }
+
+    if ( aFormat[0] && aActionName[0] )
+    {
+        memset(aText, 0, sizeof(aText));
+        STD_FORMAT(aText, aFormat, aActionName);
+
+        HWND hTextCtrl = GetDlgItem(hDlg, 1073);
+        SetWindowText(hTextCtrl, aText);
+    }
+
+    memset(aControlName, 0, sizeof(aControlName));
+    pText = jonesString_GetString("JONES_STR_TO");
+    if ( pText )
+    {
+        STD_STRCPY(aFormat, pText);
+    }
+    else
+    {
+        memset(aFormat, 0, sizeof(aFormat));
+    }
+
+    pActionName = jonesString_GetString(jonesConfig_aJonesCapControlActionNames[pData->pAssignKeyData->actionId]);
+    if ( pActionName )
+    {
+        STD_STRCPY(aActionName, pActionName);
+    }
+    else
+    {
+        memset(aActionName, 0, sizeof(aActionName));
+    }
+
+    if ( aFormat[0] && aActionName[0] )
+    {
+        HWND hTextCtrl = GetDlgItem(hDlg, 1072);
+        STD_FORMAT(aControlName, aFormat, aActionName);
+        SetWindowText(hTextCtrl, aControlName);
+    }
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_ReassignKeyDlg_HandleWM_COMMAND(HWND hWnd, unsigned int cntrlId)
+{
+    JonesReAssignKeyDialogData* pData = (JonesReAssignKeyDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+    JonesControlsScheme* pScheme = pData->pAssignKeyData->pScheme;
+
+    if ( cntrlId == 1 ) // Yes button
+    {
+        HWND hList = GetDlgItem(pData->hAssignKeyDlg, pData->pAssignKeyData->listID);
+
+        int numBinds;
+        if ( pData->pAssignKeyData->listID == 1005 )// Key list
+        {
+            numBinds = JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(pScheme->aActions[pData->actionId]);
+        }
+        else
+        {
+            numBinds = JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(pScheme->aActions[pData->actionId]);
+        }
+
+        if ( numBinds <= 1 )
+        {
+            if ( numBinds == 1 )
+            {
+                LVITEM item;
+                item.mask     = LVIF_PARAM;
+                item.iItem    = pData->index;
+                item.iSubItem = 0;
+                item.lParam   = pData->actionId;
+                ListView_SetItem(hList, &item);
+
+                // Set Empty text
+                ListView_SetItemText(hList, pData->index, 1, "");
+            }
+        }
+        else
+        {
+            ListView_DeleteItem(hList, pData->index);
+        }
+
+        for ( size_t i = pData->offset + 1; i < JONESCONTROL_ACTION_GETNUMBINDS(pScheme->aActions[pData->actionId]); ++i )
+        {
+            if ( i < STD_ARRAYLEN(pScheme->aActions[pData->actionId]) - 1 ) // Added: Added check that we don't go OOB
+            {
+                pScheme->aActions[pData->actionId][i] = pScheme->aActions[pData->actionId][i + 1];
+            }
+        }
+
+        if ( pData->pAssignKeyData->listID == 1005 ) // key list
+        {
+            JONESCONTROL_ACTION_UPDATENUMBINDINGS_KEYBOARD(pScheme->aActions[pData->actionId], -1);
+           //pScheme->aActions[pData->actionId][0] = ((uint8_t)pScheme->aActions[pData->actionId][0] - 1) | ((((pScheme->aActions[pData->actionId][0] & 0xFF00u) >> 8) - 1) << 8) | ((pScheme->aActions[pData->actionId][0] & 0xFF0000u) >> 16 << 16);
+        }
+        else // controller list
+        {
+            JONESCONTROL_ACTION_UPDATENUMBINDINGS_CONTROLLER(pScheme->aActions[pData->actionId], -1);
+            //pScheme->aActions[pData->actionId][0] = ((uint8_t)pScheme->aActions[pData->actionId][0] - 1) | ((pScheme->aActions[pData->actionId][0] & 0xFF00u) >> 8 << 8) | ((((pScheme->aActions[pData->actionId][0] & 0xFF0000u) >> 16) - 1) << 16);
+        }
+
+        EndDialog(hWnd, cntrlId);
+    }
+
+    if ( cntrlId == 2 ) // No button
+    {
+        EndDialog(hWnd, cntrlId);
+    }
+}
+int J3DAPI jonesConfig_ShowDisplaySettingsDialog(HWND hWnd, StdDisplayEnvironment* pDisplayEnv, JonesDisplaySettings* pDSettings)
+{
+    GetWindowLongPtr(hWnd, GWL_HINSTANCE); // ??
+
+    JonesDisplaySettingsDialogData dlgData = { 0 };
+    dlgData.pSettings   = pDSettings;
+    dlgData.pDisplayEnv = pDisplayEnv;
+
+    // Save current settings, to restore in case of canceling 
+    float curFogDensity = sithRender_g_fogDensity;
+    int curPerLevel     = wuRegistry_GetInt("Performance Level", 4);
+
+    JonesDisplaySettings curSettings = *pDSettings; // Changed: Copy fogDensity field
+
+    int res = JonesDialog_ShowDialog(MAKEINTRESOURCE(114), hWnd, jonesConfig_DisplaySettingsDialogProc, (LPARAM)&dlgData);
+    if ( dlgData.aVideoModes )
+    {
+        stdMemory_Free(dlgData.aVideoModes);
+    }
+
+    if ( dlgData.aCurColorDepthResolutions )
+    {
+        stdMemory_Free(dlgData.aCurColorDepthResolutions);
+    }
+
+    if ( res == 1 ) // OK btn clicked
+    {
+        int bMouseEnabled = wuRegistry_GetIntEx("Mouse Control", 0);
+        jonesConfig_EnableMouseControl(bMouseEnabled);
+    }
+    else // Cancel clicked
+    {
+        //  Restore to previous settings
+        sithRender_g_fogDensity = curFogDensity;
+        wuRegistry_SaveInt("Performance Level", curPerLevel);
+
+        *pDSettings = curSettings; // Changed: Copy fogDensity field
+    }
+
+    return res;
+}
+INT_PTR CALLBACK jonesConfig_DisplaySettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    int inited = 1;
+    if ( uMsg > WM_INITDIALOG )
+    {
+        if ( uMsg == WM_COMMAND )
+        {
+            jonesConfig_DisplaySettings_HandleWM_COMMAND(hWnd, LOWORD(wParam), lParam, HIWORD(wParam));
+            return 0;
+        }
+
+        if ( uMsg != WM_HSCROLL )
+        {
+            return 0;
+        }
+
+        if ( !jonesConfig_displaySettings_bUpdateSliderText )
+        {
+            return 1;
+        }
+
+        JonesDisplaySettingsDialogData* pData = (JonesDisplaySettingsDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+        jonesConfig_HandleWM_HSCROLL(hWnd, (HWND)lParam, LOWORD(wParam));
+
+        HWND hResolutionSliderCtrl = GetDlgItem(hWnd, 1050);
+        int sliderPos = (int)SendMessage(hResolutionSliderCtrl, TBM_GETPOS, 0, 0);
+
+        HWND hResText = GetDlgItem(hWnd, 1097);
+        SetWindowText(hResText, pData->aVideoModes[sliderPos].aResolutionText);
+        return 1;
+    }
+
+    if ( uMsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontDisplaySettingsDlg = jonesConfig_InitDialog(hWnd, 0, 114);
+        inited = jonesConfig_InitDisplaySettingsDialog(hWnd, wParam, (JonesDisplaySettingsDialogData*)lParam);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+    }
+    else
+    {
+        if ( uMsg != WM_DESTROY )
+        {
+            return 0;
+        }
+
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontDisplaySettingsDlg);
+    }
+
+    return inited;
+}
+
+int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplaySettingsDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+   // Init color depth combo-box
+    HWND hCBColorDepth = GetDlgItem(hDlg, 1094);
+    ComboBox_ResetContent(hCBColorDepth);
+
+    if ( pData->aVideoModes )
+    {
+        stdMemory_Free(pData->aVideoModes);
+        pData->aVideoModes   = NULL;
+        pData->numVideoModes = 0;
+    }
+
+    pData->aVideoModes = (JonesDisplaySettingsVideoMode*)STDMALLOC(
+        sizeof(JonesDisplaySettingsVideoMode) * pData->pDisplayEnv->aDisplayInfos[pData->pSettings->displayDeviceNum].numModes
+    );
+    if ( !pData->aVideoModes )
+    {
+        return 0;
+    }
+
+    memset(pData->aVideoModes, 0, sizeof(JonesDisplaySettingsVideoMode) * pData->pDisplayEnv->aDisplayInfos[pData->pSettings->displayDeviceNum].numModes);
+
+    if ( pData->aCurColorDepthResolutions )
+    {
+        stdMemory_Free(pData->aCurColorDepthResolutions);
+        pData->aCurColorDepthResolutions   = NULL;
+        pData->numCurColorDepthResolutions = 0;
+    }
+
+    StdDisplayInfo* pDisplayInfo = &pData->pDisplayEnv->aDisplayInfos[pData->pSettings->displayDeviceNum];
+
+    HWND hBtnOk = GetDlgItem(hDlg, 1);
+    if ( pDisplayInfo->displayDevice.bHAL )
+    {
+        EnableWindow(hBtnOk, 1);
+        EnableWindow(hCBColorDepth, 1);
+    }
+    else
+    {
+        EnableWindow(hBtnOk, 0);
+        EnableWindow(hCBColorDepth, 0);
+    }
+
+    StdVideoMode curVideoMode = pDisplayInfo->aModes[pData->pSettings->videoModeNum];
+    bool bHasCurVideoMode     = false;
+    size_t selVideoModeNum    = 0;
+    int selCBColorDepthData   = 0; // Fixed: Init to 0
+
+    for ( size_t i = 0; i < pData->pDisplayEnv->aDisplayInfos[pData->pSettings->displayDeviceNum].numModes; ++i )
+    {
+        const char* pFormat = jonesString_GetString("JONES_STR_BYPIXELS");
+        char aResolutionText[256] = { 0 };
+        if ( pFormat )
+        {
+            STD_FORMAT(aResolutionText, pFormat, pDisplayInfo->aModes[i].rasterInfo.width, pDisplayInfo->aModes[i].rasterInfo.height);
+        }
+
+        if ( pDisplayInfo->aModes[i].aspectRatio == 1.0f && pDisplayInfo->aModes[i].rasterInfo.width >= 512 && pDisplayInfo->aModes[i].rasterInfo.height >= 384 )
+        {
+            if ( jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(pDisplayInfo, pData->pSettings, pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp) )
+            {
+                int videomodeNum = jonesConfig_DisplaySettings_GetVideoModeNum(pData->aVideoModes, aResolutionText, pData->numVideoModes);
+                if ( videomodeNum != -1 )
+                {
+                    // Check if mode for this resolution is not assigned yet
+                    if ( (size_t)videomodeNum == pData->numVideoModes )
+                    {
+                        STD_STRCPY(pData->aVideoModes[videomodeNum].aResolutionText, aResolutionText);
+                        pData->numVideoModes++;
+                    }
+
+                    int colorDepthIdx = 0; // Fixed: Init to 0
+                    int colorDepthMask = 0; // Fixed: Init to 0
+                    switch ( pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp )
+                    {
+                        case 16:
+                            colorDepthIdx = 2;
+                            colorDepthMask = 4;
+                            pFormat = jonesString_GetString("JONES_STR_16BBP");
+                            if ( pFormat )
+                            {
+                                STD_FORMAT(aResolutionText, pFormat);
+                            }
+
+                            break;
+
+                        case 24:
+                            colorDepthIdx = 3;
+                            colorDepthMask = 1 << colorDepthIdx;
+                            pFormat = jonesString_GetString("JONES_STR_24BBP");
+                            if ( pFormat )
+                            {
+                                STD_FORMAT(aResolutionText, pFormat);
+                            }
+
+                            break;
+
+                        case 32:
+                            colorDepthIdx   = 4;
+                            colorDepthMask = 1 << colorDepthIdx;
+                            pFormat = jonesString_GetString("JONES_STR_32BBP");
+                            if ( pFormat )
+                            {
+                                STD_FORMAT(aResolutionText, pFormat);
+                            }
+                            break;
+
+                        default:
+                            // TODO: Shall we continue loop or break here?
+                            break;
+
+                    }
+
+                    pData->aVideoModes[videomodeNum].colorDepthFlags |= colorDepthMask;
+                    pData->aVideoModes[videomodeNum].aColorDepthVideoModes[colorDepthIdx] = i;
+
+                    if ( ComboBox_FindString(hCBColorDepth, 0, aResolutionText) == -1 )
+                    {
+                        selCBColorDepthData = MAKELONG(colorDepthIdx, colorDepthMask);// Packs pixel byte size and 
+                        int index  = ComboBox_AddString(hCBColorDepth, aResolutionText);
+                        ComboBox_SetItemData(hCBColorDepth, index, selCBColorDepthData);
+                    }
+
+                    if ( pDisplayInfo->aModes[i].rasterInfo.width == curVideoMode.rasterInfo.width
+                        && pDisplayInfo->aModes[i].rasterInfo.height == curVideoMode.rasterInfo.height
+                        && pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp == curVideoMode.rasterInfo.colorInfo.bpp )
+                    {
+                        selVideoModeNum   = (size_t)videomodeNum;
+                        bHasCurVideoMode  = true;
+                        ComboBox_SetCurSel(hCBColorDepth, ComboBox_FindString(hCBColorDepth, 0, aResolutionText));
+                    }
+                }
+            }
+        }
+    }
+
+    // Init screen resolutions for selected color depth
+
+    pData->aCurColorDepthResolutions = (const JonesDisplaySettingsVideoMode**)STDMALLOC(sizeof(const JonesDisplaySettingsVideoMode**) * pData->numVideoModes);
+    if ( !pData->aCurColorDepthResolutions )
+    {
+        return 0;
+    }
+
+    // Altered: Moved memset here from below
+    memset(pData->aCurColorDepthResolutions, 0, sizeof(const JonesDisplaySettingsVideoMode**) * pData->numVideoModes);
+
+    if ( !bHasCurVideoMode )
+    {
+        // No color depth selected, so we select first video mode
+        selVideoModeNum     = 0;
+        selCBColorDepthData = MAKELONG(0, pData->aVideoModes[0].colorDepthFlags);
+    }
+
+    HWND hResTextCtrl = GetDlgItem(hDlg, 1097);
+    char aResText[256] = { 0 }; // Added: Init to 0
+    GetWindowText(hResTextCtrl, aResText, STD_ARRAYLEN(aResText));
+
+    for ( size_t i = 0; i < pData->numVideoModes; ++i )
+    {
+        if ( (HIWORD(selCBColorDepthData) & pData->aVideoModes[i].colorDepthFlags) != 0 )
+        {
+            if ( strlen(aResText) && streq(aResText, pData->aVideoModes[i].aResolutionText) )
+            {
+                selVideoModeNum = pData->numCurColorDepthResolutions;
+            }
+            else if ( selVideoModeNum == i )
+            {
+                selVideoModeNum = pData->numCurColorDepthResolutions;
+            }
+
+            pData->aCurColorDepthResolutions[pData->numCurColorDepthResolutions++] = &pData->aVideoModes[i];
+        }
+    }
+
+    // Init resolution slider
+    HWND hCtrl = GetDlgItem(hDlg, 1050);
+    SendMessage(hCtrl, TBM_SETRANGE, /*re-draw=*/TRUE, MAKELONG(0, pData->numCurColorDepthResolutions - 1));
+    SendMessage(hCtrl, TBM_SETPOS, /*re-draw=*/TRUE, selVideoModeNum);
+    SendMessage(hCtrl, TBM_SETTICFREQ, 1u, 0);
+    SendMessage(hCtrl, TBM_SETPAGESIZE, 0, 1); // Fixed: Was sending TBM_SETPAGESIZE message to text control below
+
+  // Init resolution text control
+    hCtrl = GetDlgItem(hDlg, 1097);
+    SetWindowText(hCtrl, pData->aCurColorDepthResolutions[selVideoModeNum]->aResolutionText);
+
+    if ( !bHasCurVideoMode )
+    {
+        ComboBox_SetCurSel(hCBColorDepth, 0);
+    }
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+int J3DAPI jonesConfig_DisplaySettings_GetVideoModeNum(const JonesDisplaySettingsVideoMode* pVideoMode, const char* pText, size_t numVideoModes)
+{
+    if ( !pText )
+    {
+        return -1;
+    }
+
+    size_t i = 0;
+    for ( ; i < numVideoModes; ++i )
+    {
+        if ( streq(pVideoMode[i].aResolutionText, pText) )
+        {
+            return i;
+        }
+    }
+
+    return i;
+}
+
+void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, LPARAM a3, int notifyCode)
+{
+    J3D_UNUSED(a3);
+
+    JonesDisplaySettingsDialogData* pData = (JonesDisplaySettingsDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+
+    JonesDisplaySettings* pSettings    = pData->pSettings;
+    StdDisplayEnvironment* pDisplayEnv = pData->pDisplayEnv;
+
+    if ( ctrlID <= 1093 ) // // Advance settings clicked
+    {
+        switch ( ctrlID )
+        {
+            case 1093: // Advance settings clicked
+                jonesConfig_ShowAdvanceDisplaySettings(hWnd, pData);
+                InvalidateRect(hWnd, 0, 1);
+                return;
+
+            case 1: // OK btn
+            {
+                // Save new screen resolution data
+
+                HWND hResSliderCtrl = GetDlgItem(hWnd, 1050);// resolution slider control
+                int curSliderPos = (int)SendMessage(hResSliderCtrl, TBM_GETPOS, 0, 0);
+
+                HWND hCBColorDepth = GetDlgItem(hWnd, 1094);// color depth slider control
+                int curSelColorDepthIdx = ComboBox_GetCurSel(hCBColorDepth);
+
+                // Fixed: Added null check.
+                pSettings->videoModeNum = 0;
+                if ( *pData->aCurColorDepthResolutions )
+                {
+                    pSettings->videoModeNum = pData->aCurColorDepthResolutions[curSliderPos]->aColorDepthVideoModes[LOWORD(ComboBox_GetItemData(hCBColorDepth, curSelColorDepthIdx))];
+                }
+
+                pSettings->width = pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.width;
+                pSettings->height = pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.height;
+
+                wuRegistry_SaveStr("Display", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].displayDevice.aDriverName);
+                wuRegistry_SaveStr("3D Device", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aDevices[pSettings->device3DNum].deviceDescription);
+                wuRegistry_SaveInt("Width", pSettings->width);
+                wuRegistry_SaveInt("Height", pSettings->height);
+                wuRegistry_SaveInt("BPP", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.colorInfo.bpp);
+
+                // Set new fog config
+
+                float fogDensity = sithRender_g_fogDensity / 100.0f;
+                wuRegistry_SaveFloat("Fog Density", fogDensity);
+
+                wuRegistry_SaveIntEx("Fog", pSettings->bFog);
+                std3D_EnableFog(pSettings->bFog, sithRender_g_fogDensity);
+
+                if ( sithWorld_g_pCurrentWorld )
+                {
+                    sithWorld_g_pCurrentWorld->state |= SITH_WORLD_STATE_UPDATE_FOG;
+                }
+
+                // Save buffering and tex filtering mode
+                wuRegistry_SaveIntEx("Buffering", pSettings->bBuffering);
+                wuRegistry_SaveInt("Filter", pSettings->filter);
+
+                EndDialog(hWnd, ctrlID);
+                return;
+            }
+
+            case 2: // Cancel btn
+                EndDialog(hWnd, ctrlID);
+                return;
+
+            default:
+                return;
+        }
+
+
+        return;
+    }
+
+    if ( ctrlID == 1094 ) // Color depth combo box
+    {
+        if ( notifyCode == CBN_SELCHANGE )
+        {
+            // Selection of color depth combo box changed, 
+            // we update aCurColorDepthResolutions for new the color depth
+
+            HWND hCBColorDepth = GetDlgItem(hWnd, 1094);
+
+            HWND hResSliderCtrl = GetDlgItem(hWnd, 1050);
+            HWND hResTextCtrl = GetDlgItem(hWnd, 1097);// resolution text control
+
+            int curSelColorDepthIdx = ComboBox_GetCurSel(hCBColorDepth);
+            int colorDepthMask = ComboBox_GetItemData(hCBColorDepth, curSelColorDepthIdx);
+
+            // Clear cur color depth res array
+            memset(pData->aCurColorDepthResolutions, 0, sizeof(pData->aCurColorDepthResolutions) * pData->numCurColorDepthResolutions);
+
+            char aResText[256] = { 0 };
+            GetWindowText(hResTextCtrl, aResText, STD_ARRAYLEN(aResText));
+            pData->numCurColorDepthResolutions = 0;
+
+            size_t newItemIdx = 0; // Fixed: Init to 0
+            for ( size_t i = 0; i < pData->numVideoModes; ++i )
+            {
+                if ( (HIWORD(colorDepthMask) & pData->aVideoModes[i].colorDepthFlags) != 0 )
+                {
+                    if ( streq(aResText, pData->aVideoModes[i].aResolutionText) )
+                    {
+                        newItemIdx = pData->numCurColorDepthResolutions;
+                    }
+
+                    pData->aCurColorDepthResolutions[pData->numCurColorDepthResolutions++] = &pData->aVideoModes[i];
+                }
+            }
+
+            SendMessage(hResSliderCtrl, TBM_SETRANGE, /*re-draw=*/TRUE, MAKELONG(0, pData->numCurColorDepthResolutions - 1));
+            SendMessage(hResSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, newItemIdx);
+            SendMessage(hResSliderCtrl, TBM_SETTICFREQ, 1u, 0);
+            SetWindowText(hResTextCtrl, pData->aCurColorDepthResolutions[newItemIdx]->aResolutionText);
+        }
+    }
+    else if ( ctrlID == 1099 ) // Default button
+    {
+        HWND hCBColorDepth = GetDlgItem(hWnd, 1094);
+        size_t numColorDepths = ComboBox_GetCount(hCBColorDepth);
+
+        for ( size_t i = 0; i < numColorDepths; i++ )
+        {
+            int colorDepthMask = ComboBox_GetItemData(hCBColorDepth, i);
+            if ( HIWORD(colorDepthMask) == 0x04 )  // 16 bpp
+            {
+                ComboBox_SetCurSel(hCBColorDepth, i);
+                break;
+            }
+        }
+
+        CheckDlgButton(hWnd, 1095, 0); // ??? unknown ctrl, in advance display settings this is very fast performance radio button
+
+        const char* pResFormat = jonesString_GetString("JONES_STR_BYPIXELS");
+        if ( pResFormat )
+        {
+            HWND hResSliderCtrl = GetDlgItem(hWnd, 1050);
+            HWND hResTextCtrl   = GetDlgItem(hWnd, 1097);
+
+            char aResText[256] = { 0 };
+            STD_FORMAT(aResText, pResFormat, 640, 480);
+            SetWindowText(hResTextCtrl, aResText);
+
+            // Clear cur color depth res array
+            memset(pData->aCurColorDepthResolutions, 0, sizeof(pData->aCurColorDepthResolutions) * pData->numCurColorDepthResolutions);
+            pData->numCurColorDepthResolutions = 0;
+
+            size_t selDefaultIdx = 0; // Fixed: Init to 0
+            for ( size_t i = 0; i < pData->numVideoModes; ++i )
+            {
+                if ( (pData->aVideoModes[i].colorDepthFlags & 0x04) != 0 )// 16 bpp ie 1 << 2 (bytes)
+                {
+                    if ( streq(aResText, pData->aVideoModes[i].aResolutionText) )
+                    {
+                        selDefaultIdx = pData->numCurColorDepthResolutions;
+                    }
+
+                    pData->aCurColorDepthResolutions[pData->numCurColorDepthResolutions++] = &pData->aVideoModes[i];
+                }
+            }
+
+            SendMessage(hResSliderCtrl, TBM_SETRANGE, /*re-draw=*/TRUE, MAKELONG(0, pData->numCurColorDepthResolutions - 1));
+            SendMessage(hResSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, selDefaultIdx);
+            SendMessage(hResSliderCtrl, TBM_SETTICFREQ, 1u, 0);
+            SetWindowText(hResTextCtrl, pData->aCurColorDepthResolutions[selDefaultIdx]->aResolutionText);
+        }
+    }
+}
+int J3DAPI jonesConfig_ShowAdvanceDisplaySettings(HWND hWnd, JonesDisplaySettingsDialogData* pData)
+{
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(148), hWnd, jonesConfig_AdvanceDisplaySettingsDialogProc, (LPARAM)pData);
+}
+
+INT_PTR CALLBACK jonesConfig_AdvanceDisplaySettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch ( uMsg )
+    {
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontAdvanceDisplaySettingsDialog);
+            return 1;
+
+        case WM_INITDIALOG:
+        {
+            jonesConfig_hFontAdvanceDisplaySettingsDialog = jonesConfig_InitDialog(hWnd, 0, 148);
+            int inited = jonesConfig_InitAdvanceDisplaySettingsDialog(hWnd, wParam, (JonesDisplaySettingsDialogData*)lParam);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return inited;
+        }
+
+        case WM_COMMAND:
+            jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(hWnd, LOWORD(wParam), lParam, HIWORD(wParam));
+            return 0;
+
+        default:
+            return 0;
+    }
+}
+
+int J3DAPI jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(const StdDisplayInfo* pDisplayInfo, const JonesDisplaySettings* pSettings, int bpp)
+{
+    if ( !pDisplayInfo )
+    {
+        return 0;
+    }
+
+    switch ( bpp )
+    {
+        case 16:
+            return pDisplayInfo->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_16;
+
+        case 24:
+            return pDisplayInfo->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_24;
+
+        case 32:
+            return pDisplayInfo->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_32;
+    }
+
+    return 0;
+}
+
+int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplaySettingsDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    // Init 3D dwevice combo box
+    HWND hCB3DeviceCtrl = GetDlgItem(hDlg, 1084);    // 3D Devices combo box
+    ComboBox_ResetContent(hCB3DeviceCtrl);
+
+    for ( size_t i = 0; i < pData->pDisplayEnv->numInfos; ++i )
+    {
+        char aDBEntryText[256] = { 0 };
+        if ( pData->pDisplayEnv->aDisplayInfos[i].displayDevice.bHAL == 1 )
+        {
+            STD_FORMAT(aDBEntryText, "%s", pData->pDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName);
+            int newItemIdx = ComboBox_AddString(hCB3DeviceCtrl, aDBEntryText);
+
+            ComboBox_SetItemData(hCB3DeviceCtrl, newItemIdx, i); // i is index in aDisplayInfos 
+
+            if ( i == (size_t)pData->pSettings->displayDeviceNum )
+            {
+                ComboBox_SetCurSel(hCB3DeviceCtrl, newItemIdx);
+            }
+        }
+    }
+
+    // Init 3D Raster combo box
+    HWND hCB3DRasterCtrl = GetDlgItem(hDlg, 1085);
+
+    char aSelDeviceDesc[256] = { 0 };
+    GetWindowText(hCB3DRasterCtrl, aSelDeviceDesc, STD_ARRAYLEN(aSelDeviceDesc));
+    ComboBox_ResetContent(hCB3DRasterCtrl);
+
+    StdDisplayInfo* pDisplayInfo = &pData->pDisplayEnv->aDisplayInfos[pData->pSettings->displayDeviceNum];
+    if ( !pDisplayInfo->displayDevice.bHAL )
+    {
+        EnableWindow(hCB3DRasterCtrl, 0);
+    }
+    else
+    {
+        EnableWindow(hCB3DRasterCtrl, 1);
+
+        bool bCurSel = false;
+        for ( size_t i = 0; i < pDisplayInfo->numDevices; ++i )
+        {
+            char aDBEntryText[256] = { 0 };
+            STD_FORMAT(aDBEntryText, "%s", pDisplayInfo->aDevices[i].deviceDescription);
+            int newItemIdx = ComboBox_AddString(hCB3DRasterCtrl, aDBEntryText);
+
+            ComboBox_SetItemData(hCB3DRasterCtrl, newItemIdx, i); // i is index in aDevices
+
+            if ( streq(aSelDeviceDesc, aDBEntryText) || pData->pSettings->device3DNum == i )
+            {
+                ComboBox_SetCurSel(hCB3DRasterCtrl, newItemIdx);
+                pData->pSettings->device3DNum = i;
+                bCurSel = true;
+            }
+        }
+
+        if ( !bCurSel )
+        {
+            // Set first device as selected
+            ComboBox_SetCurSel(hCB3DRasterCtrl, 0);
+            pData->pSettings->device3DNum = 0;
+        }
+    }
+
+    // Init dialog radio buttons
+
+    if ( pData->pSettings->bBuffering )
+    {
+        // Tripple buffering
+        CheckRadioButton(hDlg, 1091, 1092, 1092);
+    }
+    else
+    {
+        // Double buffering
+        CheckRadioButton(hDlg, 1091, 1092, 1091);
+    }
+
+    // Set checked mipmap radio button
+    switch ( pData->pSettings->filter )
+    {
+        case STD3D_MIPMAPFILTER_NONE:
+            CheckRadioButton(hDlg, 1088, 1090, 1088);
+            break;
+
+        case STD3D_MIPMAPFILTER_BILINEAR:
+            CheckRadioButton(hDlg, 1088, 1090, 1089);
+            break;
+
+        case STD3D_MIPMAPFILTER_TRILINEAR:
+            CheckRadioButton(hDlg, 1088, 1090, 1090);
+            break;
+    }
+
+    int perfLevel = wuRegistry_GetInt("Performance Level", 4);
+    switch ( perfLevel )
+    {
+        case 0:
+            CheckRadioButton(hDlg, 1093, 1095, 1093); // average
+            break;
+
+        case 2:
+            CheckRadioButton(hDlg, 1093, 1095, 1094); // fast
+            break;
+
+        case 4:
+            CheckRadioButton(hDlg, 1093, 1095, 1095); // very fast
+            break;
+    }
+
+    // Set fog check box
+    CheckDlgButton(hDlg, 1051, pData->pSettings->bFog);
+
+    // Set fog slider
+    HWND hFogSliderCtrl = GetDlgItem(hDlg, 1216);
+    SendMessage(hFogSliderCtrl, TBM_SETRANGE, /*re-draw=*/TRUE, MAKELONG(0, 100));
+    SendMessage(hFogSliderCtrl, TBM_SETTICFREQ, 5u, 0);
+    SendMessage(hFogSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, (LPARAM)sithRender_g_fogDensity);
+    SendMessage(hFogSliderCtrl, TBM_SETPAGESIZE, 0, 5u);
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int ctrlID, int a3, int notifyCode)
+{
+    J3D_UNUSED(a3);
+
+    JonesDisplaySettingsDialogData* pData = (JonesDisplaySettingsDialogData*)GetWindowLongPtr(hDlg, DWL_USER);
+    JonesDisplaySettings* pSettings = pData->pSettings;
+
+    switch ( ctrlID )
+    {
+        case 1084: // 3D Devices combo box
+        {
+
+            if ( notifyCode == CBN_SELCHANGE )
+            {
+                HWND hCB3DeviceCtrl = GetDlgItem(hDlg, 1084);
+                HWND hDisplaySettingsDlg = GetParent(hDlg);
+
+                int curSelIdx = ComboBox_GetCurSel(hCB3DeviceCtrl);
+                pSettings->displayDeviceNum = ComboBox_GetItemData(hCB3DeviceCtrl, curSelIdx);
+
+                jonesConfig_InitAdvanceDisplaySettingsDialog(hDlg, 0, pData);
+                jonesConfig_InitDisplaySettingsDialog(hDisplaySettingsDlg, 0, pData);
+            }
+        } break;
+
+        case 1085: // 3D Rasterizers combo box
+        {
+            if ( notifyCode == CBN_SELCHANGE )
+            {
+                HWND hCB3DeviceCtrl = GetDlgItem(hDlg, 1084);
+                HWND hDisplaySettingsDlg = GetParent(hDlg);
+
+                int curSelIdx = ComboBox_GetCurSel(hCB3DeviceCtrl);
+                pSettings->device3DNum = ComboBox_GetItemData(hCB3DeviceCtrl, curSelIdx);
+
+                jonesConfig_InitAdvanceDisplaySettingsDialog(hDlg, 0, pData);
+                jonesConfig_InitDisplaySettingsDialog(hDisplaySettingsDlg, 0, pData);
+            }
+        } break;
+
+        case 1088: // No Mipmap radio-button
+            CheckRadioButton(hDlg, 1088, 1090, 1088);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_NONE;
+            break;
+
+        case 1089: // Bilinear radio-button
+            CheckRadioButton(hDlg, 1088, 1090, 1089);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+            break;
+
+        case 1090: // Trilinear radio-button
+            CheckRadioButton(hDlg, 1088, 1090, 1090);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR;
+            break;
+
+        case 1091: // Dbl buffer radio-button
+            CheckRadioButton(hDlg, 1091, 1092, 1091);
+            pSettings->bBuffering = 0;
+            break;
+
+        case 1092: // Tripple buffer
+            CheckRadioButton(hDlg, 1091, 1092, 1092);
+            pSettings->bBuffering = 1;
+            break;
+
+        case 1093: // Average perf. level radio button
+            CheckRadioButton(hDlg, 1093, 1095, 1093);
+            jonesConfig_advanceDisplaySettings_perfLevel = 0;
+            break;
+
+        case 1094: // Fast perf. level radio button
+            CheckRadioButton(hDlg, 1093, 1095, 1094);
+            jonesConfig_advanceDisplaySettings_perfLevel = 2;
+            break;
+
+        case 1095: // Very fast perf. level radio button
+            CheckRadioButton(hDlg, 1093, 1095, 1095);
+            jonesConfig_advanceDisplaySettings_perfLevel = 4;
+            break;
+
+        case 1099: // Default button
+        {
+            CheckDlgButton(hDlg, 1051, 1u); // Fog check box
+            pSettings->bFog = 1;
+            sithRender_g_fogDensity = 100.0f;
+
+            // Fog slider
+            HWND hFogSliderCtrl = GetDlgItem(hDlg, 1216);
+            SendMessage(hFogSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, (LPARAM)100.0f);
+
+            // Perf. level set to very fast
+            CheckRadioButton(hDlg, 1093, 1095, 1095);
+            jonesConfig_advanceDisplaySettings_perfLevel = 4;
+
+            // Set default to no buffering
+            CheckRadioButton(hDlg, 1091, 1092, 1091);
+            pSettings->bBuffering = 0;
+
+            // Set default to bilinear
+            CheckRadioButton(hDlg, 1088, 1090, 1089);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+            break;
+        }
+
+        case 1: // OK btn
+        {
+            HWND hCBFogCtrl = GetDlgItem(hDlg, 1051);
+            pSettings->bFog =  Button_GetCheck(hCBFogCtrl);
+
+            HWND hFogSliderCtrl = GetDlgItem(hDlg, 1216);
+
+            sithRender_g_fogDensity = (float)SendMessage(hFogSliderCtrl, TBM_GETPOS, 0, 0);
+            pSettings->fogDensity = sithRender_g_fogDensity / 100.0f;
+
+            wuRegistry_SaveInt("Performance Level", jonesConfig_advanceDisplaySettings_perfLevel);
+            jonesConfig_advanceDisplaySettings_perfLevel = 4;
+
+            if ( JonesMain_HasStarted() && jonesConfig_advanceDisplaySettings_perfLevel != wuRegistry_GetInt("Performance Level", 4) )
+            {
+                // Performance changed, show msg box informing that change will take into affect after game restart
+                const char* pMsgText = jonesString_GetString("JONES_STR_PERFORMANCE");
+                if ( pMsgText )
+                {
+                    jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_DPLY_OPTS", pMsgText, 136); // 136 - tv icon
+                    InvalidateRect(hDlg, 0, 1);
+                }
+            }
+
+            pSettings->filter = jonesConfig_advanceDisplaySettings_curFilterMode;
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+
+            EndDialog(hDlg, ctrlID);
+        } break;
+
+        case 2: // Cancel btn
+            EndDialog(hDlg, ctrlID);
+            break;
+
+        default:
+            return;
+    }
+
+}
+
+int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, JonesSoundSettingsDialogData* pData)
+{
+    GetWindowLongA(hWnd, GWL_HINSTANCE);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(113), hWnd, jonesConfig_SoundSettingsDialogProc, (LPARAM)pData);
+}
+
+INT_PTR CALLBACK jonesConfig_SoundSettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    int res = 1;
+    if ( uMsg > WM_INITDIALOG )
+    {
+        if ( uMsg == WM_COMMAND )
+        {
+            jonesConfig_SoundSettings_HandleWM_COMMAND(hWnd, LOWORD(wParam), lParam);
+            return 0;
+        }
+
+        if ( uMsg != WM_HSCROLL )
+        {
+            return 0;
+        }
+
+        jonesConfig_HandleWM_HSCROLL(hWnd, (HWND)lParam, LOWORD(wParam));
+        if ( LOWORD(wParam) != SB_ENDSCROLL )
+        {
+            return res;
+        }
+
+        // Play test sound with new volume
+        tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(57)); // 57 - mus_find.wav
+        if ( jonesConfig_soundSettings_hSndChannel && (Sound_GetChannelFlags(jonesConfig_soundSettings_hSndChannel) & SOUND_CHANNEL_PLAYING) != 0 )
+        {
+            sithSoundMixer_StopSound(jonesConfig_soundSettings_hSndChannel);
+        }
+
+        jonesConfig_soundSettings_hSndChannel = 0;
+        if ( !hSnd )
+        {
+            return res;
+        }
+
+        HWND hVolSliderCtrl = GetDlgItem(hWnd, 1050);
+        int curPos = SendMessage(hVolSliderCtrl, TBM_GETPOS, 0, 0);
+        if ( jonesConfig_soundSettings_curSoundVolume == curPos )
+        {
+            return res;
+        }
+
+        float volume = (float)curPos / 100.0f;
+        jonesConfig_soundSettings_hSndChannel = sithSoundMixer_PlaySound(hSnd, volume, 0.0f, (SoundPlayFlag)0);
+        jonesConfig_soundSettings_curSoundVolume = curPos;
+        return res;
+    }
+
+    if ( uMsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontSoundSettings = jonesConfig_InitDialog(hWnd, 0, 113);
+        res = jonesConfig_InitSoundSettingsDialog(hWnd, wParam, (JonesSoundSettingsDialogData*)lParam);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+    }
+    else
+    {
+        if ( uMsg != WM_DESTROY )
+        {
+            return 0;
+        }
+
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontSoundSettings);
+    }
+
+    return res;
+}
+
+int J3DAPI jonesConfig_InitSoundSettingsDialog(HWND hDlg, int a2, JonesSoundSettingsDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    HWND hVolSliderCtrl = GetDlgItem(hDlg, 1050);
+    SendMessage(hVolSliderCtrl, TBM_SETRANGE, /*re-draw=*/TRUE, MAKELONG(0, 100));
+    SendMessage(hVolSliderCtrl, TBM_SETTICFREQ, 17u, 0);
+    SendMessage(hVolSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, (LPARAM)(pData->maxSoundVolume * 100.0f));
+    SendMessage(hVolSliderCtrl, TBM_SETPAGESIZE, 0, 5);
+
+    // Set 3D sound check box
+    HWND hBtn3DSound = GetDlgItem(hDlg, 1118);
+    if ( Sound_Has3DHW() )
+    {
+        if ( pData->b3DHWSupport )
+        {
+            CheckDlgButton(hDlg, 1118, 1u);
+        }
+        else
+        {
+            CheckDlgButton(hDlg, 1118, 0);
+        }
+    }
+    else
+    {
+        CheckDlgButton(hDlg, 1118, 0);
+        EnableWindow(hBtn3DSound, 0);
+    }
+
+    // Set reverse sound check box
+    GetDlgItem(hDlg, 1051);
+    CheckDlgButton(hDlg, 1051, pData->bReverseSound);
+
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_SoundSettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, int notifyCode)
+{
+    J3D_UNUSED(notifyCode);
+
+    JonesSoundSettingsDialogData* pData = (JonesSoundSettingsDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+
+    if ( ctrlID == 1 ) // OK
+    {
+        HWND hVolSliderCtrl = GetDlgItem(hWnd, 1050);
+        int sliderPos = SendMessage(hVolSliderCtrl, TBM_GETPOS, 0, 0);
+        pData->maxSoundVolume = (float)sliderPos / 100.0f;
+        wuRegistry_SaveFloat("Sound Volume", pData->maxSoundVolume);
+
+        HWND hBtn3DSound = GetDlgItem(hWnd, 1118);
+        pData->b3DHWSupport = Button_GetState(hBtn3DSound);
+        wuRegistry_SaveIntEx("Sound 3D", pData->b3DHWSupport);
+
+        HWND hBtnReverseSound = GetDlgItem(hWnd, 1051);
+        pData->bReverseSound  = Button_GetState(hBtnReverseSound);
+        wuRegistry_SaveIntEx("ReverseSound", pData->bReverseSound);
+
+        EndDialog(hWnd, ctrlID);
+    }
+    else if ( ctrlID == 2 ) // Cancel btn
+    {
+        EndDialog(hWnd, ctrlID);
+    }
+}
+
+int J3DAPI jonesConfig_ShowGameOverDialog(HWND hWnd, char* pRestoreFilename, tSoundHandle hSndGameOVerMus, tSoundChannelHandle* pSndChnlMus)
+{
+    GameOverDialogData data;
+    data.result           = 0;
+    data.pRestoreFilename = pRestoreFilename;
+    data.sndChnlMusic     = 0;
+    data.hSndMusic        = 0;
+    data.hSndMusic        = hSndGameOVerMus;
+    JonesDialog_ShowDialog(MAKEINTRESOURCE(150), hWnd, jonesConfig_GameOverDialogProc, (LPARAM)&data);
+
+    if ( pSndChnlMus )
+    {
+        *pSndChnlMus = data.sndChnlMusic;
+    }
+    return data.result;
+}
+
+INT_PTR CALLBACK jonesConfig_GameOverDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    int bSuccess;
+
+    if ( uMsg == WM_DESTROY )
+    {
+        jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontGameOverDialog);
+        return 1;
+    }
+
+    else if ( uMsg == WM_INITDIALOG )
+    {
+        jonesConfig_hFontGameOverDialog = jonesConfig_InitDialog(hWnd, 0, 150);
+        bSuccess = jonesConfig_GameOverDialogInit(hWnd, wParam, (GameOverDialogData*)lParam);
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+        return bSuccess;
+    }
+    else
+    {
+        if ( uMsg == WM_COMMAND )
+        {
+            jonesConfig_GameOverDialog_HandleWM_COMMAND(hWnd, LOWORD(wParam));
+        }
+
+        return 0;
+    }
+}
+
+void J3DAPI jonesConfig_LoadGameGetLastSavedGamePath(char* pPath, unsigned int size)
+{
+    const char* pLastFilename;
+    int filenameSize;
+    const char* pCurText;
+    const char* pFilePrefix;
+    const char* pSaveGamesDir;
+    const char* lpszSaveGamesDir;
+    const char* pNdsLevenFilename;
+    char* pFilePart;
+    char aPath[128];
+    char aLastFilePath[128];
+
+    pLastFilename = sithGamesave_GetLastFilename();
+    if ( pLastFilename && strlen(pLastFilename) )
+    {
+        filenameSize = strlen(pLastFilename);
+        pCurText = &pLastFilename[filenameSize - 1];
+        if ( filenameSize >= 0 )
+        {
+            while ( *pCurText != '\\' )
+            {
+                --pCurText;
+                if ( --filenameSize < 0 )
+                {
+                    goto LABEL_8;
+                }
+            }
+
+            ++pCurText;
+        }
+
+    LABEL_8:
+        if ( pCurText )
+        {
+            memset(aLastFilePath, 0, sizeof(aLastFilePath));
+            memset(aPath, 0, sizeof(aPath));
+            STD_STRNCPY(aLastFilePath, pLastFilename, pCurText - pLastFilename);
+            STD_STRNCPY(aPath, pCurText, strlen(pCurText));
+            SearchPath(aLastFilePath, aPath, 0, 128u, pPath, &pFilePart);
+        }
+        else
+        {
+            lpszSaveGamesDir = sithGetSaveGamesDir();
+            SearchPath(lpszSaveGamesDir, pLastFilename, 0, 128u, pPath, &pFilePart);
+        }
+    }
+
+    if ( strlen(pPath) == 0 )
+    {
+        memset(aPath, 0, sizeof(aPath));
+        memset(pPath, 0, size);
+        if ( sithWorld_g_pCurrentWorld )
+        {
+            pNdsLevenFilename = sithGetCurrentWorldSaveName();
+            pFilePrefix = sithGetAutoSaveFilePrefix();
+            STD_FORMAT(aPath, "%s%s", pFilePrefix, pNdsLevenFilename);
+            stdFnames_ChangeExt(aPath, "nds");
+            pSaveGamesDir = sithGetSaveGamesDir();
+            SearchPath(pSaveGamesDir, aPath, 0, 128u, pPath, &pFilePart);
+        }
+    }
+}
+
+int J3DAPI jonesConfig_GameOverDialogInit(HWND hDlg, int a2, GameOverDialogData* pData)
+{
+    J3D_UNUSED(a2);
+
+    char aFilePath[128] = { 0 };
+    if ( sithWorld_g_pCurrentWorld )
+    {
+        const char* pNdsFilename = sithGetCurrentWorldSaveName();
+        const char* pFilePrefix = sithGetAutoSaveFilePrefix();
+
+        char aFilename[128] = { 0 };
+        STD_FORMAT(aFilename, "%s%s", pFilePrefix, pNdsFilename);
+        stdFnames_ChangeExt(aFilename, "nds");
+
+        const char* pDirPath = sithGetSaveGamesDir();
+        LPSTR pFilePart;
+        SearchPath(pDirPath, aFilename, NULL, STD_ARRAYLEN(aFilePath), aFilePath, &pFilePart);
+    }
+
+    if ( strlen(aFilePath) == 0 )
+    {
+        // Disable restart btn
+        HWND hBtn = GetDlgItem(hDlg, 1177); // Restart
+        EnableWindow(hBtn, 0);
+    }
+
+    tSoundHandle hSnd = pData->hSndMusic;
+    if ( hSnd )
+    {
+        pData->sndChnlMusic = sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, (SoundPlayFlag)0);
+    }
+
+    stdUtil_StringCopy(pData->pRestoreFilename, JONESCONFIG_GAMESAVE_FILEPATHSIZE, aFilePath);
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_GameOverDialog_HandleWM_COMMAND(HWND hWnd, uint16_t ctrlID)
+{
+    GameOverDialogData* pData = (GameOverDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+    switch ( ctrlID )
+    {
+        case 1177u:
+            pData->result = 1177; // restart
+            EndDialog(hWnd, 1);
+            break;
+
+        case 1178u:
+            pData->result = 1178; // load game
+            if ( jonesConfig_GetLoadGameFilePath(hWnd, pData->pRestoreFilename) == 1 )
+            {
+                InvalidateRect(hWnd, 0, 1);
+                EndDialog(hWnd, 1);
+            }
+
+            break;
+
+        case 1179u:
+            pData->result = 1179;
+            EndDialog(hWnd, 1);
+            break;
+    }
+}
+
+int J3DAPI jonesConfig_ShowStatisticsDialog(HWND hWnd, SithGameStatistics* pStatistics)
+{
+    int dwInitParam[3];
+    JonesDialogImageInfo imageInfo;
+
+    if ( !pStatistics )
+    {
+        return 2;
+    }
+
+    memset(&imageInfo, 0, sizeof(imageInfo));
+    dwInitParam[1] = (int)pStatistics;
+    dwInitParam[0] = (int)&imageInfo;
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(164), hWnd, jonesConfig_StatisticsDialogProc, (LPARAM)dwInitParam);
+}
+
+INT_PTR CALLBACK jonesConfig_StatisticsDialogProc(HWND hwnd, UINT uMsg, WPARAM wPAram, LPARAM lParam)
+{
+    INT_PTR result;
+    HWND textStatistict;
+    const char* pTitleText;
+    int inited;
+    void* pData_1;
+    HDC* v9;
+    HBRUSH SolidBrush;
+    int* pData;
+    HWND hScroll;
+    int scrollPos;
+    int levelNum;
+    int MaxPos;
+    int MinPos;
+    struct tagRECT Rect;
+    DRAWITEMSTRUCT drawitemData;
+    const char* pSummeryText;
+    HWND hTextStatTitle;
+    WPARAM iqpoints;
+
+    if ( uMsg > WM_CLOSE )
+    {
+        switch ( uMsg )
+        {
+            case WM_DRAWITEM:
+                pData_1 = (void*)GetWindowLongPtr(hwnd, DWL_USER);
+                v9 = *(HDC**)pData_1;
+                if ( !*(uint32_t*)(*(uint32_t*)pData_1 + 16) )
+                {
+                    v9[4] = (HDC)GetBkColor(*(HDC*)(lParam + 24));
+                }
+
+                GetClientRect(*(HWND*)(lParam + 20), &Rect);
+                SolidBrush = CreateSolidBrush((COLORREF)v9[4]);
+                FillRect(*(HDC*)(lParam + 24), &Rect, SolidBrush);
+                SetStretchBltMode(*(HDC*)(lParam + 24), STRETCH_HALFTONE);
+                jonesConfig_DrawImageOnDialogItem(
+                    hwnd,
+                    *v9,
+                    *(HDC*)(lParam + 24),
+                    wPAram,
+                    jonesConfig_apDialogIcons[0],// iq.bmp
+                    jonesConfig_apDialogIcons[1]);// iq_mask.bmp
+                result = 1;
+                break;
+
+            case WM_INITDIALOG:
+                textStatistict = GetDlgItem(hwnd, 1158);
+                jonesConfig_hFontGameStatisticsDialog = jonesConfig_InitDialog(hwnd, 0, 164);
+                pTitleText = jonesString_GetString("JONES_STR_SUMMARY");
+                if ( pTitleText )
+                {
+                    SetWindowText(textStatistict, pTitleText);
+                }
+
+                inited = jonesConfig_InitStatisticDialog(hwnd, wPAram, (int*)lParam);
+                SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);// TODO: 2nd is HWND_TOPMOST
+                result = inited;
+                break;
+
+            case WM_COMMAND:
+                jonesConfig_StatisticProc_HandleWM_COMMAND(hwnd, LOWORD(wPAram));
+                result = 0;
+                break;
+
+            case WM_HSCROLL:
+                pData = (int*)GetWindowLongPtr(hwnd, DWL_USER);
+                hScroll = GetDlgItem(hwnd, 1162);
+                hTextStatTitle = GetDlgItem(hwnd, 1158);
+                jonesConfig_sub_40D100((int)hwnd, (HWND)lParam, (uint16_t)wPAram, HIWORD(wPAram));
+                scrollPos = GetScrollPos(hScroll, 2);
+                if ( scrollPos != pData[2] )
+                {
+                    GetScrollRange(hScroll, SB_CTL, &MinPos, &MaxPos);
+                    if ( scrollPos == MaxPos )
+                    {
+                        pSummeryText = jonesString_GetString("JONES_STR_SUMMARY");// "JONES_STR_SUMMARY"
+                        levelNum = 17;
+                        iqpoints = jonesInventory_GetTotalIQPoints();
+                        pTitleText = pSummeryText;
+                    }
+                    else
+                    {
+                        if ( scrollPos == jonesConfig_gameStatistics_curLevelNum && jonesConfig_gameStatistics_curLevelNum > 0 )
+                        {
+                            pTitleText = jonesString_GetString(jonesConfig_gameStatistics__aLevelNames[JONESLEVEL_LASTLEVELNUM]);
+                        }
+                        else
+                        {
+                            pTitleText = jonesString_GetString(jonesConfig_gameStatistics__aLevelNames[scrollPos]);
+                        }
+
+                        levelNum = scrollPos;
+                        iqpoints = *(uint32_t*)(32 * scrollPos + pData[1] + 44);// pData[1] -> SithGameStatistics*
+                    }
+
+                    if ( pTitleText )
+                    {
+                        SetWindowText(hTextStatTitle, pTitleText);
+                    }
+
+                    else if ( scrollPos == jonesConfig_gameStatistics_curLevelNum && jonesConfig_gameStatistics_curLevelNum > 0 )
+                    {
+                        SetWindowText(hTextStatTitle, jonesConfig_gameStatistics__aLevelNames[JONESLEVEL_LASTLEVELNUM]);
+                    }
+                    else
+                    {
+                        SetWindowText(hTextStatTitle, jonesConfig_gameStatistics__aLevelNames[levelNum]);
+                    }
+
+                    jonesConfig_SetStatisticsDialogForLevel(hwnd, levelNum, pData);
+                    jonesConfig_DrawStatisticDialogIQPoints(hwnd, (JonesDialogImageInfo**)pData, 164, iqpoints);
+
+                    drawitemData.CtlType = ODT_BUTTON;
+                    drawitemData.CtlID = 1220;
+                    drawitemData.itemID = 0;
+                    drawitemData.itemAction = 1;
+                    drawitemData.itemState = 0;
+                    drawitemData.hwndItem = GetDlgItem(hwnd, 1220);
+                    drawitemData.hDC = GetDC(drawitemData.hwndItem);
+
+                    GetClientRect(drawitemData.hwndItem, &drawitemData.rcItem);
+
+                    drawitemData.itemData = 0;
+
+                    SendMessage(hwnd, WM_DRAWITEM, 1220u, (LPARAM)&drawitemData);
+                    ReleaseDC(drawitemData.hwndItem, drawitemData.hDC);
+                    pData[2] = scrollPos;
+                }
+
+                result = 1;
+                break;
+
+            default:
+                return 0;
+        }
+    }
+
+    else if ( uMsg == WM_CLOSE )
+    {
+        EndDialog(hwnd, 2);
+        return 0;
+    }
+
+    else if ( uMsg == WM_DESTROY )
+    {
+        jonesConfig_ResetDialogFont(hwnd, (HFONT)jonesConfig_hFontGameStatisticsDialog);
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+    return result;
+}
+
+int J3DAPI jonesConfig_sub_40D100(int a1, HWND hWnd, int a3, int a4)
+{
+    J3D_UNUSED(a1);
+
+    int result;
+    int v5;
+    int v6;
+    int v7;
+    int v8;
+    LPARAM lParam[7];
+    int v10;
+    LPARAM v11;
+    int v12;
+    LPARAM v13;
+    int nPos;
+
+    nPos = -1;
+    lParam[1] = 23;
+    SendMessage(hWnd, 0xEAu, 0, (LPARAM)lParam);
+    v10 = lParam[2];
+    v12 = lParam[3];
+    v13 = lParam[5];
+    v11 = lParam[4];
+    result = a3;
+    switch ( a3 )
+    {
+        case 0:
+            if ( v10 <= v13 - 1 )
+            {
+                v8 = v13 - 1;
+            }
+            else
+            {
+                v8 = v10;
+            }
+
+            result = v8;
+            nPos = v8;
+            break;
+
+        case 1:
+            if ( v12 >= v13 + 1 )
+            {
+                result = v13 + 1;
+                v7 = v13 + 1;
+            }
+            else
+            {
+                v7 = v12;
+            }
+
+            nPos = v7;
+            break;
+
+        case 2:
+            if ( v10 <= v13 - v11 )
+            {
+                v6 = v13 - v11;
+            }
+            else
+            {
+                result = v10;
+                v6 = v10;
+            }
+
+            nPos = v6;
+            break;
+
+        case 3:
+            if ( v12 >= v11 + v13 )
+            {
+                v5 = v11 + v13;
+            }
+            else
+            {
+                v5 = v12;
+            }
+
+            result = v5;
+            nPos = v5;
+            break;
+
+        case 4:
+        case 5:
+            nPos = a4;
+            break;
+
+        case 6:
+            nPos = v10;
+            break;
+
+        case 7:
+            nPos = v12;
+            break;
+
+        default:
+            break;
+    }
+
+    if ( nPos >= 0 )
+    {
+        return SetScrollPos(hWnd, 2, nPos, 1);
+    }
+
+    return result;
+}
+
+void jonesConfig_UpdateCurrentLevelNum(void)
+{
+    jonesConfig_gameStatistics_curLevelNum = JonesMain_GetCurrentLevelNum();
+}
 
 int J3DAPI jonesConfig_DrawImageOnDialogItem(HWND hDlg, HDC hdcWnd, HDC hdcCtrl, int nIDDlgItem, HBITMAP hImage, HBITMAP hMask)
 {
@@ -9982,6 +8632,58 @@ int J3DAPI jonesConfig_DrawImageOnDialogItem(HWND hDlg, HDC hdcWnd, HDC hdcCtrl,
         return StretchBlt(hdcCtrl, 0, 0, rect.right - rect.left, rect.bottom - rect.top, hdcWnd, 0, 0, bmp.bmWidth, bmp.bmHeight, SRCCOPY);
     }
 }
+
+int J3DAPI jonesConfig_SetStatisticsDialogForLevel(HWND hDlg, int levelNum, int* a3)
+{
+    int v3;
+    int v4;
+    HWND hTextTimePassed;
+    HWND hTextLvlFinished;
+    HWND hTextTreasuresFound;
+    HWND hTextHintsSeen;
+    HWND hTextDifficultyDrop;
+    SithLevelStatistic* pLevelStatistics;
+    SithGameStatistics* pStatistics;
+    char aText[256];
+
+    pStatistics = (SithGameStatistics*)a3[1];
+    pLevelStatistics = &pStatistics->aLevelStatistic[levelNum];
+    v3 = pLevelStatistics->elapsedTime >> 8;
+    v4 = pLevelStatistics->elapsedTime ^ (v3 << 8);
+    memset(aText, 0, sizeof(aText));
+    if ( v4 >= 10 )
+    {
+        STD_FORMAT(aText, "%i : %i ", v3, v4);
+    }
+    else
+    {
+        STD_FORMAT(aText, "%i : 0%i ", v3, v4);
+    }
+
+    hTextTimePassed = GetDlgItem(hDlg, 1153);
+    SetWindowText(hTextTimePassed, aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pStatistics->curLevelNum);
+    hTextLvlFinished = GetDlgItem(hDlg, 1152);
+    SetWindowText(hTextLvlFinished, aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pStatistics->aLevelStatistic[levelNum].numFoundTreasures);
+    hTextTreasuresFound = GetDlgItem(hDlg, 1154);
+    SetWindowText(hTextTreasuresFound, aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pStatistics->aLevelStatistic[levelNum].numSeenHints);
+    hTextHintsSeen = GetDlgItem(hDlg, 1155);
+    SetWindowText(hTextHintsSeen, aText);
+
+    memset(aText, 0, sizeof(aText));
+    STD_FORMAT(aText, "%i ", pStatistics->aLevelStatistic[levelNum].difficultyPenalty);
+    hTextDifficultyDrop = GetDlgItem(hDlg, 1156);
+    return SetWindowText(hTextDifficultyDrop, aText);
+}
+
 
 void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageInfo** ppImageInfo, int dlgID, int iqpoints)
 {
@@ -10040,8 +8742,10 @@ void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageI
     HBITMAP hBmp = CreateDIBSection(pImageInfo->hdcBack, &bmi, DIB_RGB_COLORS, &ppvBits, NULL, 0);
     pImageInfo->hBmp = hBmp;
 
-    SelectObject(pImageInfo->hdcBack, (HGDIOBJ)pImageInfo->hBmp);
-    SelectObject(pImageInfo->hdcFront, (HGDIOBJ)jonesConfig_apDialogIcons[3]); // 3 - numbers bmp
+    if ( pImageInfo->hBmp ) { // Fixed: Added no null check
+        SelectObject(pImageInfo->hdcBack, pImageInfo->hBmp);
+    }
+    SelectObject(pImageInfo->hdcFront, jonesConfig_apDialogIcons[3]); // 3 - numbers bmp
 
     RECT rc = { 0 };
     rc.bottom = height;
@@ -10087,6 +8791,128 @@ void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageI
     BitBlt(pImageInfo->hdcFront, x, y, width, height, pImageInfo->hdcBack, 0, 0, SRCCOPY);
 }
 
+int J3DAPI jonesConfig_InitStatisticDialog(HWND hDlg, int a2, int* pData)
+{
+    J3D_UNUSED(a2);
+    HDC* v4;
+    HWND DlgItem;
+    HDC DC;
+    HWND v7;
+    HDC v8;
+    int iqPoints;
+    HWND v10;
+    HWND hScrl;
+    SCROLLINFO scrlInfo;
+    SithGameStatistics* pDataa;
+
+    v4 = (HDC*)*pData;
+    pDataa = (SithGameStatistics*)pData[1];
+    DlgItem = GetDlgItem(hDlg, 1135);
+    DC = GetDC(DlgItem);
+    *v4 = CreateCompatibleDC(DC);
+    v7 = GetDlgItem(hDlg, 1135);
+    v8 = GetDC(v7);
+    v4[1] = CreateCompatibleDC(v8);
+    iqPoints = jonesInventory_GetTotalIQPoints();
+    jonesConfig_DrawStatisticDialogIQPoints(hDlg, (JonesDialogImageInfo**)pData, 164, iqPoints);
+    if ( !pDataa->curLevelNum )
+    {
+        v10 = GetDlgItem(hDlg, 1133);
+        EnableWindow(v10, 0);
+    }
+
+    jonesConfig_SetStatisticsDialogForLevel(hDlg, JONESLEVEL_BONUSLEVELNUM, pData);
+
+    scrlInfo.cbSize = sizeof(SCROLLINFO);
+    scrlInfo.fMask = SIF_ALL | SIF_DISABLENOSCROLL;
+    scrlInfo.nMin = 0;
+    scrlInfo.nMax = pDataa->curLevelNum + 1;
+    scrlInfo.nPage = 1;
+    scrlInfo.nPos = scrlInfo.nMax;
+    hScrl = GetDlgItem(hDlg, 1162);
+    SendMessage(hScrl, SBM_SETSCROLLINFO, TRUE, (LPARAM)&scrlInfo);
+
+    pData[2] = scrlInfo.nMax;
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
+    return 1;
+}
+
+void J3DAPI jonesConfig_StatisticProc_HandleWM_COMMAND(HWND hWnd, int16_t wParam)
+{
+    int v2;
+    HDC v3;
+
+    v2 = *(uint32_t*)GetWindowLongPtr(hWnd, DWL_USER);
+    if ( wParam > 0 && wParam <= 2 )
+    {
+        DeleteObject(*(HGDIOBJ*)(v2 + 8));
+        v3 = *(HDC*)v2;
+        *(uint32_t*)(v2 + 8) = 0;
+        DeleteDC(v3);
+        DeleteDC(*(HDC*)(v2 + 4));
+        EndDialog(hWnd, wParam);
+    }
+}
+
+int J3DAPI jonesConfig_ShowExitGameDialog(HWND hWnd, char* pSaveGameFilePath)
+{
+    GameSaveMsgBoxData data;
+    data.dialogID = 211;
+    data.pNdsFilePath = pSaveGameFilePath;
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(211), hWnd, jonesConfig_ExitGameDlgProc, (LPARAM)&data);
+}
+
+INT_PTR CALLBACK jonesConfig_ExitGameDlgProc(HWND hWnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
+{
+    switch ( uMsg )
+    {
+        case WM_INITDIALOG:
+        {
+            RECT rectWnd;
+            GetClientRect(hWnd, &rectWnd);
+            jonesConfig_GetWindowScreenRect(hWnd, &rectWnd);
+
+            RECT rectWndIcon;
+            HWND hIcon = GetDlgItem(hWnd, 1182);
+
+            // Added: Make hPrevIcon to be drawn by hWnd -> WM_DRAWITEM
+            SetWindowLongPtr(hIcon, GWL_STYLE, GetWindowLongPtr(hIcon, GWL_STYLE) | SS_OWNERDRAW);
+
+            GetWindowRect(hIcon, &rectWndIcon);
+            MoveWindow(hIcon, rectWndIcon.top - rectWnd.top, rectWndIcon.left - rectWnd.left, 96, 96, TRUE); // Changed: Shange icon size to 96 from 64
+
+            GameSaveMsgBoxData* pGSData = (GameSaveMsgBoxData*)lparam;
+            jonesConfig_hFontExitDlg = jonesConfig_InitDialog(hWnd, 0, pGSData->dialogID);
+
+            int result = jonesConfig_GameSaveSetData(hWnd, wparam, pGSData);
+            SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+            return result;
+        }
+        case WM_COMMAND:
+            jonesConfig_MsgBoxDlg_HandleWM_COMMAND(hWnd, (uint16_t)wparam);
+            return 0;
+        case WM_DESTROY:
+            jonesConfig_ResetDialogFont(hWnd, jonesConfig_hFontExitDlg);
+            return 1;
+        case WM_DRAWITEM: // Added: Fixes icon drawing
+        {
+            LPDRAWITEMSTRUCT pdis = (LPDRAWITEMSTRUCT)lparam;
+            if ( pdis->CtlID == 1182 )
+            {
+                HDC hmemdc = CreateCompatibleDC(pdis->hDC);
+                SetStretchBltMode(pdis->hDC, STRETCH_HALFTONE);
+                jonesConfig_DrawImageOnDialogItem(hWnd, hmemdc, pdis->hDC, 1182, jonesConfig_apDialogIcons[4], jonesConfig_apDialogIcons[5]); // exit and exitmask bmps
+                DeleteDC(hmemdc);
+                return TRUE;
+            }
+            return FALSE;
+        }
+
+        default:
+            return 0;
+    }
+}
+
 int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* apItemsState, int a4, int elapsedTime, int qiPoints, int numFoundTrasures, int foundTrasureValue, int totalTreasureValue)
 {
     tLevelCompletedDialogState state = { 0 };
@@ -10108,7 +8934,7 @@ int J3DAPI jonesConfig_ShowLevelCompletedDialog(HWND hWnd, int* pBalance, int* a
     JonesDialogImageInfo imageInfo = { 0 };
     state.pIQImageInfo = &imageInfo;
 
-    int result = JonesDialog_ShowDialog(MAKEINTRESOURCEA(233), hWnd, jonesConfig_LevelCompletedDialogProc, (LPARAM)&state);
+    int result = JonesDialog_ShowDialog(MAKEINTRESOURCE(233), hWnd, jonesConfig_LevelCompletedDialogProc, (LPARAM)&state);
     *pBalance  = *state.balance;
     sithGamesave_UnlockGameStatistics();
     return result;
@@ -10171,29 +8997,25 @@ int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCom
 {
     J3D_UNUSED(wParam);
 
-    HWND DlgItem;
-    HDC DC;
-
     HWND hImgCtrl = GetDlgItem(hDlg, 1135);
 
     // Added: Make hImgCtrl to be drawn by hDlg -> WM_DRAWITEM
-    LONG style = GetWindowLong(hImgCtrl, GWL_STYLE);
-    SetWindowLong(hImgCtrl, GWL_STYLE, style | SS_OWNERDRAW);
+    LONG style = GetWindowLongPtr(hImgCtrl, GWL_STYLE);
+    SetWindowLongPtr(hImgCtrl, GWL_STYLE, style | SS_OWNERDRAW);
 
     pState->pIQImageInfo->hdcFront = CreateCompatibleDC(GetDC(hImgCtrl));
 
-    DlgItem = GetDlgItem(hDlg, 1135);           // ??
-    DC = GetDC(DlgItem);
-    pState->pIQImageInfo->hdcBack = CreateCompatibleDC(DC);
+    HWND hIQImageCtrl = GetDlgItem(hDlg, 1135); // ?? Why again retrieving of image ctrl
+    pState->pIQImageInfo->hdcBack = CreateCompatibleDC(GetDC(hIQImageCtrl));
 
     jonesConfig_prevLevelNum = pState->pStatistics->curLevelNum - 1;
     jonesConfig_DrawStatisticDialogIQPoints(hDlg, &pState->pIQImageInfo, 233, pState->pStatistics->aLevelStatistic[jonesConfig_prevLevelNum].iqPoints);
 
-    CHAR aText[256] = { 0 };
-
+    // Format game elapsed time
     int hours = pState->elapsedTime >> 8;
     int minutes = (hours << 8) ^ pState->elapsedTime;
 
+    char aText[256] = { 0 };
     if ( minutes >= 10 )
     {
         STD_FORMAT(aText, "%i : %i ", hours, minutes);
@@ -10221,7 +9043,7 @@ int J3DAPI jonesConfig_InitLevelCompletedDialog(HWND hDlg, int wParam, tLevelCom
     STD_FORMAT(aText, "%i ", pState->totalTreasureValue);
     SetWindowText(GetDlgItem(hDlg, 1156), aText);
 
-    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pState);
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pState);
     return 1;
 }
 
@@ -10254,7 +9076,7 @@ int J3DAPI jonesConfig_ShowStoreDialog(HWND hWnd, int* pBalance, int* pItemsStat
     cart.apItemsState    = pItemsState;
     cart.unknown20       = a4;
 
-    int result = JonesDialog_ShowDialog(MAKEINTRESOURCEA(190), hWnd, jonesConfig_StoreDialogProc, (LPARAM)&cart);
+    int result = JonesDialog_ShowDialog(MAKEINTRESOURCE(190), hWnd, jonesConfig_StoreDialogProc, (LPARAM)&cart);
     *pBalance  = cart.balance;
     return result;
 }
@@ -10472,14 +9294,14 @@ int J3DAPI jonesConfig_StoreInitItemIcons(HWND hWnd, tStoreCartState* pCart)
     int result = hInstance != NULL;
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aStoreItems); ++i )
     {
-        pCart->aItemIcons[i] = LoadIconA(hInstance, MAKEINTRESOURCEA(JonesHud_aStoreItems[i].iconID));
+        pCart->aItemIcons[i] = LoadIconA(hInstance, MAKEINTRESOURCE(JonesHud_aStoreItems[i].iconID));
         result = ImageList_ReplaceIcon(pCart->hList, -1, pCart->aItemIcons[i]);
     }
 
     return result;
 }
 
-LRESULT J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName)
+void J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnName)
 {
     LVCOLUMNA col = { 0 }; // Added: Init to 0
     col.mask       = LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
@@ -10512,7 +9334,7 @@ LRESULT J3DAPI jonesConfig_StoreSetListColumns(HWND hList, const char* pColumnNa
     col.cx       = pad;
     col.pszText  = (LPSTR)jonesString_GetString(pColumnName);
     col.iSubItem = colNum;
-    return ListView_InsertColumn(hList, colNum, &col);
+    ListView_InsertColumn(hList, colNum, &col);
 }
 
 void J3DAPI jonesConfig_StoreInitItemList(HWND hWnd, int* apItemsState, int listID)
@@ -10568,13 +9390,13 @@ void J3DAPI jonesConfig_UpdateBalances(HWND hDlg, tStoreCartState* pCart)
     STD_FORMAT(aText, "%i ", pCart->total);
 
     HWND hTotalCtrl = GetDlgItem(hDlg, 1173); // total cost
-    SetWindowTextA(hTotalCtrl, aText);
+    SetWindowText(hTotalCtrl, aText);
 
     memset(aText, 0, sizeof(aText));
     STD_FORMAT(aText, "%i ", pCart->balance);
 
     HWND hBalanceCtrl = GetDlgItem(hDlg, 1174); // balance
-    SetWindowTextA(hBalanceCtrl, aText);
+    SetWindowText(hBalanceCtrl, aText);
 }
 
 void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart)
@@ -10707,7 +9529,7 @@ void J3DAPI jonesConfig_RemoveStoreCartItem(HWND hDlg, tStoreCartState* pCart)
 
             total += LOWORD(lvitem.lParam);
 
-            SendMessage(hCartList, LVM_DELETEITEM, idx, 0);
+            ListView_DeleteItem(hCartList, idx);
 
             int numItems = pCart->apItemsState[HIWORD(lvitem.lParam)];
             pCart->apItemsState[HIWORD(lvitem.lParam)] = ((uint16_t)numItems - 1) | numItems & 0xFFFF0000;
@@ -10779,7 +9601,7 @@ void J3DAPI jonesConfig_ClearStoreCart(HWND hDlg, tStoreCartState* pCart)
 
 int J3DAPI jonesConfig_ShowPurchaseMessageBox(HWND hWnd, tStoreCartState* dwInitParam)
 {
-    return JonesDialog_ShowDialog(MAKEINTRESOURCEA(212), hWnd, jonesConfig_PurchaseMessageBoxProc, (LPARAM)dwInitParam);
+    return JonesDialog_ShowDialog(MAKEINTRESOURCE(212), hWnd, jonesConfig_PurchaseMessageBoxProc, (LPARAM)dwInitParam);
 }
 
 INT_PTR CALLBACK jonesConfig_PurchaseMessageBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -10814,14 +9636,14 @@ int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState
     if ( pCart->total )
     {
         STD_STRCAT(aText, "\n");
-        char* pFormat = (char*)jonesString_GetString("JONES_STR_ADDINV");
+        const char* pFormat = jonesString_GetString("JONES_STR_ADDINV");
         if ( pFormat )
         {
             STD_STRCAT(aText, pFormat);
             STD_STRCAT(aText, " ");
         }
 
-        pFormat = (char*)jonesString_GetString("JONES_STR_SUBCHEST");
+        pFormat = jonesString_GetString("JONES_STR_SUBCHEST");
         if ( pFormat )
         {
             char aTotalText[256] = { 0 };
@@ -10830,7 +9652,7 @@ int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState
             STD_STRCAT(aText, "  ");
         }
 
-        pFormat = (char*)jonesString_GetString("JONES_STR_YESNOBUY");
+        pFormat = jonesString_GetString("JONES_STR_YESNOBUY");
         if ( pFormat )
         {
             STD_STRCAT(aText, pFormat);
@@ -10838,14 +9660,14 @@ int J3DAPI jonesConfig_InitPurchaseMessageBox(HWND hDlg, int a2, tStoreCartState
     }
     else
     {
-        char* pFormat = (char*)jonesString_GetString("JONES_STR_NOCHANGE");
+        const char* pFormat = jonesString_GetString("JONES_STR_NOCHANGE");
         if ( pFormat )
         {
             STD_STRCAT(aText, pFormat);
             STD_STRCAT(aText, "  ");
         }
 
-        pFormat = (char*)jonesString_GetString("JONES_STR_ABANDON");
+        pFormat = jonesString_GetString("JONES_STR_ABANDON");
         if ( pFormat )
         {
             STD_STRCAT(aText, pFormat);
@@ -10861,7 +9683,7 @@ int J3DAPI jonesConfig_ShowDialogInsertCD(HWND hWnd, LPARAM dwInitParam)
 {
     ShowCursor(1);
     GetWindowLongPtr(hWnd, GWL_HINSTANCE); // TODO: ??
-    int btnNum = JonesDialog_ShowDialog(MAKEINTRESOURCEA(167), hWnd, jonesConfig_DialogInsertCDProc, dwInitParam);
+    int btnNum = JonesDialog_ShowDialog(MAKEINTRESOURCE(167), hWnd, jonesConfig_DialogInsertCDProc, dwInitParam);
     ShowCursor(0);
     return btnNum; // 1 - ok or 2 - quit 
 }

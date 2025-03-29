@@ -104,10 +104,10 @@ static uint32_t JonesMain_prevFrameTime;
 
 static bool JonesMain_bPrintQuickSave;
 static int JonesMain_curGamesaveState = 0; // Added: Init to 0
-static char JonesMain_pNdsFileName[128];
+static char JonesMain_aNdsFilename[JONESCONFIG_GAMESAVE_FILEPATHSIZE];
 
 static bool JonesMain_bMenuToggled = false; // Added: Init to false
-static int JonesMain_aToggleMenuKeyIds[8];
+static size_t JonesMain_aToggleMenuKeyIds[JONESCONTROL_ACTION_MAXBINDS] = { 0 }; // Added: Init to 0
 
 static bool JonesMain_bEndCredits = false; // Added: Init to false
 static tSoundHandle JonesMain_hSndCredits;
@@ -363,7 +363,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
 
         case JONES_STARTMODE_LOADGAME:
         {
-            if ( jonesConfig_GetLoadGameFilePath(stdWin95_GetWindow(), JonesMain_pNdsFileName) != 1 )
+            if ( jonesConfig_GetLoadGameFilePath(stdWin95_GetWindow(), JonesMain_aNdsFilename) != 1 )
             {
                 return 1;
             }
@@ -617,7 +617,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     // Set load screen for loading static world
     if ( JonesMain_state.startMode == JONES_STARTMODE_LOADGAME )
     {
-        JonesMain_Restore(JonesMain_pNdsFileName);
+        JonesMain_Restore(JonesMain_aNdsFilename);
     }
     else
     {
@@ -1390,7 +1390,7 @@ int JonesMain_Open(void)
     // so the progress bar starts at 50%
     if ( JonesMain_state.startMode == JONES_STARTMODE_LOADGAME )
     {
-        JonesMain_Restore(JonesMain_pNdsFileName);
+        JonesMain_Restore(JonesMain_aNdsFilename);
     }
     else
     {
@@ -1408,19 +1408,19 @@ int JonesMain_Open(void)
     JonesDisplay_UpdateDualScreenWindowSize(&JonesMain_state.displaySettings);
 
     // Load savegame
-    if ( strlen(JonesMain_pNdsFileName) )
+    if ( strlen(JonesMain_aNdsFilename) )
     {
-        int v5 = strncmp("start", JonesMain_pNdsFileName, 5u) != 0; // TODO: ??
+        int v5 = strncmp("start", JonesMain_aNdsFilename, 5u) != 0; // TODO: ??
         J3D_UNUSED(v5);
 
-        if ( sithGamesave_Restore(JonesMain_pNdsFileName, 0) )
+        if ( sithGamesave_Restore(JonesMain_aNdsFilename, 0) )
         {
             // Error
             const  char* pFormat = jonesString_GetString("JONES_STR_LOADERROR");
             if ( pFormat )
             {
                 char aErrorText[128] = { 0 };
-                STD_FORMAT(aErrorText, pFormat, JonesMain_pNdsFileName);
+                STD_FORMAT(aErrorText, pFormat, JonesMain_aNdsFilename);
                 JonesMain_LogErrorToFile(aErrorText);
             }
 
@@ -1439,10 +1439,10 @@ int JonesMain_Open(void)
 
         if ( JonesMain_state.startMode == JONES_STARTMODE_LOADGAME )
         {
-            sithGamesave_NotifyRestored(JonesMain_pNdsFileName);
+            sithGamesave_NotifyRestored(JonesMain_aNdsFilename);
         }
 
-        memset(JonesMain_pNdsFileName, 0, sizeof(JonesMain_pNdsFileName));
+        memset(JonesMain_aNdsFilename, 0, sizeof(JonesMain_aNdsFilename));
     }
     else
     {
@@ -2472,10 +2472,13 @@ J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSr
     exit(1);
 }
 
-void J3DAPI JonesMain_BindToggleMenuControlKeys(const int* paKeyIds, int numKeys)
+void J3DAPI JonesMain_BindToggleMenuControlKeys(const size_t* paKeyIds, size_t numKeys)
 {
+    // Added
+    STD_ASSERT(paKeyIds);
+
     memset(JonesMain_aToggleMenuKeyIds, 0, sizeof(JonesMain_aToggleMenuKeyIds)); // Fixed: Fixed size
-    for ( size_t i = 0; i < numKeys; ++i )
+    for ( size_t i = 0; i < J3DMIN(numKeys, STD_ARRAYLEN(JonesMain_aToggleMenuKeyIds)); ++i ) // Added: Add clamp to array size
     {
         JonesMain_aToggleMenuKeyIds[i] = paKeyIds[i];
     }
@@ -2613,11 +2616,11 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.bBuffering   = wuRegistry_GetIntEx("Buffering", 0);
     pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", 1); // bilinear
 
-    pConfig->displaySettings.bFog = wuRegistry_GetIntEx("Fog", 1);
-    pConfig->fogDensity           = wuRegistry_GetFloat("Fog Density", 1.0f);
-    std3D_EnableFog(pConfig->displaySettings.bFog, pConfig->fogDensity);
+    pConfig->displaySettings.bFog       = wuRegistry_GetIntEx("Fog", 1);
+    pConfig->displaySettings.fogDensity = wuRegistry_GetFloat("Fog Density", 1.0f);
+    std3D_EnableFog(pConfig->displaySettings.bFog, pConfig->displaySettings.fogDensity);
 
-    sithRender_g_fogDensity = pConfig->fogDensity * 100.0f;
+    sithRender_g_fogDensity = pConfig->displaySettings.fogDensity * 100.0f;
 
     pConfig->bDevMode   = wuRegistry_GetIntEx("DevMode", 0);
     pConfig->startMode = wuRegistry_GetInt("Start Mode", 2);
