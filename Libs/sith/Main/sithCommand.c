@@ -481,7 +481,7 @@ int J3DAPI sithCommand_Kick(const SithConsoleCommand* pFunc, const char* pArg)
     STD_TOWSTR(aPlayerName, pArg);
     for ( size_t i = 0; i < sithPlayer_g_numPlayers; ++i )
     {
-        if ( (sithPlayer_g_aPlayers[i].flags & SITH_PLAYER_JOINEDGAME) != 0 && !wcsicmp(sithPlayer_g_aPlayers[i].awName, aPlayerName) )
+        if ( (sithPlayer_g_aPlayers[i].flags & SITH_PLAYER_JOINEDGAME) != 0 && wstreqi(sithPlayer_g_aPlayers[i].awName, aPlayerName) )
         {
             SITHCONSOLE_PRINTF("Kicked %S", sithPlayer_g_aPlayers[i].awName);
             sithMulti_QuitPlayer(sithPlayer_g_aPlayers[i].playerNetId);

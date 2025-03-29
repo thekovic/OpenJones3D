@@ -34,7 +34,8 @@
 #   include <Windows.h>
 #   define strcmpi _strcmpi
 #   define strncmpi _strnicmp
-#   define wcsicmp _wcsicmp
+#   define wstrcmpi _wcsicmp
+#   define wstrncmpi _wcsnicmp
 #else
     // TODO: define J3D_DEBUG
     typedef int      BOOL;
@@ -45,6 +46,16 @@
 #ifdef _MSC_VER 
 #   define strtok_r strtok_s
 #endif
+
+// String equivalence macros
+# define streq(s1, s2) (strcmp(s1, s2) == 0)
+
+// Case insensitive string equivalence macros
+# define streqi(s1, s2) (strcmpi(s1, s2) == 0)
+# define strneqi(s1, s2, n) (strncmpi(s1, s2, n) == 0)
+# define wstreqi(s1, s2) (wstrcmpi(s1, s2) == 0)
+# define wstrneqi(s1, s, n2) (wstrncmpi(s1, s2, n) == 0)
+
 
 #define J3D_UNUSED(x) (x)
 #define J3DNORETURN _Noreturn
