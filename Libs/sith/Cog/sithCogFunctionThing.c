@@ -33,8 +33,6 @@
 #include <std/General/stdMath.h>
 #include <std/Win95/stdComm.h>
 
-#define SITH_COLLIDE_NUMTYPES 3
-
 void J3DAPI sithCogFunctionThing_IsGhostVisible(SithCog* pCog)
 {
     float angle            = sithCogExec_PopFlex(pCog);
@@ -3059,7 +3057,7 @@ void J3DAPI sithCogFunctionThing_SetCollideType(SithCog* pCog)
     SithCollideType type  = sithCogExec_PopInt(pCog);
     SithThing* pThing      = sithCogExec_PopThing(pCog);
 
-    if ( !pThing || (unsigned int)type > SITH_COLLIDE_NUMTYPES )
+    if ( !pThing || (unsigned int)type >= SITH_COLLIDE_NUMTYPES )
     {
         STDLOG_ERROR("Cog %s: Cannot set thing collide type.\n", pCog->aName);
         return;
