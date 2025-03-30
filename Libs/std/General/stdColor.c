@@ -10,9 +10,7 @@ void stdColor_InstallHooks(void)
 }
 
 void stdColor_ResetGlobals(void)
-{
-
-}
+{}
 
 void J3DAPI stdColor_RGBtoHSV(float r, float g, float b, float* hue, float* saturation, float* value)
 {
@@ -211,40 +209,40 @@ uint32_t J3DAPI stdColor_ScaleColorComponent(uint32_t cc, int srcBPP, int deltaB
     return cc >> deltaBPP;
 }
 
-void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDestInfo, const uint8_t* pSrcRow, const ColorInfo* pSrcInfo, int width, int bColorKey, LPDDCOLORKEY pColorKey)
+void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDestCI, const uint8_t* pSrcRow, const ColorInfo* pSrcCI, int width, int bColorKey, LPDDCOLORKEY pColorKey)
 {
-    unsigned int redMask       = 0xFFFFFFFF >> (32 - (pSrcInfo->redBPP & 0xFF));
-    unsigned int greenMask     = 0xFFFFFFFF >> (32 - (pSrcInfo->greenBPP & 0xFF));
-    unsigned int blueMask      = 0xFFFFFFFF >> (32 - (pSrcInfo->blueBPP & 0xFF));
+    unsigned int redMask       = 0xFFFFFFFF >> (32 - (pSrcCI->redBPP & 0xFF));
+    unsigned int greenMask     = 0xFFFFFFFF >> (32 - (pSrcCI->greenBPP & 0xFF));
+    unsigned int blueMask      = 0xFFFFFFFF >> (32 - (pSrcCI->blueBPP & 0xFF));
     unsigned int alphaMask     = 0; // Added: Zero init
     unsigned int maxAlphaValue = 0; // Added: Zero init
 
-    if ( pSrcInfo->alphaBPP )
+    if ( pSrcCI->alphaBPP )
     {
-        alphaMask = 0xFFFFFFFF >> (32 - (pSrcInfo->alphaBPP & 0xFF));
-        if ( (255 >> pSrcInfo->alphaPosShiftRight) / 2 <= 1 )
+        alphaMask = 0xFFFFFFFF >> (32 - (pSrcCI->alphaBPP & 0xFF));
+        if ( (255 >> pSrcCI->alphaPosShiftRight) / 2 <= 1 )
         {
             maxAlphaValue = 1;
         }
         else
         {
-            maxAlphaValue = (255 >> pSrcInfo->alphaPosShiftRight) / 2;
+            maxAlphaValue = (255 >> pSrcCI->alphaPosShiftRight) / 2;
         }
     }
 
-    int redDelta   = pSrcInfo->redBPP - pDestInfo->redBPP;
-    int greenDelta = pSrcInfo->greenBPP - pDestInfo->greenBPP;
-    int blueDelta  = pSrcInfo->blueBPP - pDestInfo->blueBPP;
+    int redDelta   = pSrcCI->redBPP - pDestCI->redBPP;
+    int greenDelta = pSrcCI->greenBPP - pDestCI->greenBPP;
+    int blueDelta  = pSrcCI->blueBPP - pDestCI->blueBPP;
     int alphaDelta = 0;
-    if ( pSrcInfo->alphaBPP )
+    if ( pSrcCI->alphaBPP )
     {
-        alphaDelta = pSrcInfo->alphaBPP - pDestInfo->alphaBPP;
+        alphaDelta = pSrcCI->alphaBPP - pDestCI->alphaBPP;
     }
 
     for ( int i = 0; i < width; ++i )
     {
         unsigned int pixel = 0;
-        switch ( pSrcInfo->bpp )
+        switch ( pSrcCI->bpp )
         {
             case 8:
                 pixel = *pSrcRow;
@@ -269,21 +267,21 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
                 break;
         }
 
-        uint32_t r = redMask & (pixel >> pSrcInfo->redPosShift);
-        uint32_t g = greenMask & (pixel >> pSrcInfo->greenPosShift);
-        uint32_t b = blueMask & (pixel >> pSrcInfo->bluePosShift);
+        uint32_t r = redMask & (pixel >> pSrcCI->redPosShift);
+        uint32_t g = greenMask & (pixel >> pSrcCI->greenPosShift);
+        uint32_t b = blueMask & (pixel >> pSrcCI->bluePosShift);
         uint32_t a = 0; // Added: Zero init
-        if ( pSrcInfo->alphaBPP )
+        if ( pSrcCI->alphaBPP )
         {
-            a = alphaMask & (pixel >> pSrcInfo->alphaPosShift);
+            a = alphaMask & (pixel >> pSrcCI->alphaPosShift);
         }
 
-        r = stdColor_ScaleColorComponent(r, pSrcInfo->redBPP, redDelta);
-        g = stdColor_ScaleColorComponent(g, pSrcInfo->greenBPP, greenDelta);
-        b = stdColor_ScaleColorComponent(b, pSrcInfo->blueBPP, blueDelta);
+        r = stdColor_ScaleColorComponent(r, pSrcCI->redBPP, redDelta);
+        g = stdColor_ScaleColorComponent(g, pSrcCI->greenBPP, greenDelta);
+        b = stdColor_ScaleColorComponent(b, pSrcCI->blueBPP, blueDelta);
 
-        pixel = (b << pDestInfo->bluePosShift) | (g << pDestInfo->greenPosShift) | (r << pDestInfo->redPosShift);
-        if ( pSrcInfo->alphaBPP )
+        pixel = (b << pDestCI->bluePosShift) | (g << pDestCI->greenPosShift) | (r << pDestCI->redPosShift);
+        if ( pSrcCI->alphaBPP )
         {
             if ( bColorKey )
             {
@@ -293,12 +291,12 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
             }
             else
             {
-                a = stdColor_ScaleColorComponent(a, pSrcInfo->alphaBPP, alphaDelta);
-                pixel |= a << pDestInfo->alphaPosShift;
+                a = stdColor_ScaleColorComponent(a, pSrcCI->alphaBPP, alphaDelta);
+                pixel |= a << pDestCI->alphaPosShift;
             }
         }
 
-        switch ( pDestInfo->bpp )
+        switch ( pDestCI->bpp )
         {
             case 8:
                 *pDestRow = (pixel & 0xff);
@@ -327,14 +325,231 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
                 break;
         }
 
-        pSrcRow += (unsigned int)pSrcInfo->bpp >> 3;
-        pDestRow += (unsigned int)pDestInfo->bpp >> 3;
+        pSrcRow += (unsigned int)pSrcCI->bpp >> 3;
+        pDestRow += (unsigned int)pDestCI->bpp >> 3;
     }
 }
 
-int J3DAPI stdColor_ColorConvertOnePixel(ColorInfo* pDestInfo, int pixl, ColorInfo* pSrcInfo, int bColorKey, LPDDCOLORKEY pColorKey)
+int J3DAPI stdColor_ColorConvertOnePixel(ColorInfo* pDestCI, int pixl, ColorInfo* pSrcCI, int bColorKey, LPDDCOLORKEY pColorKey)
 {
     int cpixel = 0;
-    stdColor_ColorConvertOneRow((uint8_t*)&cpixel, pDestInfo, (const uint8_t*)&pixl, pSrcInfo, 1, bColorKey, pColorKey);
+    stdColor_ColorConvertOneRow((uint8_t*)&cpixel, pDestCI, (const uint8_t*)&pixl, pSrcCI, 1, bColorKey, pColorKey);
     return cpixel;
+}
+
+uint32_t stdColor_EncodeRGB(const ColorInfo* ci, uint8_t r, uint8_t g, uint8_t b)
+{
+    STD_ASSERT(ci);
+
+    // Scale color components according to bits per component
+    uint32_t redScaled   = r;
+    uint32_t greenScaled = g;
+    uint32_t blueScaled  = b;
+
+    // Adjust for component bit depth if needed
+    if ( ci->redBPP < 8 ) {
+        redScaled = redScaled >> (8 - ci->redBPP);
+    }
+    if ( ci->greenBPP < 8 ) {
+        greenScaled = greenScaled >> (8 - ci->greenBPP);
+    }
+    if ( ci->blueBPP < 8 ) {
+        blueScaled = blueScaled >> (8 - ci->blueBPP);
+    }
+
+    // Shift components to their positions and combine
+    uint32_t encoded = 0;
+    if ( ci->redPosShift >= 0 ) {
+        encoded |= (redScaled << ci->redPosShift);
+    }
+    else {
+        encoded |= (redScaled >> ci->redPosShiftRight);
+    }
+
+    if ( ci->greenPosShift >= 0 ) {
+        encoded |= (greenScaled << ci->greenPosShift);
+    }
+    else {
+        encoded |= (greenScaled >> ci->greenPosShiftRight);
+    }
+
+    if ( ci->bluePosShift >= 0 ) {
+        encoded |= (blueScaled << ci->bluePosShift);
+    }
+    else {
+        encoded |= (blueScaled >> ci->bluePosShiftRight);
+    }
+
+    return encoded;
+}
+
+uint32_t stdColor_EncodeRGBA(const ColorInfo* ci, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    STD_ASSERT(ci);
+
+    // Start with RGB encoding
+    uint32_t encoded = stdColor_EncodeRGB(ci, r, g, b);
+
+    // Add alpha if supported by the format
+    if ( ci->alphaBPP > 0 )
+    {
+        uint32_t alphaScaled = a;
+
+        // Adjust for alpha bit depth if needed
+        if ( ci->alphaBPP < 8 ) {
+            alphaScaled = alphaScaled >> (8 - ci->alphaBPP);
+        }
+
+        // Shift alpha to its position and combine
+        if ( ci->alphaPosShift >= 0 ) {
+            encoded |= (alphaScaled << ci->alphaPosShift);
+        }
+        else {
+            encoded |= (alphaScaled >> ci->alphaPosShiftRight);
+        }
+    }
+
+    return encoded;
+}
+
+void stdColor_DecodeRGB(uint32_t encoded, const ColorInfo* ci, uint8_t* r, uint8_t* g, uint8_t* b)
+{
+    STD_ASSERT(ci && r && g && b);
+
+    // Create masks based on bit depths
+    uint32_t redMask   = ((1 << ci->redBPP) - 1);
+    uint32_t greenMask = ((1 << ci->greenBPP) - 1);
+    uint32_t blueMask  = ((1 << ci->blueBPP) - 1);
+
+    // Extract components using shifts and masks
+    uint32_t redVal;
+    if ( ci->redPosShift >= 0 ) {
+        redVal = (encoded >> ci->redPosShift) & redMask;
+    }
+    else {
+        redVal = (encoded << ci->redPosShiftRight) & redMask;
+    }
+
+    uint32_t greenVal;
+    if ( ci->greenPosShift >= 0 ) {
+        greenVal = (encoded >> ci->greenPosShift) & greenMask;
+    }
+    else {
+        greenVal = (encoded << ci->greenPosShiftRight) & greenMask;
+    }
+
+    uint32_t blueVal;
+    if ( ci->bluePosShift >= 0 ) {
+        blueVal = (encoded >> ci->bluePosShift) & blueMask;
+    }
+    else {
+        blueVal = (encoded << ci->bluePosShiftRight) & blueMask;
+    }
+
+    // Scale back to 8-bit range if needed
+    if ( ci->redBPP < 8 ) {
+        // Scale up to fill 8 bits by replicating the MSBs
+        redVal = (redVal << (8 - ci->redBPP)) | (redVal >> (2 * ci->redBPP - 8));
+    }
+
+    if ( ci->greenBPP < 8 ) {
+        greenVal = (greenVal << (8 - ci->greenBPP)) | (greenVal >> (2 * ci->greenBPP - 8));
+    }
+
+    if ( ci->blueBPP < 8 ) {
+        blueVal = (blueVal << (8 - ci->blueBPP)) | (blueVal >> (2 * ci->blueBPP - 8));
+    }
+
+    // Store the results
+    *r = (uint8_t)redVal;
+    *g = (uint8_t)greenVal;
+    *b = (uint8_t)blueVal;
+}
+
+void stdColor_DecodeRGBA(uint32_t encoded, const ColorInfo* ci, uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a)
+{
+    STD_ASSERT(ci && r && g && b && a);
+
+    // First decode the RGB components
+    stdColor_DecodeRGB(encoded, ci, r, g, b);
+
+    // Then handle alpha if the format supports it
+    if ( ci->alphaBPP > 0 ) {
+        uint32_t alphaMask = ((1 << ci->alphaBPP) - 1);
+        uint32_t alphaVal;
+
+        // Extract alpha component
+        if ( ci->alphaPosShift >= 0 ) {
+            alphaVal = (encoded >> ci->alphaPosShift) & alphaMask;
+        }
+        else {
+            alphaVal = (encoded << ci->alphaPosShiftRight) & alphaMask;
+        }
+
+        // Scale back to 8-bit range if needed
+        if ( ci->alphaBPP < 8 ) {
+            alphaVal = (alphaVal << (8 - ci->alphaBPP)) | (alphaVal >> (2 * ci->alphaBPP - 8));
+        }
+
+        *a = (uint8_t)alphaVal;
+    }
+    else {
+     // If format doesn't support alpha, set to fully opaque
+        *a = 255;
+    }
+}
+
+uint32_t stdColor_Recode(uint32_t encoded, const ColorInfo* pSrcCI, const ColorInfo* pDestCI)
+{
+    unsigned int redMask       = 0xFFFFFFFF >> (32 - (pSrcCI->redBPP & 0xFF));
+    unsigned int greenMask     = 0xFFFFFFFF >> (32 - (pSrcCI->greenBPP & 0xFF));
+    unsigned int blueMask      = 0xFFFFFFFF >> (32 - (pSrcCI->blueBPP & 0xFF));
+    unsigned int alphaMask     = 0;
+    unsigned int maxAlphaValue = 0;
+
+    if ( pSrcCI->alphaBPP )
+    {
+        alphaMask = 0xFFFFFFFF >> (32 - (pSrcCI->alphaBPP & 0xFF));
+        if ( (255 >> pSrcCI->alphaPosShiftRight) / 2 <= 1 )
+        {
+            maxAlphaValue = 1;
+        }
+        else
+        {
+            maxAlphaValue = (255 >> pSrcCI->alphaPosShiftRight) / 2;
+        }
+    }
+
+    int redDelta   = pSrcCI->redBPP - pDestCI->redBPP;
+    int greenDelta = pSrcCI->greenBPP - pDestCI->greenBPP;
+    int blueDelta  = pSrcCI->blueBPP - pDestCI->blueBPP;
+    int alphaDelta = 0;
+    if ( pSrcCI->alphaBPP )
+    {
+        alphaDelta = pSrcCI->alphaBPP - pDestCI->alphaBPP;
+    }
+
+    // Decode
+    uint32_t r = redMask & (encoded >> pSrcCI->redPosShift);
+    uint32_t g = greenMask & (encoded >> pSrcCI->greenPosShift);
+    uint32_t b = blueMask & (encoded >> pSrcCI->bluePosShift);
+    uint32_t a = 0;
+    if ( pSrcCI->alphaBPP )
+    {
+        a = alphaMask & (encoded >> pSrcCI->alphaPosShift);
+    }
+
+    // Encode
+    r = stdColor_ScaleColorComponent(r, pSrcCI->redBPP, redDelta);
+    g = stdColor_ScaleColorComponent(g, pSrcCI->greenBPP, greenDelta);
+    b = stdColor_ScaleColorComponent(b, pSrcCI->blueBPP, blueDelta);
+
+    encoded = (b << pDestCI->bluePosShift) | (g << pDestCI->greenPosShift) | (r << pDestCI->redPosShift);
+    if ( pSrcCI->alphaBPP )
+    {
+        a = stdColor_ScaleColorComponent(a, pSrcCI->alphaBPP, alphaDelta);
+        encoded |= a << pDestCI->alphaPosShift;
+    }
+
+    return encoded;
 }
