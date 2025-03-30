@@ -1,9 +1,9 @@
-# v0.3
-General:
+## v0.3
+### General:
   - Fixed various bugs
   - Fixed game crash on save game restore when an object is attached to a non-primary mesh face of a 3D model (45c8065) 
   - Fixed hiding console on cutscene start (27ca92b)
-  - Fixed light range in `ThingLight` / `SetThingLight` COG functions (e9d4167) 
+  - Fixed light range in `ThingLight` / `SetThingLight` COG functions (e9d4167)  
     This fix ensures that the light range is correctly set when the COG function is called.
     Fixes light flickering bug when camera is facing and is near the light source.
   - Fixed casting float to int (0ada120)
@@ -16,9 +16,9 @@ General:
   - Changed argument order of debug print COG functions (a80ed30)
     Also changed the log level to debug.
   - Added programs `yacc` & `flex` (d6f5be6 + b669ca8)
-  - Fixed yacc initial line number at the start of code parsing. 
+  - Fixed yacc initial line number at the start of code parsing.(232f268)  
     This fixes line number in log when error is encountered.
-  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed on the execution stack on error. (e9d4167)
+  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed on the execution stack on error. (e9d4167)  
     This fixes corruption of the COG's execution stack when an error occurs.
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
@@ -55,10 +55,11 @@ General:
     * `sithCogYacc` (b669ca8)
     * `sithCogFunctionPlayer` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
     * `sithCogFunctionThing` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
+    * `jonesConfig` ([PR#21](https://github.com/smlu/OpenJones3D/pull/21))
     - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
     - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
     - Refactored `stdControl` module (fc4060c)
-    - Added devmode logic to `sithConsole` module (57b685b)
+    - Added devmode logic to `sithConsole` module (57b685b)  
       This enables commands flagged with `SITHCONSOLE_DEVMODE` flag to be available only
       when console flags have SITHCONSOLE_DEVMODE set.
     - Added Dev Console Commands:
@@ -85,7 +86,7 @@ General:
     * `noclip` (2d9f47a)
     * `print` (44e28c5)
 
-Display & Render:
+### Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
   - Fixed bug rendering ceiling sky (6f9db7e)
   - Fixed thumbnail rendering in save game dialog (c7bb134)
@@ -93,7 +94,7 @@ Display & Render:
   - Increased size of game save/load dialogs (ce321bb)
   - Changed the native open file dialog for game save dialog (5871f09)
   - Implemented the top layer of the game save dialog, resulting in a dialog style update (f38ff8a)
-  - Fixed incorrect scaling & positioning of dialog controls with nested child windows. (50a3f83)
+  - Fixed incorrect scaling & positioning of dialog controls with nested child windows. (50a3f83)  
     This fixes positioning of lists in Indy's trade post and key config dialogs.
   - Increased font size for all GDI dialogs (d1a09a0)
   - Added scaling for embedded dialog icon(s) (d1a09a0)
@@ -104,8 +105,8 @@ Display & Render:
   - Fixed column padding in trading post dialog (a8a32ff)
   - Increased the size of store item icon to 48 (a8a32ff)
 
-Game play:
-  - Fixed incorrect removal of loop-playing far sound. (2a25add)
+### Game play:
+  - Fixed incorrect removal of loop-playing far sound. (2a25add)  
     This ensures the loop-playing sound continues to play when the listener comes in sound hearing range.
   - Fixed submersion of dead thing in cold-water/lava (18d828d)
   - Fixed mouse sensitivity when in-editor mode (d25081f)
@@ -114,11 +115,11 @@ Game play:
   - Fixed stop looping far sound when volume is below threshold (5a169d7)
   - Fixed playing far sound on sound restore from savegame (b8a82d4)
 
-# v0.2
-General:
+## v0.2
+### General:
   - Fixed various bugs
   - Fixed floating point precision bug in `rdVector` & `rdMatrix34` functions (3b800ad)
-  - Made OpenJones3D binaries portable by adding absolute resource dir path to JonesFile VFS (fca6ef2)
+  - Made OpenJones3D binaries portable by adding absolute resource dir path to JonesFile VFS (fca6ef2)  
     This change allows binaries to be placed in any arbitrary location, eliminating the requirement for a Resource folder.
   - Fixed typo in framerate output text (47537aa)
   - Fixed initializing and clearing resource array on `JonesFile_Close` (47537aa)
@@ -133,7 +134,7 @@ General:
   - Fixed potential infinitive loop bug when .uni file is missing line break at the end of file (6b71793)
   - Implemented `sithSurface` module (b448041)
 
-Display & Render:
+### Display & Render:
   - Fixed scaling of color component when converting pixel data row in `stdColor_ColorConvertOneRow` (9e6ba77)
   - Changed default engine texture format to 32 bit from 16 bit (249a416)
   - Removed support for 16 bpp textures (3152496)
@@ -142,28 +143,30 @@ Display & Render:
   - Increased max no. of sectors in camera view to 4096 (b448041)
   - Increased max no. of thing with sectors to 8192 (b448041)
 
-Game play:
+### Game play:
   - Changed to by default play the higher resolution intro movie (800x600) (ffa2e9d)
-  - Fixed retrieving model by index number when loading savegame (669904d)
+  - Fixed retrieving model by index number when loading savegame (669904d)  
     This change adds temporary wrapper function `sithModel_GetModelByIndexWrap`.
   - Added support for 24/32 bit textures to CND cnd file format  (91d0a87)
-  - Changed how developer dialog discovers level files (30630d1)
-    Now dialog first looks for ndy folder in current working directory, and if found searches for level files in that folder. If ndy folder is not found the dialog checks for level files in `Install Path\Resource\ndy`.
-  - Fixed searching for ndy level file when corresponding cnd file is not found (5e64e5b)
+  - Changed how developer dialog discovers level files (30630d1)  
+    Now dialog first looks for ndy folder in current working directory, and if found searches for level files in that folder.  
+    If ndy folder is not found the dialog checks for level files in `Install Path\Resource\ndy`.
+  - Fixed searching for ndy level file when corresponding cnd file is not found (5e64e5b)  
     When game progresses to the next level this enables using ndy file for original levels when the corresponding cnd file is not found
   - Enabled weapon COG functions in devmode (a9cbc0b)
 
-HUD:
+### HUD:
   - Fixed drawing of horizontal wall line (8046835)
 
-# v0.1
-General:
+## v0.1
+### General:
   - Fixed minor bugs
   - Improve game loading times by disabling VSync and blt frame buffers instead of flip.
   - Changed DPI awareness to per monitor aware v2
   - Added check for NAN value of provided angle in `stdMath_SinCos`
-  - Fixed issue with float precision in `stdMath_NormalizeAngle` which could result in angles larger than 360 degrees.
-    This fixes array out of bound read in `stdMath_SinCos`, which fixes random crash when opening inventory menu or calling COG function `JonesInvItemChanged` from script.
+  - Fixed issue with float precision in `stdMath_NormalizeAngle` which could result in angles larger than 360 degrees.  
+    This fixes array out of bound read in `stdMath_SinCos`, which fixes random crash when opening inventory menu  
+    or calling COG function `JonesInvItemChanged` from script.
   - Fixed deleting hdc on pixel data read error in `stdBmp_Load`
   - Fixed reading/writing 24 bpp pixel from bytes in `stdColor_ColorConvertOneRow`.
     This fixes conversion of 24bit RGB image.
@@ -176,8 +179,9 @@ General:
   - Fixed a bug in sound compression where clipping of the audio waveform occurred
   - Fixed infinitive loop bug when voice subtitle contains too long word (`sithVoice_AddSubtitle`)
 
-  - Fixed accessing null pointer in `sithWhip_Reset` when `sithCamera` is already closed.
-    Fixed checking for null `sithWeapon_SendMessageAim` before calling function`sithWeapon_IsLocalPlayerUnableToUseWeapon` in `sithWeapon_SendMessageAim` functions.
+  - Fixed accessing null pointer in `sithWhip_Reset` when `sithCamera` is already closed.  
+    Fixed checking for null `sithWeapon_SendMessageAim` before calling  
+    function`sithWeapon_IsLocalPlayerUnableToUseWeapon` in `sithWeapon_SendMessageAim` functions.  
     This 2 fixes solve the game crash when player is aiming with whip and exits the game/program
     at the same time.
 
@@ -187,15 +191,16 @@ General:
     - Added high poly checkbox option to developer dialog (`High poly objects`)
     - Added high poly checkbox option to gameplay options (`High poly objects`)
 
-Game play:
-- Fixed the direction of fired projectiles for 2-hand-held weapons by setting the initial direction. This should resolve the issue of random crashes when firing the weapon, as the projectile will now be correctly aimed at the target.
+### Game play:
+- Fixed the direction of fired projectiles for 2-hand-held weapons by setting the initial direction.  
+  This should resolve the issue of random crashes when firing the weapon, as the projectile will now be correctly aimed at the target.
 - Fixed damaging player when game runs at > 40 FPS and Taklit's part, Azerim's part or tool from beyond runs out of energy (`sithPlayer_Update`)
 - Fixed rendering file list in load game dialog
 - Fixed DPI scaling of dialogs
 - Fixed bug where controls could become unresponsive when climbing down a whip and pressing the jump-off key simultaneously.
 - Enabled HD 3D models by default
 
-Display & Render:
+### Display & Render:
   - Added "simulated" VSync in window mode
   - Added resolution cap to HD resolutions since Direct3D3 doesn't support higher resolutions
   - Fixed raster to use correct vertices buffer when in vertex only mode
@@ -203,7 +208,7 @@ Display & Render:
   - Added option to disable VSync in `stdDisplay_Update`
   - Fixed rendering of sprite when fog is globally disabled
   - Fixed rendering of polyline when fog is globally disabled
-  - Fixed projecting Z coordinate when camera aspect ratio != 1.0
+  - Fixed projecting Z coordinate when camera aspect ratio != 1.0  
     In addition, this resolves rendering of ceiling sky when aspect ratio != 1.0
   - Fixed screen space projection by correctly applying camera aspect ratio
   - Fixed restoring backbuffer when surface is lost on surface lock
@@ -212,7 +217,7 @@ Display & Render:
   - Set 32 BPP resolution as default
   - Fixed using 32 BPP resolution stored in settings
 
-HUD:
+### HUD:
   - (`JonesDialog`) Fixed rendering game background when system dialog box is open
   - Removed help menu option
   - Fixed inventory menu position for wide screen resolutions
@@ -220,12 +225,12 @@ HUD:
   - Fixed inventory changed animation position and scaling when aspect ratio is other than 4:3
   - Fixed scaling of HUD health & endurance indicators for screen resolutions other than 4:3
   - Fixed possible menu close lock and game freeze due to uninitialized icon translation move rate.
-  - Fixed start icon transition when closing menu.
+  - Fixed start icon transition when closing menu.  
     Properly initialized move rate for the first transitioning icon, preventing its immediate disappearance.
-  - Fixed bug in inventory item change render function (`JonesHud_RenderInventoryItemChange`) which used
-    an unbounded yaw value (yaw > 360°) in the calculation of the item's yaw angle. This could lead to
+  - Fixed bug in inventory item change render function (`JonesHud_RenderInventoryItemChange`) which used  
+    an unbounded yaw value (yaw > 360°) in the calculation of the item's yaw angle. This could lead to  
     an infinite loop and prevent the menu from opening.
-  - Fixed rotation bug for selected inventory item (`JonesHud_UpdateItem`).
+  - Fixed rotation bug for selected inventory item (`JonesHud_UpdateItem`).  
     The yaw added to delta yaw was not bounded to 360 degrees, which could lead to incorrect rotation of the item.
   - Fixed rendering end credits on different screen resolutions
   - Fixed fadeout of credits theme music
