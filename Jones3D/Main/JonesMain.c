@@ -328,7 +328,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     JonesMain_LoadSettings(JonesMain_pDisplayEnv, &JonesMain_state);
 
     sithSound_StartupSound();
-    if ( sithSound_Startup(JonesMain_state.bSound3D) )
+    if ( sithSound_Startup(JonesMain_state.soundSettings.b3DHWSupport) )
     {
         const char* pErrorText = jonesString_GetString("JONES_STR_SOUNDERROR");
         if ( pErrorText )
@@ -338,11 +338,11 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
     }
 
     float defultVol = Sound_GetMaxVolume();
-    JonesMain_state.soundVolume = wuRegistry_GetFloat("Sound Volume", defultVol);
-    wuRegistry_SaveFloat("Sound Volume", JonesMain_state.soundVolume);
+    JonesMain_state.soundSettings.maxSoundVolume = wuRegistry_GetFloat("Sound Volume", defultVol);
+    wuRegistry_SaveFloat("Sound Volume", JonesMain_state.soundSettings.maxSoundVolume);
 
-    Sound_SetMaxVolume(JonesMain_state.soundVolume);
-    SmushPlay_SetGlobalVolume((size_t)(JonesMain_state.soundVolume * 127.0f)); // TODO: Can be removed as it's being set in PlayIntroMovie
+    Sound_SetMaxVolume(JonesMain_state.soundSettings.maxSoundVolume);
+    SmushPlay_SetGlobalVolume((size_t)(JonesMain_state.soundSettings.maxSoundVolume * 127.0f)); // TODO: Can be removed as it's being set in PlayIntroMovie
 
     // Handle start mode
     int bSuccess    = 0;
@@ -376,7 +376,7 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
 
         case JONES_STARTMODE_SOUNDSETTINGS:
         {
-            bSuccess = jonesConfig_ShowSoundSettingsDialog(stdWin95_GetWindow(), &JonesMain_state.soundVolume);
+            bSuccess = jonesConfig_ShowSoundSettingsDialog(stdWin95_GetWindow(), &JonesMain_state.soundSettings);
             return 1; // exit
         }
 
@@ -1985,7 +1985,7 @@ int JonesMain_PlayIntroMovie(void)
     LPDIRECTSOUND pDSound = SoundDriver_GetDSound();
     HWND hwnd = stdWin95_GetWindow();
     SmushPlay_SysStartup(hwnd, pDSound);
-    SmushPlay_SetGlobalVolume((size_t)(JonesMain_state.soundVolume * 127.0f));
+    SmushPlay_SetGlobalVolume((size_t)(JonesMain_state.soundSettings.maxSoundVolume * 127.0f));
 
     StdVideoMode videoMode;
     if ( stdDisplay_GetCurrentVideoMode(&videoMode) )
@@ -2060,9 +2060,9 @@ int JonesMain_PlayIntroMovie(void)
         if ( JonesMain_aIntroMovieColorTable )
         {
             // Init pixel conversion table
-            for ( int pixel = 0; pixel < (int)UINT16_MAX + 1; ++pixel )
+            for ( uint16_t pixel = 0; pixel < (uint32_t)UINT16_MAX + 1; ++pixel )
             {
-                *(uint16_t*)&JonesMain_aIntroMovieColorTable[2 * pixel] = stdDisplay_EncodeFromRGB565((uint16_t)pixel);
+                ((uint16_t*)JonesMain_aIntroMovieColorTable)[pixel] = stdDisplay_EncodeFromRGB565((uint16_t)pixel);
             }
 
             // Play intro movie
@@ -2093,9 +2093,9 @@ int JonesMain_PlayIntroMovie(void)
         if ( JonesMain_aIntroMovieColorTable )
         {
             // Init pixel conversion table
-            for ( int pixel = 0; pixel < (int)UINT16_MAX + 1; ++pixel )
+            for ( uint32_t pixel = 0; pixel < (uint32_t)UINT16_MAX + 1; ++pixel )
             {
-                *(uint32_t*)&JonesMain_aIntroMovieColorTable[4 * pixel] = stdDisplay_EncodeFromRGB565((uint16_t)pixel);
+                ((uint32_t*)JonesMain_aIntroMovieColorTable)[pixel] = stdDisplay_EncodeFromRGB565((uint16_t)pixel);
             }
 
             // Play intro movie
@@ -2689,8 +2689,8 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.height = JonesMain_curVideoMode.rasterInfo.height;
     pConfig->displaySettings.bClearBackBuffer = 0;
 
-    pConfig->bSound3D      = wuRegistry_GetIntEx("Sound 3D", 0);
-    pConfig->bReverseSound = wuRegistry_GetIntEx("ReverseSound", 0);
+    pConfig->soundSettings.b3DHWSupport  = wuRegistry_GetIntEx("Sound 3D", 0);
+    pConfig->soundSettings.bReverseSound = wuRegistry_GetIntEx("ReverseSound", 0);
 }
 
 
@@ -3060,7 +3060,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
 
             wuRegistry_SaveIntEx("DevMode", pState->bDevMode);
 
-            wuRegistry_SaveIntEx("Sound 3D", pState->bSound3D);
+            wuRegistry_SaveIntEx("Sound 3D", pState->soundSettings.b3DHWSupport);
 
             wuRegistry_SaveInt("Debug Mode", pState->outputMode);
             wuRegistry_SaveInt("Verbosity", pState->logLevel);

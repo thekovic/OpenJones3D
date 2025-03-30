@@ -982,7 +982,7 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
 void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int ctrlID, int a3, int notifyCode);
 
 INT_PTR CALLBACK jonesConfig_SoundSettingsDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-int J3DAPI jonesConfig_InitSoundSettingsDialog(HWND hDlg, int a2, JonesSoundSettingsDialogData* pData);
+int J3DAPI jonesConfig_InitSoundSettingsDialog(HWND hDlg, int a2, JonesSoundSettings* pData);
 void J3DAPI jonesConfig_SoundSettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, int notifyCode);
 
 INT_PTR CALLBACK jonesConfig_GameOverDialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -8011,7 +8011,7 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
 
 }
 
-int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, JonesSoundSettingsDialogData* pData)
+int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, JonesSoundSettings* pData)
 {
     GetWindowLongA(hWnd, GWL_HINSTANCE);
     return JonesDialog_ShowDialog(MAKEINTRESOURCE(113), hWnd, jonesConfig_SoundSettingsDialogProc, (LPARAM)pData);
@@ -8068,7 +8068,7 @@ INT_PTR CALLBACK jonesConfig_SoundSettingsDialogProc(HWND hWnd, UINT uMsg, WPARA
     if ( uMsg == WM_INITDIALOG )
     {
         jonesConfig_hFontSoundSettings = jonesConfig_InitDialog(hWnd, 0, 113);
-        res = jonesConfig_InitSoundSettingsDialog(hWnd, wParam, (JonesSoundSettingsDialogData*)lParam);
+        res = jonesConfig_InitSoundSettingsDialog(hWnd, wParam, (JonesSoundSettings*)lParam);
         SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
     }
     else
@@ -8084,7 +8084,7 @@ INT_PTR CALLBACK jonesConfig_SoundSettingsDialogProc(HWND hWnd, UINT uMsg, WPARA
     return res;
 }
 
-int J3DAPI jonesConfig_InitSoundSettingsDialog(HWND hDlg, int a2, JonesSoundSettingsDialogData* pData)
+int J3DAPI jonesConfig_InitSoundSettingsDialog(HWND hDlg, int a2, JonesSoundSettings* pData)
 {
     J3D_UNUSED(a2);
 
@@ -8125,22 +8125,22 @@ void J3DAPI jonesConfig_SoundSettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, in
 {
     J3D_UNUSED(notifyCode);
 
-    JonesSoundSettingsDialogData* pData = (JonesSoundSettingsDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
+    JonesSoundSettings* pSettings = (JonesSoundSettings*)GetWindowLongPtr(hWnd, DWL_USER);
 
     if ( ctrlID == 1 ) // OK
     {
         HWND hVolSliderCtrl = GetDlgItem(hWnd, 1050);
         int sliderPos = SendMessage(hVolSliderCtrl, TBM_GETPOS, 0, 0);
-        pData->maxSoundVolume = (float)sliderPos / 100.0f;
-        wuRegistry_SaveFloat("Sound Volume", pData->maxSoundVolume);
+        pSettings->maxSoundVolume = (float)sliderPos / 100.0f;
+        wuRegistry_SaveFloat("Sound Volume", pSettings->maxSoundVolume);
 
         HWND hBtn3DSound = GetDlgItem(hWnd, 1118);
-        pData->b3DHWSupport = Button_GetState(hBtn3DSound);
-        wuRegistry_SaveIntEx("Sound 3D", pData->b3DHWSupport);
+        pSettings->b3DHWSupport = Button_GetState(hBtn3DSound);
+        wuRegistry_SaveIntEx("Sound 3D", pSettings->b3DHWSupport);
 
         HWND hBtnReverseSound = GetDlgItem(hWnd, 1051);
-        pData->bReverseSound  = Button_GetState(hBtnReverseSound);
-        wuRegistry_SaveIntEx("ReverseSound", pData->bReverseSound);
+        pSettings->bReverseSound  = Button_GetState(hBtnReverseSound);
+        wuRegistry_SaveIntEx("ReverseSound", pSettings->bReverseSound);
 
         EndDialog(hWnd, ctrlID);
     }

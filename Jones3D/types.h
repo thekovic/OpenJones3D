@@ -328,6 +328,13 @@ typedef struct sJonesDisplaySettings
 } JonesDisplaySettings;
 static_assert(sizeof(JonesDisplaySettings) == 56, "sizeof(JonesDisplaySettings) == 56");
 
+typedef struct sJonesSoundSettings
+{
+    float maxSoundVolume;
+    int b3DHWSupport;
+    int bReverseSound;
+} JonesSoundSettings;
+static_assert(sizeof(JonesSoundSettings) == 12, "sizeof(JonesSoundSettings) == 12");
 
 typedef struct sJonesState
 {
@@ -340,9 +347,7 @@ typedef struct sJonesState
     char aInstallPath[128];
     char aCDPath[128];
     wchar_t waPlayerName[20];
-    float soundVolume;
-    int bSound3D;
-    int bReverseSound;
+    JonesSoundSettings soundSettings;
     JonesDisplaySettings displaySettings;
 } JonesState;
 static_assert(sizeof(JonesState) == 512, "sizeof(JonesState) == 512");
@@ -520,13 +525,6 @@ typedef struct sGDIDIBSectionInfo
     BITMAPINFO bmpInfo;
     int bHasDC;
 } GDIDIBSectionInfo;
-
-typedef struct sJonesSoundSettingsDialogData
-{
-    float maxSoundVolume;
-    int b3DHWSupport;
-    int bReverseSound;
-} JonesSoundSettingsDialogData;
 
 J3D_EXTERN_C_END
 #endif //JONES3D_TYPES_H

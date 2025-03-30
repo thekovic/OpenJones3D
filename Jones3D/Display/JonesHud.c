@@ -2981,18 +2981,18 @@ void JonesHud_MenuActivateItem(void)
 
         case JONESHUD_MENU_SOUND_SETTINGS: // sound settings
         {
-            JonesSoundSettingsDialogData sndDlgdata;
-            sndDlgdata.maxSoundVolume = Sound_GetMaxVolume();
-            sndDlgdata.b3DHWSupport   = Sound_Get3DHWState();
-            sndDlgdata.bReverseSound  = wuRegistry_GetIntEx("ReverseSound", 0);
+            JonesSoundSettings sndSettings;
+            sndSettings.maxSoundVolume = Sound_GetMaxVolume();
+            sndSettings.b3DHWSupport   = Sound_Get3DHWState();
+            sndSettings.bReverseSound  = wuRegistry_GetIntEx("ReverseSound", 0);
 
             HWND hwnd = stdWin95_GetWindow();
-            dlgResult = jonesConfig_ShowSoundSettingsDialog(hwnd, &sndDlgdata);
+            dlgResult = jonesConfig_ShowSoundSettingsDialog(hwnd, &sndSettings);
             if ( dlgResult == 1 )
             {
-                Sound_SetMaxVolume(sndDlgdata.maxSoundVolume);
-                Sound_Set3DHWState(sndDlgdata.b3DHWSupport);
-                Sound_SetReverseSound(sndDlgdata.bReverseSound);
+                Sound_SetMaxVolume(sndSettings.maxSoundVolume);
+                Sound_Set3DHWState(sndSettings.b3DHWSupport);
+                Sound_SetReverseSound(sndSettings.bReverseSound);
             }
 
         } break;

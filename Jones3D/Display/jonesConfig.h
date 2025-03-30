@@ -28,7 +28,7 @@ int J3DAPI jonesConfig_ShowGamePlayOptions(HWND hWnd);
 void J3DAPI jonesConfig_EnableMouseControl(int bEnable);
 int J3DAPI jonesConfig_ShowControlOptions(HWND hWnd);
 int J3DAPI jonesConfig_ShowDisplaySettingsDialog(HWND hWnd, StdDisplayEnvironment* pDisplayEnv, JonesDisplaySettings* pDSettings);
-int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, JonesSoundSettingsDialogData* pData);
+int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, JonesSoundSettings* pData);
 
 int J3DAPI jonesConfig_ShowGameOverDialog(HWND hWnd, char* pRestoreFilename, tSoundHandle hSndGameOVerMus, tSoundChannelHandle* pSndChnlMus);
 int J3DAPI jonesConfig_ShowStatisticsDialog(HWND hWnd, SithGameStatistics* pStatistics);
