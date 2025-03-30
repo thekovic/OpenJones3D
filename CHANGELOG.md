@@ -56,6 +56,7 @@
     * `sithCogFunctionPlayer` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
     * `sithCogFunctionThing` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
     * `jonesConfig` ([PR#21](https://github.com/smlu/OpenJones3D/pull/21))
+    * `sithWorld` (85a9ebe)
     - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
     - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
     - Refactored `stdControl` module (fc4060c)
@@ -104,6 +105,7 @@
   - Implemented Indy's trading post dialog (a8a32ff)
   - Fixed column padding in trading post dialog (a8a32ff)
   - Increased the size of store item icon to 48 (a8a32ff)
+  - Fixed drawing 2D line to 24 BPP & 32 BPP video buffer (a8a32ff)
 
 ### Game play:
   - Fixed incorrect removal of loop-playing far sound. (2a25add)  
