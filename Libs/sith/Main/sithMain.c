@@ -600,13 +600,13 @@ void sithDrawScene(void)
 
         if ( sith_bDrawPlayerMoveBounds && sithWorld_g_pCurrentWorld && sithPlayer_g_pLocalPlayerThing )
         {
-            rdPrimit3_DrawClippedCircle(&sithPlayer_g_pLocalPlayerThing->pos, sithPlayer_g_pLocalPlayerThing->collide.movesize, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+            rdPrimit3_DrawClippedCircle(&sithPlayer_g_pLocalPlayerThing->pos, sithPlayer_g_pLocalPlayerThing->collide.movesize, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
         }
 
         if ( sith_bDrawUnknown )
         {
-            rdPrimit3_DrawClippedCircle(&sith_unknownPos, sith_unknownRadius, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
-            rdPrimit3_DrawClippedCircle(&sith_unknownPos2, sith_unknownRadius2, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+            rdPrimit3_DrawClippedCircle(&sith_unknownPos, sith_unknownRadius, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
+            rdPrimit3_DrawClippedCircle(&sith_unknownPos2, sith_unknownRadius2, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
         }
 
         if ( sith_bDrawThingMoveBounds && sithWorld_g_pCurrentWorld )
@@ -616,7 +616,7 @@ void sithDrawScene(void)
                 SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[thNum];
                 if ( pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_WEAPON )
                 {
-                    rdPrimit3_DrawClippedCircle(&pThing->pos, pThing->collide.movesize, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+                    rdPrimit3_DrawClippedCircle(&pThing->pos, pThing->collide.movesize, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
                 }
             }
         }
