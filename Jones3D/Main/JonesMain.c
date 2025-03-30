@@ -59,6 +59,7 @@
 #include <w32util/wuRegistry.h>
 
 #include <stdint.h>
+#include <windowsx.h> // helper macros for win32 controls (combo-box, list-view ...)
 
 #define JONES_QUICKSAVE_TEXTSHOWTIME    1000u // 1 sec
 #define JONES_QUICKSAVE_TEXTSHOWTIMERID 1u 
@@ -169,7 +170,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
 
 INT_PTR CALLBACK JonesMain_DevDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig);
-void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam);
+void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int notifyCode);
 void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig);
 void J3DAPI JonesMain_DevDialogUpdateRadioButtons(HWND hDlg, const JonesState* pState);
 bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSettings, size_t bpp);
@@ -2614,7 +2615,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.bWindowMode  = wuRegistry_GetIntEx("InWindow", 0);
     pConfig->displaySettings.bDualMonitor = wuRegistry_GetIntEx("Dual Monitor", 0);
     pConfig->displaySettings.bBuffering   = wuRegistry_GetIntEx("Buffering", 0);
-    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", 1); // bilinear
+    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", STD3D_MIPMAPFILTER_BILINEAR); // bilinear
 
     pConfig->displaySettings.bFog       = wuRegistry_GetIntEx("Fog", 1);
     pConfig->displaySettings.fogDensity = wuRegistry_GetFloat("Fog Density", 1.0f);
@@ -2622,12 +2623,12 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
 
     sithRender_g_fogDensity = pConfig->displaySettings.fogDensity * 100.0f;
 
-    pConfig->bDevMode   = wuRegistry_GetIntEx("DevMode", 0);
-    pConfig->startMode = wuRegistry_GetInt("Start Mode", 2);
-    pConfig->startMode = STDMATH_CLAMP(pConfig->startMode, 0, 4);
+    pConfig->bDevMode  = wuRegistry_GetIntEx("DevMode", 0);
+    pConfig->startMode = wuRegistry_GetInt("Start Mode", JONES_STARTMODE_DEVELOPERDIALOG);
+    pConfig->startMode = STDMATH_CLAMP(pConfig->startMode, JONES_STARTMODE_STARTGAME, JONES_STARTMODE_DISPLAYSETTINGS);
 
-    pConfig->outputMode = wuRegistry_GetInt("Debug Mode", 0);
-    pConfig->logLevel   = wuRegistry_GetInt("Verbosity", 1);
+    pConfig->outputMode = wuRegistry_GetInt("Debug Mode", JONES_OUTPUTMODE_NONE);
+    pConfig->logLevel   = wuRegistry_GetInt("Verbosity", JONES_LOGLEVEL_NORMAL);
     pConfig->performanceLevel = wuRegistry_GetInt("Performance Level", 4);
 
     pConfig->displaySettings.geoMode   = wuRegistry_GetInt("Geometry Mode", RD_GEOMETRY_FULL);
@@ -2677,7 +2678,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     JonesMain_curVideoMode.aspectRatio                    = 1.0f;
     JonesMain_curVideoMode.rasterInfo.width               = wuRegistry_GetInt("Width", 640);
     JonesMain_curVideoMode.rasterInfo.height              = wuRegistry_GetInt("Height", 480);
-    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32);
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32); // Altered: Changed 16 bpp to 32
     JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
 
     pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
@@ -2731,86 +2732,86 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
         if ( JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL == 1 )
         {
             STD_FORMAT(std_g_genBuffer, "%s", JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName);
-            int itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)std_g_genBuffer);
-            SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, i);
+            int itemIdx = ComboBox_AddString(hDlgItem, std_g_genBuffer);
+            ComboBox_SetItemData(hDlgItem, itemIdx, i);
 
             // Select diver if matches the one in settings
             if ( i == pConfig->displaySettings.displayDeviceNum )
             {
-                SendMessage(hDlgItem, CB_SETCURSEL, itemIdx, 0);
+                ComboBox_SetCurSel(hDlgItem, itemIdx);
             }
         }
     }
 
     // Init CB GeometryMOde
     hDlgItem = GetDlgItem(hDlg, 1008);
-    int itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Vertex Only");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 1);
+    int itemIdx = ComboBox_AddString(hDlgItem, "Vertex Only");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 1);
 
     int selectedItemIdx = itemIdx;
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Wire Frame");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+    itemIdx = ComboBox_AddString(hDlgItem, "Wire Frame");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 2);
     if ( pConfig->displaySettings.geoMode == RD_GEOMETRY_WIREFRAME )
     {
         selectedItemIdx = itemIdx;
     }
 
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Solid");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 3);
+    itemIdx = ComboBox_AddString(hDlgItem, "Solid");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 3);
     if ( pConfig->displaySettings.geoMode == RD_GEOMETRY_SOLID )
     {
         selectedItemIdx = itemIdx;
     }
 
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Texture");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 4);
+    itemIdx = ComboBox_AddString(hDlgItem, "Texture");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 4);
     if ( pConfig->displaySettings.geoMode == RD_GEOMETRY_FULL )
     {
         selectedItemIdx = itemIdx;
     }
 
-    SendMessage(hDlgItem, CB_SETCURSEL, selectedItemIdx, 0);
+    ComboBox_SetCurSel(hDlgItem, selectedItemIdx);
 
     // Init CB Lighting Mode
     hDlgItem = GetDlgItem(hDlg, 1009);
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"None");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 1);
+    itemIdx = ComboBox_AddString(hDlgItem, "None");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 1);
 
     selectedItemIdx = itemIdx;
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Lit");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 0);
+    itemIdx = ComboBox_AddString(hDlgItem, "Lit");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 0);
     if ( pConfig->displaySettings.lightMode == RD_LIGHTING_NONE )
     {
         selectedItemIdx = itemIdx;
     }
 
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Diffuse");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+    itemIdx = ComboBox_AddString(hDlgItem, "Diffuse");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 2);
     if ( pConfig->displaySettings.lightMode == RD_LIGHTING_DIFFUSE )
     {
         selectedItemIdx = itemIdx;
     }
 
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Gouraud");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 3);
+    itemIdx = ComboBox_AddString(hDlgItem, "Gouraud");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 3);
     if ( pConfig->displaySettings.lightMode == RD_LIGHTING_GOURAUD )
     {
         selectedItemIdx = itemIdx;
     }
 
-    SendMessage(hDlgItem, CB_SETCURSEL, selectedItemIdx, 0);
+    ComboBox_SetCurSel(hDlgItem, selectedItemIdx);
 
     // Init CB MimpMap Filter
     hDlgItem = GetDlgItem(hDlg, 1012);
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"None");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 0);
+    itemIdx = ComboBox_AddString(hDlgItem, "None");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 0);
 
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Bilinear");
-    SendMessage(hDlgItem, CB_SETCURSEL, itemIdx, 0);// Select bilinear as defult
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 1);
+    itemIdx = ComboBox_AddString(hDlgItem, "Bilinear");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 1);
+    ComboBox_SetCurSel(hDlgItem, itemIdx);// Select bilinear as defult
 
-    itemIdx = SendMessage(hDlgItem, CB_ADDSTRING, 0, (LPARAM)"Trilinear");
-    SendMessage(hDlgItem, CB_SETITEMDATA, itemIdx, 2);
+    itemIdx = ComboBox_AddString(hDlgItem, "Trilinear");
+    ComboBox_SetItemData(hDlgItem, itemIdx, 2);
 
     // Added
     // Enable and init  HiPoly check button
@@ -2838,39 +2839,39 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
         FindFileData* pFileData = stdFileUtil_NewFind(aNdyDir, 3, "ndy");
         while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
         {
-            itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
+            itemIdx = ListBox_AddString(hDlgItem, fileInfo.aName);
         }
         stdFileUtil_DisposeFind(pFileData);
 
         pFileData = stdFileUtil_NewFind(aNdyDir, 3, "cnd");
         while ( stdFileUtil_FindNext(pFileData, &fileInfo) )
         {
-            itemIdx = SendMessage(hDlgItem, LB_ADDSTRING, 0, (LPARAM)&fileInfo);
+            itemIdx = ListBox_AddString(hDlgItem, fileInfo.aName);
         }
 
         stdFileUtil_DisposeFind(pFileData);
 
         // Select cur level from config
-        int numLevels = SendMessage(hDlgItem, LB_GETCOUNT, 0, 0);
+        int numLevels = ListBox_GetCount(hDlgItem);
         for ( itemIdx = 0; itemIdx < numLevels; ++itemIdx )
         {
             char aLevelName[128] = { 0 }; // Fixed: Increased string len to 128 from 64
-            SendMessage(hDlgItem, LB_GETTEXT, itemIdx, (LPARAM)aLevelName);
-            if ( strcmp(aLevelName, pConfig->aCurLevelFilename) == 0 )
+            ListBox_GetText(hDlgItem, itemIdx, aLevelName);
+            if ( streq(aLevelName, pConfig->aCurLevelFilename) )
             {
-                SendMessage(hDlgItem, LB_SETCURSEL, itemIdx, 0);
+                ListBox_SetCurSel(hDlgItem, itemIdx);
                 break;
             }
         }
 
         if ( itemIdx == numLevels )
         {
-            // Non selected, select level in the middle of the list
-            SendMessage(hDlgItem, LB_SETCURSEL, numLevels / 2, 0);
+            // None selected, select level in the middle of the list
+            ListBox_SetCurSel(hDlgItem, numLevels / 2);
         }
     }
 
-    SetWindowLongPtr(hDlg, DWL_USER, (LONG)pConfig); // Set config to dialog handle
+    SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pConfig); // Set config to dialog handle
 
     CheckDlgButton(hDlg, 1007, pConfig->bDevMode);// Dev mode
 
@@ -2878,7 +2879,7 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     return 1;
 }
 
-void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int hiWParam)
+void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lParam, int notifyCode)
 {
     J3D_UNUSED(lParam);
 
@@ -2918,30 +2919,30 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
                 break;
 
             case 1029: // display mode
-                if ( hiWParam == 1 )
+                if ( notifyCode == CBN_SELCHANGE )
                 {
                     HWND hCBDisplayMode = GetDlgItem(hWnd, 1029);
-                    int curSelIdx = SendMessage(hCBDisplayMode, CB_GETCURSEL, 0, 0);
-                    pState->displaySettings.videoModeNum = SendMessage(hCBDisplayMode, CB_GETITEMDATA, curSelIdx, 0);
+                    int curSelIdx = ComboBox_GetCurSel(hCBDisplayMode);
+                    pState->displaySettings.videoModeNum = ComboBox_GetItemData(hCBDisplayMode, curSelIdx);
                 }
                 break;
 
             case 1030: // Display settings
-                if ( hiWParam == 1 )
+                if ( notifyCode == CBN_SELCHANGE )
                 {
                     HWND CBDisplayDriver = GetDlgItem(hWnd, 1030);
-                    int curSelIdx = SendMessage(CBDisplayDriver, CB_GETCURSEL, 0, 0);
-                    pState->displaySettings.displayDeviceNum = SendMessage(CBDisplayDriver, CB_GETITEMDATA, curSelIdx, 0);
+                    int curSelIdx = ComboBox_GetCurSel(CBDisplayDriver);
+                    pState->displaySettings.displayDeviceNum = ComboBox_GetItemData(CBDisplayDriver, curSelIdx);
                     JonesMain_DevDialogInitDisplayDevices(hWnd, pState);
                 }
                 break;
 
             case 1031: // 3D Driver
-                if ( hiWParam == 1 )
+                if ( notifyCode == CBN_SELCHANGE )
                 {
                     HWND hCB3DDriver = GetDlgItem(hWnd, 1031);
-                    int curSelIdx = SendMessage(hCB3DDriver, CB_GETCURSEL, 0, 0);
-                    pState->displaySettings.device3DNum = SendMessage(hCB3DDriver, CB_GETITEMDATA, curSelIdx, 0);
+                    int curSelIdx = ComboBox_GetCurSel(hCB3DDriver);
+                    pState->displaySettings.device3DNum = ComboBox_GetItemData(hCB3DDriver, curSelIdx);
                     JonesMain_DevDialogInitDisplayDevices(hWnd, pState);
                 }
                 break;
@@ -2980,7 +2981,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
         switch ( controlId )
         {
             case 1001: // select level list
-                if ( hiWParam != 2 )
+                if ( notifyCode != LBN_DBLCLK )
                 {
                     return;
                 }
@@ -3003,18 +3004,18 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
 
         // Get 3D driver
         HWND hCB3DDriver = GetDlgItem(hWnd, 1031);
-        int curSelIdx = SendMessage(hCB3DDriver, CB_GETCURSEL, 0, 0);
-        pState->displaySettings.device3DNum = SendMessage(hCB3DDriver, CB_GETITEMDATA, curSelIdx, 0);
+        int curSelIdx = ComboBox_GetCurSel(hCB3DDriver);
+        pState->displaySettings.device3DNum = ComboBox_GetItemData(hCB3DDriver, curSelIdx);
 
         // Get Display mode
         HWND hCBDisplayMode = GetDlgItem(hWnd, 1029);
-        curSelIdx = SendMessage(hCBDisplayMode, CB_GETCURSEL, 0, 0);
-        pState->displaySettings.videoModeNum = SendMessage(hCBDisplayMode, CB_GETITEMDATA, curSelIdx, 0);
+        curSelIdx = ComboBox_GetCurSel(hCBDisplayMode);
+        pState->displaySettings.videoModeNum = ComboBox_GetItemData(hCBDisplayMode, curSelIdx);
 
         // Geometry mode
         HWND hCBGeometryMode = GetDlgItem(hWnd, 1008);
-        curSelIdx = SendMessage(hCBGeometryMode, CB_GETCURSEL, 0, 0);
-        pState->displaySettings.geoMode = SendMessage(hCBGeometryMode, CB_GETITEMDATA, curSelIdx, 0);
+        curSelIdx = ComboBox_GetCurSel(hCBGeometryMode);
+        pState->displaySettings.geoMode = ComboBox_GetItemData(hCBGeometryMode, curSelIdx);
 
         if ( pState->displaySettings.geoMode == RD_GEOMETRY_WIREFRAME || pState->displaySettings.geoMode == RD_GEOMETRY_VERTEX )
         {
@@ -3023,18 +3024,18 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
 
         // Light mode
         HWND hCBLightMode = GetDlgItem(hWnd, 1009);
-        curSelIdx = SendMessage(hCBLightMode, CB_GETCURSEL, 0, 0);
-        pState->displaySettings.lightMode = SendMessage(hCBLightMode, CB_GETITEMDATA, curSelIdx, 0);
+        curSelIdx = ComboBox_GetCurSel(hCBLightMode);
+        pState->displaySettings.lightMode = ComboBox_GetItemData(hCBLightMode, curSelIdx);
 
         // Filter mode
         HWND hCBFilterMode = GetDlgItem(hWnd, 1012);
-        curSelIdx = SendMessage(hCBFilterMode, CB_GETCURSEL, 0, 0);
-        pState->displaySettings.filter = SendMessage(hCBFilterMode, CB_GETITEMDATA, curSelIdx, 0);
+        curSelIdx = ComboBox_GetCurSel(hCBFilterMode);
+        pState->displaySettings.filter = ComboBox_GetItemData(hCBFilterMode, curSelIdx);
 
         // Added: Enable/Disable HiPoly
         sithModel_EnableHiPoly(IsDlgButtonChecked(hWnd, 1051) == 1);
 
-        pState->displaySettings.bWindowMode = IsDlgButtonChecked(hWnd, 1002) == 1;// window mode
+        pState->displaySettings.bWindowMode = IsDlgButtonChecked(hWnd, 1002) == 1; // window mode
         pState->bDevMode = IsDlgButtonChecked(hWnd, 1007) == 1;// devmode
 
         pState->displaySettings.width = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.width;
@@ -3042,8 +3043,8 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
 
         // Get selected level & Save settings
         HWND hCBLevelList = GetDlgItem(hWnd, 1001);
-        curSelIdx = SendMessage(hCBLevelList, LB_GETCURSEL, 0, 0);
-        if ( SendMessage(hCBLevelList, LB_GETTEXT, curSelIdx, (LPARAM)pState->aCurLevelFilename) != -1 )
+        curSelIdx = ListBox_GetCurSel(hCBLevelList);
+        if ( ListBox_GetText(hCBLevelList, curSelIdx, pState->aCurLevelFilename) != -1 )
         {
             wuRegistry_SaveStr("Display", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].displayDevice.aDriverName);
             wuRegistry_SaveStr("3D Device", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aDevices[pState->displaySettings.device3DNum].deviceDescription);
@@ -3064,7 +3065,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             wuRegistry_SaveInt("Debug Mode", pState->outputMode);
             wuRegistry_SaveInt("Verbosity", pState->logLevel);
 
-            wuRegistry_SaveStr("Install Path", pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path' 
+            wuRegistry_SaveStr("Install Path", pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path'
             wuRegistry_SaveInt("Performance Level", pState->performanceLevel);
             wuRegistry_SaveInt("HiPoly", sithModel_IsHiPolyEnabled()); // Added
 
@@ -3083,7 +3084,7 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
     HWND hCB3DDriver    = GetDlgItem(hDlg, 1031);
 
     HWND hCBDisplayMode = GetDlgItem(hDlg, 1029);
-    SendMessage(hCBDisplayMode, CB_RESETCONTENT, 0, 0);
+    ComboBox_ResetContent(hCBDisplayMode);
 
     StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum];
     if ( !pDisplay->displayDevice.bHAL )
@@ -3113,18 +3114,18 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
     CHAR aDriverName[128] = { 0 };
     GetWindowText(hCB3DDriver, aDriverName, STD_ARRAYLEN(aDriverName));
 
-    SendMessage(hCB3DDriver, CB_RESETCONTENT, 0, 0);
+    ComboBox_ResetContent(hCB3DDriver);
     for ( size_t deviceNum = 0; deviceNum < pDisplay->numDevices; ++deviceNum )
     {
         STD_FORMAT(std_g_genBuffer, "%s", pDisplay->aDevices[deviceNum].deviceDescription);
 
-        int itemIdx = SendMessage(hCB3DDriver, CB_ADDSTRING, 0, (LPARAM)std_g_genBuffer);
-        SendMessage(hCB3DDriver, CB_SETITEMDATA, itemIdx, deviceNum);
+        int itemIdx = ComboBox_AddString(hCB3DDriver, std_g_genBuffer);
+        ComboBox_SetItemData(hCB3DDriver, itemIdx, deviceNum);
 
         // Select item in cb list
         if ( strcmp(aDriverName, std_g_genBuffer) == 0 || pConfig->displaySettings.device3DNum == deviceNum )
         {
-            SendMessage(hCB3DDriver, CB_SETCURSEL, itemIdx, 0);
+            ComboBox_SetCurSel(hCB3DDriver, itemIdx);
             pConfig->displaySettings.device3DNum = deviceNum;
             bDriverSet = true;
         }
@@ -3132,8 +3133,9 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
 
     if ( !bDriverSet )
     {
+        // Select first element in list
         pConfig->displaySettings.device3DNum = 0;
-        SendMessage(hCB3DDriver, CB_SETCURSEL, 0, 0);
+        ComboBox_SetCurSel(hCB3DDriver, 0);
     }
 
     // Populate display mode combo box list (resolutions) and select 
@@ -3150,15 +3152,15 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
             if ( JonesMain_CurDisplaySupportsBPP(&pConfig->displaySettings, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp) )
             {
                 STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp);  // Changed: Moved in this scope
-                int itemIdx = SendMessage(hCBDisplayMode, CB_ADDSTRING, 0, (LPARAM)std_g_genBuffer);
-                SendMessage(hCBDisplayMode, CB_SETITEMDATA, itemIdx, modeNum);
+                int itemIdx = ComboBox_AddString(hCBDisplayMode, std_g_genBuffer);
+                ComboBox_SetItemData(hCBDisplayMode, itemIdx, modeNum);
 
                 // Select mode
                 if ( pDisplay->aModes[modeNum].rasterInfo.width == JonesMain_curVideoMode.rasterInfo.width
                     && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
                     && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
                 {
-                    SendMessage(hCBDisplayMode, CB_SETCURSEL, itemIdx, 0);
+                    ComboBox_SetCurSel(hCBDisplayMode, itemIdx);
                     bDriverSet = true;
                 }
             }
@@ -3167,7 +3169,7 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
 
     if ( !bDriverSet )
     {
-        SendMessage(hCBDisplayMode, CB_SETCURSEL, 0, 0);
+        ComboBox_SetCurSel(hCBDisplayMode, 0);
     }
 }
 
