@@ -1,5 +1,6 @@
 #ifndef W32UTIL_WUREGISTRY_H
 #define W32UTIL_WUREGISTRY_H
+#define STRICT
 #include <Windows.h>
 #include <j3dcore/j3d.h>
 #include <w32util/RTI/addresses.h>

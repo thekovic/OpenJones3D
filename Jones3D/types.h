@@ -1,5 +1,6 @@
 #ifndef JONES3D_TYPES_H
 #define JONES3D_TYPES_H
+#define STRICT
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <stdint.h>

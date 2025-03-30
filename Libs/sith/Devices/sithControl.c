@@ -201,7 +201,7 @@ void J3DAPI sithControl_RegisterKeyFunction(SithControlFunction functionId)
 
 void J3DAPI sithControl_BindControl(SithControlFunction functionId, size_t controlId, SithControlBindFlag flags)
 {
-    SITH_ASSERTREL(functionId < SITHCONTROL_MAXFUNCTIONS);
+    SITH_ASSERTREL((size_t)functionId < SITHCONTROL_MAXFUNCTIONS);
     SITH_ASSERTREL(controlId < STDCONTROL_MAX_KEYID);
 
     if ( (aControlFlags[functionId] & SITHCONTROLFUNCTION_REGISTERED) != 0 )
@@ -222,7 +222,7 @@ void J3DAPI sithControl_BindControl(SithControlFunction functionId, size_t contr
 
 SithControlBinding* J3DAPI sithControl_BindAxis(SithControlFunction functionId, size_t axis, SithControlBindFlag flags)
 {
-    SITH_ASSERTREL(functionId < SITHCONTROL_MAXFUNCTIONS);
+    SITH_ASSERTREL((size_t)functionId < SITHCONTROL_MAXFUNCTIONS);
 
     if ( !stdControl_TestAxisFlag(axis, STDCONTROL_AXIS_REGISTERED) )
     {

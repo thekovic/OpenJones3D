@@ -1114,6 +1114,7 @@ int J3DAPI sithCommand_Print(const SithConsoleCommand* pFunc, const char* pArg)
     {
         SITHCONSOLE_PRINTF("print %s", sithCogFunction_IsPrintEnabled() ? "on" : "off");
     }
+    return 1;
 }
 
 const char* J3DAPI sithCommand_CipherText(const char* pText)

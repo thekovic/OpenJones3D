@@ -420,7 +420,6 @@ int J3DAPI sithInventory_IsInventoryAvailable(const SithThing* pThing, size_t ty
     SITH_ASSERTREL(typeId < STD_ARRAYLEN(sithInventory_g_aTypes));
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
 
-
     if ( pThing->thingInfo.actorInfo.pPlayer->aItems == NULL || (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) == 0 ) // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems == NULL ???
     {
         return 0;

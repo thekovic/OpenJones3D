@@ -872,7 +872,7 @@ const char* sithGetCurrentWorldSaveName(void)
             return sithWorld_g_pCurrentWorld->aName;
         }
 
-        if ( !strncmpi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aFilename, 6u) )
+        if ( strneqi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aFilename, 6u) )
         {
             break;
         }
