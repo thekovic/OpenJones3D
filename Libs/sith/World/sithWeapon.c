@@ -736,7 +736,7 @@ void J3DAPI sithWeapon_DamageWeapon(SithThing* pThing, const SithThing* pPurpetr
 int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThing, SithCollision* pCollision, int a5)
 {
 
-    if ( (pThing->flags & 4) != 0 )
+    if ( (pThing->flags & SITH_TF_NOWEAPONCOLLIDE) != 0 )
     {
         return 0;
     }
