@@ -69,7 +69,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
 int J3DAPI sithPuppet_WriteStaticPuppetsListText(const SithWorld* pWorld); // Added: From debug
 int J3DAPI sithPuppet_ReadStaticPuppetsListText(SithWorld* pWorld, int bSkip);
 
-int J3DAPI sithPuppet_WriteStaticPuppetsListBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithPuppet_WriteStaticPuppetsListBinary(tFileHandle fh, const SithWorld* pWorld);
 int J3DAPI sithPuppet_ReadStaticPuppetsListBinary(tFileHandle fh, SithWorld* pWorld);
 
 SithPuppetClass* J3DAPI sithPuppet_LoadPuppetClass(const char* pFilename);
@@ -81,7 +81,7 @@ void J3DAPI sithPuppet_FreeWorldPuppets(SithWorld* pWorld);
 int J3DAPI sithPuppet_WriteStaticKeyframesListText(const SithWorld* pWorld); // Added: From debug version
 int J3DAPI sithPuppet_ReadStaticKeyframesListText(SithWorld* pWorld, int bSkip);
 
-int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, const SithWorld* pWorld);
 int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* pWorld);
 
 rdKeyframe* J3DAPI sithPuppet_GetKeyframeByIndex(int index);

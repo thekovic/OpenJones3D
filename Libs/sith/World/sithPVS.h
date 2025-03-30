@@ -9,9 +9,11 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI sithPVS_LoadText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithPVS_WriteBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithPVS_LoadBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithPVS_WritePVSText(const SithWorld* pWorld); // Added from debug
+int J3DAPI sithPVS_ReadPVSText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithPVS_WritePVSBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithPVS_ReadPVSBinary(tFileHandle fh, SithWorld* pWorld);
 void J3DAPI sithPVS_SetTable(uint8_t* paAdjoinTable, const uint8_t* aElements, size_t numAdjoints);
 
 // Helper hooking functions

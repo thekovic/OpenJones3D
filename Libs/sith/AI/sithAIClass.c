@@ -21,9 +21,9 @@ void sithAIClass_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithAIClass_Startup);
     J3D_HOOKFUNC(sithAIClass_Shutdown);
-    J3D_HOOKFUNC(sithAIClass_ReadAIClassesText);
-    J3D_HOOKFUNC(sithAIClass_WriteAIClassesBinary);
-    J3D_HOOKFUNC(sithAIClass_ReadAIClassesBinary);
+    J3D_HOOKFUNC(sithAIClass_ReadStaticAIClassesListText);
+    J3D_HOOKFUNC(sithAIClass_WriteStaticAIClassesListBinary);
+    J3D_HOOKFUNC(sithAIClass_ReadStaticAIClassesListBinary);
     J3D_HOOKFUNC(sithAIClass_AllocWorldAIClasses);
     J3D_HOOKFUNC(sithAIClass_FreeWorldAIClasses);
     J3D_HOOKFUNC(sithAIClass_Load);
@@ -54,7 +54,7 @@ void sithAIClass_Shutdown(void)
     sithAIClass_g_pHashtable = NULL;
 }
 
-int J3DAPI sithAIClass_WriteAIClassesText(const SithWorld* pWorld)
+int J3DAPI sithAIClass_WriteStaticAIClassesListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("######### AI Classes ###########\n")
         || stdConffile_WriteLine("Section: AICLASS\n\n")
@@ -74,7 +74,7 @@ int J3DAPI sithAIClass_WriteAIClassesText(const SithWorld* pWorld)
     return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
 }
 
-int J3DAPI sithAIClass_ReadAIClassesText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithAIClass_ReadStaticAIClassesListText(SithWorld* pWorld, int bSkip)
 {
     if ( bSkip )
     {
@@ -116,7 +116,7 @@ int J3DAPI sithAIClass_ReadAIClassesText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithAIClass_WriteAIClassesBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithAIClass_WriteStaticAIClassesListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numAIClasses; ++i )
     {
@@ -129,7 +129,7 @@ int J3DAPI sithAIClass_WriteAIClassesBinary(tFileHandle fh, SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithAIClass_ReadAIClassesBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithAIClass_ReadStaticAIClassesListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     size_t numAIClasses = pWorld->numAIClasses;
     if ( sithAIClass_AllocWorldAIClasses(pWorld, pWorld->sizeAIClasses) )

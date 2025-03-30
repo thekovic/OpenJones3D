@@ -1328,12 +1328,12 @@ typedef struct sSithWorld SithWorld;
 typedef int (J3DAPI* SithEventProcess)(int, SithEventParams*);
 typedef int (J3DAPI* SithAIInstinctFunc)(SithAIControlBlock*, SithAIInstinct*, SithAIInstinctState*, SithAIEventType, void*);
 typedef int (J3DAPI* CollisionHandlerThing)(SithThing*, SithThing*, SithCollision*, int);
-typedef int (J3DAPI* SithWorldSectionParseFunc)(SithWorld* pWorld, int bSkip);
+typedef int (J3DAPI* SithWorldTextSectionParseFunc)(SithWorld* pWorld, int bSkip);
 typedef int (J3DAPI* SithConsoleFunction)(const SithConsoleCommand*, const char*);
 typedef int (J3DAPI* CollisionHandlerSurface)(SithThing*, SithSurface*, SithCollision*);
 typedef int (J3DAPI* SithControlCallback)(SithThing* pPlayerThing, float secDeltaTime);
-typedef int (J3DAPI* CndSectionReadFunc)(tFileHandle fh, SithWorld* pWorld);
-typedef int (J3DAPI* CndSectionWriteFunc)(tFileHandle fh, SithWorld* pWorld);
+typedef int (J3DAPI* SithWorldBinarySectionSectionReadFunc)(tFileHandle fh, SithWorld* pWorld);
+typedef int (J3DAPI* SithWorldBinarySectionSectionWriteFunc)(tFileHandle fh, const SithWorld* pWorld);
 typedef void (J3DAPI* SithCogFunctionType)(SithCog*);
 typedef int (J3DAPI* SithMessageProcessFunc)(const SithMessage*);
 typedef int (J3DAPI* SithGameSaveCallback)(DPID idTo, unsigned int outstream);
@@ -2816,11 +2816,11 @@ typedef struct sSithVoiceSubtitleInfo
 } SithVoiceSubtitleInfo;
 static_assert(sizeof(SithVoiceSubtitleInfo) == 588, "sizeof(SithVoiceSubtitleInfo) == 588");
 
-typedef struct sSithWorldNdyParseHandler
+typedef struct sSithWorldTextSectionParseHandler
 {
-    char aSectionName[64];
-    SithWorldSectionParseFunc pfHandler;
-} SithWorldNdyParseHandler;
+    char aName[64];
+    SithWorldTextSectionParseFunc pfHandler;
+} SithWorldTextSectionParseHandler;
 
 typedef struct sSithAIAwarenessSector
 {
@@ -3024,12 +3024,12 @@ typedef struct sCndAIControlInfo
     int numFrames;
 } CndAIControlInfo;
 
-typedef struct sCndSectionParser
+typedef struct sSithWorldBinarySectionParser
 {
-    const char* pSection;
-    const CndSectionReadFunc pfRead;
-    const CndSectionWriteFunc pfWrite;
-} CndSectionParser;
+    const char* pName;
+    const SithWorldBinarySectionSectionReadFunc pfRead;
+    const SithWorldBinarySectionSectionWriteFunc pfWrite;
+} SithWorldBinarySectionParser;
 
 typedef struct sCndSurfaceVertInfo
 {

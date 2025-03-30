@@ -14,11 +14,11 @@ J3D_EXTERN_C_START
 int sithAIClass_Startup(void);
 void sithAIClass_Shutdown(void);
 
-int J3DAPI sithAIClass_WriteAIClassesText(const SithWorld* pWorld); // Added: From debug version
-int J3DAPI sithAIClass_ReadAIClassesText(SithWorld* pWorld, int bSkip);
+int J3DAPI sithAIClass_WriteStaticAIClassesListText(const SithWorld* pWorld); // Added: From debug version
+int J3DAPI sithAIClass_ReadStaticAIClassesListText(SithWorld* pWorld, int bSkip);
 
-int J3DAPI sithAIClass_WriteAIClassesBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithAIClass_ReadAIClassesBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithAIClass_WriteStaticAIClassesListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithAIClass_ReadStaticAIClassesListBinary(tFileHandle fh, SithWorld* pWorld);
 
 int J3DAPI sithAIClass_AllocWorldAIClasses(SithWorld* pWorld, size_t numClasses);
 void J3DAPI sithAIClass_FreeWorldAIClasses(SithWorld* pWorld);

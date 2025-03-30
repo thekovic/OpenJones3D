@@ -19,9 +19,9 @@ void J3DAPI sithTemplate_FreeWorldTemplates(SithWorld* pWorld);
 SithThing* J3DAPI sithTemplate_GetTemplateByIndex(int idx);
 int J3DAPI sithTemplate_GetTemplateIndex(const SithThing* pTemplate);
 
-int J3DAPI sithTemplate_ReadThingTemplateListText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithTemplate_WriteThingTemplateListBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithTemplate_ReadThingTemplateListBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithTemplate_ReadThingTemplatesListText(SithWorld* pWorld, int bSkip);
+int J3DAPI sithTemplate_WriteThingTemplatesListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithTemplate_ReadThingTemplatesListBinary(tFileHandle fh, SithWorld* pWorld);
 
 int J3DAPI sithTemplate_LoadMasterFile(const char* pFilename); // Added: From debug version
 void sithTemplate_FreeMasterFile(void); // Added: From debug version

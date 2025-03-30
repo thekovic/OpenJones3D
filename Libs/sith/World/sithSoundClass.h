@@ -14,7 +14,8 @@ void sithSoundClass_Shutdown(void);
 
 int J3DAPI sithSoundClass_WriteSoundClassesListText(const SithWorld* pWorld); // Added: From debug version
 int J3DAPI sithSoundClass_ReadSoundClassesListText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithSoundClass_WriteSoundClassesListBinary(tFileHandle fh, SithWorld* pWorld);
+
+int J3DAPI sithSoundClass_WriteSoundClassesListBinary(tFileHandle fh, const SithWorld* pWorld);
 int J3DAPI sithSoundClass_ReadSoundClassesListBinary(tFileHandle fh, SithWorld* pWorld);
 
 SithSoundClass* J3DAPI sithSoundClass_Load(SithWorld* pWorld, const char* pName);

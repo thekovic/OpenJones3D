@@ -285,12 +285,12 @@ void sithThing_InstallHooks(void)
     J3D_HOOKFUNC(sithThing_DetachAttachedThings);
     J3D_HOOKFUNC(sithThing_PurgeGarbageThings);
 
-    J3D_HOOKFUNC(sithThing_LoadThingsText);
-    J3D_HOOKFUNC(sithThing_WriteThingsBinary);
-    J3D_HOOKFUNC(sithThing_LoadThingsBinary);
+    J3D_HOOKFUNC(sithThing_ReadStaticThingsListText);
+    J3D_HOOKFUNC(sithThing_WriteStaticThingsListBinary);
+    J3D_HOOKFUNC(sithThing_ReadStaticThingsListBinary);
 
-    // J3D_HOOKFUNC(sithThing_WriteThingListBinary);
-    // J3D_HOOKFUNC(sithThing_LoadThingListBinary);
+    // J3D_HOOKFUNC(sithThing_WriteThingsListBinary);
+    // J3D_HOOKFUNC(sithThing_ReadThingsListBinary);
 
     J3D_HOOKFUNC(sithThing_ParseArg);
     J3D_HOOKFUNC(sithThing_ParseThingArg);
@@ -545,29 +545,29 @@ void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld)
     J3D_TRAMPOLINE_CALL(sithThing_PurgeGarbageThings, pWorld);
 }*/
 
-//int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
+//int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_LoadThingsText, pWorld, bSkip);
+//    return J3D_TRAMPOLINE_CALL(sithThing_ReadStaticThingsListText, pWorld, bSkip);
 //}
 //
-//int J3DAPI sithThing_WriteThingsBinary(tFileHandle fh, SithWorld* pWorld)
+//int J3DAPI sithThing_WriteStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_WriteThingsBinary, fh, pWorld);
+//    return J3D_TRAMPOLINE_CALL(sithThing_WriteStaticThingsListBinary, fh, pWorld);
 //}
 //
-//int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
+//int J3DAPI sithThing_ReadStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_LoadThingsBinary, fh, pWorld);
+//    return J3D_TRAMPOLINE_CALL(sithThing_ReadStaticThingsListBinary, fh, pWorld);
 //}
 
-int J3DAPI sithThing_WriteThingListBinary(tFileHandle fh, SithWorld* pWorld, unsigned int numThings, SithThing* aThings)
+int J3DAPI sithThing_WriteThingsListBinary(tFileHandle fh, const SithWorld* pWorld, size_t numThings, const SithThing* aThings)
 {
-    return J3D_TRAMPOLINE_CALL(sithThing_WriteThingListBinary, fh, pWorld, numThings, aThings);
+    return J3D_TRAMPOLINE_CALL(sithThing_WriteThingsListBinary, fh, pWorld, numThings, aThings);
 }
 
-int J3DAPI sithThing_LoadThingListBinary(tFileHandle fh, SithWorld* pWorld, unsigned int numThings, SithThing* aThings, void (J3DAPI* pfInitThingFunc)(SithThing*))
+int J3DAPI sithThing_ReadThingsListBinary(tFileHandle fh, SithWorld* pWorld, size_t numThings, SithThing* aThings, void (J3DAPI* pfInitThingFunc)(SithThing*))
 {
-    return J3D_TRAMPOLINE_CALL(sithThing_LoadThingListBinary, fh, pWorld, numThings, aThings, pfInitThingFunc);
+    return J3D_TRAMPOLINE_CALL(sithThing_ReadThingsListBinary, fh, pWorld, numThings, aThings, pfInitThingFunc);
 }
 //
 //int J3DAPI sithThing_ParseArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing)
@@ -3062,7 +3062,7 @@ void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld)
     }
 }
 
-int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
 {
     SITH_ASSERTREL(pWorld != NULL);
     sithThing_curSignature = 1;
@@ -3107,12 +3107,12 @@ int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
 }
 
 
-int J3DAPI sithThing_WriteThingsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithThing_WriteStaticThingsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
-    return sithThing_WriteThingListBinary(fh, pWorld, pWorld->numThings, pWorld->aThings);
+    return sithThing_WriteThingsListBinary(fh, pWorld, pWorld->numThings, pWorld->aThings);
 }
 
-int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithThing_ReadStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     size_t numThings = pWorld->numThings; // Note,sithThing_AllocWorldThings doesn't reset numThings to 0 but cache it anyway
     if ( sithThing_AllocWorldThings(pWorld, numThings) )
@@ -3120,7 +3120,7 @@ int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
         return 1;
     }
 
-    int error = sithThing_LoadThingListBinary(fh, pWorld, numThings, pWorld->aThings, NULL);
+    int error = sithThing_ReadThingsListBinary(fh, pWorld, numThings, pWorld->aThings, NULL);
     if ( error )
     {
         return error;

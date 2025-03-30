@@ -24,9 +24,9 @@ static size_t sithSector_numModifiedSectors = 0; // Added Init to 0
 
 void sithSector_InstallHooks(void)
 {
-    J3D_HOOKFUNC(sithSector_LoadText);
-    J3D_HOOKFUNC(sithSector_WriteBinary);
-    J3D_HOOKFUNC(sithSector_LoadBinary);
+    J3D_HOOKFUNC(sithSector_ReadSectorsListText);
+    J3D_HOOKFUNC(sithSector_WriteSectorsListBinary);
+    J3D_HOOKFUNC(sithSector_ReadSectorsListBinary);
     J3D_HOOKFUNC(sithSector_ValidateSectorPointer);
     J3D_HOOKFUNC(sithSector_AllocWorldSectors);
     J3D_HOOKFUNC(sithSector_ResetAllSectors);
@@ -46,14 +46,13 @@ void sithSector_InstallHooks(void)
 }
 
 void sithSector_ResetGlobals(void)
-{
-}
+{}
 
-int J3DAPI sithSector_WriteText(const SithWorld* pWorld)
+int J3DAPI sithSector_WriteSectorsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("###### Sector information ######\n")
-      || stdConffile_WriteLine("Section: SECTORS\n\n")
-      || stdConffile_Printf("World sectors %d\n\n", pWorld->numSectors) )
+        || stdConffile_WriteLine("Section: SECTORS\n\n")
+        || stdConffile_Printf("World sectors %d\n\n", pWorld->numSectors) )
     {
         return 1;
     }
@@ -71,14 +70,14 @@ int J3DAPI sithSector_WriteText(const SithWorld* pWorld)
             pSec->extraLight.red,
             pSec->extraLight.green,
             pSec->extraLight.blue)
-          || stdConffile_Printf("TINT\t%.2f\t%.2f\t%.2f\n", pSec->tint.red, pSec->tint.green, pSec->tint.blue)
-          || stdConffile_Printf("AVERAGE LIGHT INTENSITY\t%.4f\t%.4f\t%.4f\n", pSec->light.color.red, pSec->light.color.green, pSec->light.color.blue)
-          || stdConffile_Printf("AVERAGE LIGHT POSITION\t%f\t%f\t%f\n", pSec->light.pos.x, pSec->light.pos.y, pSec->light.pos.z)
-          || stdConffile_Printf("AVERAGE LIGHT FALLOFF\t%f\t%f\n", pSec->light.minRadius, pSec->light.maxRadius)
-          || stdConffile_Printf(
-              "BOUNDBOX\t%f %f %f %f %f %f\n", pSec->boundBox.v0.x, pSec->boundBox.v0.y, pSec->boundBox.v0.z, pSec->boundBox.v1.x, pSec->boundBox.v1.y, pSec->boundBox.v1.z)
-          || (pSec->flags & SITH_SECTOR_HASCOLLIDEBOX) != 0
-          && stdConffile_Printf("COLLIDEBOX\t%f %f %f %f %f %f\n", pSec->collideBox.v0.x, pSec->collideBox.v0.y, pSec->collideBox.v0.z, pSec->collideBox.v1.x, pSec->collideBox.v1.y, pSec->collideBox.v1.z) )
+            || stdConffile_Printf("TINT\t%.2f\t%.2f\t%.2f\n", pSec->tint.red, pSec->tint.green, pSec->tint.blue)
+            || stdConffile_Printf("AVERAGE LIGHT INTENSITY\t%.4f\t%.4f\t%.4f\n", pSec->light.color.red, pSec->light.color.green, pSec->light.color.blue)
+            || stdConffile_Printf("AVERAGE LIGHT POSITION\t%f\t%f\t%f\n", pSec->light.pos.x, pSec->light.pos.y, pSec->light.pos.z)
+            || stdConffile_Printf("AVERAGE LIGHT FALLOFF\t%f\t%f\n", pSec->light.minRadius, pSec->light.maxRadius)
+            || stdConffile_Printf(
+                "BOUNDBOX\t%f %f %f %f %f %f\n", pSec->boundBox.v0.x, pSec->boundBox.v0.y, pSec->boundBox.v0.z, pSec->boundBox.v1.x, pSec->boundBox.v1.y, pSec->boundBox.v1.z)
+            || (pSec->flags & SITH_SECTOR_HASCOLLIDEBOX) != 0
+            && stdConffile_Printf("COLLIDEBOX\t%f %f %f %f %f %f\n", pSec->collideBox.v0.x, pSec->collideBox.v0.y, pSec->collideBox.v0.z, pSec->collideBox.v1.x, pSec->collideBox.v1.y, pSec->collideBox.v1.z) )
         {
             return 1;
         }
@@ -93,14 +92,14 @@ int J3DAPI sithSector_WriteText(const SithWorld* pWorld)
         }
 
         if ( (pSec->thrust.x != 0.0f || pSec->thrust.y != 0.0f || pSec->thrust.z != 0.0f)
-          && stdConffile_Printf("THRUST\t%f %f %f\n", pSec->thrust.x, pSec->thrust.y, pSec->thrust.z) )
+            && stdConffile_Printf("THRUST\t%f %f %f\n", pSec->thrust.x, pSec->thrust.y, pSec->thrust.z) )
         {
             return 1;
         }
 
         if ( stdConffile_Printf("CENTER\t%f %f %f\n", pSec->center.x, pSec->center.y, pSec->center.z)
-          || stdConffile_Printf("RADIUS\t%f\n", pSec->radius)
-          || stdConffile_Printf("VERTICES\t%d\n", pSec->numVertices) )
+            || stdConffile_Printf("RADIUS\t%f\n", pSec->radius)
+            || stdConffile_Printf("VERTICES\t%d\n", pSec->numVertices) )
         {
             return 1;
         }
@@ -123,7 +122,7 @@ int J3DAPI sithSector_WriteText(const SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithSector_LoadText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithSector_ReadSectorsListText(SithWorld* pWorld, int bSkip)
 {
     if ( bSkip )
     {
@@ -198,20 +197,20 @@ int J3DAPI sithSector_LoadText(SithWorld* pWorld, int bSkip)
 
         // Optional tint
         if ( !stdConffile_ReadLine()
-          || sscanf_s(stdConffile_g_aLine, " tint %f %f %f", &pSec->tint.red, &pSec->tint.green, &pSec->tint.blue) == 3 && !stdConffile_ReadLine() )
+            || sscanf_s(stdConffile_g_aLine, " tint %f %f %f", &pSec->tint.red, &pSec->tint.green, &pSec->tint.blue) == 3 && !stdConffile_ReadLine() )
         {
             goto eof_error;
         }
 
         if ( sscanf_s(stdConffile_g_aLine, " average light intensity %f %f %f", &pSec->light.color.red, &pSec->light.color.green, &pSec->light.color.blue) == 3
-          && !stdConffile_ReadLine() )
+            && !stdConffile_ReadLine() )
         {
             goto eof_error;
         }
 
         // Optional average light position
         if ( sscanf_s(stdConffile_g_aLine, " average light position %f %f %f", &pSec->light.pos.x, &pSec->light.pos.y, &pSec->light.pos.z) == 3
-          && !stdConffile_ReadLine() )
+            && !stdConffile_ReadLine() )
         {
             goto eof_error;
         }
@@ -349,7 +348,7 @@ alloc_error:
     return 1;
 }
 
-int J3DAPI sithSector_WriteBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSector_WriteSectorsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     size_t sizes = sizeof(CndSectorInfo) * pWorld->numSectors;
     CndSectorInfo* aSectorInfos = (CndSectorInfo*)STDMALLOC(sizes);
@@ -441,7 +440,7 @@ int J3DAPI sithSector_WriteBinary(tFileHandle fh, SithWorld* pWorld)
     return nWritten != sizes;
 }
 
-int J3DAPI sithSector_LoadBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSector_ReadSectorsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     int32_t* aVerts = NULL;
 
@@ -645,9 +644,9 @@ SithSector* J3DAPI sithSector_FindSectorAtPos(const SithWorld* pWorld, const rdV
     {
         SithSector* pSec = &pWorld->aSectors[i];
         if ( pSec->boundBox.v0.x <= (double)pos->x
-          && pSec->boundBox.v1.x >= (double)pos->x
-          && pSec->boundBox.v0.y <= (double)pos->y
-          && pSec->boundBox.v1.y >= (double)pos->y )
+            && pSec->boundBox.v1.x >= (double)pos->x
+            && pSec->boundBox.v0.y <= (double)pos->y
+            && pSec->boundBox.v1.y >= (double)pos->y )
         {
             bool bInBounds = pSec->boundBox.v0.z <= (double)pos->z && pSec->boundBox.v1.z >= (double)pos->z;
             if ( bInBounds && sithIntersect_IsSphereInSector(pWorld, pos, /*radius=*/0.0f, pSec) )

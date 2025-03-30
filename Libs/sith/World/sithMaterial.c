@@ -31,9 +31,9 @@ void sithMaterial_InstallHooks(void)
     J3D_HOOKFUNC(sithMaterial_Startup);
     J3D_HOOKFUNC(sithMaterial_Shutdown);
     J3D_HOOKFUNC(sithMaterial_FreeWorldMaterials);
-    J3D_HOOKFUNC(sithMaterial_LoadMaterialsText);
-    J3D_HOOKFUNC(sithMaterial_WriteMaterialsBinary);
-    J3D_HOOKFUNC(sithMaterial_LoadMaterialsBinary);
+    J3D_HOOKFUNC(sithMaterial_ReadMaterialsListText);
+    J3D_HOOKFUNC(sithMaterial_WriteMaterialsListBinary);
+    J3D_HOOKFUNC(sithMaterial_ReadMaterialsListBinary);
     J3D_HOOKFUNC(sithMaterial_Load);
     J3D_HOOKFUNC(sithMaterial_GetMaterialByIndex);
     J3D_HOOKFUNC(sithMaterial_AllocWorldMaterials);
@@ -115,7 +115,7 @@ void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
     pWorld->apMatArray = NULL;
 }
 
-int J3DAPI sithMaterial_WriteMaterialsText(const SithWorld* pWorld)
+int J3DAPI sithMaterial_WriteMaterialsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("##### Material information #####\n")
         || stdConffile_WriteLine("SECTION: MATERIALS\n\n")
@@ -136,7 +136,7 @@ int J3DAPI sithMaterial_WriteMaterialsText(const SithWorld* pWorld)
     return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
 }
 
-int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
 {
     SITH_ASSERTREL(pWorld != ((void*)0));
     if ( bSkip )
@@ -204,7 +204,7 @@ int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithMaterial_WriteMaterialsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithMaterial_WriteMaterialsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     int bError             = 1;
     tFileHandle fhMat      = 0;
@@ -345,7 +345,7 @@ error:
     return bError;
 }
 
-int J3DAPI sithMaterial_LoadMaterialsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     int bError                 = 1;
     CndMaterialInfo* aMatInfos = NULL;

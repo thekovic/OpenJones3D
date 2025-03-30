@@ -160,7 +160,7 @@ int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip)
 }
 
 
-int J3DAPI sithSound_WriteSoundsListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSound_WriteSoundsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
     {

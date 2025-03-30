@@ -36,12 +36,12 @@ void sithSurface_InstallHooks(void)
     J3D_HOOKFUNC(sithSurface_ShowSectorAdjoin);
     J3D_HOOKFUNC(sithSurface_AllocWorldSurfaces);
     J3D_HOOKFUNC(sithSurface_FreeWorldSurfaces);
-    J3D_HOOKFUNC(sithSurface_WriteAdjoinsBinary);
-    J3D_HOOKFUNC(sithSurface_LoadAdjoinsBinary);
+    J3D_HOOKFUNC(sithSurface_WriteAdjoinsListBinary);
+    J3D_HOOKFUNC(sithSurface_ReadAdjoinsListBinary);
     J3D_HOOKFUNC(sithSurface_AllocWorldAdjoins);
-    J3D_HOOKFUNC(sithSurface_WriteSurfacesBinary);
-    J3D_HOOKFUNC(sithSurface_LoadSurfacesBinary);
-    J3D_HOOKFUNC(sithSurface_LoadSurfacesText);
+    J3D_HOOKFUNC(sithSurface_WriteSurfacesListBinary);
+    J3D_HOOKFUNC(sithSurface_ReadSurfacesListBinary);
+    J3D_HOOKFUNC(sithSurface_ReadSurfacesListText);
     J3D_HOOKFUNC(sithSurface_ValidateSurfacePointer);
     J3D_HOOKFUNC(sithSurface_ValidateWorldSurfaces);
     J3D_HOOKFUNC(sithSurface_HandleThingImpact);
@@ -146,7 +146,7 @@ void J3DAPI sithSurface_FreeWorldSurfaces(SithWorld* pWorld)
     pWorld->numAdjoins = 0;
 }
 
-int J3DAPI sithSurface_WriteAdjoinsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSurface_WriteAdjoinsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     size_t sizeAdjoins = sizeof(CndSurfaceAdjoin) * pWorld->numAdjoins;
     CndSurfaceAdjoin* aCndAdjoins = (CndSurfaceAdjoin*)STDMALLOC(sizeAdjoins);
@@ -170,7 +170,7 @@ int J3DAPI sithSurface_WriteAdjoinsBinary(tFileHandle fh, SithWorld* pWorld)
     return nWritten != sizeAdjoins;
 }
 
-int J3DAPI sithSurface_LoadAdjoinsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSurface_ReadAdjoinsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     size_t sizeAdjoins = sizeof(CndSurfaceAdjoin) * pWorld->numAdjoins;
     CndSurfaceAdjoin* aCndAdjoins = (CndSurfaceAdjoin*)STDMALLOC(sizeAdjoins);
@@ -226,7 +226,7 @@ int J3DAPI sithSurface_AllocWorldAdjoins(SithWorld* pWorld, size_t numAdjoins)
     return 0;
 }
 
-int J3DAPI sithSurface_WriteAdjoinsText(const SithWorld* pWorld)
+int J3DAPI sithSurface_WriteAdjoinsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("#------ Adjoins Subsection -----\n")
         || stdConffile_Printf("World adjoins %d\n", pWorld->numAdjoins)
@@ -253,7 +253,7 @@ int J3DAPI sithSurface_WriteAdjoinsText(const SithWorld* pWorld)
     return stdConffile_WriteLine("\n") != 0;
 }
 
-int J3DAPI sithSurface_WriteSurfacesBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSurface_WriteSurfacesListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     size_t sizeSurfaces = sizeof(CndSurfaceInfo) * pWorld->numSurfaces;
     CndSurfaceInfo* aCndSurfaces = (CndSurfaceInfo*)STDMALLOC(sizeSurfaces);
@@ -359,7 +359,7 @@ int J3DAPI sithSurface_WriteSurfacesBinary(tFileHandle fh, SithWorld* pWorld)
     return nWritten != sizeVerts;
 }
 
-int J3DAPI sithSurface_LoadSurfacesBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSurface_ReadSurfacesListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     CndSurfaceVertInfo* aCndSurfVerts = NULL; // Added: Init to null, fixes potential freeing unallocated mem when error occurs 
 
@@ -490,7 +490,7 @@ error:
     return 1;
 }
 
-int J3DAPI sithSurface_WriteSurfacesText(const SithWorld* pWorld)
+int J3DAPI sithSurface_WriteSurfacesListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("#----- Surfaces Subsection -----\n")
         || stdConffile_Printf("World surfaces %d\n", pWorld->numSurfaces)
@@ -604,8 +604,10 @@ int J3DAPI sithSurface_WriteSurfacesText(const SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithSurface_LoadSurfacesText(SithWorld* pWorld)
+int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
 {
+    J3D_UNUSED(bSkip);
+
     SITH_ASSERTREL(pWorld != NULL);
     SITH_ASSERTREL(pWorld->apMatArray != NULL);
 

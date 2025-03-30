@@ -105,11 +105,12 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing);
 void J3DAPI sithThing_DetachAttachedThings(SithThing* pThing);
 bool J3DAPI sithThing_IsThingAttachedToThing(SithThing* pThing); // Added
 
-int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithThing_WriteThingsBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithThing_WriteThingListBinary(tFileHandle fh, SithWorld* pWorld, unsigned int numThings, SithThing* aThings);
-int J3DAPI sithThing_LoadThingListBinary(tFileHandle fh, SithWorld* pWorld, unsigned int numThings, SithThing* aThings, void (J3DAPI* pfInitThingFunc)(SithThing*));
+int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithThing_WriteStaticThingsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithThing_ReadStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithThing_WriteThingsListBinary(tFileHandle fh, const SithWorld* pWorld, size_t numThings, const SithThing* aThings);
+int J3DAPI sithThing_ReadThingsListBinary(tFileHandle fh, SithWorld* pWorld, size_t numThings, SithThing* aThings, void (J3DAPI* pfInitThingFunc)(SithThing*));
 
 int J3DAPI sithThing_ParseArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing);
 

@@ -25,7 +25,7 @@ void J3DAPI sithSprite_FreeWorldSprites(SithWorld* pWorld);
 int J3DAPI sithSprite_WriteStaticSpritesListText(const SithWorld* pWorld); // Added: From debug version
 int J3DAPI sithSprite_ReadStaticSpritesListText(SithWorld* pWorld, int bSkip);
 
-int J3DAPI sithSprite_WriteStaticSpritesListBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSprite_WriteStaticSpritesListBinary(tFileHandle fh, const SithWorld* pWorld);
 int J3DAPI sithSprite_ReadStaticSpritesListBinary(tFileHandle fh, SithWorld* pWorld);
 
 // Helper hooking functions

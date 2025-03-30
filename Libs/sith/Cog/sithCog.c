@@ -84,9 +84,9 @@ void sithCog_InstallHooks(void)
     J3D_HOOKFUNC(sithCog_AllocWorldCogScripts);
     J3D_HOOKFUNC(sithCog_AllocWorldCogs);
     J3D_HOOKFUNC(sithCog_GetSymbolRefInitializer);
-    J3D_HOOKFUNC(sithCog_LoadText);
-    J3D_HOOKFUNC(sithCog_WriteBinary);
-    J3D_HOOKFUNC(sithCog_LoadBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogsListText);
+    J3D_HOOKFUNC(sithCog_WriteCogsListBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogsListBinary);
     J3D_HOOKFUNC(sithCog_ParseSymbolRef);
     J3D_HOOKFUNC(sithCog_LinkCog);
     J3D_HOOKFUNC(sithCog_Load);
@@ -102,9 +102,9 @@ void sithCog_InstallHooks(void)
     J3D_HOOKFUNC(sithCog_SectorSendMessageEx);
     J3D_HOOKFUNC(sithCog_SurfaceSendMessage);
     J3D_HOOKFUNC(sithCog_SurfaceSendMessageEx);
-    J3D_HOOKFUNC(sithCog_LoadCogScriptsText);
-    J3D_HOOKFUNC(sithCog_WriteCogScriptsBinary);
-    J3D_HOOKFUNC(sithCog_LoadCogScriptsBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogScriptsListText);
+    J3D_HOOKFUNC(sithCog_WriteCogScriptsListBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogScriptsListBinary);
     J3D_HOOKFUNC(sithCog_LoadScript);
     J3D_HOOKFUNC(sithCog_ProcessCog);
     J3D_HOOKFUNC(sithCog_ProcessCogs);
@@ -615,7 +615,7 @@ int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs)
     return 0;
 }
 
-int J3DAPI sithCog_WriteText(const SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("######### COG placement ########\n")
         || stdConffile_WriteLine("Section: cogs\n")
@@ -824,7 +824,7 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
     }
 }
 
-int J3DAPI sithCog_LoadText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithCog_ReadCogsListText(SithWorld* pWorld, int bSkip)
 {
     if ( bSkip )
     {
@@ -896,7 +896,7 @@ syntax_error:
     return 1;
 }
 
-int J3DAPI sithCog_WriteBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     uint32_t aSizes[2] = { 0 }; // leave uint32_t type
     for ( size_t i = 0; i < pWorld->numCogs; ++i )
@@ -987,7 +987,7 @@ error:
     return 1;
 }
 
-int J3DAPI sithCog_LoadBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_ReadCogsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     char (*aNames)[64] = NULL;
     char (*aValues)[SITHCOG_SYMVALUESTRLEN] = NULL;
@@ -1621,7 +1621,7 @@ int J3DAPI sithCog_SurfaceSendMessageEx(const SithSurface* pSurf, const SithThin
     return retVal;
 }
 
-int J3DAPI sithCog_WriteCogScriptsText(const SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogScriptsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("########## COG scripts #########\n")
         || stdConffile_WriteLine("Section: cogscripts\n")
@@ -1641,7 +1641,7 @@ int J3DAPI sithCog_WriteCogScriptsText(const SithWorld* pWorld)
     return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
 }
 
-int J3DAPI sithCog_LoadCogScriptsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithCog_ReadCogScriptsListText(SithWorld* pWorld, int bSkip)
 {
     SITH_ASSERTREL(pWorld != ((void*)0));
 
@@ -1692,7 +1692,7 @@ syntax_error:
     return 1;
 }
 
-int J3DAPI sithCog_WriteCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogScriptsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numCogScripts; ++i )
     {
@@ -1706,7 +1706,7 @@ int J3DAPI sithCog_WriteCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithCog_LoadCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_ReadCogScriptsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     const size_t numCogScripts = pWorld->numCogScripts; // Cache the num scripts as sithCog_AllocWorldCogScripts resets it to 0
     if ( sithCog_AllocWorldCogScripts(pWorld, pWorld->sizeCogScripts) )

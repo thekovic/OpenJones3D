@@ -28,32 +28,47 @@ J3D_EXTERN_C_START
 #define sithWorld_g_bLoading J3D_DECL_FAR_VAR(sithWorld_g_bLoading, int)
 // extern int sithWorld_g_bLoading;
 
-int J3DAPI sithWorld_Startup();
+int sithWorld_Startup(void);
 void sithWorld_Shutdown(void);
+
 void J3DAPI sithWorld_SetLoadProgressCallback(SithWorldLoadProgressCallback pfProgressCallback);
 void J3DAPI sithWorld_UpdateLoadProgress(float progress);
 int J3DAPI sithWorld_Load(SithWorld* pWorld, const char* pFilename);
 int J3DAPI sithWorld_LoadPostProcess(SithWorld* pWorld);
 int J3DAPI sithWorld_LoadEntryText(SithWorld* pWorld, const char* pFilename, int bSkipParsing);
 void J3DAPI sithWorld_Close(SithWorld* pWorld);
-SithWorld* sithWorld_New(void);
+
+SithWorld* sithWorld_NewEntry(void);
 void J3DAPI sithWorld_Free(SithWorld* pWorld);
-signed int J3DAPI sithWorld_NDYReadHeaderSection(SithWorld* pWorld, int bSkip);
-int J3DAPI sithWorld_NDYReadCopyrightSection(SithWorld* pWorld, int bSkip);
-void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, size_t* aMemUsed, size_t* aCount);
-int J3DAPI sithWorld_RegisterTextSectionParser(const char* aSectionName, SithWorldSectionParseFunc pfParseFunction);
+
+int J3DAPI sithWorld_ReadHeaderText(SithWorld* pWorld, int bSkip);
+int J3DAPI sithWorld_ReadCopyrightText(SithWorld* pWorld, int bSkip);
+
+void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, size_t(*aMemUsed)[17], size_t(*aCount)[17]);
+
+int J3DAPI sithWorld_RegisterTextSectionParser(const char* aSectionName, SithWorldTextSectionParseFunc pfParseFunction);
+
+void J3DAPI sithWorld_CalcSurfaceNormals(SithWorld* pWorld); // Added from debug
 void J3DAPI sithWorld_ResetRenderState(SithWorld* pWorld);
+void J3DAPI sithWorld_ResetGeoresource(SithWorld* pWorld); // Added from debug
+
 int J3DAPI sithWorld_ValidateWorld(const SithWorld* pWorld);
+uint32_t J3DAPI sithWorld_CalcWorldChecksum(SithWorld* pWorld, uint32_t seed); // Added from debug
+
 int J3DAPI sithWorld_InitPlayers(SithWorld* pWorld);
-int J3DAPI sithWorld_NDYReadSection(SithWorld* pWorld, const char* aSectionName, int bSkip);
-int J3DAPI sithWorld_NDYGetSectionParserIndex(const char* aSectionName);
-int J3DAPI sithWorld_NDYReadGeoresourceSection(SithWorld* pWorld, int bSkip);
-int J3DAPI sithWorld_CNDWriteGeoresourceSection(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithWorld_CNDReadGeoresourceSection(tFileHandle fh, SithWorld* pWorld);
-// local variable allocation has failed, the output may be wrong!
+int J3DAPI sithWorld_ReadTextSection(SithWorld* pWorld, const char* aSectionName, int bSkip);
+
+const char* sithWorld_GetCurReadSection(void); // Added from debug
+
+int J3DAPI sithWorld_GetTextSectionParserIndex(const char* aSectionName);
+
+int J3DAPI sithWorld_WriteGeoresourceText(const SithWorld* pWorld); // Added from debug
+int J3DAPI sithWorld_ReadGeoresourceText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithWorld_WriteGeoresourceBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithWorld_ReadGeoresourceBinary(tFileHandle fh, SithWorld* pWorld);
+
 int J3DAPI sithWorld_LoadEntryBinary(SithWorld* pWorld, const char* pFilePath);
-
-
 
 // Helper hooking functions
 void sithWorld_InstallHooks(void);

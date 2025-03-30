@@ -302,7 +302,7 @@ int J3DAPI sithSoundClass_ReadSoundClassesListText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithSoundClass_WriteSoundClassesListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSoundClass_WriteSoundClassesListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numSoundClasses; ++i )
     {

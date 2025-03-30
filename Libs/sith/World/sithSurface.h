@@ -15,15 +15,15 @@ void J3DAPI sithSurface_FreeWorldSurfaces(SithWorld* pWorld);
 
 int J3DAPI sithSurface_AllocWorldAdjoins(SithWorld* pWorld, size_t numAdjoins);
 
-int J3DAPI sithSurface_WriteAdjoinsBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithSurface_LoadAdjoinsBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithSurface_WriteAdjoinsText(const SithWorld* pWorld); // Added
+int J3DAPI sithSurface_WriteAdjoinsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithSurface_ReadAdjoinsListBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSurface_WriteAdjoinsListText(const SithWorld* pWorld); // Added from debug
 
-int J3DAPI sithSurface_WriteSurfacesBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithSurface_LoadSurfacesBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSurface_WriteSurfacesListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithSurface_ReadSurfacesListBinary(tFileHandle fh, SithWorld* pWorld);
 
-int J3DAPI sithSurface_WriteSurfacesText(const SithWorld* pWorld); // Added
-int J3DAPI sithSurface_LoadSurfacesText(SithWorld* pWorld);
+int J3DAPI sithSurface_WriteSurfacesListText(const SithWorld* pWorld); // Added
+int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip);
 
 int J3DAPI sithSurface_ValidateSurfacePointer(const SithSurface* pSurf);
 int J3DAPI sithSurface_ValidateWorldSurfaces(const SithWorld* pWorld);

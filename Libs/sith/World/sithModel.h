@@ -14,12 +14,12 @@ int sithModel_Startup(void);
 void sithModel_Shutdown(void);
 
 // Loading functions which reads NDY models section and loads models
-int J3DAPI sithModel_WriteModelsText(const SithWorld* pWorld); // Added
-int J3DAPI sithModel_LoadModelsText(SithWorld* pWorld, int bSkip);
+int J3DAPI sithModel_WriteStaticModelsListText(const SithWorld* pWorld); // Added
+int J3DAPI sithModel_ReadStaticModelsListText(SithWorld* pWorld, int bSkip);
 
 // Loading functions which reads CND models section and loads models
-int J3DAPI sithModel_WriteModelsBinary(tFileHandle fh, const SithWorld* pWorld);
-int J3DAPI sithModel_LoadModelsBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithModel_WriteStaticModelsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithModel_ReadStaticModelsListBinary(tFileHandle fh, SithWorld* pWorld);
 
 rdModel3* J3DAPI sithModel_Load(const char* pName, int bSkipDefault);
 

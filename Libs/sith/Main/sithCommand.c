@@ -339,7 +339,7 @@ int J3DAPI sithCommand_Memory(const SithConsoleCommand* pFunc, const char* pArg)
 
     size_t aMemUsed[17] = { 0 }; // Added: Init to 0
     size_t aCount[17]   = { 0 }; // Added: Init to 0
-    sithWorld_GetMemoryUsage(pWorld, aMemUsed, aCount);
+    sithWorld_GetMemoryUsage(pWorld, &aMemUsed, &aCount);
 
     size_t totalUsed = 0;
 

@@ -2482,7 +2482,7 @@ int J3DAPI sithPuppet_ReadStaticPuppetsListText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithPuppet_WriteStaticPuppetsListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithPuppet_WriteStaticPuppetsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numPuppetClasses; ++i )
     {
@@ -2781,7 +2781,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     int bError = 1;
     CndKeyframeMarker* aMarkers   = NULL;

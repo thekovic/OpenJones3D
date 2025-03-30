@@ -22,7 +22,8 @@ void sithSound_ShutdownSound(void);
 
 int J3DAPI sithSound_WriteSoundsListText(const SithWorld* pWorld); //Added: From debug version
 int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithSound_WriteSoundsListBinary(tFileHandle fh, SithWorld* pWorld);
+
+int J3DAPI sithSound_WriteSoundsListBinary(tFileHandle fh, const SithWorld* pWorld);
 int J3DAPI sithSound_ReadSoundsListBinary(tFileHandle fh, SithWorld* pWorld);
 
 void J3DAPI sithSound_FreeWorldSounds(SithWorld* pWorld);

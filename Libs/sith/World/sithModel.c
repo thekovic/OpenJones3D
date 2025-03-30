@@ -38,9 +38,9 @@ void sithModel_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithModel_Startup);
     J3D_HOOKFUNC(sithModel_Shutdown);
-    J3D_HOOKFUNC(sithModel_LoadModelsText);
-    J3D_HOOKFUNC(sithModel_WriteModelsBinary);
-    J3D_HOOKFUNC(sithModel_LoadModelsBinary);
+    J3D_HOOKFUNC(sithModel_ReadStaticModelsListText);
+    J3D_HOOKFUNC(sithModel_WriteStaticModelsListBinary);
+    J3D_HOOKFUNC(sithModel_ReadStaticModelsListBinary);
     J3D_HOOKFUNC(sithModel_FreeWorldModels);
     J3D_HOOKFUNC(sithModel_Load);
     J3D_HOOKFUNC(sithModel_GetModelMemUsage);
@@ -96,7 +96,7 @@ void sithModel_Shutdown(void)
     sithModel_bModelStartup = false;
 }
 
-int J3DAPI sithModel_WriteModelsText(const SithWorld* pWorld)
+int J3DAPI sithModel_WriteStaticModelsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("###### Models information ######\n")
         || stdConffile_WriteLine("Section: MODELS\n\n")
@@ -118,7 +118,7 @@ int J3DAPI sithModel_WriteModelsText(const SithWorld* pWorld)
     return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
 }
 
-int J3DAPI sithModel_LoadModelsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithModel_ReadStaticModelsListText(SithWorld* pWorld, int bSkip)
 {
     if ( bSkip )
     {
@@ -169,7 +169,7 @@ int J3DAPI sithModel_LoadModelsText(SithWorld* pWorld, int bSkip)
     }
 }
 
-int J3DAPI sithModel_WriteModelsBinary(tFileHandle fh, const SithWorld* pWorld)
+int J3DAPI sithModel_WriteStaticModelsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numModels; ++i )
     {
@@ -184,7 +184,7 @@ int J3DAPI sithModel_WriteModelsBinary(tFileHandle fh, const SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithModel_LoadModelsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithModel_ReadStaticModelsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     size_t numModels = pWorld->numModels; // Note, the num of models must be cached because it's set to 0 in sithModel_AllocWorldModels
     if ( sithModel_AllocWorldModels(pWorld, numModels) )

@@ -201,7 +201,7 @@ int J3DAPI sithSprite_ReadStaticSpritesListText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithSprite_WriteStaticSpritesListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithSprite_WriteStaticSpritesListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numSprites; ++i )
     {

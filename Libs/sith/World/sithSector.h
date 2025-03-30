@@ -9,11 +9,11 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI sithSector_WriteText(const SithWorld* pWorld); // Added
+int J3DAPI sithSector_WriteSectorsListText(const SithWorld* pWorld); // Added
+int J3DAPI sithSector_ReadSectorsListText(SithWorld* pWorld, int bSkip);
 
-int J3DAPI sithSector_LoadText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithSector_WriteBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithSector_LoadBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSector_WriteSectorsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithSector_ReadSectorsListBinary(tFileHandle fh, SithWorld* pWorld);
 
 int J3DAPI sithSector_ValidateSectorPointer(const SithWorld* pWorld, const SithSector* pSector);
 

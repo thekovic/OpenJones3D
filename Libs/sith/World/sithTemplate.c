@@ -50,9 +50,9 @@ void sithTemplate_InstallHooks(void)
     J3D_HOOKFUNC(sithTemplate_AllocWorldTemplates);
     J3D_HOOKFUNC(sithTemplate_GetTemplateByIndex);
     J3D_HOOKFUNC(sithTemplate_GetTemplateIndex);
-    J3D_HOOKFUNC(sithTemplate_ReadThingTemplateListText);
-    J3D_HOOKFUNC(sithTemplate_WriteThingTemplateListBinary);
-    J3D_HOOKFUNC(sithTemplate_ReadThingTemplateListBinary);
+    J3D_HOOKFUNC(sithTemplate_ReadThingTemplatesListText);
+    J3D_HOOKFUNC(sithTemplate_WriteThingTemplatesListBinary);
+    J3D_HOOKFUNC(sithTemplate_ReadThingTemplatesListBinary);
     J3D_HOOKFUNC(sithTemplate_AddTemplate);
     J3D_HOOKFUNC(sithTemplate_FreeWorldTemplates);
     J3D_HOOKFUNC(sithTemplate_Parse);
@@ -161,7 +161,7 @@ int J3DAPI sithTemplate_GetTemplateIndex(const SithThing* pTemplate)
     return -1;
 }
 
-int J3DAPI sithTemplate_ReadThingTemplateListText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithTemplate_ReadThingTemplatesListText(SithWorld* pWorld, int bSkip)
 {
     if ( bSkip )
     {
@@ -190,12 +190,12 @@ int J3DAPI sithTemplate_ReadThingTemplateListText(SithWorld* pWorld, int bSkip)
     return sithTemplate_ParseTemplateList(pWorld);
 }
 
-int J3DAPI sithTemplate_WriteThingTemplateListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithTemplate_WriteThingTemplatesListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
-    return sithThing_WriteThingListBinary(fh, pWorld, pWorld->numThingTemplates, pWorld->aThingTemplates);
+    return sithThing_WriteThingsListBinary(fh, pWorld, pWorld->numThingTemplates, pWorld->aThingTemplates);
 }
 
-int J3DAPI sithTemplate_ReadThingTemplateListBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithTemplate_ReadThingTemplatesListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     size_t numThingTemplates = pWorld->numThingTemplates;
     if ( sithTemplate_AllocWorldTemplates(pWorld, numThingTemplates) )
@@ -204,7 +204,7 @@ int J3DAPI sithTemplate_ReadThingTemplateListBinary(tFileHandle fh, SithWorld* p
     }
 
     pWorld->numThingTemplates = numThingTemplates;
-    return sithThing_LoadThingListBinary(fh, pWorld, numThingTemplates, pWorld->aThingTemplates, sithTemplate_AddTemplate);
+    return sithThing_ReadThingsListBinary(fh, pWorld, numThingTemplates, pWorld->aThingTemplates, sithTemplate_AddTemplate);
 }
 
 void J3DAPI sithTemplate_AddTemplate(SithThing* pTemplate)

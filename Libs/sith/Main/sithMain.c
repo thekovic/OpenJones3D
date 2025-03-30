@@ -39,6 +39,7 @@
 #include <rdroid/Math/rdVector.h>
 #include <rdroid/Primitives/rdPrimit3.h>
 
+#include <std/General/stdColor.h>
 #include <std/General/stdFileUtil.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdMemory.h>
@@ -284,7 +285,7 @@ int J3DAPI sithOpenStatic(const char* pFilename)
 {
     sithCloseStatic();
 
-    sithWorld_g_pStaticWorld = sithWorld_New();
+    sithWorld_g_pStaticWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pStaticWorld )
     {
         return 1;
@@ -303,7 +304,7 @@ int J3DAPI sithOpenStatic(const char* pFilename)
 
     // Failed to load world from cwd path, try from another path
     sithWorld_Free(sithWorld_g_pStaticWorld);
-    sithWorld_g_pStaticWorld = sithWorld_New();
+    sithWorld_g_pStaticWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pStaticWorld )
     {
         return 1;
@@ -334,7 +335,7 @@ void sithCloseStatic(void)
 
 int J3DAPI sithOpenNormal(const char* pWorldName, const wchar_t* pwPlayerName)
 {
-    sithWorld_g_pCurrentWorld = sithWorld_New();
+    sithWorld_g_pCurrentWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pCurrentWorld )
     {
         return 1;
@@ -408,7 +409,7 @@ void sithOpenPostProcess(void)
 
 int J3DAPI sithOpenMulti(const char* pFilename, const wchar_t* pwPlayerName)
 {
-    sithWorld_g_pCurrentWorld = sithWorld_New();
+    sithWorld_g_pCurrentWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pCurrentWorld )
     {
         return 0;
