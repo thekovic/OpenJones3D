@@ -50,7 +50,7 @@ void JonesHud_MenuMoveDown(void);
 void J3DAPI JonesHud_SetSelectedMenuItem(int menuId, JonesHudMenuItem* pItem);
 void JonesHud_MenuMoveUp(void);
 
-void J3DAPI JonesHud_BindActivateControlKeys(int* aKeyIds, int numKeys);
+void J3DAPI JonesHud_BindActivateControlKeys(const size_t* aKeyIds, size_t numKeys);
 int J3DAPI JonesHud_GetKey(unsigned int keyId);
 int JonesHud_InitializeMenu(void);
 void JonesHud_InitializeMenuSounds(void);

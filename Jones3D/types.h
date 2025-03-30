@@ -11,6 +11,88 @@
 
 J3D_EXTERN_C_START
 
+#define JONESCONTROL_ACTION_BINDARRAYSIZE 9u
+#define JONESCONTROL_ACTION_MAXBINDS      JONESCONTROL_ACTION_BINDARRAYSIZE -1 // -1 due to 1 element bing num binds state
+
+// Macros for retrieving number of key action bindings
+// Note: Additional clamping to the maximum number of binds was added to ensure no OBB read/write.
+#define JONESCONTROL_ACTION_GETNUMBINDS(action)            J3DMIN(((uint8_t)((action[0]) & 0xFF)), JONESCONTROL_ACTION_MAXBINDS)
+#define JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(action)    J3DMIN(((uint8_t)(((action[0]) >> 8) & 0xFF)), JONESCONTROL_ACTION_MAXBINDS)
+#define JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(action)  J3DMIN(((uint8_t)(((action[0]) >> 16) & 0xFF)), JONESCONTROL_ACTION_MAXBINDS)
+
+// Macro checks if key action has all bindings slots filled
+#define JONESCONTROL_ACTION_HASMAXBINDS(action) \
+    (JONESCONTROL_ACTION_GETNUMBINDS(action) >= JONESCONTROL_ACTION_MAXBINDS)
+
+// Macro to update binding counts (increments existing values)
+#define JONESCONTROL_ACTION_UPDATENUMBINDINGS(action, numBindsKeyboard, numBindsController) \
+    do { \
+        uint8_t curTotal = JONESCONTROL_ACTION_GETNUMBINDS(action); \
+        uint8_t curKeyboard = JONESCONTROL_ACTION_GETNUMKEYBOARDBINDS(action); \
+        uint8_t curController = JONESCONTROL_ACTION_GETNUMCONTROLLERBINDS(action); \
+        (action[0]) = (numBindsController + numBindsKeyboard + curTotal) \
+            | ((curKeyboard + numBindsKeyboard) << 8) \
+            | ((curController + numBindsController) << 16); \
+    } while ( 0 )
+
+#define JONESCONTROL_ACTION_UPDATENUMBINDINGS_KEYBOARD(action, numBindsKeyboard) \
+    JONESCONTROL_ACTION_UPDATENUMBINDINGS(action, numBindsKeyboard, 0)
+
+#define JONESCONTROL_ACTION_UPDATENUMBINDINGS_CONTROLLER(action, numBindsController) \
+    JONESCONTROL_ACTION_UPDATENUMBINDINGS(action, 0, numBindsController)
+
+// Macro assigns next key binding for action
+// It also ensures that it does not write OBB.
+#define JONES_CONTROLACTION_ADDNEXTKEYBIND(action, controlId) \
+    do { \
+        if (!JONESCONTROL_ACTION_HASMAXBINDS(action)) { \
+            action[JONESCONTROL_ACTION_GETNUMBINDS( action ) + 1 ] = controlId; \
+        }\
+    } while ( 0 )
+
+
+typedef enum eJonesControlActions
+{
+    JONESCONTROL_ACTION_WALKFORWARD  = 0,
+    JONESCONTROL_ACTION_WALKBACK     = 1,
+    JONESCONTROL_ACTION_TURNLEFT     = 2,
+    JONESCONTROL_ACTION_TURNRIGHT    = 3,
+    JONESCONTROL_ACTION_STEPLEFT     = 4,
+    JONESCONTROL_ACTION_STEPRIGHT    = 5,
+    JONESCONTROL_ACTION_CRAWL        = 6,
+    JONESCONTROL_ACTION_RUN          = 7,
+    JONESCONTROL_ACTION_ROLL         = 8,
+    JONESCONTROL_ACTION_JUMP         = 9,
+    JONESCONTROL_ACTION_LOOK         = 10,
+    JONESCONTROL_ACTION_ACTIVATE     = 11,
+    JONESCONTROL_ACTION_TOGGLEWEAPON = 12,
+    JONESCONTROL_ACTION_PREVWEAPON   = 13,
+    JONESCONTROL_ACTION_NEXTWEAPON   = 14,
+    JONESCONTROL_ACTION_TOGGLELIGHT  = 15,
+    JONESCONTROL_ACTION_FISTS        = 16,
+    JONESCONTROL_ACTION_WHIP         = 17,
+    JONESCONTROL_ACTION_MAUSER       = 18,
+    JONESCONTROL_ACTION_PPSH41       = 19,
+    JONESCONTROL_ACTION_PISTOL       = 20,
+    JONESCONTROL_ACTION_SIMONOV      = 21,
+    JONESCONTROL_ACTION_TOKEREV      = 22,
+    JONESCONTROL_ACTION_TOZ34        = 23,
+    JONESCONTROL_ACTION_BAZOOKA      = 24,
+    JONESCONTROL_ACTION_MACHETE      = 25,
+    JONESCONTROL_ACTION_SATCHEL      = 26,
+    JONESCONTROL_ACTION_GRENADE      = 27,
+    JONESCONTROL_ACTION_MAP          = 28,
+    JONESCONTROL_ACTION_INTERFACE    = 29,
+    JONESCONTROL_ACTION_HEALTH       = 30,
+    JONESCONTROL_ACTION_IMP1         = 31,
+    JONESCONTROL_ACTION_IMP2         = 32,
+    JONESCONTROL_ACTION_IMP3         = 33,
+    JONESCONTROL_ACTION_IMP4         = 34,
+    JONESCONTROL_ACTION_IMP5         = 35,
+    JONESCONTROL_ACTION_CHALK        = 36,
+    JONESCONTROL_ACTION_NUMACTIONS   = 37 // Num of all actions
+} JonesControlActions;
+
 typedef enum eJonesHudMenuType
 {
     JONESHUD_MENU_WEAP_GLOVES               = 0,
@@ -241,8 +323,9 @@ typedef struct sJonesDisplaySettings
     rdGeometryMode geoMode;
     rdLightMode lightMode;
     int bClearBackBuffer;
+    float fogDensity;
 } JonesDisplaySettings;
-static_assert(sizeof(JonesDisplaySettings) == 52, "sizeof(JonesDisplaySettings) == 52");
+static_assert(sizeof(JonesDisplaySettings) == 56, "sizeof(JonesDisplaySettings) == 56");
 
 
 typedef struct sJonesState
@@ -260,8 +343,8 @@ typedef struct sJonesState
     int bSound3D;
     int bReverseSound;
     JonesDisplaySettings displaySettings;
-    float fogDensity;
 } JonesState;
+static_assert(sizeof(JonesState) == 512, "sizeof(JonesState) == 512");
 
 typedef struct sJonesResourcesOld
 {
@@ -318,26 +401,22 @@ struct sJonesDialogData
 
 typedef struct sJonesControlsScheme
 {
-    int unknown0;
-    int aActions[37][9];
+    int bModified;
+    size_t aActions[JONESCONTROL_ACTION_NUMACTIONS][JONESCONTROL_ACTION_BINDARRAYSIZE];
     char aName[128];
 } JonesControlsScheme;
-
-typedef struct sJonesControlAction
-{
-    int unknown0;
-    int aUnknown1[8];
-} JonesControlAction;
+static_assert(sizeof(JonesControlsScheme) == 1464, "sizeof(JonesControlsScheme) == 1464");
 
 typedef struct sJonesControlsConfig
 {
-    void* unknown0;
-    int unknown1;
-    int unknown2;
-    int numSchemes;
-    int selectedShemeIdx;
+    LONG maxNameLen;
+    size_t numDeleteSchemes;
+    char (*paDeleteSchemes)[128];
+    size_t numSchemes;
+    int selectedShemeIdx; // cane be -1
     JonesControlsScheme* aSchemes;
 } JonesControlsConfig;
+static_assert(sizeof(JonesControlsConfig) == 24, "sizeof(JonesControlsConfig) == 24");
 
 typedef struct sStoreItem
 {
@@ -440,6 +519,13 @@ typedef struct sGDIDIBSectionInfo
     BITMAPINFO bmpInfo;
     int bHasDC;
 } GDIDIBSectionInfo;
+
+typedef struct sJonesSoundSettingsDialogData
+{
+    float maxSoundVolume;
+    int b3DHWSupport;
+    int bReverseSound;
+} JonesSoundSettingsDialogData;
 
 J3D_EXTERN_C_END
 #endif //JONES3D_TYPES_H

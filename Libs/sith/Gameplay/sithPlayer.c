@@ -390,7 +390,7 @@ int J3DAPI sithPlayer_GetPlayerNumByName(wchar_t* pwName)
 
     for ( size_t i = 0; i < sithPlayer_g_numPlayers; ++i )
     {
-        if ( (sithPlayer_g_aPlayers[i].flags & SITH_PLAYER_JOINEDGAME) != 0 && !_wcsicmp(sithPlayer_g_aPlayers[i].awName, pwName) )
+        if ( (sithPlayer_g_aPlayers[i].flags & SITH_PLAYER_JOINEDGAME) != 0 && wstreqi(sithPlayer_g_aPlayers[i].awName, pwName) )
         {
             return i;
         }

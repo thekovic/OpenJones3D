@@ -169,7 +169,7 @@ int J3DAPI stdControl_Startup(int bKeyboardForeground)
     memset(stdControl_aJoystickDevices, 0, sizeof(stdControl_aJoystickDevices));
 
     HINSTANCE hInstance = stdWin95_GetInstance();
-    HRESULT hres = DirectInputCreate(hInstance, DIRECTINPUT_VERSION, &stdControl_pDI, 0);
+    HRESULT hres = DirectInputCreate(hInstance, DIRECTINPUT_VERSION, &stdControl_pDI, NULL);
     if ( hres != DI_OK )
     {
         STDLOG_ERROR("DirectInputCreate returned %s.\n", stdControl_DIGetStatus(hres));
@@ -185,6 +185,7 @@ int J3DAPI stdControl_Startup(int bKeyboardForeground)
     stdControl_InitJoysticks();
     stdControl_InitMouse();
     stdControl_Reset();
+
     stdControl_bStartup = true;
     return 0;
 }
@@ -847,7 +848,7 @@ void stdControl_InitJoysticks(void)
                 IDirectInputDevice2_Release(stdControl_aJoystickDevices[joyNum].pDIDevice);
             }
 
-            stdControl_aJoystickDevices[joyNum].pDIDevice = 0;
+            stdControl_aJoystickDevices[joyNum].pDIDevice = NULL;
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Z(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
@@ -881,19 +882,25 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
             goto error;
         }
 
-        DIPROPDWORD didpw;
+
         HWND hwnd = stdWin95_GetWindow();
         hres = bForeground
             ? IDirectInputDevice_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)
             : IDirectInputDevice_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
-        if ( FAILED(hres)
-            || (didpw.diph.dwSize = sizeof(DIPROPDWORD),
-                didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER),
-                didpw.diph.dwObj = 0,
-                didpw.diph.dwHow = DIPH_DEVICE,
-                didpw.dwData     = STD_ARRAYLEN(stdControl_aKeyboardState), // input buffer size
-                hres = IDirectInputDevice_SetProperty(stdControl_keyboard.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph),
-                hres < 0) )
+        if ( FAILED(hres) )
+        {
+            goto error;
+        }
+
+        DIPROPDWORD didpw;
+        didpw.diph.dwSize       = sizeof(DIPROPDWORD);
+        didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+        didpw.diph.dwObj        = 0;
+        didpw.diph.dwHow        = DIPH_DEVICE;
+        didpw.dwData            = STD_ARRAYLEN(stdControl_aKeyboardState); // input buffer size
+
+        hres = IDirectInputDevice_SetProperty(stdControl_keyboard.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph);
+        if ( hres != DI_OK && hres != DI_PROPNOEFFECT ) // Fixed: Added check for DI_PROPNOEFFECT
         {
         error:
             STDLOG_STATUS("%s error Acquiring Keyboard.\n", stdControl_DIGetStatus(hres));
@@ -930,17 +937,22 @@ void stdControl_InitMouse(void)
             goto error;
         }
 
-        DIPROPDWORD didpw;
         HWND hwnd = stdWin95_GetWindow();
         hres = IDirectInputDevice_SetCooperativeLevel(stdControl_mouse.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_EXCLUSIVE);
-        if ( FAILED(hres)
-            || (didpw.diph.dwSize = sizeof(DIPROPDWORD),
-                didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER),
-                didpw.diph.dwObj = 0,
-                didpw.diph.dwHow = DIPH_DEVICE,
-                didpw.dwData     = STDCONTROL_MOUSE_BUFFERSIZE, // input buffer size
-                hres = IDirectInputDevice_SetProperty(stdControl_mouse.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph),
-                hres < 0) )
+        if ( FAILED(hres) )
+        {
+            goto error;
+        }
+
+        DIPROPDWORD didpw;
+        didpw.diph.dwSize       = sizeof(DIPROPDWORD);
+        didpw.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+        didpw.diph.dwObj        = 0;
+        didpw.diph.dwHow        = DIPH_DEVICE;
+        didpw.dwData            = STDCONTROL_MOUSE_BUFFERSIZE; // input buffer size
+
+        hres = IDirectInputDevice_SetProperty(stdControl_mouse.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph);
+        if ( hres != DI_OK && hres != DI_PROPNOEFFECT ) // Fixed: Added check for DI_PROPNOEFFECT
         {
         error:
             STDLOG_STATUS("%s error Acquiring Mouse.\n", stdControl_DIGetStatus(hres));
@@ -950,13 +962,12 @@ void stdControl_InitMouse(void)
             }
 
             stdControl_mouse.pDIDevice = 0;
+            return;
         }
-        else
-        {
-            stdControl_RegisterAxis(STDCONTROL_AID_MOUSE_X, -250, 250, 0.0f);
-            stdControl_RegisterAxis(STDCONTROL_AID_MOUSE_Y, -200, 200, 0.0f);
-            stdControl_RegisterAxis(STDCONTROL_AID_MOUSE_Z, -20, 20, 0.0f);
-        }
+
+        stdControl_RegisterAxis(STDCONTROL_AID_MOUSE_X, -250, 250, 0.0f);
+        stdControl_RegisterAxis(STDCONTROL_AID_MOUSE_Y, -200, 200, 0.0f);
+        stdControl_RegisterAxis(STDCONTROL_AID_MOUSE_Z, -20, 20, 0.0f);
     }
 }
 
@@ -1039,38 +1050,38 @@ void stdControl_ReadJoysticks(void)
             if ( pov < 225 * DI_DEGREES || pov > 315 * DI_DEGREES )
             {
 
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 0), 0, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 0), 0, stdControl_curReadTime);
             }
             else
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 0), 1, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 0), 1, stdControl_curReadTime);
             }
 
             if ( pov < 315 * DI_DEGREES && pov > 45 * DI_DEGREES || bCentred )
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 1), 0, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 1), 0, stdControl_curReadTime);
             }
             else
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 1), 1, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 1), 1, stdControl_curReadTime);
             }
 
             if ( pov < 45 * DI_DEGREES || pov > 135 * DI_DEGREES )
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 2), 0, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 2), 0, stdControl_curReadTime);
             }
             else
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 2), 1, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 2), 1, stdControl_curReadTime);
             }
 
             if ( pov < 135 * DI_DEGREES || pov > 225 * DI_DEGREES )
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 3), 0, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 3), 0, stdControl_curReadTime);
             }
             else
             {
-                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOVBUTTON(joyNum, j, 3), 1, stdControl_curReadTime);
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joyNum, j, 3), 1, stdControl_curReadTime);
             }
         }
     }
@@ -1209,13 +1220,11 @@ BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, 
     {
         STDLOG_STATUS("Mouse:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
     }
-
     else if ( dwDevType == DIDEVTYPE_KEYBOARD )
     {
         STDLOG_STATUS("Keyboard:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
     }
-
-    else if ( dwDevType == DIDEVTYPE_JOYSTICK && (unsigned int)stdControl_numJoystickDevices < 8 )
+    else if ( dwDevType == DIDEVTYPE_JOYSTICK && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
     {
         memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCEA));
 
@@ -1251,7 +1260,7 @@ BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, 
         }
     }
 
-    return 1;
+    return TRUE;
 }
 
 void stdControl_ResetMousePos(void)
@@ -1287,7 +1296,8 @@ const char* J3DAPI stdControl_GetJoysticDescription(int joyNum)
         stdControl_aStrBuf,
         "%s:%s",
         stdControl_aJoystickDevices[joyNum].dinstance.tszProductName,
-        stdControl_aJoystickDevices[joyNum].dinstance.tszInstanceName);
+        stdControl_aJoystickDevices[joyNum].dinstance.tszInstanceName
+    );
     return stdControl_aStrBuf;
 }
 
