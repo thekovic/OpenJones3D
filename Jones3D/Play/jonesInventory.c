@@ -174,20 +174,18 @@ size_t jonesInventory_GetMaxDifficultyLevel(void)
 
 void jonesInventory_UpdateSolvedHintsStatistics(void)
 {
-    int numSeenHints;
-    int numSeen;
-    int numHints;
-
     if ( sithGamesave_LockGameStatistics() )
     {
         int levelNum = jonesInventory_pGameStatistics->curLevelNum;
+
+        size_t numSeen, numHints;
         sithOverlayMap_GetNumSeenHints(&numSeen, &numHints);
 
-        numSeenHints = jonesInventory_pGameStatistics->aLevelStatistic[levelNum].numSeenHints;
-        if ( numSeenHints != numSeen )
+        size_t numSeenHintsLvl = jonesInventory_pGameStatistics->aLevelStatistic[levelNum].numSeenHints;
+        if ( numSeenHintsLvl != numSeen )
         {
             jonesInventory_pGameStatistics->aLevelStatistic[levelNum].numSeenHints = numSeen;
-            jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeen - numSeenHints;
+            jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeen - numSeenHintsLvl; // TODO: Make sure numSeen > numSeenHintsLvl
         }
 
         sithGamesave_UnlockGameStatistics();
@@ -232,20 +230,17 @@ void J3DAPI jonesInventory_UpdateIQPoints(size_t difficulty)
 
 int jonesInventory_GetTotalIQPoints(void)
 {
-    int numFoundTreasures;
-    int hintPenalty;
-    int numHints;
-    int numSeen;
-
+    size_t numHints, numSeen;
     sithOverlayMap_GetNumSeenHints(&numSeen, &numHints);
-    numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
+
+    size_t numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
     if ( numHints <= 0 )
     {
         return jonesInventory_pGameStatistics->totalIQPoints + 10 * numFoundTreasures / 10;// TODO: each found item is expected to have 1 IQ point and there is expected at max 10 found items per level. Remove this max 10 items limit
     }
 
-    hintPenalty = 10 * numSeen / numHints;
-    if ( !hintPenalty )
+    size_t hintPenalty = 10 * numSeen / numHints;
+    if ( hintPenalty == 0 )
     {
         hintPenalty = numSeen > 0;
     }
@@ -258,10 +253,11 @@ void jonesInventory_AdvanceStatistics(void)
     jonesInventory_UpdateGameTimeStatistics(sithTime_g_msecGameTime);
     if ( sithGamesave_LockGameStatistics() )
     {
-        int numSeenHints = 0, numTotalHints = 0;
+        size_t numSeenHints = 0, numTotalHints = 0;
         sithOverlayMap_GetNumSeenHints(&numSeenHints, &numTotalHints);
-        int numSeenHintsLvl = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numSeenHints;
-        int numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
+
+        size_t numSeenHintsLvl   = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numSeenHints;
+        size_t numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
 
         // Note, the max treasure items to be found in level is capped to 10
         if ( numTotalHints <= 0 )
@@ -270,13 +266,13 @@ void jonesInventory_AdvanceStatistics(void)
         }
         else
         {
-            int hintPoints = 10 * numSeenHints / numTotalHints;
-            if ( !hintPoints )
+            size_t hintPoints = 10 * numSeenHints / numTotalHints;
+            if ( hintPoints == 0 )
             {
                 hintPoints = numSeenHints > 0;
             }
 
-            jonesInventory_pGameStatistics->totalIQPoints += 10 * numFoundTreasures / 10 + 40 - hintPoints;
+            jonesInventory_pGameStatistics->totalIQPoints += 10 * numFoundTreasures / 10 + 40 - hintPoints; // TODO: Make sure this is can't be negative
         }
 
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].iqPoints = jonesInventory_pGameStatistics->totalIQPoints
@@ -285,7 +281,7 @@ void jonesInventory_AdvanceStatistics(void)
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum + 1].levelStartIQPoints = jonesInventory_pGameStatistics->totalIQPoints;
 
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numSeenHints = numSeenHints;
-        jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeenHints - numSeenHintsLvl;
+        jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeenHints - numSeenHintsLvl; // TODO: Make sure this is can't be negative
 
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum + 1].curElapsedSec = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].curElapsedSec;
 

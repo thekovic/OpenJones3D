@@ -8,7 +8,7 @@
 
 // Function addresses
 
-#define sithOverlayMap_ConsoleCallback_ADDR 0x004287E0
+#define sithOverlayMap_EasterEggConsoleCallback_ADDR 0x004287E0
 #define sithOverlayMap_Open_ADDR 0x00428860
 #define sithOverlayMap_Close_ADDR 0x00428B60
 #define sithOverlayMap_IsMapVisible_ADDR 0x00428BD0
@@ -24,11 +24,11 @@
 #define sithOverlayMap_SetHintSolved_ADDR 0x00428FA0
 #define sithOverlayMap_SetHintUnsolved_ADDR 0x00428FF0
 #define sithOverlayMap_GetNumSeenHints_ADDR 0x00429040
-#define sithOverlayMap_RenderSectors_ADDR 0x004290C0
-#define sithOverlayMap_RenderSector_ADDR 0x00429120
-#define sithOverlayMap_DrawPlayer_ADDR 0x00429780
-#define sithOverlayMap_DrawMark_ADDR 0x00429910
-#define sithOverlayMap_CanRenderSurface_ADDR 0x00429C80
+#define sithOverlayMap_DrawSectors_ADDR 0x004290C0
+#define sithOverlayMap_DrawSector_ADDR 0x00429120
+#define sithOverlayMap_DrawPlayerIcon_ADDR 0x00429780
+#define sithOverlayMap_DrawThingIcon_ADDR 0x00429910
+#define sithOverlayMap_CanDrawSurfaceEdge_ADDR 0x00429C80
 #define sithWorld_Startup_ADDR 0x0043D790
 #define sithWorld_Shutdown_ADDR 0x0043D970
 #define sithWorld_SetLoadProgressCallback_ADDR 0x0043D9E0
@@ -1898,18 +1898,18 @@
 
 // Variable addresses
 
-#define sithOverlayMap_aHintIconUVs_ADDR 0x00506B48
-#define sithOverlayMap_aMarkIconUVs_ADDR 0x00506B68
-#define sithOverlayMap_aPlayerIconNormals_ADDR 0x00506B88
+#define sithOverlayMap_aHintIconVerts_ADDR 0x00506B48
+#define sithOverlayMap_aMarkIconVerts_ADDR 0x00506B68
+#define sithOverlayMap_aPlayerIconVerts_ADDR 0x00506B88
 #define sithOverlayMap_aPlayerIconUVs_ADDR 0x00506BA8
-#define sithOverlayMap_aMarkIconUVNormals_ADDR 0x00506BC8
+#define sithOverlayMap_aThingIconUVs_ADDR 0x00506BC8
 #define sithOverlayMap_aEncEasterEggCmd_ADDR 0x00528838
-#define sithOverlayMap_scaleFactor_ADDR 0x00528840
+#define sithOverlayMap_curScale_ADDR 0x00528840
 #define sithOverlayMap_aHintIconNames_ADDR 0x00528844
 #define sithOverlayMap_aMapIconNames_ADDR 0x00528848
 #define sithOverlayMap_aChalkMarkIconNames_ADDR 0x0052884C
-#define sithOverlayMap_aMarkBlinkUpdateInterval_ADDR 0x00528860
-#define sithOverlayMap_orientMat_ADDR 0x0055E8A0
+#define sithOverlayMap_aIconBlinkUpdateIntervals_ADDR 0x00528860
+#define sithOverlayMap_mapOrient_ADDR 0x0055E8A0
 #define sithOverlayMap_pLocalPlayer_ADDR 0x0055E8D0
 #define sithOverlayMap_aIndyIcons_ADDR 0x0055E8D8
 #define sithOverlayMap_aMarkIcons_ADDR 0x0055E900
@@ -1920,14 +1920,14 @@
 #define sithOverlayMap_vertexScale_ADDR 0x0055E988
 #define sithOverlayMap_curHintNum_ADDR 0x0055E98C
 #define sithOverlayMap_bMapVisible_ADDR 0x0055E990
-#define sithOverlayMap_bNoSolvedHintCount_ADDR 0x0055E994
+#define sithOverlayMap_bNoSeenHintsCount_ADDR 0x0055E994
 #define sithOverlayMap_curHintIconNum_ADDR 0x0055E998
 #define sithOverlayMap_curIndyIconNum_ADDR 0x0055E99C
 #define sithOverlayMap_curMarkIconNum_ADDR 0x0055E9A0
 #define sithOverlayMap_bOpened_ADDR 0x0055E9A4
 #define sithOverlayMap_bShowHints_ADDR 0x0055E9A8
-#define sithOverlayMap_markBlinkStep_ADDR 0x0055E9AC
-#define sithOverlayMap_msecLastMarkBlinkUpdate_ADDR 0x0055E9B0
+#define sithOverlayMap_iconBlinkStep_ADDR 0x0055E9AC
+#define sithOverlayMap_msecLastIconBlinkUpdate_ADDR 0x0055E9B0
 #define sithWorld_aCopyrightSymbol_ADDR 0x00506DC0
 #define sithWorld_aBinarySectionParsers_ADDR 0x0052A358
 #define sithWorld_pfLoadProgressCallback_ADDR 0x00561340

@@ -265,46 +265,46 @@ typedef enum eSithCollideType
     SITH_COLLIDE_NUMTYPES = 4,
 } SithCollideType;
 
-typedef enum eSithAnimateFlags J3D_ENUM_TYPE(uint32_t)
+typedef enum eSithAnimateFlags
 {
-    SITHANIMATE_LOOP                 = 0x1,
-        SITHANIMATE_START_SECOND_FRAME   = 0x2,
-        SITHANIMATE_START_THIRD_FRAME    = 0x4,
-        SITHANIMATE_FINISH_FIRST_FRAME   = 0x8,
-        SITHANIMATE_PUSH_ITEM_TRACK_ANIM = 0x10,
-        SITHANIMATE_PULL_ITEM_TRACK_ANIM = 0x20,
-        SITHANIMATE_MATERIAL             = 0x10000,
-        SITHANIMATE_SURFACE              = 0x20000,
-        SITHANIMATE_THING                = 0x40000,
-        SITHANIMATE_SPRITE_THING         = 0x80000,
-        SITHANIMATE_SCROLL_SURFACE       = 0x100000,
-        SITHANIMATE_PAGEFLIP_ANIM        = 0x200000,
-        SITHANIMATE_LIGHT_ANIM           = 0x400000,
-        SITHANIMATE_SKY_HORIZON          = 0x800000,
-        SITHANIMATE_SKY_CEILING          = 0x1000000,
-        SITHANIMATE_SECTOR               = 0x2000000,
-        SITHANIMATE_CAMERA_ZOOM          = 0x4000000,
-        SITHANIMATE_COLOR_ANIM           = 0x8000000,
-        SITHANIMATE_SPRITE_SIZE_ANIM     = 0x10000000,
-        SITHANIMATE_THING_MOVE           = 0x20000000,
-        SITHANIMATE_THING_MOVE_TO_POS    = 0x40000000,
-        SITHANIMATE_THING_YAW_ROTATE     = 0x80000000,
+    SITHANIMATE_LOOP                 = 0x01,
+    SITHANIMATE_START_SECOND_FRAME   = 0x02,
+    SITHANIMATE_START_THIRD_FRAME    = 0x04,
+    SITHANIMATE_FINISH_FIRST_FRAME   = 0x08,
+    SITHANIMATE_PUSH_ITEM_TRACK_ANIM = 0x10,
+    SITHANIMATE_PULL_ITEM_TRACK_ANIM = 0x20,
+    SITHANIMATE_MATERIAL             = 0x10000,
+    SITHANIMATE_SURFACE              = 0x20000,
+    SITHANIMATE_THING                = 0x40000,
+    SITHANIMATE_SPRITE_THING         = 0x80000,
+    SITHANIMATE_SCROLL_SURFACE       = 0x100000,
+    SITHANIMATE_PAGEFLIP_ANIM        = 0x200000,
+    SITHANIMATE_LIGHT_ANIM           = 0x400000,
+    SITHANIMATE_SKY_HORIZON          = 0x800000,
+    SITHANIMATE_SKY_CEILING          = 0x1000000,
+    SITHANIMATE_SECTOR               = 0x2000000,
+    SITHANIMATE_CAMERA_ZOOM          = 0x4000000,
+    SITHANIMATE_COLOR_ANIM           = 0x8000000,
+    SITHANIMATE_SPRITE_SIZE_ANIM     = 0x10000000,
+    SITHANIMATE_THING_MOVE           = 0x20000000,
+    SITHANIMATE_THING_MOVE_TO_POS    = 0x40000000,
+    SITHANIMATE_THING_YAW_ROTATE     = 0x80000000,
 } SithAnimateFlags;
 
 typedef enum eSithControlType
 {
-    SITH_CT_PLOT      = 0x0,
-    SITH_CT_PLAYER    = 0x1,
-    SITH_CT_AI        = 0x2,
-    SITH_CT_EXPLOSION = 0x6,
-    SITH_CT_PARTICLE  = 0x7,
+    SITH_CT_PLOT      = 0,
+    SITH_CT_PLAYER    = 1,
+    SITH_CT_AI        = 2,
+    SITH_CT_EXPLOSION = 6,
+    SITH_CT_PARTICLE  = 7,
 } SithControlType;
 
 typedef enum eSithDebugModeFlag
 {
-    SITHDEBUG_AIEVENTS_DISABLED          = 0x1,
-    SITHDEBUG_PUPPETSYSTEM_DISABLED      = 0x2,
-    SITHDEBUG_UNKNOWN_8                  = 0x8,
+    SITHDEBUG_AIEVENTS_DISABLED          = 0x01,
+    SITHDEBUG_PUPPETSYSTEM_DISABLED      = 0x02,
+    SITHDEBUG_UNKNOWN_8                  = 0x08,
     SITHDEBUG_TRACKSHOTS                 = 0x40,
     SITHDEBUG_AIDISABLED                 = 0x80,
     SITHDEBUG_INEDITOR                   = 0x100,
@@ -312,29 +312,39 @@ typedef enum eSithDebugModeFlag
     SITHDEBUG_SLOWMODE                   = 0x400,
 } SithDebugModeFlag;
 
+typedef enum eSithMapModeFlags
+{
+    SITHMAPMODE_SHOWALLSECTORS = 0x02,
+    SITHMAPMODE_SHOWPLAYERS    = 0x04,
+    SITHMAPMODE_SHOWACTORS     = 0x08,
+    SITHMAPMODE_SHOWITEMS      = 0x10,
+    SITHMAPMODE_SHOWWEAPONS    = 0x20,
+    SITHMAPMODE_SHOWALLTHINGS  = 0x40,
+} SithMapModeFlags;
+
 typedef enum eSithWorldState
 {
-    SITH_WORLD_STATE_STATIC      = 0x1,
-    SITH_WORLD_STATE_INITIALIZED = 0x2,
-    SITH_WORLD_STATE_UPDATE_FOG  = 0x4,
-    SITH_WORLD_STATE_INIT_HUD    = 0x8,
+    SITH_WORLD_STATE_STATIC      = 0x01,
+    SITH_WORLD_STATE_INITIALIZED = 0x02,
+    SITH_WORLD_STATE_UPDATE_FOG  = 0x04,
+    SITH_WORLD_STATE_INIT_HUD    = 0x08,
 } SithWorldState;
 
 typedef enum eSithPathMoveMode
 {
-    SITH_PATHMOVE_MOVE         = 0x1,
-    SITH_PATHMOVE_ROTATE       = 0x2,
-    SITH_PATHMOVE_FOLLOWPATH   = 0x4,
+    SITH_PATHMOVE_MOVE         = 0x01,
+    SITH_PATHMOVE_ROTATE       = 0x02,
+    SITH_PATHMOVE_FOLLOWPATH   = 0x04,
     SITH_PATHMOVE_ROTATE_PIVOT = 0x10,
     SITH_PATHMOVE_PAUSED       = 0x80,
 } SithPathMoveMode;
 
 typedef enum eSithPhysicsFlags
 {
-    SITH_PF_USEGRAVITY          = 0x1,
-    SITH_PF_USETHRUST           = 0x2,
-    SITH_PF_UNKNOWN_4           = 0x4,
-    SITH_PF_UNKNOWN_8           = 0x8,
+    SITH_PF_USEGRAVITY          = 0x01,
+    SITH_PF_USETHRUST           = 0x02,
+    SITH_PF_UNKNOWN_4           = 0x04,
+    SITH_PF_UNKNOWN_8           = 0x08,
     SITH_PF_ALIGNSURFACE        = 0x10,
     SITH_PF_SURFACEBOUNCE       = 0x20,
     SITH_PF_FLOORSTICK          = 0x40,
@@ -365,45 +375,45 @@ typedef enum eSithPhysicsFlags
     SITH_PF_UNKNOWN_80000000    = 0x80000000,
 } SithPhysicsFlags;
 
-typedef enum eSithAIMode J3D_ENUM_TYPE(int32_t)
+typedef enum eSithAIMode
 {
-    SITHAI_MODE_MOVING            = 0x1,
-        SITHAI_MODE_ATTACKING         = 0x2,
-        SITHAI_MODE_SEARCHING         = 0x4,
-        SITHAI_MODE_TURNING           = 0x8,
-        SITHAI_MODE_UNKNOWN_10        = 0x10,
-        SITHAI_MODE_TOUGHSKIN         = 0x20,
-        SITHAI_MODE_NOCHECKFORCLIFF   = 0x40,
-        SITHAI_MODE_UNKNOWN_80        = 0x80,
-        SITHAI_MODE_BLOCK             = 0x100,
-        SITHAI_MODE_ACTIVE            = 0x200,
-        SITHAI_MODE_TARGETVISIBLE     = 0x400,
-        SITHAI_MODE_FLEEING           = 0x800,
-        SITHAI_MODE_SLEEPING          = 0x1000,
-        SITHAI_MODE_DISABLED          = 0x2000,
-        SITHAI_MODE_CIRCLESTRAFING    = 0x4000,
-        SITHAI_MODE_UNKNOWN_8000      = 0x8000,
-        SITHAI_MODE_WANTALLEVENTS     = 0x10000,
-        SITHAI_MODE_LOSTSIGHTOFGOAL   = 0x20000,
-        SITHAI_MODE_INSTINCTUSEWPNTS  = 0x40000,
-        SITHAI_MODE_CHASE_GOAL        = 0x80000,
-        SITHAI_MODE_UNKNOWN_100000    = 0x100000,
-        SITHAI_MODE_WALLCRAWLING      = 0x200000,
-        SITHAI_MODE_UNKNOWN_400000    = 0x400000,
-        SITHAI_MODE_HUNTING           = 0x800000,
-        SITHAI_MODE_UNKNOWN_1000000   = 0x1000000,
-        SITHAI_MODE_NOCHASING         = 0x2000000,
-        SITHAI_MODE_TRAVERSEWPNTS     = 0x4000000,
-        SITHAI_MODE_ARMOREDSKIN       = 0x8000000,
-        SITHAI_MODE_FLEEINGTOWAYPOINT = 0x10000000,
+    SITHAI_MODE_MOVING            = 0x01,
+    SITHAI_MODE_ATTACKING         = 0x02,
+    SITHAI_MODE_SEARCHING         = 0x04,
+    SITHAI_MODE_TURNING           = 0x08,
+    SITHAI_MODE_UNKNOWN_10        = 0x10,
+    SITHAI_MODE_TOUGHSKIN         = 0x20,
+    SITHAI_MODE_NOCHECKFORCLIFF   = 0x40,
+    SITHAI_MODE_UNKNOWN_80        = 0x80,
+    SITHAI_MODE_BLOCK             = 0x100,
+    SITHAI_MODE_ACTIVE            = 0x200,
+    SITHAI_MODE_TARGETVISIBLE     = 0x400,
+    SITHAI_MODE_FLEEING           = 0x800,
+    SITHAI_MODE_SLEEPING          = 0x1000,
+    SITHAI_MODE_DISABLED          = 0x2000,
+    SITHAI_MODE_CIRCLESTRAFING    = 0x4000,
+    SITHAI_MODE_UNKNOWN_8000      = 0x8000,
+    SITHAI_MODE_WANTALLEVENTS     = 0x10000,
+    SITHAI_MODE_LOSTSIGHTOFGOAL   = 0x20000,
+    SITHAI_MODE_INSTINCTUSEWPNTS  = 0x40000,
+    SITHAI_MODE_CHASE_GOAL        = 0x80000,
+    SITHAI_MODE_UNKNOWN_100000    = 0x100000,
+    SITHAI_MODE_WALLCRAWLING      = 0x200000,
+    SITHAI_MODE_UNKNOWN_400000    = 0x400000,
+    SITHAI_MODE_HUNTING           = 0x800000,
+    SITHAI_MODE_UNKNOWN_1000000   = 0x1000000,
+    SITHAI_MODE_NOCHASING         = 0x2000000,
+    SITHAI_MODE_TRAVERSEWPNTS     = 0x4000000,
+    SITHAI_MODE_ARMOREDSKIN       = 0x8000000,
+    SITHAI_MODE_FLEEINGTOWAYPOINT = 0x10000000,
 } SithAIMode;
 
 typedef enum eSithAISubMode
 {
-    SITHAI_SUBMODE_UNKNOWN_1                = 0x1,
-    SITHAI_SUBMODE_UNKNOWN_2                = 0x2,
-    SITHAI_SUBMODE_UNKNOWN_4                = 0x4,
-    SITHAI_SUBMODE_UNKNOWN_8                = 0x8,
+    SITHAI_SUBMODE_UNKNOWN_1                = 0x01,
+    SITHAI_SUBMODE_UNKNOWN_2                = 0x02,
+    SITHAI_SUBMODE_UNKNOWN_4                = 0x04,
+    SITHAI_SUBMODE_UNKNOWN_8                = 0x08,
     SITHAI_SUBMODE_UNKNOWN_10               = 0x10,
     SITHAI_SUBMODE_SKIPCHECKFIREFOV         = 0x20,
     SITHAI_SUBMODE_FIREADDEYEOFFSET         = 0x40,
@@ -429,23 +439,23 @@ typedef enum eSithAISubMode
     SITHAI_SUBMODE_WALLCRAWLLOCKED          = 0x8000000,
 } SithAISubMode;
 
-typedef enum eSithAttachFlag J3D_ENUM_TYPE(int32_t)
+typedef enum eSithAttachFlag
 {
-    SITH_ATTACH_SURFACE        = 0x1,
-        SITH_ATTACH_THINGFACE      = 0x2,
-        SITH_ATTACH_THING          = 0x4,
-        SITH_ATTACH_NOMOVE         = 0x8,
-        SITH_ATTACH_CLIMBSURFACE   = 0x10,
-        SITH_ATTACH_THINGCLIMBWHIP = 0x20,
-        SITH_ATTACH_TAIL           = 0x40,
+    SITH_ATTACH_SURFACE        = 0x01,
+    SITH_ATTACH_THINGFACE      = 0x02,
+    SITH_ATTACH_THING          = 0x04,
+    SITH_ATTACH_NOMOVE         = 0x08,
+    SITH_ATTACH_CLIMBSURFACE   = 0x10,
+    SITH_ATTACH_THINGCLIMBWHIP = 0x20,
+    SITH_ATTACH_TAIL           = 0x40,
 } SithAttachFlag;
 
 typedef enum eSithInventoryTypeFlag
 {
-    SITHINVENTORY_TYPE_REGISTERED                 = 0x1,
-    SITHINVENTORY_TYPE_ITEM                       = 0x2,
-    SITHINVENTORY_TYPE_WEAPON                     = 0x4,
-    SITHINVENTORY_TYPE_AUTOAIM                    = 0x8,
+    SITHINVENTORY_TYPE_REGISTERED                 = 0x01,
+    SITHINVENTORY_TYPE_ITEM                       = 0x02,
+    SITHINVENTORY_TYPE_WEAPON                     = 0x04,
+    SITHINVENTORY_TYPE_AUTOAIM                    = 0x08,
     SITHINVENTORY_TYPE_DAMAGEABLE                 = 0x10,
     SITHINVENTORY_TYPE_DEFAULT                    = 0x20,
     SITHINVENTORY_TYPE_NOT_CARRIED_BETWEEN_LEVELS = 0x40,
@@ -3005,8 +3015,8 @@ typedef struct sSithQuetzAnimInfo
 
 typedef struct sSithOverlayMapConfig
 {
-    int numZLevels;
-    float* apZLevelBounds;
+    size_t numZLevels;
+    float* aZLevelBounds;
     D3DCOLOR* aZLevelColors;
     D3DCOLOR playerBoundsColor;
     D3DCOLOR playerDirectionColor;
@@ -3107,9 +3117,9 @@ typedef struct sSithMode
 {
     int masterMode;
     int subModeFlags;
-    int debugModeFlags;
+    SithDebugModeFlag debugModeFlags;
     int difficulty;
-    int mapModeFlags;
+    SithMapModeFlags mapModeFlags;
 } SithMode;
 
 typedef struct sSithAIWaypointDistance

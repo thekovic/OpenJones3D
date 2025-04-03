@@ -7,7 +7,7 @@
 #include <sith/Main/sithMain.h>
 #include <std/types.h>
 
-#define sithOverlayMap_ConsoleCallback_TYPE int (J3DAPI*)(const SithConsoleCommand*, const char*)
+#define sithOverlayMap_EasterEggConsoleCallback_TYPE int (J3DAPI*)(const SithConsoleCommand*, const char*)
 #define sithOverlayMap_Open_TYPE int (J3DAPI*)(SithOverlayMapConfig*)
 #define sithOverlayMap_Close_TYPE void (*)(void)
 #define sithOverlayMap_IsMapVisible_TYPE int (*)(void)
@@ -22,12 +22,12 @@
 #define sithOverlayMap_UpdateHints_TYPE int (*)(void)
 #define sithOverlayMap_SetHintSolved_TYPE int (J3DAPI*)(SithThing*)
 #define sithOverlayMap_SetHintUnsolved_TYPE int (J3DAPI*)(SithThing*)
-#define sithOverlayMap_GetNumSeenHints_TYPE void (J3DAPI*)(int*, int*)
-#define sithOverlayMap_RenderSectors_TYPE void (J3DAPI*)(SithSector*)
-#define sithOverlayMap_RenderSector_TYPE int (J3DAPI*)(SithSector*)
-#define sithOverlayMap_DrawPlayer_TYPE void (*)(void)
-#define sithOverlayMap_DrawMark_TYPE void (J3DAPI*)(const SithThing*, const rdMaterial*, const rdVector2*, int, int)
-#define sithOverlayMap_CanRenderSurface_TYPE int (J3DAPI*)(SithSurface*, int, int)
+#define sithOverlayMap_GetNumSeenHints_TYPE void (J3DAPI*)(size_t*, size_t*)
+#define sithOverlayMap_DrawSectors_TYPE void (J3DAPI*)(SithSector*)
+#define sithOverlayMap_DrawSector_TYPE int (J3DAPI*)(SithSector*)
+#define sithOverlayMap_DrawPlayerIcon_TYPE void (*)(void)
+#define sithOverlayMap_DrawThingIcon_TYPE void (J3DAPI*)(const SithThing*, const rdMaterial*, const rdVector2*, int, int)
+#define sithOverlayMap_CanDrawSurfaceEdge_TYPE int (J3DAPI*)(SithSurface*, int, int)
 #define sithWorld_Startup_TYPE int (*)(void)
 #define sithWorld_Shutdown_TYPE void (*)(void)
 #define sithWorld_SetLoadProgressCallback_TYPE void (J3DAPI*)(SithWorldLoadProgressCallback)
