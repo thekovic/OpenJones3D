@@ -153,9 +153,9 @@ int J3DAPI rdFont_WriteEntry(const char* pFilename, const rdFont* pFont)
         return -4;
     }
     else if ( rdroid_g_pHS->pFileWrite(fh, &pFont->lineSpacing, sizeof(pFont->lineSpacing)) != sizeof(pFont->lineSpacing)
-           || rdroid_g_pHS->pFileWrite(fh, pFont->pName, RDFONT_MAXNAMELEN) != RDFONT_MAXNAMELEN
-           || rdroid_g_pHS->pFileWrite(fh, &pFont->fontSize, sizeof(pFont->fontSize)) != sizeof(pFont->fontSize)
-           || rdroid_g_pHS->pFileWrite(fh, pFont->aGlyphs, sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS) != sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS )
+        || rdroid_g_pHS->pFileWrite(fh, pFont->pName, RDFONT_MAXNAMELEN) != RDFONT_MAXNAMELEN
+        || rdroid_g_pHS->pFileWrite(fh, &pFont->fontSize, sizeof(pFont->fontSize)) != sizeof(pFont->fontSize)
+        || rdroid_g_pHS->pFileWrite(fh, pFont->aGlyphs, sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS) != sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS )
     {
         rdroid_g_pHS->pFileClose(fh);
         RDLOG_ERROR("Error: Unable to write file '%s'.\n", pFilename);
@@ -250,9 +250,9 @@ int J3DAPI rdFont_LoadEntry(const char* pFilename, rdFont* pFont)
         return -4;
     }
     else if ( rdroid_g_pHS->pFileRead(fh, &pFont->lineSpacing, sizeof(pFont->lineSpacing)) != sizeof(pFont->lineSpacing)
-           || rdroid_g_pHS->pFileRead(fh, pFont->pName, RDFONT_MAXNAMELEN) != RDFONT_MAXNAMELEN
-           || rdroid_g_pHS->pFileRead(fh, &pFont->fontSize, sizeof(pFont->fontSize)) != sizeof(pFont->fontSize)
-           || rdroid_g_pHS->pFileRead(fh, pFont->aGlyphs, sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS) != sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS )
+        || rdroid_g_pHS->pFileRead(fh, pFont->pName, RDFONT_MAXNAMELEN) != RDFONT_MAXNAMELEN
+        || rdroid_g_pHS->pFileRead(fh, &pFont->fontSize, sizeof(pFont->fontSize)) != sizeof(pFont->fontSize)
+        || rdroid_g_pHS->pFileRead(fh, pFont->aGlyphs, sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS) != sizeof(rdGlyphMetrics) * RDFONT_MAXGLYPHS )
     {
         rdroid_g_pHS->pFileClose(fh);
         RDLOG_ERROR("Error: Unable to write file '%s'.\n", pFilename);
@@ -482,7 +482,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->sx  = x;
     pCurVert->sy  = y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
     pCurVert->tu  = pFont->aGlyphs[chr].left;
     pCurVert->tv  = pFont->aGlyphs[chr].top;
     ++pCurVert;
@@ -490,7 +490,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->sx  = gwidth * swidth + x;
     pCurVert->sy  = y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
     pCurVert->tu  = pFont->aGlyphs[chr].right;
     pCurVert->tv  = pFont->aGlyphs[chr].top;
     ++pCurVert;
@@ -498,7 +498,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->sx  = gwidth * swidth + x;
     pCurVert->sy  = gheight * sheight + y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
     pCurVert->tu  = pFont->aGlyphs[chr].right;
     pCurVert->tv  = pFont->aGlyphs[chr].bottom;
     ++pCurVert;
@@ -506,7 +506,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->sx  = x;
     pCurVert->sy  = gheight * sheight + y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
     pCurVert->tu  = pFont->aGlyphs[chr].left;
     pCurVert->tv  = pFont->aGlyphs[chr].bottom;
 

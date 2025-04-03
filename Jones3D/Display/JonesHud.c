@@ -1160,8 +1160,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
         JonesHud_Draw(
             JonesHud_pEnduranceOverlayMat,
             &JonesHud_enduranceRect,
-            /*z=*/RD_FIXEDPOINT_RHW_SCALE, // 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
-            /*rhw=*/RD_FIXEDPOINT_RHW_SCALE,
+            /*z=*/RD_FIXEDPOINT_RHW_SCALE_X1, // 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
+            /*rhw=*/RD_FIXEDPOINT_RHW_SCALE_X1,
             &color,
             /*celNum=*/0,
             /*bAlpha=*/1
@@ -1177,8 +1177,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
         JonesHud_Draw(
             JonesHud_pEnduranceOverlayMat,
             &JonesHud_enduranceRect,
-            /*z=*/RD_FIXEDPOINT_RHW_SCALE, // z; 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
-            /*rhw=*/RD_FIXEDPOINT_RHW_SCALE,
+            /*z=*/RD_FIXEDPOINT_RHW_SCALE_X1, // z; 0.000030518044f - 1 / 32767 = 1/ (128 * 256 -1) ;  256 could be w
+            /*rhw=*/RD_FIXEDPOINT_RHW_SCALE_X1,
             &color,
             /*celNum=*/0,
             /*bAlpha=*/1
@@ -1208,8 +1208,8 @@ void J3DAPI JonesHud_DrawEnduranceIndicator(float state, float alpha)
     rdVector4 arcBarColor = JonesHud_colorBlack;
     arcBarColor.alpha = alpha;
 
-    JonesHud_enduranceIndBarPos.z = 0.000061036088f;// 1 / 16384 = 1 / (64*256) - this will make to draw_icon above base color (yellow, blue, pink)
-    JonesHud_enduranceIndBarPos.w = 0.000061036088f;
+    JonesHud_enduranceIndBarPos.z = RD_FIXEDPOINT_RHW_SCALE_X2; // this will make to draw_icon above base color (yellow, blue, pink)
+    JonesHud_enduranceIndBarPos.w = RD_FIXEDPOINT_RHW_SCALE_X2;
 
 
     rdVector4 barColor = { 0 }; // Added: Init to zero
@@ -1241,7 +1241,7 @@ void J3DAPI JonesHud_DrawEnduranceIndicator(float state, float alpha)
     rect.width = JonesHud_enduranceIndScale * 2.0f;
     rect.height = rect.width;
 
-    JonesHud_Draw(JonesHud_pHudBaseMat, &rect, 0.000091554131f, 0.000091554131f, &barColor, 0, 1);// 0.000091554131f = 1 / 10922.5f - 1 / (42.666051f * 256)
+    JonesHud_Draw(JonesHud_pHudBaseMat, &rect, RD_FIXEDPOINT_RHW_SCALE_X3, RD_FIXEDPOINT_RHW_SCALE_X3, &barColor, 0, 1);// 0.000091554131f, will draw the base mat above previously drawn endurance indicator parts
 }
 
 void J3DAPI JonesHud_SetFadeHealthHUD(int bShow, int bFade)
@@ -1337,29 +1337,31 @@ void J3DAPI JonesHud_DrawHealthIndicator(float hitDelta, float health, float alp
     rdVector4 color = JonesHud_colorWhite;
     if ( (sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.flags & SITH_AF_POISONED) != 0 )
     {
+        // Draws poisoned mat above all components in health indicator
         color.alpha = 0.25f;
-        JonesHud_Draw(
-            JonesHud_pPoisonedOverlayMat,
+        JonesHud_Draw(JonesHud_pPoisonedOverlayMat,
             &JonesHud_healthIndRect,
-            RD_FIXEDPOINT_RHW_SCALE,               // z; 0.00003051844f = 1/ 32767 - 1 / (128*256-1)
-            RD_FIXEDPOINT_RHW_SCALE,               // rhw
+            RD_FIXEDPOINT_RHW_SCALE_X1, // sz
+            RD_FIXEDPOINT_RHW_SCALE_X1, // rhw
             &color,
             /*celNum=*/0,
             /*bAlpha=*/1
         );
     }
 
-    if ( hitDelta > 0.0f ) {
-        JonesHud_DrawHealthHitOverlay(hitDelta, 0.000061036088f, 0.000061036088f);// 0.000061036088f = 1 / 16384 - 1 /(64*256)
+    // Draw hit flash effect
+    if ( hitDelta > 0.0f )
+    {
+        JonesHud_DrawHealthHitOverlay(hitDelta, RD_FIXEDPOINT_RHW_SCALE_X2, RD_FIXEDPOINT_RHW_SCALE_X2);// 0.000061036088f, will draw below poison overlay mat
     }
 
     color.alpha = alpha;
-    JonesHud_Draw(JonesHud_pHealthOverlay, &JonesHud_healthIndRect, 0.000091554131f, 0.000091554131f, &color, 0, 1);// 0.000091554131f - 1 / 10922.5f - 1 / (42.666015f*256)
+    JonesHud_Draw(JonesHud_pHealthOverlay, &JonesHud_healthIndRect, RD_FIXEDPOINT_RHW_SCALE_X3, RD_FIXEDPOINT_RHW_SCALE_X3, &color, 0, 1);// 0.000091554131f, draws overlay below previously drawn components
 
     // Draws health bar in a style of a "pie chart", in colors yellow, red or black
     // Then draw_icon base beneath underneath with health bar circle in color green, yellow, red  
-    JonesHud_DrawHealthIndicatorBar(health, alpha, 0.00012207218f, 0.00012207218f);// 0.00012207218f - 1 / 8192 = 1/(32*256); 256 could be w
-    JonesHud_DrawHealthIndicatorBase(health, alpha, 0.00015259022f, 0.00015259022f);// 0.00015259022f - 1/ 6554 - 1(25.599602f*256)
+    JonesHud_DrawHealthIndicatorBar(health, alpha, RD_FIXEDPOINT_RHW_SCALE_X4, RD_FIXEDPOINT_RHW_SCALE_X4);// 0.00012207218f, draws pie chart bar below previously drawn components and above base (color: yellow or red or black)
+    JonesHud_DrawHealthIndicatorBase(health, alpha, RD_FIXEDPOINT_RHW_SCALE_X5, RD_FIXEDPOINT_RHW_SCALE_X5);// 0.00015259022f, draws base below all previous components (color: green, yellow or red)
 }
 
 void J3DAPI JonesHud_DrawHealthHitOverlay(float hitDelta, float z, float rhw)
@@ -1413,7 +1415,6 @@ void J3DAPI JonesHud_RenderHealthIndicator(float healthState)
             JonesHud_healthIndAlpha = 1.0f;
             JonesHud_msecHealthIndLastFadeUpdate = JonesHud_msecTime;
         }
-
         else if ( JonesHud_healthIndAlpha > 0.2f
             && JonesHud_curHealth == health
             && JonesHud_HasTimeElapsed(3000u, JonesHud_msecHealthIndLastFadeUpdate + 3000, JonesHud_msecTime) )
@@ -2643,7 +2644,7 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                     float textY = pos.y - (70.0f * JonesHud_heightAspectRatioScale);
                     textX /= (JonesHud_widthAspectRatioScale * RD_REF_WIDTH);
                     textY /= (JonesHud_heightAspectRatioScale * RD_REF_HEIGHT);
-                    rdFont_DrawTextLineClipped(aItemText, textX, textY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pMenuFont, RDFONT_ALIGNCENTER);
+                    rdFont_DrawTextLineClipped(aItemText, textX, textY, RD_FIXEDPOINT_RHW_SCALE_X1, JonesHud_pMenuFont, RDFONT_ALIGNCENTER);
                 }
             }
 
@@ -4336,7 +4337,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 rdFont_SetFontColor(aFontColor);
 
                 float posY = JonesHud_aCreditsCurPosY[i] / (float)(int)JonesHud_creditsCanvasHeight;
-                rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont2, RDFONT_ALIGNCENTER);
+                rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE_X1, JonesHud_pCreditsFont2, RDFONT_ALIGNCENTER);
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
                     && !bEndCredits
@@ -4394,11 +4395,11 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                 float posY = JonesHud_aCreditsCurPosY[i] / (float)(int)JonesHud_creditsCanvasHeight;
                 if ( pText )
                 {
-                    rdFont_DrawTextLine(pText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
+                    rdFont_DrawTextLine(pText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE_X1, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
                 }
                 else
                 {
-                    rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
+                    rdFont_DrawTextLine(JonesHud_aCredits[i].aText, 0.5f, posY, RD_FIXEDPOINT_RHW_SCALE_X1, JonesHud_pCreditsFont1, RDFONT_ALIGNCENTER);
                 }
 
                 if ( i + 1 < STD_ARRAYLEN(JonesHud_aCreditsCurPosY)
@@ -4465,7 +4466,7 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
                     rdVector_Copy4(&fontColor, &JonesHud_aCreditFontColors[JonesHud_aCredits[i].fontColorNum]);
                     fontColor.alpha = fontAlpha;
 
-                    JonesHud_Draw(pIconMat, &rect, RD_FIXEDPOINT_RHW_SCALE, RD_FIXEDPOINT_RHW_SCALE, &fontColor, JonesHud_curCelNum, 1);
+                    JonesHud_Draw(pIconMat, &rect, RD_FIXEDPOINT_RHW_SCALE_X1, RD_FIXEDPOINT_RHW_SCALE_X1, &fontColor, JonesHud_curCelNum, 1);
                 }
                 else
                 {
