@@ -495,7 +495,7 @@ SithCogSyntaxNode* J3DAPI sithCogParse_MakeLeafNode(SithCogExecOpcode opcode, in
     return pNewNode;
 }
 
-SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(SithCogExecOpcode opcode, const YYSTYPE* pVal)
+SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(SithCogExecOpcode opcode, const rdVector3* pVect)
 {
     SithCogSyntaxNode* pNewNode = sithCogParse_GetNextNode();
     if ( !pNewNode ) // Fixed: was !sithCogParse_GetNextNode
@@ -504,7 +504,7 @@ SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(SithCogExecOpcode opco
     }
 
     pNewNode->opcode   = opcode;
-    pNewNode->vecValue = pVal->vecValue;
+    pNewNode->vecValue = *pVect;
 
     pCurrentRoot = pNewNode;
     return pNewNode;

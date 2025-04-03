@@ -486,7 +486,7 @@
 #define sithCogParse_GetSymbolByID_TYPE SithCogSymbol* (J3DAPI*)(const SithCogSymbolTable*, size_t)
 #define sithCogParse_GetSymbolLabel_TYPE uint32_t (J3DAPI*)(size_t)
 #define sithCogParse_MakeLeafNode_TYPE SithCogSyntaxNode* (J3DAPI*)(SithCogExecOpcode, int)
-#define sithCogParse_MakeVectorLeafNode_TYPE SithCogSyntaxNode* (J3DAPI*)(SithCogExecOpcode, const YYSTYPE*)
+#define sithCogParse_MakeVectorLeafNode_TYPE SithCogSyntaxNode* (J3DAPI*)(SithCogExecOpcode, const rdVector3*)
 #define sithCogParse_MakeNode_TYPE SithCogSyntaxNode* (J3DAPI*)(SithCogSyntaxNode*, SithCogSyntaxNode*, SithCogExecOpcode, int)
 #define sithCogParse_LexerSetSymbol_TYPE void (J3DAPI*)(const char*)
 #define sithCogParse_LexerSetString_TYPE void (J3DAPI*)(const char*)

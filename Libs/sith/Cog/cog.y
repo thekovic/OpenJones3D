@@ -31,7 +31,7 @@ static SithCogSyntaxNode* pConditionNode;
 uint32_t sithCogParse_GetNextLabel(void);
 uint32_t J3DAPI sithCogParse_GetSymbolLabel(size_t symbolId);
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeLeafNode(SithCogExecOpcode opcode, int symbolId);
-SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(SithCogExecOpcode opcode, const YYSTYPE* pVal);
+SithCogSyntaxNode* J3DAPI sithCogParse_MakeVectorLeafNode(SithCogExecOpcode opcode, const rdVector3* pVect);
 SithCogSyntaxNode* J3DAPI sithCogParse_MakeNode(SithCogSyntaxNode* pLeft, SithCogSyntaxNode* pRight, SithCogExecOpcode opcode, int value);
 %}
 
