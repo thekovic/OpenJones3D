@@ -2,6 +2,7 @@
 #include <j3dcore/j3dhook.h>
 
 #include <rdroid/Engine/rdClip.h>
+#include <rdroid/Main/rdroid.h>
 #include <rdroid/RTI/symbols.h>
 
 #include <std/General/stdColor.h>
@@ -199,12 +200,16 @@ int J3DAPI rdPrimit2_DrawClippedLine2(float x1, float y1, float x2, float y2, ui
         return 0;
     }
 
-    rdPrimit2_aD3DVertices[0].sx = x1;
-    rdPrimit2_aD3DVertices[0].sy = y1;
+    rdPrimit2_aD3DVertices[0].sx    = x1;
+    rdPrimit2_aD3DVertices[0].sy    = y1;
+    rdPrimit2_aD3DVertices[0].sz    = RD_FIXEDPOINT_RHW_SCALE_X3; // Fixed: Assigned sz value, should fix scaling & depth layering which fixes drawing line in some cases
+    rdPrimit2_aD3DVertices[0].rhw   = RD_FIXEDPOINT_RHW_SCALE_X3; // Fixed: Assigned rhw value, should fix scaling & depth layering which fixes drawing line in some cases
     rdPrimit2_aD3DVertices[0].color = color;
 
-    rdPrimit2_aD3DVertices[1].sx = x2;
-    rdPrimit2_aD3DVertices[1].sy = y2;
+    rdPrimit2_aD3DVertices[1].sx  = x2;
+    rdPrimit2_aD3DVertices[1].sy  = y2;
+    rdPrimit2_aD3DVertices[1].sz  = RD_FIXEDPOINT_RHW_SCALE_X3; // Fixed: Assigned sz value, should fix scaling & depth layering which fixes drawing line in some cases
+    rdPrimit2_aD3DVertices[1].rhw = RD_FIXEDPOINT_RHW_SCALE_X3; // Fixed: Assigned rhw value, should fix scaling & depth layering which fixes drawing line in some cases
     rdPrimit2_aD3DVertices[1].color = color;
 
     std3D_DrawLineStrip(rdPrimit2_aD3DVertices, 2u);
