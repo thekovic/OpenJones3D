@@ -911,8 +911,6 @@ void JonesHud_UpdateSinCosTable(void)
 
 void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height)
 {
-    JonesHud_healthIndAlpha = 1.0f;
-
     // Fixed: Fixed HUD scaling of indicator by using only JonesHud_widthAspectRatioScale
     // These coords are all in screen size
     JonesHud_healthIndRect.x      = JonesHud_widthAspectRatioScale * 24.0f;
