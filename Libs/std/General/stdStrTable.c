@@ -231,13 +231,13 @@ int J3DAPI stdStrTable_ReadLine(tFileHandle fh, char* pStr, int size)
     bool bFinish = false;
     while ( !bFinish )
     {
-        size_t nRead = std_g_pHS->pFileGets(fh, pStr, size);
-        if ( nRead != 0 && !strchr(pStr, '\n') ) // Added: Added check for no data read from file
+        char* pReadStr = std_g_pHS->pFileGets(fh, pStr, size);
+        if ( pReadStr != NULL && strchr(pStr, '\n') == NULL ) // Added: Added check for no data read from file
         {
             char aBuf[64] = { 0 };
             do {
-                nRead = std_g_pHS->pFileGets(fh, aBuf, sizeof(aBuf));
-            } while ( nRead != 0 && !strchr(aBuf, '\n') ); // Fixed: Added check for no data read from file. This fixes potential infinitive loop bug when there is no line break at the end of the file
+                pReadStr = std_g_pHS->pFileGets(fh, aBuf, sizeof(aBuf));
+            } while ( pReadStr != NULL && strchr(aBuf, '\n') == NULL ); // Fixed: Added check for no data read from file. This fixes potential infinitive loop bug when there is no line break at the end of the file
         }
 
         // Skip spaces
@@ -246,7 +246,7 @@ int J3DAPI stdStrTable_ReadLine(tFileHandle fh, char* pStr, int size)
             ;
         }
 
-        if ( nRead == 0 || (*pch != '#' && *pch && *pch != '\r' && *pch != '\n') ) // Fixed: Added check for no data read from file to prevent potential infinitive loop bug
+        if ( pReadStr == NULL || (*pch != '#' && *pch && *pch != '\r' && *pch != '\n') ) // Fixed: Added check for no data read from file to prevent potential infinitive loop bug
         {
             bFinish = true;
         }
