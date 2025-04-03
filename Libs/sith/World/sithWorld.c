@@ -36,8 +36,10 @@
 
 #define SITHWORLD_NDYMINVERSION 2
 #define SITHWORLD_NDYMAXVERSION 3
-#define SITHWORLD_CNDVERSION 3
+#define SITHWORLD_CNDVERSION    3
 
+// A "mocking" world struct which is stored to cnd files.
+// Stores all pointers as uint32_t type
 typedef struct sCndWorld
 {
     char aCopyright[1216];
@@ -109,7 +111,47 @@ static bool bWorldStartup = false; // Altered: Init to 0
 
 static bool bValidCopyright;
 static char aCopyrightBuf[1216];
-static const char aCopyrightSymbol[1216] = "................................................@...@...@...@................@...@..@..@...@....................@.@.@.@.@.@.....@@@@@@@@......@...........@.....@@@@@@@@....@@......@@@....@....@@.....@.....@......@@@.....@@..@@.@@@@@......@.....@@@......@@.@@@@@@@@.......@....@@.....@@...@@@@@@@@.........@@@@@@@@@@.....@@@@@@@@..........@@@@@@........@@.....@..........@@@@@.........@@.@@@@@.........@@@@@@.........@@.....@.........@@@@@@.........@@@@@@@@.........@@@@@@.........@@@@@@@@.........@@@@@@@........@@@...@@.........@@@@@@@........@@.@@@.@.........@.....@........@@..@..@........@.......@.......@@@@@@@@........@.......@.......@@@@@@@@.......@........@.......@@..@@@@.......@........@.......@@@@..@@......@.........@.......@@@@.@.@......@.........@.......@@....@@........................@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@@@.@.@.@@@@.@.@@@.@..@@...@@@..@@@..@@@@@@....@@@..@@@@@.@@@@.@@@@@@@@@@...@@.@@@.@@@@@..@@...@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.(c).lucasarts.entertainment..@@.........company.llc..........@@....(c).lucasfilm.ltd.&.tm....@@.....all.rights.reserved......@@...used.under.authorization...@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@";
+static const char aCopyrightSymbol[1217] =
+{
+    "................................"
+    "................@...@...@...@..."
+    ".............@...@..@..@...@...."
+    "................@.@.@.@.@.@....."
+    "@@@@@@@@......@...........@....."
+    "@@@@@@@@....@@......@@@....@...."
+    "@@.....@.....@......@@@.....@@.."
+    "@@.@@@@@......@.....@@@......@@."
+    "@@@@@@@@.......@....@@.....@@..."
+    "@@@@@@@@.........@@@@@@@@@@....."
+    "@@@@@@@@..........@@@@@@........"
+    "@@.....@..........@@@@@........."
+    "@@.@@@@@.........@@@@@@........."
+    "@@.....@.........@@@@@@........."
+    "@@@@@@@@.........@@@@@@........."
+    "@@@@@@@@.........@@@@@@@........"
+    "@@@...@@.........@@@@@@@........"
+    "@@.@@@.@.........@.....@........"
+    "@@..@..@........@.......@......."
+    "@@@@@@@@........@.......@......."
+    "@@@@@@@@.......@........@......."
+    "@@..@@@@.......@........@......."
+    "@@@@..@@......@.........@......."
+    "@@@@.@.@......@.........@......."
+    "@@....@@........................"
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+    "@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@"
+    "@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@"
+    "@@.@.@.@@@@.@.@@@.@..@@...@@@..@"
+    "@@..@@@@@@....@@@..@@@@@.@@@@.@@"
+    "@@@@@@@@...@@.@@@.@@@@@..@@...@@"
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+    "@.(c).lucasarts.entertainment..@"
+    "@.........company.llc..........@"
+    "@....(c).lucasfilm.ltd.&.tm....@"
+    "@.....all.rights.reserved......@"
+    "@...used.under.authorization...@"
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+};
 
 static SithWorldLoadProgressCallback pfLoadProgressCallback;
 
@@ -783,7 +825,7 @@ int J3DAPI sithWorld_ReadCopyrightText(SithWorld* pWorld, int bSkip)
         memcpy(&aCopyrightBuf[SITHWORLD_COPYRIGHTLINELEN * i], stdConffile_g_aLine, SITHWORLD_COPYRIGHTLINELEN); // Note, must be exact size, no null term
     }
 
-    if ( memcmp(aCopyrightBuf, aCopyrightSymbol, STD_ARRAYLEN(aCopyrightSymbol)) != 0 )
+    if ( memcmp(aCopyrightBuf, aCopyrightSymbol, STD_ARRAYLEN(aCopyrightSymbol) - 1) != 0 )
     {
         SITHLOG_ERROR("Error: Invalid copyright symbol.\n", stdConffile_g_aLine, pWorld->aName);
         bValidCopyright = false;
@@ -870,7 +912,8 @@ void J3DAPI sithWorld_GetMemoryUsage(const SithWorld* pWorld, size_t(*aMemUsed)[
     (*aMemUsed)[13] = sizeof(rdSprite3) * pWorld->numSprites;
     for ( size_t i = 0; i < pWorld->numSprites; ++i )
     {
-        (*aMemUsed)[13] += (sizeof(rdVector3) + sizeof(rdVector2)) * pWorld->aSprites[i].face.numVertices; static_assert(sizeof(rdVector3) + sizeof(rdVector2) == 20, ""); //  sizeof(rdVector3) - offset ;  sizeof(rdVector2) - aTexVerts
+        (*aMemUsed)[13] +=
+            (sizeof(rdVector3) + sizeof(rdVector2)) * pWorld->aSprites[i].face.numVertices; static_assert(sizeof(rdVector3) + sizeof(rdVector2) == 20, ""); //  sizeof(rdVector3) - offset ;  sizeof(rdVector2) - aTexVerts
     }
 
     (*aCount)[14] = pWorld->numThingTemplates;
@@ -1290,7 +1333,7 @@ int J3DAPI sithWorld_ReadGeoresourceBinary(tFileHandle fh, SithWorld* pWorld)
 int J3DAPI sithWorld_WriteEntryBinary(SithWorld* pWorld, const char* pFilename)
 {
     CndWorld cndWorld;
-    memcpy(&cndWorld.aCopyright, aCopyrightSymbol, STD_ARRAYLEN(aCopyrightSymbol)); // Must be exact size, no null term
+    memcpy(&cndWorld.aCopyright, aCopyrightSymbol, STD_ARRAYLEN(aCopyrightSymbol) - 1); // Must be exact size, no null term
 
     STD_STRCPY(cndWorld.aName, pFilename);
     stdUtil_ToLower(cndWorld.aName);
@@ -1450,7 +1493,7 @@ int J3DAPI sithWorld_LoadEntryBinary(SithWorld* pWorld, const char* pFilePath)
     STD_STRCPY(pWorld->aName, pFilename);
     stdUtil_ToLower(pWorld->aName);
 
-    if ( memcmp(pWorld, aCopyrightSymbol, sizeof(aCopyrightSymbol)) != 0 )
+    if ( memcmp(pWorld->aCopyright, aCopyrightSymbol, STD_ARRAYLEN(aCopyrightSymbol) - 1) != 0 )
     {
         goto error;
     }
