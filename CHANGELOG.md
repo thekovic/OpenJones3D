@@ -18,8 +18,9 @@
   - Added programs `yacc` & `flex` (d6f5be6 + b669ca8)
   - Fixed yacc initial line number at the start of code parsing.(232f268)  
     This fixes line number in log when error is encountered.
-  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed on the execution stack on error. (e9d4167)  
+  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed to the execution stack on error. (e9d4167)  
     This fixes corruption of the COG's execution stack when an error occurs.
+  - Added new rdVector arithmetic functions (c4c8ee5)
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
@@ -57,6 +58,7 @@
     * `sithCogFunctionThing` ([PR#19](https://github.com/smlu/OpenJones3D/pull/19))
     * `jonesConfig` ([PR#21](https://github.com/smlu/OpenJones3D/pull/21))
     * `sithWorld` (85a9ebe)
+    * `sithOverlayMap` (967e433)
     - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
     - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
     - Refactored `stdControl` module (fc4060c)
@@ -106,6 +108,8 @@
   - Fixed column padding in trading post dialog (a8a32ff)
   - Increased the size of store item icon to 48 (a8a32ff)
   - Fixed drawing 2D line to 24 BPP & 32 BPP video buffer (a8a32ff)
+  - Fixed the alpha value of the health indicator on the first run and when the screen resolution changes (e32a52d)
+  - Fixed the hardware-accelerated drawing of 2D lines (5a63bc7)
 
 ### Game play:
   - Fixed incorrect removal of loop-playing far sound. (2a25add)  
@@ -116,6 +120,7 @@
   - Restricted developer/debug control keys to in-editor/dev mode only (d25081f)
   - Fixed stop looping far sound when volume is below threshold (5a169d7)
   - Fixed playing far sound on sound restore from savegame (b8a82d4)
+    Subsequently, it fixes the drawing of level wireframe geometry onto the overlay map.
 
 ## v0.2
 ### General:
