@@ -1955,7 +1955,6 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                 case SITHPLAYERMOVE_SLIDEDOWNFORWARD:
                 case SITHPLAYERMOVE_SLIDEDOWNBACK:
                 {
-                    sithPhysics_ResetThingMovement(pThing); // TODO: [BUG] should not be call when falling
                     if ( (pThing == sithPlayer_g_pLocalPlayerThing || (pThing->thingInfo.actorInfo.flags & SITH_AF_NOSLOPEMOVE) != 0)
                         && (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0 )
                     {
@@ -1970,7 +1969,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                                 sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_SWIM);
                             }
                         }
-                        else if ( pThing->attach.flags )
+                        else if ( pThing->attach.flags != 0 )
                         {
                             pThing->moveStatus = SITHPLAYERMOVE_STILL;
                         }
@@ -1979,6 +1978,17 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                             pThing->moveStatus = SITHPLAYERMOVE_FALLING;
                         }
                     }
+
+                #ifdef J3D_QOL_IMPROVEMENTS
+                    // Movement must not be reset if the player is falling
+                    // as it will cause the falling velocity to be reset 
+                    // making it possible to fall from high places without taking damage
+                    if ( pThing->moveStatus != SITHPLAYERMOVE_FALLING ) {
+                        sithPhysics_ResetThingMovement(pThing);
+                    }
+                #else
+                    sithPhysics_ResetThingMovement(pThing); // Altered: Moved to after above player check
+                #endif
 
                     break;
                 }
