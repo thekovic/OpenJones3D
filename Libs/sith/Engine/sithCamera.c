@@ -5,10 +5,15 @@
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
 
+#include <sith/Engine/sithAnimate.h>
 #include <sith/Engine/sithCollision.h>
 #include <sith/Engine/sithRender.h>
+#include <sith/Gameplay/sithInventory.h>
 #include <sith/Gameplay/sithPlayer.h>
+#include <sith/Gameplay/sithPlayerActions.h>
+#include <sith/Gameplay/sithTime.h>
 #include <sith/RTI/symbols.h>
+#include <sith/World/sithThing.h>
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdMemory.h>
@@ -69,7 +74,7 @@ void sithCamera_InstallHooks(void)
     J3D_HOOKFUNC(sithCamera_RestoreExtCamera);
     J3D_HOOKFUNC(sithCamera_GetPrimaryFocus);
     J3D_HOOKFUNC(sithCamera_GetSecondaryFocus);
-    // J3D_HOOKFUNC(sithCamera_Update);
+    J3D_HOOKFUNC(sithCamera_Update);
     J3D_HOOKFUNC(sithCamera_RenderScene);
     J3D_HOOKFUNC(sithCamera_SetPOVShake);
     J3D_HOOKFUNC(sithCamera_SearchSectorInRadius);
@@ -250,10 +255,10 @@ void sithCamera_ResetGlobals(void)
 //    return J3D_TRAMPOLINE_CALL(sithCamera_GetSecondaryFocus, pCamera);
 //}
 
-void J3DAPI sithCamera_Update(SithCamera* pCamera)
-{
-    J3D_TRAMPOLINE_CALL(sithCamera_Update, pCamera);
-}
+//void J3DAPI sithCamera_Update(SithCamera* pCamera)
+//{
+//    J3D_TRAMPOLINE_CALL(sithCamera_Update, pCamera);
+//}
 
 //void sithCamera_RenderScene(void)
 //{
@@ -645,6 +650,924 @@ SithThing* J3DAPI sithCamera_GetSecondaryFocus(const SithCamera* pCamera)
 {
     SITH_ASSERTREL(pCamera != NULL);
     return pCamera->pSecondaryFocusThing;
+}
+
+void J3DAPI sithCamera_Update(SithCamera* pCamera)
+{
+    double v1;
+    double zDist;
+    double v3;
+    double v4;
+    double v5;
+    double v6;
+    SithSector* pNewSector;
+    double distToLook;
+    double v9;
+    double v10;
+    float v12;
+    float v13;
+    float v14;
+    float v15;
+    float v16;
+    float v17;
+    float v18;
+    float v19;
+    float v20;
+    float v21;
+    float v22;
+    float v23;
+    float v24;
+    float v25;
+    SithCameraType type;
+    rdVector4 startColor;
+    rdVector4 endColor;
+    float v30;
+    rdVector3 lookDir;
+    rdVector4 colorStart;
+    rdVector4 colorEnd;
+    float v34;
+    rdVector3 newLookOffset;
+    rdVector3 v36;
+    float secLookOffsetDeltaTime;
+    float zDistf;
+    float v39;
+    rdMatrix34 newOrient;
+    rdVector3 newPYR;
+    float zDelta;
+    float secFrameTime;
+    rdVector3 lookPos;
+    int v45;
+    float xDelta;
+    float angleDelta;
+    float yDelta;
+    rdVector3 pos;
+    rdVector3 newPos;
+    rdVector3 newLookPos;
+    float posDelta;
+    SithThing* pThing2;
+    float iterpDelta;
+    int curWeaponId;
+    rdVector3 curCamPos;
+    float interpSpeed;
+    float interpSpeedHalf;
+    SithThing* pThing1;
+    rdVector3 curLookPos;
+    SithWorld* pWorld;
+    rdVector3 vecPYR;
+
+    secFrameTime = sithTime_g_frameTimeFlex;
+    angleDelta = sithTime_g_frameTimeFlex * sithCamera_g_cameraAngleDelta;
+    posDelta = sithTime_g_frameTimeFlex * sithCamera_g_cameraPosDelta;
+
+    interpSpeed = pCamera->interpSpeed;
+    interpSpeedHalf = interpSpeed / 2.0f;
+    v45 = 0;
+    pWorld = sithWorld_g_pCurrentWorld;
+
+    SITH_ASSERTREL(pCamera != ((void*)0));
+    pThing1 = pCamera->pPrimaryFocusThing;
+    pThing2 = pCamera->pSecondaryFocusThing;
+    type = pCamera->type;
+
+    if ( pCamera->type > SITHCAMERA_EXTERNAL )
+    {
+        switch ( type )
+        {
+            case SITHCAMERA_CINEMATIC:
+                SITH_ASSERTREL(pThing1 != ((void*)0));
+                SITH_ASSERTREL(pThing2 != ((void*)0));
+                SITH_ASSERTREL(sithThing_ValidateThingPointer(pWorld, pThing1));
+                SITH_ASSERTREL(sithThing_ValidateThingPointer(pWorld, pThing2));
+
+                memcpy(&newPos, &pThing1->pos, sizeof(newPos));
+                newPos.x = newPos.x + sithCamera_g_vecCameraPosOffset.x;
+                newPos.y = newPos.y + sithCamera_g_vecCameraPosOffset.y;
+                newPos.z = newPos.z + sithCamera_g_vecCameraPosOffset.z;
+
+                memcpy(&lookPos, &pThing2->pos, sizeof(lookPos));
+
+                if ( pCamera->bPosInterp )
+                {
+                    switch ( pCamera->posInterpState )
+                    {
+                        case 0xFFFFFFFF:
+                        LABEL_145:
+                            memcpy(&pCamera->pos, &newPos, sizeof(pCamera->pos));
+                            pCamera->posInterpState = 0;
+                            pCamera->secPosInterpDeltaTime = 0.0f;
+                            break;
+
+                        case 1:
+                            pCamera->secPosInterpDeltaTime = pCamera->secPosInterpDeltaTime + secFrameTime;
+                            v9 = interpSpeed - pCamera->secPosInterpDeltaTime;
+                            iterpDelta = v9;
+                            if ( v9 <= 0.0f )
+                            {
+                                goto LABEL_145;
+                            }
+
+                            iterpDelta = iterpDelta / interpSpeed;
+                            xDelta = (newPos.x - pCamera->pos.x) * iterpDelta;
+                            yDelta = (newPos.y - pCamera->pos.y) * iterpDelta;
+                            zDelta = (newPos.z - pCamera->pos.z) * iterpDelta;
+                            newPos.x = newPos.x - xDelta;
+                            newPos.y = newPos.y - yDelta;
+                            newPos.z = newPos.z - zDelta;
+                            break;
+
+                        case 0:
+                            if ( newPos.x == pCamera->pos.x && newPos.y == pCamera->pos.y && newPos.z == pCamera->pos.z )
+                            {
+                                memcpy(&pCamera->pos, &newPos, sizeof(pCamera->pos));
+                                pCamera->secPosInterpDeltaTime = 0.0f;
+                            }
+                            else
+                            {
+                                pCamera->posInterpState = 1;
+                                pCamera->secPosInterpDeltaTime = 0.0f;
+                                memcpy(&newPos, &pCamera->pos, sizeof(newPos));
+                            }
+
+                            break;
+                    }
+                }
+                else
+                {
+                    memcpy(&pCamera->pos, &newPos, sizeof(pCamera->pos));
+                }
+
+                if ( pCamera->bLookInterp )
+                {
+                    if ( pCamera->lookInterpState == -1 )
+                    {
+                        goto LABEL_159;
+                    }
+
+                    if ( pCamera->lookInterpState != 1 )
+                    {
+                        if ( !pCamera->lookInterpState )
+                        {
+                            if ( lookPos.x == pCamera->curLookInterp.x && lookPos.y == pCamera->curLookInterp.y && lookPos.z == pCamera->curLookInterp.z )
+                            {
+                                memcpy(&pCamera->curLookInterp, &lookPos, sizeof(pCamera->curLookInterp));
+                            }
+                            else
+                            {
+                                pCamera->lookInterpState = 1;
+                                pCamera->secLookInterpDeltaTime = 0.0f;
+                                memcpy(&lookPos, &pCamera->curLookInterp, sizeof(lookPos));
+                            }
+                        }
+
+                        goto LABEL_171;
+                    }
+
+                    pCamera->secLookInterpDeltaTime = pCamera->secLookInterpDeltaTime + secFrameTime;
+                    v10 = interpSpeed - pCamera->secLookInterpDeltaTime;
+                    iterpDelta = v10;
+                    if ( v10 <= 0.0f )
+                    {
+                    LABEL_159:
+                        memcpy(&pCamera->curLookInterp, &lookPos, sizeof(pCamera->curLookInterp));
+                        pCamera->lookInterpState = 0;
+                        pCamera->secLookInterpDeltaTime = 0.0f;
+                    }
+                    else
+                    {
+                        iterpDelta = iterpDelta / interpSpeed;
+                        xDelta = (lookPos.x - pCamera->curLookInterp.x) * iterpDelta;
+                        yDelta = (lookPos.y - pCamera->curLookInterp.y) * iterpDelta;
+                        zDelta = (lookPos.z - pCamera->curLookInterp.z) * iterpDelta;
+                        lookPos.x = lookPos.x - xDelta;
+                        lookPos.y = lookPos.y - yDelta;
+                        lookPos.z = lookPos.z - zDelta;
+                    }
+                }
+                else
+                {
+                    memcpy(&pCamera->curLookInterp, &lookPos, sizeof(pCamera->curLookInterp));
+                }
+
+            LABEL_171:
+                rdMatrix_LookAt(&pCamera->orient, &newPos, &lookPos, 0.0f);
+                rdMatrix_PostRotate34(&pCamera->orient, &sithCamera_g_vecCameraAngleOffset);
+                rdMatrix_Normalize34(&pCamera->orient);
+                pCamera->pSector = sithCamera_SearchSectorInRadius(0, pThing1->pInSector, &pThing1->pos, &pCamera->orient.dvec, 0.0099999998f, 0x2200);
+                goto LABEL_191;
+
+            case SITHCAMERA_IDLE:
+                SITH_ASSERTREL(pThing1 != ((void*)0));
+                SITH_ASSERTREL(sithThing_ValidateThingPointer(pWorld, pThing1));
+                rdMatrix_TransformVector34(&pos, &sithCamera_idleCamOffset, &sithCamera_idleCamOrient);
+
+                lookPos.x = 0.0f;
+                lookPos.y = 0.0f;
+                lookPos.z = 0.050000001f;
+
+                lookPos.x = pThing1->pos.x + 0.0f;
+                lookPos.y = pThing1->pos.y + 0.0f;
+                lookPos.z = pThing1->pos.z + 0.050000001f;
+
+                pos.x = pos.x + lookPos.x;
+                pos.y = pos.y + lookPos.y;
+                pos.z = pos.z + lookPos.z;
+                rdMatrix_LookAt(&pCamera->orient, &pos, &lookPos, 0.0f);
+
+                pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &lookPos, 0.0f);
+                pCamera->pSector = sithCamera_SearchSectorInRadius(0, pCamera->pSector, &lookPos, &pCamera->orient.dvec, 0.0099999998f, 0x200);
+
+                lookDir.x = pCamera->orient.dvec.x - lookPos.x;
+                lookDir.y = pCamera->orient.dvec.y - lookPos.y;
+                lookDir.z = pCamera->orient.dvec.z - lookPos.z;
+                distToLook = rdVector_Len3(&lookDir);
+                v30 = distToLook;
+                if ( distToLook >= 0.098164998f )
+                {
+                    if ( sithCamera_bFocusThingInvisible && !sithPlayerActions_IsInvisible() )
+                    {
+                        memset(&endColor, 0, 12);
+                        endColor.alpha = 1.0f;
+                        memset(&startColor, 0, sizeof(startColor));
+                        sithAnimate_StartThingColorAnim(pThing1, &startColor, &endColor, 0.2f, (SithAnimateFlags)0);
+                        sithCamera_bFocusThingInvisible = 0;
+                    }
+                }
+
+                else if ( !sithCamera_bFocusThingInvisible && !sithPlayerActions_IsInvisible() )
+                {
+                    memset(&endColor, 0, sizeof(endColor));
+                    memset(&startColor, 0, 12);
+                    startColor.alpha = 1.0f;
+                    sithAnimate_StartThingColorAnim(pThing1, &startColor, &endColor, 0.2f, (SithAnimateFlags)0);
+                    sithCamera_bFocusThingInvisible = 1;
+                }
+
+                vecPYR.x = 0.0f;
+                vecPYR.y = sithTime_g_frameTimeFlex * 8.0f;
+                vecPYR.z = 0.0f;
+                rdMatrix_PostRotate34(&sithCamera_idleCamOrient, &vecPYR);
+                rdMatrix_Normalize34(&sithCamera_idleCamOrient);
+                goto LABEL_191;
+
+            case SITHCAMERA_UNKNOWN_40:
+                rdVector_Normalize3Acc(&sithCamera_vecOffsetCamType40);
+                pCamera->orient.lvec.x = -sithCamera_vecOffsetCamType40.x;
+                pCamera->orient.lvec.y = -sithCamera_vecOffsetCamType40.y;
+                pCamera->orient.lvec.z = -sithCamera_vecOffsetCamType40.z;
+
+                pCamera->orient.rvec.x = pCamera->orient.lvec.y * 1.0f - pCamera->orient.lvec.z * 0.0f;
+                pCamera->orient.rvec.y = pCamera->orient.lvec.z * 0.0f - pCamera->orient.lvec.x * 1.0f;
+                pCamera->orient.rvec.z = pCamera->orient.lvec.x * 0.0f - pCamera->orient.lvec.y * 0.0f;
+
+                pCamera->orient.uvec.x = pCamera->orient.rvec.y * pCamera->orient.lvec.z - pCamera->orient.rvec.z * pCamera->orient.lvec.y;
+                pCamera->orient.uvec.y = pCamera->orient.rvec.z * pCamera->orient.lvec.x - pCamera->orient.rvec.x * pCamera->orient.lvec.z;
+                pCamera->orient.uvec.z = pCamera->orient.rvec.x * pCamera->orient.lvec.y - pCamera->orient.rvec.y * pCamera->orient.lvec.x;
+                rdMatrix_Normalize34(&pCamera->orient);
+
+                pCamera->orient.dvec.x = sithCamera_vecOffsetCamType40.x * 0.2f;
+                pCamera->orient.dvec.y = sithCamera_vecOffsetCamType40.y * 0.2f;
+                pCamera->orient.dvec.z = sithCamera_vecOffsetCamType40.z * 0.2f;
+                rdMatrix_PostTranslate34(&pCamera->orient, &pThing1->pos);
+
+                pCamera->pSector = sithCamera_SearchSectorInRadius(0, pThing1->pInSector, &pThing1->pos, &pCamera->orient.dvec, 0.01f, 0x2200);
+                goto LABEL_191;
+
+            case SITHCAMERA_ORBITAL:
+                SITH_ASSERTREL(pThing1 != ((void*)0));
+                SITH_ASSERTREL(sithThing_ValidateThingPointer(pWorld, pThing1));
+                memcpy(&pCamera->orient, &sithCamera_g_orbCamOrient, sizeof(pCamera->orient));
+                rdMatrix_PostTranslate34(&pCamera->orient, &pThing1->pos);
+                pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &pCamera->orient.dvec, 0.01f);
+                goto LABEL_191;
+
+            case SITHCAMERA_UNKNOWN_100:
+                goto LABEL_35;
+
+            default:
+                goto LABEL_191;
+        }
+    }
+
+    if ( type != SITHCAMERA_EXTERNAL )
+    {
+        if ( type == SITHCAMERA_INTERNAL )
+        {
+            SITH_ASSERTREL(pThing1 != ((void*)0));
+            SITH_ASSERTREL(sithThing_ValidateThingPointer(pWorld, pThing1));
+            memcpy(&pCamera->orient, &pThing1->orient, sizeof(pCamera->orient));
+            if ( pThing1->moveType == SITH_MT_PATH && pThing1->renderData.paJointMatrices )
+            {
+                memcpy(&pCamera->orient, pThing1->renderData.paJointMatrices, sizeof(pCamera->orient));
+            }
+            else
+            {
+                if ( pThing1->type == SITH_THING_ACTOR || pThing1->type == SITH_THING_PLAYER )
+                {
+                    memcpy(&newPYR, &pThing1->thingInfo.actorInfo.headPYR, sizeof(newPYR));
+                }
+                else
+                {
+                    memset(&newPYR, 0, sizeof(newPYR));
+                }
+
+                if ( pThing1->moveType == SITH_MT_PHYSICS )
+                {
+                    v1 = (rdVector_Dot3(&pThing1->orient.rvec, &pThing1->moveInfo.physics.velocity)) * 5.0f;
+
+                    v39 = v1;
+                    if ( v1 < -8.0f )
+                    {
+                        v24 = -8.0f;
+                    }
+                    else
+                    {
+                        if ( v39 > 8.0f )
+                        {
+                            v25 = 8.0f;
+                        }
+                        else
+                        {
+                            v25 = v39;
+                        }
+
+                        v24 = v25;
+                    }
+
+                    newPYR.roll = v24;
+                }
+
+                if ( pThing1 == sithPlayer_g_pLocalPlayerThing )
+                {
+                    newPYR.x = newPYR.x + sithCamera_g_vecCameraAngleOffset.x;
+                    newPYR.y = newPYR.y + sithCamera_g_vecCameraAngleOffset.y;
+                    newPYR.z = newPYR.z + sithCamera_g_vecCameraAngleOffset.z;
+                }
+
+                rdMatrix_PreRotate34(&pCamera->orient, &newPYR);
+                rdMatrix_PostTranslate34(&pCamera->orient, &pThing1->pos);
+                if ( pThing1->type == SITH_THING_ACTOR || pThing1->type == SITH_THING_PLAYER )
+                {
+                    rdMatrix_PreTranslate34(&pCamera->orient, &pThing1->thingInfo.actorInfo.eyeOffset);
+                    if ( pThing1 == sithPlayer_g_pLocalPlayerThing )
+                    {
+                        rdMatrix_PreTranslate34(&pCamera->orient, &sithCamera_g_vecCameraPosOffset);
+                    }
+                }
+
+                rdMatrix_Normalize34(&pCamera->orient);
+            }
+
+            pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &pCamera->orient.dvec, 0.0099999998f);
+        }
+
+        goto LABEL_191;
+    }
+
+LABEL_35:
+
+    // Here cam type should be SITHCAMERA_EXTERNAL or SITHCAMERA_UNKNOWN_100
+    SITH_ASSERTREL(pThing1 != ((void*)0));
+    SITH_ASSERTREL(sithThing_ValidateThingPointer(pWorld, pThing1));
+
+        // What's the point of this check?
+    if ( pCamera->type != SITHCAMERA_EXTERNAL && pCamera->type != SITHCAMERA_UNKNOWN_100 )
+    {
+        goto LABEL_102;
+    }
+
+    if ( (pThing1->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) != 0 )
+    {
+        sithCamera_g_bExtCameraLookMode = 0;
+        pThing1->alpha = 1.0f;
+        sithCamera_RestoreExtCamera();
+        rdMatrix_LookAt(&pCamera->orient, &pCamera->lookPos, &pThing1->pos, 0.0f);
+
+        if ( pThing1->pInSector )
+        {
+            pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &pCamera->lookPos, 0.0f);
+        }
+
+        goto LABEL_191;
+    }
+
+    memcpy(&curLookPos, &pCamera->lookPos, sizeof(curLookPos));
+    if ( pThing1->type == SITH_THING_ACTOR || pThing1->type == SITH_THING_PLAYER )
+    {
+        memcpy(&newPYR, &pThing1->thingInfo.actorInfo.headPYR, sizeof(newPYR));
+    }
+    else
+    {
+        memset(&newPYR, 0, sizeof(newPYR));
+    }
+
+    if ( pThing1 == sithPlayer_g_pLocalPlayerThing )
+    {
+        newPYR.x = newPYR.x + sithCamera_g_vecCameraAngleOffset.pitch;
+        newPYR.y = newPYR.y + sithCamera_g_vecCameraAngleOffset.yaw;
+        newPYR.z = newPYR.z + sithCamera_g_vecCameraAngleOffset.roll;
+    }
+
+    if ( pThing1 != sithPlayer_g_pLocalPlayerThing || sithCamera_g_bExtCameraLookMode || sithCamera_bUpdateCameraOffset )
+    {
+    LABEL_75:
+        memcpy(&pCamera->offset, &sithCamera_vecExtCameraOffset, sizeof(pCamera->offset));
+        goto LABEL_76;
+    }
+
+    if ( pThing1->moveStatus == SITHPLAYERMOVE_SWIMIDLE
+        || (pThing1->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0
+        || (pThing1->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
+    {
+        if ( pThing1->moveStatus == SITHPLAYERMOVE_SWIMIDLE && (pThing1->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 )
+        {
+        LABEL_74:
+            memcpy(&pCamera->offset, &sithCamera_vecExtCameraClimbDownOffset, sizeof(pCamera->offset));
+            goto LABEL_76;
+        }
+
+        goto LABEL_75;
+    }
+
+    if ( (pThing1->moveInfo.physics.flags & SITH_PF_JEEP) == 0 || pThing1->moveStatus == SITHPLAYERMOVE_JEEP_BOARDING )
+    {
+        switch ( pThing1->moveStatus )
+        {
+            case SITHPLAYERMOVE_CLIMBING_UP:
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetClimbingUp, sizeof(pCamera->offset));
+                break;
+
+            case SITHPLAYERMOVE_CLIMBING_DOWN:
+                goto LABEL_74;
+
+            case SITHPLAYERMOVE_CLIMBING_LEFT:
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetClimbingLeft, sizeof(pCamera->offset));
+                break;
+
+            case SITHPLAYERMOVE_CLIMBING_RIGHT:
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetClimbingRight, sizeof(pCamera->offset));
+                break;
+
+            case SITHPLAYERMOVE_SLIDEDOWNFORWARD:
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetSlideForward, sizeof(pCamera->offset));
+                break;
+
+            case SITHPLAYERMOVE_JUMPROLLBACK:
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetJumpRollback, sizeof(pCamera->offset));
+                break;
+
+            case SITHPLAYERMOVE_SLIDEDOWNBACK:
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetSlideBackward, sizeof(pCamera->offset));
+                break;
+
+            default:
+                curWeaponId = sithInventory_GetCurrentWeapon(pThing1);
+                if ( !curWeaponId || curWeaponId == SITHWEAPON_SATCHEL || curWeaponId == SITHWEAPON_ZIPPO )
+                {
+                    goto LABEL_75;
+                }
+
+                memcpy(&pCamera->offset, &sithCamera_vecDefaultCameraOffset, sizeof(pCamera->offset));
+                break;
+        }
+    }
+    else
+    {
+        interpSpeed = 0.2f;
+        memcpy(&pCamera->offset, &sithCamera_vecDefaulExtCameraOffset, sizeof(pCamera->offset));
+    }
+
+LABEL_76:
+    memcpy(&newOrient, &pThing1->orient, sizeof(newOrient));
+
+    switch ( pCamera->focusInterpState )
+    {
+        case 0xFFFFFFFF:
+        LABEL_77:
+            memcpy(&pCamera->focusPos, &pThing1->pos, sizeof(pCamera->focusPos));
+            pCamera->focusInterpState = 0;
+            break;
+
+        case 0:
+            zDist = pCamera->focusPos.z - pThing1->pos.z;
+            zDistf = zDist;
+            if ( zDist > 0.0099999998f && pThing1->collide.movesize * 10.0f >= zDistf )
+            {
+                pCamera->focusInterpState = 1;
+                pCamera->focusPos.x = pThing1->pos.x;
+                pCamera->focusPos.y = pThing1->pos.y;
+                pCamera->secFocusInterpDeltaTime = secFrameTime;
+
+                iterpDelta = (interpSpeedHalf - secFrameTime) / interpSpeedHalf;
+                zDelta = (pThing1->pos.z - pCamera->focusPos.z) * iterpDelta;
+                pCamera->focusPos.z = pThing1->pos.z - zDelta;
+            }
+            else
+            {
+                memcpy(&pCamera->focusPos, &pThing1->pos, sizeof(pCamera->focusPos));
+            }
+
+            break;
+
+        case 1:
+            pCamera->secFocusInterpDeltaTime = pCamera->secFocusInterpDeltaTime + secFrameTime;
+            v3 = interpSpeedHalf - pCamera->secFocusInterpDeltaTime;
+            iterpDelta = v3;
+            if ( v3 > 0.0f )
+            {
+                if ( pCamera->focusPos.z != pThing1->pos.z )
+                {
+                    pCamera->secFocusInterpDeltaTime = secFrameTime;
+                    iterpDelta = interpSpeedHalf - pCamera->secFocusInterpDeltaTime;
+                    pCamera->focusPos.x = pThing1->pos.x;
+                    pCamera->focusPos.y = pThing1->pos.y;
+                }
+
+                iterpDelta = iterpDelta / interpSpeedHalf;
+                zDelta = (pThing1->pos.z - pCamera->focusPos.z) * iterpDelta;
+                pCamera->focusPos.z = pThing1->pos.z - zDelta;
+                break;
+            }
+
+            goto LABEL_77;
+    }
+
+
+    // Offset camera new pos
+    memcpy(&newPos, &pCamera->focusPos, sizeof(newPos));
+    newPos.x = sithCamera_g_vecCameraPosOffset.x * 3.0f + newPos.x;
+    newPos.y = sithCamera_g_vecCameraPosOffset.y * 3.0f + newPos.y;
+    newPos.z = sithCamera_g_vecCameraPosOffset.z * 3.0f + newPos.z;
+
+    // Set camera new orient
+    rdMatrix_PreRotate34(&newOrient, &newPYR);
+    rdMatrix_PostTranslate34(&newOrient, &newPos);
+    memcpy(&pCamera->orient, &newOrient, sizeof(pCamera->orient));
+
+    // Set orient offset
+    if ( sithCamera_secLookOffsetTranslateDelta == 0.0f )
+    {
+        rdMatrix_PreTranslate34(&newOrient, &sithCamera_vecExtCameraLookOffset);
+    }
+    else
+    {
+        // Translate orient offset
+        // This happens when switching to first person look
+        v4 = sithCamera_secLookOffsetTranslateDelta - secFrameTime;
+        secLookOffsetDeltaTime = v4;
+        if ( v4 > 0.0f )
+        {
+            secLookOffsetDeltaTime = secLookOffsetDeltaTime / 0.5f;// half time?
+        }
+
+        v5 = sithCamera_secLookOffsetTranslateDelta - secFrameTime;
+        sithCamera_secLookOffsetTranslateDelta = v5;
+
+        if ( v5 >= 0.0f )
+        {
+            v36.x = (sithCamera_vecExtCameraLookOffset.x - sithCamera_vecExtCameraPrevLookOffset.x) * (1.0f - secLookOffsetDeltaTime);
+            v36.y = (sithCamera_vecExtCameraLookOffset.z - sithCamera_vecExtCameraPrevLookOffset.y) * (1.0f - secLookOffsetDeltaTime);
+            v36.z = (sithCamera_vecExtCameraLookOffset.z - sithCamera_vecExtCameraPrevLookOffset.z) * (1.0f - secLookOffsetDeltaTime);
+            newLookOffset.x = sithCamera_vecExtCameraPrevLookOffset.x + v36.x;
+            newLookOffset.y = sithCamera_vecExtCameraPrevLookOffset.y + v36.y;
+            newLookOffset.z = sithCamera_vecExtCameraPrevLookOffset.z + v36.z;
+            rdMatrix_PreTranslate34(&newOrient, &newLookOffset);
+        }
+        else
+        {
+            rdMatrix_PreTranslate34(&newOrient, &sithCamera_vecExtCameraLookOffset);
+            sithCamera_secLookOffsetTranslateDelta = 0.0f;
+        }
+    }
+
+    // Offset camera orient
+    rdMatrix_PreTranslate34(&pCamera->orient, &pCamera->offset);
+
+    // Find camera new sector
+    pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &newOrient.dvec, 0.0f);
+    memcpy(&newLookPos, &pCamera->orient.dvec, sizeof(newLookPos));
+
+    if ( sithCamera_vecExtCameraLookOffset.x == sithCamera_vecDefaultExtCamLookOffset.x
+        && sithCamera_vecExtCameraLookOffset.y == sithCamera_vecDefaultExtCamLookOffset.y
+        && sithCamera_vecExtCameraLookOffset.z == sithCamera_vecDefaultExtCamLookOffset.z )
+    {
+        pCamera->pSector = sithCamera_SearchSectorInRadius(0, pCamera->pSector, &newOrient.dvec, &pCamera->orient.dvec, 0.0099999998f, 0x200);
+    }
+    else
+    {
+        pCamera->pSector = sithCollision_FindSectorInRadius(pCamera->pSector, &newOrient.dvec, &pCamera->orient.dvec, 0.0f);
+        v45 = 1;
+    }
+
+    memcpy(&curCamPos, &pCamera->orient.dvec, sizeof(curCamPos));
+
+LABEL_102:
+    switch ( pCamera->posInterpState )
+    {
+        case -1:
+            memcpy(&pCamera->pos, &curCamPos, sizeof(pCamera->pos));
+            memcpy(&newPos, &curCamPos, sizeof(newPos));
+            pCamera->posInterpState = 0;
+            pCamera->secPosInterpDeltaTime = 0.0f;
+            break;
+
+        case 1:
+            memcpy(&newPos, &curCamPos, sizeof(newPos));
+            pCamera->secPosInterpDeltaTime = pCamera->secPosInterpDeltaTime + secFrameTime;
+            v6 = interpSpeed - pCamera->secPosInterpDeltaTime;
+            iterpDelta = v6;
+            if ( v6 > 0.0f )
+            {
+                if ( newPos.x != pCamera->pos.x || newPos.y != pCamera->pos.y || newPos.z != pCamera->pos.z )
+                {
+                    pCamera->secPosInterpDeltaTime = secFrameTime;
+                    iterpDelta = interpSpeed - pCamera->secPosInterpDeltaTime;
+                    memcpy(&pCamera->pos, &curLookPos, sizeof(pCamera->pos));
+                }
+
+                iterpDelta = iterpDelta / interpSpeed;
+                xDelta = (newPos.x - pCamera->pos.x) * iterpDelta;
+                yDelta = (newPos.y - pCamera->pos.y) * iterpDelta;
+                zDelta = (newPos.z - pCamera->pos.z) * iterpDelta;
+
+                if ( pThing1->moveStatus != SITHPLAYERMOVE_PULLINGUP )
+                {
+                    newPos.x = newPos.x - xDelta;
+                    newPos.y = newPos.y - yDelta;
+                }
+
+                newPos.z = newPos.z - zDelta;
+            }
+            else
+            {
+                memcpy(&pCamera->pos, &newPos, sizeof(pCamera->pos));
+                pCamera->posInterpState = 0;
+            }
+
+            break;
+
+        case 0:
+            memcpy(&newPos, &curCamPos, sizeof(newPos));
+
+            if ( newPos.x == pCamera->pos.x && newPos.y == pCamera->pos.y && newPos.z == pCamera->pos.z )
+            {
+                memcpy(&pCamera->pos, &curCamPos, sizeof(pCamera->pos));
+            }
+            else
+            {
+                pCamera->posInterpState = 1;
+                pCamera->secPosInterpDeltaTime = secFrameTime;
+                iterpDelta = (interpSpeed - secFrameTime) / interpSpeed;
+                xDelta = (newPos.x - pCamera->pos.x) * iterpDelta;
+                yDelta = (newPos.y - pCamera->pos.y) * iterpDelta;
+                zDelta = (newPos.z - pCamera->pos.z) * iterpDelta;
+
+                if ( pThing1->moveStatus != SITHPLAYERMOVE_PULLINGUP )
+                {
+                    newPos.x = newPos.x - xDelta;
+                    newPos.y = newPos.y - yDelta;
+                }
+
+                newPos.z = newPos.z - zDelta;
+            }
+
+            break;
+    }
+
+    memcpy(&newLookPos, &newOrient.dvec, sizeof(newLookPos));
+    pCamera->pSector = sithCollision_FindSectorInRadius(pCamera->pSector, &pCamera->orient.dvec, &newLookPos, 0.0f);
+    if ( v45 )
+    {
+        pNewSector = sithCollision_FindSectorInRadius(pCamera->pSector, &newOrient.dvec, &newPos, 0.0f);
+    }
+    else
+    {
+        pNewSector = sithCamera_SearchSectorInRadius(0, pCamera->pSector, &newLookPos, &newPos, 0.0099999998f, 0x200);
+    }
+
+    pCamera->pSector = pNewSector;
+
+    // Set camera orient based on new pos and look pos
+    rdMatrix_LookAt(&pCamera->orient, &newPos, &newLookPos, 0.0f);
+
+    memcpy(&sithCamera_g_camSpot, &newPos, sizeof(sithCamera_g_camSpot));
+    memcpy(&sithCamera_g_camLookSpot, &newLookPos, sizeof(sithCamera_g_camLookSpot));
+
+    // Now check if camera is too close to focus thing, and in this cane make foused thing transparent
+    lookDir.x = newLookPos.x - newPos.x;
+    lookDir.y = newLookPos.y - newPos.y;
+    lookDir.z = newLookPos.z - newPos.z;
+    distToLook = rdVector_Len3(&lookDir);
+
+    v34 = distToLook;
+    if ( distToLook < 0.11f )
+    {
+        // Dist too close, translate focus thing to invisible
+        if ( !sithCamera_bFocusThingInvisible && !sithPlayerActions_IsInvisible() )
+        {
+            memset(&colorEnd, 0, sizeof(colorEnd));
+            memset(&colorStart, 0, 12);
+            colorStart.alpha = 1.0f;
+
+            sithAnimate_StartThingColorAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
+            sithCamera_bFocusThingInvisible = 1;
+        }
+    }
+
+    else
+        if ( sithCamera_bFocusThingInvisible && !sithPlayerActions_IsInvisible() && !sithCamera_g_bExtCameraLookMode )
+        {
+            // Translate focus thing to visible as cam is far away enough
+            memset(&colorEnd, 0, 12);
+            colorEnd.alpha = 1.0f;
+            memset(&colorStart, 0, sizeof(colorStart));
+
+            sithAnimate_StartThingColorAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
+            sithCamera_bFocusThingInvisible = 0;
+        }
+
+LABEL_191:
+    // Update global pos & rot delta states
+    memcpy(&pCamera->lookPos, &pCamera->orient.dvec, sizeof(pCamera->lookPos));
+    rdMatrix_ExtractAngles34(&pCamera->orient, &pCamera->lookPYR);
+    if ( sithCamera_g_vecCameraPosOffset.x <= 0.0f )
+    {
+        if ( sithCamera_g_vecCameraPosOffset.x < 0.0f )
+        {
+            if ( sithCamera_g_vecCameraPosOffset.x + posDelta < 0.0f )
+            {
+                v22 = sithCamera_g_vecCameraPosOffset.x + posDelta;
+            }
+            else
+            {
+                v22 = 0.0f;
+            }
+
+            sithCamera_g_vecCameraPosOffset.x = v22;
+        }
+    }
+    else
+    {
+        if ( sithCamera_g_vecCameraPosOffset.x - posDelta > 0.0f )
+        {
+            v23 = sithCamera_g_vecCameraPosOffset.x - posDelta;
+        }
+        else
+        {
+            v23 = 0.0f;
+        }
+
+        sithCamera_g_vecCameraPosOffset.x = v23;
+    }
+
+    if ( sithCamera_g_vecCameraPosOffset.y <= 0.0f )
+    {
+        if ( sithCamera_g_vecCameraPosOffset.y < 0.0f )
+        {
+            if ( sithCamera_g_vecCameraPosOffset.y + posDelta < 0.0f )
+            {
+                v20 = sithCamera_g_vecCameraPosOffset.y + posDelta;
+            }
+            else
+            {
+                v20 = 0.0f;
+            }
+
+            sithCamera_g_vecCameraPosOffset.y = v20;
+        }
+    }
+    else
+    {
+        if ( sithCamera_g_vecCameraPosOffset.y - posDelta > 0.0f )
+        {
+            v21 = sithCamera_g_vecCameraPosOffset.y - posDelta;
+        }
+        else
+        {
+            v21 = 0.0f;
+        }
+
+        sithCamera_g_vecCameraPosOffset.y = v21;
+    }
+
+    if ( sithCamera_g_vecCameraPosOffset.z <= 0.0f )
+    {
+        if ( sithCamera_g_vecCameraPosOffset.z < 0.0f )
+        {
+            if ( sithCamera_g_vecCameraPosOffset.z + posDelta < 0.0f )
+            {
+                v18 = sithCamera_g_vecCameraPosOffset.z + posDelta;
+            }
+            else
+            {
+                v18 = 0.0f;
+            }
+
+            sithCamera_g_vecCameraPosOffset.z = v18;
+        }
+    }
+    else
+    {
+        if ( sithCamera_g_vecCameraPosOffset.z - posDelta > 0.0f )
+        {
+            v19 = sithCamera_g_vecCameraPosOffset.z - posDelta;
+        }
+        else
+        {
+            v19 = 0.0f;
+        }
+
+        sithCamera_g_vecCameraPosOffset.z = v19;
+    }
+
+    if ( sithCamera_g_vecCameraAngleOffset.x <= 0.0f )
+    {
+        if ( sithCamera_g_vecCameraAngleOffset.x < 0.0f )
+        {
+            if ( sithCamera_g_vecCameraAngleOffset.x + angleDelta < 0.0f )
+            {
+                v16 = sithCamera_g_vecCameraAngleOffset.x + angleDelta;
+            }
+            else
+            {
+                v16 = 0.0f;
+            }
+
+            sithCamera_g_vecCameraAngleOffset.x = v16;
+        }
+    }
+    else
+    {
+        if ( sithCamera_g_vecCameraAngleOffset.x - angleDelta > 0.0f )
+        {
+            v17 = sithCamera_g_vecCameraAngleOffset.x - angleDelta;
+        }
+        else
+        {
+            v17 = 0.0f;
+        }
+
+        sithCamera_g_vecCameraAngleOffset.x = v17;
+    }
+
+    if ( sithCamera_g_vecCameraAngleOffset.y <= 0.0f )
+    {
+        if ( sithCamera_g_vecCameraAngleOffset.y < 0.0f )
+        {
+            if ( sithCamera_g_vecCameraAngleOffset.y + angleDelta < 0.0f )
+            {
+                v14 = sithCamera_g_vecCameraAngleOffset.y + angleDelta;
+            }
+            else
+            {
+                v14 = 0.0f;
+            }
+
+            sithCamera_g_vecCameraAngleOffset.y = v14;
+        }
+    }
+    else
+    {
+        if ( sithCamera_g_vecCameraAngleOffset.y - angleDelta > 0.0f )
+        {
+            v15 = sithCamera_g_vecCameraAngleOffset.y - angleDelta;
+        }
+        else
+        {
+            v15 = 0.0f;
+        }
+
+        sithCamera_g_vecCameraAngleOffset.y = v15;
+    }
+
+    if ( sithCamera_g_vecCameraAngleOffset.z <= 0.0f )
+    {
+        if ( sithCamera_g_vecCameraAngleOffset.z < 0.0f )
+        {
+            if ( sithCamera_g_vecCameraAngleOffset.z + angleDelta < 0.0f )
+            {
+                v12 = sithCamera_g_vecCameraAngleOffset.z + angleDelta;
+            }
+            else
+            {
+                v12 = 0.0f;
+            }
+
+            sithCamera_g_vecCameraAngleOffset.z = v12;
+        }
+    }
+    else
+    {
+        if ( sithCamera_g_vecCameraAngleOffset.z - angleDelta > 0.0f )
+        {
+            v13 = sithCamera_g_vecCameraAngleOffset.z - angleDelta;
+        }
+        else
+        {
+            v13 = 0.0f;
+        }
+
+        sithCamera_g_vecCameraAngleOffset.z = v13;
+    }
 }
 
 void sithCamera_RenderScene(void)
