@@ -147,7 +147,7 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_PrintVersion, "version", 0);
     sithConsole_RegisterCommand(JonesConsole_PrintFramerate, "framerate", 0);
     sithConsole_RegisterCommand(JonesConsole_PrintPolys, "polys", 0);
-    sithConsole_RegisterCommand(JonesConsole_ShowEndCredits, "endcredit", SITHCONSOLE_DEVMODE);
+    sithConsole_RegisterCommand(JonesConsole_ShowEndCredits, "endcredit", 0);
 
     // Added: Following commands were added from debug version
     sithConsole_RegisterCommand(JonesConsole_JumpLevel, "jumplevel", SITHCONSOLE_DEVMODE);
