@@ -119,8 +119,14 @@
   - Added mouse button actions for fire/activate, jump, weapon toggle, and weapon selection when in-editor mode (d25081f)
   - Restricted developer/debug control keys to in-editor/dev mode only (d25081f)
   - Fixed stop looping far sound when volume is below threshold (5a169d7)
-  - Fixed playing far sound on sound restore from savegame (b8a82d4)
-    Subsequently, it fixes the drawing of level wireframe geometry onto the overlay map.
+  - Fixed playing far sound on sound restore from savegame (b8a82d4)  
+    Subsequently, this fix addresses the drawing error of level wireframe geometry on the overlay map
+  - [QOL] Improved AI controlled actor movement at cliff edges (8ed5690)  
+    Enhanced the AI actors's behavior when reaching cliff edges. Previously, AI actor would perform a 180-degree turn followed by a random 60-degree movement in new direction. Now, it performs a random 60-degree movement based on its prior direction, resulting in more natural and predictable navigation.
+  - [QOL] Fixed AI collision deadlock on predefined paths (49ef284)  
+    Two AI actors that collided head-on traversing a predefined waypoint path previously entered a "dancing" loop as they continuously attempted to pass each other. Now, upon detecting a collision, each actor randomly adjusts its direction by 0–45° in its current movement direction, enabling them to maneuver past one another.
+  - [QOL] Fixed an issue with falling velocity during jump-rollback movements (c1673ac)  
+  Originally, when player performed a jump-rollback, the fall velocity was incorrectly reset to 0, allowing them to drop from dangerous heights without taking damage. Now, the fall speed is properly maintained.
 
 ## v0.2
 ### General:
