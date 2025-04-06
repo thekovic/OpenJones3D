@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
+
 project(OpenJones3D VERSION 0.3.0)
 
 set(CMAKE_C_STANDARD 11)
@@ -12,7 +13,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
+option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)
 
+if(JONES3D_QOL_IMPROVEMENTS)
+    add_compile_definitions(J3D_QOL_IMPROVEMENTS=1)
+endif()
 
 # Configure the version header file
 configure_file(
