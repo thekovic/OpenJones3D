@@ -485,7 +485,7 @@ void J3DAPI sithAI_EmitEvent(SithAIControlBlock* pLocal, SithAIEventType event, 
             return;
         }
 
-        pLocal->mode &= ~SITHAI_MODE_SLEEPING; // 0x1000 - SITHAI_MODE_SLEEPING
+        pLocal->mode &= ~SITHAI_MODE_SLEEPING;
     }
 
     bool bSendCogEvent = false;
@@ -633,11 +633,17 @@ int J3DAPI sithAI_ProcessUnhandledEvent(SithAIControlBlock* pLocal, SithAIEventT
                 rdVector3 heading;
                 sithAIUtil_GetXYHeadingVector(pLocal->pOwner, &heading);
 
+            #ifdef J3D_QOL_IMPROVEMENTS
+                // Move in the same direction
+                int pathFlags = 0x4002; // 0x2 - yaw | 0x4000 - random
+            #else
                 // Move in the opposite direction
                 rdVector_Neg3Acc(&heading); // TODO: Note, commenting out the this line will make AI not to move back and forth
-                sithAIUtil_ApplyForce(pLocal, &heading, 0.050000001f);
+                sithAIUtil_ApplyForce(pLocal, &heading, 0.05f);
 
-                int pathFlags = 0xC002;
+                int pathFlags = 0xC002; // 0x2 - yaw | 0x4000 - random | 0x8000 - rand neg rvec, but this only works when 0x1 flag is set
+            #endif
+
                 if ( (pLocal->mode & SITHAI_MODE_ACTIVE) != 0 )
                 {
                     pathFlags |= 0x100;
