@@ -761,24 +761,26 @@ int J3DAPI sithAI_ProcessUnhandledWpntEvent(SithAIControlBlock* pLocal, SithAIEv
     sithAI_EmitEvent(pLocal, SITHAI_EVENT_GOAL_UNREACHABLE, 0);
     if ( sithAIUtil_AIMoveToNextWpnt(pLocal, pLocal->moveSpeed, 0.0f, 0) )
     {
-        // TODO: The following commented code can resolves the NPC movement deadlock that occurs when they face each
-        //if ( event == SITHAI_EVENT_TOUCHED )
-        //{
-        //    // TODO: Maybe add check in which direction the AI is facing touched thing
-        //    rdVector3 heading;
-        //    sithAIUtil_GetXYHeadingVector(pLocal->pOwner, &heading);
+    #ifdef J3D_QOL_IMPROVEMENTS
+        // The following code can resolves the NPC movement deadlock that occurs when they face each
+        if ( event == SITHAI_EVENT_TOUCHED )
+        {
+            // TODO: Maybe add check in which direction the AI is facing touched thing
+            rdVector3 heading;
+            sithAIUtil_GetXYHeadingVector(pLocal->pOwner, &heading);
 
-        //    float minDist  = pLocal->pOwner->collide.movesize <= 0.089999996f ? 0.089999996f : pLocal->pOwner->collide.movesize;
-        //    float moveDist = minDist + 0.05f;
+            float minDist  = pLocal->pOwner->collide.movesize <= 0.089999996f ? 0.089999996f : pLocal->pOwner->collide.movesize;
+            float moveDist = minDist + 0.05f;
 
-        //    rdVector3 newPos;
-        //    if ( sithAIUtil_MakePathPos(pLocal, &pLocal->pOwner->pos, minDist, moveDist, 45.0f, 0xC102, &heading, &newPos) )
-        //    {
-        //        sithAIMove_AISetLookPosEyeLevel(pLocal, &newPos);
-        //        sithAIMove_AISetMovePos(pLocal, &newPos, 1.7f);
-        //        return 1;
-        //    }
-        //}
+            rdVector3 newPos;
+            if ( sithAIUtil_MakePathPos(pLocal, &pLocal->pOwner->pos, minDist, moveDist, 45.0f, 0xC102, &heading, &newPos) )
+            {
+                sithAIMove_AISetLookPosEyeLevel(pLocal, &newPos);
+                sithAIMove_AISetMovePos(pLocal, &newPos, 1.7f);
+                return 1;
+            }
+        }
+    #endif
 
         return 1;
     }
