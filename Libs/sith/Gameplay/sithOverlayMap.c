@@ -69,7 +69,7 @@ static int sithOverlayMap_iconBlinkStep;
 static uint32_t sithOverlayMap_msecLastIconBlinkUpdate;
 static int sithOverlayMap_aIconBlinkUpdateIntervals[10] = { 135, 55, 40, 20, 8, 4, 2, 1, 0, 75 };
 
-// Easter egg console command - 
+// Easter egg console command - "06/15/97"
 static const char sithOverlayMap_aEncEasterEggCmd[8] = { '\0', '\x06', '\xFF', '\x01', '\x05', '\xFF', '\t', '\a' };
 
 // Vars used by sithOverlayMap_DrawPlayerIcon
