@@ -12,6 +12,10 @@
 
 J3D_EXTERN_C_START
 
+extern const rdVector2 rdroid_zeroVector2;
+extern const rdVector2 rdroid_xVector2;
+extern const rdVector2 rdroid_yVector2;
+
 #define rdroid_g_zeroVector3 J3D_DECL_FAR_VAR(rdroid_g_zeroVector3, const rdVector3)
 // extern const rdVector3 rdroid_g_zeroVector3 ;
 
