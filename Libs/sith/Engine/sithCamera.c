@@ -888,7 +888,7 @@ void J3DAPI sithCamera_Update(SithCamera* pCamera)
                         memset(&endColor, 0, 12);
                         endColor.alpha = 1.0f;
                         memset(&startColor, 0, sizeof(startColor));
-                        sithAnimate_StartThingColorAnim(pThing1, &startColor, &endColor, 0.2f, (SithAnimateFlags)0);
+                        sithAnimate_StartThingFadeAnim(pThing1, &startColor, &endColor, 0.2f, (SithAnimateFlags)0);
                         sithCamera_bFocusThingInvisible = 0;
                     }
                 }
@@ -898,7 +898,7 @@ void J3DAPI sithCamera_Update(SithCamera* pCamera)
                     memset(&endColor, 0, sizeof(endColor));
                     memset(&startColor, 0, 12);
                     startColor.alpha = 1.0f;
-                    sithAnimate_StartThingColorAnim(pThing1, &startColor, &endColor, 0.2f, (SithAnimateFlags)0);
+                    sithAnimate_StartThingFadeAnim(pThing1, &startColor, &endColor, 0.2f, (SithAnimateFlags)0);
                     sithCamera_bFocusThingInvisible = 1;
                 }
 
@@ -1368,7 +1368,7 @@ LABEL_102:
             memset(&colorStart, 0, 12);
             colorStart.alpha = 1.0f;
 
-            sithAnimate_StartThingColorAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
+            sithAnimate_StartThingFadeAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
             sithCamera_bFocusThingInvisible = 1;
         }
     }
@@ -1381,7 +1381,7 @@ LABEL_102:
             colorEnd.alpha = 1.0f;
             memset(&colorStart, 0, sizeof(colorStart));
 
-            sithAnimate_StartThingColorAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
+            sithAnimate_StartThingFadeAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
             sithCamera_bFocusThingInvisible = 0;
         }
 

@@ -1468,11 +1468,11 @@ void J3DAPI sithCogFunctionThing_ThingFadeAnim(SithCog* pCog)
     SithAnimationSlot* pAnim;
     if ( bLoop )
     {
-        pAnim = sithAnimate_StartThingColorAnim(pThing, &startColor, &endColor, timeDelta * 0.5f, SITHANIMATE_LOOP);
+        pAnim = sithAnimate_StartThingFadeAnim(pThing, &startColor, &endColor, timeDelta * 0.5f, SITHANIMATE_LOOP);
     }
     else
     {
-        pAnim = sithAnimate_StartThingColorAnim(pThing, &startColor, &endColor, timeDelta, (SithAnimateFlags)0);
+        pAnim = sithAnimate_StartThingFadeAnim(pThing, &startColor, &endColor, timeDelta, (SithAnimateFlags)0);
     }
 
     if ( pAnim )
@@ -5286,7 +5286,7 @@ void J3DAPI sithCogFunctionThing_MoveThing(SithCog* pCog)
 
     if ( timeDelta > 0.0 )
     {
-        SithAnimationSlot* pAnim = sithAnimate_StartThingMove(pThing, &vecDirection, moveDist, timeDelta);
+        SithAnimationSlot* pAnim = sithAnimate_StartThingMoveAnim(pThing, &vecDirection, moveDist, timeDelta);
         if ( pAnim )
         {
             sithCogExec_PushInt(pCog, pAnim->animID);
@@ -5325,7 +5325,7 @@ void J3DAPI sithCogFunctionThing_MoveThingToPos(SithCog* pCog)
 
     if ( time > 0.0 )
     {
-        const SithAnimationSlot* pAnim = sithAnimate_StartThingMoveToPos(pThing, &pos, time);
+        const SithAnimationSlot* pAnim = sithAnimate_StartThingMoveAnimToPosAnim(pThing, &pos, time);
         sithCogExec_PushInt(pCog, pAnim ? pAnim->animID : -1);
     }
     else

@@ -230,10 +230,7 @@ void J3DAPI sithCogFunctionSurface_SlideWall(SithCog* pCog)
         return;
     }
 
-    dir.x = speed * dir.x;
-    dir.y = speed * dir.y;
-    dir.z = speed * dir.z;
-
+    rdVector_Scale3Acc(&dir, speed);
     SithAnimationSlot* pAnim = sithAnimate_StartScrollSurfaceAnim(pSurf, &dir);
     if ( !pAnim )
     {
@@ -248,6 +245,7 @@ void J3DAPI sithCogFunctionSurface_SlideWall(SithCog* pCog)
 void J3DAPI sithCogFunctionSurface_GetWallCel(SithCog* pCog)
 {
     SITH_ASSERTREL(pCog);
+
     SithSurface* pSurf = sithCogExec_PopSurface(pCog);
     if ( !pSurf || !pSurf->face.pMaterial )
     {
@@ -281,6 +279,7 @@ void J3DAPI sithCogFunctionSurface_SetWallCel(SithCog* pCog)
 
     int curCelNum = pSurf->face.matCelNum;
     pSurf->face.matCelNum = celNum;
+
     sithSurface_SyncSurface(pSurf);
     sithCogExec_PushInt(pCog, curCelNum);
 }

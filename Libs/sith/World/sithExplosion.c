@@ -87,7 +87,7 @@ void J3DAPI sithExplosion_CreateSpriteThing(SithThing* pThing)
             if ( pMaterial && (numCels = pMaterial->numCels, numCels > 1) )
             {
                 float fps = (float)numCels / (float)pThing->msecLifeLeft * 1000.0f;
-                sithAnimate_StartSpriteAnim(pThing, fps, SITHANIMATE_PAGEFLIP_ANIM);
+                sithAnimate_StartSpriteAnim(pThing, fps, SITHANIMATE_PAGEFLIP);
             }
             else
             {
@@ -102,7 +102,7 @@ void J3DAPI sithExplosion_CreateSpriteThing(SithThing* pThing)
             if ( pMaterial && (numCels = pMaterial->numCels, numCels > 1) && (float)pExplode->pSprite->msecLifeLeft != 0.0f )
             {
                 float fps = (float)numCels / (float)pExplode->pSprite->msecLifeLeft * 1000.0f;
-                sithAnimate_StartSpriteAnim(pExplode->pSprite, fps, SITHANIMATE_PAGEFLIP_ANIM);
+                sithAnimate_StartSpriteAnim(pExplode->pSprite, fps, SITHANIMATE_PAGEFLIP);
             }
             else
             {

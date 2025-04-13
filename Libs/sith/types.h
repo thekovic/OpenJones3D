@@ -271,24 +271,24 @@ typedef enum eSithAnimateFlags
     SITHANIMATE_START_SECOND_FRAME   = 0x02,
     SITHANIMATE_START_THIRD_FRAME    = 0x04,
     SITHANIMATE_FINISH_FIRST_FRAME   = 0x08,
-    SITHANIMATE_PUSH_ITEM_TRACK_ANIM = 0x10,
-    SITHANIMATE_PULL_ITEM_TRACK_ANIM = 0x20,
+    SITHANIMATE_PUSHITEM             = 0x10,
+    SITHANIMATE_PULLITEM             = 0x20,
     SITHANIMATE_MATERIAL             = 0x10000,
     SITHANIMATE_SURFACE              = 0x20000,
     SITHANIMATE_THING                = 0x40000,
-    SITHANIMATE_SPRITE_THING         = 0x80000,
-    SITHANIMATE_SCROLL_SURFACE       = 0x100000,
-    SITHANIMATE_PAGEFLIP_ANIM        = 0x200000,
-    SITHANIMATE_LIGHT_ANIM           = 0x400000,
-    SITHANIMATE_SKY_HORIZON          = 0x800000,
-    SITHANIMATE_SKY_CEILING          = 0x1000000,
+    SITHANIMATE_SPRITE               = 0x80000,
+    SITHANIMATE_SCROLL               = 0x100000,
+    SITHANIMATE_PAGEFLIP             = 0x200000,
+    SITHANIMATE_LIGHT                = 0x400000,
+    SITHANIMATE_SKYHORIZON           = 0x800000,
+    SITHANIMATE_SKYCEILING           = 0x1000000,
     SITHANIMATE_SECTOR               = 0x2000000,
     SITHANIMATE_CAMERA_ZOOM          = 0x4000000,
-    SITHANIMATE_COLOR_ANIM           = 0x8000000,
-    SITHANIMATE_SPRITE_SIZE_ANIM     = 0x10000000,
+    SITHANIMATE_THING_FADE           = 0x8000000,
+    SITHANIMATE_SPRITE_SIZE          = 0x10000000,
     SITHANIMATE_THING_MOVE           = 0x20000000,
-    SITHANIMATE_THING_MOVE_TO_POS    = 0x40000000,
-    SITHANIMATE_THING_YAW_ROTATE     = 0x80000000,
+    SITHANIMATE_THING_MOVEPOS        = 0x40000000,
+    SITHANIMATE_THING_QUICKTURN      = 0x80000000,
 } SithAnimateFlags;
 
 typedef enum eSithControlType
@@ -1819,28 +1819,29 @@ typedef struct sSithAnimationSlot
     SithAnimateFlags flags;
     SithThing* pThing;
     SithThing* pItemThing;
-    int thingSignature;
+    uint32_t thingSignature;
     rdMaterial* pMaterial;
     SithSurface* pSurface;
     SithSector* pSector;
     rdVector2 direction2;
     rdVector3 direction3;
-    rdVector3 position;
-    unsigned int msecNextFrameTime;
-    unsigned int msecPerFrame;
-    int curFrame;
+    rdVector3 thingEndPosition;
+    uint32_t msecNextFrameTime;
+    uint32_t msecPerFrame;
+    size_t curFrame;
     int trackNum;
-    float curDistance;
-    float distance;
+    float curValue;
+    float endValue;
     float secTimeRemaining;
-    float deltaDistance;
+    float deltaValue;
     int unknown24;
-    rdVector4 vecCurrent;
-    rdVector4 vecStart;
-    rdVector4 vecEnd;
-    rdVector4 vecDelta;
+    rdVector4 startVector;
+    rdVector4 curVector;
+    rdVector4 endVector;
+    rdVector4 deltaVector;
     int unknown41;
 } SithAnimationSlot;
+static_assert(sizeof(SithAnimationSlot) == 168, "sizeof(SithAnimationSlot) == 168");
 
 typedef struct sSithMineCarState
 {
