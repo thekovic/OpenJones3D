@@ -120,9 +120,9 @@ def print_detailed_module_stats(module_name: str, progress: Dict[str, Tuple[int,
             continue
         percentage: float = (implemented / total * 100) if total > 0 else 0
         if module_name == 'sith':
-            print(f"    {file_name + ':':<23}{percentage:>6.2f}% ({implemented}/{total})")
+            print(f"    {file_name + ':':<24}{percentage:>6.2f}% ({implemented}/{total})")
         else:
-            print(f"    {file_name + ':':<15}{percentage:>6.2f}% ({implemented}/{total})")
+            print(f"    {file_name + ':':<16}{percentage:>6.2f}% ({implemented}/{total})")
 
 
     print("") # add extra new line
