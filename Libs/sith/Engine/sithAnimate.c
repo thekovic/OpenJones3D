@@ -286,7 +286,6 @@ void J3DAPI sithAnimate_BuildScrollFaceRotate(rdMatrix34* pOrient, const rdFace*
 
     while ( rdVector_Len3(&dvert) < 0.0001f )
     {
-        // TODO: bug the dvert is not getting updated
         if ( ++vertNum == pFace->numVertices )
         {
             vertNum = 0;
@@ -294,6 +293,9 @@ void J3DAPI sithAnimate_BuildScrollFaceRotate(rdMatrix34* pOrient, const rdFace*
 
         nextVert    =  pWorld->aVertices[pFace->aVertices[vertNum]];
         nextTexVert = pWorld->aTexVerticies[pFace->aTexVertices[vertNum]];
+
+        // Fixed: Recalculate dvert, was missing in the original code
+        rdVector_Sub3(&dvert, &vert, &nextVert);
     }
 
     float u = nextTexVert.x - texVert.x;
@@ -837,9 +839,16 @@ SithAnimationSlot* J3DAPI sithAnimate_PushItem(SithThing* pActor, SithThing* pIt
 
     SITH_ASSERTREL(pActor);
     pAnim->pThing = pActor;
+
     if ( pItem )
     {
         pAnim->pItemThing = pItem;
+
+        // Fixed: Moved assignment into this block to avoid null pointer dereference
+        pAnim->msecPerFrame = pItem->collide.type; // Note, msecPerFrame is valid name as it was found in debug symbols.. So might be that anim struct was union, or devs were just lazy and reuse this field instead of creating new one
+
+        // Make item thing non-collidable
+        pItem->collide.type = SITH_COLLIDE_NONE; // Fixed: Moved assignment into this block to avoid null pointer dereference
     }
 
     pAnim->direction3     = *pDirection;
@@ -852,12 +861,7 @@ SithAnimationSlot* J3DAPI sithAnimate_PushItem(SithThing* pActor, SithThing* pIt
     pAnim->deltaValue     = 0.0f;                // ?? it is set to current animate frame in update
     pAnim->startVector.x  = 0.0f;                // Holds current distance item was pushed for
     pAnim->trackNum       = trackNum;
-    // TODO: [BUG] pAnim->pItemThing might be NULL here
-    pAnim->msecPerFrame   = pItem->collide.type; // Note, msecPerFrame is valid name as it was found in debug symbols.. So might be that anim struct was union, or devs were just lazy and reuse this field instead of creating new one
     pAnim->pSurface       = sithAnimate_GetThingFloorSurface(pItem);
-
-    // Make item thing non-collidable
-    pItem->collide.type = SITH_COLLIDE_NONE;
 
     if ( pAnim->pSurface )
     {
@@ -878,9 +882,16 @@ SithAnimationSlot* J3DAPI sithAnimate_PullItem(SithThing* pActor, SithThing* pIt
 
     SITH_ASSERTREL(pActor);
     pAnim->pThing = pActor;
+
     if ( pItem )
     {
         pAnim->pItemThing = pItem;
+
+        // Fixed: Moved assignment into this block to avoid null pointer dereference
+        pAnim->msecPerFrame = pItem->collide.type; // Note, msecPerFrame is valid name as it was found in debug symbols.. So might be that anim struct was union, or devs were just lazy and reuse this field instead of creating new one
+
+        // Make item thing non-collidable
+        pItem->collide.type = SITH_COLLIDE_NONE; // Fixed: Moved assignment into this block to avoid null pointer dereference
     }
 
     pAnim->direction3     = *pDirection;
@@ -893,13 +904,7 @@ SithAnimationSlot* J3DAPI sithAnimate_PullItem(SithThing* pActor, SithThing* pIt
     pAnim->deltaValue     = 0.0f;                // ?? it is set to current animate frame in update
     pAnim->startVector.x  = 0.0f;
     pAnim->trackNum       = trackNum;
-    // TODO: [BUG] pAnim->pItemThing might be NULL here
-    pAnim->msecPerFrame   = pItem->collide.type; // Note, msecPerFrame is valid name as it was found in debug symbols.. So might be that anim struct was union, or devs were just lazy and reuse this field instead of creating new one
     pAnim->pSurface       = sithAnimate_GetThingFloorSurface(pItem);
-
-    // Make item thing non-collidable
-    pItem->collide.type = SITH_COLLIDE_NONE;
-
 
     if ( pAnim->pSurface )
     {
@@ -1655,7 +1660,7 @@ void J3DAPI sithAnimate_UpdatePushItemAnim(SithAnimationSlot* pAnim)
         float surfDrag = pAnim->pItemThing->moveInfo.physics.surfDrag;
         pAnim->pItemThing->moveInfo.physics.surfDrag = 0.0f;
 
-        // Final item push
+        // One final item push
         rdVector3 moveDir = { 0 }; // Fixed: Init to zero; TODO: this must be a bug as it should be a copy of pAnim->direction3
         sithCollision_MoveThing(pAnim->pItemThing, &moveDir, moveDist, 0);
 
@@ -1715,9 +1720,14 @@ void J3DAPI sithAnimate_UpdatePushItemAnim(SithAnimationSlot* pAnim)
     if ( pAnim->endVector.x >= (double)pAnim->endValue || bFinish )// endVector.x holds current distance item was pushed for 
     {
         // Animation completed
-        // TODO: [BUG] pAnim->pItemThing might be NULL here
-        pAnim->pItemThing->collide.type = pAnim->msecPerFrame;
-        sithAnimate_FindAndEnterFloorSurface(pAnim->pItemThing, pAnim->pSurface);// pSurface is item thing start surface
+
+        // Fixed: Added check for pAnim->pItemThing
+        if ( pAnim->pItemThing )
+        {
+            pAnim->pItemThing->collide.type = pAnim->msecPerFrame;
+            sithAnimate_FindAndEnterFloorSurface(pAnim->pItemThing, pAnim->pSurface);// pSurface is item thing start surface
+        }
+
         sithAnimate_Stop(pAnim);
     }
 }
@@ -1794,9 +1804,14 @@ void J3DAPI sithAnimate_UpdatePullItemAnim(SithAnimationSlot* pAnim)
     if ( pAnim->endVector.x >= (double)pAnim->endValue || bFinish ) // endVector.x holds current distance item was pulled for 
     {
         // Animation completed
-        // TODO: [BUG] pAnim->pItemThing might be NULL here
-        pAnim->pItemThing->collide.type = pAnim->msecPerFrame;
-        sithAnimate_FindAndEnterFloorSurface(pAnim->pItemThing, pAnim->pSurface); // pSurface is item thing start surface
+
+        // Fixed: Added check for pAnim->pItemThing
+        if ( pAnim->pItemThing )
+        {
+            pAnim->pItemThing->collide.type = pAnim->msecPerFrame;
+            sithAnimate_FindAndEnterFloorSurface(pAnim->pItemThing, pAnim->pSurface); // pSurface is item thing start surface
+        }
+
         sithAnimate_Stop(pAnim);
     }
 }
