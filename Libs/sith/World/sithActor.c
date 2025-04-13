@@ -137,10 +137,10 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
 
             if ( pThing->thingInfo.actorInfo.endurance.msecUnderwater > (SITHACTOR_MAX_UNDERWATER_MSEC - 10000) )
             {
-                if ( (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 0xF) != 0 )
+                if ( !SITH_ISFRAMECYCLE(pThing->idx, 16) ) // Not on every 16th frame 
                 {
                     if ( pThing->thingInfo.actorInfo.endurance.msecUnderwater > (SITHACTOR_MAX_UNDERWATER_MSEC / 2) // TODO: ???, verify this if statement
-                        && (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 )
+                        && SITH_ISFRAMECYCLE(pThing->idx, 8) ) // On every 8th frame
                     {
                         sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_BREATH);
                     }
@@ -432,7 +432,7 @@ void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damage
     }
     else if ( damageType == SITH_DAMAGE_DROWN )
     {
-        if ( (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 0xF) == 0 )
+        if ( SITH_ISFRAMECYCLE(pThing->idx, 16) ) // On every 16th frame make drawning sound fx
         {
             sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_DROWNING);
         }

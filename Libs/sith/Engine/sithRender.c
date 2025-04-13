@@ -745,7 +745,7 @@ void sithRender_RenderSectors(void)
                             pPoly->flags     = pSurf->face.flags;
                             pPoly->pMaterial = pSurf->face.pMaterial;
 
-                            // Now make sky poly from ransformed vertices
+                            // Now make sky poly from transformed vertices
                             if ( (pSurf->flags & SITH_SURFACE_HORIZONSKY) != 0 )
                             {
                                 sithRenderSky_HorizonFaceToPlane(pPoly, &pSurf->face, sithRender_aSurfaceTransformedVertices, sithRender_clipFaceView.numVertices);

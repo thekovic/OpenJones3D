@@ -528,37 +528,36 @@ void J3DAPI sithCollision_RotateThing(SithThing* pThing, const rdMatrix34* pOrie
 
 void J3DAPI sithCollision_sub_4A6EE0(SithThing* pThing, rdMatrix34* pOrient)
 {
-    SithPhysicsFlags flags;
-    SithThing* pNextAttachedThing;
-    rdMatrix34 mat;
-    float moveDist;
-    rdMatrix34 orient;
-    SithThing* pAttachedThing;
-    rdVector3 moveNorm;
-
     if ( pThing->pAttachedThing )
     {
         rdMatrix_Normalize34(pOrient);
         rdVector_Copy3(&pOrient->dvec, &pThing->pos);
         rdVector_Copy3(&pThing->orient.dvec, &pThing->pos);
+
+        rdMatrix34 orient;
         rdMatrix_InvertOrtho34(&orient, &pThing->orient);
 
-        for ( pAttachedThing = pThing->pAttachedThing; pAttachedThing; pAttachedThing = pNextAttachedThing )
+        SithThing* pNextAttachedThing;
+        for ( SithThing* pAttachedThing = pThing->pAttachedThing; pAttachedThing; pAttachedThing = pNextAttachedThing )
         {
             pNextAttachedThing = pAttachedThing->pNextAttachedThing;
 
             rdVector_Copy3(&pAttachedThing->orient.dvec, &pAttachedThing->pos);
 
+            rdMatrix34 mat;
             rdMatrix_Multiply34(&mat, &orient, &pAttachedThing->orient);
             rdMatrix_PostMultiply34(&mat, pOrient);
 
             /*moveNorm.x = mat.dvec.x - pAttachedThing->pos.x;
             moveNorm.y = mat.dvec.y - pAttachedThing->pos.y;
             moveNorm.z = mat.dvec.z - pAttachedThing->pos.z;*/
+            rdVector3 moveNorm;
             rdVector_Sub3(&moveNorm, &mat.dvec, &pAttachedThing->pos);
-            moveDist = rdVector_Normalize3Acc(&moveNorm);
+            float moveDist = rdVector_Normalize3Acc(&moveNorm);
 
-            memset(&mat.dvec, 0, sizeof(mat.dvec));
+            // Clear out position vector
+            mat.dvec = rdroid_g_zeroVector3;
+
             if ( moveDist != 0.0f )
             {
                 sithCollision_MoveThing(pAttachedThing, &moveNorm, moveDist, 0x40);
@@ -567,14 +566,11 @@ void J3DAPI sithCollision_sub_4A6EE0(SithThing* pThing, rdMatrix34* pOrient)
             sithCollision_sub_4A6EE0(pAttachedThing, &mat);
             if ( pAttachedThing->moveType == SITH_MT_PHYSICS )
             {
-                flags = pAttachedThing->moveInfo.physics.flags;
-                flags &= ~SITH_PF_ALIGNED;            // 0x100 - SITH_PF_ALIGNED
-                pAttachedThing->moveInfo.physics.flags = flags;
+                pAttachedThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED;
             }
         }
     }
-
-    else if ( (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 )// Visible ?
+    else if ( SITH_ISFRAMECYCLE(pThing->idx, 8) ) // On every 8th frame normalize the orient matrix
     {
         rdMatrix_Normalize34(pOrient);
     }

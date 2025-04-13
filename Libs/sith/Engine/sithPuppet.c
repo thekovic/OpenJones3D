@@ -1004,7 +1004,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                 {
                     submode = SITHPUPPETSUBMODE_WALKBACK;
                     if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_WALKBACK
-                        || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 && SITH_RAND() < 0.40000001f)
+                        || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.40000001f) // On every 8th frame and at random
                         && !bFloating )
                     {
                         // Create ripples in water
@@ -1017,7 +1017,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                     {
                         submode = SITHPUPPETSUBMODE_RISING;
                         if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_RISING
-                            || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 3) == 0 && SITH_RAND() < 0.30000001f)
+                            || SITH_ISFRAMECYCLE(pThing->idx, 4) && SITH_RAND() < 0.30000001f) // On every 4th frame and at random
                             && !bFloating )
                         {
                             // Create ripples in water
@@ -1028,7 +1028,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                     {
                         submode = SITHPUPPETSUBMODE_STAND;
                         if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_STAND
-                            || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 && SITH_RAND() < 0.30000001f)
+                            || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // On every 8th frame and at random
                             && !bFloating )
                         {
                             sithFX_CreateWaterRipple(pThing);
@@ -1041,7 +1041,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
 
                     submode = SITHPUPPETSUBMODE_RUN;
                     if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_RUN
-                        || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 3) == 0 && SITH_RAND() < 0.30000001f)
+                        || SITH_ISFRAMECYCLE(pThing->idx, 4) && SITH_RAND() < 0.30000001f) // On every 4th frame and at random
                         && !bFloating )
                     {
                         // Create breath bubbles
@@ -1052,7 +1052,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                 {
                     submode = SITHPUPPETSUBMODE_WALK;
                     if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_WALK
-                        || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 && SITH_RAND() < 0.30000001f)
+                        || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // On every 8th frame and at random
                         && !bFloating )
                     {
                         // Create ripples in water
@@ -1066,7 +1066,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
 
                 submode = SITHPUPPETSUBMODE_RISING;
                 if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_RISING
-                    || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 && SITH_RAND() < 0.30000001f)
+                    || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // On every 8th frame and at random
                     && !bFloating )
                 {
                     sithFX_CreateBubble(pThing);
@@ -1078,7 +1078,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
 
                 submode = SITHPUPPETSUBMODE_STAND;
                 if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_STAND
-                    || (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 && SITH_RAND() < 0.30000001f)
+                    || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // on every 8th frame and at random
                     && !bFloating )
                 {
                     // Create ripples in water

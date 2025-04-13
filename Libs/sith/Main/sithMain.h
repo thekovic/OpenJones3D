@@ -40,6 +40,17 @@ J3D_EXTERN_C_START
 #define SITH_ASSERTREL(condition) \
     J3D_ASSERTREL(condition, sith_g_pHS )
 
+/**
+ * Checks if current game frame number + offset is N-th frame (like every 4th, 8th, or 16th frame).
+ * Uses the global frame counter sithMain_g_frameNumber with an optional offset.
+ *
+ * @param offset Shifts which frame is considered the "N-th" one
+ * @param n      N-th frame, i.e.: on every n-th frame (every 2nd, 4th, 8th, 16th frame, etc.)
+ * @return       True on every N-th frame
+ */
+#define SITH_ISFRAMECYCLE(offset, n) (((uint8_t)sithMain_g_frameNumber + (uint8_t)(offset)) & ((n)-1)) == 0
+
+
 #define sith_g_pHS J3D_DECL_FAR_VAR(sith_g_pHS, tHostServices*)
 // extern tHostServices *sith_g_pHS;
 

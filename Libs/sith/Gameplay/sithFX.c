@@ -372,7 +372,7 @@ void J3DAPI sithFX_CreateBubble(SithThing* pThing)
 void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
 {
     if ( ((pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 || (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0)
-      && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) == 0 )
+        && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) == 0 )
     {
         SithThing* pTemplate = sithTemplate_GetTemplate("+ripples");
         if ( !pTemplate )
@@ -978,7 +978,7 @@ void J3DAPI sithFX_UpdatePolyline(SithThing* pThing)
             rdPolyline* pPolyline = pThing->renderData.data.pPolyline;
             pPolyline->face.texVertOffset.y = (SITH_RANDF() - 0.69999999f) * 0.079999998f + pPolyline->face.texVertOffset.y;
             size_t numCels = pThing->renderData.data.pPolyline->face.pMaterial->numCels;
-            if ( numCels > 1 && (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 3) == 0 )
+            if ( numCels > 1 && SITH_ISFRAMECYCLE(pThing->idx, 4) ) // On every 4th frame random select new cel
             {
                 pThing->renderData.data.pPolyline->face.matCelNum = (int32_t)(SITH_RAND() * (double)numCels);
             }
