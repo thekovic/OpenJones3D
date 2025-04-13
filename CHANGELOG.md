@@ -88,6 +88,7 @@
     * `stopsound`, `wpdraw` (9d399b0)
     * `noclip` (2d9f47a)
     * `print` (44e28c5)
+    * `sithAnimate` (ef93c3c)
 
 ### Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
