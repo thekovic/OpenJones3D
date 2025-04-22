@@ -1572,7 +1572,7 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath)
     stdFnames_ChangeExt(aQSaveFilename, "nds");
 
     // Open load screen
-    if ( JonesMain_curLevelNum != 1 || strcmp(pNdsFilename, aQSaveFilename) == 0 )
+    if ( JonesMain_curLevelNum != 1 || streq(pNdsFilename, aQSaveFilename) )
     {
         JonesDisplay_OpenLoadScreen(
             JonesMain_aCndLevelLoadInfos[JonesMain_curLevelNum].pMatFilename,
@@ -1619,7 +1619,6 @@ int JonesMain_ProcessGamesaveState(void)
             // Success
             return 0;
         }
-
         case SITHGAMESAVE_RESTORE:
         {
             if ( JonesMain_Restore(pNdsFilename) || sithGamesave_Process() )
@@ -2060,7 +2059,7 @@ int JonesMain_PlayIntroMovie(void)
         if ( JonesMain_aIntroMovieColorTable )
         {
             // Init pixel conversion table
-            for ( uint16_t pixel = 0; pixel < (uint32_t)UINT16_MAX + 1; ++pixel )
+            for ( uint32_t pixel = 0; pixel < (uint32_t)UINT16_MAX + 1; ++pixel )
             {
                 ((uint16_t*)JonesMain_aIntroMovieColorTable)[pixel] = stdDisplay_EncodeFromRGB565((uint16_t)pixel);
             }
@@ -2586,7 +2585,8 @@ void J3DAPI JonesMain_LogErrorToFile(const char* pErrorText)
 
 void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesState* pConfig)
 {
-    DWORD nSize = STD_ARRAYLEN(pConfig->waPlayerName);
+    // Set local player name to computer name
+    DWORD nSize     = STD_ARRAYLEN(pConfig->waPlayerName);
     CHAR aText[128] = { 0 }; // Added: Init to 0
     if ( GetComputerName(aText, &nSize) )
     {
