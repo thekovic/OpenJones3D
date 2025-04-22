@@ -3635,23 +3635,23 @@ void sithThing_SyncThings(void)
     {
         if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_MOVEPOS) != 0 )
         {
-            sithDSSThing_MovePos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0x01u);
+            sithDSSThing_MovePos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
 
         if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_FULL) != 0 )
         {
-            sithDSSThing_FullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_FullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             return;
         }
 
         if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_STATE) != 0 )
         {
-            sithDSSThing_UpdateState(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_UpdateState(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
 
         if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_POS) != 0 )
         {
-            sithDSSThing_Pos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0x00);
+            sithDSSThing_Pos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, 0x00);
         }
     }
 

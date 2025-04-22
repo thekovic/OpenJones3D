@@ -5,6 +5,7 @@
 #include <sith/AI/sithAIUtil.h>
 #include <sith/Cog/sithCog.h>
 #include <sith/Cog/sithCogExec.h>
+#include <sith/Devices/sithComm.h>
 #include <sith/Devices/sithConsole.h>
 #include <sith/Dss/sithDSSThing.h>
 #include <sith/Engine/sithAnimate.h>
@@ -686,7 +687,7 @@ void J3DAPI sithCogFunctionThing_DamageThing(SithCog* pCog)
         {
             if ( stdComm_IsGameHost() )
             {
-                sithDSSThing_DamageThing(pThing, pDamageThing, damage, damageclass, SITHMESSAGE_SENDTOALL, 1u);
+                sithDSSThing_DamageThing(pThing, pDamageThing, damage, damageclass, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_NET);
             }
         }
     }
@@ -785,7 +786,7 @@ void J3DAPI sithCogFunctionThing_DestroyThing(SithCog* pCog)
         {
             if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
             {
-                sithDSSThing_DestroyThing(pThing->guid, SITHMESSAGE_SENDTOALL);
+                sithDSSThing_DestroyThing(pThing->guid, SITHMESSAGE_SENDTOJOINEDPLAYERS);
             }
         }
 
@@ -860,7 +861,7 @@ void J3DAPI sithCogFunctionThing_MoveToFrame(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_PathMove(pThing, frame, speed, 0, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_PathMove(pThing, frame, speed, 0, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 }
@@ -890,7 +891,7 @@ void J3DAPI sithCogFunctionThing_SkipToFrame(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_PathMove(pThing, frame, speed, 1, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_PathMove(pThing, frame, speed, 1, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 }
@@ -1616,7 +1617,7 @@ void J3DAPI sithCogFunctionThing_StopThing(SithCog* pCog)
             {
                 if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
                 {
-                    sithDSSThing_PathMove(pThing, 0, 0.0, 2, SITHMESSAGE_SENDTOALL, 0xFFu);// 2 - finish moving
+                    sithDSSThing_PathMove(pThing, 0, 0.0, 2, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL); // 2 - finish moving
                 }
             }
         } break;
@@ -1792,7 +1793,7 @@ void J3DAPI sithCogFunctionThing_SetThingPos(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_Pos(pThing, SITHMESSAGE_SENDTOALL, DPSEND_GUARANTEED);
+            sithDSSThing_Pos(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
     }
 
@@ -2080,7 +2081,7 @@ void J3DAPI sithCogFunctionThing_DetachThing(SithCog* pCog)
         {
             if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
             {
-                sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 1u);
+                sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
             }
         }
     }
@@ -2124,7 +2125,7 @@ void J3DAPI sithCogFunctionThing_AttachThingToSurf(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 1u);
+            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
 }
@@ -2152,7 +2153,7 @@ void J3DAPI sithCogFunctionThing_AttachThingToThing(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 1u);
+            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
 }
@@ -2182,7 +2183,7 @@ void J3DAPI sithCogFunctionThing_AttachThingToThingEx(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 1u);
+            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
 }
@@ -2265,7 +2266,7 @@ void J3DAPI sithCogFunctionThing_PlayMode(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN && trackNum >= 0 )
         {
-            sithDSSThing_PlayKeyMode(pThing, mode, pThing->renderData.pPuppet->aTracks[trackNum].guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_PlayKeyMode(pThing, mode, pThing->renderData.pPuppet->aTracks[trackNum].guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 
@@ -2562,7 +2563,7 @@ void J3DAPI sithCogFunctionThing_PlayKey(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_PlayKey(pThing, pKfTrack, kfflags, lowPriority, pThing->renderData.pPuppet->aTracks[trackNum].guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_PlayKey(pThing, pKfTrack, kfflags, lowPriority, pThing->renderData.pPuppet->aTracks[trackNum].guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 
@@ -2756,7 +2757,7 @@ void J3DAPI sithCogFunctionThing_StopKey(SithCog* pCog)
         {
             if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
             {
-                sithDSSThing_StopKey(pThing, trackGUID, fadeTime, SITHMESSAGE_SENDTOALL, 0xFFu);
+                sithDSSThing_StopKey(pThing, trackGUID, fadeTime, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             }
         }
     }
@@ -2859,7 +2860,7 @@ void J3DAPI sithCogFunctionThing_SetThingModel(SithCog* pCog)
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
-            sithDSSThing_SetModel(pThing, SITHMESSAGE_SENDTOALL);
+            sithDSSThing_SetModel(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS);
         }
     }
 }
@@ -2914,7 +2915,7 @@ void J3DAPI sithCogFunctionThing_SetArmedMode(SithCog* pCog)
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
-            sithDSSThing_UpdateState(pThing, SITHMESSAGE_SENDTOALL, 0xFFu); // TODO: why not using sithThing_Sync function?
+            sithDSSThing_UpdateState(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL); // TODO: why not using sithThing_Sync function?
         }
     }
 }
@@ -3009,7 +3010,7 @@ void J3DAPI sithCogFunctionThing_TeleportThing(SithCog* pCog)
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
-            sithDSSThing_Pos(pDestThing, SITHMESSAGE_SENDTOALL, DPSEND_GUARANTEED);
+            sithDSSThing_Pos(pDestThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
     }
 }
@@ -3861,7 +3862,7 @@ void J3DAPI sithCogFunctionThing_SetThingAttachFlags(SithCog* pCog)
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
-            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 0x01);
+            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
 }
@@ -3882,7 +3883,7 @@ void J3DAPI sithCogFunctionThing_ClearThingAttachFlags(SithCog* pCog)
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
-            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 0x01);
+            sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
 }
@@ -4335,7 +4336,7 @@ void J3DAPI sithCogFunctionThing_SyncThingAttachment(SithCog* pCog)
         return;
     }
 
-    sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOALL, 0xFFu, 0x00);
+    sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, 0x00);
 }
 
 void J3DAPI sithCogFunctionThing_SyncThingState(SithCog* pCog)
@@ -4407,7 +4408,7 @@ void J3DAPI sithCogFunctionThing_SetThingPosEx(SithCog* pCog)
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
-            sithDSSThing_Pos(pThing, SITHMESSAGE_SENDTOALL, DPSEND_GUARANTEED);
+            sithDSSThing_Pos(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
     }
 

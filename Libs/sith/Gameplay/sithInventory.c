@@ -2,6 +2,7 @@
 #include <j3dcore/j3dhook.h>
 
 #include <sith/Cog/sithCog.h>
+#include <sith/Devices/sithComm.h>
 #include <sith/Dss/sithDSSThing.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithTemplate.h>
@@ -639,8 +640,8 @@ SithThing* J3DAPI sithInventory_CreateBackpack(SithThing* pThing)
         }
     }
 
-    sithDSSThing_CreateThing(pTemplate, pBackpack, pThing, NULL, NULL, NULL, 0xFFu, DPSEND_GUARANTEED);
-    sithDSSThing_UpdateState(pBackpack, SITHMESSAGE_SENDTOALL, 0xFFu);
+    sithDSSThing_CreateThing(pTemplate, pBackpack, pThing, NULL, NULL, NULL, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
+    sithDSSThing_UpdateState(pBackpack, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     return pBackpack;
 }
 

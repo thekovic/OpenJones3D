@@ -82,9 +82,9 @@ int J3DAPI sithDSSThing_ProcessMovePos(const SithMessage* pMsg)
     return J3D_TRAMPOLINE_CALL(sithDSSThing_ProcessMovePos, pMsg);
 }
 
-int J3DAPI sithDSSThing_UpdateState(const SithThing* pThing, DPID toID, unsigned int sendFlags)
+int J3DAPI sithDSSThing_UpdateState(const SithThing* pThing, DPID toID, unsigned int outstream)
 {
-    return J3D_TRAMPOLINE_CALL(sithDSSThing_UpdateState, pThing, toID, sendFlags);
+    return J3D_TRAMPOLINE_CALL(sithDSSThing_UpdateState, pThing, toID, outstream);
 }
 
 int J3DAPI sithDSSThing_ProcessStateUpdate(const SithMessage* pMsg)

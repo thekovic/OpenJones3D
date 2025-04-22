@@ -279,7 +279,7 @@ void J3DAPI sithCogFunction_StopAnim(SithCog* pCog)
         sithAnimate_Stop(pAnim);
         if ( sithMessage_g_outputstream )
         {
-            sithDSS_AnimStatus(pAnim, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSS_AnimStatus(pAnim, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 }
@@ -303,7 +303,7 @@ void J3DAPI sithCogFunction_StopSurfaceAnim(SithCog* pCog)
     sithAnimate_Stop(pAnim);
     if ( sithMessage_g_outputstream )
     {
-        sithDSS_AnimStatus(pAnim, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSS_AnimStatus(pAnim, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 }
 
@@ -1202,7 +1202,7 @@ void J3DAPI sithCogFunction_SendTrigger(SithCog* pCog)
             param1,
             param2,
             param3,
-            SITHMESSAGE_SENDTOALL
+            SITHMESSAGE_SENDTOJOINEDPLAYERS
         );
 
         sithCog_BroadcastMessageEx(SITHCOG_MSG_TRIGGER, SITHCOG_SYM_REF_THING, sithPlayer_g_pLocalPlayerThing->idx, SITHCOG_SYM_REF_NONE, srcIdx, param0, param1, param2, param3);

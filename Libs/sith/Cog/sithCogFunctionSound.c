@@ -4,6 +4,7 @@
 
 #include <sith/Cog/sithCog.h>
 #include <sith/Cog/sithCogexec.h>
+#include <sith/Devices/sithComm.h>
 #include <sith/Devices/sithSound.h>
 #include <sith/Devices/sithSoundMixer.h>
 #include <sith/Dss/sithDSSThing.h>
@@ -61,7 +62,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundThing(SithCog* pCog)
         {
             if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
             {
-                sithDSSThing_PlaySound(pThing, &pThing->pos, hSnd, minRadius, maxRadius, playflags, guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+                sithDSSThing_PlaySound(pThing, &pThing->pos, hSnd, minRadius, maxRadius, playflags, guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             }
         }
     }
@@ -78,7 +79,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundThing(SithCog* pCog)
         {
             if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
             {
-                sithDSSThing_PlaySound(NULL, NULL, hSnd, volume, 0.0f, playflags, guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+                sithDSSThing_PlaySound(NULL, NULL, hSnd, volume, 0.0f, playflags, guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             }
         }
     }
@@ -155,7 +156,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundPos(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_PlaySound(NULL, &pos, hSnd, minRadius, maxRadius, playflags, guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_PlaySound(NULL, &pos, hSnd, minRadius, maxRadius, playflags, guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 
@@ -236,7 +237,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundGlobal(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_PlaySound(0, 0, hSnd, volume, pan, playflags, guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_PlaySound(0, 0, hSnd, volume, pan, playflags, guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 
@@ -265,7 +266,7 @@ void J3DAPI sithCogFunctionSound_StopSound(SithCog* pCog)
     {
         if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
-            sithDSSThing_StopSound(hSndChannel, secFadeTime, SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_StopSound(hSndChannel, secFadeTime, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
     }
 

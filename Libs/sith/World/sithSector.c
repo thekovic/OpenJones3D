@@ -828,11 +828,11 @@ size_t sithSector_SyncSectors(void)
     {
         if ( (sithSector_aSyncFlags[i] & 1) != 0 )
         {
-            sithDSS_SectorStatus(sithSector_aModifiedSectors[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSS_SectorStatus(sithSector_aModifiedSectors[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
         else
         {
-            sithDSS_SectorFlags(sithSector_aModifiedSectors[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSS_SectorFlags(sithSector_aModifiedSectors[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
 
         numSynced = i + 1;

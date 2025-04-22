@@ -126,8 +126,8 @@ void J3DAPI sithItem_DestroyItem(SithThing* pItem)
 
     if ( sithMessage_g_outputstream )
     {
-        sithDSSThing_UpdateState(pItem, SITHMESSAGE_SENDTOALL, 0xFFu);
-        sithDSSThing_Pos(pItem, SITHMESSAGE_SENDTOALL, DPSEND_GUARANTEED);// TODO: make separate global var for dpflags and do secure connection
+        sithDSSThing_UpdateState(pItem, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
+        sithDSSThing_Pos(pItem, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);// TODO: make separate global var for dpflags and do secure connection
     }
 }
 

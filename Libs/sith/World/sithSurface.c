@@ -977,7 +977,7 @@ void sithSurface_SyncSurfaces(void)
     if ( sithMessage_g_outputstream && sithSurface_numUnsyncedSurfaces )
     {
         for ( size_t i = 0; i < sithSurface_numUnsyncedSurfaces; ++i ) {
-            sithDSS_SurfaceStatus(sithSurface_apUnsyncedSurfaces[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSS_SurfaceStatus(sithSurface_apUnsyncedSurfaces[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
 
         sithSurface_numUnsyncedSurfaces = 0;

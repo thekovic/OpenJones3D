@@ -383,8 +383,8 @@ void sithOpenPostProcess(void)
     if ( stdComm_IsGameActive() )
     {
         sithPlayer_NewPlayer(sithPlayer_g_pLocalPlayerThing);
-        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOALL);
-        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOALL); // TODO: Why same message sent twice
+        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOJOINEDPLAYERS);
+        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOJOINEDPLAYERS); // TODO: Why same message sent twice
     }
     else if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
     {

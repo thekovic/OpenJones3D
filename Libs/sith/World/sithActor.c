@@ -276,7 +276,7 @@ float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float d
 
     if ( sithMessage_g_outputstream )
     {
-        sithDSSThing_Death(pActor, pThing, 0, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Death(pActor, pThing, 0, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     sithActor_KillActor(pActor, pThing, damageType);
@@ -341,7 +341,7 @@ float J3DAPI sithActor_DamageRaftActor(SithThing* pActor, SithThing* pPerpetrato
 
     if ( sithMessage_g_outputstream )
     {
-        sithDSSThing_Death(pActor, pPerpetrator, 0, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Death(pActor, pPerpetrator, 0, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     sithActor_KillActor(pActor, pPerpetrator, damageType);

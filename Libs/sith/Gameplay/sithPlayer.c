@@ -235,12 +235,12 @@ void J3DAPI sithPlayer_Update(SithPlayer* pPlayer, float secDetaTime)
 
     // Did thing fall into falldeth sector?
     if ( !pThing->attach.flags
-      && (pThing->thingInfo.actorInfo.flags & SITH_AF_FALLKILLED) == 0
-      && pThing->moveType == SITH_MT_PHYSICS
-      && pThing->pInSector
-      && (pThing->pInSector->flags & SITH_SECTOR_FALLDEATH) != 0
-      && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0
-      && (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
+        && (pThing->thingInfo.actorInfo.flags & SITH_AF_FALLKILLED) == 0
+        && pThing->moveType == SITH_MT_PHYSICS
+        && pThing->pInSector
+        && (pThing->pInSector->flags & SITH_SECTOR_FALLDEATH) != 0
+        && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0
+        && (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
     {
         pThing->thingInfo.actorInfo.flags |= SITH_AF_FALLKILLED;
     }
@@ -375,7 +375,7 @@ void J3DAPI sithPlayer_NewPlayer(SithThing* pPlayer)
             sithCog_BroadcastMessage(SITHCOG_MSG_NEWPLAYER, SITHCOG_SYM_REF_THING, pPlayer->idx, SITHCOG_SYM_REF_THING, pPlayer->idx);
             if ( sithMessage_g_outputstream )
             {
-                sithDSSThing_UpdateState(pPlayer, SITHMESSAGE_SENDTOALL, 0xFFu);
+                sithDSSThing_UpdateState(pPlayer, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             }
         }
     }
@@ -454,11 +454,11 @@ void J3DAPI sithPlayer_KillPlayer(SithThing* pPlayerThing)
 
     if ( pPlayerThing == sithPlayer_g_pLocalPlayerThing )
     {
-        sithDSSThing_Death(pPlayerThing, pPlayerThing, 1, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Death(pPlayerThing, pPlayerThing, 1, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     if ( (pPlayerThing->flags & SITH_TF_COGLINKED) == 0
-      || (sithCog_ThingSendMessage(pPlayerThing, pPlayerThing, SITHCOG_MSG_KILLED), (pPlayerThing->flags & SITH_TF_DESTROYED) == 0) )
+        || (sithCog_ThingSendMessage(pPlayerThing, pPlayerThing, SITHCOG_MSG_KILLED), (pPlayerThing->flags & SITH_TF_DESTROYED) == 0) )
     {
         sithSoundMixer_StopSoundThing(pPlayerThing, 0);
         sithThing_DetachAttachedThings(pPlayerThing);
