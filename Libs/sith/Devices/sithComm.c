@@ -460,7 +460,7 @@ void sithMessage_InitMessageHandlers(void)
     sithMessage_RegisterFunction(SITHDSS_STOPKEY, sithDSSThing_ProcessStopKey);
     sithMessage_RegisterFunction(SITHDSS_STOPSOUND, sithDSSThing_ProcessStopSound);
     sithMessage_RegisterFunction(SITHDSS_CREATETHING, sithDSSThing_ProcessCreateThing);
-    sithMessage_RegisterFunction(SITHDSS_SYNCWORLDSTATE, sithDSS_ProcessSyncWorldState);
+    sithMessage_RegisterFunction(SITHDSS_SYNCGAMESTATE, sithDSS_ProcessSyncGameState);
     sithMessage_RegisterFunction(SITHDSS_CHAT, sithMulti_ProcessChat);
     sithMessage_RegisterFunction(SITHDSS_DESTROYTHING, sithDSSThing_ProcessDestroyThing);
     sithMessage_RegisterFunction(SITHDSS_SECTORFLAGS, sithDSS_ProcessSectorFlags);

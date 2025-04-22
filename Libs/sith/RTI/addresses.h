@@ -858,8 +858,8 @@
 #define sithDSS_ProcessSyncTaskEvents_ADDR 0x004B2C80
 #define sithDSS_SyncCameras_ADDR 0x004B2CF0
 #define sithDSS_ProcessSyncCameras_ADDR 0x004B2E20
-#define sithDSS_SyncWorldState_ADDR 0x004B2F30
-#define sithDSS_ProcessSyncWorldState_ADDR 0x004B3220
+#define sithDSS_SyncGameState_ADDR 0x004B2F30
+#define sithDSS_ProcessSyncGameState_ADDR 0x004B3220
 #define sithDSS_SyncVehicleControlState_ADDR 0x004B3510
 #define sithDSS_ProcessVehicleControlsState_ADDR 0x004B3630
 #define sithDSS_sub_4B3760_ADDR 0x004B3760

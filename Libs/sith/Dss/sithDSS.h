@@ -84,7 +84,7 @@ typedef enum eSithDSSType
     SITHDSS_STOPSOUND           = 28,
     SITHDSS_CREATETHING         = 29,
     SITHDSS_WHIPSTATUS          = 30,
-    SITHDSS_SYNCWORLDSTATE      = 31,
+    SITHDSS_SYNCGAMESTATE       = 31,
     SITHDSS_SYNCPLAYERS         = 32,
     SITHDSS_WELCOME             = 33,
     SITHDSS_JOIN                = 34,
@@ -133,8 +133,8 @@ int J3DAPI sithDSS_ProcessSyncTaskEvents(const SithMessage* pMsg);
 int J3DAPI sithDSS_SyncCameras(DPID idTo, unsigned int outstream);
 int J3DAPI sithDSS_ProcessSyncCameras(const SithMessage* pMsg);
 
-int J3DAPI sithDSS_SyncWorldState(DPID idTo, unsigned int outstream);
-int J3DAPI sithDSS_ProcessSyncWorldState(const SithMessage* pMsg);
+int J3DAPI sithDSS_SyncGameState(DPID idTo, unsigned int outstream);
+int J3DAPI sithDSS_ProcessSyncGameState(const SithMessage* pMsg);
 
 int J3DAPI sithDSS_SyncVehicleControlState(DPID idTo, unsigned int outstream);
 int J3DAPI sithDSS_ProcessVehicleControlsState(const SithMessage* pMsg);
