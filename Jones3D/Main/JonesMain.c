@@ -1216,7 +1216,7 @@ int JonesMain_ProcessGame(void)
             sithDrawScene();
             sithOverlayMap_Draw();
             JonesMain_PrintQuickSave();
-            JonesHud_Render();
+            JonesHud_Process();
 
             // below 3 function calls could be part of rdFinishFrame
             rdCache_Flush();

@@ -19,7 +19,7 @@ void JonesHud_ToggleMenu(void);
 void J3DAPI JonesHud_EnableMenu(int bEnable);
 int JonesHud_IsMenuEnabled(void);
 
-void JonesHud_Render(void);
+void JonesHud_Process(void);
 void J3DAPI JonesHud_Update(const SithWorld* pWorld);
 int J3DAPI JonesHud_SetCanvasSize(int width, int height);
 void JonesHud_UpdateSinCosTable(void);

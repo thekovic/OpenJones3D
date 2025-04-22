@@ -217,7 +217,7 @@ void JonesHud_InstallHooks(void)
     J3D_HOOKFUNC(JonesHud_ToggleMenu);
     J3D_HOOKFUNC(JonesHud_EnableMenu);
     J3D_HOOKFUNC(JonesHud_IsMenuEnabled);
-    J3D_HOOKFUNC(JonesHud_Render);
+    J3D_HOOKFUNC(JonesHud_Process);
     J3D_HOOKFUNC(JonesHud_Update);
     J3D_HOOKFUNC(JonesHud_SetCanvasSize);
     J3D_HOOKFUNC(JonesHud_UpdateSinCosTable);
@@ -632,7 +632,7 @@ int JonesHud_IsMenuEnabled(void)
     return JonesHud_bMenuEnabled;
 }
 
-void JonesHud_Render(void) // maybe this function should be called something eles??
+void JonesHud_Process(void) // maybe this function should be called something eles??
 {
     if ( sithPlayer_g_pLocalPlayerThing )
     {

@@ -41,7 +41,7 @@
 #define JonesHud_ToggleMenu_ADDR 0x004143E0
 #define JonesHud_EnableMenu_ADDR 0x004144E0
 #define JonesHud_IsMenuEnabled_ADDR 0x004144F0
-#define JonesHud_Render_ADDR 0x00414500
+#define JonesHud_Process_ADDR 0x00414500
 #define JonesHud_Update_ADDR 0x004149F0
 #define JonesHud_SetCanvasSize_ADDR 0x00414B80
 #define JonesHud_UpdateSinCosTable_ADDR 0x00414C60
