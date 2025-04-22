@@ -1594,7 +1594,7 @@ int J3DAPI JonesMain_Restore(const char* pNdsFilePath)
 
 int JonesMain_ProcessGamesaveState(void)
 {
-    char* pNdsFilename;
+    const char* pNdsFilename;
     JonesMain_curGamesaveState = sithGamesave_GetState(&pNdsFilename);
 
     switch ( JonesMain_curGamesaveState )

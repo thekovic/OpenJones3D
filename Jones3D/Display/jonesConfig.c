@@ -3904,7 +3904,7 @@ int J3DAPI jonesConfig_SaveGameDialogInit(HWND hDlg, int a2, LPOPENFILENAME lpOf
     J3D_UNUSED(a2);
 
     SaveGameDialogData* pData = (SaveGameDialogData*)lpOfn->lCustData;
-    pData->hThumbnail = sithGamesave_GetScreenShotBitmap();
+    pData->hThumbnail = sithGamesave_CreateThumbnail();
 
     HWND hThumbnail = GetDlgItem(hDlg, 1125);
     pData->hdcThumbnail = CreateCompatibleDC(GetDC(hThumbnail));

@@ -3074,17 +3074,18 @@ typedef struct sSithGameStatistics
 
 typedef struct sNdsHeader
 {
-    int version;
+    int32_t version;
     char aDate[64];
     char aLevelFilename[128];
     char aPreviousLevelFilename[128];
-    unsigned int msecGameTime;
+    uint32_t msecGameTime;
     SithGameStatistics gameStatistics;
-    int bScreenShot;
-    int perflevel;
+    int32_t bThumbnail;
+    int32_t perflevel;
     SithCogSymbolValue aCogGlobalValues[16];
-    int localPlayerNum;
+    uint32_t localPlayerNum;
 } NdsHeader;
+static_assert(sizeof(NdsHeader) == 1188, "sizeof(NdsHeader) == 1188");
 
 typedef struct sSithMineCarControlState
 {

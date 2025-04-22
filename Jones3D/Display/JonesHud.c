@@ -611,7 +611,7 @@ void JonesHud_ToggleMenu(void)
             }
             else
             {
-                sithGamesave_ScreenShot(&stdDisplay_g_backBuffer);
+                sithGamesave_SetThumbnailImage(&stdDisplay_g_backBuffer);
                 jonesCog_g_bMenuVisible = 1;
                 JonesHud_bShowMenu      = 0;
             }
@@ -795,7 +795,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
                 else if ( JonesHud_bShowMenu )
                 {
                     // Deferred from JonesHud_ToggleMenu when item pickup animation is playing
-                    sithGamesave_ScreenShot(&stdDisplay_g_backBuffer);
+                    sithGamesave_SetThumbnailImage(&stdDisplay_g_backBuffer);
                     jonesCog_g_bMenuVisible = 1;
                     JonesHud_healthIndAlpha = 1.0f;
                     JonesHud_bShowMenu      = 0;
