@@ -313,6 +313,12 @@ tFileHandle stdConffile_GetFileHandle(void)
     return openFile;
 }
 
+tFileHandle stdConffile_GetWriteFileHandle(void)
+{
+    STD_ASSERTREL(writeFile != 0);
+    return writeFile;
+}
+
 size_t stdConffile_GetLineNumber(void)
 {
     return stdConffile_linenum;
