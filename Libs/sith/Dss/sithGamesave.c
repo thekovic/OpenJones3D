@@ -477,13 +477,14 @@ int sithGamesave_Process(void)
 
 int J3DAPI sithGamesave_RestoreFile(const char* pFilename, int bNotify)
 {
-    // TODO: [BUG] returned fh is not an actual file handle but error status. Get the correct file handle
-    tFileHandle fh = stdConffile_OpenMode(pFilename, "rb");
-    if ( !fh )
+    if ( !stdConffile_OpenMode(pFilename, "rb") )
     {
         SITHLOG_ERROR("RESTORE: could not open restore file!\n");
         goto error;
     }
+
+    // Fixed: Originally, the file handle was not set to the file handle of the opened file but the error status stdConffile_OpenMode returned
+    tFileHandle fh = stdConffile_GetFileHandle();
 
     // Read nds file header
     NdsHeader header;
@@ -556,7 +557,7 @@ int J3DAPI sithGamesave_RestoreFile(const char* pFilename, int bNotify)
     sithAnimate_Reset();
     sithEvent_Reset();
     sithFX_ClearChalkMarks();
-    sithThing_RemoveWorldThings(sithWorld_g_pCurrentWorld);// TODO: This will remove all things which moveType was changed via thing ars but is not preserved in savegame file; Fix this
+    sithThing_RemoveWorldThings(sithWorld_g_pCurrentWorld); // TODO: This will remove all things which moveType was changed via thing arg but is not preserved in savegame file; Fix this
 
     // Parse & restore gamesave file sections
     int hresult = sithGamesave_ReadBlockTypeLength(&sithMulti_g_message.type, &sithMulti_g_message.length);
@@ -675,12 +676,14 @@ int J3DAPI sithGamesave_SaveFile(const char* pFilename)
 
     memset(sithGamesave_aNdsSaveSectionSizes, 0, sizeof(sithGamesave_aNdsSaveSectionSizes));
 
-    tFileHandle fh = stdConffile_OpenWrite(pFilename); // TODO: [BUG] fh is boolean error and not file handle
-    if ( !fh )
+    if ( !stdConffile_OpenWrite(pFilename) )
     {
         SITHLOG_ERROR("Error opening file %s for writing.\n", pFilename);
         return 1;
     }
+
+    // Fixed: Originally, the file handle was not set to the file handle of the opened write file but the error status stdConffile_OpenWrite returned
+    tFileHandle fh = stdConffile_GetWriteFileHandle();
 
     // Change output stream to file
     SithMessageStream curStream = sithMessage_g_outputstream;
@@ -941,7 +944,7 @@ int J3DAPI sithGamesave_WriteThumbnail(tFileHandle fh)
         return 1;
     }
 
-    const size_t imgSize = (bmp.bmBitsPixel * bmp.bmHeight * bmp.bmWidth) / 8; // TODO: could use bmWidthBytes * bmHeight
+    const size_t imgSize = bmp.bmWidthBytes * bmp.bmHeight; // Altered: Changed to use bmp.bmWidthBytes instead of calculating (bmp.bmBitsPixel/8 * bmp.bmWidth)
     if ( imgSize != sith_g_pHS->pFileWrite(fh, bmp.bmBits, imgSize) )
     {
         return 1;
