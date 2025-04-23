@@ -20,7 +20,7 @@
     This fixes line number in log when error is encountered.
   - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed to the execution stack on error. (e9d4167)  
     This fixes corruption of the COG's execution stack when an error occurs.
-  - Added new rdVector arithmetic functions (c4c8ee5)
+  - Added new `rdVector` arithmetic functions (c4c8ee5)
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
@@ -59,13 +59,18 @@
     * `jonesConfig` ([PR#21](https://github.com/smlu/OpenJones3D/pull/21))
     * `sithWorld` (85a9ebe)
     * `sithOverlayMap` (967e433)
-    - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
-    - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
-    - Refactored `stdControl` module (fc4060c)
-    - Added devmode logic to `sithConsole` module (57b685b)  
-      This enables commands flagged with `SITHCONSOLE_DEVMODE` flag to be available only
-      when console flags have SITHCONSOLE_DEVMODE set.
-    - Added Dev Console Commands:
+    * `sithAnimate` (ef93c3c)
+    * `sithGamesave` (3dc6ee4)
+    * `sithDSSCog` (0b8f620)
+  - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
+  - Added `stdConffile_GetWriteFileHandle` function (cee02bd)
+  - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
+  - Refactored `stdControl` module (fc4060c)
+  - Fixed bug to correctly obtain the file handle when opening a savegame file for reading and writing (a90a59d)
+  - Added devmode logic to `sithConsole` module (57b685b)  
+    This enables commands flagged with `SITHCONSOLE_DEVMODE` flag to be available only
+    when console flags have `SITHCONSOLE_DEVMODE` set.
+  - Added devmode console commands:
     * `jumplevel` (e59ffab)
     * `radius` (e59ffab)
     * `pvs` (e59ffab)
@@ -88,7 +93,6 @@
     * `stopsound`, `wpdraw` (9d399b0)
     * `noclip` (2d9f47a)
     * `print` (44e28c5)
-    * `sithAnimate` (ef93c3c)
 
 ### Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
