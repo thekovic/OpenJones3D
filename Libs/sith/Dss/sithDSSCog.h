@@ -2,16 +2,20 @@
 #define SITH_SITHDSSCOG_H
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
+
+#include <sith/Devices/sithComm.h>
 #include <sith/types.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
+
 #include <std/types.h>
 
 J3D_EXTERN_C_START
 
-signed int J3DAPI sithDSSCog_SendMessage(const SithCog* pCog, SithCogMsgType msgType, SithCogSymbolRefType senderType, int senderIdx, SithCogSymbolRefType srcType, int srcIdx, int linkId, int param0, int param1, int param2, int param3, DPID idTo);
+int J3DAPI sithDSSCog_SendMessage(const SithCog* pCog, SithCogMsgType msgType, SithCogSymbolRefType senderType, int senderIdx, SithCogSymbolRefType srcType, int srcIdx, int linkId, int param0, int param1, int param2, int param3, DPID idTo);
 int J3DAPI sithDSSCog_ProcessMessage(const SithMessage* pMsg);
-signed int J3DAPI sithDSSCog_SyncCogState(const SithCog* pCog, DPID idTO, unsigned int outstream);
+
+int J3DAPI sithDSSCog_SyncCogState(const SithCog* pCog, DPID idTO, SithMessageStream outstream);
 int J3DAPI sithDSSCog_ProcessCogState(const SithMessage* pMsg);
 
 // Helper hooking functions
