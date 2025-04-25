@@ -575,7 +575,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingQuickTurnAnim(SithThing* pThing,
     return pAnim;
 }
 
-SithAnimationSlot* J3DAPI sithAnimate_StartSpriteSizeAnim(SithThing* pSprite, const rdVector3* start, const rdVector3* end, float time)
+SithAnimationSlot* J3DAPI sithAnimate_StartSpriteSizeAnim(SithThing* pSprite, const rdVector3* start, const rdVector3* end, float timeDelta)
 {
     SITH_ASSERTREL(pSprite);
 
@@ -596,9 +596,20 @@ SithAnimationSlot* J3DAPI sithAnimate_StartSpriteSizeAnim(SithThing* pSprite, co
     pAnim->curVector.z = start->z;  // alpha
     pAnim->curVector.w = 0.0f;
 
-    pAnim->deltaVector.x = (pAnim->endVector.x - pAnim->curVector.x) / time;
-    pAnim->deltaVector.y = (pAnim->endVector.y - pAnim->curVector.y) / time;
-    pAnim->deltaVector.z = (end->z - start->z) / time;
+    // Fixed: Added handling for zero timeDelta. Originally division by 0 didn't produced NAN values but 0 so the animation wasn't looping indefinitely.
+    //        In other functions such case is handled by assertion but we need to let this one pass 
+    //        because aet_sprpulse.cog script uses timeDelta = 0.0 to instantly set the sprite size to end value.
+    if ( timeDelta == 0.0f )
+    {
+        timeDelta = 1.0f;
+        pAnim->curVector.x = end->x;  // width
+        pAnim->curVector.y = end->y;  // height
+        pAnim->curVector.z = end->z;  // alpha
+    }
+
+    pAnim->deltaVector.x = (pAnim->endVector.x - pAnim->curVector.x) / timeDelta;
+    pAnim->deltaVector.y = (pAnim->endVector.y - pAnim->curVector.y) / timeDelta;
+    pAnim->deltaVector.z = (end->z - start->z) / timeDelta;
 
     pAnim->thingSignature = pSprite->signature;
     pAnim->pThing         = pSprite;
@@ -712,6 +723,12 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnim(SithThing* pThing, cons
     if ( !pAnim )
     {
         return NULL;
+    }
+
+    // Fixed: Added handling for zero timeDelta. Originally division by 0 didn't produced NAN values but 0 so the animation wasn't looping indefinitely.
+    if ( timeDelta == 0.0f )
+    {
+        timeDelta = 1.0f;
     }
 
     pAnim->pThing         = pThing;
@@ -1157,7 +1174,7 @@ void J3DAPI sithAnimate_UpdateSpriteSizeAnim(SithAnimationSlot* pAnim, float sec
 
     // Calculate new width
     pAnim->curVector.x += pAnim->deltaVector.x * secDeltaTime;
-    if ( pAnim->curVector.x < 0.0f && pAnim->curVector.x <= (double)pAnim->endVector.x )
+    if ( pAnim->deltaVector.x < 0.0f && pAnim->curVector.x <= (double)pAnim->endVector.x )
     {
         pAnim->curVector.x = pAnim->endVector.x;
         bWidthEnd = true;
@@ -1183,7 +1200,7 @@ void J3DAPI sithAnimate_UpdateSpriteSizeAnim(SithAnimationSlot* pAnim, float sec
 
     // Calculate new alpha
     pAnim->curVector.z += pAnim->deltaVector.z * secDeltaTime;
-    if ( pAnim->curVector.z < 0.0f && pAnim->curVector.z <= (double)pAnim->endVector.z )
+    if ( pAnim->deltaVector.z < 0.0f && pAnim->curVector.z <= (double)pAnim->endVector.z )
     {
         pAnim->curVector.z = pAnim->endVector.z;
         bAlphaEnd = true;
