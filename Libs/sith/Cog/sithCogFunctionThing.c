@@ -341,15 +341,27 @@ void J3DAPI sithCogFunctionThing_AnimateSpriteSize(SithCog* pCog)
         return;
     }
 
-    SithAnimationSlot* pAnim = sithAnimate_StartSpriteSizeAnim(pSprite, &vecStart, &vecEnd, deltaTime);
-    if ( !pAnim )
+    // Altered: Added check for deltaTime to avoid unnecessary animation creation and spare animation slot
+    if ( deltaTime > 0.0 )
     {
-        STDLOG_ERROR("Cog %s: Unable to create animation for AnimateSpriteSize().\n", pCog->aName);
-        sithCogExec_PushInt(pCog, -1);
-        return;
-    }
+        SithAnimationSlot* pAnim = sithAnimate_StartSpriteSizeAnim(pSprite, &vecStart, &vecEnd, deltaTime);
+        if ( !pAnim )
+        {
+            STDLOG_ERROR("Cog %s: Unable to create animation for AnimateSpriteSize().\n", pCog->aName);
+            sithCogExec_PushInt(pCog, -1);
+            return;
+        }
 
-    sithCogExec_PushInt(pCog, pAnim->animID);
+        sithCogExec_PushInt(pCog, pAnim->animID);
+    }
+    else
+    {
+        // Added: Set sprite size instantly when deltaTime is 0
+        pSprite->thingInfo.spriteInfo.width  = vecEnd.x;
+        pSprite->thingInfo.spriteInfo.height = vecEnd.y;
+        pSprite->thingInfo.spriteInfo.alpha  = vecEnd.z;
+        sithCogExec_PushInt(pCog, -1);
+    }
 }
 
 void J3DAPI sithCogFunctionThing_GetThingType(SithCog* pCog)
