@@ -27,6 +27,17 @@
     This change prevents unnecessary animation creation, thereby saving animation slots.  
     The function now returns -1 to the script when the sprite size is set instantly but no animation is created,  
     whereas previously, -1 was returned only on animation creation errors.
+  - Fixed deterministic restoration of 3D sound handles from savegame file and prevented sound handle collisions (6c3acc4)  
+    * Recalculates original handle entropy from saved handle before playing or loading sounds.
+    * Ensures restored handle entropy never falls below the highest handle used during restore to prevent handle collision.
+    * Prevents handle collisions that could swap playing sounds and cause looping sounds to stick at the player's position.
+    * Ensures restored 3D and far playing sounds have exactly the same handles they had when the sound state was saved.  
+    This fixes issues with COG scripts that store sound handles in variables.  
+    Previously, restored sounds had different handles than when they were saved, which potentially broke script logic.
+  - [QOL] Removed the loop flag from sound modes (2a757af)  
+    This prevents repeated accumulation of the same sound in sound buffer, ensuring the buffer doesn't fill up and preventing new sounds from playing.  
+    *Note, marked as QOL because this issue becomes most relevant when QOL for looping far sound is in place.*
+  - [QOL] Increased max number of simultaneous playing sounds to 128 (d8fdedc)
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
