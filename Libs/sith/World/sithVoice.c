@@ -345,7 +345,7 @@ void J3DAPI sithVoice_PlayVoice(SithCog* pCog)
     int guid = -1; // Fixed: Init to -1;
     if ( strcmpi(pThing->renderData.data.pModel3->aName, "aet_gy.3do") == 0 )
     {
-        tSoundChannelHandle hChannel = sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
+        tSoundChannelHandle hChannel = sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
         if ( hChannel )
         {
             guid = Sound_GetChannelGUID(hChannel);

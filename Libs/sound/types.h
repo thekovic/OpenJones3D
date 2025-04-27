@@ -30,7 +30,7 @@ typedef enum eSoundPlayFlag
     SOUNDPLAY_HIGH_PRIORITY        = 0x100,
     SOUNDPLAY_HIGHEST_PRIORITY     = 0x200,
     SOUNDPLAY_PLAYONCE             = 0x400,
-    SOUNDPLAY_PLAYTHIGNONCE        = 0x800,
+    SOUNDPLAY_PLAYTHINGONCE        = 0x800,
 } SoundPlayFlag;
 
 typedef enum eSoundChannelFlag J3D_ENUM_TYPE(uint32_t)

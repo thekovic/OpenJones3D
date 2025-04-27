@@ -858,7 +858,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                     tSoundHandle hSnd = sithSound_Load(sithWorld_g_pCurrentWorld, "aet_mr_ball_rebound.wav");
                     if ( hSnd )
                     {
-                        sithSoundMixer_PlaySoundThing(hSnd, pReboundProjectile, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
+                        sithSoundMixer_PlaySoundThing(hSnd, pReboundProjectile, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
                     }
 
                     memset(&pWeapon->moveDir, 0, sizeof(pWeapon->moveDir));
@@ -873,7 +873,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
             tSoundHandle hSnd = sithSound_Load(sithWorld_g_pCurrentWorld, "aet_mr_hit_indy.wav");
             if ( hSnd )
             {
-                sithSoundMixer_PlaySoundThing(hSnd, pThing, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
+                sithSoundMixer_PlaySoundThing(hSnd, pThing, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
             }
         }
     }

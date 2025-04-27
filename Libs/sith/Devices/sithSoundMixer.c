@@ -469,7 +469,7 @@ tSoundChannelFlag J3DAPI sithSoundMixer_PlayFlagsToChannelFlags(SoundPlayFlag fl
         chflags |= SOUND_CHANNEL_PLAYONCE;
     }
 
-    if ( (flags & SOUNDPLAY_PLAYTHIGNONCE) != 0 ) {
+    if ( (flags & SOUNDPLAY_PLAYTHINGONCE) != 0 ) {
         chflags |= SOUND_CHANNEL_PLAYTHINGONCE;
     }
 
