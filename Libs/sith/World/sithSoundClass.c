@@ -423,6 +423,14 @@ int J3DAPI sithSoundClass_LoadEntry(SithWorld* pWorld, SithSoundClass* pClass, c
             sscanf_s(stdConffile_g_entry.aArgs[2].argValue, "%x", &flags);
         }
 
+    #ifdef J3D_QOL_IMPROVEMENTS
+        // Fixed: Remove loop play flag
+        if ( modeNum != SITHSOUNDCLASS_CREATE ) // Create is played when thing is created
+        {
+            flags &= ~SOUNDPLAY_LOOP;
+        }
+    #endif
+
         tSoundHandle hSnd = 0;
         if ( strcmp(stdConffile_g_entry.aArgs[1].argValue, "none") != 0 ) // TODO: Replace strcmpi
         {
