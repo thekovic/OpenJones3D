@@ -103,8 +103,8 @@
 #define Sound_Update_ADDR 0x004DCCB0
 #define Sound_GenerateLipSync_ADDR 0x004DD180
 #define Sound_SetReverseSound_ADDR 0x004DD3D0
-#define Sound_GetNextHandle_ADDR 0x004DD3E0
-#define Sound_GetNextChannelHandle_ADDR 0x004DD420
+#define Sound_GenerateSoundHandle_ADDR 0x004DD3E0
+#define Sound_GenerateChannelHandle_ADDR 0x004DD420
 #define Sound_GetFreeCache_ADDR 0x004DD460
 #define Sound_IncreaseFreeCache_ADDR 0x004DD530
 #define Sound_WriteSoundFilepathToBank_ADDR 0x004DD560

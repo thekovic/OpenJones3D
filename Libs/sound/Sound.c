@@ -11,23 +11,60 @@
 #include <std/General/stdMath.h>
 #include <std/General/stdUtil.h>
 
+// General module constants
 #define SOUND_INIT_SOUNDINFO_BUFFERSIZE 16
 
+// Sound bank constants
 #define SOUNDBANK_STATIC_NUM 0
 #define SOUNDBANK_NORMAL_NUM 1
 #define SOUNDBANK_NUMBANKS   2
 
+// Sound playback constants
 #define SOUND_MAXCREATERETRIES 4
 
-#define SOUND_LOADSTATICIDXMASK 0x12344321
+// Sound load constants and macros
+#define SOUND_LOADSTATICIDXMASK 0x12344321 // Mask for static sound index
 
-#define SOUND_HANDLE_FIRST 1234u
-#define SOUND_HANDLE_MAX   1111111u
+// Sound handle constants & helper macros
+#define SOUND_HANDLE_ENTROPY_MAX   1111111u // Note, max 555555 handles per handle type (sound or channel)
+#define SOUND_HANDLE_MIN           1234u
+#define SOUND_HANDLE_MAX           (SOUND_HANDLE_MIN + SOUND_HANDLE_ENTROPY_MAX)
 
-#define SOUND_IS_SOUNDINFOHANDLE(handle) ( handle >= SOUND_HANDLE_FIRST && handle < 1112345 && (handle & 1) == 0 )
-#define SOUND_IS_CHANNELHANDLE(handle) ( handle >= SOUND_HANDLE_FIRST && handle < 1112345 && (handle & 1) != 0 )
+#define SOUND_IS_SOUNDINFOHANDLE(handle) ( handle >= SOUND_HANDLE_MIN && handle < SOUND_HANDLE_MAX && (handle & 1) == 0 )
+#define SOUND_IS_CHANNELHANDLE(handle) ( handle >= SOUND_HANDLE_MIN && handle < SOUND_HANDLE_MAX && (handle & 1) != 0 )
 
+// Logging macros
+#define SOUNDLOG_DEBUG(format, ...) \
+    Sound_pHS->pDebugPrint(format, ##__VA_ARGS__);
+    //J3DLOG_DEBUG(Sound_pHS, format, ##__VA_ARGS__)
 
+#define SOUNDLOG_STATUS(format, ...) \
+    Sound_pHS->pStatusPrint(format, ##__VA_ARGS__);
+    //J3DLOG_STATUS(Sound_pHS, format, ##__VA_ARGS__)
+
+#define SOUNDLOG_MESSAGE(format, ...) \
+    Sound_pHS->pMessagePrint(format, ##__VA_ARGS__);
+    //J3DLOG_MESSAGE(Sound_pHS, format, ##__VA_ARGS__)
+
+#define SOUNDLOG_WARNING(format, ...) \
+    Sound_pHS->pWarningPrint(format, ##__VA_ARGS__);
+    //J3DLOG_WARNING(Sound_pHS, format, ##__VA_ARGS__)
+
+#define SOUNDLOG_ERROR(format, ...) \
+    Sound_pHS->pErrorPrint(format, ##__VA_ARGS__);
+    //J3DLOG_ERROR(Sound_pHS, format, ##__VA_ARGS__)
+
+#define SOUNDLOG_FATAL(message) \
+    Sound_pHS->pAssert(message, J3D_FILE, __LINE__);
+    //J3DLOG_FATAL(Sound_pHS, message)
+
+#define SOUND_ASSERT(condition) \
+    J3D_ASSERT(condition, Sound_pHS)
+
+#define SOUND_ASSERTREL(condition) \
+    J3D_ASSERTREL(condition, Sound_pHS)
+
+// Sound module state enum
 typedef enum eSoundModuleState
 {
     SOUNDSTATE_NONE        = 0,
@@ -35,6 +72,8 @@ typedef enum eSoundModuleState
     SOUNDSTATE_STARTUP     = 2,
     SOUNDSTATE_OPEN        = 3,
 } SoundModuleState;
+
+// Note don't change the int types of vars that are being serialized on save/restore
 
 // Module state
 SoundModuleState Sound_state        = SOUNDSTATE_NONE; // Added: Init to none
@@ -71,7 +110,7 @@ static size_t soundbank_lastImportedBankNum;
 static uint8_t Sound_loadBuffer[10000];
 
 // Soundbank vars
-static size_t Sound_nextHandle;
+static size_t Sound_handleEntropy;
 
 // Loaded sound data buffer vars
 static size_t Sound_cacheBlockSize          = 0x200000;
@@ -99,8 +138,8 @@ static size_t Sound_memfileSize;
 static size_t Sound_memfilePos;
 
 
-tSoundHandle Sound_GetNextHandle(void);
-tSoundChannelHandle Sound_GetNextChannelHandle(void);
+tSoundHandle Sound_GenerateSoundHandle(void);
+tSoundChannelHandle Sound_GenerateChannelHandle(void);
 
 size_t J3DAPI Sound_GetFreeCache(size_t bankNum, size_t requiredSize);
 void J3DAPI Sound_IncreaseFreeCache(size_t bankNum, size_t nSize);
@@ -173,8 +212,8 @@ void Sound_InstallHooks(void)
     J3D_HOOKFUNC(Sound_Update);
     J3D_HOOKFUNC(Sound_GenerateLipSync);
     J3D_HOOKFUNC(Sound_SetReverseSound);
-    J3D_HOOKFUNC(Sound_GetNextHandle);
-    J3D_HOOKFUNC(Sound_GetNextChannelHandle);
+    J3D_HOOKFUNC(Sound_GenerateSoundHandle);
+    J3D_HOOKFUNC(Sound_GenerateChannelHandle);
     J3D_HOOKFUNC(Sound_GetFreeCache);
     J3D_HOOKFUNC(Sound_IncreaseFreeCache);
     J3D_HOOKFUNC(Sound_WriteSoundFilepathToBank);
@@ -201,21 +240,26 @@ static void Sound_Release(tSoundChannel* pChannel) // Added
 
     SoundDriver_Release(pChannel->pDSoundBuffer);
     pChannel->pDSoundBuffer = NULL;
-    pChannel->handle        = 0;
-    pChannel->hSnd          = 0;
+    pChannel->handle        = SOUND_INVALIDHANDLE;
+    pChannel->hSnd          = SOUND_INVALIDHANDLE;
     pChannel->thingId       = 0;
 }
-
 
 void Sound_ResetGlobals(void)
 {}
 
 int J3DAPI Sound_Initialize(tHostServices* pHS)
 {
+    // Fixed: Added check for pHS, as module requires it to be initialized
+    if ( !Sound_pHS )
+    {
+        return 1;
+    }
+
     Sound_pHS = pHS;
     if ( Sound_state != SOUNDSTATE_NONE )
     {
-        Sound_pHS->pErrorPrint("Sound_Initialize: module already in initialized state.");
+        SOUNDLOG_ERROR("Sound_Initialize: module already in initialized state.");
         return 1;
     }
 
@@ -237,7 +281,7 @@ int Sound_Startup(void)
 {
     if ( Sound_state == SOUNDSTATE_STARTUP )
     {
-        Sound_pHS->pErrorPrint("Sound_Startup: module already in startup state.");
+        SOUNDLOG_ERROR("Sound_Startup: module already in startup state.");
         return 0;
     }
 
@@ -245,7 +289,7 @@ int Sound_Startup(void)
     {
         if ( Sound_pHS )
         {
-            Sound_pHS->pErrorPrint("Sound_Startup: module hasn't been initialized, yet.");
+            SOUNDLOG_ERROR("Sound_Startup: module hasn't been initialized, yet.");
         }
 
         return 0;
@@ -267,13 +311,13 @@ int J3DAPI Sound_Open(SoundOpenFlags flags, size_t maxSoundChannels, SoundGetThi
 {
     if ( Sound_state == SOUNDSTATE_OPEN )
     {
-        Sound_pHS->pErrorPrint("Sound_Open: module already in open state.");
+        SOUNDLOG_ERROR("Sound_Open: module already in open state.");
         return 0;
     }
 
     if ( Sound_state != SOUNDSTATE_STARTUP )
     {
-        Sound_pHS->pErrorPrint("Sound_Open: module not in startup state.");
+        SOUNDLOG_ERROR("Sound_Open: module not in startup state.");
         return 0;
     }
 
@@ -293,7 +337,7 @@ int J3DAPI Sound_Open(SoundOpenFlags flags, size_t maxSoundChannels, SoundGetThi
     memset(Sound_aFades, 0, sizeof(Sound_aFades));
 
     Sound_pausedRefCount         = 0;
-    Sound_nextHandle             = 0;
+    Sound_handleEntropy          = 0;
     Sound_maxChannels            = maxSoundChannels;
     Sound_pfGetThingInfoCallback = pfGetThingInfo;
     Sound_bNoSoundCompression    = (flags & SOUNDOPEN_NOSOUNDCOMPRESSION) != 0;
@@ -327,9 +371,9 @@ void Sound_Close(void)
 
 int J3DAPI Sound_Save(tFileHandle fh)
 {
-    if ( Sound_state < 1 )
+    if ( Sound_state < SOUNDSTATE_INITIALIZED )
     {
-        Sound_pHS->pErrorPrint("Sound_Save: module is not initialized.\n");
+        SOUNDLOG_ERROR("Sound_Save: module is not initialized.\n");
         return 0;
     }
 
@@ -371,7 +415,8 @@ int J3DAPI Sound_Save(tFileHandle fh)
             break;
         }
 
-        if ( pCurChannel->handle
+        // TODO: Save also 2D sounds 
+        if ( pCurChannel->handle != SOUND_INVALIDHANDLE
             && ((pCurChannel->flags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
                 || (pCurChannel->flags & SOUND_CHANNEL_FAR) != 0)
             && (pCurChannel->flags & SOUND_CHANNEL_3DSOUND) != 0 )
@@ -514,8 +559,8 @@ int J3DAPI Sound_Save(tFileHandle fh)
     }
 
     static_assert(sizeof(Sound_aFades) == 1152, "sizeof(Sound_aFades) == 1152");
-    return Sound_pHS->pFileWrite(fh, &Sound_nextHandle, sizeof(uint32_t)) == sizeof(uint32_t)
-        && Sound_pHS->pFileWrite(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);// sizeof(SoundFade) * 48
+    return Sound_pHS->pFileWrite(fh, &Sound_handleEntropy, sizeof(uint32_t)) == sizeof(uint32_t)
+        && Sound_pHS->pFileWrite(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);
 }
 
 int J3DAPI Sound_Restore(tFileHandle fh)
@@ -523,7 +568,7 @@ int J3DAPI Sound_Restore(tFileHandle fh)
     if ( Sound_state != SOUNDSTATE_OPEN )
     {
         // Sound module is not opened, read out sound list anyway so the file read offset is moved to the end of sound section
-        Sound_pHS->pErrorPrint("Sound_Restore: module is not open.\n");
+        SOUNDLOG_ERROR("Sound_Restore: module is not open.\n");
     }
 
     uint32_t magic;
@@ -603,7 +648,7 @@ int J3DAPI Sound_Restore(tFileHandle fh)
             }
 
             // Read sound handle
-            if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) != sizeof(uint32_t) )
+            if ( Sound_pHS->pFileRead(fh, &Sound_handleEntropy, sizeof(uint32_t)) != sizeof(uint32_t) )
             {
                 return 0;
             }
@@ -622,7 +667,7 @@ int J3DAPI Sound_Restore(tFileHandle fh)
             }
 
             // Read channel handle
-            if ( Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) != sizeof(uint32_t) )
+            if ( Sound_pHS->pFileRead(fh, &Sound_handleEntropy, sizeof(uint32_t)) != sizeof(uint32_t) )
             {
                 return 0;
             }
@@ -739,16 +784,24 @@ int J3DAPI Sound_Restore(tFileHandle fh)
         }
     }
 
-    // Read next handle and fades. 
+    // Read handle entropy and fades. 
+    // TODO: Ensure Sound_handleEntropy is never smaller than the max handle value
+    //       that was used to generate the sound handle while loading sound infos and channels. 
+    if ( Sound_pHS->pFileRead(fh, &Sound_handleEntropy, sizeof(uint32_t)) != sizeof(uint32_t) )
+    {
+        return 0;
+    }
+
+    // Read fades
     // Note, what's the point to read fades to system in case system is not opened? 
-    return Sound_pHS->pFileRead(fh, &Sound_nextHandle, sizeof(uint32_t)) == sizeof(uint32_t) && Sound_pHS->pFileRead(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);
+    return Sound_pHS->pFileRead(fh, Sound_aFades, sizeof(Sound_aFades)) == sizeof(Sound_aFades);
 }
 
 void Sound_Pause(void)
 {
     if ( Sound_state != SOUNDSTATE_OPEN )
     {
-        Sound_pHS->pErrorPrint("Sound_Pause: module is not open.\n");
+        SOUNDLOG_ERROR("Sound_Pause: module is not open.\n");
         return;
     }
 
@@ -762,7 +815,7 @@ void Sound_Pause(void)
         {
             tSoundChannel* pChannel = &Sound_apChannels[i - 1];
 
-            if ( pChannel->handle )
+            if ( pChannel->handle != SOUND_INVALIDHANDLE )
             {
                 if ( (pChannel->flags & SOUND_CHANNEL_FAR) == 0 )
                 {
@@ -781,7 +834,7 @@ void Sound_Resume(void)
 {
     if ( Sound_state != SOUNDSTATE_OPEN )
     {
-        Sound_pHS->pErrorPrint("Sound_Resume: module is not open.\n");
+        SOUNDLOG_ERROR("Sound_Resume: module is not open.\n");
         return;
     }
 
@@ -798,7 +851,7 @@ void Sound_Resume(void)
         for ( size_t i = Sound_numChannels; i > 0; i-- )
         {
             tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-            if ( pChannel->handle )
+            if ( pChannel->handle != SOUND_INVALIDHANDLE )
             {
                 if ( (pChannel->flags & SOUND_CHANNEL_PAUSED) != 0 )
                 {
@@ -817,7 +870,7 @@ void J3DAPI Sound_Set3DGlobals(float distanceFactor, float minDistance, float ma
 {
     if ( Sound_state != SOUNDSTATE_OPEN )
     {
-        Sound_pHS->pErrorPrint("Sound_Set3DGlobals: module is not open.\n");
+        SOUNDLOG_ERROR("Sound_Set3DGlobals: module is not open.\n");
         return;
     }
 
@@ -831,7 +884,7 @@ int Sound_Has3DHW(void)
         return SoundDriver_Has3DHW();
     }
 
-    Sound_pHS->pErrorPrint("Sound_Has3DHW: module is not open.\n");
+    SOUNDLOG_ERROR("Sound_Has3DHW: module is not open.\n");
     return 0;
 }
 
@@ -839,7 +892,7 @@ void J3DAPI Sound_Set3DHWState(int bNo3DSound)
 {
     if ( Sound_state != SOUNDSTATE_OPEN )
     {
-        Sound_pHS->pErrorPrint("Sound_Set3DHWState: module is not open.\n");
+        SOUNDLOG_ERROR("Sound_Set3DHWState: module is not open.\n");
         return;
     }
 
@@ -896,7 +949,7 @@ int Sound_Get3DHWState(void)
 {
     if ( Sound_state != SOUNDSTATE_OPEN )
     {
-        Sound_pHS->pErrorPrint("Sound_Get3DHWState: module is not open.\n");
+        SOUNDLOG_ERROR("Sound_Get3DHWState: module is not open.\n");
         return 0;
     }
 
@@ -960,14 +1013,14 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
 
     if ( !Sound_bLoadEnabled )
     {
-        Sound_pHS->pErrorPrint("Sound_Load: Can't load %s because loads are not currently allowed.\n", pFilepath);
+        SOUNDLOG_ERROR("Sound_Load: Can't load %s because loads are not currently allowed.\n", pFilepath);
         return SOUND_INVALIDHANDLE;
     }
 
     tFileHandle fh = Sound_pHS->pFileOpen(pFilepath, "rb");
     if ( !fh )
     {
-        Sound_pHS->pErrorPrint("Sound_Load: Can't load %s.\n", pFilepath);
+        SOUNDLOG_ERROR("Sound_Load: Can't load %s.\n", pFilepath);
         return SOUND_INVALIDHANDLE;
     }
 
@@ -995,7 +1048,7 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
         SoundInfo* aSndInfos = (SoundInfo*)Sound_pHS->pRealloc(soundbank_apSoundInfos[bankNum], sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
         if ( !aSndInfos )
         {
-            Sound_pHS->pErrorPrint("Sound_Load: Couldn't realloc %d bytes.", sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
+            SOUNDLOG_ERROR("Sound_Load: Couldn't realloc %d bytes.", sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
             Sound_Reset(1);
 
             // TODO: [BUG] missing to close file handle
@@ -1025,7 +1078,7 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
     if ( wavType != 3 && wavType != 6 && wavType != 5 ) // 6  - IndyWV,  3 - WAV, 5 - FORM AIFFCOM
     {
         // Unsupported WAV type
-        Sound_pHS->pErrorPrint("Sound_Load: %s is not a WAV or WV file.\n", pFilepath);
+        SOUNDLOG_ERROR("Sound_Load: %s is not a WAV or WV file.\n", pFilepath);
         Sound_pHS->pFileClose(fh);
         return SOUND_INVALIDHANDLE;
     }
@@ -1037,7 +1090,7 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
     }
 
     // Assign sound info
-    pSndInfo->hSnd           = Sound_GetNextHandle();
+    pSndInfo->hSnd           = Sound_GenerateSoundHandle();
     pSndInfo->bankNum        = bankNum;
     pSndInfo->filePathOffset = Sound_WriteSoundFilepathToBank(pSndInfo->bankNum, pFilepath, strlen(pFilepath) + 1); // + 1 is terminating zero
 
@@ -1117,14 +1170,15 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
         AudioLib_ResetCompressor(&compressor);
         size_t compressedSize = AudioLib_Compress(
             &compressor,
-            &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset + sizeof(uint32_t)],// skip 4 bytes which are reserved for original sound data size
+            ((tAudioCompressedData*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset])->compressedData,
             &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset + dataSize],
             pSndInfo->dataSize,
             pSndInfo->numChannels
-        ) + sizeof(uint32_t);     //  sizeof((uint32_t) is original data size space
+        ) + sizeof(uint32_t);     //  sizeof((uint32_t) is size of tAudioCompressedData::uncompressedSize
 
         // Write original data size before compressed data to the beginning of the sound data in cache
-        *(uint32_t*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset] = pSndInfo->dataSize;
+        //*(uint32_t*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset] = pSndInfo->dataSize;
+        ((tAudioCompressedData*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset])->uncompressedSize = pSndInfo->dataSize;
 
         // Now assign compressed data size
         pSndInfo->dataSize = compressedSize;
@@ -1197,7 +1251,7 @@ void J3DAPI Sound_Reset(int bResetAllBanks)
             soundbank_aUsedCacheSizes[bankNum] = 0;
         }
 
-        Sound_nextHandle = 0;
+        Sound_handleEntropy = 0;
     }
     else
     {
@@ -1320,7 +1374,7 @@ tSoundChannelHandle J3DAPI Sound_GetChannelHandle(int guid)
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle && pChannel->guid == guid )
+        if ( pChannel->handle != SOUND_INVALIDHANDLE && pChannel->guid == guid )
         {
             return pChannel->handle;
         }
@@ -1365,7 +1419,7 @@ void J3DAPI Sound_SetChannelGUID(tSoundChannelHandle hChannel, int guid)
     }
 }
 
-const char* J3DAPI Sound_GetSoundFilename(unsigned int handle)
+const char* J3DAPI Sound_GetSoundFilename(tSoundHandleType handle)
 {
     SoundInfo* pSndInfo;
     tSoundChannel* pChannel = Sound_GetChannel(handle);
@@ -1386,7 +1440,7 @@ const char* J3DAPI Sound_GetSoundFilename(unsigned int handle)
     return NULL;
 }
 
-size_t J3DAPI Sound_GetLengthMsec(unsigned int handle)
+size_t J3DAPI Sound_GetLengthMsec(tSoundHandleType handle)
 {
     SoundInfo* pSndInfo;
     tSoundChannel* pChannel = Sound_GetChannel(handle);
@@ -1407,7 +1461,7 @@ size_t J3DAPI Sound_GetLengthMsec(unsigned int handle)
     uint32_t dataSize = pSndInfo->dataSize;
     if ( pSndInfo->bCompressed )
     {
-        dataSize = *(uint32_t*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset]; // decompressed size is stored in the first 4 bytes of the compressed data
+        dataSize = ((tAudioCompressedData*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset])->uncompressedSize; // decompressed size is stored in the first 4 bytes of the compressed data
     }
 
     if ( pSndInfo->sampleRate && pSndInfo->sempleBitSize >= 8 && pSndInfo->numChannels )
@@ -1415,10 +1469,9 @@ size_t J3DAPI Sound_GetLengthMsec(unsigned int handle)
         return 1000 * dataSize / (pSndInfo->numChannels * (pSndInfo->sempleBitSize >> 3)) / pSndInfo->sampleRate;
     }
 
-    Sound_pHS->pErrorPrint("Sound_GetLengthMsec: Bad header data for handle: %p (rate:%d bits:%d chans:%d)\n", handle, pSndInfo->sampleRate, pSndInfo->sempleBitSize, pSndInfo->numChannels);
+    SOUNDLOG_ERROR("Sound_GetLengthMsec: Bad header data for handle: %p (rate:%d bits:%d chans:%d)\n", handle, pSndInfo->sampleRate, pSndInfo->sempleBitSize, pSndInfo->numChannels);
     return 0;
 }
-
 
 void J3DAPI Sound_SetMaxVolume(float maxVolume)
 {
@@ -1431,7 +1484,7 @@ void J3DAPI Sound_SetMaxVolume(float maxVolume)
         for ( size_t i = Sound_numChannels; i > 0; i-- )
         {
             tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-            if ( pChannel->handle )
+            if ( pChannel->handle != SOUND_INVALIDHANDLE )
             {
                 float newVolume = pChannel->volume * Sound_maxVolume;
                 SoundDriver_SetVolume(pChannel->pDSoundBuffer, newVolume);
@@ -1500,7 +1553,7 @@ tSoundChannelHandle J3DAPI Sound_Play(tSoundHandle hSnd, float volume, float pan
         }
 
         // Found a free channel - use it immediately
-        if ( !pChannel->handle )
+        if ( pChannel->handle == SOUND_INVALIDHANDLE )
         {
             break;
         }
@@ -1508,8 +1561,8 @@ tSoundChannelHandle J3DAPI Sound_Play(tSoundHandle hSnd, float volume, float pan
         ++pChannel;
     }
 
-    // If we didn't find a free channel, try to reuse lowest priority one
-    if ( pChannel->handle )
+    // If we couldn't find a free channel, try to reuse lowest priority one
+    if ( pChannel->handle != SOUND_INVALIDHANDLE )
     {
         // No free channel found, check if we have a lower priority one to reuse
         if ( !pLowPriChannel )
@@ -1544,7 +1597,7 @@ tSoundChannelHandle J3DAPI Sound_Play(tSoundHandle hSnd, float volume, float pan
     pChannel->maxRadius  = 0.0f;
     pChannel->envflags   = 0;
 
-    // If start far playing don't play sound
+    // If start far playing then don't play sound
     if ( (flags & SOUND_CHANNEL_STARTFAR) != 0 )
     {
         pChannel->flags &= ~SOUND_CHANNEL_STARTFAR;
@@ -1567,7 +1620,7 @@ tSoundChannelHandle J3DAPI Sound_Play(tSoundHandle hSnd, float volume, float pan
                 for ( size_t i = Sound_numChannels; i > 0; i-- )
                 {
                     tSoundChannel* pCurChannel = &Sound_apChannels[i - 1];
-                    if ( pCurChannel->handle )
+                    if ( pCurChannel->handle != SOUND_INVALIDHANDLE )
                     {
                         if ( pCurChannel->priority < curPriority )
                         {
@@ -1596,20 +1649,20 @@ tSoundChannelHandle J3DAPI Sound_Play(tSoundHandle hSnd, float volume, float pan
             // TODO: maybe debug log?
 
             // Couldn't create sound buffer 
-            pChannel->handle  = 0;
-            pChannel->hSnd    = 0;
+            pChannel->handle  = SOUND_INVALIDHANDLE;
+            pChannel->hSnd    = SOUND_INVALIDHANDLE;
             pChannel->thingId = 0;
             return SOUND_INVALIDHANDLE;
         }
 
         // We have a buffer, set the volume and pan
-        float newVoluem = volume * Sound_maxVolume;
-        SoundDriver_SetVolume(pChannel->pDSoundBuffer, newVoluem);
+        float newVolume = volume * Sound_maxVolume;
+        SoundDriver_SetVolume(pChannel->pDSoundBuffer, newVolume);
         SoundDriver_SetPan(pChannel->pDSoundBuffer, pan);
     }
 
     // Set the sound handle
-    pChannel->handle = Sound_GetNextChannelHandle();
+    pChannel->handle = Sound_GenerateChannelHandle();
     return pChannel->handle;
 }
 
@@ -1766,7 +1819,7 @@ void Sound_StopAllSounds(void)
         for ( size_t i = 0; i < Sound_numChannels; ++i )
         {
             tSoundChannel* pChannel = &Sound_apChannels[i];
-            if ( pChannel->handle )
+            if ( pChannel->handle != SOUND_INVALIDHANDLE )
             {
                 Sound_Release(pChannel);
             }
@@ -1774,7 +1827,7 @@ void Sound_StopAllSounds(void)
     }
 }
 
-void J3DAPI Sound_StopThing(int thingId, unsigned int handle)
+void J3DAPI Sound_StopThing(int thingId, tSoundHandleType handle)
 {
     if ( SOUND_IS_CHANNELHANDLE(handle) )
     {
@@ -1784,7 +1837,7 @@ void J3DAPI Sound_StopThing(int thingId, unsigned int handle)
 
     if ( handle != SOUND_ALLTHINGSOUNDHANDLE && !SOUND_IS_SOUNDINFOHANDLE(handle) )
     {
-        Sound_pHS->pErrorPrint("Sound_StopThing: Don't know what 'sound' is: %p\n", handle);
+        SOUNDLOG_ERROR("Sound_StopThing: Don't know what 'sound' is: %p\n", handle);
         return;
     }
 
@@ -1792,7 +1845,7 @@ void J3DAPI Sound_StopThing(int thingId, unsigned int handle)
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle
+        if ( pChannel->handle != SOUND_INVALIDHANDLE
             && (pChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
             && pChannel->thingId == thingId
             && (handle == SOUND_ALLTHINGSOUNDHANDLE || pChannel->hSnd == handle) )
@@ -1882,7 +1935,7 @@ void J3DAPI Sound_FadeVolume(tSoundChannelHandle hChannel, float volume, float s
 
     if ( !pFade )
     {
-        Sound_pHS->pErrorPrint("Sound_FadeVolume: No free fades!\n");
+        SOUNDLOG_ERROR("Sound_FadeVolume: No free fades!\n");
         return;
     }
 
@@ -1902,7 +1955,7 @@ void J3DAPI Sound_FadeVolume(tSoundChannelHandle hChannel, float volume, float s
     pChannel->flags |= SOUND_CHANNEL_VOLUMEFADE;
 }
 
-void J3DAPI Sound_SetVolumeThing(int thingId, unsigned int handle, float volume)
+void J3DAPI Sound_SetVolumeThing(int thingId, tSoundHandleType handle, float volume)
 {
     if ( SOUND_IS_CHANNELHANDLE(handle) )
     {
@@ -1912,7 +1965,7 @@ void J3DAPI Sound_SetVolumeThing(int thingId, unsigned int handle, float volume)
 
     if ( handle != SOUND_ALLTHINGSOUNDHANDLE && !SOUND_IS_SOUNDINFOHANDLE(handle) )
     {
-        Sound_pHS->pErrorPrint("Sound_SetVolumeThing: Don't know what 'sound' is: %p\n", handle);
+        SOUNDLOG_ERROR("Sound_SetVolumeThing: Don't know what 'sound' is: %p\n", handle);
         return;
     }
 
@@ -1920,7 +1973,7 @@ void J3DAPI Sound_SetVolumeThing(int thingId, unsigned int handle, float volume)
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle
+        if ( pChannel->handle != SOUND_INVALIDHANDLE
             && (pChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
             && pChannel->thingId == thingId
             && (handle == SOUND_ALLTHINGSOUNDHANDLE || pChannel->hSnd == handle) )
@@ -1930,7 +1983,7 @@ void J3DAPI Sound_SetVolumeThing(int thingId, unsigned int handle, float volume)
     }
 }
 
-void J3DAPI Sound_FadeVolumeThing(int thingId, unsigned int handle, float startVolume, float endVolume)
+void J3DAPI Sound_FadeVolumeThing(int thingId, tSoundHandleType handle, float startVolume, float endVolume)
 {
     if ( SOUND_IS_CHANNELHANDLE(handle) )
     {
@@ -1940,7 +1993,7 @@ void J3DAPI Sound_FadeVolumeThing(int thingId, unsigned int handle, float startV
 
     if ( handle != SOUND_ALLTHINGSOUNDHANDLE && !SOUND_IS_SOUNDINFOHANDLE(handle) )
     {
-        Sound_pHS->pErrorPrint("Sound_FadeVolumeThing: Don't know what 'sound' is: %p\n", handle);
+        SOUNDLOG_ERROR("Sound_FadeVolumeThing: Don't know what 'sound' is: %p\n", handle);
         return;
     }
 
@@ -1948,7 +2001,7 @@ void J3DAPI Sound_FadeVolumeThing(int thingId, unsigned int handle, float startV
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle
+        if ( pChannel->handle != SOUND_INVALIDHANDLE
             && (pChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
             && pChannel->thingId == thingId
             && (handle == SOUND_ALLTHINGSOUNDHANDLE || pChannel->hSnd == handle) )
@@ -1958,7 +2011,7 @@ void J3DAPI Sound_FadeVolumeThing(int thingId, unsigned int handle, float startV
     }
 }
 
-int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle)
+int J3DAPI Sound_IsThingFadingVol(int thingId, tSoundHandleType handle)
 {
     if ( SOUND_IS_CHANNELHANDLE(handle) )
     {
@@ -1967,7 +2020,7 @@ int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle)
 
     if ( handle != SOUND_ALLTHINGSOUNDHANDLE && !SOUND_IS_SOUNDINFOHANDLE(handle) )
     {
-        Sound_pHS->pErrorPrint("Sound_IsThingFadingVol: Don't know what 'sound' is: %p\n", handle);
+        SOUNDLOG_ERROR("Sound_IsThingFadingVol: Don't know what 'sound' is: %p\n", handle);
         return 0;
     }
 
@@ -1975,7 +2028,7 @@ int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle)
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle
+        if ( pChannel->handle != SOUND_INVALIDHANDLE
             && (pChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
             && pChannel->thingId == thingId
             && (handle == SOUND_ALLTHINGSOUNDHANDLE || pChannel->hSnd == handle)
@@ -1988,18 +2041,18 @@ int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle)
     return 0;
 }
 
-void J3DAPI Sound_SetPan(tSoundHandle hSnd, float volume)
+void J3DAPI Sound_SetPan(tSoundChannelHandle hChannel, float volume)
 {
-    tSoundChannel* pChannel = Sound_GetChannel(hSnd);
+    tSoundChannel* pChannel = Sound_GetChannel(hChannel);
     if ( pChannel )
     {
         SoundDriver_SetPan(pChannel->pDSoundBuffer, volume);
     }
 }
 
-float J3DAPI Sound_GetPan(tSoundHandle hSnd)
+float J3DAPI Sound_GetPan(tSoundChannelHandle hChannel)
 {
-    tSoundChannel* pChannel = Sound_GetChannel(hSnd);
+    tSoundChannel* pChannel = Sound_GetChannel(hChannel);
     if ( pChannel )
     {
         return SoundDriver_GetPan(pChannel->pDSoundBuffer);
@@ -2078,7 +2131,7 @@ void J3DAPI Sound_FadePitch(tSoundChannelHandle hChannel, float pitch, float sec
 
     if ( !pFade )
     {
-        Sound_pHS->pErrorPrint("Sound_FadeVolume: No free fades!\n");
+        SOUNDLOG_ERROR("Sound_FadeVolume: No free fades!\n");
         return;
     }
 
@@ -2098,7 +2151,7 @@ void J3DAPI Sound_FadePitch(tSoundChannelHandle hChannel, float pitch, float sec
     pChannel->flags |= SOUND_CHANNEL_PITCHFADE;
 }
 
-void J3DAPI Sound_SetPitchThing(int thingId, unsigned int handle, float pitch)
+void J3DAPI Sound_SetPitchThing(int thingId, tSoundHandleType handle, float pitch)
 {
     if ( SOUND_IS_CHANNELHANDLE(handle) )
     {
@@ -2108,7 +2161,7 @@ void J3DAPI Sound_SetPitchThing(int thingId, unsigned int handle, float pitch)
 
     if ( handle != SOUND_ALLTHINGSOUNDHANDLE && !SOUND_IS_SOUNDINFOHANDLE(handle) )
     {
-        Sound_pHS->pErrorPrint("Sound_SetPitchThing: Don't know what 'sound' is: %p\n", handle);
+        SOUNDLOG_ERROR("Sound_SetPitchThing: Don't know what 'sound' is: %p\n", handle);
         return;
     }
 
@@ -2116,7 +2169,7 @@ void J3DAPI Sound_SetPitchThing(int thingId, unsigned int handle, float pitch)
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle
+        if ( pChannel->handle != SOUND_INVALIDHANDLE
             && (pChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
             && pChannel->thingId == thingId
             && (handle == SOUND_ALLTHINGSOUNDHANDLE || pChannel->hSnd == handle) )
@@ -2126,7 +2179,7 @@ void J3DAPI Sound_SetPitchThing(int thingId, unsigned int handle, float pitch)
     }
 }
 
-bool J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
+bool J3DAPI Sound_IsThingFadingPitch(int thingId, tSoundHandleType handle)
 {
     if ( SOUND_IS_CHANNELHANDLE(handle) )
     {
@@ -2135,7 +2188,7 @@ bool J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
 
     if ( handle != SOUND_ALLTHINGSOUNDHANDLE && !SOUND_IS_SOUNDINFOHANDLE(handle) )
     {
-        Sound_pHS->pErrorPrint("Sound_IsThingFadingPitch: Don't know what 'sound' is: %p\n", handle);
+        SOUNDLOG_ERROR("Sound_IsThingFadingPitch: Don't know what 'sound' is: %p\n", handle);
         return false;
     }
 
@@ -2143,7 +2196,7 @@ bool J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle)
     for ( size_t i = Sound_numChannels; i > 0; i-- )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle
+        if ( pChannel->handle != SOUND_INVALIDHANDLE
             && (pChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
             && pChannel->thingId == thingId
             && (handle == SOUND_ALLTHINGSOUNDHANDLE || pChannel->hSnd == handle)
@@ -2268,7 +2321,7 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
             break;
         }
 
-        if ( pCurChannel->handle && (pCurChannel->flags & SOUND_CHANNEL_3DSOUND) != 0 )
+        if ( pCurChannel->handle != SOUND_INVALIDHANDLE && (pCurChannel->flags & SOUND_CHANNEL_3DSOUND) != 0 )
         {
             SoundThingInfo thngSndInfo;
             if ( (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) != 0
@@ -2313,8 +2366,8 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
                 if ( (pCurChannel->flags & (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND)) == (SOUND_CHANNEL_THING | SOUND_CHANNEL_3DSOUND) )
                 {
                     tSoundChannel channel = *pCurChannel;
-                    pCurChannel->handle   = 0;
-                    pCurChannel->hSnd     = 0;
+                    pCurChannel->handle   = SOUND_INVALIDHANDLE;
+                    pCurChannel->hSnd     = SOUND_INVALIDHANDLE;
                     pCurChannel->thingId  = 0;
                     if ( pCurChannel->pDSoundBuffer )
                     {
@@ -2325,13 +2378,13 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
                     tSoundChannelHandle hChannel = Sound_PlayThing(channel.hSnd, channel.volume, channel.priority, channel.flags, channel.thingId, channel.guid, channel.minRadius, channel.maxRadius);
                     if ( !hChannel )
                     {
-                        Sound_pHS->pErrorPrint("Sound_Update: Error restarting distant sound.\n");
+                        SOUNDLOG_ERROR("Sound_Update: Error restarting distant sound.\n");
                     }
                     else
                     {
-                        for ( size_t i = Sound_numChannels; i-- > 0; )
+                        for ( size_t i = Sound_numChannels; i > 0; --i )
                         {
-                            tSoundChannel* pChannel = &Sound_apChannels[i];
+                            tSoundChannel* pChannel = &Sound_apChannels[i - 1];
                             if ( pChannel->handle == hChannel )
                             {
                                 pChannel->flags &= ~SOUND_CHANNEL_RESTART;
@@ -2344,7 +2397,7 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
                 else
                 {
                     tSoundChannel channel = *pCurChannel;
-                    pCurChannel->handle = 0;
+                    pCurChannel->handle = SOUND_INVALIDHANDLE;
                     if ( pCurChannel->pDSoundBuffer )
                     {
                         SoundDriver_Release(pCurChannel->pDSoundBuffer);
@@ -2367,13 +2420,13 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
 
                     if ( !hChannel )
                     {
-                        Sound_pHS->pErrorPrint("Sound_Update: Error restarting distant sound.\n");
+                        SOUNDLOG_ERROR("Sound_Update: Error restarting distant sound.\n");
                     }
                     else
                     {
-                        for ( size_t i = Sound_numChannels; i-- > 0; )
+                        for ( size_t i = Sound_numChannels; i > 0; --i )
                         {
-                            tSoundChannel* pChannel = &Sound_apChannels[i];
+                            tSoundChannel* pChannel = &Sound_apChannels[i - 1];
                             if ( pChannel->handle == hChannel )
                             {
                                 pChannel->flags &= ~SOUND_CHANNEL_RESTART;
@@ -2395,7 +2448,7 @@ void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, cons
         for ( size_t i = 0; i < Sound_numChannels; ++i )
         {
             pCurChannel = &Sound_apChannels[i];
-            if ( pCurChannel->handle
+            if ( pCurChannel->handle != SOUND_INVALIDHANDLE
                 && (SoundDriver_GetStatusAndCaps(pCurChannel->pDSoundBuffer) & SOUND_CHANNEL_PLAYING) == 0
                 && (pCurChannel->flags & SOUND_CHANNEL_PAUSED) == 0
                 && (pCurChannel->flags & SOUND_CHANNEL_FAR) == 0 )
@@ -2433,19 +2486,20 @@ int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPo
             goto error;
         }
 
-        Sound_pHS->pDebugPrint("NOTE: Generating lip sync for file %s\n", &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->filePathOffset]);
+        SOUNDLOG_DEBUG("Sound_GenerateLipSync: Generating lip sync for file %s\n", &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->filePathOffset]);
 
         size_t sndDataSize;
         uint8_t* pSndData;
         if ( pSndInfo->bCompressed )
         {
-            sndDataSize = *(uint32_t*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset]; // decompressed data size as uint32_t
+            tAudioCompressedData* pCompressedData = ((tAudioCompressedData*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset]);
+            sndDataSize = pCompressedData->uncompressedSize; // decompressed data size is first 4 bytes
             pSndData    = (uint8_t*)Sound_pHS->pMalloc(sndDataSize);
             bAllocated  = true;
 
             tAudioCompressorState compressor;
             AudioLib_ResetCompressor(&compressor);
-            AudioLib_Uncompress(&compressor, pSndData, &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset + sizeof(uint32_t)], sndDataSize);
+            AudioLib_Uncompress(&compressor, pSndData, pCompressedData->compressedData, sndDataSize);
         }
         else
         {
@@ -2485,7 +2539,7 @@ int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPo
     size_t  dataSize = pSndInfo->dataSize;
     if ( pSndInfo->bCompressed )
     {
-        dataSize = *(uint32_t*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset]; // decompressed data size as uint32_t
+        dataSize = ((tAudioCompressedData*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset])->uncompressedSize; // decompressed data size is first 4 bytes
     }
 
     int a2 = -1;
@@ -2526,12 +2580,12 @@ size_t J3DAPI Sound_GetAllInstanceInfo(SoundInstanceInfo* pCurInstance, size_t s
             break;
         }
 
-        if ( pCurChannel->handle )
+        if ( pCurChannel->handle != SOUND_INVALIDHANDLE )
         {
 
             if ( numSounds >= sizeInstances )
             {
-                Sound_pHS->pErrorPrint("Sound_GetAllInstanceInfo: Return value not big enough!\n");
+                SOUNDLOG_ERROR("Sound_GetAllInstanceInfo: Return value not big enough!\n");
                 return sizeInstances;
             }
 
@@ -2542,7 +2596,7 @@ size_t J3DAPI Sound_GetAllInstanceInfo(SoundInstanceInfo* pCurInstance, size_t s
             }
             else
             {
-                Sound_pHS->pErrorPrint("Sound_GetAllInstanceInfo: Unknown sound data for playing sound.\n");
+                SOUNDLOG_ERROR("Sound_GetAllInstanceInfo: Unknown sound data for playing sound.\n");
                 pCurInstance->pName = ">ERR:Unknown<";
             }
 
@@ -2566,10 +2620,7 @@ void Sound_SoundDump(void)
 {
     SoundInstanceInfo aInfos[64]; // TODO: make this array to the size of maxSoundChannels var
     size_t numSounds = Sound_GetAllInstanceInfo(aInfos, STD_ARRAYLEN(aInfos));
-
-    char aText[256];
-    STD_FORMAT(aText, "Sound Dump of %d sounds\n", numSounds);
-    Sound_pHS->pStatusPrint(aText);
+    SOUNDLOG_STATUS("Sound Dump of %d sounds\n", numSounds);
 
     for ( size_t i = 0; i < numSounds; ++i )
     {
@@ -2653,35 +2704,35 @@ void Sound_SoundDump(void)
             STD_FORMAT(aPitchText, "         ,");
         }
 
-        STD_FORMAT(aText, "%s %d\n \t%s %s %s %s %s %s %s %s", aInfos[i].pName, aInfos[i].handle, aPlayingText, aDistanceText, aLoopingText, aSpacialText, aThingText, aVoldFadeText, aPitchText, aPusedText);
-        Sound_pHS->pStatusPrint("%s\n", aText);
+        SOUNDLOG_STATUS("%s %d\n \t%s %s %s %s %s %s %s %s\n", aInfos[i].pName, aInfos[i].handle, aPlayingText, aDistanceText, aLoopingText, aSpacialText, aThingText, aVoldFadeText, aPitchText, aPusedText);
     }
 
-    Sound_pHS->pStatusPrint("\n");
+    // Print final line break to separate from next log
+    SOUNDLOG_STATUS("\n");
 }
 
-tSoundHandle Sound_GetNextHandle(void)
+tSoundHandle Sound_GenerateSoundHandle(void)
 {
-    uint32_t hNext = Sound_nextHandle;
-    if ( (Sound_nextHandle & 1) != 0 )
+    uint32_t hNext = Sound_handleEntropy;
+    if ( (Sound_handleEntropy & 1) != 0 )
     {
-        hNext = (Sound_nextHandle + 1) % SOUND_HANDLE_MAX;
+        hNext = (Sound_handleEntropy + 1) % SOUND_HANDLE_ENTROPY_MAX;
     }
 
-    Sound_nextHandle = (hNext + 1) % SOUND_HANDLE_MAX;
-    return hNext + SOUND_HANDLE_FIRST;
+    Sound_handleEntropy = (hNext + 1) % SOUND_HANDLE_ENTROPY_MAX;
+    return hNext + SOUND_HANDLE_MIN;
 }
 
-tSoundChannelHandle Sound_GetNextChannelHandle(void)
+tSoundChannelHandle Sound_GenerateChannelHandle(void)
 {
-    uint32_t hNext = Sound_nextHandle;
-    if ( (Sound_nextHandle & 1) == 0 )
+    uint32_t hNext = Sound_handleEntropy;
+    if ( (Sound_handleEntropy & 1) == 0 )
     {
-        hNext = (Sound_nextHandle + 1) % SOUND_HANDLE_MAX;
+        hNext = (Sound_handleEntropy + 1) % SOUND_HANDLE_ENTROPY_MAX;
     }
 
-    Sound_nextHandle = (hNext + 1) % SOUND_HANDLE_MAX;
-    return hNext + SOUND_HANDLE_FIRST;
+    Sound_handleEntropy = (hNext + 1) % SOUND_HANDLE_ENTROPY_MAX;
+    return hNext + SOUND_HANDLE_MIN;
 }
 
 size_t J3DAPI Sound_GetFreeCache(size_t bankNum, size_t requiredSize)
@@ -2714,7 +2765,7 @@ size_t J3DAPI Sound_GetFreeCache(size_t bankNum, size_t requiredSize)
     {
         soundbank_aUsedCacheSizes[bankNum] = prevCacheSize;
         soundbank_aCacheSizes[bankNum]     = prevCacheSize;
-        Sound_pHS->pErrorPrint(
+        SOUNDLOG_ERROR(
             "Sound_Load: Sound cache out of memory! (cacheSize:%d or 0x%08X)\n",
             soundbank_aCacheSizes[bankNum],
             soundbank_aCacheSizes[bankNum]
@@ -2806,7 +2857,7 @@ tSoundChannel* J3DAPI Sound_GetChannelBySoundHandle(tSoundHandle hSnd)
     for ( size_t i = Sound_numChannels; i > 0; --i )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle && pChannel->hSnd == hSnd )
+        if ( pChannel->handle != SOUND_INVALIDHANDLE && pChannel->hSnd == hSnd )
         {
             return pChannel;
         }
@@ -2821,7 +2872,7 @@ uint8_t* J3DAPI Sound_GetSoundBufferData(LPDIRECTSOUNDBUFFER pDSBuf, size_t* pDa
     for ( size_t i = Sound_numChannels; i > 0; --i )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i - 1];
-        if ( pChannel->handle && pChannel->pDSoundBuffer == pDSBuf )
+        if ( pChannel->handle != SOUND_INVALIDHANDLE && pChannel->pDSoundBuffer == pDSBuf )
         {
             pSoundInfo = Sound_GetSoundInfo(pChannel->hSnd);
             if ( pSoundInfo )
@@ -2890,7 +2941,7 @@ size_t J3DAPI Sound_MemFileWrite(tFileHandle fh, const void* pData, size_t size)
         uint8_t* pBufData = (uint8_t*)Sound_pHS->pRealloc(Sound_pMemfileBuf, Sound_memfileSize);
         if ( !pBufData )
         {
-            Sound_pHS->pErrorPrint("Sound.MemFileWrite: Couldn't realloc %d.\n", Sound_memfileSize);
+            SOUNDLOG_ERROR("Sound.MemFileWrite: Couldn't realloc %d.\n", Sound_memfileSize);
             Sound_MemFileFree();
             Sound_MemFileReset();
             return 0;
@@ -2932,7 +2983,7 @@ void Sound_StopAllNonStaticSounds(void)
     for ( size_t i = 0; i < Sound_numChannels; ++i )
     {
         tSoundChannel* pChannel = &Sound_apChannels[i];
-        if ( pChannel->handle )
+        if ( pChannel->handle != SOUND_INVALIDHANDLE )
         {
             SoundInfo* pSndInfo = Sound_GetSoundInfo(pChannel->hSnd);
             if ( pSndInfo )
@@ -2973,7 +3024,7 @@ int J3DAPI Sound_ExportBank(tFileHandle fh, size_t bankNum)
     }
 
     // Write next handle
-    return Sound_pHS->pFileWrite(fh, &Sound_nextHandle, sizeof(uint32_t)) == sizeof(uint32_t);
+    return Sound_pHS->pFileWrite(fh, &Sound_handleEntropy, sizeof(uint32_t)) == sizeof(uint32_t);
 }
 
 int J3DAPI Sound_ImportBank(tFileHandle fh, size_t bankNum)
@@ -2996,7 +3047,7 @@ int J3DAPI Sound_ImportBank(tFileHandle fh, size_t bankNum)
         soundbank_apSoundInfos[bankNum] = (SoundInfo*)Sound_pHS->pMalloc(sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
         if ( !soundbank_apSoundInfos[bankNum] )
         {
-            Sound_pHS->pErrorPrint("Sound:ImportBank: Failed to allocate %d bytes.\n", sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
+            SOUNDLOG_ERROR("Sound:ImportBank: Failed to allocate %d bytes.\n", sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
             return 0;
         }
     }
@@ -3016,7 +3067,7 @@ int J3DAPI Sound_ImportBank(tFileHandle fh, size_t bankNum)
         soundbank_apSoundCache[bankNum] = (uint8_t*)Sound_pHS->pMalloc(soundbank_aCacheSizes[bankNum]);
         if ( !soundbank_apSoundCache[bankNum] )
         {
-            Sound_pHS->pErrorPrint("Sound:ImportBank: Failed to allocate %d bytes.\n", soundbank_aCacheSizes[bankNum]);
+            SOUNDLOG_ERROR("Sound:ImportBank: Failed to allocate %d bytes.\n", soundbank_aCacheSizes[bankNum]);
             return 0;
         }
     }
@@ -3024,7 +3075,7 @@ int J3DAPI Sound_ImportBank(tFileHandle fh, size_t bankNum)
     // Read sound infos, sound data and next handle
     Sound_ReadFile(fh, soundbank_apSoundInfos[bankNum], sizeof(SoundInfo) * soundbank_aNumSounds[bankNum]);
     Sound_ReadFile(fh, soundbank_apSoundCache[bankNum], soundbank_aUsedCacheSizes[bankNum]);
-    Sound_ReadFile(fh, &Sound_nextHandle, sizeof(uint32_t));
+    Sound_ReadFile(fh, &Sound_handleEntropy, sizeof(uint32_t));
 
     soundbank_lastImportedBankNum = bankNum;
     return 1;

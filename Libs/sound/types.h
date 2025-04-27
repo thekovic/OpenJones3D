@@ -62,8 +62,9 @@ typedef enum eSoundEnvFlags
     SOUND_ENV_UNDERWATER = 0x01,
 } SoundEnvFlags;
 
-typedef uint32_t tSoundChannelHandle;
-typedef uint32_t tSoundHandle;
+typedef uint32_t tSoundHandleType;
+typedef tSoundHandleType tSoundChannelHandle;
+typedef tSoundHandleType tSoundHandle;
 
 typedef struct sSoundThingInfo SoundThingInfo;
 typedef struct sSoundSpatialInfo SoundSpatialInfo;
@@ -137,9 +138,10 @@ typedef struct sAudioCompressorState
 
 typedef struct sAudioCompressedData
 {
-    uint32_t uncompressedSize;
+    uint32_t uncompressedSize; // Note, don't change int type as it must be 4 bytes due to serialization
     uint8_t compressedData[1];
 } tAudioCompressedData;
+static_assert(sizeof(tAudioCompressedData) == 8, "sizeof(tAudioCompressedData) == 8"); // 8 - due to alignment
 
 struct sSoundSpatialInfo
 {

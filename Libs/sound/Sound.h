@@ -9,7 +9,6 @@ J3D_EXTERN_C_START
 #define SOUND_INVALIDHANDLE       0u
 #define SOUND_INVALIDGUID         0u
 
-//#define SOUND_INVALISOUNDINFOIDX  0
 #define SOUND_NOSOUNDINDEX          0x12345678u // Index or ID marking sound not belonging to any specific entity
 #define SOUND_INVALISOUNDINFOINDEX  0u
 
@@ -55,10 +54,10 @@ tSoundHandle J3DAPI Sound_GetSoundHandle(uint32_t idx);
 size_t J3DAPI Sound_GetSoundIndex(tSoundHandle hSnd);
 
 tSoundChannelHandle J3DAPI Sound_GetChannelHandle(int guid);
-int J3DAPI Sound_GetChannelGUID(tSoundChannelHandle hSndChannel);
+int J3DAPI Sound_GetChannelGUID(tSoundChannelHandle hChannel);
 
-const char* J3DAPI Sound_GetSoundFilename(unsigned int handle); // handle is either tSoundTrackHandle or tSoundHandle
-unsigned int J3DAPI Sound_GetLengthMsec(unsigned int handle); // handle is either tSoundTrackHandle or tSoundHandle
+const char* J3DAPI Sound_GetSoundFilename(tSoundHandleType handle); // handle is either tSoundChannelHandle or tSoundHandle
+size_t J3DAPI Sound_GetLengthMsec(tSoundHandleType handle); // handle is either tSoundChannelHandle or tSoundHandle
 
 void J3DAPI Sound_SetMaxVolume(float maxVolume);
 float Sound_GetMaxVolume(void);
@@ -70,23 +69,23 @@ tSoundChannelHandle J3DAPI Sound_PlayThing(tSoundHandle hSnd, float volume, int 
 void J3DAPI Sound_StopChannel(tSoundChannelHandle hChannel);
 void Sound_StopAllSounds(void);
 
-void J3DAPI Sound_StopThing(int thingId, unsigned int handle); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to stop all thing sounds
+void J3DAPI Sound_StopThing(int thingId, tSoundHandleType handle); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to stop all thing sounds
 void J3DAPI Sound_SetVolume(tSoundChannelHandle hChannel, float volume);
 void J3DAPI Sound_FadeVolume(tSoundChannelHandle hChannel, float volume, float secFadeTime);
 
-void J3DAPI Sound_SetVolumeThing(int thingId, unsigned int handle, float volume); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set volume to all thing sounds
-void J3DAPI Sound_FadeVolumeThing(int thingId, unsigned int handle, float startVolume, float endVolume); // handle is either tSoundTrackHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to fade all thing sounds
-int J3DAPI Sound_IsThingFadingVol(int thingId, unsigned int handle); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to check if any of thing sounds is fading volume
+void J3DAPI Sound_SetVolumeThing(int thingId, tSoundHandleType handle, float volume); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set volume to all thing sounds
+void J3DAPI Sound_FadeVolumeThing(int thingId, tSoundHandleType handle, float startVolume, float endVolume); // handle is either tSoundChannelHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to fade all thing sounds
+int J3DAPI Sound_IsThingFadingVol(int thingId, tSoundHandleType handle); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to check if any of thing sounds is fading volume
 
-void J3DAPI Sound_SetPan(tSoundHandle hSnd, float volume); // Added: From debug version
-float J3DAPI Sound_GetPan(tSoundHandle hSnd); // Added: From debug version
+void J3DAPI Sound_SetPan(tSoundChannelHandle hChannel, float volume); // Added: From debug version
+float J3DAPI Sound_GetPan(tSoundChannelHandle hChannel); // Added: From debug version
 
 void J3DAPI Sound_SetPitch(tSoundChannelHandle hChannel, float pitch);
 float J3DAPI Sound_GetPitch(tSoundChannelHandle hChannel);
 void J3DAPI Sound_FadePitch(tSoundChannelHandle hChannel, float pitch, float secFadeTime);
 
-void J3DAPI Sound_SetPitchThing(int thingId, unsigned int handle, float pitch); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set pitch to all thing sounds
-bool J3DAPI Sound_IsThingFadingPitch(int thingId, unsigned int handle); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to check if any of thing sounds is fading pitch
+void J3DAPI Sound_SetPitchThing(int thingId, tSoundHandleType handle, float pitch); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set pitch to all thing sounds
+bool J3DAPI Sound_IsThingFadingPitch(int thingId, tSoundHandleType handle); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to check if any of thing sounds is fading pitch
 
 tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel);
 

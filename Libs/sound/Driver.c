@@ -246,7 +246,7 @@ LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_CreateAndPlay(size_t samplesPerSec, size_
 
     if ( (*pFlags & SOUND_CHANNEL_COMPRESSED) != 0 )
     {
-        dataSize = ((tAudioCompressedData*)pSoundData)->uncompressedSize; //*(uint32_t*)pSoundData;
+        dataSize = ((tAudioCompressedData*)pSoundData)->uncompressedSize;
     }
 
     WAVEFORMATEX wavefmt;
@@ -325,12 +325,12 @@ LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_CreateAndPlay(size_t samplesPerSec, size_
     {
         if ( (*pFlags & SOUND_CHANNEL_RESTART) != 0 )
         {
-            dsres = IDirectSoundBuffer_SetVolume(pDSBufferNew, (LONG)(SoundDriver_maxVolume * -10000.0f));
+            dsres = IDirectSoundBuffer_SetVolume(pDSBufferNew, (LONG)(SoundDriver_maxVolume * (float)DSBVOLUME_MIN)); // silence
             SoundDriver_DSCheckStatus(dsres, __LINE__);
         }
         else
         {
-            dsres = IDirectSoundBuffer_SetVolume(pDSBufferNew, (LONG)(SoundDriver_maxVolume * 0.0f));
+            dsres = IDirectSoundBuffer_SetVolume(pDSBufferNew, (LONG)(SoundDriver_maxVolume * (float)DS3D_DEFAULTCONEOUTSIDEVOLUME)); // max i.e. no attenuation
             SoundDriver_DSCheckStatus(dsres, __LINE__);
         }
 
@@ -338,7 +338,7 @@ LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_CreateAndPlay(size_t samplesPerSec, size_
         {
             //DWORD dataSite = ((tAudioCompressedData*)pSoundData)->uncompressedSize;//*(DWORD*)pSoundData;
 
-            // Note, using dataSize as it should be set to uncompressed size here
+            // Note, using dataSize as it should be already set to uncompressed size here
             DWORD dwAudioBytes1, dwAudioBytes2;
             void* lpvAudioPtr1;
             void* lpvAudioPtr2;
