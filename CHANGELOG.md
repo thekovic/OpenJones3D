@@ -16,11 +16,17 @@
   - Changed argument order of debug print COG functions (a80ed30)
     Also changed the log level to debug.
   - Added programs `yacc` & `flex` (d6f5be6 + b669ca8)
-  - Fixed yacc initial line number at the start of code parsing.(232f268)  
+  - Fixed yacc initial line number at the start of code parsing. (232f268)  
     This fixes line number in log when error is encountered.
   - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed to the execution stack on error. (e9d4167)  
     This fixes corruption of the COG's execution stack when an error occurs.
   - Added new `rdVector` arithmetic functions (c4c8ee5)
+  - Fix null pointer dereference && infinitive loop in `sithAnimate_BuildScrollFaceRotate`, `sithAnimate_PushItem`, `sithAnimate_PullItem`, `sithAnimate_UpdatePushItemAnim` and `sithAnimate_UpdatePullItemAnim` (70cf7bf)
+  - Fixed handling division by zero in `sithAnimate_StartSpriteSizeAnim` & `sithAnimate_StartThingMoveAnim` (f5dc718)
+  - Altered the AnimateSpriteSize COG function to return -1 when deltaTime is 0. (039a227)  
+    This change prevents unnecessary animation creation, thereby saving animation slots.  
+    The function now returns -1 to the script when the sprite size is set instantly but no animation is created,  
+    whereas previously, -1 was returned only on animation creation errors.
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
@@ -62,6 +68,7 @@
     * `sithAnimate` (ef93c3c)
     * `sithGamesave` (3dc6ee4)
     * `sithDSSCog` (0b8f620)
+    * `Sound` (664b8f8)
   - Added `Sound_GetAllInstanceInfo` & `Sound_SoundDump` functions (8654185)
   - Added `stdConffile_GetWriteFileHandle` function (cee02bd)
   - Fixed bug to correctly update key press state in `stdControl_ReadAxisAsKey` function (1ab4c44)
@@ -117,13 +124,13 @@
   - Fixed the hardware-accelerated drawing of 2D lines (5a63bc7)
 
 ### Game play:
-  - Fixed incorrect removal of loop-playing far sound. (2a25add)  
+  - [QOL] Fixed incorrect removal of loop-playing far sound. (2a25add)  
     This ensures the loop-playing sound continues to play when the listener comes in sound hearing range.
   - Fixed submersion of dead thing in cold-water/lava (18d828d)
   - Fixed mouse sensitivity when in-editor mode (d25081f)
   - Added mouse button actions for fire/activate, jump, weapon toggle, and weapon selection when in-editor mode (d25081f)
   - Restricted developer/debug control keys to in-editor/dev mode only (d25081f)
-  - Fixed stop looping far sound when volume is below threshold (5a169d7)
+  - [QOL] Fixed stop looping far sound when volume is below threshold (5a169d7)
   - Fixed playing far sound on sound restore from savegame (b8a82d4)  
     Subsequently, this fix addresses the drawing error of level wireframe geometry on the overlay map
   - [QOL] Improved AI controlled actor movement at cliff edges (8ed5690)  
