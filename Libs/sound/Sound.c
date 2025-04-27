@@ -140,6 +140,9 @@ static size_t Sound_memfilePos;
 
 tSoundHandle Sound_GenerateSoundHandle(void);
 tSoundChannelHandle Sound_GenerateChannelHandle(void);
+uint32_t Sound_GetEntropyFromHandle(tSoundHandleType handle, bool bChannelHandle); // Added
+uint32_t Sound_GetEntropyFromSoundHandle(tSoundHandle handle); // Added
+uint32_t Sound_GetEntropyFromChannelHandle(tSoundChannelHandle handle); // Added
 
 size_t J3DAPI Sound_GetFreeCache(size_t bankNum, size_t requiredSize);
 void J3DAPI Sound_IncreaseFreeCache(size_t bankNum, size_t nSize);
@@ -624,6 +627,9 @@ int J3DAPI Sound_Restore(tFileHandle fh)
         return 0;
     }
 
+    // Added: Added tracking of max entropy value
+    size_t maxEntropy = 0;
+
     while ( filenameLen != Sound_serSoundListEnd )
     {
         if ( filenameLen <= STD_ARRAYLEN(Sound_sndFilename) )
@@ -653,6 +659,13 @@ int J3DAPI Sound_Restore(tFileHandle fh)
                 return 0;
             }
 
+            // Fixed: Calculate correct entropy from sound info handle
+            Sound_handleEntropy = Sound_GetEntropyFromSoundHandle(Sound_handleEntropy);
+            if ( maxEntropy < Sound_handleEntropy ) // Added
+            {
+                maxEntropy = Sound_handleEntropy;
+            }
+
             tSoundHandle hSnd = 0;
             if ( Sound_state == SOUNDSTATE_OPEN )
             {
@@ -670,6 +683,13 @@ int J3DAPI Sound_Restore(tFileHandle fh)
             if ( Sound_pHS->pFileRead(fh, &Sound_handleEntropy, sizeof(uint32_t)) != sizeof(uint32_t) )
             {
                 return 0;
+            }
+
+            // Fixed: Calculate correct entropy from channel handle
+            Sound_handleEntropy = Sound_GetEntropyFromChannelHandle(Sound_handleEntropy);
+            if ( maxEntropy < Sound_handleEntropy ) // Added
+            {
+                maxEntropy = Sound_handleEntropy;
             }
 
             int32_t priority;
@@ -790,6 +810,17 @@ int J3DAPI Sound_Restore(tFileHandle fh)
     if ( Sound_pHS->pFileRead(fh, &Sound_handleEntropy, sizeof(uint32_t)) != sizeof(uint32_t) )
     {
         return 0;
+    }
+
+    // Fixed: Added check to ensure Sound_handleEntropy is never smaller than the max entropy value.
+    //        This prevents possible sound handle collisions when loading or playing new sounds.
+    //        Especially the case where playing sounds get switched due to handle collisions, 
+    //        e.g.: When firing a gun and due to handle collision the sound of colliding handle is played instead of the gun sound.
+    //              And when the colliding sound is looping, it'll be play indefinitely at player's position.
+    if ( Sound_handleEntropy < maxEntropy )
+    {
+        SOUNDLOG_WARNING("Sound_Restore: Restored handle entropy #%d is smaller than max handle entropy #%d. Set to max handle entropy.\n", Sound_handleEntropy, maxEntropy);
+        Sound_handleEntropy = maxEntropy;
     }
 
     // Read fades
@@ -2733,6 +2764,52 @@ tSoundChannelHandle Sound_GenerateChannelHandle(void)
 
     Sound_handleEntropy = (hNext + 1) % SOUND_HANDLE_ENTROPY_MAX;
     return hNext + SOUND_HANDLE_MIN;
+}
+
+uint32_t Sound_GetEntropyFromHandle(tSoundHandleType handle, bool bChannelHandle)
+{
+    // Subtract SOUND_HANDLE_MIN to get hNext
+    uint32_t hNext = handle - SOUND_HANDLE_MIN;
+
+    if ( bChannelHandle )
+    {
+        if ( hNext % 2 == 1 )
+        {
+            // If hNext is odd, Sound_handleEntropy was likely odd too
+            return hNext;
+        }
+        else
+        {
+            // If hNext is even, it might have been (Sound_handleEntropy + 1)
+            // We need to subtract 1 and handle wrap-around
+            return (hNext > 0) ? hNext - 1 : SOUND_HANDLE_ENTROPY_MAX - 1;
+        }
+    }
+    else
+    {
+        // Sound info handles
+        if ( hNext % 2 == 0 )
+        {
+            // If hNext is even, Sound_handleEntropy was likely even too
+            return hNext;
+        }
+        else
+        {
+            // If hNext is odd, it might have been (Sound_handleEntropy + 1)
+            // We need to subtract 1 and handle wrap-around
+            return (hNext > 0) ? hNext - 1 : SOUND_HANDLE_ENTROPY_MAX - 1;
+        }
+    }
+}
+
+uint32_t Sound_GetEntropyFromSoundHandle(tSoundHandle handle)
+{
+    return Sound_GetEntropyFromHandle(handle, false);
+}
+
+uint32_t Sound_GetEntropyFromChannelHandle(tSoundChannelHandle handle)
+{
+    return Sound_GetEntropyFromHandle(handle, true);
 }
 
 size_t J3DAPI Sound_GetFreeCache(size_t bankNum, size_t requiredSize)
