@@ -26,7 +26,7 @@ float J3DAPI SoundDriver_GetPan(LPDIRECTSOUNDBUFFER pDSBuf); // Added: From debu
 void J3DAPI SoundDriver_SetFrequency(LPDIRECTSOUNDBUFFER pDSBuf, float freq);
 float J3DAPI SoundDriver_GetFrequency(LPDIRECTSOUNDBUFFER pDSBuf);
 
-int J3DAPI SoundDriver_GetCurrentPosition(LPDIRECTSOUNDBUFFER pDSoundBuf);
+size_t J3DAPI SoundDriver_GetCurrentPosition(LPDIRECTSOUNDBUFFER pDSoundBuf);
 tSoundChannelFlag J3DAPI SoundDriver_GetStatusAndCaps(LPDIRECTSOUNDBUFFER pDSBuffer);
 
 void J3DAPI SoundDriver_SetListenerPosition(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient);

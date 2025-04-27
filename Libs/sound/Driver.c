@@ -562,7 +562,7 @@ float J3DAPI SoundDriver_GetFrequency(LPDIRECTSOUNDBUFFER pDSBuf)
     return (float)(int)freq;
 }
 
-int J3DAPI SoundDriver_GetCurrentPosition(LPDIRECTSOUNDBUFFER pDSoundBuf)
+size_t J3DAPI SoundDriver_GetCurrentPosition(LPDIRECTSOUNDBUFFER pDSoundBuf)
 {
     if ( !pDSoundBuf )
     {
@@ -767,7 +767,11 @@ int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, floa
         SoundDriver_CalcListeneSoundMix(x, y, z, volume, pitch, &newVolume, &pan, &newPitch, minRadius, maxRadius, envflags);
         if ( newVolume < SOUNDDRIVER_FARVOLUMETHRESHOLD
             && (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) != (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
-            && (*pChannelFlags & (SOUND_CHANNEL_FAR)) != (SOUND_CHANNEL_FAR) ) // Fixed: Added check for channel being played far away. This prevents removing a looping sound in the Sound_Update at far distance that is out of hearing range.
+        #ifdef J3D_QOL_IMPROVEMENTS
+            && (*pChannelFlags & (SOUND_CHANNEL_FAR)) != (SOUND_CHANNEL_FAR)  // Fixed: Added check for channel being played far away. 
+                                                                              //        This prevents removing a looping sound in the Sound_Update at far distance that is out of hearing range.
+        #endif
+            )
         {
             return 0;
         }
@@ -813,11 +817,18 @@ int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, floa
         }
     }
 
+#ifdef J3D_QOL_IMPROVEMENTS
     // Fixed: Always stop currently looping far sound when volume drops below SOUNDDRIVER_FARVOLUMETHESHOLD.
     //        Originally, far marked looping sound was not stopped due to else if branch here.
     if ( (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
         && (*pChannelFlags & SOUND_CHANNEL_3DSOUND) == SOUND_CHANNEL_3DSOUND
         && newVolume < SOUNDDRIVER_FARVOLUMETHRESHOLD )
+    #else
+
+    else if ( (*pChannelFlags & (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)) == (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING)
+        && (*pChannelFlags & SOUND_CHANNEL_3DSOUND) == SOUND_CHANNEL_3DSOUND
+        && newVolume < SOUNDDRIVER_FARVOLUMETHRESHOLD )
+    #endif
     {
         SoundDriver_Stop(pDSBuf);
         if ( pDSBuf )
@@ -876,6 +887,8 @@ LPDIRECTSOUND SoundDriver_GetDSound(void)
 
 LPDIRECTSOUND J3DAPI SoundDriver_CreateDirectSound(int bNoSound3D)
 {
+    J3D_UNUSED(bNoSound3D);
+
     LPDIRECTSOUND pDSound = NULL;
     if ( DirectSoundCreate(NULL, &pDSound, NULL) != DS_OK )
     {
