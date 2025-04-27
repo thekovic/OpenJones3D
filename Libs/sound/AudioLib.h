@@ -8,11 +8,12 @@
 J3D_EXTERN_C_START
 
 // Returns pointer to snd data
-uint8_t* J3DAPI AudioLib_ParseWaveFileHeader(const uint8_t* pData, int* pType, unsigned int* pSampleRate, unsigned int* pBitsPerSample, unsigned int* pNumChannels, int* a6, unsigned int* pSoundDataSize, const uint8_t** ppHeaderEnd, unsigned int* pDataOffset);
+const uint8_t* J3DAPI AudioLib_ParseWaveFileHeader(const uint8_t* pData, int* pType, uint32_t* pSampleRate, uint32_t* pBitsPerSample, uint32_t* pNumChannels, uint32_t* pExtraInfo, uint32_t* pSoundDataSize, uint32_t* pExtraDataOffset, uint32_t* pSoundDataOffset);
+
 int J3DAPI AudioLib_Compress(tAudioCompressorState* pCompressorState, uint8_t* pOutBuffer, const uint8_t* pInBuffer, int size, unsigned int numChannels);
 void J3DAPI AudioLib_ResetCompressor(tAudioCompressorState* pState);
 void J3DAPI AudioLib_Uncompress(tAudioCompressorState* pCompressorState, uint8_t* pOutSndData, const uint8_t* pCompressedData, unsigned int size);
-int J3DAPI AudioLib_GetMouthPosition(uint8_t* pData, int a2, int* pMouthPosX, int* pMouthPosY);
+int J3DAPI AudioLib_GetMouthPosition(uint8_t* pData, int a2, uint8_t* pMouthPosX, uint8_t* pMouthPosY);
 int J3DAPI AudioLib_GenerateLipSynchBlock(uint8_t* pOutData, const uint8_t* pSndData, unsigned int a3, char a4, char a5, int sampleRate, int bitsPerSample, int numChannels, int a9, int sndDataSize);
 // ADPCM compression
 int J3DAPI AudioLib_CompressBlock(tAudioCompressorState* pCompressorState, uint8_t* pOutBuffer, int16_t* a3, int a4, unsigned int numChannels, int a6, int bStateInitialized);

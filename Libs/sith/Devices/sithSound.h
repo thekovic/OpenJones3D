@@ -9,7 +9,7 @@
 
 J3D_EXTERN_C_START
 
-#define SITHSOUND_MAXCHANNELS 32 // Max playing channels
+#define SITHSOUND_MAXCHANNELS 128 // Max playing channels
 
 int J3DAPI sithSound_Initialize(tHostServices* pHS);
 void sithSound_Uninitialize(void);

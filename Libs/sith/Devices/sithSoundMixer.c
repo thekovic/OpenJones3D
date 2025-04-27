@@ -395,7 +395,7 @@ void J3DAPI sithSoundMixer_CalcCameraRelativeSoundMix(const SoundSpatialInfo* pS
 void J3DAPI sithSoundMixer_StopAllSoundsThing(const SithThing* pThing)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
-    Sound_StopThing(thingID, 0);
+    Sound_StopThing(thingID, SOUND_ALLTHINGSOUNDHANDLE);
 }
 
 tSoundChannelHandle J3DAPI sithSoundMixer_GetChannelHandle(int guid)

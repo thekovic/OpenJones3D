@@ -56,10 +56,10 @@ int J3DAPI sithSound_Startup(int bSound3D)
 {
     SITH_ASSERTREL(!bStartup);
 
-    int flags = 0;
+    SoundOpenFlags flags = 0;
     if ( !bSound3D )
     {
-        flags = 0x02;
+        flags = SOUNDOPEN_NO3DSOUND;
     }
 
     const HWND hwnd = stdWin95_GetWindow();
@@ -210,7 +210,7 @@ void J3DAPI sithSound_FreeWorldSounds(SithWorld* pWorld)
     }
     else
     {
-        Sound_ResetBanks(pWorld->state & SITH_WORLD_STATE_STATIC);
+        Sound_Reset(pWorld->state & SITH_WORLD_STATE_STATIC);
         pWorld->numSounds = 0;
     }
 }
@@ -230,7 +230,7 @@ tSoundHandle J3DAPI sithSound_Load(SithWorld* pWorld, const char* filename)
         return 0;
     }
 
-    if ( !strcmp(filename, "none") )
+    if ( streq(filename, "none") )
     {
         return 0;
     }

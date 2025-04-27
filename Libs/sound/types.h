@@ -8,12 +8,21 @@
 
 J3D_EXTERN_C_START
 
+typedef enum eSoundOpenFlags
+{
+    SOUNDOPEN_NO3DSOUND           = 0x02,
+    SOUNDOPEN_HWNDISDIRECTSOUND   = 0x04,
+    SOUNDOPEN_GLOBALFOCUS         = 0x08,
+    SOUNDOPEN_NOSOUNDCOMPRESSION  = 0x10,
+    SOUNDOPEN_NOLIPSYNC           = 0x20,
+} SoundOpenFlags;
+
 typedef enum eSoundPlayFlag
 {
-    SOUNDPLAY_LOOP                 = 0x1,
-    SOUNDPLAY_REMOVE_AFTER_FADEOUT = 0x2,
-    SOUNDPLAY_AMBIENT              = 0x4,
-    SOUNDPLAY_USE_DOPPLAR_FX       = 0x8,
+    SOUNDPLAY_LOOP                 = 0x01,
+    SOUNDPLAY_REMOVE_AFTER_FADEOUT = 0x02,
+    SOUNDPLAY_AMBIENT              = 0x04,
+    SOUNDPLAY_USE_DOPPLAR_FX       = 0x08,
     SOUNDPLAY_FADEIN               = 0x10,
     SOUNDPLAY_FADEOUT              = 0x20,
     SOUNDPLAY_ABSOLUTE_POS         = 0x40,
@@ -26,10 +35,10 @@ typedef enum eSoundPlayFlag
 
 typedef enum eSoundChannelFlag J3D_ENUM_TYPE(uint32_t)
 {
-    SOUND_CHANNEL_PLAYING          = 0x1,
-        SOUND_CHANNEL_LOOP             = 0x2,
-        SOUND_CHANNEL_HWMIXING         = 0x4,
-        SOUND_CHANNEL_GLOBALFOCUS      = 0x8,
+    SOUND_CHANNEL_PLAYING          = 0x01,
+        SOUND_CHANNEL_LOOP             = 0x02,
+        SOUND_CHANNEL_HWMIXING         = 0x04,
+        SOUND_CHANNEL_GLOBALFOCUS      = 0x08,
         SOUND_CHANNEL_VOLUMEFADE       = 0x10,
         SOUND_CHANNEL_PITCHFADE        = 0x20,
         SOUND_CHANNEL_PLAYONCE         = 0x100,
@@ -50,7 +59,7 @@ typedef enum eSoundChannelFlag J3D_ENUM_TYPE(uint32_t)
 
 typedef enum eSoundEnvFlags
 {
-    SOUND_ENV_UNDERWATER = 0x1,
+    SOUND_ENV_UNDERWATER = 0x01,
 } SoundEnvFlags;
 
 typedef uint32_t tSoundChannelHandle;
@@ -79,7 +88,7 @@ typedef struct sSoundInfo
     uint32_t bCompressed;
     uint32_t idx;
 } SoundInfo;
-static_assert(sizeof(SoundInfo) == 48, "sizeof(SoundInfo) == 48");
+static_assert(sizeof(SoundInfo) == 48, "sizeof(SoundInfo) == 48"); // Note the size must stay 48 bytes due to bank serialization to CND file
 
 typedef struct sSoundChannel
 {

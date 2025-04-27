@@ -69,7 +69,7 @@
 #define Sound_GetMemoryUsage_ADDR 0x004DB3A0
 #define Sound_Load_ADDR 0x004DB3D0
 #define Sound_LoadStatic_ADDR 0x004DB860
-#define Sound_ResetBanks_ADDR 0x004DB8A0
+#define Sound_Reset_ADDR 0x004DB8A0
 #define Sound_EnableLoad_ADDR 0x004DBA20
 #define Sound_ExportStaticBank_ADDR 0x004DBA30
 #define Sound_ImportStaticBank_ADDR 0x004DBA40
@@ -107,9 +107,9 @@
 #define Sound_GetNextChannelHandle_ADDR 0x004DD420
 #define Sound_GetFreeCache_ADDR 0x004DD460
 #define Sound_IncreaseFreeCache_ADDR 0x004DD530
-#define Sound_BankCacheWriteSoundFilePath_ADDR 0x004DD560
+#define Sound_WriteSoundFilepathToBank_ADDR 0x004DD560
 #define Sound_GetDeltaTime_ADDR 0x004DD5A0
-#define Sound_soundbank_GetSoundInfo_ADDR 0x004DD5B0
+#define Sound_GetSoundInfo_ADDR 0x004DD5B0
 #define Sound_GetChannel_ADDR 0x004DD610
 #define Sound_GetChannelBySoundHandle_ADDR 0x004DD660
 #define Sound_GetSoundBufferData_ADDR 0x004DD6B0
@@ -186,7 +186,7 @@
 #define Sound_memfileSize_ADDR 0x014E4438
 #define Sound_memfilePos_ADDR 0x014E443C
 #define Sound_pHS_ADDR 0x014E4440
-#define Sound_startupState_ADDR 0x014E4444
+#define Sound_state_ADDR 0x014E4444
 #define Sound_bReverseSound_ADDR 0x014E4448
 #define Sound_curUpdatePos_ADDR 0x014E4450
 
