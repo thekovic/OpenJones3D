@@ -9,7 +9,12 @@
 
 J3D_EXTERN_C_START
 
-#define SITHSOUND_MAXCHANNELS 128 // Max playing channels
+// Max number of simultaneous playing sounds
+#ifdef J3D_QOL_IMPROVEMENTS
+#  define SITHSOUND_MAXCHANNELS 128
+#else
+#  define SITHSOUND_MAXCHANNELS 32
+#endif
 
 int J3DAPI sithSound_Initialize(tHostServices* pHS);
 void sithSound_Uninitialize(void);
