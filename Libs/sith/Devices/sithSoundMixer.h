@@ -30,12 +30,12 @@ void J3DAPI sithSoundMixer_SetVolume(tSoundChannelHandle hChannel, float volume)
 void J3DAPI sithSoundMixer_FadePitch(tSoundChannelHandle hSndChannel, float pitch, float secFadeTime);
 void J3DAPI sithSoundMixer_SetPitch(tSoundChannelHandle hChannel, float pitch); // Added
 
-void J3DAPI sithSoundMixer_SetPitchThing(const SithThing* pThing, unsigned int handle, float pitch); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set pitch to all thing sounds
-void J3DAPI sithSoundMixer_SetVolumeThing(const SithThing* pThing, unsigned int handle, float volume); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set volume to all thing sounds
-void J3DAPI sithSoundMixer_FadeVolumeThing(const SithThing* pThing, unsigned int handle, float startVolume, float endVolume); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to fade pitch all thing sounds
+void J3DAPI sithSoundMixer_SetPitchThing(const SithThing* pThing, tSoundHandleType handle, float pitch); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set pitch to all thing sounds
+void J3DAPI sithSoundMixer_SetVolumeThing(const SithThing* pThing, tSoundHandleType handle, float volume); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to set volume to all thing sounds
+void J3DAPI sithSoundMixer_FadeVolumeThing(const SithThing* pThing, tSoundHandleType handle, float startVolume, float endVolume); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to fade pitch all thing sounds
 
-int J3DAPI sithSoundMixer_IsThingFadingVol(const SithThing* pThing, unsigned int handle); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case it will check if any of thing sound is fading volume
-bool J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, unsigned int handle); // Added: From debug version; // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case it will check if any of thing sound is fading pitch
+int J3DAPI sithSoundMixer_IsThingFadingVol(const SithThing* pThing, tSoundHandleType handle); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case it will check if any of thing sound is fading volume
+bool J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, tSoundHandleType handle); // Added: From debug version; // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case it will check if any of thing sound is fading pitch
 
 void sithSoundMixer_Update(void);
 
@@ -43,7 +43,7 @@ int J3DAPI sithSoundMixer_GetThingInfo(int thingId, SoundThingInfo* pThingInfo);
 void J3DAPI sithSoundMixer_CalcCameraRelativeSoundMix(const SoundSpatialInfo* pSpatialInfo, float* volume, float* pan, float* pitch);
 
 void J3DAPI sithSoundMixer_StopAllSoundsThing(const SithThing* pThing);
-void J3DAPI sithSoundMixer_StopSoundThing(const SithThing* pThing, unsigned int handle); // handle is either tSoundTrackHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will stop all thing sounds
+void J3DAPI sithSoundMixer_StopSoundThing(const SithThing* pThing, tSoundHandleType handle); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will stop all thing sounds
 
 tSoundChannelHandle J3DAPI sithSoundMixer_GetChannelHandle(int guid);
 

@@ -205,31 +205,31 @@ void J3DAPI sithSoundMixer_SetPitch(tSoundChannelHandle hChannel, float pitch)
     Sound_SetPitch(hChannel, pitch);
 }
 
-void J3DAPI sithSoundMixer_SetPitchThing(const SithThing* pThing, unsigned int handle, float pitch)
+void J3DAPI sithSoundMixer_SetPitchThing(const SithThing* pThing, tSoundHandleType handle, float pitch)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     Sound_SetPitchThing(thingID, handle, pitch);
 }
 
-void J3DAPI sithSoundMixer_SetVolumeThing(const SithThing* pThing, unsigned int handle, float volume)
+void J3DAPI sithSoundMixer_SetVolumeThing(const SithThing* pThing, tSoundHandleType handle, float volume)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     Sound_SetVolumeThing(thingID, handle, volume);
 }
 
-void J3DAPI sithSoundMixer_FadeVolumeThing(const SithThing* pThing, unsigned int handle, float startVolume, float endVolume)
+void J3DAPI sithSoundMixer_FadeVolumeThing(const SithThing* pThing, tSoundHandleType handle, float startVolume, float endVolume)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     Sound_FadeVolumeThing(thingID, handle, startVolume, endVolume);
 }
 
-int J3DAPI sithSoundMixer_IsThingFadingVol(const SithThing* pThing, unsigned int handle)
+int J3DAPI sithSoundMixer_IsThingFadingVol(const SithThing* pThing, tSoundHandleType handle)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     return Sound_IsThingFadingVol(thingID, handle);
 }
 
-bool J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, unsigned int handle)
+bool J3DAPI sithSoundMixer_IsThingFadingPitch(SithThing* pThing, tSoundHandleType handle)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     return Sound_IsThingFadingPitch(thingID, handle);
@@ -407,7 +407,7 @@ tSoundChannelHandle J3DAPI sithSoundMixer_GetChannelHandle(int guid)
     return 0;
 }
 
-void J3DAPI sithSoundMixer_StopSoundThing(const SithThing* pThing, unsigned int handle)
+void J3DAPI sithSoundMixer_StopSoundThing(const SithThing* pThing, tSoundHandleType handle)
 {
     int thingID = sithSoundMixer_GetThingID(pThing->idx);
     Sound_StopThing(thingID, handle);
