@@ -76,29 +76,29 @@ typedef enum eSoundModuleState
 // Note don't change the int types of vars that are being serialized on save/restore
 
 // Module state
-SoundModuleState Sound_state        = SOUNDSTATE_NONE; // Added: Init to none
-tHostServices* Sound_pHS;
-int Sound_bLoadEnabled;
-int Sound_pausedRefCount;
-uint32_t Sound_msecPauseStartTime;
-uint32_t Sound_msecElapsed;
+static SoundModuleState Sound_state        = SOUNDSTATE_NONE; // Added: Init to none
+static tHostServices* Sound_pHS;
+static int Sound_bLoadEnabled;
+static int Sound_pausedRefCount;
+static uint32_t Sound_msecPauseStartTime;
+static uint32_t Sound_msecElapsed;
 
 // Module options
-int Sound_bNoSound3D;
-int Sound_bReverseSound;
-int Sound_bGlobalFocusBuf;
-float Sound_maxVolume          = 1.0f;
-int Sound_bNoSoundCompression;
-int Sound_bNoLipSync;
+static int Sound_bNoSound3D;
+static int Sound_bReverseSound;
+static int Sound_bGlobalFocusBuf;
+static float Sound_maxVolume          = 1.0f;
+static int Sound_bNoSoundCompression;
+static int Sound_bNoLipSync;
 
 // Misc vars
-HWND Sound_hwnd;
-LPDIRECTSOUND Sound_pDirectSound;
+static HWND Sound_hwnd;
+static LPDIRECTSOUND Sound_pDirectSound;
 
 // 3D sound vars
 static rdVector3 Sound_curUpdatePos;
-SoundCalcListenerSoundMixFunc Sound_pfCalcListenerSoundMix;
-SoundGetThingInfoCallback Sound_pfGetThingInfoCallback;
+static SoundCalcListenerSoundMixFunc Sound_pfCalcListenerSoundMix;
+static SoundGetThingInfoCallback Sound_pfGetThingInfoCallback;
 
 // Save/Restore vars
 static const uint32_t Sound_serMagic        = 0x12345678u;
@@ -136,7 +136,6 @@ static SoundFade Sound_aFades[48];
 static uint8_t* Sound_pMemfileBuf;
 static size_t Sound_memfileSize;
 static size_t Sound_memfilePos;
-
 
 tSoundHandle Sound_GenerateSoundHandle(void);
 tSoundChannelHandle Sound_GenerateChannelHandle(void);
@@ -254,7 +253,7 @@ void Sound_ResetGlobals(void)
 int J3DAPI Sound_Initialize(tHostServices* pHS)
 {
     // Fixed: Added check for pHS, as module requires it to be initialized
-    if ( !Sound_pHS )
+    if ( !pHS )
     {
         return 1;
     }
