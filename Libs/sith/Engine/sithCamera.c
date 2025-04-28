@@ -28,7 +28,7 @@ static rdVector3 sithCamera_vecExtCameraOffset                 = { { 0.0f }, { -
 static const rdVector3 sithCamera_vecExtCameraDefaultOffset      = { { 0.0f }, { -0.2f }, { 0.064999998f } };
 static const rdVector3 sithCamera_vecExtCameraDefaultLookOffset  = { { 0.0f }, { 0.02f }, { 0.02f } };
 
-static const rdVector3 sithCamera_vecCameraOffsetWeaponPulled  = { { 0.0f }, { -0.22f }, { 0.15000001f } };
+static const rdVector3 sithCamera_vecCameraOffsetWeaponDrawn   = { { 0.0f }, { -0.22f }, { 0.15000001f } };
 static const rdVector3 sithCamera_vecCameraOffsetJeep          = { { 0.0f }, { -0.2f }, { 0.14f } };
 static const rdVector3 sithCamera_vecCameraOffsetClimbingUp    = { { 0.0f }, { -0.2f }, { -0.0099999998f } };
 static const rdVector3 sithCamera_vecCameraOffsetClimbDown     = { { 0.0f }, { -0.2f }, { 0.16500001f } };
@@ -943,7 +943,7 @@ LABEL_35:
                     goto LABEL_75;
                 }
 
-                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetWeaponPulled, sizeof(pCamera->offset));
+                memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetWeaponDrawn, sizeof(pCamera->offset));
                 break;
         }
     }
@@ -1190,6 +1190,12 @@ LABEL_102:
         }
     }
     else
+    {
+    #ifndef J3D_DEBUG
+        // Following code was found only in release build but not in debug build
+        sithCamera_secFocusThingFadeInTime = sithCamera_secFocusThingFadeInTime + sithTime_g_frameTimeFlex;
+    #endif
+
         if ( sithCamera_bFocusThingInvisible && !sithPlayerActions_IsInvisible() && !sithCamera_g_bExtCameraLookMode )
         {
             // Translate focus thing to visible as cam is far away enough
@@ -1200,6 +1206,22 @@ LABEL_102:
             sithAnimate_StartThingFadeAnim(pThing1, &colorStart, &colorEnd, 0.2f, (SithAnimateFlags)0);
             sithCamera_bFocusThingInvisible = 0;
         }
+
+    #ifndef J3D_DEBUG
+        // Following code was found only in release build in debug build
+        if ( pThing1->alpha != 1.0f && !sithCamera_g_bExtCameraLookMode )
+        {
+            if ( (pThing1->moveStatus == SITHPLAYERMOVE_STILL || pThing1->moveStatus == SITHPLAYERMOVE_SWIMIDLE)
+                && sithCamera_secFocusThingFadeInTime > 0.5
+                && !sithPlayerActions_IsInvisible()
+                && sithInventory_GetCurrentWeapon(pThing1) != SITHWEAPON_IMP2 ) // Note: Note if pThing1 is not Actor or Player the call to sithInventory_GetCurrentWeapon function crashes app
+            {
+                sithCamera_secFocusThingFadeInTime = 0.0;
+                pThing1->alpha                     = 1.0;
+            }
+        }
+    #endif
+    }
 
 LABEL_191:
     // Update global pos & rot delta states
