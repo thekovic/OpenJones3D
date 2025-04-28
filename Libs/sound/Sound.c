@@ -805,8 +805,6 @@ int J3DAPI Sound_Restore(tFileHandle fh)
     }
 
     // Read handle entropy and fades. 
-    // TODO: Ensure Sound_handleEntropy is never smaller than the max handle value
-    //       that was used to generate the sound handle while loading sound infos and channels. 
     if ( Sound_pHS->pFileRead(fh, &Sound_handleEntropy, sizeof(uint32_t)) != sizeof(uint32_t) )
     {
         return 0;
@@ -1059,8 +1057,8 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
     size_t nRead = Sound_pHS->pFileRead(fh, Sound_loadBuffer, STD_ARRAYLEN(Sound_loadBuffer));
     if ( (int)nRead < 50 ) // 50 - is WAV header size?
     {
-        // TODO: Log?
-        // TODO: [BUG] missing to close file handle
+        SOUNDLOG_ERROR("Sound_Load: Can't load %s because loads are not currently allowed.\n", pFilepath);
+        Sound_pHS->pFileClose(fh); // Fixed: Close fh
         return SOUND_INVALIDHANDLE;
     }
 
@@ -1082,7 +1080,7 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
             SOUNDLOG_ERROR("Sound_Load: Couldn't realloc %d bytes.", sizeof(SoundInfo) * soundbank_aSizeSounds[bankNum]);
             Sound_Reset(1);
 
-            // TODO: [BUG] missing to close file handle
+            Sound_pHS->pFileClose(fh); // Fixed: Close fh
             return SOUND_INVALIDHANDLE;
         }
 
@@ -1153,8 +1151,8 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
         nRead = Sound_pHS->pFileRead(fh, &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset], pSndInfo->dataSize);
         if ( nRead != pSndInfo->dataSize )
         {
-            // TODO: log read error?
-            // TODO: [BUG] Missing to close file handle
+            SOUNDLOG_ERROR("Sound_Load: Failed to read sound data from %s.\n", pFilepath); // Added: Log read error
+            Sound_pHS->pFileClose(fh); // Fixed: Close fh
             return SOUND_INVALIDHANDLE;
         }
 
@@ -1191,8 +1189,8 @@ tSoundHandle J3DAPI Sound_Load(const char* pFilepath, uint32_t* sndIdx)
         nRead = Sound_pHS->pFileRead(fh, &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset + dataSize], pSndInfo->dataSize);
         if ( nRead != pSndInfo->dataSize )
         {
-            // TODO: log read error?
-            // TODO: [BUG] Missing to close file handle
+            SOUNDLOG_ERROR("Sound_Load: Failed to read sound data from %s.\n", pFilepath); // Added: Log read error
+            Sound_pHS->pFileClose(fh); // Fixed: Close fh
             return SOUND_INVALIDHANDLE;
         }
 
@@ -1677,7 +1675,8 @@ tSoundChannelHandle J3DAPI Sound_Play(tSoundHandle hSnd, float volume, float pan
         // If we still don't have a buffer, give up
         if ( nRetries >= SOUND_MAXCREATERETRIES )
         {
-            // TODO: maybe debug log?
+            // Added: Log error message
+            SOUNDLOG_ERROR("Sound_Play: Couldn't create sound buffer after %d retries.\n", SOUND_MAXCREATERETRIES);
 
             // Couldn't create sound buffer 
             pChannel->handle  = SOUND_INVALIDHANDLE;
