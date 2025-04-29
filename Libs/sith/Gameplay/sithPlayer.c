@@ -13,6 +13,7 @@
 #include <sith/Engine/sithPhysics.h>
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Gameplay/sithInventory.h>
+#include <sith/Gameplay/sithPlayerActions.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithActor.h>
 #include <sith/World/sithThing.h>
@@ -76,6 +77,20 @@ void J3DAPI sithPlayer_Open(const wchar_t* awName)
 void sithPlayer_Close(void)
 {
     // TODO: maybe track open/close state like in other modules
+
+    // Fixed: Reset IMP state (in case IMP is active).
+    //        This is required to avoid IMP being activated in the next level, as the state is not reset on open.
+    sithPlayer_g_impFireType = -1;
+
+    // Fixed: Reset player state to visible as it is not reset on open, nor in sithPlayerActions module and it will be present in the next level.
+    sithPlayerActions_g_bPlayerInvisible = 0;
+
+    // Fixed: Disable jewel flying (in case active) which resets global vars sithPlayerActions_g_bJewelFlying and sithPlayerActions_g_pPlasma
+    sithPlayerActions_DisableJewelFlying();
+
+    // Fixed: Disable swimming inventory, which could be set by jewel flying system or by cog script.
+    sithInventory_SetSwimmingInventory(sithPlayer_g_pLocalPlayerThing, /*bItemsAvailable=*/1);
+
     sithPlayer_g_pLocalPlayerThing = NULL;
     sithPlayer_g_pLocalPlayer      = NULL;
 }
