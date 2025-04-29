@@ -132,7 +132,8 @@
   - Increased the size of store item icon to 48 (a8a32ff)
   - Fixed drawing 2D line to 24 BPP & 32 BPP video buffer (a8a32ff)
   - Fixed the alpha value of the health indicator on the first run and when the screen resolution changes (e32a52d)
-  - Fixed the hardware-accelerated drawing of 2D lines (5a63bc7)
+  - Fixed the hardware-accelerated drawing of 2D lines (5a63bc7)  
+    Subsequently, this fix addresses the drawing error of level wireframe geometry on the overlay map
 
 ### Game play:
   - [QOL] Fixed incorrect removal of loop-playing far sound. (2a25add)  
@@ -142,8 +143,7 @@
   - Added mouse button actions for fire/activate, jump, weapon toggle, and weapon selection when in-editor mode (d25081f)
   - Restricted developer/debug control keys to in-editor/dev mode only (d25081f)
   - [QOL] Fixed stop looping far sound when volume is below threshold (5a169d7)
-  - Fixed playing far sound on sound restore from savegame (b8a82d4)  
-    Subsequently, this fix addresses the drawing error of level wireframe geometry on the overlay map
+  - Fixed playing far sound on sound restore from savegame (b8a82d4)
   - [QOL] Improved AI controlled actor movement at cliff edges (8ed5690)  
     Enhanced the AI actors's behavior when reaching cliff edges. Previously, AI actor would perform a 180-degree turn followed by a random 60-degree movement in new direction. Now, it performs a random 60-degree movement based on its prior direction, resulting in more natural and predictable navigation.
   - [QOL] Fixed AI collision deadlock on predefined paths (49ef284)  
