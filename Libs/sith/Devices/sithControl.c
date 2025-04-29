@@ -131,7 +131,7 @@ void sithControl_ResetGlobals(void)
 
 int J3DAPI sithControl_Startup(int bKeyboardForeground)
 {
-    SITH_ASSERTREL(strcmp(aFunctionNames[SITHCONTROL_MAXFUNCTIONS], "MAXFUNCTIONS") == 0);
+    SITH_ASSERTREL(streq(aFunctionNames[SITHCONTROL_MAXFUNCTIONS], "MAXFUNCTIONS"));
     if ( bControlStartup )
     {
         return 1;

@@ -106,8 +106,8 @@ int J3DAPI rdFont_Write(const char* pFilename, const rdFont* pFont, tVBuffer*** 
         return -3;
     }
 
-    bool bGcf = strcmp(&pFilename[strlen(pFilename) - 4], ".gcf") == 0;
-    bool bMat = strcmp(&pFilename[strlen(pFilename) - 4], ".mat") == 0;
+    bool bGcf = streq(&pFilename[strlen(pFilename) - 4], ".gcf");
+    bool bMat = streq(&pFilename[strlen(pFilename) - 4], ".mat");
     if ( !bGcf && !bMat )
     {
         return -5;
@@ -186,8 +186,8 @@ rdFont* J3DAPI rdFont_Load(const char* pFilename)
 
     memset(pFont, 0, sizeof(rdFont));
 
-    bool bGcf = strcmp(&pFilename[strlen(pFilename) - 4], ".gcf") == 0;
-    bool bMat = strcmp(&pFilename[strlen(pFilename) - 4], ".mat") == 0;
+    bool bGcf = streq(&pFilename[strlen(pFilename) - 4], ".gcf");
+    bool bMat = streq(&pFilename[strlen(pFilename) - 4], ".mat");
     if ( !bGcf && !bMat )
     {
         return NULL;

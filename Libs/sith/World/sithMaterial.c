@@ -85,11 +85,11 @@ void sithMaterial_Shutdown(void)
 
 void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     if ( !pWorld->sizeMaterials )
     {
-        SITH_ASSERTREL(pWorld->aMaterials == ((void*)0));
+        SITH_ASSERTREL(pWorld->aMaterials == NULL);
         return;
     }
 
@@ -138,7 +138,7 @@ int J3DAPI sithMaterial_WriteMaterialsListText(const SithWorld* pWorld)
 
 int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     if ( bSkip )
     {
         return 1;
@@ -182,7 +182,7 @@ int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
     }
 
     size_t curMatNum = 0;
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         rdMaterial* pMat = sithMaterial_Load(stdConffile_g_entry.aArgs[1].argValue);
         if ( !pMat )
@@ -549,10 +549,10 @@ error:
 rdMaterial* J3DAPI sithMaterial_Load(const char* pName)
 {
     SithWorld* pWorld = sithWorld_g_pLastLoadedWorld;
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(pWorld->aMaterials != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(pWorld->aMaterials != NULL);
 
     rdMaterial* pMat = sithMaterial_CacheFind(pName);
     if ( pMat )
@@ -614,7 +614,7 @@ rdMaterial* J3DAPI sithMaterial_GetMaterialByIndex(int index)
 
 int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMaterials)
 {
-    SITH_ASSERTREL(pWorld->aMaterials == ((void*)0));
+    SITH_ASSERTREL(pWorld->aMaterials == NULL);
 
     // Added: Make sure the material buffer is enough big to load in extra textures of original HD models.
     if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 && sithModel_IsHiPolyEnabled() )

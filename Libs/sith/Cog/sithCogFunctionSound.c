@@ -53,7 +53,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundThing(SithCog* pCog)
             hSndChannel = sithSoundMixer_PlaySoundThing(hSnd, pThing, volume, minRadius, maxRadius, playflags);
         }
 
-        if ( hSndChannel )
+        if ( hSndChannel != SOUND_INVALIDHANDLE )
         {
             guid = Sound_GetChannelGUID(hSndChannel);
         }
@@ -70,7 +70,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundThing(SithCog* pCog)
     {
         playflags &= ~(SOUNDPLAY_THING_POS | SOUNDPLAY_ABSOLUTE_POS);
         tSoundChannelHandle hSndChannel = sithSoundMixer_PlaySound(hSnd, volume, 0.0f, playflags);
-        if ( hSndChannel )
+        if ( hSndChannel != SOUND_INVALIDHANDLE )
         {
             guid = Sound_GetChannelGUID(hSndChannel);
         }
@@ -147,7 +147,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundPos(SithCog* pCog)
     tSoundChannelHandle hChannel = sithSoundMixer_PlaySoundPos(hSnd, &pos, 0, volume, minRadius, maxRadius, playflags);
 
     int guid = -1;
-    if ( hChannel )
+    if ( hChannel != SOUND_INVALIDHANDLE )
     {
         guid = Sound_GetChannelGUID(hChannel);
     }
@@ -182,7 +182,7 @@ void J3DAPI sithCogFunctionSound_PlaySoundLocal(SithCog* pCog)
 
     playflags &= ~(SOUNDPLAY_THING_POS | SOUNDPLAY_ABSOLUTE_POS);
     tSoundChannelHandle hChannel = sithSoundMixer_PlaySound(hSnd, volume, pan, playflags);
-    if ( !hChannel )
+    if ( hChannel == SOUND_INVALIDHANDLE )
     {
         SITHLOG_ERROR("Cog %s: Unable to play sound in PlaySoundLocal().\n", pCog->aName);
         sithCogExec_PushInt(pCog, -1);
@@ -221,12 +221,12 @@ void J3DAPI sithCogFunctionSound_PlaySoundGlobal(SithCog* pCog)
 
     // TODO: Hmm why setting guid to -1 here when in the next scope -1 is returned if !hChannel?
     int guid = -1;
-    if ( hChannel )
+    if ( hChannel != SOUND_INVALIDHANDLE )
     {
         guid = Sound_GetChannelGUID(hChannel);
     }
 
-    if ( !hChannel )
+    if ( hChannel == SOUND_INVALIDHANDLE )
     {
         SITHLOG_ERROR("Cog %s: Unable to play sound in PlaySoundLocal().\n", pCog->aName);
         sithCogExec_PushInt(pCog, -1);
@@ -256,7 +256,7 @@ void J3DAPI sithCogFunctionSound_StopSound(SithCog* pCog)
     int guid          = sithCogExec_PopInt(pCog);
 
     tSoundChannelHandle hSndChannel = sithSoundMixer_GetChannelHandle(guid);
-    if ( !hSndChannel )
+    if ( hSndChannel == SOUND_INVALIDHANDLE )
     {
         SITHLOG_ERROR("%s: Couldn't find sound instance in StopSound().\n", pCog->aName);
         return;
@@ -305,13 +305,12 @@ void J3DAPI sithCogFunctionSound_PlaySoundClass(SithCog* pCog)
     if ( pThing && pThing->pSoundClass )
     {
         tSoundChannelHandle hChannel = sithSoundClass_PlayModeRandom(pThing, mode);
-
-        if ( hChannel )
+        if ( hChannel != SOUND_INVALIDHANDLE )
         {
             guid = Sound_GetChannelGUID(hChannel);
         }
 
-        if ( hChannel && (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        if ( hChannel != SOUND_INVALIDHANDLE && (pCog->flags & SITHCOG_NOSYNC) == 0 && pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
         {
             sithDSSThing_PlaySoundMode(pThing, mode, guid, -1.0f);
         }
@@ -349,7 +348,7 @@ void J3DAPI sithCogFunctionSound_ChangeVolume(SithCog* pCog)
     int guid                        = sithCogExec_PopInt(pCog);
     tSoundChannelHandle hSndChannel = sithSoundMixer_GetChannelHandle(guid);
 
-    if ( !hSndChannel )
+    if ( hSndChannel == SOUND_INVALIDHANDLE )
     {
         SITHLOG_ERROR("Cog %s: No sound playing on channel %d in ChangeVolume().\n", pCog->aName, guid);
         return;
@@ -371,7 +370,7 @@ void J3DAPI sithCogFunctionSound_ChangePitch(SithCog* pCog)
     int guid                        = sithCogExec_PopInt(pCog);
     tSoundChannelHandle hSndChannel = sithSoundMixer_GetChannelHandle(guid);
 
-    if ( !hSndChannel )
+    if ( hSndChannel == SOUND_INVALIDHANDLE )
     {
         SITHLOG_ERROR("Cog %s: No sound playing on channel %d in ChangePitch().\n", pCog->aName, guid);
         return;

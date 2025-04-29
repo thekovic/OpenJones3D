@@ -1099,7 +1099,7 @@ void sithRender_RenderThings(void)
 
 int J3DAPI sithRender_RenderThing(SithThing* pThing)
 {
-    RD_ASSERTREL(pThing != ((void*)0)); // TODO: Why using RD_ASSERTREL
+    RD_ASSERTREL(pThing != NULL); // TODO: Why using RD_ASSERTREL
 
     if ( (pThing->flags & SITH_TF_SEEN) == 0 )
     {

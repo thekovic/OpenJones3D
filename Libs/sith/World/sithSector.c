@@ -587,8 +587,8 @@ int J3DAPI sithSector_ValidateSectorPointer(const SithWorld* pWorld, const SithS
 
 int J3DAPI sithSector_AllocWorldSectors(SithWorld* pWorld, size_t numSectors)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
-    SITH_ASSERTREL(pWorld->aSectors == ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
+    SITH_ASSERTREL(pWorld->aSectors == NULL);
 
     pWorld->aSectors = (SithSector*)STDMALLOC(sizeof(SithSector) * numSectors);
     if ( !pWorld->aSectors )
@@ -637,8 +637,8 @@ void J3DAPI sithSector_FreeWorldSectors(SithWorld* pWorld)
 
 SithSector* J3DAPI sithSector_FindSectorAtPos(const SithWorld* pWorld, const rdVector3* pos)
 {
-    SITH_ASSERTREL(pos != ((void*)0));
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pos != NULL);
+    SITH_ASSERTREL(pWorld != NULL);
 
     for ( size_t i = 0; i < pWorld->numSectors; ++i )
     {
@@ -682,7 +682,7 @@ void J3DAPI sithSector_ShowSectorAdjoins(SithSector* pSector)
 
 void J3DAPI sithSector_SetSectorFlags(SithSector* pSector, SithSectorFlag flags)
 {
-    SITH_ASSERTREL(pSector != ((void*)0));
+    SITH_ASSERTREL(pSector != NULL);
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
 
     SithSectorFlag prevflags = pSector->flags;
@@ -715,7 +715,7 @@ void J3DAPI sithSector_SetSectorFlags(SithSector* pSector, SithSectorFlag flags)
 
 void J3DAPI sithSector_ClearSectorFlags(SithSector* pSector, SithSectorFlag flags)
 {
-    SITH_ASSERTREL(pSector != ((void*)0));
+    SITH_ASSERTREL(pSector != NULL);
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
 
     SithSectorFlag prevflags = pSector->flags;
@@ -748,7 +748,7 @@ void J3DAPI sithSector_ClearSectorFlags(SithSector* pSector, SithSectorFlag flag
 
 size_t J3DAPI sithSector_GetSectorThingCount(const SithSector* pSector)
 {
-    SITH_ASSERTREL(pSector != ((void*)0));
+    SITH_ASSERTREL(pSector != NULL);
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
 
     size_t count = 0;
@@ -763,7 +763,7 @@ size_t J3DAPI sithSector_GetSectorThingCount(const SithSector* pSector)
 
 size_t J3DAPI sithSector_GetSectorPlayerCount(const SithSector* pSector)
 {
-    SITH_ASSERTREL(pSector != ((void*)0));
+    SITH_ASSERTREL(pSector != NULL);
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
 
     size_t count = 0;
@@ -781,7 +781,7 @@ size_t J3DAPI sithSector_GetSectorPlayerCount(const SithSector* pSector)
 
 size_t J3DAPI sithSector_GetAdjoinCount(const SithSector* pSector)
 {
-    SITH_ASSERTREL(pSector != ((void*)0));
+    SITH_ASSERTREL(pSector != NULL);
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
 
     size_t count = 0;

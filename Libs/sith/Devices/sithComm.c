@@ -93,7 +93,7 @@ void sithMessage_Shutdown(void)
 
 int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, SithMessageStream outstream, uint32_t dwDPFlags)
 {
-    SITH_ASSERTREL(pMessage != ((void*)0));
+    SITH_ASSERTREL(pMessage != NULL);
     SITH_ASSERTREL((pMessage->type >= 0) && (pMessage->type < STD_ARRAYLEN(sithMessage_aTypeFuncs)));
     SITH_ASSERTREL(pMessage->length <= STD_ARRAYLEN(pMessage->data));
 
@@ -198,7 +198,7 @@ int J3DAPI sithMessage_NetWrite(const SithMessage* pMsg, DPID idTo, uint32_t fla
 
 int J3DAPI sithMessage_ReceiveMessage(SithMessage* pMsg, DPID* pSender)
 {
-    SITH_ASSERTREL(pMsg != ((void*)0)); // Fixed: Moved this assert to beginning of scope before accessing pMsg
+    SITH_ASSERTREL(pMsg != NULL); // Fixed: Moved this assert to beginning of scope before accessing pMsg
 
     size_t dataLen = STD_ARRAYLEN(pMsg->data);
     int res = stdComm_Receive(pSender, &pMsg->type, &dataLen);
@@ -411,7 +411,7 @@ void J3DAPI sithMessage_RegisterFunction(int type, SithMessageProcessFunc pFunc)
 
 int J3DAPI sithMessage_Process(const SithMessage* pMessage)
 {
-    SITH_ASSERTREL(pMessage != ((void*)0));
+    SITH_ASSERTREL(pMessage != NULL);
 
     uint32_t type = pMessage->type;
     if ( type >= STD_ARRAYLEN(sithMessage_aTypeFuncs) )

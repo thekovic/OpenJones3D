@@ -135,8 +135,8 @@ void J3DAPI rdCamera_FreeEntry(rdCamera* pCamera)
 
 void J3DAPI rdCamera_SetCanvas(rdCamera* pCamera, rdCanvas* pCanvas)
 {
-    RD_ASSERTREL(pCamera != ((void*)0));
-    RD_ASSERTREL(pCanvas != ((void*)0));
+    RD_ASSERTREL(pCamera != NULL);
+    RD_ASSERTREL(pCanvas != NULL);
 
     pCamera->pCanvas = pCanvas;
     rdCamera_BuildFOV(pCamera);

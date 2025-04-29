@@ -268,7 +268,7 @@ int J3DAPI sithSoundClass_ReadSoundClassesListText(SithWorld* pWorld, int bSkip)
     SITH_ASSERTREL(!pWorld->sizeSoundClasses && !pWorld->numSoundClasses);
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") != 0 || strcmp(stdConffile_g_entry.aArgs[1].argValue, "soundclasses") != 0 ) // TODO: Replace with strcmpi
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "soundclasses") )
     {
         SITHLOG_ERROR("Parse error reading soundclass list line %d.\n", stdConffile_GetLineNumber());
         return 1;
@@ -292,7 +292,7 @@ int J3DAPI sithSoundClass_ReadSoundClassesListText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") != 0 ) // TODO: Replace with strcmpi
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         sithSoundClass_Load(pWorld, stdConffile_g_entry.aArgs[1].argValue);
     }
@@ -353,7 +353,7 @@ SithSoundClass* J3DAPI sithSoundClass_Load(SithWorld* pWorld, const char* pName)
         return 0;
     }
 
-    if ( !strcmp(pName, "none") || !*pName ) // TODO: Replace with strcmpi
+    if ( streq(pName, "none") || !*pName )
     {
         return 0;
     }
@@ -432,7 +432,7 @@ int J3DAPI sithSoundClass_LoadEntry(SithWorld* pWorld, SithSoundClass* pClass, c
     #endif
 
         tSoundHandle hSnd = 0;
-        if ( strcmp(stdConffile_g_entry.aArgs[1].argValue, "none") != 0 ) // TODO: Replace strcmpi
+        if ( !streq(stdConffile_g_entry.aArgs[1].argValue, "none") != 0 )
         {
 
             hSnd = sithSound_Load(pWorld, stdConffile_g_entry.aArgs[1].argValue);
@@ -491,7 +491,7 @@ int J3DAPI sithSoundClass_LoadEntry(SithWorld* pWorld, SithSoundClass* pClass, c
             pClass->aEntries[modeNum]->numEntries = count + 1;
         }
 
-        // TODO: Should the flags be reset to SOUNDPLAY_ABSOLUTE_POS here
+        // TODO: Should the flags be reset to SOUNDPLAY_ABSOLUTE_POS here?
     }
 
     stdConffile_Close();

@@ -28,8 +28,8 @@ int J3DAPI stdBmp_WriteVBuffer(const char* pFilename, tVBuffer* pVBuffer)
     BITMAPINFOHEADER infoHeader;
 
 
-    STD_ASSERTREL(pFilename != ((void*)0));
-    STD_ASSERTREL(pVBuffer != ((void*)0));
+    STD_ASSERTREL(pFilename != NULL);
+    STD_ASSERTREL(pVBuffer != NULL);
 
     if ( pVBuffer->rasterInfo.colorInfo.colorMode == STDCOLOR_PAL )
     {

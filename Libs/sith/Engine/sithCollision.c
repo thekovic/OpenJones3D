@@ -143,7 +143,7 @@ void J3DAPI sithCollision_AddCollisionHandler(SithThingType type1, SithThingType
 {
     SITH_ASSERTREL((type1 >= SITH_THING_FREE) && (type1 < SITH_THING_NUMTYPES));
     SITH_ASSERTREL((type2 >= SITH_THING_FREE) && (type2 < SITH_THING_NUMTYPES));
-    SITH_ASSERTREL(pProcessFunc != ((void*)0));
+    SITH_ASSERTREL(pProcessFunc != NULL);
 
     if ( aCollideResults[type1][type2].pProcessFunc || aCollideResults[type2][type1].pProcessFunc )
     {
@@ -178,7 +178,7 @@ SithSurface* J3DAPI sithCollision_sub_4D5E37(SithSector* pStartSector, const rdV
     SithCollision* pCollision = sithCollision_PopStack();
     if ( pCollision )
     {
-        SITH_ASSERTREL(pCollision->pSurfaceCollided != ((void*)0));
+        SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
         *hitType = pCollision->type;
         sithCollision_DecreaseStackLevel();
         return pCollision->pSurfaceCollided;
@@ -273,7 +273,7 @@ SithSector* J3DAPI sithCollision_FindSectorInRadius(SithSector* pStartSector, co
             break;
         }
 
-        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != ((void*)0));
+        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
         pSector = pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector;
     }
 
@@ -308,7 +308,7 @@ SithSector* J3DAPI sithCollision_FindSectorAtThing(SithThing* pThing, SithSector
             && (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_NOPLAYERMOVE) == 0
             && (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) != 0 )
         {
-            SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != ((void*)0));
+            SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
             pSector = pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector;
         }
         else if ( (pCollision->type & SITHCOLLISION_THING) == 0 || pCollision->pThingCollided != pThing )
@@ -370,7 +370,7 @@ SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVec
             break;
         }
 
-        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != ((void*)0));
+        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
         pSector = pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector;
     }
 
@@ -820,12 +820,12 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
 
                     if ( (pCollision->type & SITHCOLLISION_THING) != 0 )
                     {
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided == ((void*)0));
-                        SITH_ASSERTREL(pCollision->pThingCollided != ((void*)0));
+                        SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
+                        SITH_ASSERTREL(pCollision->pThingCollided != NULL);
 
                         SithThingType type2 = pCollision->pThingCollided->type;
                         SithThingType type1 = pThing->type;
-                        SITH_ASSERTREL(aCollideResults[type1][type2].pProcessFunc != ((void*)0));
+                        SITH_ASSERTREL(aCollideResults[type1][type2].pProcessFunc != NULL);
 
                         if ( aCollideResults[type1][type2].bDifferentTypHandler )
                         {
@@ -838,10 +838,10 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                     }
                     else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) != 0 )
                     {
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided != ((void*)0));
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != ((void*)0));
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pMirrorAdjoin != ((void*)0));
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector != ((void*)0));
+                        SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
+                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
+                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pMirrorAdjoin != NULL);
+                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector != NULL);
 
                         rdVector_Copy3(&curthPos, &pThing->pos);
                         if ( (pCollision->pSurfaceCollided->flags & SITH_SURFACE_COGLINKED) != 0 )
@@ -854,8 +854,8 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                     }
                     else
                     {
-                        SITH_ASSERTREL(pCollision->pThingCollided == ((void*)0));
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided != ((void*)0));
+                        SITH_ASSERTREL(pCollision->pThingCollided == NULL);
+                        SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
 
                         if ( sithCollision_aThingSurfaceCollideResults[pThing->type] )
                         {
@@ -1073,8 +1073,8 @@ float J3DAPI sithCollision_SearchForCollisions(SithSector* pStartSector, SithThi
         {
             pAdjoin = pCollision->pSurfaceCollided->pAdjoin;
             SITH_ASSERTREL(pAdjoin);
-            SITH_ASSERTREL(pAdjoin->pMirrorAdjoin != ((void*)0));
-            SITH_ASSERTREL(pAdjoin->pAdjoinSector != ((void*)0));
+            SITH_ASSERTREL(pAdjoin->pMirrorAdjoin != NULL);
+            SITH_ASSERTREL(pAdjoin->pAdjoinSector != NULL);
             if ( (searchFlags & 0x400) != 0 || pCollision->distance <= moveDist )
             {
                 moveDist = sithCollision_BuildCollisionList(pAdjoin->pAdjoinSector, pThing, startPos, moveNorm, moveDist, radius, searchFlags);
@@ -1293,8 +1293,8 @@ int J3DAPI sithCollision_HandleThingHitSurface(SithThing* pThing, SithSurface* p
     float volume;
 
     volume = 1.0f;
-    SITH_ASSERTREL(pThing != ((void*)0));
-    SITH_ASSERTREL(pSurface != ((void*)0));
+    SITH_ASSERTREL(pThing != NULL);
+    SITH_ASSERTREL(pSurface != NULL);
     if ( pThing->moveType != SITH_MT_PHYSICS )
     {
         return 0;
@@ -1595,7 +1595,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                 return 1;
             }
             else if ( (pThing->pAttachedThing && (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0 || (pThing->attach.flags & SITH_ATTACH_TAIL) != 0)
-                && _strcmpi(pHitThing->aName, "elevpltfrm") )
+                && !streqi(pHitThing->aName, "elevpltfrm") )
             {
                 return 0;
             }
@@ -1680,7 +1680,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
     }
     else if ( (pHitThing->pAttachedThing && (pHitThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0
         || (pHitThing->attach.flags & SITH_ATTACH_TAIL) != 0)
-        && strcmpi(pThing->aName, "elevpltfrm") )
+        && !streqi(pThing->aName, "elevpltfrm") )
     {
         return 0;
     }
@@ -2210,8 +2210,8 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
         {
             if ( (pCollision->type & SITHCOLLISION_THING) != 0 )
             {
-                SITH_ASSERTREL(pCollision->pSurfaceCollided == ((void*)0));
-                SITH_ASSERTREL(pCollision->pThingCollided != ((void*)0));
+                SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
+                SITH_ASSERTREL(pCollision->pThingCollided != NULL);
                 pThingCollided = pCollision->pThingCollided;
                 if ( pThingCollided->type == SITH_THING_ITEM )
                 {
@@ -2247,8 +2247,8 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
         {
             if ( (pCollision->type & SITHCOLLISION_THING) != 0 )
             {
-                SITH_ASSERTREL(pCollision->pSurfaceCollided == ((void*)0));
-                SITH_ASSERTREL(pCollision->pThingCollided != ((void*)0));
+                SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
+                SITH_ASSERTREL(pCollision->pThingCollided != NULL);
                 pThingCollided = pCollision->pThingCollided;
                 if ( pThingCollided->type == SITH_THING_ITEM )
                 {
@@ -2298,7 +2298,7 @@ int J3DAPI sithCollision_sub_4DABF1(const SithThing* pThing, int searchFlags)
         return 0;
     }
 
-    return (searchFlags & 0x2000) == 0 || pThing->type == SITH_THING_COG || !strcmp(pThing->aName, "killtruk");
+    return (searchFlags & 0x2000) == 0 || pThing->type == SITH_THING_COG || streq(pThing->aName, "killtruk");
 }
 
 int J3DAPI sithCollision_sub_4DAC4B(const SithThing* pThing1, const SithThing* pThing2, int collflags)
@@ -2499,7 +2499,7 @@ SithCollision* sithCollision_PopClosest(void)
             {
                 if ( pCollision->distance == distance )
                 {
-                    SITH_ASSERTREL(pClosest != ((void*)0));
+                    SITH_ASSERTREL(pClosest != NULL);
                     if ( (pClosest->type & (SITHCOLLISION_FACEVERTEX | SITHCOLLISION_FACEEDGE)) != 0 && (pCollision->type & SITHCOLLISION_FACE) != 0 )
                     {
                         pClosest = pCollision;
@@ -2614,8 +2614,8 @@ float J3DAPI sithCollision_CheckDistance(SithThing* pThing, const rdVector3* mov
 
         if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
         {
-            SITH_ASSERTREL(pCollision->pThingCollided == ((void*)0));
-            SITH_ASSERTREL(pCollision->pSurfaceCollided != ((void*)0));
+            SITH_ASSERTREL(pCollision->pThingCollided == NULL);
+            SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
             pSurfaceCollided = pCollision->pSurfaceCollided;
             if ( (pSurfaceCollided->flags & SITH_SURFACE_ISFLOOR) != 0 && pCollision->distance < distance )
             {

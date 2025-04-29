@@ -11,15 +11,14 @@ void stdLinkList_InstallHooks(void)
 }
 
 void stdLinkList_ResetGlobals(void)
-{
-}
+{}
 
 void J3DAPI stdLinkList_AddNode(tLinkListNode* pCur, tLinkListNode* pNodeToAdd)
 {
-    STD_ASSERTREL(pCur != ((void*)0));
-    STD_ASSERTREL(pNodeToAdd != ((void*)0));
-    STD_ASSERTREL(pNodeToAdd->prev == ((void*)0));
-    STD_ASSERTREL(pNodeToAdd->next == ((void*)0));
+    STD_ASSERTREL(pCur != NULL);
+    STD_ASSERTREL(pNodeToAdd != NULL);
+    STD_ASSERTREL(pNodeToAdd->prev == NULL);
+    STD_ASSERTREL(pNodeToAdd->next == NULL);
 
     tLinkListNode* pNext = pCur->next;
     pNodeToAdd->prev     = pCur;
@@ -32,10 +31,10 @@ void J3DAPI stdLinkList_AddNode(tLinkListNode* pCur, tLinkListNode* pNodeToAdd)
 
 void J3DAPI stdLinklist_InsertNode(tLinkListNode* pCur, tLinkListNode* pNodeToInsert)
 {
-    STD_ASSERTREL(pCur != ((void*)0));
-    STD_ASSERTREL(pNodeToInsert != ((void*)0));
-    STD_ASSERTREL(pNodeToInsert->prev == ((void*)0));
-    STD_ASSERTREL(pNodeToInsert->next == ((void*)0));
+    STD_ASSERTREL(pCur != NULL);
+    STD_ASSERTREL(pNodeToInsert != NULL);
+    STD_ASSERTREL(pNodeToInsert->prev == NULL);
+    STD_ASSERTREL(pNodeToInsert->next == NULL);
 
     tLinkListNode* pPrev = pCur->prev;
     pNodeToInsert->next  = pCur;
@@ -49,10 +48,10 @@ void J3DAPI stdLinklist_InsertNode(tLinkListNode* pCur, tLinkListNode* pNodeToIn
 
 void J3DAPI stdLinklist_AppendNode(tLinkListNode* pCur, tLinkListNode* pNodeToAdd)
 {
-    STD_ASSERTREL(pCur != ((void*)0));
-    STD_ASSERTREL(pNodeToAdd != ((void*)0));
-    STD_ASSERTREL(pNodeToAdd->prev == ((void*)0));
-    STD_ASSERTREL(pNodeToAdd->next == ((void*)0));
+    STD_ASSERTREL(pCur != NULL);
+    STD_ASSERTREL(pNodeToAdd != NULL);
+    STD_ASSERTREL(pNodeToAdd->prev == NULL);
+    STD_ASSERTREL(pNodeToAdd->next == NULL);
 
     tLinkListNode* pPrev;
     for ( pPrev = pCur; pPrev->next; pPrev = pPrev->next ) {
@@ -66,7 +65,7 @@ void J3DAPI stdLinklist_AppendNode(tLinkListNode* pCur, tLinkListNode* pNodeToAd
 
 void J3DAPI stdLinkList_RemoveNode(tLinkListNode* pCur)
 {
-    STD_ASSERTREL(pCur != ((void*)0));
+    STD_ASSERTREL(pCur != NULL);
     if ( pCur->prev ) {
         pCur->prev->next = pCur->next;
     }
@@ -82,7 +81,7 @@ void J3DAPI stdLinkList_RemoveNode(tLinkListNode* pCur)
 
 void J3DAPI stdLinklist_NewList(tLinkListNode* pFirstOfNewList)
 {
-    STD_ASSERTREL(pFirstOfNewList != ((void*)0));
+    STD_ASSERTREL(pFirstOfNewList != NULL);
     if ( pFirstOfNewList->prev ) {
         pFirstOfNewList->prev->next = NULL;
     }
@@ -111,7 +110,7 @@ size_t J3DAPI stdLinklist_GetCount(const tLinkListNode* pCur)
 tLinkListNode* J3DAPI stdLinklist_GetNode(const tLinkListNode* pFirstNode, int n)
 {
     STD_ASSERTREL(n >= 0);
-    STD_ASSERTREL(pFirstNode != ((void*)0));
+    STD_ASSERTREL(pFirstNode != NULL);
 
     while ( pFirstNode && n > 0 )
     {

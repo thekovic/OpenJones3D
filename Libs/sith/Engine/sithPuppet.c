@@ -1452,7 +1452,7 @@ int J3DAPI sithPuppet_PlayForceMoveMode(SithThing* pThing, SithPuppetSubMode sub
         return -1;
     }
 
-    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
+    for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD address
     {
         if ( pTrack->submode == submode )
         {
@@ -1603,7 +1603,7 @@ void J3DAPI sithPuppet_SwapSubMode(SithThing* pThing, SithPuppetSubMode newMode,
             sithPuppet_StopFridgetTrack(pThing);
 
             SithPuppetTrack* pTrack;
-            for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
+            for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD address
             {
                 if ( pTrack->submode == oldMode )
                 {
@@ -1651,7 +1651,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
     {
         bool bStopTrack = false;
         SithPuppetTrack* pTrack;
-        for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD addresss
+        for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD address
         {
             if ( pTrack->pSubmode && (pTrack->pSubmode->flags & RDKEYFRAME_FORCEMOVE) != 0 )
             {
@@ -2465,7 +2465,7 @@ int J3DAPI sithPuppet_ReadStaticPuppetsListText(SithWorld* pWorld, int bSkip)
     }
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") != 0 || strcmp(stdConffile_g_entry.aArgs[1].argValue, "puppets") != 0 ) // TODO: use strcmpi
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "puppets") )
     {
         return 1;
     }
@@ -2481,7 +2481,7 @@ int J3DAPI sithPuppet_ReadStaticPuppetsListText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") != 0 ) // TODO: use strcmpi
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( !sithPuppet_LoadPuppetClass(stdConffile_g_entry.aArgs[1].argValue) )
         {
@@ -2605,7 +2605,7 @@ int J3DAPI sithPuppet_LoadPuppetClassEntry(SithPuppetClass* pClass, const char* 
         {
             SITHLOG_ERROR("Bad line encountered line %d.\n", stdConffile_GetLineNumber());
         }
-        else if ( strcmp(stdConffile_g_entry.aArgs[0].argName, "mode") == 0 )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argName, "mode") )
         {
             modeNum = atoi(stdConffile_g_entry.aArgs[0].argValue);
             SITH_ASSERTREL((modeNum >= 0) && (modeNum < (SITH_PUPPET_NUMARMEDMODES * SITH_PUPPET_NUMMOVEMODES)));
@@ -2618,9 +2618,9 @@ int J3DAPI sithPuppet_LoadPuppetClassEntry(SithPuppetClass* pClass, const char* 
                 memcpy(pClass->aModes[modeNum], pClass->aModes[basedOn], sizeof(pClass->aModes[modeNum]));
             }
         }
-        else if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "joints") == 0 )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "joints") )
         {
-            while ( stdConffile_ReadArgs() && stdConffile_g_entry.numArgs && strcmp(stdConffile_g_entry.aArgs[0].argName, "end") != 0 )
+            while ( stdConffile_ReadArgs() && stdConffile_g_entry.numArgs && !streq(stdConffile_g_entry.aArgs[0].argName, "end") )
             {
                 size_t jointNum = atoi(stdConffile_g_entry.aArgs[0].argName);
                 int jointId     = atoi(stdConffile_g_entry.aArgs[0].argValue);
@@ -2662,7 +2662,7 @@ int J3DAPI sithPuppet_LoadPuppetClassEntry(SithPuppetClass* pClass, const char* 
             }
 
             rdKeyframe* pKeyframe = NULL;
-            if ( strcmp(stdConffile_g_entry.aArgs[1].argValue, "none") != 0 )
+            if ( !streq(stdConffile_g_entry.aArgs[1].argValue, "none") )
             {
                 pKeyframe = sithPuppet_LoadKeyframe(stdConffile_g_entry.aArgs[1].argValue);
             }
@@ -2748,7 +2748,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListText(SithWorld* pWorld, int bSkip)
 
     stdConffile_ReadArgs();
 
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "keyframes") ) // TODO: Use strcmpi
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "keyframes") )
     {
         SITHLOG_ERROR("Parse error reading keyframe list line %d.\n", stdConffile_GetLineNumber());
         return 1;
@@ -2769,7 +2769,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListText(SithWorld* pWorld, int bSkip)
 
     float progress = 80.0f;
     const float progressDelta = 15.0f / (float)numKeyframes;
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( !sithPuppet_LoadKeyframe(stdConffile_g_entry.aArgs[1].argValue) )
         {

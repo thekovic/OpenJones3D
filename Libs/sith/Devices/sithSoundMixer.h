@@ -9,7 +9,7 @@
 
 J3D_EXTERN_C_START
 
-// TODO: verify if function is not really be named stdSound_Startup
+// TODO: verify if function should mamybe be named stdSound_Startup
 int sithSoundMixer_Startup(void);
 void J3DAPI sithSoundMixer_Shutdown();
 

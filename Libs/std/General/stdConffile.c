@@ -87,7 +87,7 @@ int J3DAPI stdConffile_OpenMode(const char* pFilename, const char* openMode)
     }
 
     STD_ASSERTREL(openFile == 0);
-    if ( strcmp(pFilename, "none") == 0 ) {
+    if ( streq(pFilename, "none") ) {
         openFile = 0;
     }
     else
@@ -124,7 +124,7 @@ void stdConffile_Close(void)
         return;
     }
 
-    STD_ASSERTREL(stdConffile_g_aLine != ((void*)0));
+    STD_ASSERTREL(stdConffile_g_aLine != NULL);
     if ( openFile ) {
         std_g_pHS->pFileClose(openFile);
     }

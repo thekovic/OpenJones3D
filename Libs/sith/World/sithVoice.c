@@ -340,7 +340,7 @@ void J3DAPI sithVoice_PlayVoice(SithCog* pCog)
     }
 
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
-    SITH_ASSERTREL(pThing->renderData.data.pModel3 != ((void*)0));
+    SITH_ASSERTREL(pThing->renderData.data.pModel3 != NULL);
 
     int guid = -1; // Fixed: Init to -1;
     if ( strcmpi(pThing->renderData.data.pModel3->aName, "aet_gy.3do") == 0 )
@@ -475,8 +475,8 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
 
             unsigned int curTime = stdPlatform_GetTimeMsec();
             while ( strcmp(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName) == 0
-                 && (int)sithVoice_numSubtitleInfos > 0
-                 && curTime < sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].msecEndTime )
+                && (int)sithVoice_numSubtitleInfos > 0
+                && curTime < sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].msecEndTime )
             {
                 if ( strlen(aCurVoiceLine) == 0 )
                 {
@@ -638,7 +638,7 @@ void sithVoice_Draw(void)
 
     // Skip lines that expired
     while ( (strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].aSubtitleText) > 0)
-         && (curTime > sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecShowEndTime) )
+        && (curTime > sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecShowEndTime) )
     {
         ++sithVoice_curSubtitleInfoNum;
 
@@ -663,7 +663,7 @@ void sithVoice_Draw(void)
         float lineHeight = (float)((double)sithVoice_pTextFont->lineSpacing / RD_REF_HEIGHT);
 
         if ( curTime >= sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecEndTime
-          && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum + 1].aSubtitleText) > 0 )
+            && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum + 1].aSubtitleText) > 0 )
         {
             y = y - (float)((double)(curTime - sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecEndTime) * lineHeight) / 1000.0f;
         }

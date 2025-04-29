@@ -125,8 +125,8 @@ int J3DAPI sithModel_ReadStaticModelsListText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    SITH_ASSERTREL(pWorld != ((void*)0));
-    SITH_ASSERTREL(pWorld->aModels == ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
+    SITH_ASSERTREL(pWorld->aModels == NULL);
     SITH_ASSERTREL(pWorld->numModels == 0);
 
     stdConffile_ReadArgs();
@@ -208,14 +208,14 @@ int J3DAPI sithModel_ReadStaticModelsListBinary(tFileHandle fh, SithWorld* pWorl
 
 void J3DAPI sithModel_FreeWorldModels(SithWorld* pWorld)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     if ( !pWorld->sizeModels )
     {
-        SITH_ASSERTREL(pWorld->aModels == ((void*)0));
+        SITH_ASSERTREL(pWorld->aModels == NULL);
         return;
     }
 
-    SITH_ASSERTREL(pWorld->aModels != ((void*)0));
+    SITH_ASSERTREL(pWorld->aModels != NULL);
     for ( size_t i = 0; i < pWorld->numModels; ++i )
     {
         sithModel_CacheRemove(&pWorld->aModels[i]);
@@ -233,10 +233,10 @@ rdModel3* J3DAPI sithModel_Load(const char* pName, int bSkipDefault)
 {
     SithWorld* pWorld = sithWorld_g_pLastLoadedWorld;
 
-    SITH_ASSERTREL(pWorld != ((void*)0));
-    SITH_ASSERTREL(pWorld->aModels != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
+    SITH_ASSERTREL(pWorld->aModels != NULL);
 
-    SITH_ASSERTREL(pName != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
     rdModel3* pModel = sithModel_CacheFind(pName);
     if ( pModel )
     {
@@ -329,7 +329,7 @@ size_t J3DAPI sithModel_GetModelMemUsage(const rdModel3* pModel)
 
 int J3DAPI sithModel_AllocWorldModels(SithWorld* pWorld, size_t size)
 {
-    SITH_ASSERTREL(pWorld->aModels == ((void*)0));
+    SITH_ASSERTREL(pWorld->aModels == NULL);
 
     pWorld->aModels = STDMALLOC(sizeof(rdModel3) * size);
     if ( !pWorld->aModels )
@@ -438,23 +438,23 @@ bool sithModel_IsHiPolyEnabled(void)
 
 void J3DAPI sithModel_CacheRemove(const rdModel3* pModel)
 {
-    SITH_ASSERTREL(pModel != ((void*)0));
+    SITH_ASSERTREL(pModel != NULL);
     SITH_ASSERTREL(strlen(pModel->aName) > 0);
-    SITH_ASSERTREL(sithModel_pHashtable != ((void*)0));
+    SITH_ASSERTREL(sithModel_pHashtable != NULL);
     stdHashtbl_Remove(sithModel_pHashtable, pModel->aName);
 }
 
 void J3DAPI sithModel_CacheAdd(rdModel3* pModel)
 {
-    SITH_ASSERTREL(pModel != ((void*)0));
+    SITH_ASSERTREL(pModel != NULL);
     SITH_ASSERTREL(strlen(pModel->aName) > 0);
-    SITH_ASSERTREL(sithModel_pHashtable != ((void*)0));
+    SITH_ASSERTREL(sithModel_pHashtable != NULL);
     stdHashtbl_Add(sithModel_pHashtable, pModel->aName, pModel);
 }
 
 rdModel3* J3DAPI sithModel_CacheFind(const char* pName)
 {
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(sithModel_pHashtable != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(sithModel_pHashtable != NULL);
     return stdHashtbl_Find(sithModel_pHashtable, pName);
 }

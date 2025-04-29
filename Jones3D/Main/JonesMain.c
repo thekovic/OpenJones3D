@@ -1500,7 +1500,7 @@ int J3DAPI JonesMain_EnsureLevelFileEx(const char* pFilename, bool bFindAll, cha
     if ( bFindAll && pFoundFilename )
     {
         const char* pCurExt = stdFnames_FindExt(aPath);
-        if ( strcmpi(pCurExt, "cnd") == 0 ) {
+        if ( streqi(pCurExt, "cnd") ) {
             stdFnames_ChangeExt(aPath, "ndy");
         }
         else {
@@ -1660,7 +1660,7 @@ void JonesMain_UpdateLevelNum(void)
     JonesMain_curLevelNum = 0;
     for ( size_t i = 1; i < JONESLEVEL_NUMLEVELS; ++i )
     {
-        if ( strcmpi(JonesMain_state.aCurLevelFilename, JonesMain_aCndLevelLoadInfos[i].pFilename) == 0 )
+        if ( streqi(JonesMain_state.aCurLevelFilename, JonesMain_aCndLevelLoadInfos[i].pFilename) )
         {
             JonesMain_curLevelNum = i;
             break;
@@ -1671,7 +1671,7 @@ void JonesMain_UpdateLevelNum(void)
     {
         for ( size_t i = 1; i < JONESLEVEL_NUMLEVELS; ++i )
         {
-            if ( strcmpi(JonesMain_state.aCurLevelFilename, JonesMain_aNdyLevelLoadInfos[i].pFilename) == 0 )
+            if ( streqi(JonesMain_state.aCurLevelFilename, JonesMain_aNdyLevelLoadInfos[i].pFilename) )
             {
                 JonesMain_curLevelNum = i;
                 return;
@@ -1682,7 +1682,7 @@ void JonesMain_UpdateLevelNum(void)
 
 void JonesMain_NextLevel(void)
 {
-    if ( strcmpi(sithWorld_g_pCurrentWorld->aName, "17_PRU.cnd") )
+    if ( !streqi(sithWorld_g_pCurrentWorld->aName, "17_PRU.cnd") )
     {
         STD_STRCPY(JonesMain_state.aCurLevelFilename, sithWorld_g_pCurrentWorld->aName);
     }
@@ -2648,7 +2648,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
             pConfig->displaySettings.displayDeviceNum = i;
         }
 
-        if ( strcmp(JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName, aText) == 0 )
+        if ( streq(JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName, aText) )
         {
             pConfig->displaySettings.displayDeviceNum = i;
             break;
@@ -2668,7 +2668,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     wuRegistry_GetStr("3D Device", aText, STD_ARRAYLEN(aText), "");
     for ( size_t i = 0; i < pDisplay->numDevices; ++i )
     {
-        if ( !strcmp(pDisplay->aDevices[i].deviceDescription, aText) )
+        if ( streq(pDisplay->aDevices[i].deviceDescription, aText) )
         {
             pConfig->displaySettings.device3DNum = i;
             break;
@@ -3123,7 +3123,7 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
         ComboBox_SetItemData(hCB3DDriver, itemIdx, deviceNum);
 
         // Select item in cb list
-        if ( strcmp(aDriverName, std_g_genBuffer) == 0 || pConfig->displaySettings.device3DNum == deviceNum )
+        if ( streq(aDriverName, std_g_genBuffer) || pConfig->displaySettings.device3DNum == deviceNum )
         {
             ComboBox_SetCurSel(hCB3DDriver, itemIdx);
             pConfig->displaySettings.device3DNum = deviceNum;

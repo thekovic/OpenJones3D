@@ -38,9 +38,9 @@ int J3DAPI stdStrTable_Load(tStringTable* pStrTable, const char* pFilename)
     char aLine[276] = { 0 };
     char aBuf[256]  = { 0 };
 
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
     STD_ASSERTREL(pStrTable->magic != 'sTbl');
-    STD_ASSERTREL(pFilename != ((void*)0));
+    STD_ASSERTREL(pFilename != NULL);
 
     pStrTable->nMsgs    = 0;
     pStrTable->pData    = NULL;
@@ -127,7 +127,7 @@ int J3DAPI stdStrTable_Load(tStringTable* pStrTable, const char* pFilename)
         aLine[0] = 0;
         stdStrTable_ReadLine(fh, aLine, STD_ARRAYLEN(aLine) - 1);
         const char* ptok = strtok(aLine, " \t\n\r");
-        if ( strcmpi(ptok, "end") )
+        if ( !streqi(ptok, "end") )
         {
             bSuccess = 0;
             std_g_pHS->pErrorPrint("'END' not found in '%s'.  Enlarge number in 'MSG xxx' header.\n", pFilename);
@@ -168,7 +168,7 @@ void J3DAPI stdStrTable_Free(tStringTable* pStrTable)
     int nMsgs;
     tStringTableNode* aData;
 
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
 
     if ( pStrTable->magic == 'sTbl' )
     {
@@ -201,7 +201,7 @@ void J3DAPI stdStrTable_Free(tStringTable* pStrTable)
 wchar_t* J3DAPI stdStrTable_GetValue(const tStringTable* pStrTable, const char* pKey)
 {
     tStringTableNode* pStrNode;
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
 
     if ( pStrTable->nMsgs && (pStrNode = (tStringTableNode*)stdHashtbl_Find(pStrTable->pHashtbl, pKey)) != 0 )
     {
@@ -215,7 +215,7 @@ wchar_t* J3DAPI stdStrTable_GetValueOrKey(const tStringTable* pStrTable, const c
 {
     wchar_t* pVal;
 
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
     pVal = stdStrTable_GetValue(pStrTable, pKey);
     if ( pVal )
     {

@@ -1269,7 +1269,7 @@ void J3DAPI sithCogFunction_SetMountWait(SithCog* pCog)
     float timeToWait  = sithCogExec_PopFlex(pCog);
     SithThing* pThing = sithCogExec_PopThing(pCog);
 
-    SITH_ASSERTREL(pThing != ((void*)0));
+    SITH_ASSERTREL(pThing != NULL);
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(timeToWait >= -((float)1.0));
 
@@ -1861,7 +1861,7 @@ void J3DAPI sithCogFunction_IsLevelName(SithCog* pCog)
         return;
     }
 
-    if ( !_strcmpi(sithWorld_g_pCurrentWorld->aName, pName) )
+    if ( streqi(sithWorld_g_pCurrentWorld->aName, pName) )
     {
         sithCogExec_PushInt(pCog, 1);
     }

@@ -20,7 +20,7 @@ void stdCircBuf_ResetGlobals(void)
 
 int J3DAPI stdCircBuf_New(tCircularBuffer* pCirc, int numElementsDesired, int sizeOfEachElement)
 {
-    STD_ASSERTREL(pCirc != ((void*)0));
+    STD_ASSERTREL(pCirc != NULL);
     STD_ASSERTREL(numElementsDesired > 0);
     STD_ASSERTREL(sizeOfEachElement > 0);
 
@@ -52,11 +52,11 @@ void J3DAPI stdCircBuf_Free(tCircularBuffer* pCirc)
 
 void J3DAPI stdCircBuf_Purge(tCircularBuffer* pCirc)
 {
-    STD_ASSERTREL(pCirc != ((void*)0));
+    STD_ASSERTREL(pCirc != NULL);
     if ( pCirc->paElements && pCirc->numValidElements )
     {
         --pCirc->numValidElements;
-        STD_ASSERT(pCirc->paElements != ((void*)0));
+        STD_ASSERT(pCirc->paElements != NULL);
         pCirc->iFirst = (pCirc->iFirst + 1) % pCirc->numAllocated;
     }
 }
@@ -65,7 +65,7 @@ void* J3DAPI stdCircBuf_GetNextElement(tCircularBuffer* pCirc)
 {
     int idx;
 
-    STD_ASSERTREL(pCirc != ((void*)0));
+    STD_ASSERTREL(pCirc != NULL);
     if ( !pCirc->paElements )
     {
         return NULL;
@@ -81,6 +81,6 @@ void* J3DAPI stdCircBuf_GetNextElement(tCircularBuffer* pCirc)
 
     idx = (pCirc->numValidElements + pCirc->iFirst) % pCirc->numAllocated;
     ++pCirc->numValidElements;
-    STD_ASSERTREL(pCirc->paElements != ((void*)0));
+    STD_ASSERTREL(pCirc->paElements != NULL);
     return &pCirc->paElements[pCirc->elementSize * idx];
 }

@@ -87,7 +87,7 @@ const wchar_t* sithPlayer_GetLocalPlayerName(void)
 
 void J3DAPI sithPlayer_PlacePlayers(SithWorld* pWorld)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     size_t numPlayers = 0;
     if ( pWorld->lastThingIdx >= 0 )

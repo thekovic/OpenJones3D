@@ -418,13 +418,11 @@ void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damage
                     goto LABEL_43;
                 }
             }
-
             else if ( damageType != (SITH_DAMAGE_2000 | SITH_DAMAGE_IMP1) && damageType != SITH_DAMAGE_2000 )
             {
                 goto LABEL_43;
             }
         }
-
         else if ( damageType != SITH_DAMAGE_IMP1 && damageType != SITH_DAMAGE_POISON )
         {
             goto LABEL_43;

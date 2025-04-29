@@ -266,7 +266,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartScrollSurfaceAnim(SithSurface* pSurf,
 
 void J3DAPI sithAnimate_BuildScrollFaceRotate(rdMatrix34* pOrient, const rdFace* pFace, SithSurfaceFlag surfflags)
 {
-    SITH_ASSERTREL(pFace != ((void*)0));
+    SITH_ASSERTREL(pFace != NULL);
     SITH_ASSERTREL(pFace->numVertices >= 3);
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;

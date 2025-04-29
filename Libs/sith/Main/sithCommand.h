@@ -20,12 +20,12 @@ inline bool sithCommand_ParseBool(const char* pStr, bool* pOut) // Added
         return false;
     }
 
-    if ( strcmpi(pStr, "on") == 0 || strcmpi(pStr, "1") == 0 )
+    if ( streqi(pStr, "on") || streqi(pStr, "1") )
     {
         *pOut = true;
         return true;
     }
-    else if ( strcmpi(pStr, "off") == 0 || strcmpi(pStr, "0") == 0 )
+    else if ( streqi(pStr, "off") || streqi(pStr, "0") )
     {
         *pOut = false;
         return true;

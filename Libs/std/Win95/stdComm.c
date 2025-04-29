@@ -293,7 +293,7 @@ int J3DAPI stdComm_JoinGame(size_t gameNum, const wchar_t* pPassword)
 
 void stdComm_CloseGame(void)
 {
-    STD_ASSERTREL(pDirectPlay != ((void*)0));
+    STD_ASSERTREL(pDirectPlay != NULL);
     if ( bGameActive ) {
         IDirectPlayX_Close(pDirectPlay);
     }
@@ -304,7 +304,7 @@ void stdComm_CloseGame(void)
 
 int J3DAPI stdComm_RejoinSession(DPID* pPlayerId, const wchar_t* pPlayerName)
 {
-    STD_ASSERTREL(pDirectPlay != ((void*)0));
+    STD_ASSERTREL(pDirectPlay != NULL);
     STD_ASSERTREL(bGameActive);
 
     StdCommGame settings;
@@ -384,7 +384,7 @@ int J3DAPI stdComm_IsGameHost(void)
 
 int J3DAPI stdComm_UpdatePlayers(size_t gameNum)
 {
-    STD_ASSERTREL((pDirectPlay != ((void*)0)));
+    STD_ASSERTREL((pDirectPlay != NULL));
 
     stdComm_numPlayers = 0;
     memset(stdComm_aPlayers, 0, sizeof(stdComm_aPlayers));
@@ -433,7 +433,7 @@ DPID J3DAPI stdComm_CreatePlayer(const wchar_t* pPlayerName)
 
 void J3DAPI stdComm_DestroyPlayer(DPID playerId)
 {
-    STD_ASSERTREL(pDirectPlay != ((void*)0));
+    STD_ASSERTREL(pDirectPlay != NULL);
     STD_ASSERTREL(playerId > 0);
     HRESULT  hr = IDirectPlayX_DestroyPlayer(pDirectPlay, playerId);
     if ( hr >= DP_OK ) {

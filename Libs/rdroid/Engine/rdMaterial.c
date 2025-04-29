@@ -29,8 +29,7 @@ void rdMaterial_InstallHooks(void)
 }
 
 void rdMaterial_ResetGlobals(void)
-{
-}
+{}
 
 rdMaterialLoaderFunc J3DAPI rdMaterial_RegisterLoader(rdMaterialLoaderFunc pFunc)
 {
@@ -122,7 +121,7 @@ int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat)
     for ( size_t i = 0; i < pMat->numCels; ++i )
     {
         if ( rdroid_g_pHS->pFileRead(fh, &celInfo, sizeof(rdMatCelInfo)) != sizeof(rdMatCelInfo)
-          || ((celInfo.type & 0x8) != 0 && rdroid_g_pHS->pFileRead(fh, &texcelInfo, sizeof(rdMatTextureCelInfo)) != sizeof(rdMatTextureCelInfo)) )
+            || ((celInfo.type & 0x8) != 0 && rdroid_g_pHS->pFileRead(fh, &texcelInfo, sizeof(rdMatTextureCelInfo)) != sizeof(rdMatTextureCelInfo)) )
         {
             goto error;
         }
@@ -227,7 +226,7 @@ error:
 
 void J3DAPI rdMaterial_Free(rdMaterial* pMaterial)
 {
-    RD_ASSERTREL(pMaterial != ((void*)0));
+    RD_ASSERTREL(pMaterial != NULL);
     if ( rdMaterial_pMaterialsUnloader )
     {
         rdMaterial_pMaterialsUnloader(pMaterial);
@@ -241,7 +240,7 @@ void J3DAPI rdMaterial_Free(rdMaterial* pMaterial)
 
 void J3DAPI rdMaterial_FreeEntry(rdMaterial* pMaterial)
 {
-    RD_ASSERTREL(pMaterial != ((void*)0));
+    RD_ASSERTREL(pMaterial != NULL);
 
     if ( pMaterial->aTextures )
     {

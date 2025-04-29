@@ -31,24 +31,23 @@ void sithIntersect_InstallHooks(void)
 }
 
 void sithIntersect_ResetGlobals(void)
-{
-}
+{}
 
 void J3DAPI sithIntersect_GetProjectionAxes(const rdVector3* pNormal, int* pOffs1, int* pOffs2);
 
 int J3DAPI sithIntersect_IsSphereInSector(const SithWorld* pWorld, const rdVector3* pos, float radius, const SithSector* pSector)
 {
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(pWorld, pSector));
-    SITH_ASSERTREL(pos != ((void*)0));
+    SITH_ASSERTREL(pos != NULL);
     SITH_ASSERTREL(radius >= 0.0f);
 
     if ( (pSector->flags & SITH_SECTOR_HASCOLLIDEBOX) != 0
-      && pos->z - radius > pSector->collideBox.v0.z
-      && pos->y - radius > pSector->collideBox.v0.y
-      && pos->x - radius > pSector->collideBox.v0.x
-      && pos->x + radius < pSector->collideBox.v1.x
-      && pos->y + radius < pSector->collideBox.v1.y
-      && pos->z + radius < pSector->collideBox.v1.z )
+        && pos->z - radius > pSector->collideBox.v0.z
+        && pos->y - radius > pSector->collideBox.v0.y
+        && pos->x - radius > pSector->collideBox.v0.x
+        && pos->x + radius < pSector->collideBox.v1.x
+        && pos->y + radius < pSector->collideBox.v1.y
+        && pos->z + radius < pSector->collideBox.v1.z )
     {
         return 1;
     }
@@ -94,7 +93,7 @@ SithCollisionType J3DAPI sithIntersect_CheckFaceVerticesIntersection(const rdVec
 SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* pThing, const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, SithThing* pCheck, int colflags, float* pHitDistance, rdModel3Mesh** ppHitMesh, rdFace** ppHitFace, rdVector3* hitNorm)
 {
     SITH_ASSERTREL(pCheck->collide.type != SITH_COLLIDE_NONE);
-    SITH_ASSERTREL(pHitDistance != ((void*)0));
+    SITH_ASSERTREL(pHitDistance != NULL);
     SITH_ASSERTREL(ppHitMesh && ppHitFace);
 
     if ( (pCheck->flags & SITH_TF_JEEPSTOP) != 0 )
@@ -219,9 +218,9 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
 
 SithCollisionType J3DAPI sithIntersect_CheckSphereThingModelIntersection(const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, const rdThing* prdThing, float* hitDistance, rdFace** ppFace, rdModel3Mesh** ppMesh, rdVector3* hitNorm)
 {
-    SITH_ASSERTREL(prdThing != ((void*)0));
+    SITH_ASSERTREL(prdThing != NULL);
     SITH_ASSERTREL(prdThing->type == RD_THING_MODEL3);
-    SITH_ASSERTREL(prdThing->data.pModel3 != ((void*)0));
+    SITH_ASSERTREL(prdThing->data.pModel3 != NULL);
     SITH_ASSERTREL(ppMesh && ppFace);
     SITH_ASSERTREL(hitNorm);
 
@@ -390,7 +389,7 @@ int J3DAPI sithIntersect_TestSphereFaceHit(const rdVector3* startPos, float radi
 
 SithCollisionType J3DAPI sithIntersect_CheckSphereFaceHitVerticesIntersection(const rdVector3* startPos, float radius, const rdFace* pFace, const rdVector3* aVertices, int vertHitMask, rdVector3* pHitPos)
 {
-    SITH_ASSERTREL(pFace != ((void*)0));
+    SITH_ASSERTREL(pFace != NULL);
     SITH_ASSERTREL(radius >= 0.0f);
 
     SithCollisionType hitType = 0;
@@ -514,9 +513,9 @@ int J3DAPI sithIntersect_CheckSphereHit(const rdVector3* startPos, const rdVecto
 
 SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersectionEx(const rdVector3* startPos, const rdVector3* moveNorm, float moveDistance, float radius, const rdFace* pFace, const rdVector3* aVertices, float* hitDist, rdVector3* hitNorm, int colflags)
 {
-    SITH_ASSERTREL((startPos != ((void*)0)) && (pFace != ((void*)0)) && (aVertices != ((void*)0)));
-    SITH_ASSERTREL((hitDist != ((void*)0)) && (moveNorm != ((void*)0))); // Fixed check for hitDist != NULL, was hitPos != NULL
-    //SITH_ASSERTREL((hitPos != ((void*)0)) && (moveNorm != ((void*)0)));
+    SITH_ASSERTREL((startPos != NULL) && (pFace != NULL) && (aVertices != NULL));
+    SITH_ASSERTREL((hitDist != NULL) && (moveNorm != NULL)); // Fixed check for hitDist != NULL, was hitPos != NULL
+    //SITH_ASSERTREL((hitPos != NULL) && (moveNorm != NULL));
     SITH_ASSERTREL(radius >= 0.0f);
 
     if ( !sithIntersect_CheckSphereHit(startPos, moveNorm, moveDistance, radius, &pFace->normal, &aVertices[*pFace->aVertices], hitDist, colflags) )
@@ -635,9 +634,9 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersectionEx(const rdVec
 
 SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersection(const rdVector3* startPos, const rdVector3* moveNorm, float moveDistance, float radius, const rdFace* pFace, const rdVector3* aVertices, float* hitDist, int flags)
 {
-    SITH_ASSERTREL((startPos != ((void*)0)) && (pFace != ((void*)0)) && (aVertices != ((void*)0)));
-    SITH_ASSERTREL((hitDist != ((void*)0)) && (moveNorm != ((void*)0))); // Fixed check for hitDist != NULL, was hitPos != NULL
-    //SITH_ASSERTREL((hitPos != ((void*)0)) && (moveNorm != ((void*)0)));
+    SITH_ASSERTREL((startPos != NULL) && (pFace != NULL) && (aVertices != NULL));
+    SITH_ASSERTREL((hitDist != NULL) && (moveNorm != NULL)); // Fixed check for hitDist != NULL, was hitPos != NULL
+    //SITH_ASSERTREL((hitPos != NULL) && (moveNorm != NULL));
     SITH_ASSERTREL(radius >= 0.0f);
     if ( !sithIntersect_CheckSphereHit(startPos, moveNorm, moveDistance, radius, &pFace->normal, &aVertices[*pFace->aVertices], hitDist, flags) )
     {

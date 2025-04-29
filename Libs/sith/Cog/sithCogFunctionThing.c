@@ -4918,7 +4918,7 @@ void J3DAPI sithCogFunctionThing_IsThingModelName(SithCog* pCog)
         return;
     }
 
-    if ( strcmpi(pThing->renderData.data.pModel3->aName, pModelName) == 0 )
+    if ( streqi(pThing->renderData.data.pModel3->aName, pModelName) )
     {
         sithCogExec_PushInt(pCog, 1);
         return;

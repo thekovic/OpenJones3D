@@ -2073,8 +2073,8 @@ int J3DAPI sithWeapon_IsAiming(SithThing* pThing)
 
 void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing)
 {
-    SITH_ASSERTREL(pHitThing != ((void*)0));
-    SITH_ASSERTREL(pHitThing->renderData.data.pModel3 != ((void*)0));
+    SITH_ASSERTREL(pHitThing != NULL);
+    SITH_ASSERTREL(pHitThing->renderData.data.pModel3 != NULL);
     SITH_ASSERTREL((pHitThing->type == SITH_THING_ACTOR) || (pHitThing->type == SITH_THING_CORPSE));
 
     SithThing* pTemplate = NULL;
@@ -2344,7 +2344,7 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
 {
     J3D_UNUSED(autoAimFovX);
     J3D_UNUSED(autoAimFovZ);
-    SITH_ASSERTREL(pShooter != ((void*)0));
+    SITH_ASSERTREL(pShooter != NULL);
 
     if ( pShooter->type != SITH_THING_ACTOR )
     {
@@ -2427,7 +2427,7 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
 
 void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
 {
-    SITH_ASSERTREL(pThing != ((void*)0));
+    SITH_ASSERTREL(pThing != NULL);
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
 
     rdModel3* pHandModel = NULL;
@@ -2494,7 +2494,7 @@ void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
 
 int J3DAPI sithWeapon_ActivateWhip(SithThing* pThing, SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     bool bValidTarget = false;
     bool bSuccess     = false;

@@ -191,7 +191,7 @@ void* J3DAPI stdMemory_Realloc(void* pBytes, size_t size, const char* pFilename,
     if ( size )
     {
         pHeader = (tMemoryHeader*)((char*)pBytes - sizeof(tMemoryHeader));
-        STD_ASSERTREL((pHeader != ((void*)0)) && ((uint32_t)pHeader == pHeader->id));
+        STD_ASSERTREL((pHeader != NULL) && ((uint32_t)pHeader == pHeader->id));
         v8 = pHeader->size;
         pHeap = (tMemoryHeap*)std_g_pHS->pRealloc(pHeader, size + sizeof(tMemoryHeap));
         if ( pHeap )

@@ -305,7 +305,7 @@ void J3DAPI sithCog_FreeWorldCogs(SithWorld* pWorld)
 
 void J3DAPI sithCog_FreeScriptEntry(SithCogScript* pScript)
 {
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
 
     sithCogParse_FreeSymbolTable(pScript->pSymbolTable);
     pScript->pSymbolTable = NULL;
@@ -387,7 +387,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     }
 
     SithCogScript* pScript = pCog->pScript;
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(messageType > 0);
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
@@ -474,10 +474,10 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
 
 int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, SithCogSymbolRefType senderType, int senderIdx, SithCogSymbolRefType srcType, int srcIdx, int linkId, int param0, int param1, int param2, int param3)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogScript* pScript; pScript = pCog->pScript;
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
 
     SITH_ASSERTREL(messageType > 0);
 
@@ -582,7 +582,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
 
 int J3DAPI sithCog_AllocWorldCogScripts(SithWorld* pWorld, size_t numCogScripts)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     SITH_ASSERTREL(!pWorld->aCogScripts);
 
     pWorld->aCogScripts = (SithCogScript*)STDMALLOC(sizeof(SithCogScript) * numCogScripts);
@@ -600,7 +600,7 @@ int J3DAPI sithCog_AllocWorldCogScripts(SithWorld* pWorld, size_t numCogScripts)
 
 int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     SITH_ASSERTREL(!pWorld->aCogs);
     pWorld->aCogs = (SithCog*)STDMALLOC(sizeof(SithCog) * sizeCogs);
     if ( !pWorld->aCogs )
@@ -831,11 +831,11 @@ int J3DAPI sithCog_ReadCogsListText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    SITH_ASSERTREL(pWorld != ((void*)0));
-    SITH_ASSERTREL(pWorld->aCogs == ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
+    SITH_ASSERTREL(pWorld->aCogs == NULL);
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "cogs") )
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "cogs") )
     {
         goto syntax_error;
     }
@@ -852,7 +852,7 @@ int J3DAPI sithCog_ReadCogsListText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( stdConffile_g_entry.numArgs < 2u )
         {
@@ -1320,7 +1320,7 @@ SithCog* J3DAPI sithCog_GetCog(const char* pName)
         {
             for ( size_t j = 0; j < pWorld->numCogs; ++j )
             {
-                if ( strcmpi(pName, pWorld->aCogs[j].aName) == 0 )
+                if ( streqi(pName, pWorld->aCogs[j].aName) )
                 {
                     return &pWorld->aCogs[j];
                 }
@@ -1643,7 +1643,7 @@ int J3DAPI sithCog_WriteCogScriptsListText(const SithWorld* pWorld)
 
 int J3DAPI sithCog_ReadCogScriptsListText(SithWorld* pWorld, int bSkip)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     if ( bSkip )
     {
@@ -1651,7 +1651,7 @@ int J3DAPI sithCog_ReadCogScriptsListText(SithWorld* pWorld, int bSkip)
     }
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") != 0 || strcmp(stdConffile_g_entry.aArgs[1].argValue, "scripts") != 0 )
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "scripts") )
     {
         goto syntax_error;
     }
@@ -1659,13 +1659,13 @@ int J3DAPI sithCog_ReadCogScriptsListText(SithWorld* pWorld, int bSkip)
     size_t numScripts = atoi(stdConffile_g_entry.aArgs[2].argValue);
     if ( numScripts )
     {
-        SITH_ASSERTREL(pWorld->aCogScripts == ((void*)0));
+        SITH_ASSERTREL(pWorld->aCogScripts == NULL);
         if ( sithCog_AllocWorldCogScripts(pWorld, numScripts) )
         {
             return 1;
         }
 
-        while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") != 0 )
+        while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
         {
             if ( pWorld->numCogScripts >= pWorld->sizeCogScripts )
             {
@@ -1728,8 +1728,8 @@ int J3DAPI sithCog_ReadCogScriptsListBinary(tFileHandle fh, SithWorld* pWorld)
 
 SithCogScript* J3DAPI sithCog_LoadScript(SithWorld* pWorld, const char* pName)
 {
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(pWorld != NULL);
 
     char aPath[128];
     SITH_ASSERTREL(strlen(pName) + 32 < STD_ARRAYLEN(aPath));
@@ -2022,7 +2022,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
 void sithCog_ProcessCogs(void)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     if ( sithMain_g_sith_mode.masterMode != SITH_MODE_UNKNOWN_2 )
     {
@@ -2123,24 +2123,24 @@ int J3DAPI sithCog_TimerEventTask(int msecTime, SithEventParams* pParams)
 
 SithCogScript* J3DAPI sithCog_GetScript(const char* pName)
 {
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(sithCog_g_pHashtable != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
     return (SithCogScript*)stdHashtbl_Find(sithCog_g_pHashtable, pName);
 }
 
 int J3DAPI sithCog_AddScript(SithCogScript* pScript)
 {
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(strlen(pScript->aName) > 0);
-    SITH_ASSERTREL(sithCog_g_pHashtable != ((void*)0));
+    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
     return stdHashtbl_Add(sithCog_g_pHashtable, pScript->aName, pScript);
 }
 
 int J3DAPI sithCog_RemoveScript(SithCogScript* pScript)
 {
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(strlen(pScript->aName) > 0);
-    SITH_ASSERTREL(sithCog_g_pHashtable != ((void*)0));
+    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
     return stdHashtbl_Remove(sithCog_g_pHashtable, pScript->aName);
 }
 

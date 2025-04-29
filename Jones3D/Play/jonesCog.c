@@ -170,7 +170,7 @@ void J3DAPI jonesCog_ExitToShell(SithCog* pCog)
 void J3DAPI jonesCog_StartCutsceneFunc(SithCog* pCog)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    STD_ASSERTREL(pWorld != ((void*)0));
+    STD_ASSERTREL(pWorld != NULL);
 
     int type;
     if ( pCog )

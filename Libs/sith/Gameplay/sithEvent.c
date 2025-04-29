@@ -109,7 +109,7 @@ int J3DAPI sithEvent_CreateEvent(size_t taskId, SithEventParams* params, uint32_
 void J3DAPI sithEvent_FreeEvent(SithEvent* pEvent)
 {
     SITH_ASSERTREL((numFreeEventBuffers < (STD_ARRAYLEN(aEventBuffer))));
-    SITH_ASSERTREL(pEvent != ((void*)0));
+    SITH_ASSERTREL(pEvent != NULL);
 
     size_t index = pEvent - aEventBuffer;
     SITH_ASSERTREL((index >= 0) && (index < STD_ARRAYLEN(aEventBuffer)));
@@ -139,7 +139,7 @@ void sithEvent_Process(void)
     for ( size_t i = 1; i < STD_ARRAYLEN(aTasks); ++i )
     {
         if ( aTasks[i].startMode == SITHEVENT_TASKINTERVAL
-          && sithTime_g_msecGameTime - aTasks[i].msecLastIntervalTime > aTasks[i].msecFrequency )
+            && sithTime_g_msecGameTime - aTasks[i].msecLastIntervalTime > aTasks[i].msecFrequency )
         {
             if ( aTasks[i].pfProcess(sithTime_g_msecGameTime - aTasks[i].msecLastIntervalTime, NULL) )
             {
@@ -191,7 +191,7 @@ SithEvent* sithEvent_Create(void)
 
 void J3DAPI sithEvent_AddEvent(SithEvent* pEvent)
 {
-    SITH_ASSERTREL(pEvent != ((void*)0));
+    SITH_ASSERTREL(pEvent != NULL);
 
     SithEvent* pNextEvent = sithEvent_g_pFirstQueuedEvent;
     SithEvent* pPrevEvent = NULL;

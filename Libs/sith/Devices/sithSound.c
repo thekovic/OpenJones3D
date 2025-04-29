@@ -123,7 +123,7 @@ int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip)
 
     sithWorld_UpdateLoadProgress(0.0f);
 
-    if ( !stdConffile_ReadArgs() || strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "sounds") )
+    if ( !stdConffile_ReadArgs() || !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "sounds") )
     {
         sithSound_FreeWorldSounds(pWorld);
         return 1;
@@ -139,7 +139,7 @@ int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip)
 
     // Fixed: Refactored to load sounds directly instead of first reading filenames into a cache list.
     //        This also fixes a memory leak where the cache list wasn't freed when bSkipRestoringSounds = true.
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") ) // TODO: use strcmpi
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( !bSkipRestoringSounds )
         {

@@ -288,7 +288,7 @@ void J3DAPI JonesConsole_PrintTextWithID(int ID, const char* pText)
         if ( JonesConsole_aBuffers[i].ID == ID )
         {
             // Replace existing text
-            if ( strcmp(JonesConsole_aBuffers[i].aLine, pText) != 0 ) { // if 
+            if ( !streq(JonesConsole_aBuffers[i].aLine, pText) ) {
                 STD_STRCPY(JonesConsole_aBuffers[i].aLine, pText);
             }
 
