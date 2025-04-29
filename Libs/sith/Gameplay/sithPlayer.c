@@ -13,6 +13,7 @@
 #include <sith/Engine/sithPhysics.h>
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Gameplay/sithInventory.h>
+#include <sith/Gameplay/sithPlayerActions.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithActor.h>
 #include <sith/World/sithThing.h>
@@ -76,6 +77,20 @@ void J3DAPI sithPlayer_Open(const wchar_t* awName)
 void sithPlayer_Close(void)
 {
     // TODO: maybe track open/close state like in other modules
+
+    // Fixed: Reset IMP state (in case IMP is active).
+    //        This is required to avoid IMP being activated in the next level, as the state is not reset on open.
+    sithPlayer_g_impFireType = -1;
+
+    // Fixed: Reset player state to visible as it is not reset on open, nor in sithPlayerActions module and it will be present in the next level.
+    sithPlayerActions_g_bPlayerInvisible = 0;
+
+    // Fixed: Disable jewel flying (in case active) which resets global vars sithPlayerActions_g_bJewelFlying and sithPlayerActions_g_pPlasma
+    sithPlayerActions_DisableJewelFlying();
+
+    // Fixed: Disable swimming inventory, which could be set by jewel flying system or by cog script.
+    sithInventory_SetSwimmingInventory(sithPlayer_g_pLocalPlayerThing, /*bItemsAvailable=*/1);
+
     sithPlayer_g_pLocalPlayerThing = NULL;
     sithPlayer_g_pLocalPlayer      = NULL;
 }
@@ -87,7 +102,7 @@ const wchar_t* sithPlayer_GetLocalPlayerName(void)
 
 void J3DAPI sithPlayer_PlacePlayers(SithWorld* pWorld)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     size_t numPlayers = 0;
     if ( pWorld->lastThingIdx >= 0 )
@@ -235,12 +250,12 @@ void J3DAPI sithPlayer_Update(SithPlayer* pPlayer, float secDetaTime)
 
     // Did thing fall into falldeth sector?
     if ( !pThing->attach.flags
-      && (pThing->thingInfo.actorInfo.flags & SITH_AF_FALLKILLED) == 0
-      && pThing->moveType == SITH_MT_PHYSICS
-      && pThing->pInSector
-      && (pThing->pInSector->flags & SITH_SECTOR_FALLDEATH) != 0
-      && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0
-      && (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
+        && (pThing->thingInfo.actorInfo.flags & SITH_AF_FALLKILLED) == 0
+        && pThing->moveType == SITH_MT_PHYSICS
+        && pThing->pInSector
+        && (pThing->pInSector->flags & SITH_SECTOR_FALLDEATH) != 0
+        && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0
+        && (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
     {
         pThing->thingInfo.actorInfo.flags |= SITH_AF_FALLKILLED;
     }
@@ -375,7 +390,7 @@ void J3DAPI sithPlayer_NewPlayer(SithThing* pPlayer)
             sithCog_BroadcastMessage(SITHCOG_MSG_NEWPLAYER, SITHCOG_SYM_REF_THING, pPlayer->idx, SITHCOG_SYM_REF_THING, pPlayer->idx);
             if ( sithMessage_g_outputstream )
             {
-                sithDSSThing_UpdateState(pPlayer, SITHMESSAGE_SENDTOALL, 0xFFu);
+                sithDSSThing_UpdateState(pPlayer, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             }
         }
     }
@@ -390,7 +405,7 @@ int J3DAPI sithPlayer_GetPlayerNumByName(wchar_t* pwName)
 
     for ( size_t i = 0; i < sithPlayer_g_numPlayers; ++i )
     {
-        if ( (sithPlayer_g_aPlayers[i].flags & SITH_PLAYER_JOINEDGAME) != 0 && !_wcsicmp(sithPlayer_g_aPlayers[i].awName, pwName) )
+        if ( (sithPlayer_g_aPlayers[i].flags & SITH_PLAYER_JOINEDGAME) != 0 && wstreqi(sithPlayer_g_aPlayers[i].awName, pwName) )
         {
             return i;
         }
@@ -454,11 +469,11 @@ void J3DAPI sithPlayer_KillPlayer(SithThing* pPlayerThing)
 
     if ( pPlayerThing == sithPlayer_g_pLocalPlayerThing )
     {
-        sithDSSThing_Death(pPlayerThing, pPlayerThing, 1, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Death(pPlayerThing, pPlayerThing, 1, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     if ( (pPlayerThing->flags & SITH_TF_COGLINKED) == 0
-      || (sithCog_ThingSendMessage(pPlayerThing, pPlayerThing, SITHCOG_MSG_KILLED), (pPlayerThing->flags & SITH_TF_DESTROYED) == 0) )
+        || (sithCog_ThingSendMessage(pPlayerThing, pPlayerThing, SITHCOG_MSG_KILLED), (pPlayerThing->flags & SITH_TF_DESTROYED) == 0) )
     {
         sithSoundMixer_StopSoundThing(pPlayerThing, 0);
         sithThing_DetachAttachedThings(pPlayerThing);

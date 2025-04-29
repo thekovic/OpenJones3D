@@ -11,6 +11,10 @@
 
 J3D_EXTERN_C_START
 
+#define SITHWEAPON_HOLSTWEWHIP   1
+#define SITHWEAPON_HOLSTERPISTOL 2
+#define SITHWEAPON_HOLSTERBACK   3
+
 void sithWeapon_Open(void);
 void sithWeapon_Close(void); // Added
 
@@ -20,7 +24,7 @@ void J3DAPI sithWeapon_Update(SithThing* pThing, float secDeltaTime);
 
 int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId);
 
-int J3DAPI sithWeapon_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 
 SithThing* J3DAPI sithWeapon_WeaponFire(SithThing* pShooter, const SithThing* pProjectileTemplate, const rdVector3* pFireDir, rdVector3* pFirePos, tSoundHandle hFireSnd, SithPuppetSubMode submode, float extra, SithFireProjectileFlags projectileFlags, float secDeltaTime);
 SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const SithThing* pProjectileTemplate, const rdVector3* pFireDir, rdVector3* pFirePos, tSoundHandle hFireSnd, SithPuppetSubMode submode, float extra, SithFireProjectileFlags flags, float secDeltaTime);

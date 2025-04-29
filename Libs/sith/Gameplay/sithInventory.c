@@ -2,6 +2,7 @@
 #include <j3dcore/j3dhook.h>
 
 #include <sith/Cog/sithCog.h>
+#include <sith/Devices/sithComm.h>
 #include <sith/Dss/sithDSSThing.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithTemplate.h>
@@ -276,7 +277,7 @@ float J3DAPI sithInventory_ChangeInventory(SithThing* pThing, size_t typeId, flo
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
 
     SithInventoryType* pType = &sithInventory_g_aTypes[typeId];
-    if ( pThing->thingInfo.actorInfo.pPlayer == (SithPlayer*)-0x88 || (pType->flags & SITHINVENTORY_TYPE_REGISTERED) == 0 )
+    if ( pThing->thingInfo.actorInfo.pPlayer->aItems == NULL || (pType->flags & SITHINVENTORY_TYPE_REGISTERED) == 0 ) // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems == NULL ???
     {
         return 0.0f;
     }
@@ -390,7 +391,7 @@ int J3DAPI sithInventory_IsInventoryActivated(SithThing* pThing, size_t typeId)
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(typeId < STD_ARRAYLEN(sithInventory_g_aTypes));
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
-    return pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NUL ???
+    return pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NULL ???
         && (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) != 0
         && (pThing->thingInfo.actorInfo.pPlayer->aItems[typeId].status & SITHINVENTORY_ITEM_ACTIVATED) != 0;
 }
@@ -420,7 +421,6 @@ int J3DAPI sithInventory_IsInventoryAvailable(const SithThing* pThing, size_t ty
     SITH_ASSERTREL(typeId < STD_ARRAYLEN(sithInventory_g_aTypes));
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
 
-
     if ( pThing->thingInfo.actorInfo.pPlayer->aItems == NULL || (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) == 0 ) // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems == NULL ???
     {
         return 0;
@@ -436,8 +436,8 @@ void J3DAPI sithInventory_SetInventoryDisabled(SithThing* pThing, size_t typeId,
     SITH_ASSERTREL(typeId < STD_ARRAYLEN(sithInventory_g_aTypes));
 
     if ( pThing->thingInfo.actorInfo.pPlayer
-      && pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NUL ???
-      && (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
+        && pThing->thingInfo.actorInfo.pPlayer->aItems != NULL  // TODO: pThing->thingInfo.actorInfo.pPlayer->aItems != NUL ???
+        && (sithInventory_g_aTypes[typeId].flags & SITHINVENTORY_TYPE_REGISTERED) != 0 )
     {
         SithInventoryItem* pItem = &pThing->thingInfo.actorInfo.pPlayer->aItems[typeId];
         if ( bDisabled )
@@ -467,7 +467,7 @@ int J3DAPI sithInventory_IsWeapon(size_t typeID)
     return (sithInventory_g_aTypes[typeID].flags & SITHINVENTORY_TYPE_WEAPON) != 0;
 }
 
-double J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id)
+float J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id)
 {
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(id < STD_ARRAYLEN(sithInventory_g_aTypes));
@@ -476,7 +476,7 @@ double J3DAPI sithInventory_GetInventoryMinimum(SithThing* pThing, size_t id)
     return sithInventory_g_aTypes[id].min;
 }
 
-double J3DAPI sithInventory_GetInventoryMaximum(SithThing* pThing, size_t id)
+float J3DAPI sithInventory_GetInventoryMaximum(SithThing* pThing, size_t id)
 {
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(id < STD_ARRAYLEN(sithInventory_g_aTypes));
@@ -640,8 +640,8 @@ SithThing* J3DAPI sithInventory_CreateBackpack(SithThing* pThing)
         }
     }
 
-    sithDSSThing_CreateThing(pTemplate, pBackpack, pThing, NULL, NULL, NULL, 0xFFu, DPSEND_GUARANTEED);
-    sithDSSThing_UpdateState(pBackpack, SITHMESSAGE_SENDTOALL, 0xFFu);
+    sithDSSThing_CreateThing(pTemplate, pBackpack, pThing, NULL, NULL, NULL, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
+    sithDSSThing_UpdateState(pBackpack, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     return pBackpack;
 }
 

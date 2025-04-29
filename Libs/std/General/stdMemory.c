@@ -3,6 +3,9 @@
 #include <j3dcore/j3dhook.h>
 #include <std/RTI/symbols.h>
 
+#define STDMEMORY_HEADERMAGIC   0x12345678
+#define STD_MEMORY_FREE_PATTERN 0xDD
+
 #define stdMemory_aZoneData J3D_DECL_FAR_ARRAYVAR(stdMemory_aZoneData, tMemoryBlock(*)[8456])
 //#define bStartup J3D_DECL_FAR_VAR(bStartup, int)
 //#define bOpen J3D_DECL_FAR_VAR(bOpen, int)
@@ -28,9 +31,7 @@ void stdMemory_InstallHooks(void)
 void stdMemory_ResetGlobals(void)
 {
     memset(&stdMemory_aZoneData, 0, sizeof(stdMemory_aZoneData));
-    //memset(&bStartup, 0, sizeof(bStartup));
-    //memset(&bOpen, 0, sizeof(bOpen));
-    //memset(&stdMemory_g_curState, 0, sizeof(stdMemory_g_curState));
+    memset(&stdMemory_g_curState, 0, sizeof(stdMemory_g_curState));
 }
 
 void* J3DAPI stdMemory_BlockMalloc(size_t size)
@@ -137,8 +138,8 @@ void* J3DAPI stdMemory_Malloc(size_t size, const char* pFilename, size_t line)
 
     memset(&pData[1], 0xCC, size);
 
-    pData->magic = 0x12345678;
-    *(int*)((char*)&pData[1].number + size) = 0x12345678;
+    pData->magic = STDMEMORY_HEADERMAGIC;
+    *(int*)((char*)&pData[1].number + size) = STDMEMORY_HEADERMAGIC;
     stdMemory_g_curState.totalBytes += size;
 
     if ( stdMemory_g_curState.maxBytes <= stdMemory_g_curState.totalBytes )
@@ -158,10 +159,11 @@ void* J3DAPI stdMemory_Malloc(size_t size, const char* pFilename, size_t line)
 void J3DAPI stdMemory_Free(void* pBytes)
 {
     tMemoryHeader* pHeader = (tMemoryHeader*)((char*)pBytes - sizeof(tMemoryHeader));
-    STD_ASSERTREL((pHeader != ((void*)0)) && ((uint32_t)pHeader == pHeader->id));
-    STD_ASSERTREL(pHeader->magic == 0x12345678);
-    STD_ASSERTREL(*(uint32_t*)((uint8_t*)pBytes + pHeader->size) == 0x12345678);
-    memset(pBytes, 0xDD, pHeader->size);
+    STD_ASSERTREL((pHeader != NULL) && ((uint32_t)pHeader == pHeader->id));
+    STD_ASSERTREL(pHeader->magic == STDMEMORY_HEADERMAGIC);
+    STD_ASSERTREL(*(uint32_t*)((uint8_t*)pBytes + pHeader->size) == STDMEMORY_HEADERMAGIC);
+
+    memset(pBytes, STD_MEMORY_FREE_PATTERN, pHeader->size);
     if ( pHeader->pNext )
     {
         pHeader->pNext->pPrev = pHeader->pPrev;
@@ -189,7 +191,7 @@ void* J3DAPI stdMemory_Realloc(void* pBytes, size_t size, const char* pFilename,
     if ( size )
     {
         pHeader = (tMemoryHeader*)((char*)pBytes - sizeof(tMemoryHeader));
-        STD_ASSERTREL((pHeader != ((void*)0)) && ((uint32_t)pHeader == pHeader->id));
+        STD_ASSERTREL((pHeader != NULL) && ((uint32_t)pHeader == pHeader->id));
         v8 = pHeader->size;
         pHeap = (tMemoryHeap*)std_g_pHS->pRealloc(pHeader, size + sizeof(tMemoryHeap));
         if ( pHeap )
@@ -208,8 +210,8 @@ void* J3DAPI stdMemory_Realloc(void* pBytes, size_t size, const char* pFilename,
                 pHeap->header.pPrev->pNext = &pHeap->header;
             }
 
-            pHeap->header.magic = 0x12345678;
-            *(void**)((char*)&pHeap->pMemory + size) = (void*)0x12345678;
+            pHeap->header.magic = STDMEMORY_HEADERMAGIC;
+            *(void**)((char*)&pHeap->pMemory + size) = (void*)STDMEMORY_HEADERMAGIC;
             stdMemory_g_curState.totalBytes += size - v8;
             if ( stdMemory_g_curState.maxBytes <= stdMemory_g_curState.totalBytes )
             {

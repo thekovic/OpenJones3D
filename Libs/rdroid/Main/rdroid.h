@@ -18,7 +18,20 @@ J3D_EXTERN_C_START
 // Guessed macro: Older GPUs, particularly those in the DirectX 6 era, often used fixed - point math instead of floating - point for performance reasons.
 // The rhw value was frequently packed into a 16 - bit or 32 - bit fixed - point format, and 32767.5f is the middle value for a signed 16 - bit integer range(-32768 to 32767).
 // Using 1.0f / 32767.5f normalizes the W component, keeping it within a more precise range for the hardware.
-#define RD_FIXEDPOINT_RHW_SCALE (1.0f / 32767.5f) //0.000030518044f
+#define RD_FIXEDPOINT_RHW_SCALE_BASE (1.0f / 32767.5f) // 0.000030518044f
+
+// Predefined RHW scale factors.
+// Higher multipliers yield a larger RHW value, which moves vertices further from the camera.
+// These are useful for quickly selecting standard scaling values.
+#define RD_FIXEDPOINT_RHW_SCALE_X1   RD_FIXEDPOINT_RHW_SCALE(1) // same as RD_FIXEDPOINT_RHW_SCALE_BASE
+#define RD_FIXEDPOINT_RHW_SCALE_X2   RD_FIXEDPOINT_RHW_SCALE(2) // 0.000061036088
+#define RD_FIXEDPOINT_RHW_SCALE_X3   RD_FIXEDPOINT_RHW_SCALE(3) // 0.000091554131
+#define RD_FIXEDPOINT_RHW_SCALE_X4   RD_FIXEDPOINT_RHW_SCALE(4) // 0.00012207218
+#define RD_FIXEDPOINT_RHW_SCALE_X5   RD_FIXEDPOINT_RHW_SCALE(5) // 0.00015259022
+
+// Macro to compute an RHW scale factor for an arbitrary multiplier.
+// Use this macro when you need a non-standard scale factor instead of the predefined ones.
+#define RD_FIXEDPOINT_RHW_SCALE(multiplier) ((multiplier) * RD_FIXEDPOINT_RHW_SCALE_BASE)
 
 #define RDLOG_DEBUG(format, ...) \
     J3DLOG_DEBUG(rdroid_g_pHS, format, ##__VA_ARGS__)

@@ -55,37 +55,18 @@
 // Just static regression tests
 static_assert(SITHTHING_TYPEMASK(SITH_THING_FREE) == 0x01, "SITHTHING_TYPEMASK(SITH_THING_FREE) == 0x01");
 static_assert(SITHTHING_TYPEMASK(SITH_THING_PLAYER) == 0x400, "SITHTHING_TYPEMASK(SITH_THING_PLAYER) == 0x400");
+static_assert(SITHTHING_TYPEMASK(SITH_THING_FREE, SITH_THING_PLAYER) == 0x401, "SITHTHING_TYPEMASK(SITH_THING_FREE, SITH_THING_PLAYER) == 0x401");
 static_assert(SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER) == 0x404, "SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER) == 0x404");
 static_assert(SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER, SITH_THING_WEAPON) == 0x40C, "SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER, SITH_THING_WEAPON) == 0x40C");
 
 #define SITHTHING_MAXTHINGSTOPURGE 10
 
-#define SITHTHING_ARG_PARSED      0
-#define SITHTHING_ARG_NOTPARSED   1
-#define SITHTHING_ARG_BADSYNTAX   19
+#define SITHTHING_PARSEARG_PARSED      0
+#define SITHTHING_PARSEARG_NOTPARSED   1
+#define SITHTHING_PARSEARG_BADSYNTAX   19
 
-//#define sithThing_aStrThingTypes J3D_DECL_FAR_ARRAYVAR(sithThing_aStrThingTypes, const char*(*)[15])
-
-//#define sithThing_aStrThingArgs J3D_DECL_FAR_ARRAYVAR(sithThing_aStrThingArgs, const char*(*)[77])
-
-//#define sithThing_curSignature J3D_DECL_FAR_VAR(sithThing_curSignature, unsigned int)
-//#define sithThing_guidEntropy J3D_DECL_FAR_VAR(sithThing_guidEntropy, uint16_t)
-//#define sithThing_aWeaponCoefficients J3D_DECL_FAR_ARRAYVAR(sithThing_aWeaponCoefficients, float(*)[10])
-//#define sithThing_jeepHitMinVelocityZ J3D_DECL_FAR_VAR(sithThing_jeepHitMinVelocityZ, float)
-//#define sithThing_apUnsyncedThings J3D_DECL_FAR_ARRAYVAR(sithThing_apUnsyncedThings, SithThing*(*)[16])
-//#define sithThing_pParseHashtbl J3D_DECL_FAR_VAR(sithThing_pParseHashtbl, tHashTable*)
 #define sithThing_prevQuetzAttachInfo J3D_DECL_FAR_VAR(sithThing_prevQuetzAttachInfo, SithQuetzAttachInfo*)
-
-//#define sithThing_numFreeThings J3D_DECL_FAR_VAR(sithThing_numFreeThings, size_t)
-//#define sithThing_aFreeThingIdxs J3D_DECL_FAR_ARRAYVAR(sithThing_aFreeThingIdxs, int(*)[2304])
-
 #define sithThing_curQuetzAttachInfo J3D_DECL_FAR_VAR(sithThing_curQuetzAttachInfo, SithQuetzAttachInfo*)
-//#define sithThing_aSyncFlags J3D_DECL_FAR_ARRAYVAR(sithThing_aSyncFlags, int(*)[16])
-//#define sithThing_numUnsyncedThings J3D_DECL_FAR_VAR(sithThing_numUnsyncedThings, int)
-
-//#define sithThing_bThingStartup J3D_DECL_FAR_VAR(sithThing_bThingStartup, int) // 
-
-//#define sithThing_pfUnknownFunc J3D_DECL_FAR_VAR(sithThing_pfUnknownFunc, SithThingUnknownFunc)
 #define sithThing_dword_5612B8 J3D_DECL_FAR_VAR(sithThing_dword_5612B8, int)
 
 
@@ -101,7 +82,7 @@ size_t sithThing_aFreeThingIdxs[2304];
 
 size_t sithThing_numUnsyncedThings;
 SithThing* sithThing_apUnsyncedThings[16];
-int sithThing_aSyncFlags[STD_ARRAYLEN(sithThing_apUnsyncedThings)];
+SithThingSyncFlags sithThing_aSyncFlags[STD_ARRAYLEN(sithThing_apUnsyncedThings)];
 
 tHashTable* sithThing_pParseHashtbl = NULL; // Added: Init to null
 
@@ -243,7 +224,7 @@ void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash);
 void J3DAPI sithThing_ExitWater(SithThing* pThing, int bNoSplash);
 void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld);
 
-int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum);
+int J3DAPI sithThing_ParseThingArg(const StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum);
 int J3DAPI sithThing_ParseType(const char* pType);
 int J3DAPI sithThing_ParseThingPlacement(SithWorld* pWorld);
 
@@ -304,12 +285,12 @@ void sithThing_InstallHooks(void)
     J3D_HOOKFUNC(sithThing_DetachAttachedThings);
     J3D_HOOKFUNC(sithThing_PurgeGarbageThings);
 
-    J3D_HOOKFUNC(sithThing_LoadThingsText);
-    J3D_HOOKFUNC(sithThing_WriteThingsBinary);
-    J3D_HOOKFUNC(sithThing_LoadThingsBinary);
+    J3D_HOOKFUNC(sithThing_ReadStaticThingsListText);
+    J3D_HOOKFUNC(sithThing_WriteStaticThingsListBinary);
+    J3D_HOOKFUNC(sithThing_ReadStaticThingsListBinary);
 
-    // J3D_HOOKFUNC(sithThing_WriteThingListBinary);
-    // J3D_HOOKFUNC(sithThing_LoadThingListBinary);
+    // J3D_HOOKFUNC(sithThing_WriteThingsListBinary);
+    // J3D_HOOKFUNC(sithThing_ReadThingsListBinary);
 
     J3D_HOOKFUNC(sithThing_ParseArg);
     J3D_HOOKFUNC(sithThing_ParseThingArg);
@@ -329,139 +310,8 @@ void sithThing_InstallHooks(void)
 
 void sithThing_ResetGlobals(void)
 {
-    /* const char* sithThing_aStrThingTypes_tmp[15] = {
-       "free",
-       "camera",
-       "actor",
-       "weapon",
-       "debris",
-       "item",
-       "explosion",
-       "cog",
-       "ghost",
-       "corpse",
-       "player",
-       "particle",
-       "hint",
-       "sprite",
-       "polyline"
-     };
-     memcpy((char**)&sithThing_aStrThingTypes, &sithThing_aStrThingTypes_tmp, sizeof(sithThing_aStrThingTypes));*/
-
-     /*const char* sithThing_aStrThingArgs_tmp[77] = {
-       "--invalid--",
-       "type",
-       "collide",
-       "move",
-       "size",
-       "thingflags",
-       "timer",
-       "light",
-       "attach",
-       "soundclass",
-       "model3d",
-       "sprite",
-       "surfdrag",
-       "airdrag",
-       "staticdrag",
-       "mass",
-       "height",
-       "physflags",
-       "maxrotvel",
-       "maxvel",
-       "vel",
-       "angvel",
-       "typeflags",
-       "health",
-       "maxthrust",
-       "maxrotthrust",
-       "maxheadvel",
-       "maxheadyaw",
-       "jumpspeed",
-       "weapon",
-       "damage",
-       "mindamage",
-       "damageclass",
-       "explode",
-       "frame",
-       "numframes",
-       "puppet",
-       "blasttime",
-       "babytime",
-       "force",
-       "maxlight",
-       "range",
-       "flashrgb",
-       "expandtime",
-       "fadetime",
-       "aiclass",
-       "cog",
-       "respawn",
-       "material",
-       "rate",
-       "count",
-       "elementsize",
-       "particle",
-       "maxhealth",
-       "movesize",
-       "orientspeed",
-       "buoyancy",
-       "eyeoffset",
-       "minheadpitch",
-       "maxheadpitch",
-       "fireoffset",
-       "lightoffset",
-       "lightintensity",
-       "debris",
-       "creatething",
-       "minsize",
-       "pitchrange",
-       "yawrange",
-       "orient",
-       "userval",
-       "spritething",
-       "spritestart",
-       "spriteend",
-       "collheight",
-       "collwidth",
-       "voicecolor",
-       "perflevel"
-     };
-     memcpy((char**)&sithThing_aStrThingArgs, &sithThing_aStrThingArgs_tmp, sizeof(sithThing_aStrThingArgs));*/
-
-     //unsigned int sithThing_curSignature_tmp = 1u;
-     //memcpy(&sithThing_curSignature, &sithThing_curSignature_tmp, sizeof(sithThing_curSignature));
-
-     //uint16_t sithThing_guidEntropy_tmp = 1u;
-     //memcpy(&sithThing_guidEntropy, &sithThing_guidEntropy_tmp, sizeof(sithThing_guidEntropy));
-
-     /* float sithThing_aWeaponCoefficients_tmp[10] = {
-        0.0f,
-        0.0f,
-        0.0f,
-        0.025f,
-        0.050000001f,
-        0.059999999f,
-        0.059999999f,
-        0.0f,
-        0.0099999998f,
-        0.0f
-      };
-      memcpy(&sithThing_aWeaponCoefficients, &sithThing_aWeaponCoefficients_tmp, sizeof(sithThing_aWeaponCoefficients));*/
-
-      //float sithThing_jeepHitMinVelocityZ_tmp = -1.65f;
-      //memcpy(&sithThing_jeepHitMinVelocityZ, &sithThing_jeepHitMinVelocityZ_tmp, sizeof(sithThing_jeepHitMinVelocityZ));
-
-      //memset(&sithThing_apUnsyncedThings, 0, sizeof(sithThing_apUnsyncedThings));
-      //memset(&sithThing_pParseHashtbl, 0, sizeof(sithThing_pParseHashtbl));
     memset(&sithThing_prevQuetzAttachInfo, 0, sizeof(sithThing_prevQuetzAttachInfo));
-    //memset(&sithThing_aFreeThingIdxs, 0, sizeof(sithThing_aFreeThingIdxs));
     memset(&sithThing_curQuetzAttachInfo, 0, sizeof(sithThing_curQuetzAttachInfo));
-    //memset(&sithThing_aSyncFlags, 0, sizeof(sithThing_aSyncFlags));
-    //memset(&sithThing_numFreeThings, 0, sizeof(sithThing_numFreeThings));
-    //memset(&sithThing_numUnsyncedThings, 0, sizeof(sithThing_numUnsyncedThings));
-   // memset(&sithThing_bThingStartup, 0, sizeof(sithThing_bThingStartup));
-    //memset(&sithThing_pfUnknownFunc, 0, sizeof(sithThing_pfUnknownFunc));
     memset(&sithThing_dword_5612B8, 0, sizeof(sithThing_dword_5612B8));
 }
 
@@ -535,9 +385,9 @@ void sithThing_ResetGlobals(void)
 //    J3D_TRAMPOLINE_CALL(sithThing_DestroyThing, pThing);
 //}
 //
-//float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pPurpetrator, float damage, SithDamageType hitType)
+//float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pDamageThing, float damage, SithDamageType hitType)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_DamageThing, pThing, pPurpetrator, damage, hitType);
+//    return J3D_TRAMPOLINE_CALL(sithThing_DamageThing, pThing, pDamageThing, damage, hitType);
 //}
 //
 //float J3DAPI sithThing_ScaleCombatDamage(const SithThing* pThing, SithThing* pHitThing)
@@ -695,29 +545,29 @@ void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld)
     J3D_TRAMPOLINE_CALL(sithThing_PurgeGarbageThings, pWorld);
 }*/
 
-//int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
+//int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_LoadThingsText, pWorld, bSkip);
+//    return J3D_TRAMPOLINE_CALL(sithThing_ReadStaticThingsListText, pWorld, bSkip);
 //}
 //
-//int J3DAPI sithThing_WriteThingsBinary(tFileHandle fh, SithWorld* pWorld)
+//int J3DAPI sithThing_WriteStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_WriteThingsBinary, fh, pWorld);
+//    return J3D_TRAMPOLINE_CALL(sithThing_WriteStaticThingsListBinary, fh, pWorld);
 //}
 //
-//int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
+//int J3DAPI sithThing_ReadStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
 //{
-//    return J3D_TRAMPOLINE_CALL(sithThing_LoadThingsBinary, fh, pWorld);
+//    return J3D_TRAMPOLINE_CALL(sithThing_ReadStaticThingsListBinary, fh, pWorld);
 //}
 
-int J3DAPI sithThing_WriteThingListBinary(tFileHandle fh, SithWorld* pWorld, unsigned int numThings, SithThing* aThings)
+int J3DAPI sithThing_WriteThingsListBinary(tFileHandle fh, const SithWorld* pWorld, size_t numThings, const SithThing* aThings)
 {
-    return J3D_TRAMPOLINE_CALL(sithThing_WriteThingListBinary, fh, pWorld, numThings, aThings);
+    return J3D_TRAMPOLINE_CALL(sithThing_WriteThingsListBinary, fh, pWorld, numThings, aThings);
 }
 
-int J3DAPI sithThing_LoadThingListBinary(tFileHandle fh, SithWorld* pWorld, unsigned int numThings, SithThing* aThings, void (J3DAPI* pfInitThingFunc)(SithThing*))
+int J3DAPI sithThing_ReadThingsListBinary(tFileHandle fh, SithWorld* pWorld, size_t numThings, SithThing* aThings, void (J3DAPI* pfInitThingFunc)(SithThing*))
 {
-    return J3D_TRAMPOLINE_CALL(sithThing_LoadThingListBinary, fh, pWorld, numThings, aThings, pfInitThingFunc);
+    return J3D_TRAMPOLINE_CALL(sithThing_ReadThingsListBinary, fh, pWorld, numThings, aThings, pfInitThingFunc);
 }
 //
 //int J3DAPI sithThing_ParseArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing)
@@ -740,9 +590,9 @@ int J3DAPI sithThing_LoadThingListBinary(tFileHandle fh, SithWorld* pWorld, unsi
 //    return J3D_TRAMPOLINE_CALL(sithThing_ValidateThingPointer, pWorld, pThing);
 //}
 //
-//void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
+//void J3DAPI sithThing_SyncThing(SithThing* pThing, int flags)
 //{
-//    J3D_TRAMPOLINE_CALL(sithThing_SyncThing, pThing, syncFlags);
+//    J3D_TRAMPOLINE_CALL(sithThing_SyncThing, pThing, flags);
 //}
 //
 //int J3DAPI sithThing_SyncThings()
@@ -1025,7 +875,7 @@ void J3DAPI sithThing_ResetSwapList(SithThing* pThing)
 void J3DAPI sithThing_Update(float secDeltaTime, uint32_t msecDeltaTime)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     int curIndex      = 0;
     int lastThingIdx  = pWorld->lastThingIdx; // Fixed: Moved after assert
@@ -1180,8 +1030,8 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
     }
 
     if ( pThing->attach.flags
-      && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
-      && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_SCROLLING) != 0 )
+        && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
+        && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_SCROLLING) != 0 )
     {
         SithSurface* pSurface = pThing->attach.attachedToStructure.pSurfaceAttached;
         SITH_ASSERTREL(pSurface);
@@ -1198,9 +1048,9 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
     if ( pThing->moveDir.x == 0.0f && pThing->moveDir.y == 0.0f && pThing->moveDir.z == 0.0f )
     {
         if ( pThing->moveType == SITH_MT_PHYSICS
-          && (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0
-          && pThing->attach.attachedToStructure.pThingAttached->moveType == SITH_MT_PATH
-          && pThing->moveStatus != SITHPLAYERMOVE_HANGING )
+            && (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0
+            && pThing->attach.attachedToStructure.pThingAttached->moveType == SITH_MT_PATH
+            && pThing->moveStatus != SITHPLAYERMOVE_HANGING )
         {
             sithPhysics_FindFloor(pThing, 0);
         }
@@ -1218,8 +1068,8 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         }
 
         if ( (pThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0
-          && pThing->moveStatus != SITHPLAYERMOVE_UNKNOWN_83
-          && pThing->moveStatus != SITHPLAYERMOVE_JEEP_IMPACT )
+            && pThing->moveStatus != SITHPLAYERMOVE_UNKNOWN_83
+            && pThing->moveStatus != SITHPLAYERMOVE_JEEP_IMPACT )
         {
             // Update Jeep move 
 
@@ -1367,7 +1217,7 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         }
 
         pThing->distanceMoved = distanceMoved;
-        SITH_ASSERTREL(distanceMoved >= ((float)0.0));
+        SITH_ASSERTREL(distanceMoved >= 0.0f);
     }
 
     if ( pThing->pAttachedThing && (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0 )
@@ -1453,7 +1303,7 @@ int J3DAPI sithThing_GetThingIndex(const SithThing* pThing)
 
 SithThing* J3DAPI sithThing_GetGuidThing(int guid)
 {
-    if ( (guid & 0x80000000) != 0 )
+    if ( guid < 0 )
     {
         return NULL;
     }
@@ -1476,13 +1326,13 @@ SithThing* J3DAPI sithThing_GetGuidThing(int guid)
 
 void J3DAPI sithThing_DestroyThing(SithThing* pThing)
 {
-    SITH_ASSERTREL(pThing != ((void*)0));
+    SITH_ASSERTREL(pThing != NULL);
 
     pThing->flags |= SITH_TF_DESTROYED;
     sithCog_ThingSendMessage(pThing, 0, SITHCOG_MSG_REMOVED);
 }
 
-float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pPurpetrator, float damage, SithDamageType hitType)
+float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pDamageThing, float damage, SithDamageType hitType)
 {
     SITH_ASSERTREL(pThing);
 
@@ -1491,7 +1341,7 @@ float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pPurpetra
         return 0.0f;
     }
 
-    float retDamage = (float)(unsigned int)sithCog_ThingSendMessageEx(pThing, pPurpetrator, SITHCOG_MSG_DAMAGED, (int32_t)damage, hitType, 0, 0);
+    float retDamage = (float)(unsigned int)sithCog_ThingSendMessageEx(pThing, pDamageThing, SITHCOG_MSG_DAMAGED, (int32_t)damage, hitType, 0, 0);
     if ( retDamage > 0.0f )
     {
         switch ( pThing->type )
@@ -1500,19 +1350,19 @@ float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pPurpetra
             case SITH_THING_PLAYER:
             {
                 if ( ((hitType & SITH_DAMAGE_RAZOR_ROCK) != 0 || (hitType & SITH_DAMAGE_RAFT_LEAK) != 0)
-                  && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
+                    && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
                 {
-                    retDamage = retDamage - sithActor_DamageRaftActor(pThing, (SithThing*)pPurpetrator, retDamage, hitType);
+                    retDamage = retDamage - sithActor_DamageRaftActor(pThing, (SithThing*)pDamageThing, retDamage, hitType);
                 }
                 else
                 {
-                    retDamage = retDamage - sithActor_DamageActor(pThing, (SithThing*)pPurpetrator, retDamage, hitType);
+                    retDamage = retDamage - sithActor_DamageActor(pThing, (SithThing*)pDamageThing, retDamage, hitType);
                 }
 
             } break;
 
             case SITH_THING_WEAPON:
-                sithWeapon_DamageWeapon(pThing, pPurpetrator, retDamage);
+                sithWeapon_DamageWeapon(pThing, pDamageThing, retDamage);
                 break;
 
             case SITH_THING_COG:
@@ -1591,8 +1441,8 @@ float J3DAPI sithThing_ScaleCombatDamage(const SithThing* pThing, SithThing* pHi
     {
         // Fixed: Use cached damage type instead of pointer to pThing->thingInfo which wasn't initialized for explosion thing
         if ( damageType != SITH_DAMAGE_DROWN
-          && damageType != SITH_DAMAGE_CRUSH
-          && (pParent->thingInfo.actorInfo.flags & SITH_AF_FULLDAMAGE) == 0 )
+            && damageType != SITH_DAMAGE_CRUSH
+            && (pParent->thingInfo.actorInfo.flags & SITH_AF_FULLDAMAGE) == 0 )
         {
             return damage * 0.5f;
         }
@@ -1713,7 +1563,7 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
 int J3DAPI sithThing_AllocWorldThings(SithWorld* pWorld, size_t numThings)
 {
     SITH_ASSERTREL((numThings <= STD_ARRAYLEN(sithThing_aFreeThingIdxs)));
-    SITH_ASSERTREL(pWorld->aThings == ((void*)0));
+    SITH_ASSERTREL(pWorld->aThings == NULL);
     SITH_ASSERTREL(sithThing_bThingStartup);
 
     pWorld->aThings = (SithThing*)STDMALLOC(sizeof(SithThing) * numThings);
@@ -1873,9 +1723,9 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
         case SITH_THING_ACTOR:
         {
             if ( pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.red == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
             {
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
@@ -1897,9 +1747,9 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
         case SITH_THING_PLAYER:
         {
             if ( pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.red == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
-              && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
+                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
             {
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
@@ -2037,7 +1887,7 @@ void J3DAPI sithThing_ExitSector(SithThing* pThing)
 
 void J3DAPI sithThing_EnterSector(SithThing* pThing, SithSector* pNewSector, int bNoWaterSplash, int bNoNotify)
 {
-    SITH_ASSERTREL(pThing->pInSector == ((void*)0));
+    SITH_ASSERTREL(pThing->pInSector == NULL);
     SITH_ASSERTREL(pNewSector->pFirstThingInSector != pThing);
     SITH_ASSERTREL(pThing->type != SITH_THING_FREE);
 
@@ -2146,8 +1996,8 @@ void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash)
             pThing->moveInfo.physics.velocity.z *=  0.25f; // Slowdown fall
 
             if ( pThing->type == SITH_THING_WEAPON
-              && (pThing->moveInfo.physics.flags & SITH_PF_USEGRAVITY) == 0
-              && (pThing->thingInfo.weaponInfo.damageType & SITH_DAMAGE_IMPACT) != 0 )
+                && (pThing->moveInfo.physics.flags & SITH_PF_USEGRAVITY) == 0
+                && (pThing->thingInfo.weaponInfo.damageType & SITH_DAMAGE_IMPACT) != 0 )
             {
                 rdVector_Scale3Acc(&pThing->moveInfo.physics.velocity, 0.5f); // Slowdown weapon
                 /*    pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x * 0.5f;
@@ -2164,9 +2014,9 @@ void J3DAPI sithThing_ExitWater(SithThing* pThing, int bNoSplash)
 
     int bFalling = 0;
     if ( pThing == sithPlayer_g_pLocalPlayerThing
-      && pThing->moveStatus == SITHPLAYERMOVE_SWIMIDLE
-      && !pThing->thingInfo.actorInfo.bForceMovePlay
-      && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 )
+        && pThing->moveStatus == SITHPLAYERMOVE_SWIMIDLE
+        && !pThing->thingInfo.actorInfo.bForceMovePlay
+        && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 )
     {
         bFalling = 1;
         pThing->moveStatus = SITHPLAYERMOVE_FALLING;
@@ -2246,7 +2096,7 @@ SithThing* J3DAPI sithThing_Create(SithThingType type)
 
 void J3DAPI sithThing_SetPositionAndOrient(SithThing* pThing, const rdVector3* pos, const rdMatrix34* pOrient)
 {
-    SITH_ASSERTREL(pThing->pInSector == ((void*)0));
+    SITH_ASSERTREL(pThing->pInSector == NULL);
 
     rdVector_Copy3(&pThing->pos, pos);
     rdMatrix_Copy34(&pThing->orient, pOrient);
@@ -2301,7 +2151,7 @@ void J3DAPI sithThing_SetThingBasedOn(SithThing* pThing, const SithThing* pTempl
 
             case RD_THING_SPRITE3:
                 rdThing_SetSprite3(&pThing->renderData, pThing->renderData.data.pSprite3);
-                sithSprite_UpdateSize(pThing);
+                sithSprite_Create(pThing);
                 break;
         }
 
@@ -2328,7 +2178,7 @@ void J3DAPI sithThing_SetThingBasedOn(SithThing* pThing, const SithThing* pTempl
 SithThing* J3DAPI sithThing_CreateThingAtPos(const SithThing* pTemplate, const rdVector3* pos, const rdMatrix34* orient, SithSector* pSector, SithThing* pParent)
 {
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
-    SITH_ASSERTREL(pTemplate != ((void*)0));
+    SITH_ASSERTREL(pTemplate != NULL);
 
     SithThing* pThing = sithThing_Create(pTemplate->type);
     if ( !pThing )
@@ -2391,8 +2241,7 @@ SithThing* J3DAPI sithThing_CreateThingAtPos(const SithThing* pTemplate, const r
         return pThing;
     }
 
-
-    pCreateThing->flags |= SITH_TF_REMOTE; // 0x100 - SITH_TF_REMOTE
+    pCreateThing->flags |= SITH_TF_REMOTE;
     return pThing;
 }
 
@@ -2448,13 +2297,13 @@ SithThing* J3DAPI sithThing_CreateThing(const SithThing* pTemplate, SithThing* p
 
     if ( pNewThing->type == SITH_THING_SPRITE )
     {
-        sithSprite_UpdateSize(pNewThing);
+        sithSprite_Create(pNewThing);
     }
 
     if ( pNewThing->moveType == SITH_MT_PATH
-      && pMarker->moveType == SITH_MT_PATH
-      && pMarker->moveInfo.pathMovement.aFrames
-      && !pNewThing->moveInfo.pathMovement.aFrames )
+        && pMarker->moveType == SITH_MT_PATH
+        && pMarker->moveInfo.pathMovement.aFrames
+        && !pNewThing->moveInfo.pathMovement.aFrames )
     {
         sithPathMove_Create(pNewThing, pMarker, &offset);
     }
@@ -2483,7 +2332,7 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
     if ( (pSurface->flags & SITH_SURFACE_LAVA) != 0 )
     {
         if ( pThing->type == SITH_THING_PLAYER && (sithPuppet_g_bPlayerLeapForward == 1 || pThing->moveStatus == SITHPLAYERMOVE_LEAPFWD)
-          || (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
+            || (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
         {
             goto update_attachment;
         }
@@ -2494,10 +2343,10 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
         }
 
         if ( pThing->type != SITH_THING_PLAYER && pThing->type != SITH_THING_ACTOR
-          || (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0
-          || pThing->type == SITH_THING_ACTOR
-          && pThing->controlInfo.aiControl.pLocal
-          && (pThing->controlInfo.aiControl.pLocal->allowedSurfaceTypes & SITH_SURFACE_LAVA) != 0 )
+            || (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0
+            || pThing->type == SITH_THING_ACTOR
+            && pThing->controlInfo.aiControl.pLocal
+            && (pThing->controlInfo.aiControl.pLocal->allowedSurfaceTypes & SITH_SURFACE_LAVA) != 0 )
         {
             goto update_attachment;
         }
@@ -2527,12 +2376,15 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
     }
 
 update_attachment:
-    pThing->attach.flags = SITH_ATTACH_SURFACE;
-    rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices]);
-    pThing->attach.pFace = &pSurface->face;
-    pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
+    if ( (pThing->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) == 0 || (pSurface->flags & SITH_SURFACE_LAVA) == 0 ) // Added: Fixes not attaching dead player to lava surface
+    {
+        pThing->attach.flags = SITH_ATTACH_SURFACE;
+        rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices]);
+        pThing->attach.pFace = &pSurface->face;
+        pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
+    }
 
-    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED; // 0x100 - SITH_PF_ALIGNED
+    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED;
 
     if ( (pSurface->flags & SITH_SURFACE_SCROLLING) != 0 && pThing->moveType == SITH_MT_PHYSICS )
     {
@@ -2618,7 +2470,7 @@ update_attachment:
                 if ( impactForce >= 1.65f )
                 {
                     if ( (pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR)
-                      && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
+                        && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
                     {
                         sithActor_KillActor(pThing, pThing, SITH_DAMAGE_IMPACT);
                     }
@@ -2691,10 +2543,10 @@ update_attachment:
             }
 
             if ( (pThing->flags & SITH_TF_DYING) == 0
-              && (pThing->flags & SITH_TF_DESTROYED) == 0
-              && pThing->pPuppetClass
-              && pThing->moveType == SITH_MT_PHYSICS
-              && pThing->moveStatus != SITHPLAYERMOVE_CRAWL_STILL )
+                && (pThing->flags & SITH_TF_DESTROYED) == 0
+                && pThing->pPuppetClass
+                && pThing->moveType == SITH_MT_PHYSICS
+                && pThing->moveStatus != SITHPLAYERMOVE_CRAWL_STILL )
             {
                 if ( pThing->moveStatus == SITHPLAYERMOVE_FALLING || pThing->moveInfo.physics.deltaVelocity.z < -0.15000001f )
                 {
@@ -2860,8 +2712,8 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     if ( pThing->attach.flags )
     {
         if ( (pThing->attach.flags & SITH_TF_DESTROYED) != 0
-          && pThing->attach.attachedToStructure.pThingAttached == pAttachThing
-          && pThing->attach.pFace == pFace )
+            && pThing->attach.attachedToStructure.pThingAttached == pAttachThing
+            && pThing->attach.pFace == pFace )
         {
             return;
         }
@@ -2925,7 +2777,7 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
         {
             if ( impactForce >= 1.65f )
             {
-                if ( (pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR) && (pThing->thingInfo.actorInfo.flags & 8) == 0 )
+                if ( (pThing->type == SITH_THING_PLAYER || pThing->type == SITH_THING_ACTOR) && (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) == 0 )
                 {
                     sithActor_KillActor(pThing, pThing, SITH_DAMAGE_IMPACT);
                 }
@@ -2998,7 +2850,7 @@ void J3DAPI sithThing_AddThingToAttachedThings(SithThing* pThing, SithThing* pAt
     pThing->pNextAttachedThing = pAttachThing->pAttachedThing;
     if ( pThing->pNextAttachedThing )
     {
-        SITH_ASSERTREL(pThing->pNextAttachedThing->pPrevAttachedThing == ((void*)0));
+        SITH_ASSERTREL(pThing->pNextAttachedThing->pPrevAttachedThing == NULL);
         pThing->pNextAttachedThing->pPrevAttachedThing = pThing;
     }
 
@@ -3045,32 +2897,28 @@ void J3DAPI sithThing_AttachThingToThing(SithThing* pThing, SithThing* pAttachTh
 
 void J3DAPI sithThing_AttachThingToThingMesh(SithThing* pThing, SithThing* pAttachThing, int meshNum)
 {
-    SithThingType type;
-    SithSpriteInfo* pSpriteInfo;
-
     SITH_ASSERTREL(pThing);
     SITH_ASSERTREL(pAttachThing);
-    type = pThing->type;
-    switch ( type )
+
+    switch ( pThing->type )
     {
         case SITH_THING_ACTOR:
             pThing->thingInfo.actorInfo.pThingMeshAttached = pAttachThing;
-            pThing->thingInfo.actorInfo.attachMeshNum = meshNum;
+            pThing->thingInfo.actorInfo.attachMeshNum      = meshNum;
             break;
 
         case SITH_THING_EXPLOSION:
             if ( pThing->thingInfo.explosionInfo.pSprite )
             {
-                pSpriteInfo = (SithSpriteInfo*)&pThing->thingInfo.explosionInfo.pSprite->thingInfo;
+                SithSpriteInfo* pSpriteInfo = &pThing->thingInfo.explosionInfo.pSprite->thingInfo.spriteInfo;
                 pSpriteInfo->pThingMeshAttached = pAttachThing;
-                pSpriteInfo->attachMeshNum = meshNum;
+                pSpriteInfo->attachMeshNum      = meshNum;
             }
-
             break;
 
         case SITH_THING_SPRITE:
-            pThing->thingInfo.actorInfo.flags = (SithActorFlag)pAttachThing;// TODO: should point to spriteInfo.pThingMeshAttached 
-            pThing->thingInfo.spriteInfo.attachMeshNum = meshNum;
+            pThing->thingInfo.spriteInfo.pThingMeshAttached = pAttachThing;
+            pThing->thingInfo.spriteInfo.attachMeshNum      = meshNum;
             break;
 
         default:
@@ -3112,12 +2960,12 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
         }
 
         if ( pThing->type == SITH_THING_PLAYER
-          && (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0
-          && (pThing->attach.pFace->flags & RD_FF_3DO_WHIP_AIM) != 0
-          && (sithWhip_GetWhipSwingThing() || sithWhip_GetWhipClimbThing()) )
+            && (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0
+            && (pThing->attach.pFace->flags & RD_FF_3DO_WHIP_AIM) != 0
+            && (sithWhip_GetWhipSwingThing() || sithWhip_GetWhipClimbThing()) )
         {
             sithWhip_Reset();
-            sithWeapon_SendMessageAim(pThing, 0);
+            sithWeapon_SendMessageAim(pThing, /*bAim*/0);
         }
 
         if ( (pAttached->flags & SITH_TF_COGLINKED) != 0 && (pThing->flags & SITH_TF_REMOTE) == 0 )
@@ -3163,7 +3011,7 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
         if ( pThing->type == SITH_THING_PLAYER && (pSurf->flags & SITH_SURFACE_WHIPAIM) != 0 && (sithWhip_GetWhipSwingThing() || sithWhip_GetWhipClimbThing()) )
         {
             sithWhip_Reset();
-            sithWeapon_SendMessageAim(pThing, 0);
+            sithWeapon_SendMessageAim(pThing, /*bAim*/0);
         }
 
         if ( (pSurf->flags & SITH_TF_DESTROYED) != 0 && (pThing->flags & SITH_TF_REMOTE) == 0 )
@@ -3214,9 +3062,9 @@ void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld)
     }
 }
 
-int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     sithThing_curSignature = 1;
 
     if ( bSkip )
@@ -3226,7 +3074,7 @@ int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
     }
     else
     {
-        SITH_ASSERTREL(pWorld->aThings == ((void*)0));
+        SITH_ASSERTREL(pWorld->aThings == NULL);
         SITH_ASSERTREL(pWorld->numThings == 0);
     }
 
@@ -3259,12 +3107,12 @@ int J3DAPI sithThing_LoadThingsText(SithWorld* pWorld, int bSkip)
 }
 
 
-int J3DAPI sithThing_WriteThingsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithThing_WriteStaticThingsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
-    return sithThing_WriteThingListBinary(fh, pWorld, pWorld->numThings, pWorld->aThings);
+    return sithThing_WriteThingsListBinary(fh, pWorld, pWorld->numThings, pWorld->aThings);
 }
 
-int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithThing_ReadStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     size_t numThings = pWorld->numThings; // Note,sithThing_AllocWorldThings doesn't reset numThings to 0 but cache it anyway
     if ( sithThing_AllocWorldThings(pWorld, numThings) )
@@ -3272,7 +3120,7 @@ int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
         return 1;
     }
 
-    int error = sithThing_LoadThingListBinary(fh, pWorld, numThings, pWorld->aThings, NULL);
+    int error = sithThing_ReadThingsListBinary(fh, pWorld, numThings, pWorld->aThings, NULL);
     if ( error )
     {
         return error;
@@ -3296,7 +3144,7 @@ int J3DAPI sithThing_LoadThingsBinary(tFileHandle fh, SithWorld* pWorld)
 
 int J3DAPI sithThing_ParseArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing)
 {
-    SITH_ASSERTREL((pArg != ((void*)0)) && (pThing != ((void*)0)));
+    SITH_ASSERTREL((pArg != NULL) && (pThing != NULL));
     SITH_ASSERTREL((strlen(pArg->argName) > 0));
 
     size_t adjNum = (size_t)stdHashtbl_Find(sithThing_pParseHashtbl, pArg->argName);
@@ -3306,12 +3154,12 @@ int J3DAPI sithThing_ParseArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing
     }
 
     int parseRes = sithThing_ParseThingArg(pArg, pWorld, pThing, adjNum);
-    if ( parseRes == SITHTHING_ARG_PARSED )
+    if ( parseRes == SITHTHING_PARSEARG_PARSED )
     {
         return 0;
     }
 
-    if ( parseRes == SITHTHING_ARG_BADSYNTAX )
+    if ( parseRes == SITHTHING_PARSEARG_BADSYNTAX )
     {
         return 1;
     }
@@ -3373,7 +3221,7 @@ parse_error:
     return 0;
 }
 
-int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum)
+int J3DAPI sithThing_ParseThingArg(const StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum)
 {
     switch ( adjNum )
     {
@@ -3404,7 +3252,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
                     break;
             }
 
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_COLLIDE:
         {
@@ -3415,20 +3263,20 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             pThing->collide.type = coltype;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_MOVE:
         {
             if ( strcmp(pArg->argValue, "physics") == 0 )
             {
                 pThing->moveType = SITH_MT_PHYSICS;
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             if ( strcmp(pArg->argValue, "path") == 0 )
             {
                 pThing->moveType = SITH_MT_PATH;
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             if ( strcmp(pArg->argValue, "none") != 0 )
@@ -3437,7 +3285,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             pThing->moveType = SITH_MT_NONE;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_SIZE:
         {
@@ -3449,7 +3297,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
 
             pThing->collide.movesize = size;
             pThing->collide.size     = size;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_THINGFLAGS:
         {
@@ -3460,7 +3308,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             pThing->flags = flags;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_TIMER:
         {
@@ -3471,7 +3319,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             pThing->msecLifeLeft = (int32_t)(secLifeLeft * 1000.0f);
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_LIGHT:
         {
@@ -3499,18 +3347,18 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             pThing->light.minRadius = range;
 
             pThing->flags |= SITH_TF_EMITLIGHT;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_SOUNDCLASS:
         {
             pThing->pSoundClass = sithSoundClass_Load(pWorld, pArg->argValue);
             if ( pThing->pSoundClass )
             {
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             SITHLOG_ERROR("Could not load soundclass %s, line %d.\n", pArg->argValue, stdConffile_GetLineNumber());
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_MODEL3D:
         {
@@ -3543,12 +3391,12 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
 
             if ( pThing->collide.unkHeight != 0.0f )
             {
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             pThing->collide.height    = pThing->collide.movesize;
             pThing->collide.unkHeight = pThing->collide.height;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_SPRITE:
         {
@@ -3562,7 +3410,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             rdThing_SetSprite3(&pThing->renderData, pSprite3);
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_PUPPET:
         {
@@ -3572,7 +3420,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
                 rdPuppet_New(&pThing->renderData);
             }
 
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_AICLASS:
         {
@@ -3580,42 +3428,42 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             pThing->controlInfo.aiControl.pClass = sithAIClass_Load(pWorld, pArg->argValue);
             if ( !pThing->controlInfo.aiControl.pLocal || !pThing->controlInfo.aiControl.pClass )
             {
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             pThing->controlInfo.aiControl.pLocal->pClass       = pThing->controlInfo.aiControl.pClass;
             pThing->controlInfo.aiControl.pLocal->numInstincts = pThing->controlInfo.aiControl.pClass->numInstincts;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_COG:
         {
             pThing->pCog = sithCog_Load(pWorld, pArg->argValue);
             if ( !pThing->pCog )
             {
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             pThing->pCog->flags |= SITHCOG_LOCAL | SITHCOG_CLASS;
             pThing->flags       |= SITH_TF_COGLINKED;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_PARTICLE:
         {
             rdParticle* pParticle = sithParticle_Load(pWorld, pArg->argValue);
             if ( !pParticle )
             {
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             rdThing_FreeEntry(&pThing->renderData);
             rdThing_SetParticleCloud(&pThing->renderData, pParticle);
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_MOVESIZE:
         {
             if ( pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER )
             {
-                return SITHTHING_ARG_PARSED;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
             float movesize = strtof(pArg->argValue, NULL); // Changed: use strtof instead atof
@@ -3625,12 +3473,12 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             pThing->collide.movesize = movesize;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_CREATETHING:
         {
             pThing->pCreateThingTemplate = sithTemplate_GetTemplate(pArg->argValue);
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_ORIENT:
         {
@@ -3641,7 +3489,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             rdMatrix_BuildRotate34(&pThing->orient, &pyr);
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_USERVAL:
         {
@@ -3652,7 +3500,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
             }
 
             pThing->userval = userval;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_COLLHEIGHT:
         {
@@ -3664,7 +3512,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
 
             pThing->collide.height    = height;
             pThing->collide.unkHeight = height;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_COLLWIDTH:
         {
@@ -3676,7 +3524,7 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
 
             pThing->collide.width    = width;
             pThing->collide.unkWidth = width;
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_PERFLEVEL:
         {
@@ -3685,16 +3533,16 @@ int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, Sith
                 goto syntax_error;
             }
 
-            return SITHTHING_ARG_PARSED;
+            return SITHTHING_PARSEARG_PARSED;
         }
 
         default:
-            return SITHTHING_ARG_NOTPARSED;
+            return SITHTHING_PARSEARG_NOTPARSED;
     }
 
 syntax_error:
     SITHLOG_ERROR("Bad argument %s=%s, line %d in %s.\n", pArg->argName, pArg->argValue, stdConffile_GetFilename(), stdConffile_GetLineNumber());
-    return SITHTHING_ARG_BADSYNTAX;
+    return SITHTHING_PARSEARG_BADSYNTAX;
 }
 
 int J3DAPI sithThing_ParseType(const char* pType)
@@ -3756,7 +3604,7 @@ uint32_t J3DAPI sithThing_CalcThingChecksum(const SithThing* pTemplate, uint32_t
     return checksum;
 }
 
-void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
+void J3DAPI sithThing_SyncThing(SithThing* pThing, SithThingSyncFlags flags)
 {
     if ( sithMessage_g_outputstream )
     {
@@ -3764,7 +3612,7 @@ void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
         {
             if ( sithThing_apUnsyncedThings[i] == pThing )
             {
-                sithThing_aSyncFlags[i] |= syncFlags;
+                sithThing_aSyncFlags[i] |= flags;
                 return;
             }
         }
@@ -3776,7 +3624,7 @@ void J3DAPI sithThing_SyncThing(SithThing* pThing, int syncFlags)
         else
         {
             sithThing_apUnsyncedThings[sithThing_numUnsyncedThings] = pThing;
-            sithThing_aSyncFlags[sithThing_numUnsyncedThings++] = syncFlags;
+            sithThing_aSyncFlags[sithThing_numUnsyncedThings++] = flags;
         }
     }
 }
@@ -3785,25 +3633,25 @@ void sithThing_SyncThings(void)
 {
     for ( size_t i = 0; i < sithThing_numUnsyncedThings; ++i )
     {
-        if ( (sithThing_aSyncFlags[i] & 8) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_MOVEPOS) != 0 )
         {
-            sithDSSThing_MovePos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0x01u);
+            sithDSSThing_MovePos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
 
-        if ( (sithThing_aSyncFlags[i] & 4) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_FULL) != 0 )
         {
-            sithDSSThing_FullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_FullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             return;
         }
 
-        if ( (sithThing_aSyncFlags[i] & 2) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_STATE) != 0 )
         {
-            sithDSSThing_UpdateState(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0xFFu);
+            sithDSSThing_UpdateState(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
 
-        if ( (sithThing_aSyncFlags[i] & 1) != 0 )
+        if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_POS) != 0 )
         {
-            sithDSSThing_Pos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOALL, 0);
+            sithDSSThing_Pos(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, 0x00);
         }
     }
 
@@ -3963,7 +3811,7 @@ int J3DAPI sithThing_ParseThingPlacement(SithWorld* pWorld)
         return 0;
     }
 
-    SITH_ASSERTREL(pNewThing != ((void*)0)); // TODO: Why this check here???
+    SITH_ASSERTREL(pNewThing != NULL); // TODO: Why this check here???
     STD_STRCPY(pNewThing->aName, stdConffile_g_entry.aArgs[2].argValue);
     return 0;
 }

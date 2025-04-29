@@ -22,7 +22,7 @@
 #define SoundDriver_SetListenerPosition_ADDR 0x004DE530
 #define SoundDriver_ListenerCommitDeferred_ADDR 0x004DE650
 #define SoundDriver_SetPosAndVelocity_ADDR 0x004DE680
-#define SoundDriver_Update_ADDR 0x004DE790
+#define SoundDriver_Update3DSound_ADDR 0x004DE790
 #define SoundDriver_SetGlobals_ADDR 0x004DEA10
 #define SoundDriver_Use3DCaps_ADDR 0x004DEAD0
 #define SoundDriver_GetDSound_ADDR 0x004DEAE0
@@ -69,7 +69,7 @@
 #define Sound_GetMemoryUsage_ADDR 0x004DB3A0
 #define Sound_Load_ADDR 0x004DB3D0
 #define Sound_LoadStatic_ADDR 0x004DB860
-#define Sound_ResetBanks_ADDR 0x004DB8A0
+#define Sound_Reset_ADDR 0x004DB8A0
 #define Sound_EnableLoad_ADDR 0x004DBA20
 #define Sound_ExportStaticBank_ADDR 0x004DBA30
 #define Sound_ImportStaticBank_ADDR 0x004DBA40
@@ -103,13 +103,13 @@
 #define Sound_Update_ADDR 0x004DCCB0
 #define Sound_GenerateLipSync_ADDR 0x004DD180
 #define Sound_SetReverseSound_ADDR 0x004DD3D0
-#define Sound_GetNextHandle_ADDR 0x004DD3E0
-#define Sound_GetNextChannelHandle_ADDR 0x004DD420
+#define Sound_GenerateSoundHandle_ADDR 0x004DD3E0
+#define Sound_GenerateChannelHandle_ADDR 0x004DD420
 #define Sound_GetFreeCache_ADDR 0x004DD460
 #define Sound_IncreaseFreeCache_ADDR 0x004DD530
-#define Sound_BankCacheWriteSoundFilePath_ADDR 0x004DD560
+#define Sound_WriteSoundFilepathToBank_ADDR 0x004DD560
 #define Sound_GetDeltaTime_ADDR 0x004DD5A0
-#define Sound_soundbank_GetSoundInfo_ADDR 0x004DD5B0
+#define Sound_GetSoundInfo_ADDR 0x004DD5B0
 #define Sound_GetChannel_ADDR 0x004DD610
 #define Sound_GetChannelBySoundHandle_ADDR 0x004DD660
 #define Sound_GetSoundBufferData_ADDR 0x004DD6B0
@@ -145,7 +145,7 @@
 #define SoundDriver_pDS3DListener_ADDR 0x014E488C
 #define SoundDriver_curListenerPos_ADDR 0x014E4890
 #define SoundDriver_bUse3DCaps_ADDR 0x014E489C
-#define SoundDriver_g_bHas3DHW_ADDR 0x014E48A0
+#define SoundDriver_bHas3DHW_ADDR 0x014E48A0
 #define AudioLib_aStepTable_ADDR 0x0050A2A0
 #define AudioLib_aStepBits_ADDR 0x0050A358
 #define AudioLib_aIndexTableTable_ADDR 0x0054BBD0
@@ -154,7 +154,7 @@
 #define AudioLib_bDeltaTableInitialized_ADDR 0x014E7528
 #define Sound_cacheBlockSize_ADDR 0x0054B434
 #define Sound_maxVolume_ADDR 0x0054B438
-#define Sound_defaultDistanceFactor_ADDR 0x0054BB0C
+#define SoundDriver_defaultDistanceFactor_ADDR 0x0054BB0C
 #define Sound_pfGetThingInfoCallback_ADDR 0x014E1718
 #define Sound_aFades_ADDR 0x014E1720
 #define Sound_nextHandle_ADDR 0x014E1BA0
@@ -186,7 +186,7 @@
 #define Sound_memfileSize_ADDR 0x014E4438
 #define Sound_memfilePos_ADDR 0x014E443C
 #define Sound_pHS_ADDR 0x014E4440
-#define Sound_startupState_ADDR 0x014E4444
+#define Sound_state_ADDR 0x014E4444
 #define Sound_bReverseSound_ADDR 0x014E4448
 #define Sound_curUpdatePos_ADDR 0x014E4450
 

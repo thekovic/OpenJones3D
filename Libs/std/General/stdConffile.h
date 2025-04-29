@@ -52,6 +52,7 @@ int stdConffile_ReadLine(void);
 int stdConffile_ScanLine(const char* pFormat, ...); // Added
 
 tFileHandle stdConffile_GetFileHandle(void);
+tFileHandle stdConffile_GetWriteFileHandle(void); // Added
 size_t stdConffile_GetLineNumber(void);
 
 const char* stdConffile_GetFilename(void);

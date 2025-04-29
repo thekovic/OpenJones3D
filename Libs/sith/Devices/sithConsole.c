@@ -1,114 +1,358 @@
 #include "sithConsole.h"
 #include <j3dcore/j3dhook.h>
+
+#include <sith/Main/sithCommand.h>
 #include <sith/RTI/symbols.h>
 
-#define sithConsole_startIndex J3D_DECL_FAR_VAR(sithConsole_startIndex, int)
-#define sithConsole_endIndex2 J3D_DECL_FAR_VAR(sithConsole_endIndex2, int)
-#define sithConsole_apCommands J3D_DECL_FAR_VAR(sithConsole_apCommands, SithConsoleCommand*)
-#define sithConsole_endIndex J3D_DECL_FAR_VAR(sithConsole_endIndex, int)
-#define sithConsole_aBuffers J3D_DECL_FAR_ARRAYVAR(sithConsole_aBuffers, char(*)[32][128])
-#define sithConsole_pTable J3D_DECL_FAR_VAR(sithConsole_pTable, tHashTable*)
-#define sithConsole_bOpen J3D_DECL_FAR_VAR(sithConsole_bOpen, int)
-#define sithConsole_bStarted J3D_DECL_FAR_VAR(sithConsole_bStarted, int)
-#define sithConsole_maxRegisteredCommands J3D_DECL_FAR_VAR(sithConsole_maxRegisteredCommands, int)
-#define sithConsole_numRegistredCommands J3D_DECL_FAR_VAR(sithConsole_numRegistredCommands, int)
-#define sithConsole_bufferSize J3D_DECL_FAR_VAR(sithConsole_bufferSize, int)
-#define sithConsole_pfPrintString J3D_DECL_FAR_VAR(sithConsole_pfPrintString, SithConsoleWriteTextFunc)
-#define sithConsole_pfPrintWString J3D_DECL_FAR_VAR(sithConsole_pfPrintWString, SithConsoleWriteWideTextFunc)
-#define sithConsole_pfFlush J3D_DECL_FAR_VAR(sithConsole_pfFlush, SithConsoleFlush)
+#include <std/General/stdHashtbl.h>
+#include <std/General/stdMemory.h>
+#include <std/General/stdUtil.h>
+
+#include <stdio.h>
+#include <string.h>
+
+#define SITHCONSOLE_MAXLINES 32
+#define SITHCONSOLE_LINELEN  128
+
+static bool bOpen;
+static bool bStarted;
+
+static SithConsoleFlags consoleflags = 0x0; // Added
+
+static char aBuffers[SITHCONSOLE_MAXLINES][SITHCONSOLE_LINELEN];
+static size_t bufferSize;
+static size_t curFlushIndex;
+static size_t endPrintIndex;
+static size_t curPrintIndex;
+
+static tHashTable* pCommandTable;
+static SithConsoleCommand* apCommands;
+static size_t maxRegisteredCommands;
+static size_t numRegistredCommands;
+
+static SithConsoleWriteTextFunc pfPrintString;
+static SithConsoleWriteWideTextFunc pfPrintWString;
+static SithConsoleFlushFunc pfFlushFunc;
+
+int J3DAPI sithConsole_CreateCommandTable(size_t size);
+void sithConsole_FreeCommandTable(void);
 
 void sithConsole_InstallHooks(void)
 {
-    // Uncomment only lines for functions that have full definition and doesn't call original function (non-thunk functions)
-
-    // J3D_HOOKFUNC(sithConsole_Startup);
-    // J3D_HOOKFUNC(sithConsole_Shutdown);
-    // J3D_HOOKFUNC(sithConsole_Open);
-    // J3D_HOOKFUNC(sithConsole_Close);
-    // J3D_HOOKFUNC(sithConsole_PrintString);
-    // J3D_HOOKFUNC(sithConsole_PrintWString);
-    // J3D_HOOKFUNC(sithConsole_ExeCommand);
-    // J3D_HOOKFUNC(sithConsole_Flush);
-    // J3D_HOOKFUNC(sithConsole_RegisterCommand);
-    // J3D_HOOKFUNC(sithConsole_RegisterPrintFunctions);
-    // J3D_HOOKFUNC(sithConsole_CreateCommandTable);
-    // J3D_HOOKFUNC(sithConsole_FreeCommandTable);
+    J3D_HOOKFUNC(sithConsole_Startup);
+    J3D_HOOKFUNC(sithConsole_Shutdown);
+    J3D_HOOKFUNC(sithConsole_Open);
+    J3D_HOOKFUNC(sithConsole_Close);
+    J3D_HOOKFUNC(sithConsole_PrintString);
+    J3D_HOOKFUNC(sithConsole_PrintWString);
+    J3D_HOOKFUNC(sithConsole_ExeCommand);
+    J3D_HOOKFUNC(sithConsole_Flush);
+    J3D_HOOKFUNC(sithConsole_RegisterCommand);
+    J3D_HOOKFUNC(sithConsole_RegisterPrintFunctions);
+    J3D_HOOKFUNC(sithConsole_CreateCommandTable);
+    J3D_HOOKFUNC(sithConsole_FreeCommandTable);
 }
 
 void sithConsole_ResetGlobals(void)
+{}
+
+int sithConsole_Startup(void)
 {
-    memset(&sithConsole_startIndex, 0, sizeof(sithConsole_startIndex));
-    memset(&sithConsole_endIndex2, 0, sizeof(sithConsole_endIndex2));
-    memset(&sithConsole_apCommands, 0, sizeof(sithConsole_apCommands));
-    memset(&sithConsole_endIndex, 0, sizeof(sithConsole_endIndex));
-    memset(&sithConsole_aBuffers, 0, sizeof(sithConsole_aBuffers));
-    memset(&sithConsole_pTable, 0, sizeof(sithConsole_pTable));
-    memset(&sithConsole_bOpen, 0, sizeof(sithConsole_bOpen));
-    memset(&sithConsole_bStarted, 0, sizeof(sithConsole_bStarted));
-    memset(&sithConsole_maxRegisteredCommands, 0, sizeof(sithConsole_maxRegisteredCommands));
-    memset(&sithConsole_numRegistredCommands, 0, sizeof(sithConsole_numRegistredCommands));
-    memset(&sithConsole_bufferSize, 0, sizeof(sithConsole_bufferSize));
-    memset(&sithConsole_pfPrintString, 0, sizeof(sithConsole_pfPrintString));
-    memset(&sithConsole_pfPrintWString, 0, sizeof(sithConsole_pfPrintWString));
-    memset(&sithConsole_pfFlush, 0, sizeof(sithConsole_pfFlush));
+    SITH_ASSERTREL(!bStarted);
+
+    bufferSize            = 0;
+    maxRegisteredCommands = 0;
+    numRegistredCommands  = 0;
+
+    pfPrintString  = NULL;
+    pfPrintWString = NULL;
+    pfFlushFunc    = NULL;
+
+    bStarted = true;
+    return 0;
 }
 
-int J3DAPI sithConsole_Startup()
+void sithConsole_Shutdown(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithConsole_Startup);
+    bufferSize            = 0;
+    maxRegisteredCommands = 0;
+    numRegistredCommands  = 0;
+
+    pfPrintString  = NULL;
+    pfPrintWString = NULL;
+    pfFlushFunc    = NULL;
+
+    if ( bOpen ) {
+        sithConsole_Close();
+    }
+
+    bStarted = false;
 }
 
-void J3DAPI sithConsole_Shutdown()
+int J3DAPI sithConsole_Open(size_t numLines, size_t numCommands)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_Shutdown);
+    if ( !bStarted ) {
+        return 1;
+    }
+
+    if ( bOpen ) {
+        return 1;
+    }
+
+    // Added: bound check
+    if ( numLines > SITHCONSOLE_MAXLINES )
+    {
+        SITHLOG_ERROR("Failed to create console. Requested too big print buffer size! max=%d\n", SITHCONSOLE_MAXLINES);
+        return 1;
+    }
+
+    memset(aBuffers, 0, numLines * SITHCONSOLE_LINELEN);
+    bufferSize = numLines;
+
+    endPrintIndex = 0;
+    curPrintIndex = 0;
+    curFlushIndex = 0;
+
+    if ( !sithConsole_CreateCommandTable(numCommands) )
+    {
+        SITHLOG_ERROR("Failed to create console.\n");
+        return 1;
+    }
+
+    sithCommand_RegisterCommands();
+
+    bOpen = true;
+    return 0;
 }
 
-int J3DAPI sithConsole_Open(int bufSize, int numCommands)
+void sithConsole_Close(void)
 {
-    return J3D_TRAMPOLINE_CALL(sithConsole_Open, bufSize, numCommands);
+    if ( !bOpen ) {
+        SITHLOG_STATUS("sithConsole closed when not opened.\n");
+    }
+
+    bufferSize            = 0;
+    maxRegisteredCommands = 0;
+    numRegistredCommands  = 0;
+
+    sithConsole_FreeCommandTable();
+    bOpen = false;
 }
 
-void sithConsole_Close()
+SithConsoleFlags sithConsole_GetConsoleFlags(void)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_Close);
+    return consoleflags;
+}
+
+void J3DAPI sithConsole_SetConsoleFlags(SithConsoleFlags flags)
+{
+    consoleflags |= flags;
+}
+
+void J3DAPI sithConsole_ClearConsoleFlags(SithConsoleFlags flags)
+{
+    consoleflags &= ~flags;
 }
 
 void J3DAPI sithConsole_PrintString(const char* pString)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_PrintString, pString);
+    SITH_ASSERTREL(pString);
+
+    if ( bOpen )
+    {
+        if ( pfPrintString )
+        {
+            pfPrintString(pString);
+        }
+        else
+        {
+            const size_t len = strlen(pString);
+            if ( len > SITHCONSOLE_LINELEN - 1 )
+            {
+                SITHLOG_ERROR("Console string too long (%d).  Truncated.\n", len);
+            }
+
+            curPrintIndex = (curPrintIndex + 1) % bufferSize;
+            if ( curPrintIndex == endPrintIndex )
+            {
+                endPrintIndex = (endPrintIndex + 1) % bufferSize;
+            }
+
+            STD_STRCPY(aBuffers[curPrintIndex], pString);
+        }
+    }
 }
 
-void J3DAPI sithConsole_PrintWString(wchar_t* pwString)
+void J3DAPI sithConsole_PrintWString(const wchar_t* pwString)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_PrintWString, pwString);
+    SITH_ASSERTREL(pwString && bOpen);
+    if ( pfPrintWString )
+    {
+        pfPrintWString(pwString);
+    }
 }
 
 int J3DAPI sithConsole_ExeCommand(const char* pLine)
 {
-    return J3D_TRAMPOLINE_CALL(sithConsole_ExeCommand, pLine);
+    SITH_ASSERTREL(bOpen);
+    SITH_ASSERTREL(pLine);
+
+    // Fixed: Copy line to buffer before convert to lower str
+    char aLine[128];
+    STD_STRCPY(aLine, pLine);
+    stdUtil_ToLower(aLine);// Note, was calling _strlwr((char*)pLine);
+
+    const char* pCmdName = strtok(aLine, ", \t\n\r");
+    if ( !pCmdName ) {
+        return 0;
+    }
+
+    SithConsoleCommand* pFunc = (SithConsoleCommand*)stdHashtbl_Find(pCommandTable, pCmdName);
+    if ( !pFunc || (pFunc->flags & SITHCONSOLE_DEVMODE) != 0 && (consoleflags & SITHCONSOLE_DEVMODE) == 0 )
+    {
+        SITHCONSOLE_PRINTF("Console command %s not recognized.", pCmdName);
+        return 0;
+    }
+
+    SITH_ASSERTREL(pFunc->pfFunc);
+    const char* pArg = strtok(NULL, "\n\r");
+    pFunc->pfFunc(pFunc, pArg);
+    return 1;
 }
 
 void sithConsole_Flush(void)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_Flush);
+    if ( pfFlushFunc )
+    {
+        pfFlushFunc();
+    }
+    else
+    {
+        while ( curFlushIndex != curPrintIndex )
+        {
+            curFlushIndex = (curFlushIndex + 1) % bufferSize;
+            SITHLOG_STATUS("%s", aBuffers[curFlushIndex]);
+        }
+    }
 }
 
 int J3DAPI sithConsole_RegisterCommand(SithConsoleFunction pfFunc, const char* pName, int flags)
 {
-    return J3D_TRAMPOLINE_CALL(sithConsole_RegisterCommand, pfFunc, pName, flags);
+    SithConsoleCommand* pCommand;
+
+    SITH_ASSERTREL(pfFunc && pName);
+    if ( numRegistredCommands == maxRegisteredCommands )
+    {
+        SITHLOG_ERROR("Tried to register > %d console funcs.\n", maxRegisteredCommands);
+        return 0;
+    }
+
+    pCommand = (SithConsoleCommand*)stdHashtbl_Find(pCommandTable, pName);
+    if ( pCommand )
+    {
+        // TODO: Add log for func getting overridden
+        pCommand->pfFunc = pfFunc;
+        pCommand->flags  = flags;
+    }
+    else
+    {
+        STD_STRCPY(apCommands[numRegistredCommands].aName, pName);
+
+        apCommands[numRegistredCommands].pfFunc = pfFunc;
+        apCommands[numRegistredCommands].flags  = flags;
+
+        stdHashtbl_Add(
+            pCommandTable,
+            apCommands[numRegistredCommands].aName,
+            &apCommands[numRegistredCommands]
+        );
+        ++numRegistredCommands;
+    }
+
+    return 1;
 }
 
-void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlush pfFlush)
+void J3DAPI sithConsole_RegisterPrintFunctions(SithConsoleWriteTextFunc pfWriteText, SithConsoleWriteWideTextFunc pfWriteWText, SithConsoleFlushFunc pfFlush)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_RegisterPrintFunctions, pfWriteText, pfWriteWText, pfFlush);
+    pfPrintString  = pfWriteText;
+    pfPrintWString = pfWriteWText;
+    pfFlushFunc    = pfFlush;
 }
 
-int J3DAPI sithConsole_CreateCommandTable(int size)
+int J3DAPI sithConsole_Help(const SithConsoleCommand* pFunc, const char* pArg)
 {
-    return J3D_TRAMPOLINE_CALL(sithConsole_CreateCommandTable, size);
+    J3D_UNUSED(pFunc);
+    J3D_UNUSED(pArg);
+
+    char aLine[56] = { 0 }; // Added: Init to 0
+
+    // Removed
+    //*(uint16_t*)aLine = word_5FA420; // ???
+    //memset(&aLine[2], 0, 54);
+
+    size_t curPos = 0;
+    sithConsole_PrintString("The following commands are available:");
+    for ( size_t i = 0; i < numRegistredCommands; ++i )
+    {
+        const SithConsoleCommand* pCommand = &apCommands[i];
+        if ( (pCommand->flags & SITHCONSOLE_DEVMODE) == 0 || (consoleflags & SITHCONSOLE_DEVMODE) != 0 ) // Added
+        {
+            if ( curPos + strlen(pCommand->aName) + 5 >= 56 )
+            {
+                sithConsole_PrintString(aLine);
+                curPos = 0;
+            }
+
+            curPos += sprintf_s(&aLine[curPos], STD_ARRAYLEN(aLine) - curPos, "    %s", pCommand->aName);
+        }
+    }
+
+    sithConsole_PrintString(aLine);
+    return 1;
 }
 
-void J3DAPI sithConsole_FreeCommandTable()
+int J3DAPI sithConsole_CreateCommandTable(size_t size)
 {
-    J3D_TRAMPOLINE_CALL(sithConsole_FreeCommandTable);
+    SITH_ASSERTREL(size > 0);
+    apCommands = (SithConsoleCommand*)STDMALLOC(sizeof(SithConsoleCommand) * size);
+    pCommandTable = stdHashtbl_New(2 * size);
+
+    if ( !apCommands || !pCommandTable )
+    {
+        if ( apCommands )
+        {
+            stdMemory_Free(apCommands);
+            apCommands = NULL;
+        }
+
+        if ( !pCommandTable )
+        {
+            return 0;
+        }
+
+        stdHashtbl_Free(pCommandTable);
+        pCommandTable = NULL;
+        return 0;
+    }
+    else
+    {
+        memset(apCommands, 0, sizeof(SithConsoleCommand) * size);
+        maxRegisteredCommands = size;
+        return 1;
+    }
+}
+
+void sithConsole_FreeCommandTable(void)
+{
+    if ( apCommands )
+    {
+        stdMemory_Free(apCommands);
+        apCommands = NULL;
+    }
+
+    if ( pCommandTable )
+    {
+        stdHashtbl_Free(pCommandTable);
+        pCommandTable = NULL;
+    }
 }

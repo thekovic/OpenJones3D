@@ -35,7 +35,7 @@ int J3DAPI rdCanvas_NewEntry(rdCanvas* pCanvas, int flags, tVBuffer* pVBuffer, i
 {
     pCanvas->flags    = flags;
     pCanvas->pVBuffer = pVBuffer;
-    if ( (flags & 1) != 0 )
+    if ( (flags & 0x01) != 0 )
     {
         pCanvas->rect.left   = left;
         pCanvas->rect.top    = top;

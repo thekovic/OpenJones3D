@@ -165,7 +165,7 @@ int J3DAPI JonesDialog_InitCursorTracking(int* pAlreadyInited)
     if ( !ClipCursor(&recz) )
     {
         dwError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_InitCursorTracking: Error calling ClipCursor().  Reason: %s", JonesDialog_szErrorBuffer);
         JonesDialog_ResetCursorTracking();
         return 1;
@@ -283,7 +283,7 @@ int J3DAPI JonesDialog_TrackCursor(int bReDraw)
         SRCAND) )
     {
         dwError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_TrackCursor: BitBlt of cursor, SRCAND failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
@@ -302,7 +302,7 @@ int J3DAPI JonesDialog_TrackCursor(int bReDraw)
             SRCPAINT) )
         {
             LastError = GetLastError();
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, 0xFFu, 0);
+            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
             STDLOG_ERROR("JonesDialog_TrackCursor: BitBlt of cursor, SRCPAINT failed.  Reason: %s", JonesDialog_szErrorBuffer);
         }
 
@@ -320,7 +320,7 @@ int J3DAPI JonesDialog_TrackCursor(int bReDraw)
         SRCPAINT) )
     {
         dwError_1 = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, 255u, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_TrackCursor: BitBlt of cursor, SRCPAINT failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
@@ -396,7 +396,7 @@ int J3DAPI JonesDialog_CopyRectToDrawBuffer(GDIDIBSectionInfo* pInfo, const PPOI
                         SRCCOPY) )
                     {
                         dwError = GetLastError();
-                        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                         STDLOG_ERROR("JonesDialog_CopyRectToDrawBuffer: BitBlt to virtual desktop failed.  Reason: %s", JonesDialog_szErrorBuffer);
                     }
 
@@ -415,7 +415,7 @@ int J3DAPI JonesDialog_CopyRectToDrawBuffer(GDIDIBSectionInfo* pInfo, const PPOI
                     SRCCOPY) )
                 {
                     dwError_1 = GetLastError();
-                    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                     STDLOG_ERROR("JonesDialog_CopyRectToDrawBuffer: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
                 }
 
@@ -468,7 +468,7 @@ int J3DAPI JonesDialog_RestoreBackground(HDC hdc, HWND hwnd, LPPOINT a3, LPRECT 
     }
 
     dwError = GetLastError();
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
     STDLOG_ERROR("JonesDialog_RestoreBackground: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
     return 1;
 }
@@ -481,7 +481,7 @@ int J3DAPI JonesDialog_ShowDialog(LPCSTR lpTemplateName, HWND hWnd, DLGPROC lpDi
     JonesDialogGameState state;
     int v9;
 
-    hInstance = (HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE);
+    hInstance = (HINSTANCE)GetWindowLongPtr(hWnd, GWL_HINSTANCE);
     if ( !JonesMain_HasStarted() )
     {
         return DialogBoxParam(hInstance, lpTemplateName, hWnd, lpDialogFunc, dwInitParam);
@@ -560,7 +560,6 @@ void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowMo
     {
         JonesDialog_FreeOffScreenDIBSection();
     }
-
     else if ( JonesDialog_AllocScreenDBISection(&pState->bScreenDBIAllocSkipped) )
     {
         JonesDialog_FreeScreenDIBSection();
@@ -591,16 +590,16 @@ void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowMo
                 SRCCOPY) )
             {
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_SetGameState: BitBlt of background to virtual desktop failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
             hDC = GetDC(0);
             if ( hDC != JonesDialog_GDIDIBSectionInfo.hScreenDC
-              && !BitBlt(hDC, 0, 0, width, height, JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, SRCCOPY) )
+                && !BitBlt(hDC, 0, 0, width, height, JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, SRCCOPY) )
             {
                 dwError_1 = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError_1, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_SetGameState: BitBlt of background to actual desktop failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
@@ -694,7 +693,7 @@ INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wPa
     uint32_t width;
 
     lpPrevWndFunc = 0;
-    lpData = (JonesDialogData*)GetWindowLong(hwnd, GWL_USERDATA);
+    lpData = (JonesDialogData*)GetWindowLongPtr(hwnd, GWL_USERDATA);
     if ( lpData && lpData->dwSize == sizeof(JonesDialogData) )
     {
         lpPrevWndFunc = (WNDPROC)lpData->lpfnPrevHook;
@@ -709,14 +708,14 @@ INT_PTR CALLBACK JonesDialog_SubclassDialogProc(HWND hwnd, UINT uMsg, WPARAM wPa
     }
     else if ( uMsg == WM_INITDIALOG )
     {
-        SetWindowLong(hwnd, GWL_USERDATA, lParam);// TODO: cast lParam which is JonesDialogData  here
+        SetWindowLongPtr(hwnd, GWL_USERDATA, lParam);// TODO: cast lParam which is JonesDialogData  here
         lpData = (JonesDialogData*)lParam;
         if ( lParam && lpData->dwSize == sizeof(JonesDialogData) )
         {
             lpPrevWndFunc = (WNDPROC)lpData->lpfnPrevHook;
-            lpData->lpfnWndProc = (WNDPROC)GetWindowLong(hwnd, GWL_WNDPROC);
-            lpData->lpUserData = (LPVOID)GetWindowLong(hwnd, GWL_USERDATA);
-            SetWindowLong(hwnd, GWL_WNDPROC, (LONG)JonesDialog_SubclassDialogWindowProc);
+            lpData->lpfnWndProc = (WNDPROC)GetWindowLongPtr(hwnd, GWL_WNDPROC);
+            lpData->lpUserData = (LPVOID)GetWindowLongPtr(hwnd, GWL_USERDATA);
+            SetWindowLongPtr(hwnd, GWL_WNDPROC, (LONG)JonesDialog_SubclassDialogWindowProc);
             lParam = lpData->lPrevCustData;
         }
 
@@ -803,7 +802,7 @@ LRESULT CALLBACK JonesDialog_SubclassDialogWindowProc(HWND hwnd, UINT uMsg, WPAR
     int bCanRenderWindowed;
 
     lpPrevWndFunc = 0;
-    lpSubclassData = (JonesDialogData*)GetWindowLong(hwnd, GWL_USERDATA);
+    lpSubclassData = (JonesDialogData*)GetWindowLongPtr(hwnd, GWL_USERDATA);
     if ( lpSubclassData && lpSubclassData->dwSize == sizeof(JonesDialogData) )
     {
         lpPrevWndFunc = lpSubclassData->lpfnWndProc;
@@ -1059,7 +1058,7 @@ LRESULT CALLBACK JonesDialog_SubclassDialogWindowProc(HWND hwnd, UINT uMsg, WPAR
                 }
 
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 255u, 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_SubclassDialogWindowProc: Error calling ClipCursor().  Reason: %s", JonesDialog_szErrorBuffer);
 
                 result = 1;
@@ -1172,7 +1171,7 @@ void J3DAPI JonesDialog_HandleWM_NCPAINT(HWND hwnd, WPARAM wParam, JonesDialogDa
         else
         {
             dwError = GetLastError();
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, 0xFFu, 0);
+            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
             STDLOG_ERROR("JonesDialog_HandleWM_NCPAINT: GDIDIBSectionInfo.hDC is NULL.  Reason: %s\n", JonesDialog_szErrorBuffer);
         }
     }
@@ -1224,7 +1223,7 @@ int J3DAPI JonesDialog_AllocScreenDBISection(int* pbSkippedAllocation)
     }
 }
 
-int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hdc, int b24bpp, int* pBSkipedAllocation)
+int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hdc, int b24bpp, int* pbSkipedAllocation)
 {
     uint32_t dwError;
     StdVideoMode pDisplayMode;
@@ -1232,16 +1231,16 @@ int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hd
     stdDisplay_GetCurrentVideoMode(&pDisplayMode);
     if ( pInfo->hBitmap )
     {
-        if ( pBSkipedAllocation )
+        if ( pbSkipedAllocation )
         {
-            *pBSkipedAllocation = 1;
+            *pbSkipedAllocation = 1;
         }
 
         return 0;
     }
     else
     {
-        *pBSkipedAllocation = 0;
+        *pbSkipedAllocation = 0;
         if ( stdDisplay_GetCurrentVideoMode(&pDisplayMode) )
         {
             return 1;
@@ -1275,7 +1274,7 @@ int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hd
             if ( !pInfo->hBitmap )
             {
                 dwError = GetLastError();
-                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer), 0);
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
                 STDLOG_ERROR("JonesDialog_AllocOffScreenGDISection: CreateDIBSection failed.  Reason: %s", JonesDialog_szErrorBuffer);
             }
 
@@ -1330,16 +1329,16 @@ int J3DAPI JonesDialog_AllocOffScreenDIBSection(int* pBSkipedAllocation)
 
     JonesDialog_GDIDIBSectionInfoOffScreen.bHasDC = 1;
     if ( !*pBSkipedAllocation
-      && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, pDisplayMode.rasterInfo.width, pDisplayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
+        && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, pDisplayMode.rasterInfo.width, pDisplayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
     {
         LastError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer), 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
         STDLOG_ERROR("JonesDialog_AllocOffScreenDIBSection: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
     stdDisplay_ReleaseFrontBufferDC(drawDC);
     JonesDialog_pfFlipPage(); // Added: Fixes rendering of game background when dialog is open.
-    return JonesDialog_GDIDIBSectionInfoOffScreen.hBitmap == 0;
+    return JonesDialog_GDIDIBSectionInfoOffScreen.hBitmap == NULL;
 }
 
 int J3DAPI JonesDialog_FreeOffScreenDIBSection()
@@ -1354,9 +1353,9 @@ int J3DAPI JonesDialog_FreeOffScreenDIBSection()
         DeleteObject(JonesDialog_GDIDIBSectionInfoOffScreen.hBitmap);
     }
 
-    JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC = 0;
-    JonesDialog_GDIDIBSectionInfoOffScreen.hBitmap = 0;
-    JonesDialog_GDIDIBSectionInfoOffScreen.pPixels = 0;
+    JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC = NULL;
+    JonesDialog_GDIDIBSectionInfoOffScreen.hBitmap   = NULL;
+    JonesDialog_GDIDIBSectionInfoOffScreen.pPixels   = NULL;
     return 0;
 }
 
@@ -1410,7 +1409,7 @@ BOOL J3DAPI JonesDialog_ShowFileSelectDialog(LPOPENFILENAMEA pofn, int bOpen)
     return bRes;
 }
 
-UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
+UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HWND hwnd;
     HWND hParent;
@@ -1427,13 +1426,13 @@ UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM
         hParent = hDlg;
     }
 
-    lpData_1 = (JonesDialogData*)GetWindowLong(hDlg, GWL_USERDATA);
+    lpData_1 = (JonesDialogData*)GetWindowLongPtr(hDlg, GWL_USERDATA);
     if ( lpData_1 && lpData_1->dwSize == sizeof(JonesDialogData) )
     {
         lpPrevWndFunc = lpData_1->lpfnPrevHook;
     }
 
-    if ( Msg == WM_DESTROY )
+    if ( uMsg == WM_DESTROY )
     {
         if ( JonesDialog_cursorInfo.numHandels )
         {
@@ -1444,9 +1443,9 @@ UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM
         goto LABEL_27;
     }
 
-    if ( Msg != WM_INITDIALOG )
+    if ( uMsg != WM_INITDIALOG )
     {
-        if ( Msg == WM_TIMER )
+        if ( uMsg == WM_TIMER )
         {
             JonesDialog_TrackCursor(1);
         }
@@ -1455,7 +1454,7 @@ UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM
     }
 
     lpData = *(JonesDialogData**)(lParam + 64);// TODO: cast lParam which is LPOPENFILENAMEA  here
-    SetWindowLong(hDlg, GWL_USERDATA, (LONG)lpData);
+    SetWindowLongPtr(hDlg, GWL_USERDATA, (LONG)lpData);
     JonesDialog_dword_5532EC = 0;
 
     if ( !lpData || lpData->dwSize != sizeof(JonesDialogData) )
@@ -1463,7 +1462,7 @@ UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM
     LABEL_27:
         if ( lpPrevWndFunc )
         {
-            return CallWindowProc((WNDPROC)lpPrevWndFunc, hDlg, Msg, wParam, lParam);
+            return CallWindowProc((WNDPROC)lpPrevWndFunc, hDlg, uMsg, wParam, lParam);
         }
         else
         {
@@ -1475,9 +1474,9 @@ UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM
 
     *(uint32_t*)(lParam + 64) = lpData->lPrevCustData;
     lpPrevWndFunca = lpData->lpfnPrevHook;
-    lpData->lpfnWndProc = (WNDPROC)GetWindowLong(hDlg, GWL_WNDPROC);
-    lpData->lpUserData = (LPVOID)GetWindowLong(hDlg, GWL_USERDATA);
-    SetWindowLong(hDlg, GWL_WNDPROC, (LONG)JonesDialog_SubclassDialogWindowProc);
+    lpData->lpfnWndProc = (WNDPROC)GetWindowLongPtr(hDlg, GWL_WNDPROC);
+    lpData->lpUserData = (LPVOID)GetWindowLongPtr(hDlg, GWL_USERDATA);
+    SetWindowLongPtr(hDlg, GWL_WNDPROC, (LONG)JonesDialog_SubclassDialogWindowProc);
 
     if ( JonesDialog_cursorInfo.numHandels >= 10 )
     {
@@ -1491,14 +1490,14 @@ UINT_PTR CALLBACK JonesDialog_SubclassFileDialogProc(HWND hDlg, UINT Msg, WPARAM
     if ( lpData->pExtraData )
     {
         lpData = lpData->pExtraData;
-        lpData->lpfnWndProc = (WNDPROC)GetWindowLong(hParent, GWL_WNDPROC);
-        lpData->lpUserData = (LPVOID)GetWindowLong(hParent, GWL_USERDATA);
+        lpData->lpfnWndProc = (WNDPROC)GetWindowLongPtr(hParent, GWL_WNDPROC);
+        lpData->lpUserData = (LPVOID)GetWindowLongPtr(hParent, GWL_USERDATA);
         GetWindowRect(hParent, &lpData->rcWindow);
-        SetWindowLong(hParent, GWL_WNDPROC, (LONG)JonesDialog_SubclassDialogWindowProc);
-        SetWindowLong(hParent, GWL_USERDATA, (LONG)lpData);
+        SetWindowLongPtr(hParent, GWL_WNDPROC, (LONG)JonesDialog_SubclassDialogWindowProc);
+        SetWindowLongPtr(hParent, GWL_USERDATA, (LONG)lpData);
     }
 
-    result = CallWindowProc((WNDPROC)lpPrevWndFunca, hDlg, Msg, wParam, lParam);
+    result = CallWindowProc((WNDPROC)lpPrevWndFunca, hDlg, uMsg, wParam, lParam);
     if ( lpData && lpData->dwSize == sizeof(JonesDialogData) )
     {
         GetWindowRect(hParent, &lpData->rcWindow);

@@ -31,9 +31,9 @@ void sithMaterial_InstallHooks(void)
     J3D_HOOKFUNC(sithMaterial_Startup);
     J3D_HOOKFUNC(sithMaterial_Shutdown);
     J3D_HOOKFUNC(sithMaterial_FreeWorldMaterials);
-    J3D_HOOKFUNC(sithMaterial_LoadMaterialsText);
-    J3D_HOOKFUNC(sithMaterial_WriteMaterialsBinary);
-    J3D_HOOKFUNC(sithMaterial_LoadMaterialsBinary);
+    J3D_HOOKFUNC(sithMaterial_ReadMaterialsListText);
+    J3D_HOOKFUNC(sithMaterial_WriteMaterialsListBinary);
+    J3D_HOOKFUNC(sithMaterial_ReadMaterialsListBinary);
     J3D_HOOKFUNC(sithMaterial_Load);
     J3D_HOOKFUNC(sithMaterial_GetMaterialByIndex);
     J3D_HOOKFUNC(sithMaterial_AllocWorldMaterials);
@@ -85,11 +85,11 @@ void sithMaterial_Shutdown(void)
 
 void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     if ( !pWorld->sizeMaterials )
     {
-        SITH_ASSERTREL(pWorld->aMaterials == ((void*)0));
+        SITH_ASSERTREL(pWorld->aMaterials == NULL);
         return;
     }
 
@@ -115,7 +115,7 @@ void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
     pWorld->apMatArray = NULL;
 }
 
-int J3DAPI sithMaterial_WriteMaterialsText(const SithWorld* pWorld)
+int J3DAPI sithMaterial_WriteMaterialsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("##### Material information #####\n")
         || stdConffile_WriteLine("SECTION: MATERIALS\n\n")
@@ -136,9 +136,9 @@ int J3DAPI sithMaterial_WriteMaterialsText(const SithWorld* pWorld)
     return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
 }
 
-int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     if ( bSkip )
     {
         return 1;
@@ -182,7 +182,7 @@ int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
     }
 
     size_t curMatNum = 0;
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         rdMaterial* pMat = sithMaterial_Load(stdConffile_g_entry.aArgs[1].argValue);
         if ( !pMat )
@@ -204,7 +204,7 @@ int J3DAPI sithMaterial_LoadMaterialsText(SithWorld* pWorld, int bSkip)
     return 0;
 }
 
-int J3DAPI sithMaterial_WriteMaterialsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithMaterial_WriteMaterialsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     int bError             = 1;
     tFileHandle fhMat      = 0;
@@ -345,7 +345,7 @@ error:
     return bError;
 }
 
-int J3DAPI sithMaterial_LoadMaterialsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     int bError                 = 1;
     CndMaterialInfo* aMatInfos = NULL;
@@ -549,10 +549,10 @@ error:
 rdMaterial* J3DAPI sithMaterial_Load(const char* pName)
 {
     SithWorld* pWorld = sithWorld_g_pLastLoadedWorld;
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(pWorld->aMaterials != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(pWorld->aMaterials != NULL);
 
     rdMaterial* pMat = sithMaterial_CacheFind(pName);
     if ( pMat )
@@ -614,7 +614,7 @@ rdMaterial* J3DAPI sithMaterial_GetMaterialByIndex(int index)
 
 int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMaterials)
 {
-    SITH_ASSERTREL(pWorld->aMaterials == ((void*)0));
+    SITH_ASSERTREL(pWorld->aMaterials == NULL);
 
     // Added: Make sure the material buffer is enough big to load in extra textures of original HD models.
     if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 && sithModel_IsHiPolyEnabled() )

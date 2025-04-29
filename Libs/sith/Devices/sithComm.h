@@ -9,20 +9,28 @@
 
 J3D_EXTERN_C_START
 
+typedef enum eSithMessageStream
+{
+    SITHMESSAGE_STREAM_NONE = 0x00,
+    SITHMESSAGE_STREAM_NET  = 0x01,
+    SITHMESSAGE_STREAM_FILE = 0x04,
+    SITHMESSAGE_STREAM_ALL  = 0xFF,
+} SithMessageStream;
+
 #define sithMessage_g_localPlayerId J3D_DECL_FAR_VAR(sithMessage_g_localPlayerId, DPID)
 // extern DPID sithMessage_g_localPlayerId;
 
-#define sithMessage_g_outputstream J3D_DECL_FAR_VAR(sithMessage_g_outputstream, int)
+#define sithMessage_g_outputstream J3D_DECL_FAR_VAR(sithMessage_g_outputstream, SithMessageStream)
 // extern int sithMessage_g_outputstream;
 
-#define sithMessage_g_inputstream J3D_DECL_FAR_VAR(sithMessage_g_inputstream, int)
+#define sithMessage_g_inputstream J3D_DECL_FAR_VAR(sithMessage_g_inputstream, SithMessageStream)
 // extern int sithMessage_g_inputstream;
 
 // NOTE: all sithMessage functions should be in sithComm module
 void sithMessage_Startup(void);
 void sithMessage_Shutdown(void);
 
-int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, uint32_t outstream, uint32_t dwDPFlags);
+int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, SithMessageStream outstream, uint32_t dwDPFlags);
 
 void J3DAPI sithMessage_ProcessMessages();
 int J3DAPI sithMessage_Process(const SithMessage* pMessage);

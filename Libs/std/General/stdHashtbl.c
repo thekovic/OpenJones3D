@@ -127,7 +127,7 @@ size_t J3DAPI stdHashtbl_nextPrime(size_t candidate)
 void J3DAPI stdHashtbl_Free(tHashTable* pTable)
 {
 
-    STD_ASSERTREL(pTable != ((void*)0));
+    STD_ASSERTREL(pTable != NULL);
     for ( size_t i = 0; i < pTable->numNodes; ++i ) {
         stdHashtbl_FreeListNodes(&pTable->paNodes[i]);
     }
@@ -148,8 +148,8 @@ void J3DAPI stdHashtbl_FreeListNodes(tLinkListNode* pNode)
 
 int J3DAPI stdHashtbl_Add(tHashTable* pTable, const char* pName, void* pData)
 {
-    STD_ASSERTREL(pTable != ((void*)0));
-    STD_ASSERTREL(pData != ((void*)0));
+    STD_ASSERTREL(pTable != NULL);
+    STD_ASSERTREL(pData != NULL);
 
     if ( stdHashtbl_Find(pTable, pName) ) {
         return 0;
@@ -181,7 +181,7 @@ int J3DAPI stdHashtbl_Add(tHashTable* pTable, const char* pName, void* pData)
 
 tLinkListNode* J3DAPI stdHashtbl_GetTailNode(const tLinkListNode* pCur)
 {
-    STD_ASSERTREL(pCur != ((void*)0));
+    STD_ASSERTREL(pCur != NULL);
     while ( pCur->next ) {
         pCur = pCur->next;
     }
@@ -208,7 +208,7 @@ tLinkListNode* J3DAPI stdHashtbl_FindNode(const tHashTable* pTable, const char* 
     *pNodeIdx = pTable->pfHashFunc(pName, pTable->numNodes);
     for ( tLinkListNode* pCurNode = &pTable->paNodes[*pNodeIdx]; pCurNode && pCurNode->name; pCurNode = pCurNode->next )
     {
-        if ( strcmp(pCurNode->name, pName) == 0 ) {
+        if ( streq(pCurNode->name, pName) ) {
             return pCurNode;
         }
     }
@@ -218,7 +218,7 @@ tLinkListNode* J3DAPI stdHashtbl_FindNode(const tHashTable* pTable, const char* 
 
 int J3DAPI stdHashtbl_Remove(tHashTable* pTable, const char* pName)
 {
-    STD_ASSERTREL(pTable != ((void*)0));
+    STD_ASSERTREL(pTable != NULL);
 
     int nodeIdx = -1;
     tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &nodeIdx);
@@ -253,7 +253,7 @@ int J3DAPI stdHashtbl_Remove(tHashTable* pTable, const char* pName)
 
 void J3DAPI stdHashtbl_PrintTableDiagnostics(tHashTable* pTable)
 {
-    STD_ASSERTREL(pTable != ((void*)0));
+    STD_ASSERTREL(pTable != NULL);
     std_g_pHS->pDebugPrint("\nHASHTABLE Diagnostics\n");
     std_g_pHS->pDebugPrint("---------------------\n");
 
@@ -283,7 +283,7 @@ void J3DAPI stdHashtbl_PrintTableDiagnostics(tHashTable* pTable)
 
 void J3DAPI stdHashtbl_DumpTable(tHashTable* pTable)
 {
-    STD_ASSERTREL(pTable != ((void*)0));
+    STD_ASSERTREL(pTable != NULL);
     std_g_pHS->pDebugPrint("\nHASHTABLE\n---------\n");
     for ( size_t i = 0; i < pTable->numNodes; ++i )
     {

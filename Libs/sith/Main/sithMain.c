@@ -39,6 +39,7 @@
 #include <rdroid/Math/rdVector.h>
 #include <rdroid/Primitives/rdPrimit3.h>
 
+#include <std/General/stdColor.h>
 #include <std/General/stdFileUtil.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdMemory.h>
@@ -48,6 +49,7 @@
 #include <w32util/wuRegistry.h>
 
 #define SITH_PATHSIZE 128
+#define SITH_DEFAULTGAMEDIFFICULTY 5
 
 static bool sith_bStartup = false; // Added: Init to false
 static bool sith_bOpen    = false; // Added: Init to false
@@ -63,8 +65,8 @@ static char sith_aTmpAutoSaveFilePrefix[SITH_PATHSIZE];
 static char sith_aTmpScreenShotDirPath[SITH_PATHSIZE];
 
 static int sith_bDrawUnknown;
-static int sith_bDrawPlayerMoveBounds;
-static int sith_bDrawThingMoveBounds;
+static bool sith_bDrawPlayerMoveBounds = false; // Added: Init to false
+static bool sith_bDrawThingMoveBounds = false; // Added: Init to false
 static int sith_performanceLevel;
 
 rdVector3 sith_unknownPos;
@@ -75,6 +77,7 @@ float sith_unknownRadius2;
 
 static const SithMainStartLevelNdsInfo sithMain_aLevelNdsInfos[17] =
 {
+    // Note all level file names must be of 6 chars; see sithGetCurrentWorldSaveName
     { "SITHSTRING_STARTCYN", "00_CYN" },
     { "SITHSTRING_STARTBAB", "01_BAB" },
     { "SITHSTRING_STARTRIV", "02_RIV" },
@@ -212,7 +215,7 @@ int sithStartup(void)
 
     memset(&sithMain_g_sith_mode, 0, sizeof(sithMain_g_sith_mode));
 
-    int difficulty = wuRegistry_GetInt("Difficulty", 5);
+    int difficulty = wuRegistry_GetInt("Difficulty", SITH_DEFAULTGAMEDIFFICULTY);
     sithSetGameDifficulty(difficulty);
 
     memset(sith_aTmpAutoSaveFilePrefix, 0, sizeof(sith_aTmpAutoSaveFilePrefix));
@@ -282,7 +285,7 @@ int J3DAPI sithOpenStatic(const char* pFilename)
 {
     sithCloseStatic();
 
-    sithWorld_g_pStaticWorld = sithWorld_New();
+    sithWorld_g_pStaticWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pStaticWorld )
     {
         return 1;
@@ -301,7 +304,7 @@ int J3DAPI sithOpenStatic(const char* pFilename)
 
     // Failed to load world from cwd path, try from another path
     sithWorld_Free(sithWorld_g_pStaticWorld);
-    sithWorld_g_pStaticWorld = sithWorld_New();
+    sithWorld_g_pStaticWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pStaticWorld )
     {
         return 1;
@@ -332,7 +335,7 @@ void sithCloseStatic(void)
 
 int J3DAPI sithOpenNormal(const char* pWorldName, const wchar_t* pwPlayerName)
 {
-    sithWorld_g_pCurrentWorld = sithWorld_New();
+    sithWorld_g_pCurrentWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pCurrentWorld )
     {
         return 1;
@@ -380,8 +383,8 @@ void sithOpenPostProcess(void)
     if ( stdComm_IsGameActive() )
     {
         sithPlayer_NewPlayer(sithPlayer_g_pLocalPlayerThing);
-        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOALL);
-        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOALL); // TODO: Why same message sent twice
+        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOJOINEDPLAYERS);
+        sithMulti_SendWelcome(sithMessage_g_localPlayerId, sithPlayer_g_playerNum, SITHMESSAGE_SENDTOJOINEDPLAYERS); // TODO: Why same message sent twice
     }
     else if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
     {
@@ -406,7 +409,7 @@ void sithOpenPostProcess(void)
 
 int J3DAPI sithOpenMulti(const char* pFilename, const wchar_t* pwPlayerName)
 {
-    sithWorld_g_pCurrentWorld = sithWorld_New();
+    sithWorld_g_pCurrentWorld = sithWorld_NewEntry();
     if ( !sithWorld_g_pCurrentWorld )
     {
         return 0;
@@ -598,13 +601,13 @@ void sithDrawScene(void)
 
         if ( sith_bDrawPlayerMoveBounds && sithWorld_g_pCurrentWorld && sithPlayer_g_pLocalPlayerThing )
         {
-            rdPrimit3_DrawClippedCircle(&sithPlayer_g_pLocalPlayerThing->pos, sithPlayer_g_pLocalPlayerThing->collide.movesize, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+            rdPrimit3_DrawClippedCircle(&sithPlayer_g_pLocalPlayerThing->pos, sithPlayer_g_pLocalPlayerThing->collide.movesize, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
         }
 
         if ( sith_bDrawUnknown )
         {
-            rdPrimit3_DrawClippedCircle(&sith_unknownPos, sith_unknownRadius, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
-            rdPrimit3_DrawClippedCircle(&sith_unknownPos2, sith_unknownRadius2, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+            rdPrimit3_DrawClippedCircle(&sith_unknownPos, sith_unknownRadius, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
+            rdPrimit3_DrawClippedCircle(&sith_unknownPos2, sith_unknownRadius2, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
         }
 
         if ( sith_bDrawThingMoveBounds && sithWorld_g_pCurrentWorld )
@@ -614,7 +617,7 @@ void sithDrawScene(void)
                 SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[thNum];
                 if ( pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_WEAPON )
                 {
-                    rdPrimit3_DrawClippedCircle(&pThing->pos, pThing->collide.movesize, 20.0f, 0xFFFF3F2F, 0xFFFFFFFF);
+                    rdPrimit3_DrawClippedCircle(&pThing->pos, pThing->collide.movesize, 20.0f, STD_RGB(58, 231, 123), 0xFFFFFFFF); // Altered: color encoding to 32 bpp, was RGB565 (0xFFFF3F2F)
                 }
             }
         }
@@ -759,6 +762,12 @@ void sithAdvanceRenderTick(void)
     }
 }
 
+bool sithToggleDrawPlayerRadius(void)
+{
+    sith_bDrawPlayerMoveBounds = !sith_bDrawPlayerMoveBounds;
+    return sith_bDrawPlayerMoveBounds;
+}
+
 void sithMakeDirs(void)
 {
     stdFileUtil_MkDir(sithGetSaveGamesDir());
@@ -859,12 +868,12 @@ const char* sithGetCurrentWorldSaveName(void)
     size_t i;
     for ( i = 0; ; ++i )
     {
-        if ( i >= 17 )
+        if ( i >= STD_ARRAYLEN(sithMain_aLevelNdsInfos) )
         {
             return sithWorld_g_pCurrentWorld->aName;
         }
 
-        if ( !strncmpi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aLevelNamePrefix, 6u) )
+        if ( strneqi(sithWorld_g_pCurrentWorld->aName, sithMain_aLevelNdsInfos[i].aFilename, 6u) )
         {
             break;
         }
@@ -889,7 +898,7 @@ const char* sithGetCurrentWorldSaveName(void)
 
 const char* J3DAPI sithGetLevelSaveFilename(size_t levelNum)
 {
-    if ( levelNum >= 17 )
+    if ( levelNum >= STD_ARRAYLEN(sithMain_aLevelNdsInfos) )
     {
         return 0;
     }

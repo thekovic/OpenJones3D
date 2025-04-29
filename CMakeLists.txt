@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
-project(OpenJones3D VERSION 0.2.0)
+
+project(OpenJones3D VERSION 0.3.0)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -11,6 +12,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Enable solution folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
+option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)
+
+if(JONES3D_QOL_IMPROVEMENTS)
+    add_compile_definitions(J3D_QOL_IMPROVEMENTS=1)
+endif()
+
 # Configure the version header file
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/LIBS/j3dcore/j3d.h.in"
@@ -21,9 +29,10 @@ configure_file(
 set(CMAKE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Release>:MultiThreaded>$<$<CONFIG:MinSizeRel>:MultiThreaded>")
 
 if (MSVC)
-    add_compile_definitions("__BASE_FILE__=\"%(Filename)%(Extension)\"")
+    add_compile_definitions("__FILE_NAME__=\"%(Filename)%(Extension)\"")
     add_compile_options(
         /utf-8
+        /Zc:__STDC__
         /Zc:__cplusplus
         /diagnostics:caret
         /sdl
@@ -44,3 +53,7 @@ add_subdirectory(Libs)
 
 # Add main project Jones3D
 add_subdirectory(Jones3D)
+
+if (JONES3D_BUILD_PROGRAMS)
+    add_subdirectory(Programs)
+endif()

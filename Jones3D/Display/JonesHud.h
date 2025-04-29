@@ -19,7 +19,7 @@ void JonesHud_ToggleMenu(void);
 void J3DAPI JonesHud_EnableMenu(int bEnable);
 int JonesHud_IsMenuEnabled(void);
 
-void JonesHud_Render(void);
+void JonesHud_Process(void);
 void J3DAPI JonesHud_Update(const SithWorld* pWorld);
 int J3DAPI JonesHud_SetCanvasSize(int width, int height);
 void JonesHud_UpdateSinCosTable(void);
@@ -50,7 +50,7 @@ void JonesHud_MenuMoveDown(void);
 void J3DAPI JonesHud_SetSelectedMenuItem(int menuId, JonesHudMenuItem* pItem);
 void JonesHud_MenuMoveUp(void);
 
-void J3DAPI JonesHud_BindActivateControlKeys(int* aKeyIds, int numKeys);
+void J3DAPI JonesHud_BindActivateControlKeys(const size_t* aKeyIds, size_t numKeys);
 int J3DAPI JonesHud_GetKey(unsigned int keyId);
 int JonesHud_InitializeMenu(void);
 void JonesHud_InitializeMenuSounds(void);
@@ -61,8 +61,8 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem);
 void J3DAPI JonesHud_RenderMenuItems(JonesHudMenuItem* pItem);
 // Function formats and displays inventory items and its text
 void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem);
-void J3DAPI JonesHud_MenuActivateItem();
-void J3DAPI JonesHud_ResetMenuItems();
+void JonesHud_MenuActivateItem(void);
+void JonesHud_ResetMenuItems(void);
 void J3DAPI JonesHud_SetLeftRightItems(JonesHudMenuItem* pItem1, JonesHudMenuItem* pItem2);
 void J3DAPI JonesHud_SetDownUpItems(JonesHudMenuItem* pItem1, JonesHudMenuItem* pItem2);
 void J3DAPI JonesHud_sub_4198E0(JonesHudMenuItem* pItem);
@@ -70,6 +70,9 @@ void J3DAPI JonesHud_sub_419B50(JonesHudMenuItem* pItem);
 void J3DAPI JonesHud_InventoryItemChanged(int typeId);
 void JonesHud_RenderInventoryItemChange(void);
 void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scale);
+
+// Returns menu item by index or NULL if index >= JONESHUD_MAX_MENU_ITEMS
+const JonesHudMenuItem* J3DAPI JonesHud_GetMenuItem(size_t index);
 
 // Returns 1 when bonus map was bought
 int JonesHud_ShowLevelCompleted(void);

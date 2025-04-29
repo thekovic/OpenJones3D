@@ -745,7 +745,7 @@ void sithRender_RenderSectors(void)
                             pPoly->flags     = pSurf->face.flags;
                             pPoly->pMaterial = pSurf->face.pMaterial;
 
-                            // Now make sky poly from ransformed vertices
+                            // Now make sky poly from transformed vertices
                             if ( (pSurf->flags & SITH_SURFACE_HORIZONSKY) != 0 )
                             {
                                 sithRenderSky_HorizonFaceToPlane(pPoly, &pSurf->face, sithRender_aSurfaceTransformedVertices, sithRender_clipFaceView.numVertices);
@@ -950,12 +950,12 @@ void sithRender_BuildDynamicLights(void)
                     if ( dist < (double)pLight->maxRadius )
                     {
                         float att = dist * attenuationMax;
-                        aVertDynamicLights[vertIdx].red   = pLight->color.red - att + aVertDynamicLights[vertIdx].red;
-                        aVertDynamicLights[vertIdx].green = pLight->color.green - att + aVertDynamicLights[vertIdx].green;
-                        aVertDynamicLights[vertIdx].blue  = pLight->color.blue - att + aVertDynamicLights[vertIdx].blue;
+                        aVertDynamicLights[vertIdx].red   += pLight->color.red - att;
+                        aVertDynamicLights[vertIdx].green += pLight->color.green - att;
+                        aVertDynamicLights[vertIdx].blue  += pLight->color.blue - att;
                     }
 
-                    rdMath_ClampVector3((rdVector3*)&aVertDynamicLights[vertIdx], 0.0f, 1.0f);
+                    rdMath_ClampVector3Acc((rdVector3*)&aVertDynamicLights[vertIdx], 0.0f, 1.0f);
                     // TODO: alpha value is not set
                 }
 
@@ -979,7 +979,7 @@ void sithRender_RenderThings(void)
 
         rdVector4 sectorAmbientLight;
         rdVector_Add4(&sectorAmbientLight, &pSector->ambientLight, &pSector->extraLight);
-        rdMath_ClampVector4(&sectorAmbientLight, 0.0f, 1.0f);
+        rdMath_ClampVector4Acc(&sectorAmbientLight, 0.0f, 1.0f);
         sectorAmbientLight.alpha = 0.0f;
 
         for ( SithThing* pCurThing = pSector->pFirstThingInSector; pCurThing; pCurThing = pCurThing->pNextThingInSector )
@@ -1067,7 +1067,7 @@ void sithRender_RenderThings(void)
                     {
                         rdVector4 ambientLight;
                         rdVector_Add4(&ambientLight, &sectorAmbientLight, &pCurThing->light.color);
-                        rdMath_ClampVector4(&ambientLight, 0.0f, 1.0f);
+                        rdMath_ClampVector4Acc(&ambientLight, 0.0f, 1.0f);
                         ambientLight.alpha = sectorAmbientLight.alpha;
 
                         rdCamera_SetAmbientLight(rdCamera_g_pCurCamera, &ambientLight);
@@ -1099,7 +1099,7 @@ void sithRender_RenderThings(void)
 
 int J3DAPI sithRender_RenderThing(SithThing* pThing)
 {
-    RD_ASSERTREL(pThing != ((void*)0)); // TODO: Why using RD_ASSERTREL
+    RD_ASSERTREL(pThing != NULL); // TODO: Why using RD_ASSERTREL
 
     if ( (pThing->flags & SITH_TF_SEEN) == 0 )
     {

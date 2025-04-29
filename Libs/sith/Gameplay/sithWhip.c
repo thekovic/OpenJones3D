@@ -76,7 +76,7 @@ void sithWhip_ResetGlobals(void)
 
 void J3DAPI sithWhip_UpdateWhipAim(SithThing* pThing)
 {
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
     if ( sithWhip_SearchWhipSwingThing(pThing) )
     {
         sithCamera_SetExtCameraOffset(&sithWhip_vecCameraOffsetWhipSwingAim);
@@ -99,7 +99,7 @@ void J3DAPI sithWhip_UpdateWhipAim(SithThing* pThing)
 
 int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing)
 {
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
 
     float dot = rdVector_Dot3(&pThing->orient.rvec, &sithWhip_pWhipSwingThing->orient.lvec);
     if ( dot != 0.0f )
@@ -171,7 +171,7 @@ void J3DAPI sithWhip_DeactivateWhip(SithThing* pThing)
 
 int J3DAPI sithWhip_StartWhipClimb(SithThing* pThing, SithThing* pWhippedThing)
 {
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
 
     sithCamera_RestoreExtCamera();
     sithInventory_SetSwimmingInventory(pThing, 0);
@@ -259,7 +259,7 @@ void J3DAPI sithWhip_WhipClimbDismount(SithThing* pThing)
 void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing)
 {
 
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
     if ( !pThing->thingInfo.actorInfo.bControlsDisabled && !pThing->thingInfo.actorInfo.bForceMovePlay )
     {
         const int bJumpOff = sithControl_GetKey(SITHCONTROL_JUMP, NULL);
@@ -322,13 +322,13 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing)
         }
         else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, 0) )
         {
-            sithThing_SyncThing(pThing, 0x08);
+            sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
             pThing->moveInfo.pathMovement.vecDeltaPos.y = sithTime_g_fps + pThing->thingInfo.actorInfo.maxRotVelocity;
         }
 
         else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, 0) )
         {
-            sithThing_SyncThing(pThing, 0x08);
+            sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
             pThing->moveInfo.pathMovement.vecDeltaPos.y = -1.0f * sithTime_g_fps + pThing->thingInfo.actorInfo.maxRotVelocity * -1.0f;
         }
         else
@@ -385,7 +385,7 @@ void J3DAPI sithWhip_WhipClimbPuppetCallback(SithThing* pThing, int track, rdKey
             sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
         }
 
-        sithPuppet_RemoveTrackNum(pThing, track);
+        sithPuppet_FreeTrackByIndex(pThing, track);
     }
 }
 
@@ -399,7 +399,7 @@ void J3DAPI sithWhip_ClimbDismountPuppetCallback(SithThing* pThing, int track, r
             sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
         }
 
-        sithPuppet_RemoveTrackNum(pThing, track);
+        sithPuppet_FreeTrackByIndex(pThing, track);
     }
 }
 
@@ -459,7 +459,7 @@ int J3DAPI sithWhip_SearchWhipSwingThing(SithThing* pThing)
     //moveNorm.y = 1.0f;
     //moveNorm.z = 1.0f;
 
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
     sithWhip_pWhipSwingThing = NULL;
 
     // Search for whip swing thing in the forward,up direction at max distance 0.65 (6.5m)
@@ -494,7 +494,7 @@ int J3DAPI sithWhip_SearchWhipSwingThing(SithThing* pThing)
 
 int J3DAPI sithWhip_SearchWhipClimbThing(SithThing* pThing)
 {
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
 
     sithWhip_pWhipClimbThing = NULL; // No need to free as it's reference to world thing
 
@@ -540,7 +540,7 @@ int J3DAPI sithWhip_SearchWhipClimbThing(SithThing* pThing)
 
 void J3DAPI sithWhip_CreatePlayerWhip(SithThing* pThing)
 {
-    SITH_ASSERTREL((pThing != ((void*)0)) && (pThing->type == SITH_THING_PLAYER) && (pThing->renderData.pPuppet != ((void*)0)));
+    SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER) && (pThing->renderData.pPuppet != NULL));
 
     int handMeshIdx = sithThing_GetThingMeshIndex(pThing, "inrhand");
     const SithThing* pTemplate = sithTemplate_GetTemplate("+whip_actor");

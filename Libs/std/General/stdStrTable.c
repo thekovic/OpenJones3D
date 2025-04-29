@@ -38,9 +38,9 @@ int J3DAPI stdStrTable_Load(tStringTable* pStrTable, const char* pFilename)
     char aLine[276] = { 0 };
     char aBuf[256]  = { 0 };
 
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
     STD_ASSERTREL(pStrTable->magic != 'sTbl');
-    STD_ASSERTREL(pFilename != ((void*)0));
+    STD_ASSERTREL(pFilename != NULL);
 
     pStrTable->nMsgs    = 0;
     pStrTable->pData    = NULL;
@@ -127,7 +127,7 @@ int J3DAPI stdStrTable_Load(tStringTable* pStrTable, const char* pFilename)
         aLine[0] = 0;
         stdStrTable_ReadLine(fh, aLine, STD_ARRAYLEN(aLine) - 1);
         const char* ptok = strtok(aLine, " \t\n\r");
-        if ( strcmpi(ptok, "end") )
+        if ( !streqi(ptok, "end") )
         {
             bSuccess = 0;
             std_g_pHS->pErrorPrint("'END' not found in '%s'.  Enlarge number in 'MSG xxx' header.\n", pFilename);
@@ -168,7 +168,7 @@ void J3DAPI stdStrTable_Free(tStringTable* pStrTable)
     int nMsgs;
     tStringTableNode* aData;
 
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
 
     if ( pStrTable->magic == 'sTbl' )
     {
@@ -201,7 +201,7 @@ void J3DAPI stdStrTable_Free(tStringTable* pStrTable)
 wchar_t* J3DAPI stdStrTable_GetValue(const tStringTable* pStrTable, const char* pKey)
 {
     tStringTableNode* pStrNode;
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
 
     if ( pStrTable->nMsgs && (pStrNode = (tStringTableNode*)stdHashtbl_Find(pStrTable->pHashtbl, pKey)) != 0 )
     {
@@ -215,15 +215,14 @@ wchar_t* J3DAPI stdStrTable_GetValueOrKey(const tStringTable* pStrTable, const c
 {
     wchar_t* pVal;
 
-    STD_ASSERTREL(pStrTable != ((void*)0));
+    STD_ASSERTREL(pStrTable != NULL);
     pVal = stdStrTable_GetValue(pStrTable, pKey);
     if ( pVal )
     {
         return pVal;
     }
 
-    stdUtil_ToWStringEx(stdStrTable_aBuffer, pKey, STD_ARRAYLEN(stdStrTable_aBuffer) - 1);
-    stdStrTable_aBuffer[STD_ARRAYLEN(stdStrTable_aBuffer) - 1] = 0;
+    STD_TOWSTR(stdStrTable_aBuffer, pKey);
     return stdStrTable_aBuffer;
 }
 
@@ -232,13 +231,13 @@ int J3DAPI stdStrTable_ReadLine(tFileHandle fh, char* pStr, int size)
     bool bFinish = false;
     while ( !bFinish )
     {
-        size_t nRead = std_g_pHS->pFileGets(fh, pStr, size);
-        if ( nRead != 0 && !strchr(pStr, '\n') ) // Added: Added check for no data read from file
+        char* pReadStr = std_g_pHS->pFileGets(fh, pStr, size);
+        if ( pReadStr != NULL && strchr(pStr, '\n') == NULL ) // Added: Added check for no data read from file
         {
             char aBuf[64] = { 0 };
             do {
-                nRead = std_g_pHS->pFileGets(fh, aBuf, sizeof(aBuf));
-            } while ( nRead != 0 && !strchr(aBuf, '\n') ); // Fixed: Added check for no data read from file. This fixes potential infinitive loop bug when there is no line break at the end of the file
+                pReadStr = std_g_pHS->pFileGets(fh, aBuf, sizeof(aBuf));
+            } while ( pReadStr != NULL && strchr(aBuf, '\n') == NULL ); // Fixed: Added check for no data read from file. This fixes potential infinitive loop bug when there is no line break at the end of the file
         }
 
         // Skip spaces
@@ -247,7 +246,7 @@ int J3DAPI stdStrTable_ReadLine(tFileHandle fh, char* pStr, int size)
             ;
         }
 
-        if ( nRead == 0 || (*pch != '#' && *pch && *pch != '\r' && *pch != '\n') ) // Fixed: Added check for no data read from file to prevent potential infinitive loop bug
+        if ( pReadStr == NULL || (*pch != '#' && *pch && *pch != '\r' && *pch != '\n') ) // Fixed: Added check for no data read from file to prevent potential infinitive loop bug
         {
             bFinish = true;
         }

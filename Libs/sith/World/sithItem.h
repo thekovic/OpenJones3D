@@ -15,7 +15,7 @@ int J3DAPI sithItem_PlayerCollisionHandler(SithThing* pItem, SithThing* pPlayer,
 void J3DAPI sithItem_Initialize(SithThing* pThing);
 void J3DAPI sithItem_SetItemTaken(SithThing* pItem, const SithThing* pSrcThing, int bNoMultiSync);
 void J3DAPI sithItem_DestroyItem(SithThing* pItem);
-int J3DAPI sithItem_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithItem_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 
 // Helper hooking functions
 void sithItem_InstallHooks(void);

@@ -11,17 +11,16 @@
 
 void sithPVS_InstallHooks(void)
 {
-    J3D_HOOKFUNC(sithPVS_LoadText);
-    J3D_HOOKFUNC(sithPVS_WriteBinary);
-    J3D_HOOKFUNC(sithPVS_LoadBinary);
+    J3D_HOOKFUNC(sithPVS_ReadPVSText);
+    J3D_HOOKFUNC(sithPVS_WritePVSBinary);
+    J3D_HOOKFUNC(sithPVS_ReadPVSBinary);
     J3D_HOOKFUNC(sithPVS_SetTable);
 }
 
 void sithPVS_ResetGlobals(void)
-{
-}
+{}
 
-int J3DAPI sithPVS_WriteText(const SithWorld* pWorld)
+int J3DAPI sithPVS_WritePVSText(const SithWorld* pWorld)
 {
     if ( !pWorld->aPVS )
     {
@@ -70,7 +69,7 @@ int J3DAPI sithPVS_WriteText(const SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithPVS_LoadText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithPVS_ReadPVSText(SithWorld* pWorld, int bSkip)
 {
     J3D_UNUSED(bSkip); // TODO: maybe implement skip logic
 
@@ -142,7 +141,7 @@ syntax_error:
     return 1;
 }
 
-int J3DAPI sithPVS_WriteBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithPVS_WritePVSBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     static_assert(sizeof(pWorld->sizePVS) == sizeof(uint32_t), "sizeof(pWorld->sizePVS) == sizeof(uint32_t)");
     if ( sith_g_pHS->pFileWrite(fh, &pWorld->sizePVS, sizeof(uint32_t)) != sizeof(uint32_t) )
@@ -153,7 +152,7 @@ int J3DAPI sithPVS_WriteBinary(tFileHandle fh, SithWorld* pWorld)
     return pWorld->sizePVS && sith_g_pHS->pFileWrite(fh, pWorld->aPVS, pWorld->sizePVS) != pWorld->sizePVS;
 }
 
-int J3DAPI sithPVS_LoadBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithPVS_ReadPVSBinary(tFileHandle fh, SithWorld* pWorld)
 {
     if ( sith_g_pHS->pFileRead(fh, &pWorld->sizePVS, sizeof(uint32_t)) != sizeof(uint32_t) )
     {

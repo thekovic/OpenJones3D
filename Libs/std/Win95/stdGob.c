@@ -84,7 +84,7 @@ int J3DAPI stdGob_LoadEntry(Gob* pGob, const char* pFilename, int numFileHandles
     if ( bMMapFile )
     {
         pGob->hFile = CreateFileA(pGob->aFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, CREATE_ALWAYS | CREATE_NEW, FILE_FLAG_RANDOM_ACCESS, NULL);
-        STD_ASSERTREL(pGob->hFile != ((void*)0));
+        STD_ASSERTREL(pGob->hFile != NULL);
         STD_ASSERTREL(pGob->hFile != (HANDLE)((HFILE)-1));
 
         pGob->hMapFile = CreateFileMappingA(pGob->hFile, NULL, PAGE_READONLY, 0, 0, NULL);
@@ -95,7 +95,7 @@ int J3DAPI stdGob_LoadEntry(Gob* pGob, const char* pFilename, int numFileHandles
             if ( pGob->aHandles )
             {
                 pGob->pBase = MapViewOfFile(pGob->hMapFile, FILE_MAP_READ, 0, 0, 0);
-                STD_ASSERTREL(pGob->pBase != ((void*)0));
+                STD_ASSERTREL(pGob->pBase != NULL);
                 return 1;
             }
             else
@@ -182,7 +182,7 @@ void J3DAPI stdGob_Free(Gob* pGob)
 
 void J3DAPI stdGob_FreeEntry(Gob* pGob)
 {
-    STD_ASSERTREL(pGob != ((void*)0));
+    STD_ASSERTREL(pGob != NULL);
     if ( pGob->bFileMap )
     {
         UnmapViewOfFile(pGob->pBase);

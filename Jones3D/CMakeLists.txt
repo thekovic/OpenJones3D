@@ -11,7 +11,6 @@ option(JONES3D_ENABLE_POST_BUILD_COPY "Enable copying of output files (Jones3D.d
 # The copied files will be placed in this directory under a 'Debug' subfolder.
 set(JONES3D_POST_BUILD_COPY_DIR "" CACHE PATH "Destination folder for the post-build copied files (Jones3D.dll, Jones3D.exe)")
 
-
 # Collect Jones3D DLL sources
 file(GLOB_RECURSE JONES3D_DLL_SOURCES *.c)
 file(GLOB_RECURSE JONES3D_DLL_HEADERS *.h)
@@ -45,7 +44,6 @@ target_link_libraries(Jones3D_DLL PRIVATE Comctl32.lib)
 
 # Organize source files in Visual Studio
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${JONES3D_DLL_SOURCES} ${JONES3D_DLL_HEADERS})
-
 
 # If the post-build command is enabled, and the destination path is provided,
 # add the post-build command to copy the output files to the specified directory.

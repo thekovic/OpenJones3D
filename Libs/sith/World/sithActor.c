@@ -137,10 +137,10 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
 
             if ( pThing->thingInfo.actorInfo.endurance.msecUnderwater > (SITHACTOR_MAX_UNDERWATER_MSEC - 10000) )
             {
-                if ( (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 0xF) != 0 )
+                if ( !SITH_ISFRAMECYCLE(pThing->idx, 16) ) // Not on every 16th frame 
                 {
                     if ( pThing->thingInfo.actorInfo.endurance.msecUnderwater > (SITHACTOR_MAX_UNDERWATER_MSEC / 2) // TODO: ???, verify this if statement
-                      && (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 )
+                        && SITH_ISFRAMECYCLE(pThing->idx, 8) ) // On every 8th frame
                     {
                         sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_BREATH);
                     }
@@ -158,11 +158,11 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
             }
         }
         else if ( pThing->thingInfo.actorInfo.endurance.raftLeakDamage
-               && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARD_START
-               && pThing->moveStatus != SITHPLAYERMOVE_RAFT_BOARDING )
+            && (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_UNBOARD_START
+            && pThing->moveStatus != SITHPLAYERMOVE_RAFT_BOARDING )
         {
             // Update Raft damage
 
@@ -194,19 +194,19 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
 
 float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float damage, SithDamageType damageType)
 {
-    SITH_ASSERTREL(pActor && (damage > ((float)0.0)));
+    SITH_ASSERTREL(pActor && (damage > 0.0f));
     SITH_ASSERTREL(pActor->type == SITH_THING_ACTOR || pActor->type == SITH_THING_PLAYER);
 
     if ( pActor->type == SITH_THING_PLAYER
-      && (pActor->moveStatus == SITHPLAYERMOVE_RAFT_BOARDING
-          || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
-          || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
-          || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARD_START
-          || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_BOARDING
-          || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_LEFT
-          || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_RIGHT
-          || pActor->moveStatus == SITHPLAYERMOVE_JEEP_BOARDING
-          || pActor->moveStatus == SITHPLAYERMOVE_JEEP_UNBOARDING) )
+        && (pActor->moveStatus == SITHPLAYERMOVE_RAFT_BOARDING
+            || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT
+            || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT
+            || pActor->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARD_START
+            || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_BOARDING
+            || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_LEFT
+            || pActor->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_RIGHT
+            || pActor->moveStatus == SITHPLAYERMOVE_JEEP_BOARDING
+            || pActor->moveStatus == SITHPLAYERMOVE_JEEP_UNBOARDING) )
     {
         return 0.0f;
     }
@@ -276,7 +276,7 @@ float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float d
 
     if ( sithMessage_g_outputstream )
     {
-        sithDSSThing_Death(pActor, pThing, 0, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Death(pActor, pThing, 0, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     sithActor_KillActor(pActor, pThing, damageType);
@@ -285,7 +285,7 @@ float J3DAPI sithActor_DamageActor(SithThing* pActor, SithThing* pThing, float d
 
 float J3DAPI sithActor_DamageRaftActor(SithThing* pActor, SithThing* pPerpetrator, float damage, SithDamageType damageType)
 {
-    SITH_ASSERTREL(pActor && (damage > ((float)0.0)));
+    SITH_ASSERTREL(pActor && (damage > 0.0f));
     SITH_ASSERTREL(pActor->type == SITH_THING_ACTOR || pActor->type == SITH_THING_PLAYER);
 
     if ( stdComm_IsGameActive() && (pActor->flags & SITH_TF_REMOTE) != 0 )
@@ -341,7 +341,7 @@ float J3DAPI sithActor_DamageRaftActor(SithThing* pActor, SithThing* pPerpetrato
 
     if ( sithMessage_g_outputstream )
     {
-        sithDSSThing_Death(pActor, pPerpetrator, 0, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Death(pActor, pPerpetrator, 0, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     sithActor_KillActor(pActor, pPerpetrator, damageType);
@@ -418,13 +418,11 @@ void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damage
                     goto LABEL_43;
                 }
             }
-
             else if ( damageType != (SITH_DAMAGE_2000 | SITH_DAMAGE_IMP1) && damageType != SITH_DAMAGE_2000 )
             {
                 goto LABEL_43;
             }
         }
-
         else if ( damageType != SITH_DAMAGE_IMP1 && damageType != SITH_DAMAGE_POISON )
         {
             goto LABEL_43;
@@ -432,7 +430,7 @@ void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damage
     }
     else if ( damageType == SITH_DAMAGE_DROWN )
     {
-        if ( (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 0xF) == 0 )
+        if ( SITH_ISFRAMECYCLE(pThing->idx, 16) ) // On every 16th frame make drawning sound fx
         {
             sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_DROWNING);
         }
@@ -590,7 +588,7 @@ void J3DAPI sithActor_KillActor(SithThing* pThing, SithThing* pSrcThing, SithDam
         {
             if ( damageType == SITH_DAMAGE_COLD_WATER )
             {
-                pThing->pPuppetState->majorMode = pThing->pPuppetState->armedMode + 8;
+                pThing->pPuppetState->majorMode = pThing->pPuppetState->armedMode + 8; // Unarmed swimming
                 curHealth = -31.0f;
             }
 
@@ -679,12 +677,7 @@ int J3DAPI sithActor_ActorCollisionHandler(SithThing* pSrcThing, SithThing* pThi
         sithAI_EmitEvent(pSrcThing->controlInfo.aiControl.pLocal, SITHAI_EVENT_TOUCHED, pThing);
     }
 
-    if ( pThing->controlType != SITH_CT_AI )
-    {
-        return bCollision;
-    }
-
-    if ( pThing->controlInfo.aiControl.pLocal )
+    if ( pThing->controlType == SITH_CT_AI && pThing->controlInfo.aiControl.pLocal )
     {
         sithAI_EmitEvent(pThing->controlInfo.aiControl.pLocal, SITHAI_EVENT_TOUCHED, pSrcThing);
     }
@@ -696,10 +689,6 @@ void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles)
 {
     SITH_ASSERTREL(pThing && headAngles && ((pThing->type == SITH_THING_ACTOR) || (pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_CORPSE)));
 
-    /*flags = pThing->thingInfo.actorInfo.flags;
-    (flags & 0xFF) = flags & (SithActorFlag)~SITH_AF_VIEWCENTRED;
-    pThing->thingInfo.actorInfo.flags = flags;*/
-
     pThing->thingInfo.actorInfo.flags &= ~SITH_AF_VIEWCENTRED;
 
     rdVector_Copy3(&pThing->thingInfo.actorInfo.headPYR, headAngles);
@@ -708,27 +697,26 @@ void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles)
     {
         int lastNodeNum = pThing->renderData.data.pModel3->numHNodes - 1;
 
-        int neckNum = pThing->pPuppetClass->aJoints[1];
-        int hipNum = pThing->pPuppetClass->aJoints[2];
-        int aim1Num = pThing->pPuppetClass->aJoints[5];
-        int aim2Num = pThing->pPuppetClass->aJoints[6];
-
+        int neckNum = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_NECK];
         if ( neckNum >= 0 && neckNum <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[neckNum].pitch = headAngles->pitch * 0.5f;
             pThing->renderData.apTweakedAngles[neckNum].yaw = headAngles->yaw;
         }
 
+        int hipNum  = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_HIP];
         if ( hipNum >= 0 && hipNum <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[hipNum].pitch = headAngles->pitch * 0.5f;
         }
 
+        int aim1Num = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIM1];
         if ( aim1Num >= 0 && aim1Num <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[aim1Num].pitch = headAngles->pitch * 0.30000001f;
         }
 
+        int aim2Num = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIM2];
         if ( aim2Num >= 0 && aim2Num <= lastNodeNum )
         {
             pThing->renderData.apTweakedAngles[aim2Num].pitch = headAngles->pitch * 0.30000001f;
@@ -741,13 +729,13 @@ void J3DAPI sithActor_UpdateAimJoints(SithThing* pThing)
     SITH_ASSERTREL(pThing && ((pThing->type == SITH_THING_ACTOR) || (pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_CORPSE)));
     if ( pThing->pPuppetClass )
     {
-        int aimPitchNum = pThing->pPuppetClass->aJoints[7];
-        int aimYawNum = pThing->pPuppetClass->aJoints[8];
+        int aimPitchNum = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIMPITCH];
         if ( aimPitchNum >= 0 )
         {
             pThing->renderData.apTweakedAngles[aimPitchNum].pitch = pThing->thingInfo.actorInfo.headPYR.pitch;
         }
 
+        int aimYawNum   = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIMYAW];
         if ( aimYawNum >= 0 )
         {
             pThing->renderData.apTweakedAngles[aimYawNum].yaw = pThing->thingInfo.actorInfo.headPYR.yaw;
@@ -779,7 +767,7 @@ void J3DAPI sithActor_DestroyCorpse(SithThing* pThing)
     // Fyi, here we can make the actor corpse to not disappear
     if ( pThing->renderFrame + 1 == sithMain_g_frameNumber )
     {
-        // If in camera view, extend life for 3 sec
+        // In camera view, extend life for 3 sec
         pThing->msecLifeLeft = 3000;
     }
     else
@@ -788,7 +776,7 @@ void J3DAPI sithActor_DestroyCorpse(SithThing* pThing)
     }
 }
 
-int J3DAPI sithActor_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithActor_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     SithActorInfo* pActorInfo = &pThing->thingInfo.actorInfo;
     switch ( adjNum )

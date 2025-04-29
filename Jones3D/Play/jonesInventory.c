@@ -18,11 +18,10 @@
 #include <stdio.h>
 
 static SithGameStatistics* jonesInventory_pGameStatistics;
-static size_t jonesInventory_msecStatisticsGameTime;
+static uint32_t jonesInventory_msecStatisticsGameTime;
 
 void jonesInventory_InstallHooks(void)
 {
-
     J3D_HOOKFUNC(jonesInventory_Open);
     J3D_HOOKFUNC(jonesInventory_Load);
     J3D_HOOKFUNC(jonesInventory_Close);
@@ -41,10 +40,7 @@ void jonesInventory_InstallHooks(void)
 }
 
 void jonesInventory_ResetGlobals(void)
-{
-    memset(&jonesInventory_pGameStatistics, 0, sizeof(jonesInventory_pGameStatistics));
-    memset(&jonesInventory_msecStatisticsGameTime, 0, sizeof(jonesInventory_msecStatisticsGameTime));
-}
+{}
 
 int jonesInventory_Open(void)
 {
@@ -178,20 +174,18 @@ size_t jonesInventory_GetMaxDifficultyLevel(void)
 
 void jonesInventory_UpdateSolvedHintsStatistics(void)
 {
-    int numSeenHints;
-    int numSeen;
-    int numHints;
-
     if ( sithGamesave_LockGameStatistics() )
     {
         int levelNum = jonesInventory_pGameStatistics->curLevelNum;
+
+        size_t numSeen, numHints;
         sithOverlayMap_GetNumSeenHints(&numSeen, &numHints);
 
-        numSeenHints = jonesInventory_pGameStatistics->aLevelStatistic[levelNum].numSeenHints;
-        if ( numSeenHints != numSeen )
+        size_t numSeenHintsLvl = jonesInventory_pGameStatistics->aLevelStatistic[levelNum].numSeenHints;
+        if ( numSeenHintsLvl != numSeen )
         {
             jonesInventory_pGameStatistics->aLevelStatistic[levelNum].numSeenHints = numSeen;
-            jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeen - numSeenHints;
+            jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeen - numSeenHintsLvl; // TODO: Make sure numSeen > numSeenHintsLvl
         }
 
         sithGamesave_UnlockGameStatistics();
@@ -236,20 +230,17 @@ void J3DAPI jonesInventory_UpdateIQPoints(size_t difficulty)
 
 int jonesInventory_GetTotalIQPoints(void)
 {
-    int numFoundTreasures;
-    int hintPenalty;
-    int numHints;
-    int numSeen;
-
+    size_t numHints, numSeen;
     sithOverlayMap_GetNumSeenHints(&numSeen, &numHints);
-    numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
+
+    size_t numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
     if ( numHints <= 0 )
     {
         return jonesInventory_pGameStatistics->totalIQPoints + 10 * numFoundTreasures / 10;// TODO: each found item is expected to have 1 IQ point and there is expected at max 10 found items per level. Remove this max 10 items limit
     }
 
-    hintPenalty = 10 * numSeen / numHints;
-    if ( !hintPenalty )
+    size_t hintPenalty = 10 * numSeen / numHints;
+    if ( hintPenalty == 0 )
     {
         hintPenalty = numSeen > 0;
     }
@@ -257,15 +248,16 @@ int jonesInventory_GetTotalIQPoints(void)
     return jonesInventory_pGameStatistics->totalIQPoints + 10 * numFoundTreasures / 10 - hintPenalty;// TODO: same here
 }
 
-void J3DAPI jonesInventory_AdvanceStatistics()
+void jonesInventory_AdvanceStatistics(void)
 {
     jonesInventory_UpdateGameTimeStatistics(sithTime_g_msecGameTime);
     if ( sithGamesave_LockGameStatistics() )
     {
-        int numSeenHints = 0, numTotalHints = 0;
+        size_t numSeenHints = 0, numTotalHints = 0;
         sithOverlayMap_GetNumSeenHints(&numSeenHints, &numTotalHints);
-        int numSeenHintsLvl = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numSeenHints;
-        int numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
+
+        size_t numSeenHintsLvl   = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numSeenHints;
+        size_t numFoundTreasures = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numFoundTreasures;
 
         // Note, the max treasure items to be found in level is capped to 10
         if ( numTotalHints <= 0 )
@@ -274,13 +266,13 @@ void J3DAPI jonesInventory_AdvanceStatistics()
         }
         else
         {
-            int hintPoints = 10 * numSeenHints / numTotalHints;
-            if ( !hintPoints )
+            size_t hintPoints = 10 * numSeenHints / numTotalHints;
+            if ( hintPoints == 0 )
             {
                 hintPoints = numSeenHints > 0;
             }
 
-            jonesInventory_pGameStatistics->totalIQPoints += 10 * numFoundTreasures / 10 + 40 - hintPoints;
+            jonesInventory_pGameStatistics->totalIQPoints += 10 * numFoundTreasures / 10 + 40 - hintPoints; // TODO: Make sure this is can't be negative
         }
 
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].iqPoints = jonesInventory_pGameStatistics->totalIQPoints
@@ -289,7 +281,7 @@ void J3DAPI jonesInventory_AdvanceStatistics()
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum + 1].levelStartIQPoints = jonesInventory_pGameStatistics->totalIQPoints;
 
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].numSeenHints = numSeenHints;
-        jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeenHints - numSeenHintsLvl;
+        jonesInventory_pGameStatistics->totalLevelStats.numSeenHints += numSeenHints - numSeenHintsLvl; // TODO: Make sure this is can't be negative
 
         jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum + 1].curElapsedSec = jonesInventory_pGameStatistics->aLevelStatistic[jonesInventory_pGameStatistics->curLevelNum].curElapsedSec;
 
@@ -310,7 +302,7 @@ void jonesInventory_AdvanceFoundTreasuresStatistics()
     }
 }
 
-void J3DAPI jonesInventory_UpdateGameTimeStatistics(unsigned int msecTime)
+void J3DAPI jonesInventory_UpdateGameTimeStatistics(uint32_t msecTime)
 {
     if ( sithGamesave_LockGameStatistics() )
     {
@@ -333,29 +325,48 @@ void J3DAPI jonesInventory_UpdateGameTimeStatistics(unsigned int msecTime)
     }
 }
 
-void J3DAPI jonesInventory_UpdateLevelStatisticTime(int elapsedSec, SithLevelStatistic* pLevelStats, unsigned int msecNewTime, int msecPreviousTime)
+void J3DAPI jonesInventory_UpdateLevelStatisticTime(uint32_t elapsedSec, SithLevelStatistic* pLevelStats, uint32_t msecNewTime, uint32_t msecPreviousTime)
 {
     uint32_t msecNewElapsed;
     if ( msecNewTime >= jonesInventory_msecStatisticsGameTime )
     {
-        msecNewElapsed = msecNewTime + 1000 * elapsedSec - msecPreviousTime;
+        msecNewElapsed = (int)msecNewTime + 1000 * (int)elapsedSec - (int)msecPreviousTime;
     }
     else
     {
         msecNewElapsed = msecNewTime + 1000 * elapsedSec - msecPreviousTime - 1;
     }
 
-    pLevelStats->elapsedTime = ((int)(msecNewElapsed / 60000 % 60// minutes
-        + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8))) % 60) | ((msecNewElapsed / 3600000// hours
-            + (pLevelStats->elapsedTime >> 8)
-            + (int)(msecNewElapsed / 60000 % 60// minutes
-                + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8)))
-            / 60) << 8);
+    //pLevelStats->elapsedTime = ((int)(msecNewElapsed / 60000 % 60// minutes
+    //    + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8))) % 60) | ((msecNewElapsed / 3600000// hours
+    //        + (pLevelStats->elapsedTime >> 8)
+    //        + (int)(msecNewElapsed / 60000 % 60// minutes
+    //            + (pLevelStats->elapsedTime ^ (pLevelStats->elapsedTime >> 8 << 8)))
+    //        / 60) << 8);
+
+    // Extract old hours and minutes from elapsedTime.
+    uint8_t oldMinutes = pLevelStats->elapsedTime & 0xFF; // lower 8 bits
+    uint8_t oldHours   = pLevelStats->elapsedTime >> 8;   // upper 8 bits
+
+    // Calculate new time components from msecNewElapsed.
+    uint8_t newMinutes = (msecNewElapsed / 60000) % 60;  // minutes portion
+    uint8_t newHours   = msecNewElapsed / 3600000;       // hours portion
+
+    // Sum the minutes and compute carry for hours.
+    uint16_t totalMinutes = oldMinutes + newMinutes;
+    uint8_t carryHours = totalMinutes / 60;
+    totalMinutes %= 60;
+
+    // Calculate total hours.
+    uint8_t totalHours = oldHours + newHours + carryHours;
+
+    // Pack the hours and minutes back into a single integer.
+    pLevelStats->elapsedTime = (totalHours << 8) | totalMinutes;
 
     pLevelStats->curElapsedSec = msecNewElapsed / 1000 % 60;
 }
 
-void jonesInventory_ResetStatisticsGameTime()
+void jonesInventory_ResetStatisticsGameTime(void)
 {
     jonesInventory_msecStatisticsGameTime = sithTime_g_msecGameTime;
 }

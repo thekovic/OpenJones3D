@@ -196,8 +196,8 @@ void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
                     if ( pThing->type == SITH_THING_PLAYER && pThing->thingInfo.actorInfo.curWeaponID == SITHWEAPON_WHIP )
                     {
                         if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
-                          && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_WHIPAIM) != 0
-                          || (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0 && (pThing->attach.pFace->flags & RD_FF_3DO_WHIP_AIM) != 0 )
+                            && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_WHIPAIM) != 0
+                            || (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0 && (pThing->attach.pFace->flags & RD_FF_3DO_WHIP_AIM) != 0 )
                         {
                             sithWhip_UpdateWhipAim(pThing);
                         }
@@ -225,7 +225,7 @@ void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
                 }
             }
             else if ( (pThing->type != SITH_THING_PLAYER || sithTime_g_secGameTime >= (double)sithWeapon_secMountWait)
-                   && sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secAimWaitEndTime )
+                && sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secAimWaitEndTime )
             {
                 SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.selectedWeaponID);
                 if ( (pItem->flags & SITHINVENTORY_TYPE_WEAPON) != 0 && pItem->pCog )
@@ -302,7 +302,7 @@ void J3DAPI sithWeapon_Update(SithThing* pThing, float secDeltaTime)
         }
     }
 
-    if ( (pThing->thingInfo.weaponInfo.flags & SITH_WF_DECAYEMITSOUNDAWARENESSEVENT) != 0 && (((uint8_t)sithMain_g_frameNumber + (uint8_t)pThing->idx) & 7) == 0 )
+    if ( (pThing->thingInfo.weaponInfo.flags & SITH_WF_DECAYEMITSOUNDAWARENESSEVENT) != 0 && SITH_ISFRAMECYCLE(pThing->idx, 8) ) // on every 8th frame
     {
         sithAIAwareness_CreateTransmittingEvent(pThing->pInSector, &pThing->pos, 2, 0.5f, pThing);
     }
@@ -389,18 +389,18 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
             {
                 // Call actor killed cb if actor is killed
                 if ( sithThing_GetThingParent(pWeapon) == sithPlayer_g_pLocalPlayerThing
-                  && sithWeapon_pfActorKilledCallback
-                  && pVictim->thingInfo.actorInfo.health == 0.0f )
+                    && sithWeapon_pfActorKilledCallback
+                    && pVictim->thingInfo.actorInfo.health == 0.0f )
                 {
                     sithWeapon_pfActorKilledCallback(sithGetGameDifficulty());
                 }
 
                 // Generate bloodsplort anf destroy projectile or explode projectile
                 if ( pVictim->thingInfo.actorInfo.health == 0.0f
-                  && (pWeaponInfo->flags & SITH_WF_ACTORKILLDESTROY) != 0
-                  && (pVictim->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
-                  && pVictim->type != SITH_THING_PLAYER
-                  && sithWeapon_bGenBloodsplort )
+                    && (pWeaponInfo->flags & SITH_WF_ACTORKILLDESTROY) != 0
+                    && (pVictim->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
+                    && pVictim->type != SITH_THING_PLAYER
+                    && sithWeapon_bGenBloodsplort )
                 {
                     sithWeapon_GenBloodsplort(pVictim);
                     sithThing_DestroyThing(pWeapon);
@@ -444,7 +444,7 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
     sithThing_RemoveThing(sithWorld_g_pCurrentWorld, pWeapon);
 }
 
-int J3DAPI sithWeapon_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     switch ( adjNum )
     {
@@ -538,7 +538,7 @@ SithThing* J3DAPI sithWeapon_WeaponFire(SithThing* pShooter, const SithThing* pP
     SithThing* pProjectile = sithWeapon_WeaponFireProjectile(pShooter, pProjectileTemplate, pFireDir, pFirePos, hFireSnd, submode, extra, projectileFlags, secDeltaTime);
     if ( pProjectile && sithMessage_g_outputstream )
     {
-        sithDSSThing_Fire(pShooter, pProjectileTemplate, pFireDir, pFirePos, hFireSnd, submode, extra, projectileFlags, secDeltaTime, pProjectile->guid, SITHMESSAGE_SENDTOALL, 0xFFu);
+        sithDSSThing_Fire(pShooter, pProjectileTemplate, pFireDir, pFirePos, hFireSnd, submode, extra, projectileFlags, secDeltaTime, pProjectile->guid, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
     }
 
     return pProjectile;
@@ -561,7 +561,7 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
         if ( (pShooter->thingInfo.actorInfo.fireOffset.x != 0.0f
             || pShooter->thingInfo.actorInfo.fireOffset.y != 0.0f
             || pShooter->thingInfo.actorInfo.fireOffset.z != 0.0f)
-          && pShooter->controlType != SITH_CT_AI )
+            && pShooter->controlType != SITH_CT_AI )
         {
             rdVector3 fireOffset;
             rdVector_Copy3(&fireOffset, &pShooter->thingInfo.actorInfo.fireOffset);
@@ -688,9 +688,9 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
         if ( pCollision && (pCollision->type & SITHCOLLISION_THING) != 0 )
         {
             if ( !stdComm_IsGameActive()
-              && pShooter == sithPlayer_g_pLocalPlayerThing
-              && (pProjectile->thingInfo.weaponInfo.flags & SITH_WF_EMITAITARGETEDEVENT) != 0
-              && pCollision->pThingCollided->controlType == SITH_CT_AI )
+                && pShooter == sithPlayer_g_pLocalPlayerThing
+                && (pProjectile->thingInfo.weaponInfo.flags & SITH_WF_EMITAITARGETEDEVENT) != 0
+                && pCollision->pThingCollided->controlType == SITH_CT_AI )
             {
                 sithAI_EmitEvent(pCollision->pThingCollided->controlInfo.aiControl.pLocal, SITHAI_EVENT_TARGETED, pProjectile);
             }
@@ -736,7 +736,7 @@ void J3DAPI sithWeapon_DamageWeapon(SithThing* pThing, const SithThing* pPurpetr
 int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThing, SithCollision* pCollision, int a5)
 {
 
-    if ( (pThing->flags & 4) != 0 )
+    if ( (pThing->flags & SITH_TF_NOWEAPONCOLLIDE) != 0 )
     {
         return 0;
     }
@@ -858,7 +858,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                     tSoundHandle hSnd = sithSound_Load(sithWorld_g_pCurrentWorld, "aet_mr_ball_rebound.wav");
                     if ( hSnd )
                     {
-                        sithSoundMixer_PlaySoundThing(hSnd, pReboundProjectile, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
+                        sithSoundMixer_PlaySoundThing(hSnd, pReboundProjectile, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
                     }
 
                     memset(&pWeapon->moveDir, 0, sizeof(pWeapon->moveDir));
@@ -873,7 +873,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
             tSoundHandle hSnd = sithSound_Load(sithWorld_g_pCurrentWorld, "aet_mr_hit_indy.wav");
             if ( hSnd )
             {
-                sithSoundMixer_PlaySoundThing(hSnd, pThing, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHIGNONCE | SOUNDPLAY_THING_POS);
+                sithSoundMixer_PlaySoundThing(hSnd, pThing, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
             }
         }
     }
@@ -930,8 +930,8 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
         }
 
         if ( sithThing_GetThingParent(pWeapon) == sithPlayer_g_pLocalPlayerThing
-          && sithWeapon_pfActorKilledCallback
-          && pThing->thingInfo.actorInfo.health == 0.0f )
+            && sithWeapon_pfActorKilledCallback
+            && pThing->thingInfo.actorInfo.health == 0.0f )
         {
             sithWeapon_pfActorKilledCallback(sithGetGameDifficulty());
         }
@@ -939,10 +939,10 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
         if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_THINGHITEXPLODE) != 0 )
         {
             if ( pThing->thingInfo.actorInfo.health == 0.0f
-              && (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_ACTORKILLDESTROY) != 0
-              && (pThing->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
-              && pThing->type != SITH_THING_PLAYER
-              && sithWeapon_bGenBloodsplort )
+                && (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_ACTORKILLDESTROY) != 0
+                && (pThing->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
+                && pThing->type != SITH_THING_PLAYER
+                && sithWeapon_bGenBloodsplort )
             {
                 sithWeapon_GenBloodsplort(pThing);
                 sithThing_DestroyThing(pWeapon);
@@ -1051,8 +1051,7 @@ int J3DAPI sithWeapon_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pS
 
         int secIdx  = sithSector_GetSectorIndex(pSurf->pSector);
         int surfIdx = sithSurface_GetSurfaceIndex(pSurf);
-        STD_FORMAT(std_g_genBuffer, "Weapon hit surface %d, sector %d, material '%s'.\n", surfIdx, secIdx, pMatName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Weapon hit surface %d, sector %d, material '%s'.\n", surfIdx, secIdx, pMatName);
     }
 
     // If hit sky surface, destroy projectile
@@ -1146,8 +1145,8 @@ SithThing* J3DAPI sithWeapon_CreateWeaponExplosion(SithThing* pWeapon, SithThing
     SITH_ASSERTREL(pWeapon->moveType == SITH_MT_PHYSICS);
 
     if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_EXPLODE) != 0
-      && (pWeapon->flags & SITH_TF_SUBMERGED) != 0
-      && (pWeapon->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 )
+        && (pWeapon->flags & SITH_TF_SUBMERGED) != 0
+        && (pWeapon->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 )
     {
         pExplosionTemplate = sithTemplate_GetTemplate("+uw_blast");
     }
@@ -1323,9 +1322,9 @@ int J3DAPI sithWeapon_ProcessWeaponControls(SithThing* pThing, float secDeltaTim
         }
 
         if ( curWeaponID > SITHWEAPON_NO_WEAPON
-          && sithTime_g_secGameTime >= (double)sithWeapon_secWeaponActivationWaitEndTime
-          && (sithControl_GetKey(SITHCONTROL_ACT2, &keyState), keyState)
-          && !sithWeapon_bPlayerWeaponActivated )
+            && sithTime_g_secGameTime >= (double)sithWeapon_secWeaponActivationWaitEndTime
+            && (sithControl_GetKey(SITHCONTROL_ACT2, &keyState), keyState)
+            && !sithWeapon_bPlayerWeaponActivated )
         {
             sithWeapon_secWeaponActivationWaitEndTime = sithTime_g_secGameTime + 0.5f;
             return 0;
@@ -1579,8 +1578,8 @@ int J3DAPI sithWeapon_HasWeaponSelected(const SithThing* pThing)
 {
     SITH_ASSERTREL(pThing);
     if ( pThing->type == SITH_THING_PLAYER
-      && pThing->thingInfo.actorInfo.curWeaponID >= SITHWEAPON_FISTS
-      && pThing->thingInfo.actorInfo.curWeaponID <= SITHWEAPON_BAZOOKA )
+        && pThing->thingInfo.actorInfo.curWeaponID >= SITHWEAPON_FISTS
+        && pThing->thingInfo.actorInfo.curWeaponID <= SITHWEAPON_BAZOOKA )
     {
         return 1;
     }
@@ -1775,7 +1774,7 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
     if ( (flags & SITHFIREPROJECTILE_AIM_ERROR) != 0 )
     {
         if ( !sithWeapon_GetAimOrient(&matAimError, pShooter, &fireOrient, pFireOffset, autoAimFovX, autoAimFovZ)
-          && (pAimError->x != 0.0f || pAimError->y != 0.0f || pAimError->z != 0.0f) )
+            && (pAimError->x != 0.0f || pAimError->y != 0.0f || pAimError->z != 0.0f) )
         {
             rdMatrix_PreRotate34(&matAimError, pAimError);
         }
@@ -1951,21 +1950,21 @@ void J3DAPI sithWeapon_ResetHolsterModel(SithThing* pThing, int holsterNum)
 {
     SITH_ASSERTREL(pThing);
 
-    if ( holsterNum == 1 ) // whipholster
+    if ( holsterNum == SITHWEAPON_HOLSTWEWHIP ) // whipholster
     {
         if ( sithWeapon_playerWhipHolsterSwapRefNum != -1 )
         {
             sithThing_RemoveSwapEntry(pThing, sithWeapon_playerWhipHolsterSwapRefNum);
         }
     }
-    else if ( holsterNum == 2 ) // pistol holster
+    else if ( holsterNum == SITHWEAPON_HOLSTERPISTOL ) // pistol holster
     {
         if ( sithWeapon_playerPistolHolsterSwapRefNum != -1 )
         {
             sithThing_RemoveSwapEntry(pThing, sithWeapon_playerPistolHolsterSwapRefNum);
         }
     }
-    else if ( holsterNum == 3 && sithWeapon_playerBackHolsterSwapRefNum != -1 ) // back holster
+    else if ( holsterNum == SITHWEAPON_HOLSTERBACK && sithWeapon_playerBackHolsterSwapRefNum != -1 ) // back holster
     {
         sithThing_RemoveSwapEntry(pThing, sithWeapon_playerBackHolsterSwapRefNum);
     }
@@ -2074,8 +2073,8 @@ int J3DAPI sithWeapon_IsAiming(SithThing* pThing)
 
 void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing)
 {
-    SITH_ASSERTREL(pHitThing != ((void*)0));
-    SITH_ASSERTREL(pHitThing->renderData.data.pModel3 != ((void*)0));
+    SITH_ASSERTREL(pHitThing != NULL);
+    SITH_ASSERTREL(pHitThing->renderData.data.pModel3 != NULL);
     SITH_ASSERTREL((pHitThing->type == SITH_THING_ACTOR) || (pHitThing->type == SITH_THING_CORPSE));
 
     SithThing* pTemplate = NULL;
@@ -2345,7 +2344,7 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
 {
     J3D_UNUSED(autoAimFovX);
     J3D_UNUSED(autoAimFovZ);
-    SITH_ASSERTREL(pShooter != ((void*)0));
+    SITH_ASSERTREL(pShooter != NULL);
 
     if ( pShooter->type != SITH_THING_ACTOR )
     {
@@ -2369,8 +2368,8 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
     if ( bUseFireOffset == 1 )
     {
         if ( pShooter->thingInfo.actorInfo.fireOffset.x != 0.0f
-          || pShooter->thingInfo.actorInfo.fireOffset.y != 0.0f
-          || pShooter->thingInfo.actorInfo.fireOffset.z != 0.0f )
+            || pShooter->thingInfo.actorInfo.fireOffset.y != 0.0f
+            || pShooter->thingInfo.actorInfo.fireOffset.z != 0.0f )
         {
             rdVector3 shooterFireOffset;
             rdVector_Copy3(&shooterFireOffset, &pShooter->thingInfo.actorInfo.fireOffset);
@@ -2428,7 +2427,7 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
 
 void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
 {
-    SITH_ASSERTREL(pThing != ((void*)0));
+    SITH_ASSERTREL(pThing != NULL);
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
 
     rdModel3* pHandModel = NULL;
@@ -2495,7 +2494,7 @@ void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
 
 int J3DAPI sithWeapon_ActivateWhip(SithThing* pThing, SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     bool bValidTarget = false;
     bool bSuccess     = false;

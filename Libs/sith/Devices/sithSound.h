@@ -9,8 +9,15 @@
 
 J3D_EXTERN_C_START
 
-int J3DAPI sithSound_InitializeSound(tHostServices* pHS);
-void sithSound_UninitializeSound(void);
+// Max number of simultaneous playing sounds
+#ifdef J3D_QOL_IMPROVEMENTS
+#  define SITHSOUND_MAXCHANNELS 128
+#else
+#  define SITHSOUND_MAXCHANNELS 32
+#endif
+
+int J3DAPI sithSound_Initialize(tHostServices* pHS);
+void sithSound_Uninitialize(void);
 
 int J3DAPI sithSound_Startup(int bSound3D);
 int sithSound_StartupSound(void);
@@ -18,10 +25,14 @@ int sithSound_StartupSound(void);
 void sithSound_Shutdown(void);
 void sithSound_ShutdownSound(void);
 
-int J3DAPI sithSound_NDYReadSoundSection(SithWorld* pWorld, int bSkip);
-int J3DAPI sithSound_CNDWriteSoundSection(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithSound_CNDReadSoundSection(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithSound_WriteSoundsListText(const SithWorld* pWorld); //Added: From debug version
+int J3DAPI sithSound_ReadSoundsListText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithSound_WriteSoundsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithSound_ReadSoundsListBinary(tFileHandle fh, SithWorld* pWorld);
+
 void J3DAPI sithSound_FreeWorldSounds(SithWorld* pWorld);
+
 tSoundHandle J3DAPI sithSound_Load(SithWorld* pWorld, const char* filename);
 void J3DAPI sithSound_SetSkipRestoringSounds(int bSkip);
 

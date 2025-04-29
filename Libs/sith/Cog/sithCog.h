@@ -9,7 +9,9 @@
 
 J3D_EXTERN_C_START
 
-#define SITHCOG_NORETURNVALUE -9999
+#define SITHCOG_TASKID              4u
+#define SITHCOG_NORETURNVALUE      -9999
+#define SITHCOG_GLOBALSYMBOLSTARTID SITHCOGSCRIPT_MAXSYMREFS
 
 #define sithCog_g_bCogStartup J3D_DECL_FAR_VAR(sithCog_g_bCogStartup, int)
 // extern int sithCog_g_bCogStartup;
@@ -50,10 +52,11 @@ int J3DAPI sithCog_AllocWorldCogScripts(SithWorld* pWorld, size_t numCogScripts)
 int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs);
 
 // Functions for loading & writing COGs from/to NDY/CND files
-int J3DAPI sithCog_WriteText(const SithWorld* pWorld); // Added
-int J3DAPI sithCog_LoadText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithCog_WriteBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithCog_LoadBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithCog_WriteCogsListText(const SithWorld* pWorld); // Added from debug
+int J3DAPI sithCog_ReadCogsListText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithCog_WriteCogsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithCog_ReadCogsListBinary(tFileHandle fh, SithWorld* pWorld);
 
 // On success 0 is returned and 1 on error
 int J3DAPI sithCog_ParseSymbolRef(SithWorld* pWorld, SithCogSymbol* pSymbol, const SithCogSymbolRef* pRef, const char* pString);
@@ -76,16 +79,17 @@ int J3DAPI sithCog_SurfaceSendMessage(const SithSurface* pSurf, const SithThing*
 int J3DAPI sithCog_SurfaceSendMessageEx(const SithSurface* pSurf, const SithThing* pSrcThing, SithCogMsgType messageType, int param0, int param1, int param2, int param3);
 
 // Functions for loading & writing COG Scripts from/to NDY/CND files
-int J3DAPI sithCog_WriteCogScriptsText(const SithWorld* pWorld);// Added
-int J3DAPI sithCog_LoadCogScriptsText(SithWorld* pWorld, int bSkip);
-int J3DAPI sithCog_WriteCogScriptsBinary(tFileHandle fh, SithWorld* pWorld);
-int J3DAPI sithCog_LoadCogScriptsBinary(tFileHandle fh, SithWorld* pWorld);
+int J3DAPI sithCog_WriteCogScriptsListText(const SithWorld* pWorld);// Added
+int J3DAPI sithCog_ReadCogScriptsListText(SithWorld* pWorld, int bSkip);
+
+int J3DAPI sithCog_WriteCogScriptsListBinary(tFileHandle fh, const SithWorld* pWorld);
+int J3DAPI sithCog_ReadCogScriptsListBinary(tFileHandle fh, SithWorld* pWorld);
 
 SithCogScript* J3DAPI sithCog_LoadScript(SithWorld* pWorld, const char* pName); // Loads COG script
 
 void J3DAPI sithCog_ProcessCog(SithCog* pCog);
-void J3DAPI sithCog_ProcessCogs();
-void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg); // Added
+void sithCog_ProcessCogs(void);
+int J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 // Maybe following should be all called register* functions
 void J3DAPI sithCog_AddIntSymbol(SithCogSymbolTable* pTbl, int val, const char* pName);

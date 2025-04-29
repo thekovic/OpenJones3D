@@ -28,8 +28,7 @@ void rdThing_InstallHooks(void)
 }
 
 void rdThing_ResetGlobals(void)
-{
-}
+{}
 
 rdThing* J3DAPI rdThing_New(SithThing* pThing)
 {
@@ -106,8 +105,8 @@ void J3DAPI rdThing_FreeEntry(rdThing* pThing)
 
 int J3DAPI rdThing_SetModel3(rdThing* pThing, rdModel3* pModel3)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pModel3 != ((void*)0));
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pModel3 != NULL);
 
     pThing->type            = RD_THING_MODEL3;
     pThing->data.pModel3    = pModel3;
@@ -144,8 +143,8 @@ int J3DAPI rdThing_SetModel3(rdThing* pThing, rdModel3* pModel3)
 
 int J3DAPI rdThing_SetCamera(rdThing* pThing, rdCamera* pCamera)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pCamera != ((void*)0));
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pCamera != NULL);
 
     pThing->type         = RD_THING_CAMERA;
     pThing->data.pCamera = pCamera;
@@ -154,8 +153,8 @@ int J3DAPI rdThing_SetCamera(rdThing* pThing, rdCamera* pCamera)
 
 int J3DAPI rdThing_SetLight(rdThing* pThing, rdLight* pLight)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pLight != ((void*)0));
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pLight != NULL);
 
     pThing->type        = RD_THING_LIGHT;
     pThing->data.pLight = pLight;
@@ -164,8 +163,8 @@ int J3DAPI rdThing_SetLight(rdThing* pThing, rdLight* pLight)
 
 int J3DAPI rdThing_SetSprite3(rdThing* pThing, rdSprite3* pSprite3)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pSprite3 != ((void*)0));
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pSprite3 != NULL);
 
     pThing->type          = RD_THING_SPRITE3;
     pThing->data.pSprite3 = pSprite3;
@@ -175,8 +174,8 @@ int J3DAPI rdThing_SetSprite3(rdThing* pThing, rdSprite3* pSprite3)
 
 int J3DAPI rdThing_SetPolyline(rdThing* pThing, rdPolyline* pPolyline)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pPolyline != ((void*)0));
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pPolyline != NULL);
 
     pThing->type         = RD_THING_POLYLINE;
     pThing->data.pModel3 = (rdModel3*)pPolyline;
@@ -186,8 +185,8 @@ int J3DAPI rdThing_SetPolyline(rdThing* pThing, rdPolyline* pPolyline)
 
 int J3DAPI rdThing_SetParticleCloud(rdThing* pThing, rdParticle* pParticle)
 {
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pParticle != ((void*)0));
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pParticle != NULL);
 
     pThing->type           = RD_THING_PARTICLE;
     pThing->data.pParticle = pParticle;

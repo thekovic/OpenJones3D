@@ -36,8 +36,7 @@ void stdMath_InstallHooks(void)
 }
 
 void stdMath_ResetGlobals(void)
-{
-}
+{}
 
 float J3DAPI stdMath_FlexPower(float base, int exponent)
 {
@@ -307,15 +306,15 @@ void stdMath_SinCos(float angle, float* pSinOut, float* pCosOut)
     *pCosOut = (cosValue - cosLookup) * fracPart + cosLookup;
 
     // TEST scope remove 
-    #ifdef J3D_DEBUG
+#ifdef J3D_DEBUG
     float sn, css;
     stdMath_SinCos2(angle, &sn, &css); // TODO: remove 
     if ( sn != *pSinOut || css != *pCosOut ) {
         STDLOG_ERROR("SinCos result differ from original for angle: %.f. sin=%.f osin=%.f cos=%.f ocos=%.f", angle, pSinOut, sn, pCosOut, css);
     }
     STD_ASSERT(sn == *pSinOut && css == *pCosOut);
-    #endif
-    // TEST scope remove 
+#endif
+// TEST scope remove 
 }
 
 // TODO: Remove
@@ -465,15 +464,15 @@ float J3DAPI stdMath_Tan(float angle)
     }
 
     // TODO: Remove
-    #ifdef J3D_DEBUG
+#ifdef J3D_DEBUG
     float tan = ((tanValue - baseLookup) * fracPart + baseLookup);
     float otan = stdMath_Tan2(angle);
     if ( tan != otan ) {
         STDLOG_ERROR("stdMath_Tan2 result differ from original for angle: %.f. tan=%.f otan=%.f", angle, tan, otan);
     }
     STD_ASSERT(tan == otan);
-    #endif
-    // TODO: Remove
+#endif
+// TODO: Remove
     return (tanValue - baseLookup) * fracPart + baseLookup;
 }
 
@@ -482,12 +481,12 @@ float J3DAPI stdMath_ArcSin1(float num)
     double asinval;
     double absNum = fabs(num);
     if ( absNum <= 0.70710677 ) {
-        asinval = (pow(absNum, 3) * 0.212749 + absNum) * (180.0 / M_PI);
+        asinval = STDMATH_TODEGREES(pow(absNum, 3) * 0.212749 + absNum);
     }
     else
     {
         double sqrtComplement = sqrt(1.0 - absNum * absNum);
-        asinval = 90.0 - (pow(sqrtComplement, 3) * 0.212749 + sqrtComplement) * (180.0 / M_PI);
+        asinval = 90.0 - STDMATH_TODEGREES(pow(sqrtComplement, 3) * 0.212749 + sqrtComplement);
     }
 
     return (float)(num < 0.0 ? -asinval : asinval);
@@ -500,13 +499,13 @@ float J3DAPI stdMath_ArcSin2(float num)
     if ( absnum <= 0.70710677 )
     {
         double term1 = pow(absnum, 3) / 6.0 + absnum;
-        asinval = (pow(absnum, 5) * 0.105502 + term1) * (180.0 / M_PI);
+        asinval = STDMATH_TODEGREES(pow(absnum, 5) * 0.105502 + term1);
     }
     else
     {
         double sqrtComplement = sqrt(1.0 - absnum * absnum);
         double term1 = pow(sqrtComplement, 3) / 6.0 + sqrtComplement;
-        asinval = 90.0 - (pow(sqrtComplement, 5) * 0.105502 + term1) * (180.0 / M_PI);
+        asinval = 90.0 - STDMATH_TODEGREES(pow(sqrtComplement, 5) * 0.105502 + term1);
     }
 
     return (float)(num < 0.0 ? -asinval : asinval);
@@ -519,14 +518,14 @@ float J3DAPI stdMath_ArcSin3(float num)
     {
         double term1 = pow(asinval, 3) / 6.0 + asinval;
         double term2 = pow(asinval, 5) * 0.075000003 + term1;
-        asinval = (pow(asinval, 7) * 0.066797003 + term2) * (180.0 / M_PI);
+        asinval = STDMATH_TODEGREES(pow(asinval, 7) * 0.066797003 + term2);
     }
     else
     {
         double sqrtVal = sqrt(1.0 - asinval * asinval);
         double term = pow(sqrtVal, 3) / 6.0 + sqrtVal;
         term        = pow(sqrtVal, 5) * 0.075000003 + term;
-        asinval     = 90.0 - (pow(sqrtVal, 7) * 0.066797003 + term) * (180.0 / M_PI);
+        asinval     = 90.0 - STDMATH_TODEGREES(pow(sqrtVal, 7) * 0.066797003 + term);
     }
 
     return (float)(num < 0.0 ? -asinval : asinval);
@@ -552,7 +551,7 @@ float stdMath_ArcTan4(float x, float y)
     double angle = ratio - pow(ratio, 3) / 3.0;
     angle = pow(ratio, 5) / 5.0 + angle;
     angle = angle - pow(ratio, 7) / 7.0;
-    angle = (pow(ratio, 9) * 0.063235f + angle) * (180.0 / M_PI); // - 57.295784
+    angle = STDMATH_TODEGREES(pow(ratio, 9) * 0.063235f + angle);
 
     if ( absX >= absY ) {
         angle = 90.0 - angle;

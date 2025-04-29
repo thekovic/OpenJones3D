@@ -27,7 +27,6 @@
 #include <w32util/wuRegistry.h>
 #include <wkernel/wkernel.h>
 
-
 static size_t JonesDisplay_primaryDisplayNum  = 1;
 static uint32_t JonesDisplay_backBufferWidth  = 0; // Added: init to 0
 static uint32_t JonesDisplay_backBufferHeight = 0;
@@ -183,9 +182,8 @@ int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings)
     if ( JonesDisplay_Startup(pSettings) ) {
         return 1;
     }
-    else {
-        return JonesDisplay_Open(pSettings);
-    }
+
+    return JonesDisplay_Open(pSettings);
 }
 
 void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings)

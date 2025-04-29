@@ -91,25 +91,25 @@ void sithMessage_Shutdown(void)
     sithMessage_bSturtup = false;
 }
 
-int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, uint32_t outstream, uint32_t dwDPFlags)
+int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, SithMessageStream outstream, uint32_t dwDPFlags)
 {
-    SITH_ASSERTREL(pMessage != ((void*)0));
+    SITH_ASSERTREL(pMessage != NULL);
     SITH_ASSERTREL((pMessage->type >= 0) && (pMessage->type < STD_ARRAYLEN(sithMessage_aTypeFuncs)));
     SITH_ASSERTREL(pMessage->length <= STD_ARRAYLEN(pMessage->data));
 
     uint32_t stream = sithMessage_g_outputstream & outstream;
-    if ( !stream )
+    if ( stream == SITHMESSAGE_STREAM_NONE )
     {
         return 1;
     }
 
     pMessage->msecTime = sithTime_g_msecGameTime;
-    if ( (stream & 1) != 0 )
+    if ( (stream & SITHMESSAGE_STREAM_NET) != 0 )
     {
         return sithMessage_NetWrite(pMessage, idTo, dwDPFlags);
     }
 
-    if ( (stream & 4) != 0 )
+    if ( (stream & SITHMESSAGE_STREAM_FILE) != 0 )
     {
         return sithMessage_FileWrite(pMessage);
     }
@@ -119,7 +119,7 @@ int J3DAPI sithMessage_SendMessage(SithMessage* pMessage, DPID idTo, uint32_t ou
 
 void sithMessage_ProcessMessages(void)
 {
-    if ( !sithMessage_g_inputstream )
+    if ( sithMessage_g_inputstream == SITHMESSAGE_STREAM_NONE )
     {
         SITHLOG_ERROR("Called ProcessMessages without any input stream to read from.\n");
     }
@@ -136,9 +136,9 @@ void sithMessage_ProcessMessages(void)
         }
 
         if ( sithMulti_g_message.type != SITHDSS_WELCOME
-          && sithMulti_g_message.type != SITHDSS_JOIN
-          && sithMulti_g_message.type != SITHDSS_SYNCPLAYERS
-          && (sithMain_g_sith_mode.subModeFlags & 8) == 0 )
+            && sithMulti_g_message.type != SITHDSS_JOIN
+            && sithMulti_g_message.type != SITHDSS_SYNCPLAYERS
+            && (sithMain_g_sith_mode.subModeFlags & 8) == 0 )
         {
             SITHLOG_ERROR("Ignored message type %d from non-active sender %x.\n", sithMulti_g_message.type, sithMessage_senderId);
 
@@ -169,7 +169,7 @@ int J3DAPI sithMessage_NetWrite(const SithMessage* pMsg, DPID idTo, uint32_t fla
 
     int bFailed = 0;
     uint32_t dataSize = pMsg->length + sizeof(pMsg->type); // 4 is the size of message type
-    if ( idTo == SITHMESSAGE_SENDTOALL )
+    if ( idTo == SITHMESSAGE_SENDTOJOINEDPLAYERS )
     {
         for ( size_t i = 0; i < sithPlayer_g_numPlayers; ++i )
         {
@@ -198,7 +198,7 @@ int J3DAPI sithMessage_NetWrite(const SithMessage* pMsg, DPID idTo, uint32_t fla
 
 int J3DAPI sithMessage_ReceiveMessage(SithMessage* pMsg, DPID* pSender)
 {
-    SITH_ASSERTREL(pMsg != ((void*)0)); // Fixed: Moved this assert to beginning of scope before accessing pMsg
+    SITH_ASSERTREL(pMsg != NULL); // Fixed: Moved this assert to beginning of scope before accessing pMsg
 
     size_t dataLen = STD_ARRAYLEN(pMsg->data);
     int res = stdComm_Receive(pSender, &pMsg->type, &dataLen);
@@ -411,7 +411,7 @@ void J3DAPI sithMessage_RegisterFunction(int type, SithMessageProcessFunc pFunc)
 
 int J3DAPI sithMessage_Process(const SithMessage* pMessage)
 {
-    SITH_ASSERTREL(pMessage != ((void*)0));
+    SITH_ASSERTREL(pMessage != NULL);
 
     uint32_t type = pMessage->type;
     if ( type >= STD_ARRAYLEN(sithMessage_aTypeFuncs) )
@@ -460,7 +460,7 @@ void sithMessage_InitMessageHandlers(void)
     sithMessage_RegisterFunction(SITHDSS_STOPKEY, sithDSSThing_ProcessStopKey);
     sithMessage_RegisterFunction(SITHDSS_STOPSOUND, sithDSSThing_ProcessStopSound);
     sithMessage_RegisterFunction(SITHDSS_CREATETHING, sithDSSThing_ProcessCreateThing);
-    sithMessage_RegisterFunction(SITHDSS_SYNCWORLDSTATE, sithDSS_ProcessSyncWorldState);
+    sithMessage_RegisterFunction(SITHDSS_SYNCGAMESTATE, sithDSS_ProcessSyncGameState);
     sithMessage_RegisterFunction(SITHDSS_CHAT, sithMulti_ProcessChat);
     sithMessage_RegisterFunction(SITHDSS_DESTROYTHING, sithDSSThing_ProcessDestroyThing);
     sithMessage_RegisterFunction(SITHDSS_SECTORFLAGS, sithDSS_ProcessSectorFlags);

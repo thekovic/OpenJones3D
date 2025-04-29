@@ -1,6 +1,8 @@
 #ifndef SITH_SITHMAIN_H
 #define SITH_SITHMAIN_H
 #include <j3dcore/j3d.h>
+#include <j3dcore/j3dhook.h>
+
 #include <rdroid/types.h>
 #include <sith/types.h>
 #include <sith/Main/sithMain.h>
@@ -13,6 +15,7 @@ J3D_EXTERN_C_START
 
 #define SITH_RAND() ((double)rand() * (1.0 / RAND_MAX))
 #define SITH_RANDF() ((float)SITH_RAND())
+
 #define SITHLOG_DEBUG(format, ...) \
     J3DLOG_DEBUG(sith_g_pHS, format, ##__VA_ARGS__)
 
@@ -37,18 +40,29 @@ J3D_EXTERN_C_START
 #define SITH_ASSERTREL(condition) \
     J3D_ASSERTREL(condition, sith_g_pHS )
 
+/**
+ * Checks if current game frame number + offset is N-th frame (like every 4th, 8th, or 16th frame).
+ * Uses the global frame counter sithMain_g_frameNumber with an optional offset.
+ *
+ * @param offset Shifts current game frame for which frame is considered the "N-th" one
+ * @param n      N-th frame, i.e.: on every n-th frame (e.g.: every 2nd, 4th, 8th, 16th frame, etc.)
+ * @return       True on every N-th frame
+ */
+#define SITH_ISFRAMECYCLE(offset, n) (((uint8_t)sithMain_g_frameNumber + (uint8_t)(offset)) & ((n)-1)) == 0
+
+
 #define sith_g_pHS J3D_DECL_FAR_VAR(sith_g_pHS, tHostServices*)
 // extern tHostServices *sith_g_pHS;
 
 // TODO: Rename all to be prefixed only by 'sith'
 
-#define sithMain_g_frameNumber J3D_DECL_FAR_VAR(sithMain_g_frameNumber, int)
+#define sithMain_g_frameNumber J3D_DECL_FAR_VAR(sithMain_g_frameNumber, size_t)
 // extern int sithMain_g_frameNumber;
 
 #define sithMain_g_sith_mode J3D_DECL_FAR_VAR(sithMain_g_sith_mode, SithMode)
 // extern SithMode sithMain_g_sith_mode;
 
-#define sithMain_g_curRenderTick J3D_DECL_FAR_VAR(sithMain_g_curRenderTick, unsigned int)
+#define sithMain_g_curRenderTick J3D_DECL_FAR_VAR(sithMain_g_curRenderTick, size_t)
 // extern unsigned int sithMain_g_curRenderTick;
 
 void J3DAPI sithSetServices(tHostServices* pHS);
@@ -73,6 +87,7 @@ void sithClose(void);
 void sithUpdate(void);
 void sithDrawScene(void);
 void sithAdvanceRenderTick(void);
+bool sithToggleDrawPlayerRadius(void); // Added
 
 void J3DAPI sithSetGameDifficulty(int difficulty);
 int sithGetGameDifficulty(void);

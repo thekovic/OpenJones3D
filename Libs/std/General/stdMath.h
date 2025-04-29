@@ -9,7 +9,16 @@
 
 J3D_EXTERN_C_START
 
+// Clamp value between min and max
 #define STDMATH_CLAMP(val, minv, maxv) (((val) < (minv)) ? (minv) : ((val) > (maxv)) ? (maxv) : (val))
+
+// Convert radians to degrees
+#define STDMATH_TODEGREES(rad)  ((rad) * (180.0 / M_PI))
+#define STDMATH_TODEGREESF(rad) (float)STDMATH_TODEGREES(rad)
+
+// Convert degrees to radians
+#define STDMATH_RADIANS(deg)  ((deg) * (M_PI / 180.0))
+#define STDMATH_RADIANSF(deg) (float)STDMATH_RADIANS(deg)
 
 float J3DAPI stdMath_FlexPower(float base, int exponent);
 inline float stdMath_ClipNearZero(float val); // Added

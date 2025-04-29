@@ -52,19 +52,6 @@ void stdConffile_InstallHooks(void)
 
 void stdConffile_ResetGlobals(void)
 {
-    //memset(&stdConffile_aWriteFilename, 0, sizeof(stdConffile_aWriteFilename));
-    //memset(&aFilenameStack, 0, sizeof(aFilenameStack));
-    //memset(&apBufferStack, 0, sizeof(apBufferStack));
-    //memset(&linenumStack, 0, sizeof(linenumStack));
-    //memset(&stdConffile_pFilename, 0, sizeof(stdConffile_pFilename));
-    //memset(&aEntryStack, 0, sizeof(aEntryStack));
-    //memset(&openFileStack, 0, sizeof(openFileStack));
-    //memset(&stdConffile_linenum, 0, sizeof(stdConffile_linenum));
-    //memset(&stdConffile_bOpen, 0, sizeof(stdConffile_bOpen));
-    //memset(&stdConffile_openFile, 0, sizeof(stdConffile_openFile));
-    //memset(&stdConffile_writeFile, 0, sizeof(stdConffile_writeFile));
-    //memset(&stdConffile_stackLevel, 0, sizeof(stdConffile_stackLevel));
-
     memset(&stdConffile_g_entry, 0, sizeof(stdConffile_g_entry));
     memset(&stdConffile_g_aLine, 0, sizeof(stdConffile_g_aLine));
 }
@@ -100,7 +87,7 @@ int J3DAPI stdConffile_OpenMode(const char* pFilename, const char* openMode)
     }
 
     STD_ASSERTREL(openFile == 0);
-    if ( strcmp(pFilename, "none") == 0 ) {
+    if ( streq(pFilename, "none") ) {
         openFile = 0;
     }
     else
@@ -137,7 +124,7 @@ void stdConffile_Close(void)
         return;
     }
 
-    STD_ASSERTREL(stdConffile_g_aLine != ((void*)0));
+    STD_ASSERTREL(stdConffile_g_aLine != NULL);
     if ( openFile ) {
         std_g_pHS->pFileClose(openFile);
     }
@@ -324,6 +311,12 @@ tFileHandle stdConffile_GetFileHandle(void)
 {
     STD_ASSERTREL(openFile != 0);
     return openFile;
+}
+
+tFileHandle stdConffile_GetWriteFileHandle(void)
+{
+    STD_ASSERTREL(writeFile != 0);
+    return writeFile;
 }
 
 size_t stdConffile_GetLineNumber(void)

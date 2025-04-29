@@ -8,25 +8,24 @@
 
 J3D_EXTERN_C_START
 
-#define SITHTHING_NUMADJECTIVES 77
+#define SITHTHING_NUMADJECTIVES 77u
 
-#define SITH_PUPPET_NUMMOVEMODES  3
-#define SITH_PUPPET_NUMARMEDMODES 8
-#define SITH_PUPPET_NUMSUBMODES   84
+#define SITH_PUPPET_NUMMOVEMODES  3u
+#define SITH_PUPPET_NUMARMEDMODES 8u
+#define SITH_PUPPET_NUMSUBMODES   84u
 
-#define SITHMESSAGE_NUMTYPES  65
-#define SITHMESSAGE_SENDTOALL ((DPID)-1)
+#define SITHMESSAGE_NUMTYPES             65u
+#define SITHMESSAGE_SENDTOJOINEDPLAYERS ((DPID)-1)
 
-#define SITHAIAWARENESS_NUMTYPES  4
-#define SITHAIAWARENESS_MAXEVENTS 32
+#define SITHCOGSCRIPT_MAXSYMREFS  256u
 
-#define SITHCOGEXEC_CALLSTACKSIZE 4
-#define SITHCOGEXEC_STACKSIZE     256
+#define SITHCOGEXEC_CALLSTACKSIZE 4u
+#define SITHCOGEXEC_STACKSIZE     256u
 
-#define SITHAI_MAXWPNTOWNERS          10
-#define SITHAI_MAXINSTINCTS           16
-#define SITHAI_MAXREGISTEREDINSTINCTS 32
-#define SITHAI_MAXWPNTS               60
+#define SITHAI_MAXWPNTOWNERS          10u
+#define SITHAI_MAXINSTINCTS           16u
+#define SITHAI_MAXREGISTEREDINSTINCTS 32u
+#define SITHAI_MAXWPNTS               60u
 
 #define SITH_STATICRESOURCE_INDEXMASK 0x8000
 
@@ -34,7 +33,9 @@ J3D_EXTERN_C_START
 #define SITHGAMESAVE_SAVE    0x1
 #define SITHGAMESAVE_RESTORE 0x2
 
-#define SITHINVENTORY_MAXTYPES 200
+#define SITHINVENTORY_MAXTYPES 200u
+
+#define SITHSOUNDCLASS_MAXMODES 141u
 
 typedef enum eSithThingType
 {
@@ -94,10 +95,19 @@ typedef enum eSithThingFlag
 
 typedef enum eSithThingMoveType
 {
-    SITH_MT_NONE    = 0x0,
-    SITH_MT_PHYSICS = 0x1,
-    SITH_MT_PATH    = 0x2,
+    SITH_MT_NONE    = 0,
+    SITH_MT_PHYSICS = 1,
+    SITH_MT_PATH    = 2,
 } SithThingMoveType;
+
+// Thing sync flags
+typedef enum eSithThingSyncFlags
+{
+    SITHTHING_SYNC_POS     = 0x01, // Current position & orientation + physics properties
+    SITHTHING_SYNC_STATE   = 0x02,
+    SITHTHING_SYNC_FULL    = 0x04,
+    SITHTHING_SYNC_MOVEPOS = 0x08, // Current position & orientation + move status
+} SithThingSyncFlags;
 
 typedef enum eSithSectorFlag
 {
@@ -249,81 +259,92 @@ typedef enum eSithCollisionType
 
 typedef enum eSithCollideType
 {
-    SITH_COLLIDE_NONE   = 0,
-    SITH_COLLIDE_SPHERE = 1,
-    SITH_COLLIDE_FACE   = 3,
+    SITH_COLLIDE_NONE     = 0,
+    SITH_COLLIDE_SPHERE   = 1,
+    SITH_COLLIDE_FACE     = 3,
+    SITH_COLLIDE_NUMTYPES = 4,
 } SithCollideType;
 
-typedef enum eSithAnimateFlags J3D_ENUM_TYPE(uint32_t)
+typedef enum eSithAnimateFlags
 {
-    SITHANIMATE_LOOP                 = 0x1,
-        SITHANIMATE_START_SECOND_FRAME   = 0x2,
-        SITHANIMATE_START_THIRD_FRAME    = 0x4,
-        SITHANIMATE_FINISH_FIRST_FRAME   = 0x8,
-        SITHANIMATE_PUSH_ITEM_TRACK_ANIM = 0x10,
-        SITHANIMATE_PULL_ITEM_TRACK_ANIM = 0x20,
-        SITHANIMATE_MATERIAL             = 0x10000,
-        SITHANIMATE_SURFACE              = 0x20000,
-        SITHANIMATE_THING                = 0x40000,
-        SITHANIMATE_SPRITE_THING         = 0x80000,
-        SITHANIMATE_SCROLL_SURFACE       = 0x100000,
-        SITHANIMATE_PAGEFLIP_ANIM        = 0x200000,
-        SITHANIMATE_LIGHT_ANIM           = 0x400000,
-        SITHANIMATE_SKY_HORIZON          = 0x800000,
-        SITHANIMATE_SKY_CEILING          = 0x1000000,
-        SITHANIMATE_SECTOR               = 0x2000000,
-        SITHANIMATE_CAMERA_ZOOM          = 0x4000000,
-        SITHANIMATE_COLOR_ANIM           = 0x8000000,
-        SITHANIMATE_SPRITE_SIZE_ANIM     = 0x10000000,
-        SITHANIMATE_THING_MOVE           = 0x20000000,
-        SITHANIMATE_THING_MOVE_TO_POS    = 0x40000000,
-        SITHANIMATE_THING_YAW_ROTATE     = 0x80000000,
+    SITHANIMATE_LOOP                 = 0x01,
+    SITHANIMATE_START_SECOND_FRAME   = 0x02,
+    SITHANIMATE_START_THIRD_FRAME    = 0x04,
+    SITHANIMATE_FINISH_FIRST_FRAME   = 0x08,
+    SITHANIMATE_PUSHITEM             = 0x10,
+    SITHANIMATE_PULLITEM             = 0x20,
+    SITHANIMATE_MATERIAL             = 0x10000,
+    SITHANIMATE_SURFACE              = 0x20000,
+    SITHANIMATE_THING                = 0x40000,
+    SITHANIMATE_SPRITE               = 0x80000,
+    SITHANIMATE_SCROLL               = 0x100000,
+    SITHANIMATE_PAGEFLIP             = 0x200000,
+    SITHANIMATE_LIGHT                = 0x400000,
+    SITHANIMATE_SKYHORIZON           = 0x800000,
+    SITHANIMATE_SKYCEILING           = 0x1000000,
+    SITHANIMATE_SECTOR               = 0x2000000,
+    SITHANIMATE_CAMERA_ZOOM          = 0x4000000,
+    SITHANIMATE_THING_FADE           = 0x8000000,
+    SITHANIMATE_SPRITE_SIZE          = 0x10000000,
+    SITHANIMATE_THING_MOVE           = 0x20000000,
+    SITHANIMATE_THING_MOVEPOS        = 0x40000000,
+    SITHANIMATE_THING_QUICKTURN      = 0x80000000,
 } SithAnimateFlags;
 
 typedef enum eSithControlType
 {
-    SITH_CT_PLOT      = 0x0,
-    SITH_CT_PLAYER    = 0x1,
-    SITH_CT_AI        = 0x2,
-    SITH_CT_EXPLOSION = 0x6,
-    SITH_CT_PARTICLE  = 0x7,
+    SITH_CT_PLOT      = 0,
+    SITH_CT_PLAYER    = 1,
+    SITH_CT_AI        = 2,
+    SITH_CT_EXPLOSION = 6,
+    SITH_CT_PARTICLE  = 7,
 } SithControlType;
 
 typedef enum eSithDebugModeFlag
 {
-    SITHDEBUG_AIEVENTS_DISABLED          = 0x1,
-    SITHDEBUG_PUPPETSYSTEM_DISABLED      = 0x2,
-    SITHDEBUG_INVULNERABLE               = 0x8,
+    SITHDEBUG_AIEVENTS_DISABLED          = 0x01,
+    SITHDEBUG_PUPPETSYSTEM_DISABLED      = 0x02,
+    SITHDEBUG_UNKNOWN_8                  = 0x08,
     SITHDEBUG_TRACKSHOTS                 = 0x40,
     SITHDEBUG_AIDISABLED                 = 0x80,
     SITHDEBUG_INEDITOR                   = 0x100,
-    SITHDEBUG_AILOOK_FOR_TARGET_DISABLED = 0x200,
+    SITHDEBUG_AINOTARGET                 = 0x200,
     SITHDEBUG_SLOWMODE                   = 0x400,
 } SithDebugModeFlag;
 
+typedef enum eSithMapModeFlags
+{
+    SITHMAPMODE_SHOWALLSECTORS = 0x02,
+    SITHMAPMODE_SHOWPLAYERS    = 0x04,
+    SITHMAPMODE_SHOWACTORS     = 0x08,
+    SITHMAPMODE_SHOWITEMS      = 0x10,
+    SITHMAPMODE_SHOWWEAPONS    = 0x20,
+    SITHMAPMODE_SHOWALLTHINGS  = 0x40,
+} SithMapModeFlags;
+
 typedef enum eSithWorldState
 {
-    SITH_WORLD_STATE_STATIC      = 0x1,
-    SITH_WORLD_STATE_INITIALIZED = 0x2,
-    SITH_WORLD_STATE_UPDATE_FOG  = 0x4,
-    SITH_WORLD_STATE_INIT_HUD    = 0x8,
+    SITH_WORLD_STATE_STATIC      = 0x01,
+    SITH_WORLD_STATE_INITIALIZED = 0x02,
+    SITH_WORLD_STATE_UPDATE_FOG  = 0x04,
+    SITH_WORLD_STATE_INIT_HUD    = 0x08,
 } SithWorldState;
 
 typedef enum eSithPathMoveMode
 {
-    SITH_PATHMOVE_MOVE         = 0x1,
-    SITH_PATHMOVE_ROTATE       = 0x2,
-    SITH_PATHMOVE_FOLLOWPATH   = 0x4,
+    SITH_PATHMOVE_MOVE         = 0x01,
+    SITH_PATHMOVE_ROTATE       = 0x02,
+    SITH_PATHMOVE_FOLLOWPATH   = 0x04,
     SITH_PATHMOVE_ROTATE_PIVOT = 0x10,
     SITH_PATHMOVE_PAUSED       = 0x80,
 } SithPathMoveMode;
 
 typedef enum eSithPhysicsFlags
 {
-    SITH_PF_USEGRAVITY          = 0x1,
-    SITH_PF_USETHRUST           = 0x2,
-    SITH_PF_UNKNOWN_4           = 0x4,
-    SITH_PF_UNKNOWN_8           = 0x8,
+    SITH_PF_USEGRAVITY          = 0x01,
+    SITH_PF_USETHRUST           = 0x02,
+    SITH_PF_UNKNOWN_4           = 0x04,
+    SITH_PF_UNKNOWN_8           = 0x08,
     SITH_PF_ALIGNSURFACE        = 0x10,
     SITH_PF_SURFACEBOUNCE       = 0x20,
     SITH_PF_FLOORSTICK          = 0x40,
@@ -354,45 +375,45 @@ typedef enum eSithPhysicsFlags
     SITH_PF_UNKNOWN_80000000    = 0x80000000,
 } SithPhysicsFlags;
 
-typedef enum eSithAIMode J3D_ENUM_TYPE(int32_t)
+typedef enum eSithAIMode
 {
-    SITHAI_MODE_MOVING            = 0x1,
-        SITHAI_MODE_ATTACKING         = 0x2,
-        SITHAI_MODE_SEARCHING         = 0x4,
-        SITHAI_MODE_TURNING           = 0x8,
-        SITHAI_MODE_UNKNOWN_10        = 0x10,
-        SITHAI_MODE_TOUGHSKIN         = 0x20,
-        SITHAI_MODE_NOCHECKFORCLIFF   = 0x40,
-        SITHAI_MODE_UNKNOWN_80        = 0x80,
-        SITHAI_MODE_BLOCK             = 0x100,
-        SITHAI_MODE_ACTIVE            = 0x200,
-        SITHAI_MODE_TARGETVISIBLE     = 0x400,
-        SITHAI_MODE_FLEEING           = 0x800,
-        SITHAI_MODE_SLEEPING          = 0x1000,
-        SITHAI_MODE_DISABLED          = 0x2000,
-        SITHAI_MODE_CIRCLESTRAFING    = 0x4000,
-        SITHAI_MODE_UNKNOWN_8000      = 0x8000,
-        SITHAI_MODE_WANTALLEVENTS     = 0x10000,
-        SITHAI_MODE_LOSTSIGHTOFGOAL   = 0x20000,
-        SITHAI_MODE_INSTINCTUSEWPNTS  = 0x40000,
-        SITHAI_MODE_CHASE_GOAL        = 0x80000,
-        SITHAI_MODE_UNKNOWN_100000    = 0x100000,
-        SITHAI_MODE_WALLCRAWLING      = 0x200000,
-        SITHAI_MODE_UNKNOWN_400000    = 0x400000,
-        SITHAI_MODE_HUNTING           = 0x800000,
-        SITHAI_MODE_UNKNOWN_1000000   = 0x1000000,
-        SITHAI_MODE_NOCHASING         = 0x2000000,
-        SITHAI_MODE_TRAVERSEWPNTS     = 0x4000000,
-        SITHAI_MODE_ARMOREDSKIN       = 0x8000000,
-        SITHAI_MODE_FLEEINGTOWAYPOINT = 0x10000000,
+    SITHAI_MODE_MOVING            = 0x01,
+    SITHAI_MODE_ATTACKING         = 0x02,
+    SITHAI_MODE_SEARCHING         = 0x04,
+    SITHAI_MODE_TURNING           = 0x08,
+    SITHAI_MODE_UNKNOWN_10        = 0x10,
+    SITHAI_MODE_TOUGHSKIN         = 0x20,
+    SITHAI_MODE_NOCHECKFORCLIFF   = 0x40,
+    SITHAI_MODE_UNKNOWN_80        = 0x80,
+    SITHAI_MODE_BLOCK             = 0x100,
+    SITHAI_MODE_ACTIVE            = 0x200,
+    SITHAI_MODE_TARGETVISIBLE     = 0x400,
+    SITHAI_MODE_FLEEING           = 0x800,
+    SITHAI_MODE_SLEEPING          = 0x1000,
+    SITHAI_MODE_DISABLED          = 0x2000,
+    SITHAI_MODE_CIRCLESTRAFING    = 0x4000,
+    SITHAI_MODE_UNKNOWN_8000      = 0x8000,
+    SITHAI_MODE_WANTALLEVENTS     = 0x10000,
+    SITHAI_MODE_LOSTSIGHTOFGOAL   = 0x20000,
+    SITHAI_MODE_INSTINCTUSEWPNTS  = 0x40000,
+    SITHAI_MODE_CHASE_GOAL        = 0x80000,
+    SITHAI_MODE_UNKNOWN_100000    = 0x100000,
+    SITHAI_MODE_WALLCRAWLING      = 0x200000,
+    SITHAI_MODE_UNKNOWN_400000    = 0x400000,
+    SITHAI_MODE_HUNTING           = 0x800000,
+    SITHAI_MODE_UNKNOWN_1000000   = 0x1000000,
+    SITHAI_MODE_NOCHASING         = 0x2000000,
+    SITHAI_MODE_TRAVERSEWPNTS     = 0x4000000,
+    SITHAI_MODE_ARMOREDSKIN       = 0x8000000,
+    SITHAI_MODE_FLEEINGTOWAYPOINT = 0x10000000,
 } SithAIMode;
 
 typedef enum eSithAISubMode
 {
-    SITHAI_SUBMODE_UNKNOWN_1                = 0x1,
-    SITHAI_SUBMODE_UNKNOWN_2                = 0x2,
-    SITHAI_SUBMODE_UNKNOWN_4                = 0x4,
-    SITHAI_SUBMODE_UNKNOWN_8                = 0x8,
+    SITHAI_SUBMODE_UNKNOWN_1                = 0x01,
+    SITHAI_SUBMODE_UNKNOWN_2                = 0x02,
+    SITHAI_SUBMODE_UNKNOWN_4                = 0x04,
+    SITHAI_SUBMODE_UNKNOWN_8                = 0x08,
     SITHAI_SUBMODE_UNKNOWN_10               = 0x10,
     SITHAI_SUBMODE_SKIPCHECKFIREFOV         = 0x20,
     SITHAI_SUBMODE_FIREADDEYEOFFSET         = 0x40,
@@ -418,23 +439,23 @@ typedef enum eSithAISubMode
     SITHAI_SUBMODE_WALLCRAWLLOCKED          = 0x8000000,
 } SithAISubMode;
 
-typedef enum eSithAttachFlag J3D_ENUM_TYPE(int32_t)
+typedef enum eSithAttachFlag
 {
-    SITH_ATTACH_SURFACE        = 0x1,
-        SITH_ATTACH_THINGFACE      = 0x2,
-        SITH_ATTACH_THING          = 0x4,
-        SITH_ATTACH_NOMOVE         = 0x8,
-        SITH_ATTACH_CLIMBSURFACE   = 0x10,
-        SITH_ATTACH_THINGCLIMBWHIP = 0x20,
-        SITH_ATTACH_TAIL           = 0x40,
+    SITH_ATTACH_SURFACE        = 0x01,
+    SITH_ATTACH_THINGFACE      = 0x02,
+    SITH_ATTACH_THING          = 0x04,
+    SITH_ATTACH_NOMOVE         = 0x08,
+    SITH_ATTACH_CLIMBSURFACE   = 0x10,
+    SITH_ATTACH_THINGCLIMBWHIP = 0x20,
+    SITH_ATTACH_TAIL           = 0x40,
 } SithAttachFlag;
 
 typedef enum eSithInventoryTypeFlag
 {
-    SITHINVENTORY_TYPE_REGISTERED                 = 0x1,
-    SITHINVENTORY_TYPE_ITEM                       = 0x2,
-    SITHINVENTORY_TYPE_WEAPON                     = 0x4,
-    SITHINVENTORY_TYPE_AUTOAIM                    = 0x8,
+    SITHINVENTORY_TYPE_REGISTERED                 = 0x01,
+    SITHINVENTORY_TYPE_ITEM                       = 0x02,
+    SITHINVENTORY_TYPE_WEAPON                     = 0x04,
+    SITHINVENTORY_TYPE_AUTOAIM                    = 0x08,
     SITHINVENTORY_TYPE_DAMAGEABLE                 = 0x10,
     SITHINVENTORY_TYPE_DEFAULT                    = 0x20,
     SITHINVENTORY_TYPE_NOT_CARRIED_BETWEEN_LEVELS = 0x40,
@@ -1143,42 +1164,6 @@ typedef enum eSithControlFunction
     SITHCONTROL_CHALK         = 57
 } SithControlFunction;
 
-typedef enum eSithCogExecOpcode
-{
-    SITHCOGEXEC_OPCODE_NOP        = 0x0,
-    SITHCOGEXEC_OPCODE_PUSHINT    = 0x1,
-    SITHCOGEXEC_OPCODE_PUSHFLOAT  = 0x2,
-    SITHCOGEXEC_OPCODE_PUSHSYMBOL = 0x3,
-    SITHCOGEXEC_OPCODE_ARRAYIDX   = 0x4,
-    SITHCOGEXEC_OPCODE_CALLFUNC   = 0x5,
-    SITHCOGEXEC_OPCODE_ASSIGN     = 0x6,
-    SITHCOGEXEC_OPCODE_PUSHVECTOR = 0x7,
-    SITHCOGEXEC_OPCODE_ADD        = 0x8,
-    SITHCOGEXEC_OPCODE_SUB        = 0x9,
-    SITHCOGEXEC_OPCODE_MUL        = 0xA,
-    SITHCOGEXEC_OPCODE_DIV        = 0xB,
-    SITHCOGEXEC_OPCODE_MOD        = 0xC,
-    SITHCOGEXEC_OPCODE_CMPFALSE   = 0xD,
-    SITHCOGEXEC_OPCODE_NEG        = 0xE,
-    SITHCOGEXEC_OPCODE_CMPGT      = 0xF,
-    SITHCOGEXEC_OPCODE_CMPLS      = 0x10,
-    SITHCOGEXEC_OPCODE_CMPEQ      = 0x11,
-    SITHCOGEXEC_OPCODE_CMPLE      = 0x12,
-    SITHCOGEXEC_OPCODE_CMPGE      = 0x13,
-    SITHCOGEXEC_OPCODE_CMPAND     = 0x14,
-    SITHCOGEXEC_OPCODE_CMPOR      = 0x15,
-    SITHCOGEXEC_OPCODE_CMPNE      = 0x16,
-    SITHCOGEXEC_OPCODE_AND        = 0x17,
-    SITHCOGEXEC_OPCODE_OR         = 0x18,
-    SITHCOGEXEC_OPCODE_XOR        = 0x19,
-    SITHCOGEXEC_OPCODE_JZ         = 0x1A,
-    SITHCOGEXEC_OPCODE_JNZ        = 0x1B,
-    SITHCOGEXEC_OPCODE_JMP        = 0x1C,
-    SITHCOGEXEC_OPCODE_RET        = 0x1D,
-    SITHCOGEXEC_OPCODE_UNUSED_30  = 0x1E,
-    SITHCOGEXEC_OPCODE_CALL       = 0x1F,
-} SithCogExecOpcode;
-
 typedef enum eSithCameraState
 {
     SITHCAMERA_STATE_CUTSCENE = 0x1,
@@ -1353,12 +1338,12 @@ typedef struct sSithWorld SithWorld;
 typedef int (J3DAPI* SithEventProcess)(int, SithEventParams*);
 typedef int (J3DAPI* SithAIInstinctFunc)(SithAIControlBlock*, SithAIInstinct*, SithAIInstinctState*, SithAIEventType, void*);
 typedef int (J3DAPI* CollisionHandlerThing)(SithThing*, SithThing*, SithCollision*, int);
-typedef int (J3DAPI* SithWorldSectionParseFunc)(SithWorld* pWorld, int bSkip);
+typedef int (J3DAPI* SithWorldTextSectionParseFunc)(SithWorld* pWorld, int bSkip);
 typedef int (J3DAPI* SithConsoleFunction)(const SithConsoleCommand*, const char*);
 typedef int (J3DAPI* CollisionHandlerSurface)(SithThing*, SithSurface*, SithCollision*);
 typedef int (J3DAPI* SithControlCallback)(SithThing* pPlayerThing, float secDeltaTime);
-typedef int (J3DAPI* CndSectionReadFunc)(tFileHandle fh, SithWorld* pWorld);
-typedef int (J3DAPI* CndSectionWriteFunc)(tFileHandle fh, SithWorld* pWorld);
+typedef int (J3DAPI* SithWorldBinarySectionSectionReadFunc)(tFileHandle fh, SithWorld* pWorld);
+typedef int (J3DAPI* SithWorldBinarySectionSectionWriteFunc)(tFileHandle fh, const SithWorld* pWorld);
 typedef void (J3DAPI* SithCogFunctionType)(SithCog*);
 typedef int (J3DAPI* SithMessageProcessFunc)(const SithMessage*);
 typedef int (J3DAPI* SithGameSaveCallback)(DPID idTo, unsigned int outstream);
@@ -1369,7 +1354,7 @@ typedef void (J3DAPI* SithRenderUnknownFunc)(SithThing* pThing);
 typedef void (J3DAPI* SithThingUnknownFunc)(SithThing*);
 typedef void (J3DAPI* SithConsoleWriteTextFunc)(const char* pText);
 typedef void (J3DAPI* SithConsoleWriteWideTextFunc)(const wchar_t* pWText);
-typedef void (*SithConsoleFlush)(void);
+typedef void (*SithConsoleFlushFunc)(void);
 typedef void (*SithMultiNewPlayerJoinedCallback)(void);
 
 typedef union sSithCogValue
@@ -1377,7 +1362,7 @@ typedef union sSithCogValue
     void* pointerValue;
     float floatValue;
     int intValue;
-    const char* pString;
+    char* pString;
     rdVector3 vecValue;
 } SithCogValue;
 static_assert(sizeof(SithCogValue) == 12, "sizeof(SithCogValue) == 12");
@@ -1392,9 +1377,9 @@ static_assert(sizeof(SithCogSymbolValue) == 16, "sizeof(SithCogSymbolValue) == 1
 typedef struct sSithCogSymbol
 {
     size_t id;
-    SithCogSymbolValue val;
+    SithCogSymbolValue value;
     uint32_t label;
-    const char* pName;
+    char* pName;
 } SithCogSymbol;
 static_assert(sizeof(SithCogSymbol) == 28, "sizeof(SithCogSymbol) == 28");
 
@@ -1834,28 +1819,29 @@ typedef struct sSithAnimationSlot
     SithAnimateFlags flags;
     SithThing* pThing;
     SithThing* pItemThing;
-    int thingSignature;
+    uint32_t thingSignature;
     rdMaterial* pMaterial;
     SithSurface* pSurface;
     SithSector* pSector;
     rdVector2 direction2;
     rdVector3 direction3;
-    rdVector3 position;
-    unsigned int msecNextFrameTime;
-    unsigned int msecPerFrame;
-    int curFrame;
+    rdVector3 thingEndPosition;
+    uint32_t msecNextFrameTime;
+    uint32_t msecPerFrame;
+    size_t curFrame;
     int trackNum;
-    float curDistance;
-    float distance;
+    float curValue;
+    float endValue;
     float secTimeRemaining;
-    float deltaDistance;
+    float deltaValue;
     int unknown24;
-    rdVector4 vecCurrent;
-    rdVector4 vecStart;
-    rdVector4 vecEnd;
-    rdVector4 vecDelta;
+    rdVector4 startVector;
+    rdVector4 curVector;
+    rdVector4 endVector;
+    rdVector4 deltaVector;
     int unknown41;
 } SithAnimationSlot;
+static_assert(sizeof(SithAnimationSlot) == 168, "sizeof(SithAnimationSlot) == 168");
 
 typedef struct sSithMineCarState
 {
@@ -1954,7 +1940,7 @@ static_assert(sizeof(SithWeaponInfo) == 48, "sizeof(SithWeaponInfo) == 48");
 typedef struct sSithParticleInfo
 {
     SithParticleFlag flags;
-    int numParticles;
+    size_t numParticles;
     rdMaterial* pMaterial;
     float size;
     float growthSpeed;
@@ -1966,6 +1952,7 @@ typedef struct sSithParticleInfo
     float curGrowthSize;
     float secElapsed;
 } SithParticleInfo;
+static_assert(sizeof(SithParticleInfo) == 48, "sizeof(SithParticleInfo) == 48");
 
 typedef union sSithActorEndurance
 {
@@ -2154,8 +2141,8 @@ typedef struct sSithCogCallstackElement
 typedef struct sSithCogScriptMsgHandler
 {
     SithCogMsgType type;
-    int codeOffset;
-    int id;
+    int32_t codeOffset; // Can be < 0
+    uint32_t label;
 } SithCogScriptMsgHandler;
 
 typedef struct sSithCogSymbolRef
@@ -2164,10 +2151,11 @@ typedef struct sSithCogSymbolRef
     int bLocal;
     int linkId;
     int mask;
-    int symbolId;
+    size_t symbolId;
     char* pDescription;
     char aValue[64];
 } SithCogSymbolRef;
+static_assert(sizeof(SithCogSymbolRef) == 88, "sizeof(SithCogSymbolRef) == 88");
 
 typedef struct sSithCogScript
 {
@@ -2178,7 +2166,7 @@ typedef struct sSithCogScript
     SithCogSymbolTable* pSymbolTable;
     size_t numHandlers;
     SithCogScriptMsgHandler aHandlers[32];
-    SithCogSymbolRef aSymRefs[256];
+    SithCogSymbolRef aSymRefs[SITHCOGSCRIPT_MAXSYMREFS];
     size_t numSymbolRefs;
 } SithCogScript;
 static_assert(sizeof(SithCogScript) == 23000, "sizeof(SithCogScript) == 23000");
@@ -2191,9 +2179,9 @@ struct sSithCog
     SithCogStatus status;
     size_t execPos;
     int statusParams[2];
-    unsigned int msecPulseInterval;
-    unsigned int msecNextPulseTime;
-    unsigned int msecTimerTimeout;
+    uint32_t msecPulseInterval;
+    uint32_t msecNextPulseTime;
+    uint32_t msecTimerTimeout;
     int linkId;
     int senderIdx;
     SithCogSymbolRefType senderType;
@@ -2208,7 +2196,7 @@ struct sSithCog
     SithCogSymbolValue stack[SITHCOGEXEC_STACKSIZE];
     size_t stackSize;
     char aName[64];
-    char aSymRefValues[256][64];
+    char aSymRefValues[SITHCOGSCRIPT_MAXSYMREFS][64];
     SithCogSymbolValue* aHeap;
     size_t heapSize;
 };
@@ -2250,15 +2238,17 @@ struct sSithSoundClassEntry
     float maxVolume;
     float minRadius;
     float maxRadius;
-    int numEntries;
+    size_t numEntries;
     SithSoundClassEntry* pNextMode;
 };
+static_assert(sizeof(SithSoundClassEntry) == 28, "sizeof(SithSoundClassEntry) == 28");
 
 typedef struct sSithSoundClass
 {
     char aName[64];
-    SithSoundClassEntry* aEntries[141];
+    SithSoundClassEntry* aEntries[SITHSOUNDCLASS_MAXMODES];
 } SithSoundClass;
+static_assert(sizeof(SithSoundClass) == 628, "sizeof(SithSoundClass) == 628");
 
 typedef struct sSithPuppetClassSubmode
 {
@@ -2271,9 +2261,10 @@ typedef struct sSithPuppetClassSubmode
 typedef struct sSithPuppetClass
 {
     char aName[64];
-    SithPuppetClassSubmode aModes[24][84];
+    SithPuppetClassSubmode aModes[SITH_PUPPET_NUMMOVEMODES * SITH_PUPPET_NUMARMEDMODES][SITH_PUPPET_NUMSUBMODES];
     int aJoints[10];
 } SithPuppetClass;
+static_assert(sizeof(SithPuppetClass) == 32360, "sizeof(SithPuppetClass) == 32360");
 
 typedef struct sSithPathFrame
 {
@@ -2283,8 +2274,8 @@ typedef struct sSithPathFrame
 
 typedef struct sSithPathMoveInfo
 {
-    int sizeFrames;
-    int numFrames;
+    size_t sizeFrames;
+    size_t numFrames;
     SithPathFrame* aFrames;
     SithPathMoveMode mode;
     rdVector3 vecDeltaPos;
@@ -2296,11 +2287,12 @@ typedef struct sSithPathMoveInfo
     rdVector3 goalPYR;
     rdVector3 rotateToPYR;
     float rotDelta;
-    int numBlockedMoves;
-    int currentFrame;
-    int nextFrame;
-    int goalFrame;
+    size_t numBlockedMoves;
+    int currentFrame; // can be -1
+    size_t nextFrame;
+    size_t goalFrame;
 } SithPathMoveInfo;
+static_assert(sizeof(SithPathMoveInfo) == 144, "sizeof(SithPathMoveInfo) == 144");
 
 typedef struct sSithPhysicsInfo
 {
@@ -2346,6 +2338,7 @@ struct sSithPuppetTrack
     SithPuppetSubMode submode;
     SithPuppetTrack* pNextTrack;
 };
+static_assert(sizeof(SithPuppetTrack) == 16, "sizeof(SithPuppetTrack) == 16");
 
 typedef struct sSithPuppetState
 {
@@ -2390,7 +2383,7 @@ struct sSithThing
     rdThing renderData;
     rdVector3 transformedPos;
     SithThingLight light;
-    int renderFrame;
+    size_t renderFrame;
     SithSoundClass* pSoundClass;
     SithPuppetClass* pPuppetClass;
     SithPuppetState* pPuppetState;
@@ -2422,9 +2415,9 @@ struct sSithAIControlBlock
     SithAIClass* pClass;
     SithAIMode mode;
     SithAISubMode submode;
-    SithAIInstinctState aInstinctStates[16];
-    int numInstincts;
-    int msecNextUpdate;
+    SithAIInstinctState aInstinctStates[SITHAI_MAXINSTINCTS];
+    size_t numInstincts;
+    uint32_t msecNextUpdate;
     rdVector3 goalLVec;
     rdVector3 lookPos;
     rdVector3 movePos;
@@ -2440,7 +2433,7 @@ struct sSithAIControlBlock
     float distance;
     int targetSightState;
     rdVector3 vecUnknown122;
-    unsigned int msecAttackStart;
+    uint32_t msecAttackStart;
     rdVector3 weaponFirePos;
     SithThing* goalThing;
     rdVector3 vecUnknown6;
@@ -2462,11 +2455,11 @@ struct sSithAIControlBlock
     int unknown166;
     int unknown167;
     int unknown168;
-    unsigned int msecFireWaitTime;
-    unsigned int msecPauseMoveUntil;
+    uint32_t msecFireWaitTime;
+    uint32_t msecPauseMoveUntil;
     rdVector3* aFrames;
-    int numFrames;
-    int sizeFrames;
+    size_t numFrames;
+    size_t sizeFrames;
     int allowedSurfaceTypes;
     rdVector3 vecUnknown3;
     rdVector3 vecUnknown;
@@ -2576,31 +2569,13 @@ typedef struct sCndMaterialInfo
 } CndMaterialInfo;
 static_assert(sizeof(CndMaterialInfo) == 136, "sizeof(CndMaterialInfo) == 136");
 
-typedef struct sCndKeyframeInfo
-{
-    char name[64];
-    int flags;
-    int type;
-    int numFrames;
-    float fps;
-    int numMarkers;
-    int numJoints;
-    int numNodes;
-} CndKeyframeInfo;
-
-typedef struct sCndKeyframeNode
-{
-    char meshName[64];
-    int nodeNum;
-    int numEntries;
-} CndKeyframeNode;
-
 typedef struct sCndAdjoin
 {
     int flags;
     int mirror;
     float distance;
 } CndAdjoin;
+static_assert(sizeof(CndAdjoin) == 12, "sizeof(CndAdjoin) == 12");
 
 typedef struct sCndSurfaceInfo
 {
@@ -2618,23 +2593,25 @@ static_assert(sizeof(CndSurfaceInfo) == 56, "sizeof(CndSurfaceInfo) == 56");
 
 struct sSithCogSyntaxNode
 {
-    int branchLabel;
-    int label;
+    uint32_t parentLabel;
+    uint32_t childLabel;
     SithCogSyntaxNode* pLeft;
     SithCogSyntaxNode* pRight;
-    int opcode;
+    int32_t opcode;
     int value;
     rdVector3 vecValue;
 };
+static_assert(sizeof(SithCogSyntaxNode) == 36, "sizeof(SithCogSyntaxNode) == 36");
 
 typedef struct sSithCogThingLink
 {
     SithThing* pThing;
-    int thingSignature;
+    uint32_t thingSignature;
     SithCog* pCog;
     int linkId;
     int mask;
 } SithCogThingLink;
+static_assert(sizeof(SithCogThingLink) == 20, "sizeof(SithCogThingLink) == 20");
 
 typedef struct sSithCogSectorLink
 {
@@ -2850,20 +2827,21 @@ typedef struct sSithVoiceSubtitleInfo
 } SithVoiceSubtitleInfo;
 static_assert(sizeof(SithVoiceSubtitleInfo) == 588, "sizeof(SithVoiceSubtitleInfo) == 588");
 
-typedef struct sSithWorldNdyParseHandler
+typedef struct sSithWorldTextSectionParseHandler
 {
-    char aSectionName[64];
-    SithWorldSectionParseFunc pfHandler;
-} SithWorldNdyParseHandler;
+    char aName[64];
+    SithWorldTextSectionParseFunc pfHandler;
+} SithWorldTextSectionParseHandler;
 
 typedef struct sSithAIAwarenessSector
 {
-    int processID;
+    size_t processID;
     float aLevelAtTransmittingPos[4];
     rdVector3 aStartPos[4];
     rdVector3 aEndPos[4];
     SithThing* aTransmittingThing[4];
 } SithAIAwarenessSector;
+static_assert(sizeof(SithAIAwarenessSector) == 132, "sizeof(sSithAIAwarenessSector) == 132");
 
 struct sSithConsoleCommand
 {
@@ -2935,7 +2913,7 @@ typedef struct sCndSurfaceAdjoin
 typedef struct sSithMainStartLevelNdsInfo
 {
     const char* aName;
-    const char* aLevelNamePrefix;
+    const char* aFilename;
 } SithMainStartLevelNdsInfo;
 
 typedef struct sSithQuetzAnimInfo
@@ -3038,8 +3016,8 @@ typedef struct sSithQuetzAnimInfo
 
 typedef struct sSithOverlayMapConfig
 {
-    int numZLevels;
-    float* apZLevelBounds;
+    size_t numZLevels;
+    float* aZLevelBounds;
     D3DCOLOR* aZLevelColors;
     D3DCOLOR playerBoundsColor;
     D3DCOLOR playerDirectionColor;
@@ -3057,12 +3035,12 @@ typedef struct sCndAIControlInfo
     int numFrames;
 } CndAIControlInfo;
 
-typedef struct sCndSectionParser
+typedef struct sSithWorldBinarySectionParser
 {
-    const char* pSection;
-    const CndSectionReadFunc pfRead;
-    const CndSectionWriteFunc pfWrite;
-} CndSectionParser;
+    const char* pName;
+    const SithWorldBinarySectionSectionReadFunc pfRead;
+    const SithWorldBinarySectionSectionWriteFunc pfWrite;
+} SithWorldBinarySectionParser;
 
 typedef struct sCndSurfaceVertInfo
 {
@@ -3073,15 +3051,16 @@ typedef struct sCndSurfaceVertInfo
 
 typedef struct sSithLevelStatistic
 {
-    int elapsedTime;
-    int numFoundTreasures;
-    int numSeenHints;
+    uint32_t elapsedTime;
+    size_t numFoundTreasures;
+    size_t numSeenHints;
     int difficultyPenalty;
-    int curElapsedSec;
-    int numIQUpdates;
+    uint32_t curElapsedSec;
+    size_t numIQUpdates;
     int levelStartIQPoints;
     int iqPoints;
 } SithLevelStatistic;
+static_assert(sizeof(SithLevelStatistic) == 32, "sizeof(SithLevelStatistic) == 42");
 
 typedef struct sSithGameStatistics
 {
@@ -3095,17 +3074,18 @@ typedef struct sSithGameStatistics
 
 typedef struct sNdsHeader
 {
-    int version;
+    int32_t version;
     char aDate[64];
     char aLevelFilename[128];
     char aPreviousLevelFilename[128];
-    unsigned int msecGameTime;
+    uint32_t msecGameTime;
     SithGameStatistics gameStatistics;
-    int bScreenShot;
-    int perflevel;
+    int32_t bThumbnail;
+    int32_t perflevel;
     SithCogSymbolValue aCogGlobalValues[16];
-    int localPlayerNum;
+    uint32_t localPlayerNum;
 } NdsHeader;
+static_assert(sizeof(NdsHeader) == 1188, "sizeof(NdsHeader) == 1188");
 
 typedef struct sSithMineCarControlState
 {
@@ -3139,9 +3119,9 @@ typedef struct sSithMode
 {
     int masterMode;
     int subModeFlags;
-    int debugModeFlags;
+    SithDebugModeFlag debugModeFlags;
     int difficulty;
-    int mapModeFlags;
+    SithMapModeFlags mapModeFlags;
 } SithMode;
 
 typedef struct sSithAIWaypointDistance

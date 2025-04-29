@@ -17,7 +17,12 @@ J3D_EXTERN_C_START
 
 void sithMulti_OpenGame(void); // Added
 void sithMulti_CloseGame();
+
 int J3DAPI sithMulti_CheckPlayers(int msecTime, SithEventParams* pParam);
+
+size_t J3DAPI sithMulti_GetTickRate(void); // Added: from debug
+void J3DAPI sithMulti_SetTickRate(size_t tickRate); // Added: from debug
+
 void J3DAPI sithMulti_ProcessPlayerLost(DPID idPlayer);
 void J3DAPI sithMulti_RemovePlayer(unsigned int playerNum);
 signed int J3DAPI sithMulti_SendWelcome(DPID idPlayer, int playerNum, DPID idTo);
@@ -28,13 +33,17 @@ signed int J3DAPI sithMulti_ProcessSyncPlayers(const SithMessage* pMsg);
 int J3DAPI sithMulti_ProcessJoinRequest(const SithMessage* pMsg);
 signed int J3DAPI sithMulti_FinishJoining(SithMultiJoinStatus code, float arg4, int playerId);
 int J3DAPI sithMulti_ProcessChat(const SithMessage* pMsg);
+
+int J3DAPI sithMulti_Ping(DPID idTo); // Added: from debug
 int J3DAPI sithMulti_ProcessPing(const SithMessage* pMsg);
 int J3DAPI sithMulti_ProcessPong(const SithMessage* pMsg);
+
 int J3DAPI sithMulti_QuitPlayer(DPID id);
 int J3DAPI sithMulti_ProcessQuit(const SithMessage* pMsg);
+
 void J3DAPI sithMulti_Update(int msecDeltaTime);
 void J3DAPI sithMulti_SyncScores();
-int J3DAPI sithMulti_GetPlayerNum(DPID idPlayer);
+int J3DAPI sithMulti_GetPlayerIndexByID(DPID idPlayer);
 void J3DAPI sithMulti_ProcessKilledPlayer(const SithPlayer* pPlayer, const SithThing* pPlayerThing, const SithThing* pKiller);
 int J3DAPI sithMulti_QuitGame(unsigned int msecTime, int state);
 size_t J3DAPI sithMulti_Respawn(SithThing* pPlayer);

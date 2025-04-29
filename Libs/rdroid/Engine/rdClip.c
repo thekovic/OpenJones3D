@@ -4001,7 +4001,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
 
                 int vertIdx = pFace->aVertices[i];
                 rdVector_Add4(&pProcFace->aVertIntensities[i], &aLightColors[vertIdx], &aVertColors[i]);
-                rdMath_ClampVector4(&pProcFace->aVertIntensities[i], 0.0f, 1.0f);
+                rdMath_ClampVector4Acc(&pProcFace->aVertIntensities[i], 0.0f, 1.0f);
             }
         }
         else

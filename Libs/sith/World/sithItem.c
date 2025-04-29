@@ -74,7 +74,7 @@ void J3DAPI sithItem_SetItemTaken(SithThing* pItem, const SithThing* pSrcThing, 
     }
 
     if ( (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_SP) != 0 && !stdComm_IsGameActive()
-      || (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_MP) != 0 && stdComm_IsGameActive() )
+        || (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_MP) != 0 && stdComm_IsGameActive() )
     {
         // Re-spawn enabled, hide item for the time of respawn interval
         // Fyi, re-spawning handled in sithItem_DestroyItem
@@ -96,8 +96,8 @@ void J3DAPI sithItem_DestroyItem(SithThing* pItem)
     }
 
     if ( pItem->thingInfo.itemInfo.pInSector
-      && (stdComm_IsGameActive() && (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_MP) != 0
-          || !stdComm_IsGameActive() && (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_SP) != 0) )
+        && (stdComm_IsGameActive() && (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_MP) != 0
+            || !stdComm_IsGameActive() && (pItem->thingInfo.itemInfo.flags & SITH_ITEM_RESPAWN_SP) != 0) )
     {
         // Re-spawn item
 
@@ -116,7 +116,7 @@ void J3DAPI sithItem_DestroyItem(SithThing* pItem)
     }
     else if ( pItem->renderFrame + 1 == sithMain_g_frameNumber )
     {
-        // If item is in camera view extend life for 3 sec
+        // Item is in camera view extend life for 3 sec
         pItem->msecLifeLeft = 3000;
     }
     else
@@ -126,12 +126,12 @@ void J3DAPI sithItem_DestroyItem(SithThing* pItem)
 
     if ( sithMessage_g_outputstream )
     {
-        sithDSSThing_UpdateState(pItem, SITHMESSAGE_SENDTOALL, 0xFFu);
-        sithDSSThing_Pos(pItem, SITHMESSAGE_SENDTOALL, DPSEND_GUARANTEED);// TODO: make separate global var for dpflags and do secure connection
+        sithDSSThing_UpdateState(pItem, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
+        sithDSSThing_Pos(pItem, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);// TODO: make separate global var for dpflags and do secure connection
     }
 }
 
-int J3DAPI sithItem_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum)
+int J3DAPI sithItem_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     switch ( adjNum )
     {
@@ -151,6 +151,7 @@ int J3DAPI sithItem_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum
             if ( errno == ERANGE ) { // Added
                 return 0; // error
             }
+
             pThing->thingInfo.itemInfo.secRespawnInterval = spawnInterval;
             return 1;
         }

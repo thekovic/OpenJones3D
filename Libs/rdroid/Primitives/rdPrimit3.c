@@ -16,8 +16,7 @@ void rdPrimit3_InstallHooks(void)
 }
 
 void rdPrimit3_ResetGlobals(void)
-{
-}
+{}
 
 int J3DAPI rdPrimit3_DrawPoint(rdVector3* pPoint, int32_t* pPPoint, uint32_t color)
 {
@@ -66,19 +65,17 @@ int J3DAPI rdPrimit3_DrawClippedLine(rdVector3* pPoint1, rdVector3* pPoint2, uin
     return rdPrimit2_DrawClippedLine2(ppoint1.x, ppoint1.y, ppoint2.x, ppoint2.y, color);
 }
 
-void J3DAPI rdPrimit3_DrawClippedCircle(const rdVector3* pPos, float radius, float step, uint32_t color, uint32_t flags)
+void J3DAPI rdPrimit3_DrawClippedCircle(const rdVector3* pPos, float radius, float step, uint32_t color, uint32_t pattern)
 {
     rdVector3 center;
     rdMatrix_TransformPoint34(&center, pPos, &rdCamera_g_pCurCamera->orient);
 
-    rdVector3 circlePoint;
-    circlePoint.x = radius + center.x;
-    circlePoint.y = center.y;
-    circlePoint.z = center.z;
     if ( center.y > 0.0f )
     {
-        rdVector3 projCenter;
-        rdVector3 projCirclePoint;
+        rdVector3 circlePoint = center;
+        circlePoint.x += radius;
+
+        rdVector3 projCenter, projCirclePoint;
         rdCamera_g_pCurCamera->pfProject(&projCenter, &center);
         rdCamera_g_pCurCamera->pfProject(&projCirclePoint, &circlePoint);
 
@@ -86,7 +83,7 @@ void J3DAPI rdPrimit3_DrawClippedCircle(const rdVector3* pPos, float radius, flo
         int32_t y = (int32_t)(projCenter.y + 0.5f);
         float radius2D = projCirclePoint.x - projCenter.x;
 
-        rdPrimit2_DrawClippedCircle(rdCamera_g_pCurCamera->pCanvas, x, y, radius2D, step, color, flags);
+        rdPrimit2_DrawClippedCircle(rdCamera_g_pCurCamera->pCanvas, x, y, radius2D, step, color, pattern);
     }
 }
 

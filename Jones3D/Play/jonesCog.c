@@ -3,6 +3,7 @@
 
 #include <Jones3D/Display/JonesConsole.h>
 #include <Jones3D/Display/JonesHud.h>
+#include <Jones3D/Main/JonesLevel.h>
 #include <Jones3D/Main/JonesMain.h>
 #include <Jones3D/Play/jonesInventory.h>
 #include <Jones3D/RTI/symbols.h>
@@ -10,7 +11,6 @@
 #include <sith/AI/sithAI.h>
 #include <sith/Cog/sithCog.h>
 #include <sith/Cog/sithCogExec.h>
-#include <sith/Devices/sithConsole.h>
 #include <sith/Devices/sithSoundMixer.h>
 #include <sith/Engine/sithCamera.h>
 #include <sith/Gameplay/sithOverlayMap.h>
@@ -26,7 +26,6 @@ static int jonesCog_curCutsceneType     = -1;
 static int jonesCog_bInterfaceEnabled   = -1;
 static bool jonesCog_bOverlayMapVisible = false;
 static bool jonesCog_bStartup           = false;
-
 
 int J3DAPI jonesCog_RegisterFunctions();
 void J3DAPI jonesCog_HideHealthDisplay(SithCog* pCog);
@@ -55,7 +54,7 @@ void jonesCog_InstallHooks(void)
     J3D_HOOKFUNC(jonesCog_UpdateDifficulty);
     J3D_HOOKFUNC(jonesCog_EnableInterfaceFunc);
     J3D_HOOKFUNC(jonesCog_StartCutscene);
-    J3D_HOOKFUNC(jonesCog_EnableInterface);
+    J3D_HOOKFUNC(jonesCog_ToggleInterface);
 }
 
 void jonesCog_ResetGlobals(void)
@@ -138,7 +137,7 @@ void jonesCog_EndLevel(void)
 
     sithSoundMixer_StopAll();
 
-    if ( sithPlayer_g_curLevelNum >= 17 ) { // If cur level is Peru or higher show end credits
+    if ( sithPlayer_g_curLevelNum >= JONESLEVEL_BONUSLEVELNUM ) { // If cur level is Peru or higher show end credits
         JonesMain_ShowEndCredits();
     }
     else if ( JonesHud_ShowLevelCompleted() )
@@ -146,7 +145,7 @@ void jonesCog_EndLevel(void)
         JonesMain_SetBonusLevel();
         sithPlayer_g_bBonusMapBought = 1;
     }
-    else if ( sithPlayer_g_curLevelNum != 16 || sithPlayer_g_bBonusMapBought ) {
+    else if ( sithPlayer_g_curLevelNum != JONESLEVEL_LASTLEVELNUM || sithPlayer_g_bBonusMapBought ) {
         JonesMain_NextLevel();
     }
     else
@@ -171,7 +170,7 @@ void J3DAPI jonesCog_ExitToShell(SithCog* pCog)
 void J3DAPI jonesCog_StartCutsceneFunc(SithCog* pCog)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    STD_ASSERTREL(pWorld != ((void*)0));
+    STD_ASSERTREL(pWorld != NULL);
 
     int type;
     if ( pCog )
@@ -196,9 +195,13 @@ void J3DAPI jonesCog_StartCutsceneFunc(SithCog* pCog)
     }
 
     jonesCog_bOverlayMapVisible = sithOverlayMap_IsMapVisible();
-    if ( jonesCog_bOverlayMapVisible )
-    {
+    if ( jonesCog_bOverlayMapVisible ) {
         sithOverlayMap_ToggleMap();
+    }
+
+    // Added
+    if ( JonesConsole_g_bVisible ) {
+        JonesConsole_HideConsole();
     }
 
     if ( type )
@@ -279,9 +282,6 @@ void J3DAPI jonesCog_EndCutscene(SithCog* pCog)
         }
     }
 
-    //cameraState = sithCamera_g_stateFlags;  
-    //(cameraState & 0xFF) = sithCamera_g_stateFlags & ~SITHCAMERA_STATE_CUTSCENE;
-    //sithCamera_g_stateFlags = cameraState;
     sithCamera_g_stateFlags &= ~SITHCAMERA_STATE_CUTSCENE;
     sithPlayerControls_g_bCutsceneMode = 0;
 }
@@ -329,7 +329,34 @@ void J3DAPI jonesCog_StartCutscene(SithCog* pCog)
     jonesCog_StartCutsceneFunc(pCog);
 }
 
-void J3DAPI jonesCog_EnableInterface(SithCog* pCog)
+void J3DAPI jonesCog_ToggleInterface(SithCog* pCog)
 {
     jonesCog_EnableInterfaceFunc(pCog);
+}
+
+void J3DAPI jonesCog_EnableInterface(bool bEnable)
+{
+    if ( jonesCog_g_bMenuVisible )
+    {
+        JonesHud_EnableInterface(1);
+        jonesCog_bInterfaceEnabled = bEnable ? 1 : 0;
+        return;
+    }
+
+    JonesHud_EnableMenu(bEnable);
+    jonesCog_g_bEnableGamesave = bEnable ? 1 : 0;
+}
+
+void J3DAPI jonesCog_EnableIndicatrors(bool bEnable)
+{
+    if ( bEnable )
+    {
+        jonesCog_g_bShowHealthHUD = 1;
+        JonesHud_SetFadeHealthHUD(1, 1);
+    }
+    else
+    {
+        jonesCog_g_bShowHealthHUD = 0;
+        JonesHud_SetFadeHealthHUD(0, 0);
+    }
 }

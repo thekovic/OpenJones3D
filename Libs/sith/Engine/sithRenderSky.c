@@ -38,8 +38,7 @@ void sithRenderSky_InstallHooks(void)
 }
 
 void sithRenderSky_ResetGlobals(void)
-{
-}
+{}
 
 int J3DAPI sithRenderSky_Open(float horizonDistance, float ceilingHeight)
 {
@@ -60,12 +59,11 @@ int J3DAPI sithRenderSky_Open(float horizonDistance, float ceilingHeight)
 }
 
 void sithRenderSky_Close(void)
-{
-}
+{}
 
 void sithRenderSky_Update(void)
 {
-    horizonScale = horizonSkyDistance / (rdCamera_g_pCurCamera->focalLength * rdCamera_g_pCurCamera->aspectRatio);
+    horizonScale = horizonSkyDistance / (rdCamera_g_pCurCamera->focalLength * rdCamera_g_pCurCamera->aspectRatio); // Added: Multiply focalLength by aspectRatio, fixes sky rendering when aspect ratio is not 1:1 (underwater)
     stdMath_SinCos(sithCamera_g_pCurCamera->lookPYR.z, &lookRollSin, &lookRollCos);
 
     lookYaw   = -(sithCamera_g_pCurCamera->lookPYR.yaw * horizonPixelsPerRev);
@@ -118,7 +116,7 @@ void J3DAPI sithRenderSky_CeilingFaceToPlane(rdCacheProcEntry* pPoly, const rdFa
             }
 
             rdVector_Scale3Acc(&skyVert, skyDist);
-            rdVector_Sub3Acc(&skyVert, &sithCamera_g_pCurCamera->lookPos);
+            rdVector_Add3Acc(&skyVert, &sithCamera_g_pCurCamera->lookPos);
 
             float tu = skyVert.x * 16.0f * invMatWidth;
             float tv = skyVert.y * 16.0f * invMatHeight;
@@ -128,11 +126,11 @@ void J3DAPI sithRenderSky_CeilingFaceToPlane(rdCacheProcEntry* pPoly, const rdFa
             tv += pFace->texVertOffset.y;
 
             LPD3DTLVERTEX pOutVert = &pPoly->aVertices[i];
-            pOutVert->tu = tu;
-            pOutVert->tv = tv;
-            pOutVert->sx = aTransformedVerts[i].x;
-            pOutVert->sy = aTransformedVerts[i].y;
-            pOutVert->sz = 0.99996948f;
+            pOutVert->tu  = tu;
+            pOutVert->tv  = tv;
+            pOutVert->sx  = aTransformedVerts[i].x;
+            pOutVert->sy  = aTransformedVerts[i].y;
+            pOutVert->sz  = 0.99996948f;
             pOutVert->rhw = aTransformedVerts[i].z / 32.0f;
         }
     }

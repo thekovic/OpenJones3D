@@ -30,9 +30,9 @@ J3D_EXTERN_C_START
 #define SITHDSS_PUSHINT32(x) sithDSS_WriteInt32(&pCurDSSMsgData_, (x))
 #define SITHDSS_PUSHUINT32(x) sithDSS_WriteUint32(&pCurDSSMsgData_, (x))
 #define SITHDSS_PUSHFLOAT(x) sithDSS_WriteFloat(&pCurDSSMsgData_, (x))
-#define SITHDSS_PUSHVECT2(x) sithDSS_WriteVec2(&pCurDSSMsgData_, (x))
+#define SITHDSS_PUSHVEC2(x) sithDSS_WriteVec2(&pCurDSSMsgData_, (x))
 #define SITHDSS_PUSHVEC3(x) sithDSS_WriteVec3(&pCurDSSMsgData_, (x))
-#define SITHDSS_PUSHVECT4(x) sithDSS_WriteVec4(&pCurDSSMsgData_, (x))
+#define SITHDSS_PUSHVEC4(x) sithDSS_WriteVec4(&pCurDSSMsgData_, (x))
 #define SITHDSS_PUSHMAT34(x) sithDSS_WriteMat34(&pCurDSSMsgData_, (x))
 #define SITHDSS_PUSHSTRING(x, len) sithDSS_WriteString(&pCurDSSMsgData_, (x), (len))
 #define SITHDSS_PUSHWSTRING(x, len) sithDSS_WriteWString(&pCurDSSMsgData_, (x), (len))
@@ -44,9 +44,9 @@ J3D_EXTERN_C_START
 #define SITHDSS_POPINT32() sithDSS_ReadInt32(&pCurDSSMsgData_)
 #define SITHDSS_POPUINT32() sithDSS_ReadUint32(&pCurDSSMsgData_)
 #define SITHDSS_POPFLOAT() sithDSS_ReadFloat(&pCurDSSMsgData_)
-#define SITHDSS_POPVECT2(x) sithDSS_ReadVec2(&pCurDSSMsgData_, (x))
+#define SITHDSS_POPVEC2(x) sithDSS_ReadVec2(&pCurDSSMsgData_, (x))
 #define SITHDSS_POPVEC3(x) sithDSS_ReadVec3(&pCurDSSMsgData_, (x))
-#define SITHDSS_POPVECT4(x) sithDSS_ReadVec4(&pCurDSSMsgData_, (x))
+#define SITHDSS_POPVEC4(x) sithDSS_ReadVec4(&pCurDSSMsgData_, (x))
 #define SITHDSS_POPMAT34(x) sithDSS_ReadMat34(&pCurDSSMsgData_, (x))
 #define SITHDSS_POPSTRING(x, len)  sithDSS_ReadString(&pCurDSSMsgData_, (x), (len))
 #define SITHDSS_POPWSTRING(x, len) sithDSS_ReadWString(&pCurDSSMsgData_, (x), (len))
@@ -84,7 +84,7 @@ typedef enum eSithDSSType
     SITHDSS_STOPSOUND           = 28,
     SITHDSS_CREATETHING         = 29,
     SITHDSS_WHIPSTATUS          = 30,
-    SITHDSS_SYNCWORLDSTATE      = 31,
+    SITHDSS_SYNCGAMESTATE       = 31,
     SITHDSS_SYNCPLAYERS         = 32,
     SITHDSS_WELCOME             = 33,
     SITHDSS_JOIN                = 34,
@@ -133,8 +133,8 @@ int J3DAPI sithDSS_ProcessSyncTaskEvents(const SithMessage* pMsg);
 int J3DAPI sithDSS_SyncCameras(DPID idTo, unsigned int outstream);
 int J3DAPI sithDSS_ProcessSyncCameras(const SithMessage* pMsg);
 
-int J3DAPI sithDSS_SyncWorldState(DPID idTo, unsigned int outstream);
-int J3DAPI sithDSS_ProcessSyncWorldState(const SithMessage* pMsg);
+int J3DAPI sithDSS_SyncGameState(DPID idTo, unsigned int outstream);
+int J3DAPI sithDSS_ProcessSyncGameState(const SithMessage* pMsg);
 
 int J3DAPI sithDSS_SyncVehicleControlState(DPID idTo, unsigned int outstream);
 int J3DAPI sithDSS_ProcessVehicleControlsState(const SithMessage* pMsg);

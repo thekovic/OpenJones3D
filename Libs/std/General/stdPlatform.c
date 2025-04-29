@@ -1,4 +1,5 @@
 
+#define STRICT
 #include <Windows.h> // timeGetTime, include first to avoid undefined warning due to WIN32_LEAN_AND_MEAN
 
 #include "std.h"

@@ -65,8 +65,8 @@ void sithDSS_InstallHooks(void)
     // J3D_HOOKFUNC(sithDSS_ProcessSyncTaskEvents);
     // J3D_HOOKFUNC(sithDSS_SyncCameras);
     // J3D_HOOKFUNC(sithDSS_ProcessSyncCameras);
-    // J3D_HOOKFUNC(sithDSS_SyncWorldState);
-    // J3D_HOOKFUNC(sithDSS_ProcessSyncWorldState);
+    // J3D_HOOKFUNC(sithDSS_SyncGameState);
+    // J3D_HOOKFUNC(sithDSS_ProcessSyncGameState);
     // J3D_HOOKFUNC(sithDSS_SyncVehicleControlState);
     // J3D_HOOKFUNC(sithDSS_ProcessVehicleControlsState);
     // J3D_HOOKFUNC(sithDSS_sub_4B3760);
@@ -74,8 +74,7 @@ void sithDSS_InstallHooks(void)
 }
 
 void sithDSS_ResetGlobals(void)
-{
-}
+{}
 
 int J3DAPI sithDSS_SurfaceStatus(const SithSurface* pSurf, DPID idTo, unsigned int outstream)
 {
@@ -177,14 +176,14 @@ int J3DAPI sithDSS_ProcessSyncCameras(const SithMessage* pMsg)
     return J3D_TRAMPOLINE_CALL(sithDSS_ProcessSyncCameras, pMsg);
 }
 
-int J3DAPI sithDSS_SyncWorldState(DPID idTo, unsigned int outstream)
+int J3DAPI sithDSS_SyncGameState(DPID idTo, unsigned int outstream)
 {
-    return J3D_TRAMPOLINE_CALL(sithDSS_SyncWorldState, idTo, outstream);
+    return J3D_TRAMPOLINE_CALL(sithDSS_SyncGameState, idTo, outstream);
 }
 
-int J3DAPI sithDSS_ProcessSyncWorldState(const SithMessage* pMsg)
+int J3DAPI sithDSS_ProcessSyncGameState(const SithMessage* pMsg)
 {
-    return J3D_TRAMPOLINE_CALL(sithDSS_ProcessSyncWorldState, pMsg);
+    return J3D_TRAMPOLINE_CALL(sithDSS_ProcessSyncGameState, pMsg);
 }
 
 int J3DAPI sithDSS_SyncVehicleControlState(DPID idTo, unsigned int outstream)

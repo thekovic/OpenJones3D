@@ -336,7 +336,8 @@ int J3DAPI stdDisplay_Open(size_t deviceNum)
         stdDisplay_aVideoModes,
         stdDisplay_numVideoModes,
         sizeof(StdVideoMode),
-        (int(__cdecl*)(const void*, const void*))stdDisplay_VideoModeCompare);
+        (int(__cdecl*)(const void*, const void*))stdDisplay_VideoModeCompare
+    );
 
     stdDisplay_bOpen = true;
     return 1;
@@ -604,7 +605,7 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
 
 void J3DAPI stdDisplay_VBufferFree(tVBuffer* pVBuffer)
 {
-    STD_ASSERTREL(pVBuffer != ((void*)0));
+    STD_ASSERTREL(pVBuffer != NULL);
     if ( pVBuffer->lockRefCount )
     {
         if ( pVBuffer->lockRefCount == 1 )
@@ -627,7 +628,7 @@ void J3DAPI stdDisplay_VBufferFree(tVBuffer* pVBuffer)
 
 int J3DAPI stdDisplay_VBufferLock(tVBuffer* pVBuffer)
 {
-    STD_ASSERTREL(pVBuffer != ((void*)0));
+    STD_ASSERTREL(pVBuffer != NULL);
 
     if ( pVBuffer->lockRefCount )
     {
@@ -658,7 +659,7 @@ int J3DAPI stdDisplay_VBufferUnlock(tVBuffer* pVBuffer)
 {
     int result;
 
-    STD_ASSERTREL(pVBuffer != ((void*)0));
+    STD_ASSERTREL(pVBuffer != NULL);
     if ( pVBuffer->lockRefCount == 0 )
     {
         if ( pVBuffer->lockSurfRefCount ) {
@@ -686,7 +687,7 @@ int J3DAPI stdDisplay_VBufferUnlock(tVBuffer* pVBuffer)
 
 int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdRect* pRect)
 {
-    STD_ASSERTREL(pVBuffer != ((void*)0));
+    STD_ASSERTREL(pVBuffer != NULL);
 
     if ( pVBuffer->lockRefCount )
     {
@@ -761,8 +762,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
 
 tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredColorFormat, tVBuffer* pSrc, int bColorKey, LPDDCOLORKEY pColorKey)
 {
-    STD_ASSERTREL(pSrc != ((void*)0));
-    if ( !memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) ) {
+    STD_ASSERTREL(pSrc != NULL);
+    if ( memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) == 0 ) {
         return pSrc;
     }
 
@@ -802,14 +803,14 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
         if ( !pDest )
         {
             STDLOG_ERROR("Unable to allocate memory for new tVBuffer", 0, 0, 0, 0);
-            return 0;
+            return NULL;
         }
     }
 
     // Convert pixel data
 
-    STD_ASSERTREL(pSrc->pPixels != ((void*)0));
-    STD_ASSERTREL(pDest->pPixels != ((void*)0));
+    STD_ASSERTREL(pSrc->pPixels != NULL);
+    STD_ASSERTREL(pDest->pPixels != NULL);
 
     stdDisplay_VBufferLock(pSrc);
     stdDisplay_VBufferLock(pDest);
@@ -1076,12 +1077,6 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
 
     if ( stdDisplay_numVideoModes >= STD_ARRAYLEN(stdDisplay_aVideoModes) ) {
         return 0;
-    }
-
-    // Added: Cap the resolution to HD since std3D device doesn't support higher resolutions
-    // TODO: Remove this constrain when porting to newer GAPI
-    if ( lpDDSurfaceDesc->dwWidth >= 2000 || lpDDSurfaceDesc->dwHeight >= 2000 ) {
-        return 1;
     }
 
     // Added: Allow only true colors

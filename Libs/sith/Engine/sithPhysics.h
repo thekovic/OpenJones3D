@@ -17,7 +17,7 @@ void J3DAPI sithPhysics_UpdateThing(SithThing* pThing, float secDeltaTime);
 void J3DAPI sithPhysics_ApplyForce(SithThing* pThing, const rdVector3* force);
 void J3DAPI sithPhysics_SetThingLook(SithThing* pThing, const rdVector3* pNormal, float secDeltaTime);
 void J3DAPI sithPhysics_ApplyDrag(rdVector3* pVelocity, float drag, float mag, float secDeltaTime);
-signed int J3DAPI sithPhysics_ParseArg(StdConffileArg* pArg, SithThing* pThing, int adjNum);
+int J3DAPI sithPhysics_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 void J3DAPI sithPhysics_ResetThingMovement(SithThing* pThing);
 float J3DAPI sithPhysics_GetThingHeight(const SithThing* pThing);
 // Updates physics include gravity effect on thing

@@ -18,19 +18,13 @@
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
-#define RDPARTICLE_MAXVERTS 256
 #define RDPARTICLE_MAJVER   1
 #define RDPARTICLE_MINVER   0
-
-//#define rdParticle_aFaceTexVerts J3D_DECL_FAR_ARRAYVAR(rdParticle_aFaceTexVerts, rdVector2(*)[4])
-//#define rdParticle_aFaceVerts J3D_DECL_FAR_ARRAYVAR(rdParticle_aFaceVerts, rdVector3(*)[4])
-//#define rdParticle_aTransformedVerts J3D_DECL_FAR_VAR(rdParticle_aTransformedVerts, rdVector3)
 
 static rdVector2 rdParticle_aFaceTexVerts[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 static rdVector3 rdParticle_aFaceVerts[4];
 static rdVector3 rdParticle_aTransformedVerts[RDPARTICLE_MAXVERTS];
 static rdParticleLoaderFunc rdParticle_pfLoader = NULL;
-
 
 void rdParticle_InstallHooks(void)
 {
@@ -44,17 +38,11 @@ void rdParticle_InstallHooks(void)
 }
 
 void rdParticle_ResetGlobals(void)
-{
-    //rdVector2 rdParticle_aFaceTexVertices_tmp[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
-    //memcpy(&rdParticle_aFaceTexVerts, &rdParticle_aFaceTexVertices_tmp, sizeof(rdParticle_aFaceTexVerts));
-
-    //memset(&rdParticle_aFaceVerts, 0, sizeof(rdParticle_aFaceVerts));
-    //memset(&rdParticle_aTransformedVerts, 0, sizeof(rdParticle_aTransformedVerts));
-}
+{}
 
 rdParticleLoaderFunc J3DAPI rdParticle_RegisterLoader(rdParticleLoaderFunc pFunc)
 {
-    RD_ASSERTREL(pFunc != ((void*)0));
+    RD_ASSERTREL(pFunc != NULL);
 
     rdParticleLoaderFunc pPrevFunc = rdParticle_pfLoader;
     rdParticle_pfLoader = pFunc;
@@ -63,9 +51,7 @@ rdParticleLoaderFunc J3DAPI rdParticle_RegisterLoader(rdParticleLoaderFunc pFunc
 
 rdParticle* J3DAPI rdParticle_New(size_t num, float size, rdMaterial* pMat, rdLightMode lightMode)
 {
-    rdParticle* pParticle;
-
-    pParticle = (rdParticle*)STDMALLOC(sizeof(rdParticle));
+    rdParticle* pParticle = (rdParticle*)STDMALLOC(sizeof(rdParticle));
     if ( !pParticle )
     {
         RDLOG_ERROR("Error allocating memory for particle.\n");
@@ -109,7 +95,6 @@ int J3DAPI rdParticle_NewEntry(rdParticle* pParticle, size_t num, float size, rd
     memset(pParticle->aVertMatCelNums, -1, sizeof(*pParticle->aVertMatCelNums) * pParticle->numVertices);
     memset(pParticle->aExtraLights, 255, sizeof(rdVector4) * pParticle->numVertices); // TODO: verify if we have a bug here and the set value should be 1.0f instead
     return 0;
-
 }
 
 rdParticle* J3DAPI rdParticle_Duplicate(const rdParticle* pOriginal)
@@ -136,7 +121,6 @@ rdParticle* J3DAPI rdParticle_Duplicate(const rdParticle* pOriginal)
     memcpy(pParticle->aExtraLights, pOriginal->aExtraLights, sizeof(rdVector4) * pOriginal->numVertices);
     return pParticle;
 }
-
 
 void J3DAPI rdParticle_Free(rdParticle* pParticle)
 {
@@ -338,7 +322,7 @@ int J3DAPI rdParticle_Write(const char* pFilename, rdParticle* pParticle, const 
     rdroid_g_pHS->pFilePrintf(fh, "# PAR '%s' created from '%s'\n\n", pParticle, pCreatedName);
     rdroid_g_pHS->pFilePrintf(fh, "###############\n");
     rdroid_g_pHS->pFilePrintf(fh, "SECTION: HEADER\n\n");
-    rdroid_g_pHS->pFilePrintf(fh, "PAR %d.%d\n\n", 1, 0);// version
+    rdroid_g_pHS->pFilePrintf(fh, "PAR %d.%d\n\n", RDPARTICLE_MAJVER, RDPARTICLE_MINVER);
     rdroid_g_pHS->pFilePrintf(fh, "SIZE %.6f\n\n", pParticle->size);
     rdroid_g_pHS->pFilePrintf(fh, "MATERIAL %s\n\n", pParticle->pMaterial);
     rdroid_g_pHS->pFilePrintf(fh, "LIGHTINGMODE %d\n\n", pParticle->lightningMode);

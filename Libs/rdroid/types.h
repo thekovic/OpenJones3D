@@ -7,17 +7,15 @@
 
 J3D_EXTERN_C_START
 
-#define RDCAMERA_MAX_LIGHTS 128
+#define RDCAMERA_MAX_LIGHTS 128u
 
-#define RDCLIP_MAXWORKVERTS  80
-#define RDQCLIP_MAXWORKVERTS 80
+#define RDCLIP_MAXWORKVERTS  80u
+#define RDQCLIP_MAXWORKVERTS 80u
 
-#define RDKEYFRAME_MAX_MARKERS 16
+#define RDKEYFRAME_MAX_MARKERS 16u
 
-#define RDPUPPET_MAX_TRACKS   8
-#define RDPUPPET_MAX_KFNODES  64
-
-
+#define RDPUPPET_MAX_TRACKS   8u
+#define RDPUPPET_MAX_KFNODES  64u
 
 typedef enum erdThingType
 {
@@ -242,6 +240,7 @@ struct srdVector3
         float roll;
     };
 };
+static_assert(sizeof(struct srdVector3) == 12, "sizeof(struct srdVector3) == 12");
 
 typedef struct srdMatrix34
 {
@@ -250,6 +249,7 @@ typedef struct srdMatrix34
     rdVector3 uvec;
     rdVector3 dvec;
 } rdMatrix34;
+static_assert(sizeof(rdMatrix34) == 48, "sizeof(rdMatrix34) == 48");
 
 typedef struct srdClipFrustum
 {
@@ -269,6 +269,7 @@ typedef struct srdClipFrustum
     rdVector3 topPlaneNormal;
     rdVector3 bottomPlaneNormal;
 } rdClipFrustum;
+static_assert(sizeof(rdClipFrustum) == 92, "sizeof(rdClipFrustum) == 92");
 
 struct srdVector4
 {
@@ -293,12 +294,14 @@ struct srdVector4
         float alpha;
     };
 };
+static_assert(sizeof(struct srdVector4) == sizeof(rdVector3) + sizeof(float), "sizeof(struct srdVector4) == sizeof(rdVector3) + sizeof(float)");
 
 typedef struct srdVector2
 {
     float x;
     float y;
 } rdVector2;
+static_assert(sizeof(rdVector2) == 8, "sizeof(rdVector2) == 8");
 
 typedef struct srdCanvas
 {
@@ -439,7 +442,7 @@ typedef struct srdParticle
     rdLightMode lightningMode;
     size_t numVertices;
     rdVector3* aVerticies;
-    int32_t* aVertMatCelNums;
+    int* aVertMatCelNums;
     rdVector4* aExtraLights;
     float size;
     float sizeHalf;
@@ -527,7 +530,7 @@ typedef struct srdPuppetTrack
     float prevFrame;
     rdKeyframe* pKFTrack;
     rdPuppetTrackCallback pfCallback;
-    unsigned int guid;
+    uint32_t guid;
 } rdPuppetTrack;
 static_assert(sizeof(rdPuppetTrack) == 308, "sizeof(rdPuppetTrack) == 308");
 

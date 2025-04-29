@@ -1,18 +1,18 @@
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "types.h" // Should be included first due to Windows.h / CommCtrl.h conflict
 
 #include <j3dcore/j3d.h>
 #include <j3dcore/j3dhook.h>
 
-#include "Display/JonesConsole.h"
-#include "Display/JonesHud.h"
 #include "Display/jonesConfig.h"
+#include "Display/JonesConsole.h"
 #include "Display/JonesDisplay.h"
+#include "Display/JonesHud.h"
 #include "Gui/JonesDialog.h"
-#include "Main/JonesMain.h"
 #include "Main/JonesFile.h"
+#include "Main/JonesMain.h"
 #include "Main/jonesString.h"
 #include "Play/jonesCog.h"
 #include "Play/JonesControl.h"
@@ -21,135 +21,139 @@
 #include "RTI/symbols.h"
 
 #include <rdroid/Engine/rdCamera.h>
-#include <rdroid/Engine/rdMaterial.h>
-#include <rdroid/Engine/rdKeyframe.h>
-#include <rdroid/Engine/rdClip.h>
-#include <rdroid/Engine/rdQClip.h>
 #include <rdroid/Engine/rdCanvas.h>
-#include <rdroid/Engine/rdThing.h>
-#include <rdroid/Engine/rdPuppet.h>
+#include <rdroid/Engine/rdClip.h>
+#include <rdroid/Engine/rdKeyframe.h>
 #include <rdroid/Engine/rdLight.h>
+#include <rdroid/Engine/rdMaterial.h>
+#include <rdroid/Engine/rdPuppet.h>
+#include <rdroid/Engine/rdQClip.h>
+#include <rdroid/Engine/rdThing.h>
 #include <rdroid/Main/rdroid.h>
+#include <rdroid/Math/rdMath.h>
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
-#include <rdroid/Math/rdMath.h>
-#include <rdroid/Primitives/rdWallpaper.h>
+#include <rdroid/Primitives/rdFont.h>
 #include <rdroid/Primitives/rdModel3.h>
 #include <rdroid/Primitives/rdParticle.h>
-#include <rdroid/Primitives/rdFont.h>
-#include <rdroid/Primitives/rdPrimit2.h>
 #include <rdroid/Primitives/rdPolyline.h>
-#include <rdroid/Primitives/rdSprite.h>
+#include <rdroid/Primitives/rdPrimit2.h>
 #include <rdroid/Primitives/rdPrimit3.h>
+#include <rdroid/Primitives/rdSprite.h>
+#include <rdroid/Primitives/rdWallpaper.h>
 #include <rdroid/Raster/rdCache.h>
 #include <rdroid/Raster/rdFace.h>
 
-#include <sith/AI/sithAIInstinct.h>
 #include <sith/AI/sithAI.h>
+#include <sith/AI/sithAIAwareness.h>
 #include <sith/AI/sithAIClass.h>
+#include <sith/AI/sithAIInstinct.h>
 #include <sith/AI/sithAIMove.h>
 #include <sith/AI/sithAIUtil.h>
-#include <sith/AI/sithAIAwareness.h>
-#include <sith/Cog/sithCogYacc.h>
-#include <sith/Cog/sithCogParse.h>
 #include <sith/Cog/sithCog.h>
-#include <sith/Cog/sithCogFunctionAI.h>
 #include <sith/Cog/sithCogExec.h>
+#include <sith/Cog/sithCogFunction.h>
+#include <sith/Cog/sithCogFunctionAI.h>
 #include <sith/Cog/sithCogFunctionPlayer.h>
 #include <sith/Cog/sithCogFunctionSector.h>
 #include <sith/Cog/sithCogFunctionSound.h>
 #include <sith/Cog/sithCogFunctionSurface.h>
 #include <sith/Cog/sithCogFunctionThing.h>
-#include <sith/Cog/sithCogFunction.h>
-#include <sith/Devices/sithSoundMixer.h>
-#include <sith/Devices/sithControl.h>
-#include <sith/Devices/sithConsole.h>
-#include <sith/Devices/sithSound.h>
+#include <sith/Cog/sithCogParse.h>
+#include <sith/Cog/sithCogYacc.h>
 #include <sith/Devices/sithComm.h>
-#include <sith/Dss/sithGamesave.h>
-#include <sith/Dss/sithMulti.h>
+#include <sith/Devices/sithConsole.h>
+#include <sith/Devices/sithControl.h>
+#include <sith/Devices/sithSound.h>
+#include <sith/Devices/sithSoundMixer.h>
 #include <sith/Dss/sithDSS.h>
 #include <sith/Dss/sithDSSCog.h>
 #include <sith/Dss/sithDSSThing.h>
-#include <sith/Engine/sithCamera.h>
-#include <sith/Engine/sithRender.h>
-#include <sith/Engine/sithRenderSky.h>
-#include <sith/Engine/sithPuppet.h>
+#include <sith/Dss/sithGamesave.h>
+#include <sith/Dss/sithMulti.h>
 #include <sith/Engine/sithAnimate.h>
-#include <sith/Engine/sithPhysics.h>
+#include <sith/Engine/sithCamera.h>
 #include <sith/Engine/sithCollision.h>
 #include <sith/Engine/sithIntersect.h>
-#include <sith/Engine/sithShadow.h>
 #include <sith/Engine/sithParticle.h>
 #include <sith/Engine/sithPathMove.h>
+#include <sith/Engine/sithPhysics.h>
+#include <sith/Engine/sithPuppet.h>
+#include <sith/Engine/sithRender.h>
+#include <sith/Engine/sithRenderSky.h>
+#include <sith/Engine/sithShadow.h>
+#include <sith/Gameplay/sithEvent.h>
+#include <sith/Gameplay/sithFX.h>
+#include <sith/Gameplay/sithInventory.h>
 #include <sith/Gameplay/sithOverlayMap.h>
 #include <sith/Gameplay/sithPlayer.h>
-#include <sith/Gameplay/sithPlayerControls.h>
-#include <sith/Gameplay/sithInventory.h>
 #include <sith/Gameplay/sithPlayerActions.h>
-#include <sith/Gameplay/sithFX.h>
-#include <sith/Gameplay/sithWhip.h>
-#include <sith/Gameplay/sithVehicleControls.h>
+#include <sith/Gameplay/sithPlayerControls.h>
 #include <sith/Gameplay/sithTime.h>
-#include <sith/Gameplay/sithEvent.h>
+#include <sith/Gameplay/sithVehicleControls.h>
+#include <sith/Gameplay/sithWhip.h>
+#include <sith/Main/sithCommand.h>
 #include <sith/Main/sithMain.h>
 #include <sith/Main/sithString.h>
-#include <sith/Main/sithCommand.h>
-#include <sith/World/sithWorld.h>
+#include <sith/World/sithActor.h>
+#include <sith/World/sithExplosion.h>
+#include <sith/World/sithItem.h>
+#include <sith/World/sithMaterial.h>
+#include <sith/World/sithModel.h>
+#include <sith/World/sithPVS.h>
+#include <sith/World/sithSector.h>
+#include <sith/World/sithSoundClass.h>
+#include <sith/World/sithSprite.h>
+#include <sith/World/sithSurface.h>
+#include <sith/World/sithTemplate.h>
 #include <sith/World/sithThing.h>
 #include <sith/World/sithVoice.h>
 #include <sith/World/sithWeapon.h>
-#include <sith/World/sithSoundClass.h>
-#include <sith/World/sithModel.h>
-#include <sith/World/sithTemplate.h>
-#include <sith/World/sithMaterial.h>
-#include <sith/World/sithSurface.h>
-#include <sith/World/sithSector.h>
-#include <sith/World/sithSprite.h>
-#include <sith/World/sithExplosion.h>
-#include <sith/World/sithActor.h>
-#include <sith/World/sithItem.h>
-#include <sith/World/sithPVS.h>
+#include <sith/World/sithWorld.h>
 
-#include <sound/Driver.h>
 #include <sound/AudioLib.h>
+#include <sound/Driver.h>
 #include <sound/Sound.h>
 
-#include <std/General/stdHashtbl.h>
-#include <std/General/stdMath.h>
 #include <std/General/std.h>
-#include <std/General/stdMemory.h>
-#include <std/General/stdConffile.h>
-#include <std/General/stdPlatform.h>
-#include <std/General/stdEffect.h>
-#include <std/General/stdStrTable.h>
 #include <std/General/stdBmp.h>
-#include <std/General/stdFnames.h>
-#include <std/General/stdUtil.h>
-#include <std/General/stdFileUtil.h>
 #include <std/General/stdCircBuf.h>
 #include <std/General/stdColor.h>
+#include <std/General/stdConffile.h>
+#include <std/General/stdEffect.h>
+#include <std/General/stdFileUtil.h>
+#include <std/General/stdFnames.h>
+#include <std/General/stdHashtbl.h>
 #include <std/General/stdLinkList.h>
-#include <std/Win95/stdControl.h>
-#include <std/Win95/stdDisplay.h>
+#include <std/General/stdMath.h>
+#include <std/General/stdMemory.h>
+#include <std/General/stdPlatform.h>
+#include <std/General/stdStrTable.h>
+#include <std/General/stdUtil.h>
 #include <std/Win95/std3D.h>
 #include <std/Win95/stdComm.h>
-#include <std/Win95/stdWin95.h>
-#include <std/Win95/stdGob.h>
 #include <std/Win95/stdConsole.h>
+#include <std/Win95/stdControl.h>
+#include <std/Win95/stdDisplay.h>
+#include <std/Win95/stdGob.h>
+#include <std/Win95/stdWin95.h>
 
 #include <w32util/wuRegistry.h>
 #include <wkernel/wkernel.h>
+
+#include <string.h>
 
 static const char* appName = "Open Jones 3D";
 
 bool InstallHooks(void);
 bool ResetGlobals(void);
+static bool RemoveDirect3D3ResolutionCap(void);
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
 {
     J3D_UNUSED(hModule);
     J3D_UNUSED(lpReserved);
+
     switch ( dwReason )
     {
         case DLL_PROCESS_ATTACH:
@@ -163,6 +167,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
                 MB_ICONINFORMATION | MB_DEFBUTTON1
             );
         #endif
+
+            // Remove DX6 resolutions cap
+            if ( !RemoveDirect3D3ResolutionCap() )
+            {
+                printf("WARNING: Failed to remove Direct3D3 cap on width/height of DirectDrawSurface!\n");
+                MessageBox(NULL, "Failed to remove DirectX 6 draw surface resolution cap!", "Jones3D",
+                    MB_ICONINFORMATION | MB_DEFBUTTON1
+                );
+            }
 
             // Init function hooks
             if ( !InstallHooks() )
@@ -499,4 +512,72 @@ bool ResetGlobals(void)
     wuRegistry_ResetGlobals();
 
     return J3DEndHookContext(&ctx);
+}
+
+void* memfind(const void* l, size_t l_len, const void* s, size_t s_len)
+{
+    register char* cur, * last;
+    const char* cl = (const char*)l;
+    const char* cs = (const char*)s;
+
+    if ( !l_len || !s_len )
+        return NULL;
+
+    if ( l_len < s_len )
+        return NULL;
+
+    // Special case where s_len == 1
+    if ( s_len == 1 )
+        return memchr(l, (int)*cs, l_len);
+
+    // The last position where it's possible to find "s" in "l"
+    last = (char*)cl + l_len - s_len;
+    for ( cur = (char*)cl; cur <= last; cur++ )
+        if ( cur[0] == cs[0] && !memcmp(cur, cs, s_len) )
+            return cur;
+
+    return NULL;
+}
+
+/**
+ * @brief Removes IDirect3D3 2048-pixel resolution cap on device creation
+ *
+ * @details Loads d3dim.dll and patches in memory IDirect3D3_CreateDevice function
+ *          to remove the 2048-pixel width/height limit check when creating a Direct3D device
+ *          from DirectDrawSurface, allowing rendering to surfaces larger than 2048x2048.
+ *
+ * @return true if resolution cap was successfully removed, false if operation failed
+ */
+bool RemoveDirect3D3ResolutionCap(void)
+{
+    // From: https://github.com/UCyborg/LegacyD3DResolutionHack
+
+    static const BYTE wantedBytes[] = { 0xB8, 0x00, 0x08, 0x00, 0x00, 0x39 };
+
+    char szPath[MAX_PATH];
+    GetSystemDirectory(szPath, MAX_PATH);
+    strcat_s(szPath, sizeof(szPath), "\\d3dim.dll");
+
+    HMODULE hD3DIm = LoadLibrary(szPath);
+    if ( !hD3DIm ) {
+        return false;
+    }
+
+    PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)hD3DIm;
+    PIMAGE_NT_HEADERS pNtHeader = (PIMAGE_NT_HEADERS)((char*)pDosHeader + pDosHeader->e_lfanew);
+    DWORD dwCodeBase = (DWORD)hD3DIm + pNtHeader->OptionalHeader.BaseOfCode;
+    DWORD dwCodeSize = pNtHeader->OptionalHeader.SizeOfCode;
+
+    uintptr_t dwPatchBase = (uintptr_t)memfind((void*)dwCodeBase, dwCodeSize, wantedBytes, sizeof(wantedBytes));
+    if ( dwPatchBase )
+    {
+        dwPatchBase++;
+
+        DWORD dwOldProtect;
+        VirtualProtect((LPVOID)dwPatchBase, 4, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+        *(DWORD*)dwPatchBase = (DWORD)-1;
+        VirtualProtect((LPVOID)dwPatchBase, 4, dwOldProtect, &dwOldProtect);
+    }
+
+    return true;
 }

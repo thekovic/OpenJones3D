@@ -1337,7 +1337,7 @@ rdModel3HNode* J3DAPI rdModel3_FindNamedNode(const char* pName, rdModel3* pModel
     for ( size_t i = 0; i < pModel3->numHNodes; ++i )
     {
         rdModel3HNode* pNode = &pModel3->aHierarchyNodes[i];
-        if ( !strcmpi(pNode->aName, pName) )
+        if ( streqi(pNode->aName, pName) )
         {
             return pNode;
         }
@@ -1502,9 +1502,9 @@ void J3DAPI rdModel3_SetNodeColorForNonAmputatedJoints(const rdThing* prdThing, 
 
 int J3DAPI rdModel3_Draw(rdThing* pThing, const rdMatrix34* pPlacement)
 {
-    RD_ASSERTREL(rdCamera_g_pCurCamera != ((void*)0));
-    RD_ASSERTREL(pThing != ((void*)0));
-    RD_ASSERTREL(pThing->data.pModel3 != ((void*)0));
+    RD_ASSERTREL(rdCamera_g_pCurCamera != NULL);
+    RD_ASSERTREL(pThing != NULL);
+    RD_ASSERTREL(pThing->data.pModel3 != NULL);
 
     rdModel3_g_numDrawnAlphaFaces = 0;
     rdModel3_g_numDrawnFaces      = 0;
@@ -1578,8 +1578,8 @@ void J3DAPI rdModel3_DrawHNode(const rdModel3GeoSet* prdGeo, const rdModel3HNode
 
 void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orient)
 {
-    RD_ASSERTREL(rdCamera_g_pCurCamera != ((void*)0));
-    RD_ASSERTREL(pMesh != ((void*)0));
+    RD_ASSERTREL(rdCamera_g_pCurCamera != NULL);
+    RD_ASSERTREL(pMesh != NULL);
 
     pCurMesh = pMesh;
 

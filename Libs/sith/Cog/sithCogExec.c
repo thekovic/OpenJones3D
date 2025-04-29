@@ -69,7 +69,7 @@ void sithCogExec_ResetGlobals(void)
 
 void J3DAPI sithCogExec_Execute(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
     SITH_ASSERTREL(pCog->execPos < pCog->pScript->codeSize);
 
     pCog->status = SITHCOG_STATUS_EXECUTING;
@@ -147,7 +147,7 @@ void J3DAPI sithCogExec_Execute(SithCog* pCog)
 
 void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogScript* pScript = pCog->pScript;
     if ( pCog->pScript->aHandlers[handlerNum].codeOffset < 0 )
@@ -175,8 +175,7 @@ void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum)
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer, "Cog %s: execution started.\n", pCog->aName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: execution started.\n", pCog->aName);
     }
 
     sithCogExec_Execute(pCog);
@@ -188,8 +187,8 @@ void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum)
 
 int J3DAPI sithCogExec_PopSymbol(SithCog* pCog, SithCogSymbolValue* pVal)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
-    SITH_ASSERTREL(pVal != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
+    SITH_ASSERTREL(pVal != NULL);
 
     if ( !sithCogExec_PopStack(pCog, pVal) )
     {
@@ -203,7 +202,7 @@ int J3DAPI sithCogExec_PopSymbol(SithCog* pCog, SithCogSymbolValue* pVal)
 
 float J3DAPI sithCogExec_PopFlex(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogSymbolValue value;
     if ( !sithCogExec_PopStack(pCog, &value) )
@@ -229,7 +228,7 @@ float J3DAPI sithCogExec_PopFlex(SithCog* pCog)
 
 int J3DAPI sithCogExec_PopInt(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogSymbolValue value;
     if ( !sithCogExec_PopStack(pCog, &value) )
@@ -241,7 +240,7 @@ int J3DAPI sithCogExec_PopInt(SithCog* pCog)
     value = *sithCogExec_GetSymbolValue(&retVal, pCog, &value);
     if ( value.type == SITHCOG_VALUE_FLOAT )
     {
-        return (int)rintf(value.val.floatValue);
+        return (int)value.val.floatValue;
     }
 
     if ( value.type == SITHCOG_VALUE_INT )
@@ -273,8 +272,8 @@ int J3DAPI sithCogExec_PopArray(SithCog* pCog)
 
 int J3DAPI sithCogExec_PopVector(SithCog* pCog, rdVector3* vec)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
-    SITH_ASSERTREL(vec != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
+    SITH_ASSERTREL(vec != NULL);
 
     SithCogSymbolValue value;
     if ( !sithCogExec_PopStack(pCog, &value) )
@@ -402,13 +401,13 @@ SithSector* J3DAPI sithCogExec_PopSector(SithCog* pCog)
     SITH_ASSERTREL(pCog);
 
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    int idnex = sithCogExec_PopInt(pCog);
-    if ( pWorld && idnex >= 0 && idnex < pWorld->numSectors )
+    int index = sithCogExec_PopInt(pCog);
+    if ( pWorld && index >= 0 && index < pWorld->numSectors )
     {
-        return &pWorld->aSectors[idnex];
+        return &pWorld->aSectors[index];
     }
 
-    SITHLOG_ERROR("Cog %s: Bad sector index %d on stack.\n", pCog->aName, idnex);
+    SITHLOG_ERROR("Cog %s: Bad sector index %d on stack.\n", pCog->aName, index);
     return NULL;
 }
 
@@ -530,12 +529,12 @@ SithAIClass* J3DAPI sithCogExec_PopAIClass(SithCog* pCog)
 
 void* J3DAPI sithCogExec_PopPointer(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogSymbolValue returnVal;
     if ( !sithCogExec_PopStack(pCog, &returnVal) )
     {
-        return 0;
+        return NULL;
     }
 
     SithCogSymbolValue retVal;
@@ -546,7 +545,7 @@ void* J3DAPI sithCogExec_PopPointer(SithCog* pCog)
 
 const char* J3DAPI sithCogExec_PopString(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogSymbolValue value;
     if ( !sithCogExec_PopStack(pCog, &value) )
@@ -556,16 +555,19 @@ const char* J3DAPI sithCogExec_PopString(SithCog* pCog)
 
     if ( value.type != SITHCOG_VALUE_SYMBOLID )
     {
+        SITHLOG_ERROR("Cog %s: Expected string, got constant of type %d.\n", pCog->aName, value.type);
         return NULL;
     }
 
     SithCogSymbol* pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, value.val.intValue);
-    SITH_ASSERTREL(pSymbol != ((void*)0));
+    SITH_ASSERTREL(pSymbol != NULL);
 
-    if ( pSymbol->val.type == SITHCOG_VALUE_STRING )
+    if ( pSymbol->value.type == SITHCOG_VALUE_STRING )
     {
-        return pSymbol->val.val.pString;
+        return pSymbol->value.val.pString;
     }
+
+    SITHLOG_ERROR("Cog %s: Expected string, got constant of type %d.\n", pCog->aName, value.type);
 
 #ifdef J3D_DEBUG
     // TODO: Verify this is correct, found in debug version
@@ -578,8 +580,8 @@ const char* J3DAPI sithCogExec_PopString(SithCog* pCog)
 
 void J3DAPI sithCogExec_PushStack(SithCog* pCog, SithCogSymbolValue* pValue)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
-    SITH_ASSERTREL(pValue != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
+    SITH_ASSERTREL(pValue != NULL);
 
     if ( pCog->stackSize >= STD_ARRAYLEN(pCog->stack) ) // Fixed: Added GE check (was EQ) to make absolutely sure the stack doesn't exceed
     {
@@ -620,12 +622,12 @@ void J3DAPI sithCogExec_PushVector(SithCog* pCog, const rdVector3* vec)
     sithCogExec_PushStack(pCog, &value);
 }
 
-int32_t J3DAPI sithCogExec_GetOpCode(SithCog* pCog)
+SithCogExecOpcode J3DAPI sithCogExec_GetOpCode(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogScript* pScript = pCog->pScript;
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
 
     if ( pCog->execPos >= pScript->codeSize - 1 )
     {
@@ -638,7 +640,7 @@ int32_t J3DAPI sithCogExec_GetOpCode(SithCog* pCog)
 
 void J3DAPI sithCogExec_ResetStack(SithCog* pCog)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
     if ( pCog->stackSize )
     {
         pCog->stackSize = 0;
@@ -681,8 +683,8 @@ void J3DAPI sithCogExec_PopCallstack(SithCog* pCog)
 
 int J3DAPI sithCogExec_PopStack(SithCog* pCog, SithCogSymbolValue* pValue)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
-    SITH_ASSERTREL(pValue != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
+    SITH_ASSERTREL(pValue != NULL);
     if ( pCog->stackSize < 1 )
     {
         SITHLOG_ERROR("Cog %s: PopStack failed -- stack size < 1.\n", pCog->aName);
@@ -700,14 +702,13 @@ void J3DAPI sithCogExec_FunctionCallOp(SithCog* pCog)
 
     SithCogSymbol* pSymbol = NULL;
     if ( sithCogExec_PopStack(pCog, &value)
-      && value.type == SITHCOG_VALUE_SYMBOLID
-      && (pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, value.val.intValue)) != 0
-      && pSymbol->val.type == SITHCOG_VALUE_POINTER
-      && (pfCogFunction = (SithCogFunctionType)pSymbol->val.val.pointerValue) != NULL )
+        && value.type == SITHCOG_VALUE_SYMBOLID
+        && (pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, value.val.intValue)) != 0
+        && pSymbol->value.type == SITHCOG_VALUE_POINTER
+        && (pfCogFunction = (SithCogFunctionType)pSymbol->value.val.pointerValue) != NULL )
     {
         pfCogFunction(pCog);
     }
-
     else if ( pSymbol )
     {
         if ( pSymbol->pName )
@@ -729,8 +730,7 @@ void J3DAPI sithCogExec_RetOp(SithCog* pCog)
 {
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer, "Cog %s: Returned from depth %d.\n", pCog->aName, pCog->callDepth);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: Returned from depth %d.\n", pCog->aName, pCog->callDepth);
     }
 
     sithCogExec_PopCallstack(pCog);
@@ -841,7 +841,6 @@ void J3DAPI sithCogExec_NegFalseOps(SithCog* pCog, int opcode)
         value.type = SITHCOG_VALUE_INT;
         value.val.intValue = sithCogExec_PopInt(pCog) == 0;
     }
-
     else if ( opcode == SITHCOGEXEC_OPCODE_NEG )
     {
         float fltval = sithCogExec_PopFlex(pCog);
@@ -872,7 +871,7 @@ void J3DAPI sithCogExec_AssignOp(SithCog* pCog)
     }
 
     SithCogSymbol* pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, variable.val.intValue);
-    pSymbol->val = value;
+    pSymbol->value = value;
 }
 
 void J3DAPI sithCogExec_IntererOps(SithCog* pCog, int opcode)
@@ -880,38 +879,38 @@ void J3DAPI sithCogExec_IntererOps(SithCog* pCog, int opcode)
     SithCogSymbolValue value;
     value.type = SITHCOG_VALUE_INT;
 
-    int a = sithCogExec_PopInt(pCog);
     int b = sithCogExec_PopInt(pCog);
+    int a = sithCogExec_PopInt(pCog);
 
     switch ( opcode )
     {
         case SITHCOGEXEC_OPCODE_CMPAND:
-            value.val.intValue = b && a;
+            value.val.intValue = a && b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPOR:
-            value.val.intValue = b || a;
+            value.val.intValue = a || b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPNE:
-            value.val.intValue = b != a;
+            value.val.intValue = a != b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_AND:
-            value.val.intValue = a & b;
+            value.val.intValue = b & a;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_OR:
-            value.val.intValue = a | b;
+            value.val.intValue = b | a;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_XOR:
-            value.val.intValue = a ^ b;
+            value.val.intValue = b ^ a;
             sithCogExec_PushStack(pCog, &value);
             break;
 
@@ -926,71 +925,71 @@ void J3DAPI sithCogExec_FloatOps(SithCog* pCog, int opcode)
     SithCogSymbolValue value;
     value.type = SITHCOG_VALUE_FLOAT;
 
-    float a = sithCogExec_PopFlex(pCog);
     float b = sithCogExec_PopFlex(pCog);
+    float a = sithCogExec_PopFlex(pCog);
 
     switch ( opcode )
     {
         case SITHCOGEXEC_OPCODE_ADD:
-            value.val.floatValue = b + a;
+            value.val.floatValue = a + b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_SUB:
-            value.val.floatValue = b - a;
+            value.val.floatValue = a - b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_MUL:
-            value.val.floatValue = b * a;
+            value.val.floatValue = a * b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_DIV:
-            if ( a == 0.0f )
+            if ( b == 0.0f )
             {
                 value.val.intValue = 0;
             }
             else
             {
-                value.val.floatValue = b / a;
+                value.val.floatValue = a / b;
             }
 
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_MOD:
-            value.val.floatValue = fmodf(b, a);
+            value.val.floatValue = fmodf(a, b);
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPGT:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b > (double)a;
+            value.val.intValue = a > (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPLS:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b < (double)a;
+            value.val.intValue = a < (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPEQ:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b == a;
+            value.val.intValue = a == b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPLE:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b <= (double)a;
+            value.val.intValue = a <= (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPGE:
             value.type = SITHCOG_VALUE_INT;
-            value.val.intValue = b >= (double)a;
+            value.val.intValue = a >= (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
@@ -1008,8 +1007,8 @@ SithCogSymbolValue* J3DAPI sithCogExec_GetSymbolValue(SithCogSymbolValue* pDest,
     if ( pValue->type == SITHCOG_VALUE_SYMBOLID )
     {
         pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, pValue->val.intValue);
-        SITH_ASSERTREL(pSymbol != ((void*)0));
-        pValue = &pSymbol->val;
+        SITH_ASSERTREL(pSymbol != NULL);
+        pValue = &pSymbol->value;
     }
 
     if ( pValue->type != SITHCOG_VALUE_POINTER )
@@ -1018,8 +1017,8 @@ SithCogSymbolValue* J3DAPI sithCogExec_GetSymbolValue(SithCogSymbolValue* pDest,
     }
     else
     {
-        SITH_ASSERTREL(pValue->val.pointerValue != ((void*)0));
-        // TODO: memset to 0 first before assigning. Verify if pointer value should be assigned instead
+        SITH_ASSERTREL(pValue->val.pointerValue != NULL);
+        // TODO: Verify if pointer value should be assigned instead
         pDest->type = SITHCOG_VALUE_INT;
         pDest->val.intValue = *(uint32_t*)pValue->val.pointerValue;
     }
@@ -1033,14 +1032,14 @@ SithCogSymbolValue* J3DAPI sithCogExec_GetPointerValue(SithCogSymbolValue* pDest
     if ( pValue->type == SITHCOG_VALUE_SYMBOLID )
     {
         SithCogSymbol* pSymbol = sithCogParse_GetSymbolByID(pCog->pSymbolTable, (unsigned int)pValue->val.pointerValue);
-        SITH_ASSERTREL(pSymbol != ((void*)0));
-        if ( pSymbol->val.type == SITHCOG_VALUE_POINTER )
+        SITH_ASSERTREL(pSymbol != NULL);
+        if ( pSymbol->value.type == SITHCOG_VALUE_POINTER )
         {
-            pDest->val.pointerValue = pSymbol->val.val.pointerValue;
+            pDest->val.pointerValue = pSymbol->value.val.pointerValue;
         }
         else
         {
-            pDest->val.pointerValue = &pSymbol->val.val;
+            pDest->val.pointerValue = &pSymbol->value.val;
         }
     }
     else if ( pValue->type == SITHCOG_VALUE_POINTER )

@@ -84,9 +84,9 @@ void sithCog_InstallHooks(void)
     J3D_HOOKFUNC(sithCog_AllocWorldCogScripts);
     J3D_HOOKFUNC(sithCog_AllocWorldCogs);
     J3D_HOOKFUNC(sithCog_GetSymbolRefInitializer);
-    J3D_HOOKFUNC(sithCog_LoadText);
-    J3D_HOOKFUNC(sithCog_WriteBinary);
-    J3D_HOOKFUNC(sithCog_LoadBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogsListText);
+    J3D_HOOKFUNC(sithCog_WriteCogsListBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogsListBinary);
     J3D_HOOKFUNC(sithCog_ParseSymbolRef);
     J3D_HOOKFUNC(sithCog_LinkCog);
     J3D_HOOKFUNC(sithCog_Load);
@@ -102,9 +102,9 @@ void sithCog_InstallHooks(void)
     J3D_HOOKFUNC(sithCog_SectorSendMessageEx);
     J3D_HOOKFUNC(sithCog_SurfaceSendMessage);
     J3D_HOOKFUNC(sithCog_SurfaceSendMessageEx);
-    J3D_HOOKFUNC(sithCog_LoadCogScriptsText);
-    J3D_HOOKFUNC(sithCog_WriteCogScriptsBinary);
-    J3D_HOOKFUNC(sithCog_LoadCogScriptsBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogScriptsListText);
+    J3D_HOOKFUNC(sithCog_WriteCogScriptsListBinary);
+    J3D_HOOKFUNC(sithCog_ReadCogScriptsListBinary);
     J3D_HOOKFUNC(sithCog_LoadScript);
     J3D_HOOKFUNC(sithCog_ProcessCog);
     J3D_HOOKFUNC(sithCog_ProcessCogs);
@@ -148,10 +148,10 @@ int sithCog_Startup(void)
         return 1;
     }
 
-    sithCog_g_pSymbolTable->firstId = 256; // Is this the SITHCOG_MAXSCRIPTS? 
+    sithCog_g_pSymbolTable->firstId = SITHCOG_GLOBALSYMBOLSTARTID;
 
     sithCog_Initialize();
-    sithEvent_RegisterTask(4u, sithCog_TimerEventTask, 0, SITHEVENT_TASKONDEMAND);
+    sithEvent_RegisterTask(SITHCOG_TASKID, sithCog_TimerEventTask, 0, SITHEVENT_TASKONDEMAND);
     sithCog_g_bCogStartup = 1;
     return 0;
 }
@@ -305,7 +305,7 @@ void J3DAPI sithCog_FreeWorldCogs(SithWorld* pWorld)
 
 void J3DAPI sithCog_FreeScriptEntry(SithCogScript* pScript)
 {
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
 
     sithCogParse_FreeSymbolTable(pScript->pSymbolTable);
     pScript->pSymbolTable = NULL;
@@ -387,12 +387,12 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     }
 
     SithCogScript* pScript = pCog->pScript;
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(messageType > 0);
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer,
+        SITHCONSOLE_PRINTF(
             "Cog %s: Message %d delivered, senderType=%d, senderIndex=%d, sourceType=%d, sourceIndex=%d, linkId=%d.\n",
             pCog->aName,
             messageType,
@@ -402,15 +402,13 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
             srcIdx,
             linkId
         );
-        sithConsole_PrintString(std_g_genBuffer);
     }
 
     if ( (pCog->flags & SITHCOG_DISABLED) != 0 )
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "Cog %s: Disabled, message ignored.\n", pCog->aName);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("Cog %s: Disabled, message ignored.\n", pCog->aName);
         }
         return;
     }
@@ -426,8 +424,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: Message %d received but ignored.  No handler.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: Message %d received but ignored.  No handler.\n", pCog->aName, messageType);
         }
         return;
     }
@@ -436,17 +433,16 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
     {
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: Message %d received but COG is paused.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: Message %d received but COG is paused.\n", pCog->aName, messageType);
         }
         return;
     }
 
     if ( messageType != SITHCOG_MSG_STARTUP
-          && messageType != SITHCOG_MSG_SHUTDOWN
-          && stdComm_IsGameActive()
-          && !stdComm_IsGameHost()
-          && (pCog->flags & SITHCOG_LOCAL) == 0 )
+        && messageType != SITHCOG_MSG_SHUTDOWN
+        && stdComm_IsGameActive()
+        && !stdComm_IsGameHost()
+        && (pCog->flags & SITHCOG_LOCAL) == 0 )
     {
         // Send message over net
         if ( messageType != SITHCOG_MSG_PULSE && messageType != SITHCOG_MSG_TIMER )
@@ -469,8 +465,7 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
 
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: Message %d received and accepted for execution.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: Message %d received and accepted for execution.\n", pCog->aName, messageType);
         }
 
         sithCogExec_ExecuteMessage(pCog, handlerNum);
@@ -479,16 +474,16 @@ void J3DAPI sithCog_SendMessage(SithCog* pCog, SithCogMsgType messageType, SithC
 
 int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, SithCogSymbolRefType senderType, int senderIdx, SithCogSymbolRefType srcType, int srcIdx, int linkId, int param0, int param1, int param2, int param3)
 {
-    SITH_ASSERTREL(pCog != ((void*)0));
+    SITH_ASSERTREL(pCog != NULL);
 
     SithCogScript* pScript; pScript = pCog->pScript;
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
 
     SITH_ASSERTREL(messageType > 0);
 
     if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
     {
-        STD_FORMAT(std_g_genBuffer,
+        SITHCONSOLE_PRINTF(
             "Cog %s: MessageEx %d delivered, senderType=%d, senderIndex=%d, sourceType=%d, sourceIndex=%d, linkId=%d, param0=%d, param1=%d, param2=%d, param3=%d.\n",
             pCog->aName,
             messageType,
@@ -502,7 +497,6 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             param2,
             param3
         );
-        sithConsole_PrintString(std_g_genBuffer);
     }
 
     if ( (pCog->flags & SITHCOG_DISABLED) != 0 )
@@ -512,8 +506,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             return SITHCOG_NORETURNVALUE;
         }
 
-        STD_FORMAT(std_g_genBuffer, "Cog %s: Disabled, MessageEx ignored.\n", pCog->aName);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("Cog %s: Disabled, MessageEx ignored.\n", pCog->aName);
         return SITHCOG_NORETURNVALUE;
     }
 
@@ -531,8 +524,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             return SITHCOG_NORETURNVALUE;
         }
 
-        STD_FORMAT(std_g_genBuffer, "--Cog %s: MessageEx %d received but ignored.  No handler.\n", pCog->aName, messageType);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("--Cog %s: MessageEx %d received but ignored.  No handler.\n", pCog->aName, messageType);
         return SITHCOG_NORETURNVALUE;
     }
 
@@ -543,16 +535,15 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
             return SITHCOG_NORETURNVALUE;
         }
 
-        STD_FORMAT(std_g_genBuffer, "--Cog %s: MessageEx %d received but COG is paused.\n", pCog->aName, messageType);
-        sithConsole_PrintString(std_g_genBuffer);
+        SITHCONSOLE_PRINTF("--Cog %s: MessageEx %d received but COG is paused.\n", pCog->aName, messageType);
         return SITHCOG_NORETURNVALUE;
     }
 
     if ( messageType != SITHCOG_MSG_STARTUP
-          && messageType != SITHCOG_MSG_SHUTDOWN
-          && stdComm_IsGameActive()
-          && !stdComm_IsGameHost()
-          && (pCog->flags & SITHCOG_LOCAL) == 0 )
+        && messageType != SITHCOG_MSG_SHUTDOWN
+        && stdComm_IsGameActive()
+        && !stdComm_IsGameHost()
+        && (pCog->flags & SITHCOG_LOCAL) == 0 )
     {
         // Send over net
         if ( messageType == SITHCOG_MSG_PULSE || messageType == SITHCOG_MSG_TIMER )
@@ -581,8 +572,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
 
         if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
         {
-            STD_FORMAT(std_g_genBuffer, "--Cog %s: MessageEx %d received and accepted for execution.\n", pCog->aName, messageType);
-            sithConsole_PrintString(std_g_genBuffer);
+            SITHCONSOLE_PRINTF("--Cog %s: MessageEx %d received and accepted for execution.\n", pCog->aName, messageType);
         }
 
         sithCogExec_ExecuteMessage(pCog, handlerNum);
@@ -592,7 +582,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
 
 int J3DAPI sithCog_AllocWorldCogScripts(SithWorld* pWorld, size_t numCogScripts)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     SITH_ASSERTREL(!pWorld->aCogScripts);
 
     pWorld->aCogScripts = (SithCogScript*)STDMALLOC(sizeof(SithCogScript) * numCogScripts);
@@ -610,7 +600,7 @@ int J3DAPI sithCog_AllocWorldCogScripts(SithWorld* pWorld, size_t numCogScripts)
 
 int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
     SITH_ASSERTREL(!pWorld->aCogs);
     pWorld->aCogs = (SithCog*)STDMALLOC(sizeof(SithCog) * sizeCogs);
     if ( !pWorld->aCogs )
@@ -625,12 +615,12 @@ int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs)
     return 0;
 }
 
-int J3DAPI sithCog_WriteText(const SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("######### COG placement ########\n")
-      || stdConffile_WriteLine("Section: cogs\n")
-      || stdConffile_Printf("World cogs %d\n", pWorld->numCogs)
-      || stdConffile_WriteLine("#Num\tScript          Symbol values\n") )
+        || stdConffile_WriteLine("Section: cogs\n")
+        || stdConffile_Printf("World cogs %d\n", pWorld->numCogs)
+        || stdConffile_WriteLine("#Num\tScript          Symbol values\n") )
     {
         return 1;
     }
@@ -669,17 +659,17 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
 {
 
     SithCogSymbol* pSymbol = &pCog->pSymbolTable->aSymbols[pCog->pScript->aSymRefs[symIdx].symbolId];
-    int objectIdx = pSymbol->val.val.intValue;
+    int objectIdx = pSymbol->value.val.intValue;
     int refIdx    = objectIdx;
 
     switch ( pCog->pScript->aSymRefs[symIdx].type )
     {
         case SITHCOG_SYM_REF_FLEX:
-            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "%f", pSymbol->val.val.floatValue);
+            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "%f", pSymbol->value.val.floatValue);
             break;
 
         case SITHCOG_SYM_REF_VECTOR:
-            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "(%f/%f/%f)", pSymbol->val.val.floatValue, pSymbol->val.val.vecValue.y, pSymbol->val.val.vecValue.z);
+            stdUtil_Format(pOutString, SITHCOG_SYMVALUESTRLEN, "(%f/%f/%f)", pSymbol->value.val.floatValue, pSymbol->value.val.vecValue.y, pSymbol->value.val.vecValue.z);
             break;
 
         case SITHCOG_SYM_REF_TEMPLATE:
@@ -719,7 +709,7 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
             }
             else
             {
-                numSounds = pSymbol->val.val.intValue;
+                numSounds = pSymbol->value.val.intValue;
             }
 
             objectIdx = numSounds;
@@ -759,7 +749,7 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
             }
             else
             {
-                numCogs = pSymbol->val.val.intValue;
+                numCogs = pSymbol->value.val.intValue;
             }
 
             objectIdx = numCogs;
@@ -834,18 +824,18 @@ void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithC
     }
 }
 
-int J3DAPI sithCog_LoadText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithCog_ReadCogsListText(SithWorld* pWorld, int bSkip)
 {
     if ( bSkip )
     {
         return 1;
     }
 
-    SITH_ASSERTREL(pWorld != ((void*)0));
-    SITH_ASSERTREL(pWorld->aCogs == ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
+    SITH_ASSERTREL(pWorld->aCogs == NULL);
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "cogs") )
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "cogs") )
     {
         goto syntax_error;
     }
@@ -862,7 +852,7 @@ int J3DAPI sithCog_LoadText(SithWorld* pWorld, int bSkip)
         return 1;
     }
 
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( stdConffile_g_entry.numArgs < 2u )
         {
@@ -906,7 +896,7 @@ syntax_error:
     return 1;
 }
 
-int J3DAPI sithCog_WriteBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     uint32_t aSizes[2] = { 0 }; // leave uint32_t type
     for ( size_t i = 0; i < pWorld->numCogs; ++i )
@@ -976,7 +966,7 @@ int J3DAPI sithCog_WriteBinary(tFileHandle fh, SithWorld* pWorld)
     }
 
     if ( (sith_g_pHS->pFileWrite(fh, aNames, sizeNames) == sizeNames)
-      && (sith_g_pHS->pFileWrite(fh, aValues, sizeValues) == sizeValues) )
+        && (sith_g_pHS->pFileWrite(fh, aValues, sizeValues) == sizeValues) )
     {
         stdMemory_Free(aNames);
         stdMemory_Free(aValues);
@@ -997,7 +987,7 @@ error:
     return 1;
 }
 
-int J3DAPI sithCog_LoadBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_ReadCogsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     char (*aNames)[64] = NULL;
     char (*aValues)[SITHCOG_SYMVALUESTRLEN] = NULL;
@@ -1029,7 +1019,7 @@ int J3DAPI sithCog_LoadBinary(tFileHandle fh, SithWorld* pWorld)
     }
 
     if ( (sith_g_pHS->pFileRead(fh, aNames, sizeCogs) == sizeCogs)
-      && (sith_g_pHS->pFileRead(fh, aValues, sizeValues) == sizeValues) )
+        && (sith_g_pHS->pFileRead(fh, aValues, sizeValues) == sizeValues) )
     {
         const char (*pCurValue)[SITHCOG_SYMVALUESTRLEN] = aValues;
         for ( size_t i = 0; i < aSizes[0]; ++i )
@@ -1081,120 +1071,120 @@ int J3DAPI sithCog_ParseSymbolRef(SithWorld* pWorld, SithCogSymbol* pSymbol, con
     switch ( pRef->type )
     {
         case SITHCOG_SYM_REF_FLEX:
-            pSymbol->val.type = SITHCOG_VALUE_FLOAT;
-            pSymbol->val.val.floatValue = strtof(pString, NULL);
+            pSymbol->value.type = SITHCOG_VALUE_FLOAT;
+            pSymbol->value.val.floatValue = strtof(pString, NULL);
             return 0;
 
         case SITHCOG_SYM_REF_VECTOR:
         {
-            pSymbol->val.type = SITHCOG_VALUE_VECTOR;
+            pSymbol->value.type = SITHCOG_VALUE_VECTOR;
             float x, y, z;
             if ( sscanf_s(pString, "(%f/%f/%f)", &x, &y, &z) != 3 )
             {
                 SITHLOG_ERROR("Ref '%s' could not be read as a vector, line %d.\n", pString, stdConffile_GetLineNumber());
-                memset(&pSymbol->val.val, 0, sizeof(pSymbol->val.val));
+                memset(&pSymbol->value.val, 0, sizeof(pSymbol->value.val));
                 return 1;
             }
 
-            pSymbol->val.val.vecValue.x = x;
-            pSymbol->val.val.vecValue.y = y;
-            pSymbol->val.val.vecValue.z = z;
+            pSymbol->value.val.vecValue.x = x;
+            pSymbol->value.val.vecValue.y = y;
+            pSymbol->value.val.vecValue.z = z;
             return 0;
         }
 
         case SITHCOG_SYM_REF_MATERIAL:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             rdMaterial* pMat = sithMaterial_Load(pString);
             if ( !pMat )
             {
                 SITHLOG_ERROR("MaterialRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pMat->num;
+            pSymbol->value.val.intValue = pMat->num;
             return 0;
         }
 
         case SITHCOG_SYM_REF_SOUND:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             tSoundHandle hSnd = sithSound_Load(pWorld, pString);
             if ( hSnd == 0 )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("SoundRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = Sound_GetSoundIndex(hSnd);
+            pSymbol->value.val.intValue = Sound_GetSoundIndex(hSnd);
             return 0;
         }
 
         case SITHCOG_SYM_REF_TEMPLATE:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             SithThing* pTemplate = sithTemplate_GetTemplate(pString);
             if ( !pTemplate )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("TemplateRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pTemplate->idx;
+            pSymbol->value.val.intValue = pTemplate->idx;
             return 0;
         }
 
         case SITHCOG_SYM_REF_MODEL:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             rdModel3* pModel = sithModel_Load(pString, 1);
             if ( !pModel )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("ModelRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pModel->num;
+            pSymbol->value.val.intValue = pModel->num;
             return 0;
         }
 
         case SITHCOG_SYM_REF_KEYFRAME:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             rdKeyframe* pKeyframe = sithPuppet_LoadKeyframe(pString);
             if ( !pKeyframe )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("KeyframeRef '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pKeyframe->idx;
+            pSymbol->value.val.intValue = pKeyframe->idx;
             return 0;
         }
 
         case SITHCOG_SYM_REF_AICLASS:
         {
-            pSymbol->val.type = SITHCOG_VALUE_INT;
+            pSymbol->value.type = SITHCOG_VALUE_INT;
             SithAIClass* pAIClass = sithAIClass_Load(pWorld, pString);
             if ( !pAIClass )
             {
-                pSymbol->val.val.intValue = -1;
+                pSymbol->value.val.intValue = -1;
                 SITHLOG_ERROR("AIClass '%s' could not be resolved, line %d.\n", pString, stdConffile_GetLineNumber());
                 return 1;
             }
 
-            pSymbol->val.val.intValue = pAIClass->num;
+            pSymbol->value.val.intValue = pAIClass->num;
             return 0;
         }
 
         default:
-            pSymbol->val.type = SITHCOG_VALUE_INT;
-            pSymbol->val.val.intValue = atoi(pString);
+            pSymbol->value.type = SITHCOG_VALUE_INT;
+            pSymbol->value.val.intValue = atoi(pString);
             return 0;
     }
 }
@@ -1203,7 +1193,7 @@ int J3DAPI sithCog_LinkCog(const SithWorld* pWorld, SithCog* pCog, const SithCog
 {
     SITH_ASSERTREL(pCog && pRef && pSymbol);
 
-    int index = pSymbol->val.val.intValue;
+    int index = pSymbol->value.val.intValue;
     if ( index < 0 )
     {
         return 1;
@@ -1330,7 +1320,7 @@ SithCog* J3DAPI sithCog_GetCog(const char* pName)
         {
             for ( size_t j = 0; j < pWorld->numCogs; ++j )
             {
-                if ( strcmpi(pName, pWorld->aCogs[j].aName) == 0 )
+                if ( streqi(pName, pWorld->aCogs[j].aName) )
                 {
                     return &pWorld->aCogs[j];
                 }
@@ -1631,11 +1621,11 @@ int J3DAPI sithCog_SurfaceSendMessageEx(const SithSurface* pSurf, const SithThin
     return retVal;
 }
 
-int J3DAPI sithCog_WriteCogScriptsText(const SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogScriptsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("########## COG scripts #########\n")
-      || stdConffile_WriteLine("Section: cogscripts\n")
-      || stdConffile_Printf("World scripts %d\n", pWorld->numCogScripts) )
+        || stdConffile_WriteLine("Section: cogscripts\n")
+        || stdConffile_Printf("World scripts %d\n", pWorld->numCogScripts) )
     {
         return 1;
     }
@@ -1651,9 +1641,9 @@ int J3DAPI sithCog_WriteCogScriptsText(const SithWorld* pWorld)
     return stdConffile_WriteLine("end\n") || stdConffile_WriteLine("################################\n\n\n");
 }
 
-int J3DAPI sithCog_LoadCogScriptsText(SithWorld* pWorld, int bSkip)
+int J3DAPI sithCog_ReadCogScriptsListText(SithWorld* pWorld, int bSkip)
 {
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     if ( bSkip )
     {
@@ -1661,7 +1651,7 @@ int J3DAPI sithCog_LoadCogScriptsText(SithWorld* pWorld, int bSkip)
     }
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") != 0 || strcmp(stdConffile_g_entry.aArgs[1].argValue, "scripts") != 0 )
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "scripts") )
     {
         goto syntax_error;
     }
@@ -1669,13 +1659,13 @@ int J3DAPI sithCog_LoadCogScriptsText(SithWorld* pWorld, int bSkip)
     size_t numScripts = atoi(stdConffile_g_entry.aArgs[2].argValue);
     if ( numScripts )
     {
-        SITH_ASSERTREL(pWorld->aCogScripts == ((void*)0));
+        SITH_ASSERTREL(pWorld->aCogScripts == NULL);
         if ( sithCog_AllocWorldCogScripts(pWorld, numScripts) )
         {
             return 1;
         }
 
-        while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") != 0 )
+        while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
         {
             if ( pWorld->numCogScripts >= pWorld->sizeCogScripts )
             {
@@ -1702,7 +1692,7 @@ syntax_error:
     return 1;
 }
 
-int J3DAPI sithCog_WriteCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_WriteCogScriptsListBinary(tFileHandle fh, const SithWorld* pWorld)
 {
     for ( size_t i = 0; i < pWorld->numCogScripts; ++i )
     {
@@ -1716,7 +1706,7 @@ int J3DAPI sithCog_WriteCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
     return 0;
 }
 
-int J3DAPI sithCog_LoadCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
+int J3DAPI sithCog_ReadCogScriptsListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     const size_t numCogScripts = pWorld->numCogScripts; // Cache the num scripts as sithCog_AllocWorldCogScripts resets it to 0
     if ( sithCog_AllocWorldCogScripts(pWorld, pWorld->sizeCogScripts) )
@@ -1738,8 +1728,8 @@ int J3DAPI sithCog_LoadCogScriptsBinary(tFileHandle fh, SithWorld* pWorld)
 
 SithCogScript* J3DAPI sithCog_LoadScript(SithWorld* pWorld, const char* pName)
 {
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(pWorld != NULL);
 
     char aPath[128];
     SITH_ASSERTREL(strlen(pName) + 32 < STD_ARRAYLEN(aPath));
@@ -1803,14 +1793,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Ok wake up COG now and continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to timer elapse.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to timer elapse.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_THING_TO_STOP:
         {
             if ( (sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].moveInfo.pathMovement.mode & (SITH_PATHMOVE_ROTATE | SITH_PATHMOVE_MOVE)) != 0 )
@@ -1822,14 +1810,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Ok thing stopped continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to movement completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to movement completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_KEYFRAME_TO_STOP:
         {
             SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[1]];
@@ -1838,8 +1824,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             {
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: waking up due to keyframe completion.\n", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: waking up due to keyframe completion.\n", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -1855,14 +1840,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Keyframe stopped playing, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: waking up due to keyframe completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: waking up due to keyframe completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_SOUND_TO_STOP:
         {
             tSoundChannelHandle channel = sithSoundMixer_GetChannelHandle(pCog->statusParams[0]);
@@ -1875,14 +1858,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Sound stopped playing continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: waking up due to sound completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: waking up due to sound completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_AI_TO_STOP:
         {
             SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]];
@@ -1891,8 +1872,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // Thing no longer exists
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI movement completion, but AI no longer exists!", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI movement completion, but AI no longer exists!", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -1904,8 +1884,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI no longer exists
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI %s movement completion, but AI control block no longer exists!", pCog->aName, pThing->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI %s movement completion, but AI control block no longer exists!", pCog->aName, pThing->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -1921,14 +1900,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // AI stopped, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to AI movement completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to AI movement completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_ACTOR_WEAPON_SELECT_FINISH:
         {
             if ( !sithWeapon_SelectWeapon(&sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]], (SithWeaponId)pCog->statusParams[1]) )
@@ -1940,18 +1917,16 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Weapon selected, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Weapon selection successful. Waking up cog %s.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Weapon selection successful. Waking up cog %s.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_ACTOR_WEAPON_DESELECT_FINISH:
         {
             if ( sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].thingInfo.actorInfo.deselectedWeaponID != -1
-              || sithWeapon_GetMountWait() > (double)sithTime_g_secGameTime )
+                || sithWeapon_GetMountWait() > (double)sithTime_g_secGameTime )
             {
                 // Weapon still not deselected
                 return;
@@ -1960,14 +1935,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Weapon deselected, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Weapon deselection complete. Waking up cog %s.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Weapon deselection complete. Waking up cog %s.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_ANIMATION_TO_STOP:
         {
             if ( sithAnimate_GetAnim(pCog->statusParams[0]) )
@@ -1979,14 +1952,12 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
             // Animation finished playing, continue execution
             if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to animation completion.\n", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s: Waking up due to animation completion.\n", pCog->aName);
             }
 
             sithCogExec_Execute(pCog);
             return;
         }
-
         case SITHCOG_STATUS_WAITING_AI_HEAD_TRACK:
         {
             SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]];
@@ -1995,8 +1966,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI thing gone
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI head tracking, but AI no longer exists!", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI head tracking, but AI no longer exists!", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -2008,8 +1978,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI gone
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Was waiting on AI %s head tracking, but AI control block no longer exists!", pCog->aName, pThing->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Was waiting on AI %s head tracking, but AI control block no longer exists!", pCog->aName, pThing->aName);
                 }
 
                 sithCogExec_Execute(pCog);
@@ -2021,22 +1990,19 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
                 // AI head tracking stopped
                 if ( (pCog->flags & SITHCOG_DEBUG) != 0 )
                 {
-                    STD_FORMAT(std_g_genBuffer, "Cog %s: Waking up due to AI head tracking at max yaw.\n", pCog->aName);
-                    sithConsole_PrintString(std_g_genBuffer);
+                    SITHCONSOLE_PRINTF("Cog %s: Waking up due to AI head tracking at max yaw.\n", pCog->aName);
                 }
 
                 sithCogExec_Execute(pCog);
             }
             return;
         }
-
         case SITHCOG_STATUS_WAITING_PLAYER_TO_STOP:
         {
             SithThing* pThing = sithPlayer_g_pLocalPlayerThing;
             if ( !sithPlayer_g_pLocalPlayerThing || sithPlayer_g_pLocalPlayerThing->type == SITH_THING_FREE )
             {
-                STD_FORMAT(std_g_genBuffer, "Cog %s was waiting for player to stop, player is gone!", pCog->aName);
-                sithConsole_PrintString(std_g_genBuffer);
+                SITHCONSOLE_PRINTF("Cog %s was waiting for player to stop, player is gone!", pCog->aName);
                 sithCogExec_Execute(pCog);
             }
 
@@ -2053,10 +2019,10 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
     }
 }
 
-void J3DAPI sithCog_ProcessCogs()
+void sithCog_ProcessCogs(void)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    SITH_ASSERTREL(pWorld != ((void*)0));
+    SITH_ASSERTREL(pWorld != NULL);
 
     if ( sithMain_g_sith_mode.masterMode != SITH_MODE_UNKNOWN_2 )
     {
@@ -2078,7 +2044,7 @@ void J3DAPI sithCog_ProcessCogs()
     }
 }
 
-void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
+int J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
 {
     J3D_UNUSED(pFunc);
 
@@ -2087,18 +2053,17 @@ void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
     size_t index;
     SithCog* pCog;
     if ( !pWorld
-      || !pArg
-      || sscanf_s(pArg, "%d", &index) != 1
-      || index > pWorld->numCogs
-      || (pCog = &pWorld->aCogs[index], !pCog->pScript)
-      || !pCog->pSymbolTable )
+        || !pArg
+        || sscanf_s(pArg, "%d", &index) != 1
+        || index > pWorld->numCogs
+        || (pCog = &pWorld->aCogs[index], !pCog->pScript)
+        || !pCog->pSymbolTable )
     {
         sithConsole_PrintString("Error, bad parameters.\n");
-        return;
+        return 0;
     }
 
-    STD_FORMAT(std_g_genBuffer, "Cog #%d: Name:%s  Script %s\n", index, pCog->aName, pCog->pScript->aName);
-    sithConsole_PrintString(std_g_genBuffer);
+    SITHCONSOLE_PRINTF("Cog #%d: Name:%s  Script %s\n", index, pCog->aName, pCog->pScript->aName);
 
     for ( size_t i = 0; i < pCog->pSymbolTable->numUsedSymbols; i++ )
     {
@@ -2114,17 +2079,19 @@ void J3DAPI sithCog_CogStatus(const SithConsoleCommand* pFunc, const char* pArg)
         }
 
         size_t curPos = strlen(std_g_genBuffer);
-        if ( pSymbol->val.type == SITHCOG_VALUE_FLOAT )
+        if ( pSymbol->value.type == SITHCOG_VALUE_FLOAT )
         {
-            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %f\n", pSymbol->val.val.floatValue);
+            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %f\n", pSymbol->value.val.floatValue);
         }
         else
         {
-            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %d\n", pSymbol->val.val.intValue);
+            stdUtil_Format(&std_g_genBuffer[curPos], STD_ARRAYLEN(std_g_genBuffer) - curPos, " = %d\n", pSymbol->value.val.intValue);
         }
 
         sithConsole_PrintString(std_g_genBuffer);
     }
+
+    return 1;
 }
 
 void J3DAPI sithCog_AddIntSymbol(SithCogSymbolTable* pTbl, int val, const char* pName)
@@ -2156,24 +2123,24 @@ int J3DAPI sithCog_TimerEventTask(int msecTime, SithEventParams* pParams)
 
 SithCogScript* J3DAPI sithCog_GetScript(const char* pName)
 {
-    SITH_ASSERTREL(pName != ((void*)0));
-    SITH_ASSERTREL(sithCog_g_pHashtable != ((void*)0));
+    SITH_ASSERTREL(pName != NULL);
+    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
     return (SithCogScript*)stdHashtbl_Find(sithCog_g_pHashtable, pName);
 }
 
 int J3DAPI sithCog_AddScript(SithCogScript* pScript)
 {
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(strlen(pScript->aName) > 0);
-    SITH_ASSERTREL(sithCog_g_pHashtable != ((void*)0));
+    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
     return stdHashtbl_Add(sithCog_g_pHashtable, pScript->aName, pScript);
 }
 
 int J3DAPI sithCog_RemoveScript(SithCogScript* pScript)
 {
-    SITH_ASSERTREL(pScript != ((void*)0));
+    SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(strlen(pScript->aName) > 0);
-    SITH_ASSERTREL(sithCog_g_pHashtable != ((void*)0));
+    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
     return stdHashtbl_Remove(sithCog_g_pHashtable, pScript->aName);
 }
 

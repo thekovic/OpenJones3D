@@ -1,8 +1,3 @@
-
-
-//#include <Windows.h>  // no def lean & mean
-
-
 #include "wkernel.h"
 #include "wkernel/RTI/symbols.h"
 

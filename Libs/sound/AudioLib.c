@@ -231,9 +231,9 @@ void AudioLib_ResetGlobals(void)
 }
 
 // Returns pointer to snd data
-uint8_t* J3DAPI AudioLib_ParseWaveFileHeader(const uint8_t* pData, int* pType, unsigned int* pSampleRate, unsigned int* pBitsPerSample, unsigned int* pNumChannels, int* a6, unsigned int* pSoundDataSize, const uint8_t** ppHeaderEnd, unsigned int* pDataOffset)
+const uint8_t* J3DAPI AudioLib_ParseWaveFileHeader(const uint8_t* pData, int* pType, uint32_t* pSampleRate, uint32_t* pBitsPerSample, uint32_t* pNumChannels, uint32_t* pExtraInfo, uint32_t* pSoundDataSize, uint32_t* pExtraDataOffset, uint32_t* pSoundDataOffset)
 {
-    return J3D_TRAMPOLINE_CALL(AudioLib_ParseWaveFileHeader, pData, pType, pSampleRate, pBitsPerSample, pNumChannels, a6, pSoundDataSize, ppHeaderEnd, pDataOffset);
+    return J3D_TRAMPOLINE_CALL(AudioLib_ParseWaveFileHeader, pData, pType, pSampleRate, pBitsPerSample, pNumChannels, pExtraInfo, pSoundDataSize, pExtraDataOffset, pSoundDataOffset);
 }
 
 int J3DAPI AudioLib_Compress(tAudioCompressorState* pCompressorState, uint8_t* pOutBuffer, const uint8_t* pInBuffer, int size, unsigned int numChannels)
@@ -251,7 +251,7 @@ void J3DAPI AudioLib_Uncompress(tAudioCompressorState* pCompressorState, uint8_t
     J3D_TRAMPOLINE_CALL(AudioLib_Uncompress, pCompressorState, pOutSndData, pCompressedData, size);
 }
 
-int J3DAPI AudioLib_GetMouthPosition(uint8_t* pData, int a2, int* pMouthPosX, int* pMouthPosY)
+int J3DAPI AudioLib_GetMouthPosition(uint8_t* pData, int a2, uint8_t* pMouthPosX, uint8_t* pMouthPosY)
 {
     return J3D_TRAMPOLINE_CALL(AudioLib_GetMouthPosition, pData, a2, pMouthPosX, pMouthPosY);
 }
@@ -343,7 +343,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
 
     memset(rightBits, 0, sizeof(rightBits));
 
-    if (size_1 > 0)
+    if ( size_1 > 0 )
     {
         int outOfBoundsLeft = 0;
         int outOfBoundsRight = 0;
@@ -357,19 +357,19 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
         {
             curLeftSamp = *(int16_t*)pInBuffer_1;
             v8 = pInBuffer_1 + 2;
-            if (curLeftSamp < 0)
+            if ( curLeftSamp < 0 )
             {
                 curLeftSamp = -curLeftSamp;
             }
 
-            for (i = 0; curLeftSamp; ++i) // [ADD] Fixed init i value (orig. i = 1) which caused out of bounds access
+            for ( i = 0; curLeftSamp; ++i ) // [ADD] Fixed init i value (orig. i = 1) which caused out of bounds access
             {
                 curLeftSamp >>= 1;
             }
 
             pInBuffer_1 = v8 + 2;
 
-            if (i > 16) // [ADD] bound check fix
+            if ( i > 16 ) // [ADD] bound check fix
             {
                 i = 16;
                 outOfBoundsLeft++;
@@ -377,27 +377,27 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
             ++leftBits[i];
 
             curRightSamp = *((int16_t*)pInBuffer_1 - 1);
-            if (curRightSamp < 0)
+            if ( curRightSamp < 0 )
             {
                 curRightSamp = -curRightSamp;
             }
 
-            for (j = 0; curRightSamp; ++j) // [ADD] Fixed init j value (orig. j = 1)
+            for ( j = 0; curRightSamp; ++j ) // [ADD] Fixed init j value (orig. j = 1)
             {
                 curRightSamp >>= 1;
             }
 
             --sampleCount;
 
-            if (j > 16) // [ADD] bound check fix
+            if ( j > 16 ) // [ADD] bound check fix
             {
                 j = 16;
                 outOfBoundsRight++;
             }
             ++rightBits[j];
-        } while (sampleCount);
+        } while ( sampleCount );
 
-        if (outOfBoundsLeft || outOfBoundsRight)
+        if ( outOfBoundsLeft || outOfBoundsRight )
         {
             // TODO: make separate log function var for audio lib
           /*  if (Sound_pHS) {
@@ -409,9 +409,9 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
     kRight_1 = 8;
 
     pLeft = &leftBits[16];
-    for (kLeft = 8; kLeft > 0; --kLeft)
+    for ( kLeft = 8; kLeft > 0; --kLeft )
     {
-        if (*pLeft)
+        if ( *pLeft )
         {
             break;
         }
@@ -424,14 +424,14 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
     pRight = &rightBits[16];
     do
     {
-        if (*pRight)
+        if ( *pRight )
         {
             break;
         }
 
         --kRight_1;
         --pRight;
-    } while (kRight_1 > 0);
+    } while ( kRight_1 > 0 );
 
     rsavedBits = 0;
     lsavedBits_1 = 0;
@@ -442,9 +442,9 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
     pLeft_1 = &leftBits[kLeft + 8];
     do
     {
-        if (kLeft <= 0)
+        if ( kLeft <= 0 )
         {
-            if (kRight <= 0)
+            if ( kRight <= 0 )
             {
                 break;
             }
@@ -452,7 +452,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
             v21 = 0;
         }
 
-        else if (kRight <= 0)
+        else if ( kRight <= 0 )
         {
             v21 = 1;
         }
@@ -462,9 +462,9 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
             kLeft = v44;
         }
 
-        if (v21)
+        if ( v21 )
         {
-            if (*pLeft_1 > numSlots)
+            if ( *pLeft_1 > numSlots )
             {
                 break;
             }
@@ -477,7 +477,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
         }
         else
         {
-            if (*pRight_1 > numSlots)
+            if ( *pRight_1 > numSlots )
             {
                 break;
             }
@@ -486,10 +486,10 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
             --kRight;
             ++rsavedBits;
         }
-    } while (numSlots);
+    } while ( numSlots );
 
     lsavedBits = lsavedBits_1;
-    if (kLeft)
+    if ( kLeft )
     {
         leftOffset = 1 << (kLeft - 1);
         v47 = leftOffset;
@@ -501,7 +501,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
     }
 
     kRight_2 = kRight;
-    if (kRight)
+    if ( kRight )
     {
         rightOffset = 1 << (kRight - 1);
     }
@@ -510,7 +510,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
         rightOffset = 0;
     }
 
-    if (pFile)
+    if ( pFile )
     {
         fprintf(pFile, "L = %4d:", kLeft);
         v24 = leftBits;
@@ -519,7 +519,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
         {
             fprintf(pFile, "%4d,", *v24++);
             --v25;
-        } while (v25);
+        } while ( v25 );
 
         fprintf(pFile, "%4d\n", leftBits[16]);
 
@@ -530,7 +530,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
         {
             fprintf(pFile, "%4d,", *v26++);
             --v27;
-        } while (v27);
+        } while ( v27 );
 
         fprintf(pFile, "%4d\n", rightBits[16]);
 
@@ -546,14 +546,14 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
     pCurOut = pOutBuffer + 3;
 
     // compressing block
-    if (blockSizea > 0)
+    if ( blockSizea > 0 )
     {
         kLeft_1 = (unsigned int)(blockSizea + 1) >> 1;// TODO: make new int var
-        while (1)
+        while ( 1 )
         {
             curLeftSample = *pCurIn;
             pRightIn = pCurIn + 1;
-            if (curLeftSample >= 0)
+            if ( curLeftSample >= 0 )
             {
                 leftSampleOffseted = leftOffset + curLeftSample;
             }
@@ -562,19 +562,19 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
                 leftSampleOffseted = curLeftSample - leftOffset;
             }
 
-            if (leftSampleOffseted < -32767)
+            if ( leftSampleOffseted < -32767 )
             {
                 leftSampleOffseted = -32767;
             }
 
-            if (leftSampleOffseted > 32767)
+            if ( leftSampleOffseted > 32767 )
             {
                 leftSampleOffseted = 32767;
             }
 
             leftSampeCompressed = leftSampleOffseted >> kLeft;
             v34 = leftSampeCompressed << kLeft; // leftSampleOffseted could be used instead
-            if (leftSampeCompressed > 127 || leftSampeCompressed < -127)
+            if ( leftSampeCompressed > 127 || leftSampeCompressed < -127 )
             {
                 *pCurOut = 0x80;
                 v35 = pCurOut + 1;
@@ -590,7 +590,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
             curRightSampe = *pRightIn;
             pRightOut = pCurOut + 1;
             pCurIn = pRightIn + 1;
-            if (curRightSampe >= 0)
+            if ( curRightSampe >= 0 )
             {
                 rightSampleOffseted = rightOffset + curRightSampe;
             }
@@ -599,19 +599,19 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
                 rightSampleOffseted = curRightSampe - rightOffset;
             }
 
-            if (rightSampleOffseted < -32767)
+            if ( rightSampleOffseted < -32767 )
             {
                 rightSampleOffseted = -32767;
             }
 
-            if (rightSampleOffseted > 32767)
+            if ( rightSampleOffseted > 32767 )
             {
                 rightSampleOffseted = 32767;
             }
 
             rightSampleCompressed = rightSampleOffseted >> kRight;
             v40 = rightSampleCompressed << kRight;// rightSampleOffseted could be used instead
-            if (rightSampleCompressed > 127 || rightSampleCompressed < -127)
+            if ( rightSampleCompressed > 127 || rightSampleCompressed < -127 )
             {
                 *pRightOut = 0x80;
                 v41 = pRightOut + 1;
@@ -625,7 +625,7 @@ int J3DAPI AudioLib_WVSMCompressBlock(uint8_t* pOutBuffer, const uint8_t* pInBuf
             }
 
             pCurOut = pRightOut + 1;
-            if (!--kLeft_1)
+            if ( !--kLeft_1 )
             {
                 break;
             }

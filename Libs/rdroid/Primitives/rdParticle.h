@@ -5,6 +5,8 @@
 #include <rdroid/RTI/addresses.h>
 #include <std/types.h>
 
+#define RDPARTICLE_MAXVERTS 256
+
 J3D_EXTERN_C_START
 typedef rdParticle* (J3DAPI* rdParticleLoaderFunc)(const char* pFilename);
 

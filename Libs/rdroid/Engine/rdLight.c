@@ -78,7 +78,8 @@ void J3DAPI rdLight_CalcVertexIntensities(const rdLight** apLights, const rdVect
 {
     for ( int i = numVertices - 1; i >= 0; --i )
     {
-        rdVector_Copy4(&aColors[i], &aVertexColors[i]);
+        aColors[i] = aVertexColors[i];
+
         for ( int j = numLights - 1; j >= 0; --j )
         {
             const rdLight* pLight = apLights[j];
@@ -94,18 +95,18 @@ void J3DAPI rdLight_CalcVertexIntensities(const rdLight** apLights, const rdVect
                 {
                     if ( dist < (double)pLight->maxRadius )
                     {
-                        aColors[i].red   = pLight->color.red * dot + aColors[i].red;
-                        aColors[i].green = pLight->color.green * dot + aColors[i].green;
-                        aColors[i].blue  = pLight->color.blue * dot + aColors[i].blue;
+                        aColors[i].red   += pLight->color.red * dot;
+                        aColors[i].green += pLight->color.green * dot;
+                        aColors[i].blue  += pLight->color.blue * dot;
                     }
                     else
                     {
                         float drad  = pLight->minRadius - pLight->maxRadius;
                         float atten = (dist - pLight->maxRadius) / drad;
 
-                        aColors[i].red   = (pLight->color.red - atten * pLight->color.red) * dot + aColors[i].red;
-                        aColors[i].green = (pLight->color.green - atten * pLight->color.green) * dot + aColors[i].green;
-                        aColors[i].blue  = (pLight->color.blue - atten * pLight->color.blue) * dot + aColors[i].blue;
+                        aColors[i].red   += (pLight->color.red - atten * pLight->color.red) * dot;
+                        aColors[i].green += (pLight->color.green - atten * pLight->color.green) * dot;
+                        aColors[i].blue  += (pLight->color.blue - atten * pLight->color.blue) * dot;
                     }
                 }
             }
@@ -118,7 +119,8 @@ void J3DAPI rdLight_CalcDistVertexIntensities(const rdLight** apLights, const rd
     J3D_UNUSED(aVertexNormal);
     for ( size_t i = 0; i < numVertices; ++i )
     {
-        memcpy(&aLightColors[i], &aVertexColors[i], sizeof(rdVector4));
+        aLightColors[i] = aVertexColors[i];
+
         for ( size_t j = 0; j < numLights; ++j )
         {
             const rdLight* pLight = apLights[j];
@@ -130,9 +132,9 @@ void J3DAPI rdLight_CalcDistVertexIntensities(const rdLight** apLights, const rd
             {
                 attenuation = dist * attenuation;
                 attenuation = pLight->color.red - attenuation;
-                aLightColors[i].red   = aLightColors[i].red + attenuation;
-                aLightColors[i].green = aLightColors[i].green + attenuation;
-                aLightColors[i].blue  = aLightColors[i].blue + attenuation;
+                aLightColors[i].red   += attenuation;
+                aLightColors[i].green += attenuation;
+                aLightColors[i].blue  += attenuation;
             }
         }
     }
@@ -148,9 +150,8 @@ void J3DAPI rdLight_CalcFaceIntensity(const rdLight** apLights, const rdVector3*
         if ( pLight->bEnabled )
         {
             rdVector3 dir;
-            dir.x = apLightPos[i].x - apVertices[*pFace->aVertices].x;
-            dir.y = apLightPos[i].y - apVertices[*pFace->aVertices].y;
-            dir.z = apLightPos[i].z - apVertices[*pFace->aVertices].z;
+            rdVector_Sub3(&dir, &apLightPos[i], &apVertices[*pFace->aVertices]);
+
             float dist = rdMath_DistancePointToPlane(&apLightPos[i], pNormal, &apVertices[*pFace->aVertices]);
             if ( dist < (double)pLight->minRadius )
             {
@@ -159,9 +160,9 @@ void J3DAPI rdLight_CalcFaceIntensity(const rdLight** apLights, const rdVector3*
                 if ( dot > 0.0f )
                 {
                     attenuation = dist * attenuation;
-                    pOutColor->x = (pLight->color.x - attenuation) * dot + pOutColor->x;
-                    pOutColor->y = (pLight->color.y - attenuation) * dot + pOutColor->y;
-                    pOutColor->z = (pLight->color.z - attenuation) * dot + pOutColor->z;
+                    pOutColor->red   += (pLight->color.red - attenuation) * dot;
+                    pOutColor->green += (pLight->color.green - attenuation) * dot;
+                    pOutColor->blue  += (pLight->color.blue - attenuation) * dot;
                 }
             }
         }
@@ -181,9 +182,9 @@ void J3DAPI rdLight_CalcDistFaceIntensity(const rdLight** apLights, const rdVect
             if ( dist < (double)pLight->minRadius )
             {
                 attenuation = dist * attenuation;
-                pOutColor->red   = pLight->color.red - attenuation + pOutColor->red;
-                pOutColor->green = pLight->color.green - attenuation + pOutColor->green;
-                pOutColor->blue  = pLight->color.blue - attenuation + pOutColor->blue;
+                pOutColor->red   += pLight->color.red - attenuation;
+                pOutColor->green += pLight->color.green - attenuation;
+                pOutColor->blue  += pLight->color.blue - attenuation;
             }
         }
     }

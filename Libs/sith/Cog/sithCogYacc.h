@@ -1,36 +1,57 @@
-#ifndef SITH_SITHCOGYACC_H
-#define SITH_SITHCOGYACC_H
-#include <j3dcore/j3d.h>
+#ifndef SITH_COG_YACC_H
+#define SITH_COG_YACC_H
+
 #include <rdroid/types.h>
 #include <sith/types.h>
-#include <sith/Main/sithMain.h>
-#include <sith/RTI/addresses.h>
 #include <std/types.h>
-
-#include <stdio.h>
 
 J3D_EXTERN_C_START
 
-#define sithCogYacc_g_yylineno J3D_DECL_FAR_VAR(sithCogYacc_g_yylineno, int)
-// extern int sithCogYacc_g_yylineno;
+#define IDENTIFIER 257
+#define CONSTANT_INT 258
+#define CONSTANT_FLOAT 259
+#define STRING_LITERAL 260
+#define VECTOR_LITERAL 261
+#define LE_OP 262
+#define GE_OP 263
+#define EQ_OP 264
+#define NE_OP 265
+#define AND_OP 266
+#define OR_OP 267
+#define TYPE_NAME 268
+#define IFX 269
+#define IF 270
+#define ELSE 271
+#define SWITCH 272
+#define WHILE 273
+#define DO 274
+#define FOR 275
+#define GOTO 276
+#define CONTINUE 277
+#define BREAK 278
+#define RETURN 279
+#define CALL 280
+typedef union {
+    void *pointerValue;
+    float floatValue;
+    int intValue;
+    rdVector3 vecValue;
+    SithCogSyntaxNode *pNode;
+} YYSTYPE;
+extern YYSTYPE yylval;
 
-//#define sithCogYacc_g_yylval J3D_DECL_FAR_VAR(sithCogYacc_g_yylval, YYSTYPE)
-// extern YYSTYPE sithCogYacc_g_yylval;
+extern size_t yylinenum;
+extern int yyleng;
+extern tFileHandle yyin, yyout;
 
-void J3DAPI sithCogYacc_yyerror(const char* msg);
-int J3DAPI sithCogYacc_yyparse();
-int J3DAPI sithCogYacc_yylex();
-int sithCogYacc_yy_get_next_buffer(void);
-int sithCogYacc_yy_get_previous_state(void);
-int J3DAPI sithCogYacc_yy_try_NUL_trans(int yy_current_state);
-void J3DAPI sithCogYacc_yyrestart(FILE* input_file);
-void sithCogYacc_yy_load_buffer_state(void);
-//YY_BUFFER_STATE J3DAPI sithCogYacc_yy_create_buffer(FILE* file, int size);
-//void J3DAPI sithCogYacc_yy_init_buffer(YY_BUFFER_STATE b, FILE* file);
+int yyparse(void);
+int yylex(void);
+void yyrestart(tFileHandle input_file);
 
 // Helper hooking functions
-void sithCogYacc_InstallHooks(void);
-void sithCogYacc_ResetGlobals(void);
+static void sithCogYacc_InstallHooks(void){}
+static void sithCogYacc_ResetGlobals(void){}
 
 J3D_EXTERN_C_END
-#endif // SITH_SITHCOGYACC_H
+
+#endif //SITH_COG_YACC_H
