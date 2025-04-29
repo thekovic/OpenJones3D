@@ -4,9 +4,9 @@
   - Fixed game crash on save game restore when an object is attached to a non-primary mesh face of a 3D model (45c8065) 
   - Fixed hiding console on cutscene start (27ca92b)
   - Fixed light range in `ThingLight` / `SetThingLight` COG functions (e9d4167)  
-    This fix ensures that the light range is correctly set when the COG function is called.
+    This fix ensures that the light range is correctly set when the COG function is called.  
     Fixes light flickering bug when camera is facing and is near the light source.
-  - Fixed casting float to int (0ada120)
+  - Fixed casting float to int (0ada120)  
     This fix ensures that:
     * The correct integer values are popped from the COG execution stack.
     * AI instinct parameters are correctly parsed when the AI class is parsed.
@@ -40,6 +40,7 @@
   - [QOL] Increased max number of simultaneous playing sounds to 128 (d8fdedc)
   - Fixed OOB bug in command line level selection (24ab38b)
   - Added level related hardcoded constants (fedb5bf)
+  - Fixed resetting IMP fire state, player visibility, and disabling of swimming inventory on system close (645471a)
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
