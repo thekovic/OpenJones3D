@@ -38,6 +38,8 @@
     This prevents repeated accumulation of the same sound in sound buffer, ensuring the buffer doesn't fill up and preventing new sounds from playing.  
     *Note, marked as QOL because this issue becomes most relevant when QOL for looping far sound is in place.*
   - [QOL] Increased max number of simultaneous playing sounds to 128 (d8fdedc)
+  - Fixed OOB bug in command line level selection (24ab38b)
+  - Added level related hardcoded constants (fedb5bf)
   - Added new system COG functions:
     * `DebugVector` (eb860f8)
     * `EnablePrint` (32763c2)
@@ -130,13 +132,13 @@
   - Implemented Indy's trading post dialog (a8a32ff)
   - Fixed column padding in trading post dialog (a8a32ff)
   - Increased the size of store item icon to 48 (a8a32ff)
-  - Fixed drawing 2D line to 24 BPP & 32 BPP video buffer (a8a32ff)
+  - Fixed drawing 2D line to 24 BPP & 32 BPP video buffer (81b4bc7)
   - Fixed the alpha value of the health indicator on the first run and when the screen resolution changes (e32a52d)
   - Fixed the hardware-accelerated drawing of 2D lines (5a63bc7)  
     Subsequently, this fix addresses the drawing error of level wireframe geometry on the overlay map
 
 ### Game play:
-  - [QOL] Fixed incorrect removal of loop-playing far sound. (2a25add)  
+  - [QOL] Fixed removal of loop-playing far sound. (2a25add)  
     This ensures the loop-playing sound continues to play when the listener comes in sound hearing range.
   - Fixed submersion of dead thing in cold-water/lava (18d828d)
   - Fixed mouse sensitivity when in-editor mode (d25081f)
