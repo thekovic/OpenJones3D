@@ -129,7 +129,7 @@ def print_detailed_module_stats(module_name: str, progress: Dict[str, Tuple[int,
 
 def print_total_stats(total_implemented: int, total_functions: int) -> None:
     total_progress = (total_implemented / total_functions) * 100 if total_functions > 0 else 0
-    print(f"\nOverall Progress: {total_progress:.2f}% | {total_implemented} implemented out of {total_functions:}\n")
+    print(f"Overall Progress: {total_progress:.2f}% | Implemented {total_implemented} out of {total_functions:} functions\n")
 
 
 def analyze_progress(modules: List[str], detailed: bool):
@@ -156,6 +156,8 @@ def analyze_progress(modules: List[str], detailed: bool):
         total_functions += total
 
     # Print overall progress
+    if(not detailed):
+        print("\n")
     print_total_stats(total_implemented, total_functions)
 
 def list_of_strings(arg: str):
