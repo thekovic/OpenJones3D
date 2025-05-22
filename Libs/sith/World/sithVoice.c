@@ -391,7 +391,7 @@ void J3DAPI sithVoice_SetThingVoiceHeads(SithCog* pCog)
     if ( pThing )
     {
         SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
-        for ( size_t i = 0; i < 4; ++i )
+        for ( size_t i = 0; i < STD_ARRAYLEN(pThing->thingInfo.actorInfo.voiceInfo.voiceHeadInfo.apSoundHeadModels); ++i )
         {
             pThing->thingInfo.actorInfo.voiceInfo.voiceHeadInfo.apSoundHeadModels[i] = sithModel_GetModel(aModelNames[i]);
         }

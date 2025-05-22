@@ -3079,7 +3079,7 @@ int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
     }
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "things") )
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "things") )
     {
         SITHLOG_ERROR("Parse error reading thing template list line %d.\n", stdConffile_GetLineNumber());
         return 1;
@@ -3094,7 +3094,7 @@ int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
     }
 
     // Read things
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( sithThing_ParseThingPlacement(pWorld) )
         {
@@ -3267,25 +3267,26 @@ int J3DAPI sithThing_ParseThingArg(const StdConffileArg* pArg, SithWorld* pWorld
         }
         case SITHTHING_ARG_MOVE:
         {
-            if ( strcmp(pArg->argValue, "physics") == 0 )
+            if ( streq(pArg->argValue, "physics") )
             {
                 pThing->moveType = SITH_MT_PHYSICS;
                 return SITHTHING_PARSEARG_PARSED;
             }
 
-            if ( strcmp(pArg->argValue, "path") == 0 )
+            if ( streq(pArg->argValue, "path") )
             {
                 pThing->moveType = SITH_MT_PATH;
                 return SITHTHING_PARSEARG_PARSED;
             }
 
-            if ( strcmp(pArg->argValue, "none") != 0 )
+            if ( streq(pArg->argValue, "none") )
             {
-                goto syntax_error;
+                pThing->moveType = SITH_MT_NONE;
+                return SITHTHING_PARSEARG_PARSED;
             }
 
-            pThing->moveType = SITH_MT_NONE;
-            return SITHTHING_PARSEARG_PARSED;
+            // Couldn't parse move type
+            goto syntax_error;
         }
         case SITHTHING_ARG_SIZE:
         {
@@ -3389,13 +3390,12 @@ int J3DAPI sithThing_ParseThingArg(const StdConffileArg* pArg, SithWorld* pWorld
                 pThing->collide.unkWidth = pThing->collide.width;
             }
 
-            if ( pThing->collide.unkHeight != 0.0f )
+            if ( pThing->collide.unkHeight == 0.0f )
             {
-                return SITHTHING_PARSEARG_PARSED;
+                pThing->collide.height    = pThing->collide.movesize;
+                pThing->collide.unkHeight = pThing->collide.height;
             }
 
-            pThing->collide.height    = pThing->collide.movesize;
-            pThing->collide.unkHeight = pThing->collide.height;
             return SITHTHING_PARSEARG_PARSED;
         }
         case SITHTHING_ARG_SPRITE:
@@ -3549,7 +3549,7 @@ int J3DAPI sithThing_ParseType(const char* pType)
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(sithThing_aStrThingTypes); ++i )
     {
-        if ( strcmp(pType, sithThing_aStrThingTypes[i]) == 0 ) //strcmpi maybe?
+        if ( streq(pType, sithThing_aStrThingTypes[i]) ) //streqi maybe?
         {
             return i;
         }
@@ -3677,7 +3677,7 @@ int J3DAPI sithThing_GetThingMeshIndex(const SithThing* pThing, const char* pMes
 
     for ( size_t i = 0; i < pThing->renderData.data.pModel3->aGeos[0].numMeshes; ++i )
     {
-        if ( strcmp(pMeshName, pThing->renderData.data.pModel3->aGeos[0].aMeshes[i].name) == 0 ) // TODO: Why using strcmp? Note, sithThing_GetThingJointIndex is using strcmpi
+        if ( streq(pMeshName, pThing->renderData.data.pModel3->aGeos[0].aMeshes[i].name) ) // TODO: Why using streq? Note, sithThing_GetThingJointIndex is using streqi
         {
             return i;
         }
@@ -3695,7 +3695,7 @@ int J3DAPI sithThing_GetThingJointIndex(const SithThing* pThing, const char* pJo
 
     for ( size_t i = 0; i < pThing->renderData.data.pModel3->numHNodes; ++i )
     {
-        if ( strcmpi(pJointName, pThing->renderData.data.pModel3->aHierarchyNodes[i].aName) == 0 )
+        if ( streqi(pJointName, pThing->renderData.data.pModel3->aHierarchyNodes[i].aName) )
         {
             return i;
         }
@@ -3752,7 +3752,7 @@ int J3DAPI sithThing_ParseThingPlacement(SithWorld* pWorld)
     SITH_ASSERTREL(pNewThing->type == SITH_THING_FREE);
 
     SithThing* pTemplate = sithTemplate_GetTemplate(stdConffile_g_entry.aArgs[1].argValue);
-    if ( !pTemplate && strcmp(stdConffile_g_entry.aArgs[1].argValue, "none") ) {
+    if ( !pTemplate && !streq(stdConffile_g_entry.aArgs[1].argValue, "none") ) {
         SITHLOG_ERROR("Template %s not found, line %d.\n", stdConffile_g_entry.aArgs[1].argValue, stdConffile_GetLineNumber());
     }
 

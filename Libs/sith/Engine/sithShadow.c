@@ -18,9 +18,9 @@
 
 #include <std/General/stdUtil.h>
 
-static const rdVector2 sithShadow_aShadowUVs[4] = { { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f } };
-static rdVector3 sithShadow_aTransformedVertices[4];
 static rdVector3 sithShadow_aVertices[4];
+static rdVector3 sithShadow_aTransformedVertices[STD_ARRAYLEN(sithShadow_aVertices)];
+static const rdVector2 sithShadow_aShadowUVs[STD_ARRAYLEN(sithShadow_aVertices)] = { { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f } };
 
 void sithShadow_InstallHooks(void)
 {
@@ -32,12 +32,10 @@ void sithShadow_InstallHooks(void)
 }
 
 void sithShadow_ResetGlobals(void)
-{
-}
+{}
 
 void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing)
 {
-
     if ( pThing->renderData.data.pModel3 && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) == 0 )
     {
         rdVector3 pos;
@@ -86,13 +84,13 @@ void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing)
         rdVector_Copy3(&orient.dvec, &pos);
         rdVector_Sub3Acc(&orient.dvec, &pThing->renderData.data.pModel3->aHierarchyNodes->pos);
 
-        if ( strncmp(pThing->aName, "mine", 4u) == 0 )
+        if ( strneq(pThing->aName, "mine", 4u) )
         {
             float size = pThing->renderData.data.pModel3->size;
             sithShadow_DrawShadow(&orient, size, scale, 1);
             return;
         }
-        else if ( strncmp(pThing->aName, "jeep", 4u) == 0 )
+        else if ( strneq(pThing->aName, "jeep", 4u) )
         {
             float size = pThing->renderData.data.pModel3->size * 1.8f;
             sithShadow_DrawShadow(&orient, size, scale, 1);
@@ -100,7 +98,7 @@ void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing)
         else // human
         {
             rdThing* prdThing = &pThing->renderData;
-            float size = pThing->renderData.data.pModel3->size;
+            const float size  = prdThing->data.pModel3->size;
 
             int lshoeIdx = sithThing_GetThingMeshIndex(pThing, "inlshoe");
             int rshoeIdx = sithThing_GetThingMeshIndex(pThing, "inrshoe");
@@ -110,17 +108,16 @@ void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing)
                 return;
             }
 
+            // Get left foot position
             rdMatrix34 meshOrient;
-
-            rdVector3 lshoePos;
             rdModel3_GetMeshMatrix(prdThing, &rdroid_g_identMatrix34, lshoeIdx, &meshOrient);
-            rdVector_Copy3(&lshoePos, &meshOrient.dvec);
 
-            rdVector3 rshoePos;
-            rdModel3_GetMeshMatrix(prdThing, &rdroid_g_identMatrix34, rshoeIdx, &meshOrient);
-            rdVector_Copy3(&rshoePos, &meshOrient.dvec);
-
+            rdVector3 lshoePos = meshOrient.dvec;
             lshoePos.z = pos.z;
+
+            // Get right foot position
+            rdModel3_GetMeshMatrix(prdThing, &rdroid_g_identMatrix34, rshoeIdx, &meshOrient);
+            rdVector3 rshoePos = meshOrient.dvec;
             rshoePos.z = pos.z;
 
             if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWL_STILL )
@@ -290,7 +287,7 @@ void J3DAPI sithShadow_DrawShadow(const rdMatrix34* orient, float size, float sc
     rdCache_AddAlphaProcFace(4u);
 }
 
-void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, rdVector3* leg, rdVector3* rleg, rdVector3* lvec, rdVector3* rvec)
+void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, const rdVector3* leg, const rdVector3* rleg, const rdVector3* lvec, const rdVector3* rvec)
 {
     if ( scale <= 0.0f ) {
         return;
@@ -346,7 +343,7 @@ void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, rdVector3* leg, r
     pPoly->pMaterial    = pMat;
     pPoly->matCelNum    = -1;
 
-    float alpha = scale * 0.80000001f + 0.2f;
+    float alpha = scale * 0.8f + 0.2f;
     rdVector_Set4(&pPoly->aVertIntensities[0], 1.0f, 1.0f, 1.0f, alpha);
     rdVector_Set4(&pPoly->aVertIntensities[1], 1.0f, 1.0f, 1.0f, alpha);
     rdVector_Set4(&pPoly->aVertIntensities[2], 1.0f, 1.0f, 1.0f, alpha);
@@ -354,5 +351,5 @@ void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, rdVector3* leg, r
 
     rdVector_Set4(&pPoly->extraLight, 1.0f, 1.0f, 1.0f, 1.0f);
 
-    rdCache_AddAlphaProcFace(4u);
+    rdCache_AddAlphaProcFace(STD_ARRAYLEN(sithShadow_aVertices));
 }

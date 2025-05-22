@@ -169,7 +169,7 @@ int J3DAPI sithTemplate_ReadThingTemplatesListText(SithWorld* pWorld, int bSkip)
     }
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") != 0 || strcmp(stdConffile_g_entry.aArgs[1].argValue, "templates") != 0 ) // TODO: change to strcmpi
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "world") || !streq(stdConffile_g_entry.aArgs[1].argValue, "templates") )
     {
         SITHLOG_ERROR("Parse error reading thing template list line %d.\n", stdConffile_GetLineNumber());
         return 1;
@@ -237,11 +237,11 @@ int J3DAPI sithTemplate_LoadMasterFile(const char* pFilename)
     {
         char aFirstToken[64];
         char* pEnd = stdUtil_StringSplit(stdConffile_g_aLine, aFirstToken, STD_ARRAYLEN(aFirstToken), " \t");
-        if ( !strcmp(aFirstToken, "end") )
+        if ( streq(aFirstToken, "end") )
         {
             bFinished = true;
         }
-        else if ( !strcmp(aFirstToken, "desc:") )
+        else if ( streq(aFirstToken, "desc:") )
         {
             // if previous description was parsed and  no template data was found, make just entry with description
             if ( pDesc )
@@ -333,10 +333,10 @@ int J3DAPI sithTemplate_MasterFileAddTemplate(const char* pName, const char* pDe
         return 0;
     }
 
-    sithTemplate_pMasterFile[sithTemplate_masterFileCount].pName = pName;
+    sithTemplate_pMasterFile[sithTemplate_masterFileCount].pName        = pName;
     sithTemplate_pMasterFile[sithTemplate_masterFileCount].pDescription = pDesc;
-    sithTemplate_pMasterFile[sithTemplate_masterFileCount].pText = pText;
-    sithTemplate_pMasterFile[sithTemplate_masterFileCount].pBasedOn = pBasedOn;
+    sithTemplate_pMasterFile[sithTemplate_masterFileCount].pText        = pText;
+    sithTemplate_pMasterFile[sithTemplate_masterFileCount].pBasedOn     = pBasedOn;
     stdHashtbl_Add(sithTemplate_pMasterHashtable, pName, &sithTemplate_pMasterFile[sithTemplate_masterFileCount]);
 
     ++sithTemplate_masterFileCount;
@@ -393,7 +393,7 @@ SithThing* J3DAPI sithTemplate_GetTemplate(const char* pName)
 {
     SITH_ASSERTREL(pName);
 
-    if ( !strcmp(pName, "none") || !*pName ) // TODO: Change to strcmpi
+    if ( streq(pName, "none") || !*pName )
     {
         return NULL;
     }
@@ -422,7 +422,7 @@ SithThing* J3DAPI sithTemplate_GetTemplate(const char* pName)
     stdConffile_Open("none");
     if ( !stdConffile_ReadArgsFromStr(aTemplateText) )
     {
-        sithTemplate_Parse(sithWorld_g_pLastLoadedWorld);// first arg is base
+        sithTemplate_Parse(sithWorld_g_pLastLoadedWorld); // first arg is base
     }
 
     pTemplate = sithTemplate_Parse(sithWorld_g_pLastLoadedWorld);
@@ -453,7 +453,7 @@ SithThing* J3DAPI sithTemplate_Parse(SithWorld* pWorld)
 
     // Get base template thing
     const SithThing* pBaseTemplate = sithTemplate_CacheFind(stdConffile_g_entry.aArgs[1].argValue);
-    if ( !pBaseTemplate && strcmp(stdConffile_g_entry.aArgs[1].argValue, "none") ) // TODO: Replace with strcmpi
+    if ( !pBaseTemplate && !streq(stdConffile_g_entry.aArgs[1].argValue, "none") )
     {
         SITHLOG_ERROR("Based-on template %s not found, using blank.\n", stdConffile_g_entry.aArgs[1].argValue);
     }
@@ -527,7 +527,7 @@ int J3DAPI sithTemplate_ParseTemplateList(SithWorld* pWorld)
 {
     SITH_ASSERTREL(pWorld != NULL);
 
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") ) // TODO: Replace with strcmpi
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") )
     {
         if ( !sithTemplate_Parse(pWorld) )
         {

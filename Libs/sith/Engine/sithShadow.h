@@ -13,7 +13,7 @@ void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing);
 int J3DAPI sithShadow_SearchForAttachDistance(SithThing* pThing, float* distance, float* radius);
 float J3DAPI sithShadow_DistanceThingToSurface(const SithThing* pThing, const rdVector3* normal, const rdFace* pFace);
 void J3DAPI sithShadow_DrawShadow(const rdMatrix34* orient, float size, float scale, int bCar);
-void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, rdVector3* leg, rdVector3* rleg, rdVector3* lvec, rdVector3* rvec);
+void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, const rdVector3* leg, const rdVector3* rleg, const rdVector3* lvec, const rdVector3* rvec);
 
 // Helper hooking functions
 void sithShadow_InstallHooks(void);

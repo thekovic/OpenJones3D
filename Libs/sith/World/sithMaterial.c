@@ -119,7 +119,7 @@ int J3DAPI sithMaterial_WriteMaterialsListText(const SithWorld* pWorld)
 {
     if ( stdConffile_WriteLine("##### Material information #####\n")
         || stdConffile_WriteLine("SECTION: MATERIALS\n\n")
-        || stdConffile_Printf("World materials %d\n\n", pWorld->numMaterials + 64)
+        || stdConffile_Printf("World materials %d\n\n", pWorld->numMaterials + SITHMATERIAL_EXTRABUFFERSIZE)
         || stdConffile_WriteLine("#num:\tmat:\n") )
     {
         return 1;

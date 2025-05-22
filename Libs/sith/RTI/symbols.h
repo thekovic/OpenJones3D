@@ -867,7 +867,7 @@
 #define sithShadow_SearchForAttachDistance_TYPE int (J3DAPI*)(SithThing*, float*, float*)
 #define sithShadow_DistanceThingToSurface_TYPE float (J3DAPI*)(const SithThing*, const rdVector3*, const rdFace*)
 #define sithShadow_DrawShadow_TYPE void (J3DAPI*)(const rdMatrix34*, float, float, int)
-#define sithShadow_DrawWalkShadow_TYPE void (J3DAPI*)(float, float, rdVector3*, rdVector3*, rdVector3*, rdVector3*)
+#define sithShadow_DrawWalkShadow_TYPE void (J3DAPI*)(float, float, const rdVector3*, const rdVector3*, const rdVector3*, const rdVector3*)
 #define sithCog_Startup_TYPE int (*)(void)
 #define sithCog_Shutdown_TYPE void (*)(void)
 #define sithCog_Open_TYPE int (J3DAPI*)(SithWorld*)

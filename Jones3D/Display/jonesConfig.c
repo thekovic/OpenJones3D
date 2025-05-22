@@ -3814,8 +3814,7 @@ UINT_PTR CALLBACK jonesConfig_SaveGameDialogHookProc(HWND hDlg, UINT uMsg, WPARA
                             bValidFile = false;
                         }
 
-                        // TODO: Replace const 17 with macro or with some STD_ARRAYLEN(aLevels)
-                        for ( size_t levelNum = 0; levelNum < 17u; ++levelNum )
+                        for ( size_t levelNum = 0; levelNum < JONESLEVEL_BONUSLEVELNUM; ++levelNum )
                         {
                             const char* pSaveName = sithGetLevelSaveFilename(levelNum);
                             if ( pSaveName )
