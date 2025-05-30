@@ -561,10 +561,13 @@ void J3DAPI sithPathMove_UpdateMove(SithThing* pThing, float simTime)
         float movedDist = sithCollision_MoveThing(pThing, &pPath->vecDeltaPos, moveDist, 0x44);
         if ( movedDist < moveDist )
         {
-            timeDelta = 0.0f;
             if ( stdMath_ClipNearZero(movedDist) > 0.0f )
             {
                 timeDelta = movedDist / moveDist * timeDelta;
+            }
+            else
+            {
+                 timeDelta = 0.0f;
             }
 
             ++pPath->numBlockedMoves;
