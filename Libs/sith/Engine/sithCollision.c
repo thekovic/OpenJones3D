@@ -481,7 +481,7 @@ int J3DAPI sithCollision_HasLOS(const SithThing* pViewer, const SithThing* pTarg
             }
         }
 
-        else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITHCOLLISION_ADJOINCROSS) == 0 )
+        else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 )
         {
             bLos = 0;
             break;

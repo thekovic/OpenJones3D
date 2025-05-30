@@ -2711,7 +2711,7 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     bool bNoPrevAttach = true;
     if ( pThing->attach.flags )
     {
-        if ( (pThing->attach.flags & SITH_TF_DESTROYED) != 0
+        if ( (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0
             && pThing->attach.attachedToStructure.pThingAttached == pAttachThing
             && pThing->attach.pFace == pFace )
         {
@@ -3014,7 +3014,7 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
             sithWeapon_SendMessageAim(pThing, /*bAim*/0);
         }
 
-        if ( (pSurf->flags & SITH_TF_DESTROYED) != 0 && (pThing->flags & SITH_TF_REMOTE) == 0 )
+        if ( (pSurf->flags & SITH_SURFACE_COGLINKED) != 0 && (pThing->flags & SITH_TF_REMOTE) == 0 )
         {
             sithCog_SurfaceSendMessage(pSurf, pThing, SITHCOG_MSG_EXITED);
         }

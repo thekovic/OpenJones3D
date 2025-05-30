@@ -293,7 +293,7 @@ void J3DAPI sithExplosion_Update(SithThing* pThing, float sedDeltaTime)
         sithExplosion_UpdateExpandFade(pExplode);
     }
 
-    if ( (pExplode->flags & SITH_EF_VARIABLELIGHT) != 0 && (pThing->flags & SITH_EF_ANIMATESPRITE) != 0 )
+    if ( (pExplode->flags & SITH_EF_VARIABLELIGHT) != 0 && (pThing->flags & SITH_TF_EMITLIGHT) != 0 )
     {
         double msecBlastTime;
         double msecLifeLeft;

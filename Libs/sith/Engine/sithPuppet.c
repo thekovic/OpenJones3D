@@ -2178,7 +2178,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         {
             if ( pThing->renderData.pPuppet->aTracks[track].playSpeed >= 0.5f && pThing->pSoundClass )
             {
-                if ( pThing->pInSector && (pThing->pInSector->flags & SITH_TF_REMOTE) != 0 )
+                if ( pThing->pInSector && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
                 {
                     sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_LSWIMAET);
                 }

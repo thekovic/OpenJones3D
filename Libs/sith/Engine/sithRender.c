@@ -1139,13 +1139,7 @@ int J3DAPI sithRender_RenderThing(SithThing* pThing)
         sithRender_pExtraThingRenderFunc(pThing);
     }
 
-    if ( pThing->type != SITH_THING_EXPLOSION )
-    {
-
-        return drawResult;
-    }
-
-    if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0 )
+    if ( pThing->type != SITH_THING_EXPLOSION || (pThing->thingInfo.explosionInfo.flags & SITH_EF_BLINDPLAYER) == 0 )
     {
         return drawResult;
     }
@@ -1154,7 +1148,7 @@ int J3DAPI sithRender_RenderThing(SithThing* pThing)
     // In JKDF2 (OpenJKDF2), here is section of code that adds light flashing effect to player view
     stdMath_Dist3D1(pThing->transformedPos.x, pThing->transformedPos.y, pThing->transformedPos.z);
 
-    pThing->thingInfo.actorInfo.flags &= ~SITH_EF_BLINDPLAYER;// 0x100 - SITH_EF_BLINDPLAYER
+    pThing->thingInfo.explosionInfo.flags &= ~SITH_EF_BLINDPLAYER;// 0x100 - SITH_EF_BLINDPLAYER
     return drawResult;
 }
 
