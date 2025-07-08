@@ -30,7 +30,9 @@
 #   ifndef NDEBUG
 #       define J3D_DEBUG 1
 #   endif
-#   define STRICT
+#   ifndef STRICT
+#       define STRICT
+#   endif
 #   define WIN32_LEAN_AND_MEAN
 #   include <Windows.h>
 #   define strcmpi _strcmpi

@@ -293,7 +293,7 @@ void J3DAPI sithExplosion_Update(SithThing* pThing, float sedDeltaTime)
         sithExplosion_UpdateExpandFade(pExplode);
     }
 
-    if ( (pExplode->flags & SITH_EF_VARIABLELIGHT) != 0 && (pThing->flags & SITH_EF_ANIMATESPRITE) != 0 )
+    if ( (pExplode->flags & SITH_EF_VARIABLELIGHT) != 0 && (pThing->flags & SITH_TF_EMITLIGHT) != 0 )
     {
         double msecBlastTime;
         double msecLifeLeft;
@@ -341,7 +341,7 @@ void J3DAPI sithExplosion_MakeBlast(SithThing* pThing)
             float scale = 1.0f - powf(pCollision->distance / exprange, 2);
             scale = STDMATH_CLAMP(scale, 0.25f, 1.0f);
 
-            if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
             {
                 float damage = scale * expdamage;
                 sithSurface_HandleThingImpact(pCollision->pSurfaceCollided, pThing, damage, pExplode->damageType);

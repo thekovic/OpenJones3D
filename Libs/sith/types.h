@@ -249,12 +249,12 @@ typedef enum eSithSurfaceFlag
 typedef enum eSithCollisionType
 {
     SITHCOLLISION_THING       = 0x1,
-    SITHCOLLISION_ADJOINCROSS = 0x2,
+    SITHCOLLISION_WORLD       = 0x2,
     SITHCOLLISION_FACE        = 0x4,
     SITHCOLLISION_FACEEDGE    = 0x8,
     SITHCOLLISION_FACEVERTEX  = 0x10,
     SITHCOLLISION_ADJOINTOUCH = 0x20,
-    SITHCOLLISION_WORLD       = 0x40,
+    SITHCOLLISION_ADJOINCROSS = 0x40,
 } SithCollisionType;
 
 typedef enum eSithCollideType

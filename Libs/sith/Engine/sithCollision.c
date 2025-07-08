@@ -352,7 +352,7 @@ SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVec
             break;
         }
 
-        if ( (pCollision->type & (SITHCOLLISION_WORLD | SITHCOLLISION_ADJOINTOUCH)) != 0
+        if ( (pCollision->type & (SITHCOLLISION_ADJOINCROSS | SITHCOLLISION_ADJOINTOUCH)) != 0
             && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_WATER) != 0
             && (pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
         {
@@ -481,7 +481,7 @@ int J3DAPI sithCollision_HasLOS(const SithThing* pViewer, const SithThing* pTarg
             }
         }
 
-        else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITHCOLLISION_ADJOINCROSS) == 0 )
+        else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 )
         {
             bLos = 0;
             break;
@@ -1069,7 +1069,7 @@ float J3DAPI sithCollision_SearchForCollisions(SithSector* pStartSector, SithThi
     pCollision = sithCollision_aCollisions[stackLevel];
     while ( collNum < sithCollision_aNumStackCollisions[stackLevel] )
     {
-        if ( pCollision->type == SITHCOLLISION_WORLD )
+        if ( pCollision->type == SITHCOLLISION_ADJOINCROSS )
         {
             pAdjoin = pCollision->pSurfaceCollided->pAdjoin;
             SITH_ASSERTREL(pAdjoin);
@@ -1229,7 +1229,7 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
                     {
                         if ( ((colflags & 4) == 0 || (colflags & 1) == 0) && !sithCollision_CheckSectorSearched(pAdjoin->pAdjoinSector) )
                         {
-                            sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, SITHCOLLISION_WORLD, 0);
+                            sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, SITHCOLLISION_ADJOINCROSS, NULL);
                         }
 
                         if ( (colflags & 2) == 0
@@ -1245,10 +1245,10 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
                         {
                             if ( (colflags & 4) != 0 && (colflags & 1) != 0 && !sithCollision_CheckSectorSearched(pAdjoin->pAdjoinSector) )
                             {
-                                sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, SITHCOLLISION_WORLD, 0);
+                                sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, SITHCOLLISION_ADJOINCROSS, NULL);
                             }
 
-                            sithCollision_PushSurfaceCollision(pCurSurf, distance, SITHCOLLISION_ADJOINTOUCH, 0);
+                            sithCollision_PushSurfaceCollision(pCurSurf, distance, SITHCOLLISION_ADJOINTOUCH, NULL);
                         }
                     }
                 }
@@ -1273,7 +1273,7 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
                     {
                         if ( (colflags & 0x400) != 0 || rdVector_Dot3(moveNorm, &hitNorm) < 0.0f )
                         {
-                            sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, (SithCollisionType)(hitType | SITHCOLLISION_ADJOINCROSS), &hitNorm);
+                            sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, (SithCollisionType)(hitType | SITHCOLLISION_WORLD), &hitNorm);
                         }
                     }
                 }
@@ -2460,7 +2460,7 @@ void J3DAPI sithCollision_PushSurfaceCollision(SithSurface* pSurf, float distanc
 {
     SithCollision* pCollision;
 
-    SITH_ASSERTREL(((hitType) & (SITHCOLLISION_WORLD | SITHCOLLISION_ADJOINTOUCH | SITHCOLLISION_ADJOINCROSS)));
+    SITH_ASSERTREL(((hitType) & (SITHCOLLISION_ADJOINCROSS | SITHCOLLISION_ADJOINTOUCH | SITHCOLLISION_WORLD)));
     if ( sithCollision_aNumStackCollisions[stackLevel] == STD_ARRAYLEN(sithCollision_aCollisions[stackLevel]) )
     {
         SITHLOG_ERROR("Found too many collisions in collision system.\n");
@@ -2468,10 +2468,10 @@ void J3DAPI sithCollision_PushSurfaceCollision(SithSurface* pSurf, float distanc
     }
 
     pCollision = &sithCollision_aCollisions[stackLevel][sithCollision_aNumStackCollisions[stackLevel]++];
-    pCollision->pThingCollided = NULL;
-    pCollision->bEnumerated = 0;
-    pCollision->type = hitType;
-    pCollision->distance = distance;
+    pCollision->pThingCollided   = NULL;
+    pCollision->bEnumerated      = 0;
+    pCollision->type             = hitType;
+    pCollision->distance         = distance;
     pCollision->pSurfaceCollided = pSurf;
     if ( pHitNorm )
     {
@@ -2612,7 +2612,7 @@ float J3DAPI sithCollision_CheckDistance(SithThing* pThing, const rdVector3* mov
             break;
         }
 
-        if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+        if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             SITH_ASSERTREL(pCollision->pThingCollided == NULL);
             SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);

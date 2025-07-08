@@ -896,7 +896,6 @@ LABEL_35:
     {
         if ( pThing1->moveStatus == SITHPLAYERMOVE_SWIMIDLE && (pThing1->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 )
         {
-        LABEL_74:
             memcpy(&pCamera->offset, &sithCamera_vecCameraOffsetClimbDown, sizeof(pCamera->offset));
             goto LABEL_76;
         }

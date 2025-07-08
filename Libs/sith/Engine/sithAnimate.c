@@ -1867,7 +1867,7 @@ SithSurface* J3DAPI sithAnimate_GetThingFloorSurface(const SithThing* pThing)
             break;
         }
 
-        if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+        if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             SithSurface* pSurfaceCollided = pCollision->pSurfaceCollided;
             sithCollision_DecreaseStackLevel();
@@ -1907,7 +1907,7 @@ void J3DAPI sithAnimate_FindAndEnterFloorSurface(const SithThing* pThing, const 
             break;
         }
 
-        if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+        if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             pSurfaceCollided = pCollision->pSurfaceCollided;
             if ( pSurfaceCollided != pPrevSurf )
