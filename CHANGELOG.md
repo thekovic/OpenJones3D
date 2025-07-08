@@ -1,3 +1,14 @@
+## v0.3.1
+### General:
+  - Fixed radius of fading plate 3DO models (5d705fb)
+  - Codebase update and cleanup (bf2c4f7)
+  - Fixed bug calculating time delta when path move thing is blocked (f361b65)
+    This fixes the bug where another thing object blocks the path of path moving objects, causing them to continue moving indefinitely as long as the path is blocked.
+    e.g.: pressed button moves out of socket if player blocks its path when the button moves to initial position.
+  - Fixed incorrect usage of enum flags (918bcee)
+  - Added define guard for `STRICT` macro to prevent redefinition warnings (1b0e597)
+  - Fixed incorrect enumerator names enum `SithCollisionType` (f2cbab2)
+
 ## v0.3
 ### General:
   - Fixed various bugs
@@ -13,17 +24,18 @@
   - Added developer COG verbs (33f8f9d)
   - Added error log when popping invalid string from COG stack (34c9e20)
   - Rename debug mode flag `SITHDEBUG_AILOOK_FOR_TARGET_DISABLED` to `SITHDEBUG_AINOTARGET` (53b9091)
-  - Changed argument order of debug print COG functions (a80ed30)
+  - Changed argument order of debug print COG functions (a80ed30)  
     Also changed the log level to debug.
   - Added programs `yacc` & `flex` (d6f5be6 + b669ca8)
   - Fixed yacc initial line number at the start of code parsing. (232f268)  
     This fixes line number in log when error is encountered.
-  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value was not pushed to the execution stack on error. (e9d4167)  
+  - Fixed bug in multiple COG thing functions (`sithCogFunctionThing` module) where a return value  
+   was not pushed to the execution stack on error. (e9d4167)  
     This fixes corruption of the COG's execution stack when an error occurs.
   - Added new `rdVector` arithmetic functions (c4c8ee5)
   - Fix null pointer dereference && infinitive loop in `sithAnimate_BuildScrollFaceRotate`, `sithAnimate_PushItem`, `sithAnimate_PullItem`, `sithAnimate_UpdatePushItemAnim` and `sithAnimate_UpdatePullItemAnim` (70cf7bf)
   - Fixed handling division by zero in `sithAnimate_StartSpriteSizeAnim` & `sithAnimate_StartThingMoveAnim` (f5dc718)
-  - Altered the AnimateSpriteSize COG function to return -1 when deltaTime is 0. (039a227)  
+  - Altered the `AnimateSpriteSize` COG function to return -1 when deltaTime is 0. (039a227)  
     This change prevents unnecessary animation creation, thereby saving animation slots.  
     The function now returns -1 to the script when the sprite size is set instantly but no animation is created,  
     whereas previously, -1 was returned only on animation creation errors.
@@ -117,7 +129,7 @@
 
 ### Display & Render:
   - Added support for display resolutions higher than 2048-pixel (6f9db7e)
-  - Fixed bug rendering ceiling sky (6f9db7e)
+  - Fixed bug rendering ceiling sky (2a200d5)
   - Fixed thumbnail rendering in save game dialog (c7bb134)
   - Fixed thumbnail rendering in exit dialog (b64fb63)
   - Increased size of game save/load dialogs (ce321bb)
