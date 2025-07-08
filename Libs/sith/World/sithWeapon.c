@@ -426,7 +426,7 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
             break;
         }
 
-        if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+        if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             sithWeapon_CreateWeaponExplosion(pWeapon, pWeaponInfo->pExplosionTemplate, NULL, /*bRotate=*/0);
             sithSurface_HandleThingImpact(pCollision->pSurfaceCollided, pWeapon, damage, pWeaponInfo->damageType);

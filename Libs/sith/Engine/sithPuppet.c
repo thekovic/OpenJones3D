@@ -1830,7 +1830,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
                 {
                     break;
                 }
-                if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+                if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
                 {
                     if ( (pCollision->pSurfaceCollided->flags & SITH_SURFACE_LAVA) == 0 )
                     {

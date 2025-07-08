@@ -167,7 +167,7 @@ int J3DAPI sithShadow_SearchForAttachDistance(SithThing* pThing, float* distance
             break;
         }
 
-        if ( (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0 )
+        if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             *distance = sithShadow_DistanceThingToSurface(pThing, &pCollision->pSurfaceCollided->face.normal, &pCollision->pSurfaceCollided->face);
             sithCollision_DecreaseStackLevel();
