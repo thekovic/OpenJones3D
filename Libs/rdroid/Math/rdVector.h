@@ -28,6 +28,10 @@ extern const rdVector2 rdroid_yVector2;
 #define rdroid_g_zVector3 J3D_DECL_FAR_VAR(rdroid_g_zVector3, const rdVector3)
 // extern const rdVector3 rdroid_g_zVector3 ;
 
+bool J3DAPI rdVector_IsZero2(const rdVector2* v); // Added
+bool J3DAPI rdVector_IsZero3(const rdVector3* v); // Added
+bool J3DAPI rdVector_IsZero4(const rdVector4* v); // Added
+
 void J3DAPI rdVector_Set2(rdVector2* dest, float x, float y); // Added
 void J3DAPI rdVector_Set3(rdVector3* dest, float x, float y, float z);
 void J3DAPI rdVector_Set4(rdVector4* dest, float x, float y, float z, float w);
@@ -80,9 +84,17 @@ void J3DAPI rdVector_ScaleAdd2(rdVector2* dest, const rdVector2* src, float scal
 void J3DAPI rdVector_ScaleAdd3(rdVector3* dest, const rdVector3* src, float scalar, const rdVector3* add); // Added
 void J3DAPI rdVector_ScaleAdd4(rdVector4* dest, const rdVector4* src, float scalar, const rdVector4* add); // Added
 
-void J3DAPI rdVector_ScaleAdd2Acc(rdVector2* dest, const rdVector2* src, float scalar); // Added
-void J3DAPI rdVector_ScaleAdd3Acc(rdVector3* dest, const rdVector3* src, float scalar); // Added
-void J3DAPI rdVector_ScaleAdd4Acc(rdVector4* dest, const rdVector4* src, float scalar); // Added
+// Helper functions for scaling destination vector by scalar and adding another vector; i.e. destvec = destvec * scalar + addvec
+// To not be confused with rdVector_MultAccX
+void J3DAPI rdVector_ScaleAdd2Acc(rdVector2* dest, float scalar, const rdVector2* add); // Added
+void J3DAPI rdVector_ScaleAdd3Acc(rdVector3* dest, float scalar, const rdVector3* add); // Added
+void J3DAPI rdVector_ScaleAdd4Acc(rdVector4* dest, float scalar, const rdVector4* add); // Added
+
+// Helper functions for accumulating scaled vector; i.e. destvec += toscalevec * scalar
+// To not be confused with rdVector_ScaleAddxAcc
+void J3DAPI rdVector_MultAcc2(rdVector2* dest, const rdVector2* toscale, float scalar); // Added
+void J3DAPI rdVector_MultAcc3(rdVector3* dest, const rdVector3* toscale, float scalar); // Added
+void J3DAPI rdVector_MultAcc4(rdVector4* dest, const rdVector4* toscale, float scalar); // Added
 
 float J3DAPI rdVector_Len2(const rdVector2* v); // Added from debug version
 float J3DAPI rdVector_Len3(const rdVector3* vec);
@@ -154,6 +166,21 @@ void rdVector_Lerp4Acc(rdVector4* a, const rdVector4* b, float t); // Added
 
 void J3DAPI rdVector_Rotate3(rdVector3* vec, const rdVector3* pivot, const rdVector3* pyr);
 void J3DAPI rdVector_Rotate3Acc(rdVector3* vec, const rdVector3* pyr);
+
+inline bool J3DAPI rdVector_IsZero2(const rdVector2* v)
+{
+    return (v->x == 0.0f && v->y == 0.0f);
+}
+
+inline bool J3DAPI rdVector_IsZero3(const rdVector3* v)
+{
+    return (v->x == 0.0f && v->y == 0.0f && v->z == 0.0f);
+}
+
+inline bool J3DAPI rdVector_IsZero4(const rdVector4* v)
+{
+    return (v->x == 0.0f && v->y == 0.0f && v->z == 0.0f && v->w == 0.0f);
+}
 
 inline void J3DAPI rdVector_Set2(rdVector2* dest, float x, float y)
 {
@@ -426,25 +453,46 @@ inline void J3DAPI rdVector_ScaleAdd4(rdVector4* dest, const rdVector4* src, flo
     dest->w = src->w * scalar + add->w;
 }
 
-inline void J3DAPI rdVector_ScaleAdd2Acc(rdVector2* dest, const rdVector2* src, float scalar)
+inline void J3DAPI rdVector_ScaleAdd2Acc(rdVector2* dest, float scalar, const rdVector2* add)
 {
-    dest->x += src->x * scalar;
-    dest->y += src->y * scalar;
+    dest->x = dest->x * scalar + add->x;
+    dest->y = dest->y * scalar + add->y;
 }
 
-inline void J3DAPI rdVector_ScaleAdd3Acc(rdVector3* dest, const rdVector3* src, float scalar)
+inline void J3DAPI rdVector_ScaleAdd3Acc(rdVector3* dest, float scalar, const rdVector3* add)
 {
-    dest->x += src->x * scalar;
-    dest->y += src->y * scalar;
-    dest->z += src->z * scalar;
+    dest->x = dest->x * scalar + add->x;
+    dest->y = dest->y * scalar + add->y;
+    dest->z = dest->z * scalar + add->z;
 }
 
-inline void J3DAPI rdVector_ScaleAdd4Acc(rdVector4* dest, const rdVector4* src, float scalar)
+inline void J3DAPI rdVector_ScaleAdd4Acc(rdVector4* dest, float scalar, const rdVector4* add)
 {
-    dest->x += src->x * scalar;
-    dest->y += src->y * scalar;
-    dest->z += src->z * scalar;
-    dest->w += src->w * scalar;
+    dest->x = dest->x * scalar + add->x;
+    dest->y = dest->y * scalar + add->y;
+    dest->z = dest->z * scalar + add->z;
+    dest->w = dest->w * scalar + add->w;
+}
+
+inline void J3DAPI rdVector_MultAcc2(rdVector2* dest, const rdVector2* toscale, float scalar)
+{
+    dest->x += toscale->x * scalar;
+    dest->y += toscale->y * scalar;
+}
+
+inline void J3DAPI rdVector_MultAcc3(rdVector3* dest, const rdVector3* toscale, float scalar)
+{
+    dest->x += toscale->x * scalar;
+    dest->y += toscale->y * scalar;
+    dest->z += toscale->z * scalar;
+}
+
+inline void J3DAPI rdVector_MultAcc4(rdVector4* dest, const rdVector4* toscale, float scalar)
+{
+    dest->x += toscale->x * scalar;
+    dest->y += toscale->y * scalar;
+    dest->z += toscale->z * scalar;
+    dest->w += toscale->w * scalar;
 }
 
 inline float J3DAPI rdVector_Len2(const rdVector2* v)

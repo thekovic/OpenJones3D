@@ -629,7 +629,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartSectorLightAnim(SithSector* pSector, 
     rdVector3 colorDelta;
     rdVector_Sub3(&colorDelta, pNewLight, (const rdVector3*)&pSector->extraLight);
 
-    if ( colorDelta.x == 0.0f && colorDelta.y == 0.0f && colorDelta.z == 0.0f )
+    if ( rdVector_IsZero3(&colorDelta) )
     {
         return NULL;
     }
@@ -664,7 +664,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingLightAnim(SithThing* pThing, con
     lightDelta.blue  = light->blue - pThing->light.color.blue;
     lightDelta.w     = light->w - pThing->light.minRadius; // range delta
 
-    if ( lightDelta.red == 0.0f && lightDelta.green == 0.0f && lightDelta.blue == 0.0f && lightDelta.w == 0.0f )
+    if ( rdVector_IsZero4(&lightDelta) )
     {
         return NULL;
     }
@@ -707,7 +707,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnim(SithThing* pThing, cons
         return NULL;
     }
 
-    if ( pDirection->x == 0.0f && pDirection->y == 0.0f && pDirection->z == 0.0f )
+    if ( rdVector_IsZero3(pDirection) )
     {
         SITHLOG_ERROR("Direction is 0 in sithAnimate_StartThingMoveAnim(), %s\n", pThing->aName);
         return NULL;
@@ -789,7 +789,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingFadeAnim(SithThing* pThing, cons
     rdVector4 colorDelta;
     rdVector_Sub4(&colorDelta, endColor, startColor);
 
-    if ( colorDelta.red == 0.0f && colorDelta.green == 0.0f && colorDelta.blue == 0.0f && colorDelta.alpha == 0.0f )
+    if ( rdVector_IsZero4(&colorDelta) )
     {
         return NULL;
     }
@@ -1224,7 +1224,7 @@ void J3DAPI sithAnimate_UpdateSpriteSizeAnim(SithAnimationSlot* pAnim, float sec
 void J3DAPI sithAnimate_UpdateLightAnim(SithAnimationSlot* pAnim, float secDeltaTime)
 {
     // Calculate new light color
-    rdVector_ScaleAdd4Acc(&pAnim->curVector, &pAnim->deltaVector, secDeltaTime);
+    rdVector_MultAcc4(&pAnim->curVector, &pAnim->deltaVector, secDeltaTime);
 
     bool bRedEnd   = false;
     if ( pAnim->deltaVector.red == 0.0f )
@@ -1487,7 +1487,7 @@ void J3DAPI sithAnimate_UpdateSurfaceScrollAnim(SithAnimationSlot* pAnim, float 
     if ( pAnim->pSurface )
     {
         // Shift the texture coordinates
-        rdVector_ScaleAdd2Acc(&pAnim->pSurface->face.texVertOffset, &pAnim->direction2, secDeltaTime);
+        rdVector_MultAcc2(&pAnim->pSurface->face.texVertOffset, &pAnim->direction2, secDeltaTime);
         if ( SITH_ISFRAMECYCLE(animNum, 16) ) // every 16th frame
         {
             // Wrap texture coordinates
@@ -1509,7 +1509,7 @@ void J3DAPI sithAnimate_UpdateSlideSkyAnim(SithAnimationSlot* pAnim, int skyType
         pWorld->horizonSkyOffset.x = pAnim->direction2.x * secDeltaTime + pWorld->horizonSkyOffset.x;
         pWorld->horizonSkyOffset.y = pAnim->direction2.y * secDeltaTime + pWorld->horizonSkyOffset.y;
 
-        rdVector_ScaleAdd2Acc(&pWorld->horizonSkyOffset, &pAnim->direction2, secDeltaTime);
+        rdVector_MultAcc2(&pWorld->horizonSkyOffset, &pAnim->direction2, secDeltaTime);
         if ( SITH_ISFRAMECYCLE(animNum, 16) )
         {
             // Wrap texture coordinates
@@ -1519,7 +1519,7 @@ void J3DAPI sithAnimate_UpdateSlideSkyAnim(SithAnimationSlot* pAnim, int skyType
     }
     else
     {
-        rdVector_ScaleAdd2Acc(&pWorld->ceilingSkyOffset, &pAnim->direction2, secDeltaTime);
+        rdVector_MultAcc2(&pWorld->ceilingSkyOffset, &pAnim->direction2, secDeltaTime);
         if ( SITH_ISFRAMECYCLE(animNum, 16) )
         {
             // Wrap texture coordinates

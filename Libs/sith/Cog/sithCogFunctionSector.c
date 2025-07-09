@@ -77,7 +77,7 @@ void J3DAPI sithCogFunctionSector_SetSectorLight(SithCog* pCog)
 
     if ( timeDelta == 0.0f )
     {
-        pSector->extraLight.red   =  color.red;
+        pSector->extraLight.red   = color.red;
         pSector->extraLight.green = color.green;
         pSector->extraLight.blue  = color.blue;
         sithSector_SyncSector(pSector, 1);
@@ -186,17 +186,15 @@ void J3DAPI sithCogFunctionSector_SetSectorThrust(SithCog* pCog)
 
     if ( pSector && bVec )
     {
-        if ( dir.x == 0.0f && dir.y == 0.0f && dir.z == 0.0f )
+        if ( rdVector_IsZero3(&dir) )
         {
             pSector->flags &= ~SITH_SECTOR_USETHRUST;
-            memset(&pSector->thrust, 0, sizeof(pSector->thrust));
+            pSector->thrust = rdroid_g_zeroVector3;
         }
         else
         {
             pSector->flags |= SITH_SECTOR_USETHRUST;
-            pSector->thrust.x = dir.x * speed;
-            pSector->thrust.y = dir.y * speed;
-            pSector->thrust.z = dir.z * speed;
+            rdVector_Scale3(&pSector->thrust, &dir, speed);
         }
 
         sithSector_SyncSector(pSector, 1);

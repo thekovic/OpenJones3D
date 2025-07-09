@@ -1765,7 +1765,7 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
         rdMatrix_Copy34(&fireOrient, &pShooter->orient);
     }
 
-    if ( pFireOffset->x == 0.0f && pFireOffset->y == 0.0f && pFireOffset->z == 0.0f )
+    if ( rdVector_IsZero3(pFireOffset) )
     {
         rdVector_Copy3(pFireOffset, &pShooter->pos);
     }
@@ -2359,7 +2359,7 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
         return 0;
     }
 
-    if ( pFirePos->x == 0.0f && pFirePos->y == 0.0f && pFirePos->z == 0.0f )
+    if ( rdVector_IsZero3(pFirePos) )
     {
         rdVector_Copy3(pFirePos, &pShooter->pos);
     }

@@ -861,7 +861,7 @@ void J3DAPI sithCogFunctionThing_MoveToFrame(SithCog* pCog)
         return;
     }
 
-    if ( speed == 0.0 )
+    if ( speed == 0.0f )
     {
         STDLOG_ERROR("Cog %s: Bad movement speed set for movetoframe.  Set=0.5\n", pCog->aName);
         speed = 0.5;

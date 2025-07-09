@@ -1039,13 +1039,13 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         rdVector3 scrollDir;
         sithAnimate_GetSurfaceScrollingDirection(pSurface, &scrollDir);
 
-        rdVector_ScaleAdd3Acc(&pThing->moveDir, &scrollDir, secDeltaTime);
+        rdVector_MultAcc3(&pThing->moveDir, &scrollDir, secDeltaTime);
         /*    pThing->moveDir.x = scrollDir.x * secDeltaTime + pThing->moveDir.x;
             pThing->moveDir.y = scrollDir.y * secDeltaTime + pThing->moveDir.y;
             pThing->moveDir.z = scrollDir.z * secDeltaTime + pThing->moveDir.z;*/
     }
 
-    if ( pThing->moveDir.x == 0.0f && pThing->moveDir.y == 0.0f && pThing->moveDir.z == 0.0f )
+    if ( rdVector_IsZero3(&pThing->moveDir) )
     {
         if ( pThing->moveType == SITH_MT_PHYSICS
             && (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0
@@ -1064,7 +1064,7 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
 
         if ( pThing->type == SITH_THING_PLAYER )
         {
-            moveFlags |= 0x200;
+            moveFlags |= 0x200; // Probably no collision with adjoin which has flag NOPLAYERMOVE set
         }
 
         if ( (pThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0
@@ -1722,10 +1722,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
     {
         case SITH_THING_ACTOR:
         {
-            if ( pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.red == 0.0f
-                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
-                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
-                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
+            if ( rdVector_IsZero4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top) )
             {
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
@@ -1746,10 +1743,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
 
         case SITH_THING_PLAYER:
         {
-            if ( pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.red == 0.0f
-                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.green == 0.0f
-                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.blue == 0.0f
-                && pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top.alpha == 0.0f )
+            if ( rdVector_IsZero4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top) )
             {
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
@@ -2745,7 +2739,7 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     }
     else if ( pAttachThing->moveType == SITH_MT_PATH )
     {
-        rdVector_ScaleAdd3Acc(&pThing->moveInfo.physics.velocity, &pAttachThing->moveInfo.pathMovement.vecDeltaPos, -pAttachThing->moveInfo.pathMovement.moveVel);
+        rdVector_MultAcc3(&pThing->moveInfo.physics.velocity, &pAttachThing->moveInfo.pathMovement.vecDeltaPos, -pAttachThing->moveInfo.pathMovement.moveVel);
 
         /*pThing->moveInfo.physics.velocity.x = pAttachThing->moveInfo.pathMovement.vecDeltaPos.x * -pAttachThing->moveInfo.pathMovement.moveVel
             + pThing->moveInfo.physics.velocity.x;
@@ -2948,7 +2942,7 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
 
             else if ( pAttached->moveType == SITH_MT_PATH )
             {
-                rdVector_ScaleAdd3Acc(&pThing->moveInfo.physics.velocity, &pAttached->moveInfo.pathMovement.vecDeltaPos, pAttached->moveInfo.pathMovement.moveVel);
+                rdVector_MultAcc3(&pThing->moveInfo.physics.velocity, &pAttached->moveInfo.pathMovement.vecDeltaPos, pAttached->moveInfo.pathMovement.moveVel);
 
                 /*     pThing->moveInfo.physics.velocity.x = pAttached->moveInfo.pathMovement.vecDeltaPos.x * pAttached->moveInfo.pathMovement.moveVel
                          + pThing->moveInfo.physics.velocity.x;

@@ -1041,7 +1041,7 @@ SithThing* J3DAPI sithFX_CreateLaserThing(const SithThing* pSourceThing, const r
     float length = rdVector_Normalize3Acc(&look);
     rdMatrix_BuildFromLook34(&pThing->orient, &look);
 
-    rdVector4 color = { .red= 1.0f, .green=0.40000001f, .blue=0.2f, .alpha=0.89999998f };
+    rdVector4 color = { .red=1.0f, .green=0.40000001f, .blue=0.2f, .alpha=0.89999998f };
     rdPolyline* pPolyline = rdPolyline_New("+laserbeam", "gen_a4sfx_rbbeam_b.mat", "gen_a4sfx_rbbeam_b.mat", length, baseRadius, tipRadius, RD_GEOMETRY_FULL, RD_LIGHTING_GOURAUD, &color);
     if ( !pPolyline )
     {
@@ -1057,8 +1057,8 @@ SithThing* J3DAPI sithFX_CreateLaserThing(const SithThing* pSourceThing, const r
     pThing->renderData.data.pPolyline->face.texVertOffset.x = 0.0f;
     pThing->renderData.data.pPolyline->face.texVertOffset.y = 0.0f;
 
-    memset(&pThing->orient.dvec, 0, sizeof(pThing->orient.dvec)); // Reset orientation
-    rdVector_Copy3(&pThing->pos, &startPos);
+    pThing->orient.dvec = rdroid_g_zeroVector3; // Reset position vector
+    pThing->pos         = startPos;
     sithThing_EnterSector(pThing, pSourceThing->pInSector, 1, 1);
     return pThing;
 }

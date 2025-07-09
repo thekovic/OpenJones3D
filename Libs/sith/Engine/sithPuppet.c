@@ -3248,7 +3248,7 @@ float J3DAPI sithPuppet_GetThingLocalVelocityAxis(SithThing* pThing, size_t* pAx
     }
 
     SithPhysicsInfo* pPhysics = (SithPhysicsInfo*)&pThing->moveInfo; // Changed: Moved here from the top of the function
-    if ( pPhysics->velocity.x == 0.0f && pPhysics->velocity.y == 0.0f && pPhysics->velocity.z == 0.0f )
+    if ( rdVector_IsZero3(&pPhysics->velocity) )
     {
         *pVelX = 0.0f;
         *pVelY = 0.0f;
