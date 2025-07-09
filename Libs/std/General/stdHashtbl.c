@@ -191,8 +191,8 @@ tLinkListNode* J3DAPI stdHashtbl_GetTailNode(const tLinkListNode* pCur)
 
 void* J3DAPI stdHashtbl_Find(const tHashTable* pTable, const char* pName)
 {
-    int pNodeHash;
-    tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &pNodeHash);
+    int nodeIdx;
+    tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &nodeIdx);
     if ( pNode ) {
         return pNode->data;
     }
@@ -258,8 +258,8 @@ void J3DAPI stdHashtbl_PrintTableDiagnostics(tHashTable* pTable)
     std_g_pHS->pDebugPrint("---------------------\n");
 
     size_t usedIndices = 0;
-    size_t totalNodes = 0;
-    size_t maxLookup = 0;
+    size_t totalNodes  = 0;
+    size_t maxLookup   = 0;
     for ( size_t i = 0; i < pTable->numNodes; ++i )
     {
         if ( pTable->paNodes[i].name )

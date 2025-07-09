@@ -48,11 +48,11 @@ void sithCollision_ResetCurStack(void);
 float J3DAPI sithCollision_BuildCollisionList(SithSector* pSector, SithThing* pThing, const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, int searchFlags);
 int J3DAPI sithCollision_CheckSectorSearched(const SithSector* pSector);
 int J3DAPI sithCollision_AddSearchedSector(SithSector* pSector);
-int J3DAPI sithCollision_sub_4DABF1(const SithThing* pThing, int searchFlags);
-int J3DAPI sithCollision_sub_4DAC4B(const SithThing* pThing1, const SithThing* pThing2, int collflags);
-int J3DAPI sithCollision_sub_4DAC4B(const SithThing* pThing1, const SithThing* pThing2, int collflags);
+int J3DAPI sithCollision_CanThingCollide(const SithThing* pThing, int searchFlags);
+int J3DAPI sithCollision_CanThingCollideWithThing(const SithThing* pThing1, const SithThing* pThing2, int collflags);
+int J3DAPI sithCollision_CanThingCollideWithThing(const SithThing* pThing1, const SithThing* pThing2, int collflags);
 int J3DAPI sithCollision_sub_4DB3CA(SithThing* pThing1, SithThing* pThing2);
-int J3DAPI sithCollision_sub_4DB49F(SithSurfaceAdjoinFlag adjflags, int colflags);
+int J3DAPI sithCollision_CanAdjoinCollide(SithSurfaceAdjoinFlag adjflags, int colflags);
 
 void sithCollision_InstallHooks(void)
 {
@@ -101,29 +101,29 @@ void sithCollision_Startup(void)
     memset(aCollideResults, 0, sizeof(aCollideResults));
     memset(sithCollision_aThingSurfaceCollideResults, 0, sizeof(sithCollision_aThingSurfaceCollideResults));
 
-    sithCollision_AddCollisionHandler(SITH_THING_ACTOR, SITH_THING_ACTOR, sithActor_ActorCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_ACTOR, SITH_THING_ACTOR, sithActor_ActorCollisionHandler, NULL);
     sithCollision_AddCollisionHandler(SITH_THING_ACTOR, SITH_THING_PLAYER, sithActor_ActorCollisionHandler, sithCollision_sub_4AAF30);
 
-    sithCollision_AddCollisionHandler(SITH_THING_PLAYER, SITH_THING_PLAYER, sithCollision_ThingCollisionHandler, 0);
-    sithCollision_AddCollisionHandler(SITH_THING_PLAYER, SITH_THING_COG, sithCollision_ThingCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_PLAYER, SITH_THING_PLAYER, sithCollision_ThingCollisionHandler, NULL);
+    sithCollision_AddCollisionHandler(SITH_THING_PLAYER, SITH_THING_COG, sithCollision_ThingCollisionHandler, NULL);
 
-    sithCollision_AddCollisionHandler(SITH_THING_ACTOR, SITH_THING_COG, sithActor_ActorCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_ACTOR, SITH_THING_COG, sithActor_ActorCollisionHandler, NULL);
 
-    sithCollision_AddCollisionHandler(SITH_THING_DEBRIS, SITH_THING_ACTOR, sithCollision_ParticleAndActorCollisionHandler, 0);
-    sithCollision_AddCollisionHandler(SITH_THING_DEBRIS, SITH_THING_PLAYER, sithCollision_ParticleAndActorCollisionHandler, 0);
-    sithCollision_AddCollisionHandler(SITH_THING_DEBRIS, SITH_THING_DEBRIS, sithCollision_ThingCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_DEBRIS, SITH_THING_ACTOR, sithCollision_ParticleAndActorCollisionHandler, NULL);
+    sithCollision_AddCollisionHandler(SITH_THING_DEBRIS, SITH_THING_PLAYER, sithCollision_ParticleAndActorCollisionHandler, NULL);
+    sithCollision_AddCollisionHandler(SITH_THING_DEBRIS, SITH_THING_DEBRIS, sithCollision_ThingCollisionHandler, NULL);
 
-    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_ACTOR, sithWeapon_ThingCollisionHandler, 0);
-    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_PLAYER, sithWeapon_ThingCollisionHandler, 0);
-    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_DEBRIS, sithWeapon_ThingCollisionHandler, 0);
-    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_COG, sithWeapon_ThingCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_ACTOR, sithWeapon_ThingCollisionHandler, NULL);
+    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_PLAYER, sithWeapon_ThingCollisionHandler, NULL);
+    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_DEBRIS, sithWeapon_ThingCollisionHandler, NULL);
+    sithCollision_AddCollisionHandler(SITH_THING_WEAPON, SITH_THING_COG, sithWeapon_ThingCollisionHandler, NULL);
 
-    sithCollision_AddCollisionHandler(SITH_THING_ITEM, SITH_THING_PLAYER, sithItem_PlayerCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_ITEM, SITH_THING_PLAYER, sithItem_PlayerCollisionHandler, NULL);
 
     sithCollision_AddSurfaceCollisionHandler(SITH_THING_ACTOR, sithActor_SurfaceCollisionHandler);
     sithCollision_AddSurfaceCollisionHandler(SITH_THING_WEAPON, sithWeapon_SurfaceCollisionHandler);
 
-    sithCollision_AddCollisionHandler(SITH_THING_COG, SITH_THING_COG, sithCollision_ThingCollisionHandler, 0);
+    sithCollision_AddCollisionHandler(SITH_THING_COG, SITH_THING_COG, sithCollision_ThingCollisionHandler, NULL);
 
     bCollideStartup = 1;
 }
@@ -256,7 +256,7 @@ SithSector* J3DAPI sithCollision_FindSectorInRadius(SithSector* pStartSector, co
     moveDist = rdVector_Normalize3Acc(&moveNorm);
 
     pSector = pStartSector;
-    sithCollision_SearchForCollisions(pStartSector, NULL, startPos, &moveNorm, moveDist, radius, 1);
+    sithCollision_SearchForCollisions(pStartSector, NULL, startPos, &moveNorm, moveDist, radius, 0x01);
     while ( 1 )
     {
         pCollision = sithCollision_PopStack();
@@ -1124,14 +1124,14 @@ void sithCollision_DecreaseStackLevel(void)
 float J3DAPI sithCollision_SearchForThingCollisions(const SithSector* pSector, SithThing* pThing, const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, int searchFlags)
 {
     SithThing* pCurThing;
-    float pHitDistance;
-    rdFace* ppHitFace;
-    rdModel3Mesh* ppHitMesh;
+    float hitDistance;
+    rdFace* pHitFace;
+    rdModel3Mesh* pHitMesh;
     SithCollisionType hitType;
-    rdVector3 Src;
+    rdVector3 hitNorm;
 
-    ppHitMesh = 0;
-    ppHitFace = 0;
+    pHitMesh = 0;
+    pHitFace = 0;
     if ( sithWorld_g_pCurrentWorld )
     {
         SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
@@ -1140,7 +1140,7 @@ float J3DAPI sithCollision_SearchForThingCollisions(const SithSector* pSector, S
 
     for ( pCurThing = pSector->pFirstThingInSector; pCurThing; pCurThing = pCurThing->pNextThingInSector )
     {
-        if ( ((searchFlags & 8) == 0 || (pCurThing->flags & SITH_TF_MOUNTABLE) != 0)
+        if ( ((searchFlags & 0x08) == 0 || (pCurThing->flags & SITH_TF_MOUNTABLE) != 0)
             && ((searchFlags & 0x10) == 0 || (pCurThing->flags & SITH_TF_STANDON) != 0)
             && ((searchFlags & 0x4000) == 0
                 || pCurThing->type != SITH_THING_PLAYER
@@ -1148,8 +1148,8 @@ float J3DAPI sithCollision_SearchForThingCollisions(const SithSector* pSector, S
                 && pCurThing->type != SITH_THING_WEAPON
                 && pCurThing->type != SITH_THING_DEBRIS
                 && (pCurThing->flags & (SITH_TF_INVISIBLE | SITH_TF_NOWEAPONCOLLIDE)) == 0)
-            && sithCollision_sub_4DABF1(pCurThing, searchFlags)
-            && (!pThing || sithCollision_sub_4DAC4B(pThing, pCurThing, searchFlags)) )
+            && sithCollision_CanThingCollide(pCurThing, searchFlags)
+            && (!pThing || sithCollision_CanThingCollideWithThing(pThing, pCurThing, searchFlags)) )
         {
             hitType = sithIntersect_CheckSphereThingIntersection(
                 pThing,
@@ -1159,18 +1159,18 @@ float J3DAPI sithCollision_SearchForThingCollisions(const SithSector* pSector, S
                 radius,
                 pCurThing,
                 searchFlags,
-                &pHitDistance,
-                &ppHitMesh,
-                &ppHitFace,
-                &Src);
+                &hitDistance,
+                &pHitMesh,
+                &pHitFace,
+                &hitNorm);
             if ( hitType )
             {
-                sithCollision_PushThingCollision(pCurThing, pHitDistance, (SithCollisionType)(hitType | SITHCOLLISION_THING), ppHitMesh, ppHitFace, &Src);
+                sithCollision_PushThingCollision(pCurThing, hitDistance, (SithCollisionType)(hitType | SITHCOLLISION_THING), pHitMesh, pHitFace, &hitNorm);
                 if ( pThing )
                 {
                     if ( sithCollision_sub_4DB3CA(pThing, pCurThing) )
                     {
-                        moveDist = pHitDistance;
+                        moveDist = hitDistance;
                     }
                 }
             }
@@ -1182,11 +1182,11 @@ float J3DAPI sithCollision_SearchForThingCollisions(const SithSector* pSector, S
 
 void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, int colflags)
 {
-    float pHitDist;
+    float hitDist;
     SithSurfaceAdjoin* pAdjoin;
     SithSurface* pCurSurf;
-    rdVector3 v9;
-    unsigned int surfNum;
+
+    size_t surfNum;
     rdVector3 hitNorm;
     SithCollisionType hitType;
     SithWorld* pWorld;
@@ -1196,16 +1196,17 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
     SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pSector));
     SITH_ASSERTREL(radius >= 0.0f);
     SITH_ASSERTREL(moveDist >= 0.0f);
-    v9.x = moveNorm->x * moveDist + startPos->x;
-    v9.y = moveNorm->y * moveDist + startPos->y;
-    v9.z = moveNorm->z * moveDist + startPos->z;
+
+    rdVector3 point;
+    rdVector_ScaleAdd3(&point, moveNorm, moveDist, startPos);
+
     if ( (pSector->flags & SITH_SECTOR_HASCOLLIDEBOX) == 0
-        || v9.z - radius <= pSector->collideBox.v0.z
-        || v9.y - radius <= pSector->collideBox.v0.y
-        || v9.x - radius <= pSector->collideBox.v0.x
-        || v9.x + radius >= pSector->collideBox.v1.x
-        || v9.y + radius >= pSector->collideBox.v1.y
-        || v9.z + radius >= pSector->collideBox.v1.z )
+        || point.z - radius <= pSector->collideBox.v0.z
+        || point.y - radius <= pSector->collideBox.v0.y
+        || point.x - radius <= pSector->collideBox.v0.x
+        || point.x + radius >= pSector->collideBox.v1.x
+        || point.y + radius >= pSector->collideBox.v1.y
+        || point.z + radius >= pSector->collideBox.v1.z )
     {
         surfNum = 0;
         pCurSurf = pSector->pFirstSurface;
@@ -1214,7 +1215,7 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
             pAdjoin = pCurSurf->pAdjoin;
             if ( (pCurSurf->flags & SITH_SURFACE_COLLISION) != 0 || pAdjoin )
             {
-                if ( pAdjoin && sithCollision_sub_4DB49F(pAdjoin->flags, colflags) )
+                if ( pAdjoin && sithCollision_CanAdjoinCollide(pAdjoin->flags, colflags) )
                 {
                     hitType = sithIntersect_CheckSphereFaceIntersection(
                         startPos,
@@ -1223,16 +1224,16 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
                         radius,
                         &pCurSurf->face,
                         pWorld->aVertices,
-                        &pHitDist,
+                        &hitDist,
                         colflags);
                     if ( hitType )
                     {
-                        if ( ((colflags & 4) == 0 || (colflags & 1) == 0) && !sithCollision_CheckSectorSearched(pAdjoin->pAdjoinSector) )
+                        if ( ((colflags & 0x04) == 0 || (colflags & 0x01) == 0) && !sithCollision_CheckSectorSearched(pAdjoin->pAdjoinSector) )
                         {
-                            sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, SITHCOLLISION_ADJOINCROSS, NULL);
+                            sithCollision_PushSurfaceCollision(pCurSurf, hitDist, SITHCOLLISION_ADJOINCROSS, NULL);
                         }
 
-                        if ( (colflags & 2) == 0
+                        if ( (colflags & 0x02) == 0
                             && sithIntersect_CheckSphereFaceIntersection(
                                 startPos,
                                 moveNorm,
@@ -1243,21 +1244,18 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
                                 &distance,
                                 colflags) )
                         {
-                            if ( (colflags & 4) != 0 && (colflags & 1) != 0 && !sithCollision_CheckSectorSearched(pAdjoin->pAdjoinSector) )
+                            if ( (colflags & 0x04) != 0 && (colflags & 0x01) != 0 && !sithCollision_CheckSectorSearched(pAdjoin->pAdjoinSector) )
                             {
-                                sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, SITHCOLLISION_ADJOINCROSS, NULL);
+                                sithCollision_PushSurfaceCollision(pCurSurf, hitDist, SITHCOLLISION_ADJOINCROSS, NULL);
                             }
 
                             sithCollision_PushSurfaceCollision(pCurSurf, distance, SITHCOLLISION_ADJOINTOUCH, NULL);
                         }
                     }
                 }
-
-                else if ( (colflags & 4) == 0
+                else if ( (colflags & 0x04) == 0
                     && ((colflags & 0x10) == 0 || (pCurSurf->flags & SITH_SURFACE_ISFLOOR) != 0)
-                    && (v9.x - pWorld->aVertices[*pCurSurf->face.aVertices].x) * pCurSurf->face.normal.x
-                    + (v9.y - pWorld->aVertices[*pCurSurf->face.aVertices].y) * pCurSurf->face.normal.y
-                    + (v9.z - pWorld->aVertices[*pCurSurf->face.aVertices].z) * pCurSurf->face.normal.z <= radius )
+                    && rdMath_DistancePointToPlane(&point, &pCurSurf->face.normal, &pWorld->aVertices[*pCurSurf->face.aVertices]) <= radius )
                 {
                     hitType = sithIntersect_CheckSphereFaceIntersectionEx(
                         startPos,
@@ -1266,14 +1264,14 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
                         radius,
                         &pCurSurf->face,
                         pWorld->aVertices,
-                        &pHitDist,
+                        &hitDist,
                         &hitNorm,
                         colflags);
                     if ( hitType )
                     {
                         if ( (colflags & 0x400) != 0 || rdVector_Dot3(moveNorm, &hitNorm) < 0.0f )
                         {
-                            sithCollision_PushSurfaceCollision(pCurSurf, pHitDist, (SithCollisionType)(hitType | SITHCOLLISION_WORLD), &hitNorm);
+                            sithCollision_PushSurfaceCollision(pCurSurf, hitDist, (SithCollisionType)(hitType | SITHCOLLISION_WORLD), &hitNorm);
                         }
                     }
                 }
@@ -1335,9 +1333,7 @@ int J3DAPI sithCollision_HandleThingHitSurface(SithThing* pThing, SithSurface* p
             #ifdef J3D_DEBUG // Found in debug version
                 if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0 )
                 {
-                    char aText[256];
-                    STD_FORMAT(aText, "Falling Death Wall %f.", pThing->moveInfo.physics.velocity.z);
-                    sithConsole_PrintString(aText);
+                    SITHCONSOLE_PRINTF("Falling Death Wall %f.", pThing->moveInfo.physics.velocity.z); // Altered: Use of SITHCONSOLE_PRINTF macro
                 }
             #endif
 
@@ -2274,7 +2270,7 @@ float J3DAPI sithCollision_BuildCollisionList(SithSector* pSector, SithThing* pT
     }
 
     float v8 = moveDist;
-    if ( (searchFlags & 1) == 0 )
+    if ( (searchFlags & 0x01) == 0 )
     {
         v8 = sithCollision_SearchForThingCollisions(pSector, pThing, startPos, moveNorm, moveDist, radius, searchFlags);
     }
@@ -2291,7 +2287,7 @@ float J3DAPI sithCollision_BuildCollisionList(SithSector* pSector, SithThing* pT
     return v8;
 }
 
-int J3DAPI sithCollision_sub_4DABF1(const SithThing* pThing, int searchFlags)
+int J3DAPI sithCollision_CanThingCollide(const SithThing* pThing, int searchFlags)
 {
     if ( pThing->collide.type == SITH_COLLIDE_NONE || (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) != 0 )
     {
@@ -2301,7 +2297,7 @@ int J3DAPI sithCollision_sub_4DABF1(const SithThing* pThing, int searchFlags)
     return (searchFlags & 0x2000) == 0 || pThing->type == SITH_THING_COG || streq(pThing->aName, "killtruk");
 }
 
-int J3DAPI sithCollision_sub_4DAC4B(const SithThing* pThing1, const SithThing* pThing2, int collflags)
+int J3DAPI sithCollision_CanThingCollideWithThing(const SithThing* pThing1, const SithThing* pThing2, int collflags)
 {
     if ( pThing1 == pThing2 || !aCollideResults[pThing1->type][pThing2->type].pProcessFunc )
     {
@@ -2342,22 +2338,19 @@ int J3DAPI sithCollision_sub_4DAC4B(const SithThing* pThing1, const SithThing* p
         }
     }
 
-    if ( (pThing2->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) == 0 || pThing2->attach.attachedToStructure.pThingAttached != pThing1 )
+    if ( (pThing2->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0 && pThing2->attach.attachedToStructure.pThingAttached == pThing1 )
     {
-        goto LABEL_42;
+        if ( (pThing2->attach.flags & SITH_ATTACH_NOMOVE) != 0 || (collflags & 0x40) != 0 )
+        {
+            return 0;
+        }
+
+        if ( pThing2->type == SITH_THING_ACTOR && (pThing2->thingInfo.actorInfo.flags & SITH_AF_UNKNOWN_20000000) != 0 )
+        {
+            return 0;
+        }
     }
 
-    if ( (pThing2->attach.flags & SITH_ATTACH_NOMOVE) != 0 || (collflags & 0x40) != 0 )
-    {
-        return 0;
-    }
-
-    if ( pThing2->type == SITH_THING_ACTOR && (pThing2->thingInfo.actorInfo.flags & SITH_AF_UNKNOWN_20000000) != 0 )
-    {
-        return 0;
-    }
-
-LABEL_42:
     if ( (pThing1->attach.flags & SITH_ATTACH_TAIL) != 0 && (pThing2->attach.flags & SITH_ATTACH_TAIL) != 0 )
     {
         return 0;
@@ -2460,7 +2453,7 @@ void J3DAPI sithCollision_PushSurfaceCollision(SithSurface* pSurf, float distanc
 {
     SithCollision* pCollision;
 
-    SITH_ASSERTREL(((hitType) & (SITHCOLLISION_ADJOINCROSS | SITHCOLLISION_ADJOINTOUCH | SITHCOLLISION_WORLD)));
+    SITH_ASSERTREL(((hitType) & (SITHCOLLISION_WORLD | SITHCOLLISION_ADJOINTOUCH | SITHCOLLISION_ADJOINCROSS)));
     if ( sithCollision_aNumStackCollisions[stackLevel] == STD_ARRAYLEN(sithCollision_aCollisions[stackLevel]) )
     {
         SITHLOG_ERROR("Found too many collisions in collision system.\n");
@@ -2481,16 +2474,11 @@ void J3DAPI sithCollision_PushSurfaceCollision(SithSurface* pSurf, float distanc
 
 SithCollision* sithCollision_PopClosest(void)
 {
-    SithCollision* pCollision;
-    float distance;
-    unsigned int collNum;
-    SithCollision* pClosest;
+    float distance = 3.4028235e38f;
+    SithCollision* pClosest   = NULL;
+    SithCollision* pCollision = sithCollision_aCollisions[stackLevel];
 
-    pClosest = 0;
-    distance = 3.4028235e38f;
-    collNum = 0;
-    pCollision = sithCollision_aCollisions[stackLevel];
-
+    size_t collNum  = 0;
     while ( collNum < sithCollision_aNumStackCollisions[stackLevel] )
     {
         if ( !pCollision->bEnumerated )
@@ -2537,9 +2525,9 @@ int J3DAPI sithCollision_sub_4DB3CA(SithThing* pThing1, SithThing* pThing2)
     return 1;
 }
 
-int J3DAPI sithCollision_sub_4DB49F(SithSurfaceAdjoinFlag adjflags, int colflags)
+int J3DAPI sithCollision_CanAdjoinCollide(SithSurfaceAdjoinFlag adjflags, int colflags)
 {
-    if ( (colflags & 4) != 0 )
+    if ( (colflags & 0x04) != 0 )
     {
         return 1;
     }
@@ -2559,11 +2547,7 @@ int J3DAPI sithCollision_sub_4DB49F(SithSurfaceAdjoinFlag adjflags, int colflags
 
 int J3DAPI sithCollision_ParticleAndActorCollisionHandler(SithThing* pSrcThing, SithThing* pThingCollided, SithCollision* pCollision, int bSecondThingIsSource)
 {
-    float damage;
-    float mass;
-
-
-    mass = pSrcThing->moveInfo.physics.mass;
+    float mass = pSrcThing->moveInfo.physics.mass;
     if ( bSecondThingIsSource )
     {
         return sithCollision_ThingCollisionHandler(pSrcThing, pThingCollided, pCollision, bSecondThingIsSource);
@@ -2585,7 +2569,7 @@ int J3DAPI sithCollision_ParticleAndActorCollisionHandler(SithThing* pSrcThing, 
         return 1;
     }
 
-    damage = mass * 0.30000001f * dirDot;
+    float damage = mass * 0.30000001f * dirDot;
     sithThing_DamageThing(pThingCollided, pSrcThing, damage, SITH_DAMAGE_IMPACT);
     return 1;
 }

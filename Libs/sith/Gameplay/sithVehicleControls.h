@@ -30,8 +30,8 @@ void J3DAPI sithVehicleControls_FadeJeepMoveSounds(SithThing* pThing);
 int J3DAPI sithVehicleControls_CanMoveInDirection(SithThing* pThing, rdVector3* pDir);
 void J3DAPI sithVehicleControls_ExitRaft(SithThing* pRaftPlayer);
 void J3DAPI sithVehicleControls_UpdateRaftPaddleSoundFx(SithThing* pThing);
-int J3DAPI sithVehicleControls_SendMessageUser0(SithThing* pThing);
-void J3DAPI sithVehicleControls_SendMessageUser1(SithThing* pThing);
+int J3DAPI sithVehicleControls_SendMessageBoardingStarted(SithThing* pThing);
+void J3DAPI sithVehicleControls_SendMessageBoardingFinished(SithThing* pThing);
 
 // Helper hooking functions
 void sithVehicleControls_InstallHooks(void);

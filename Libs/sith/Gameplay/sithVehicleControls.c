@@ -36,8 +36,8 @@ void sithVehicleControls_InstallHooks(void)
     // J3D_HOOKFUNC(sithVehicleControls_CanMoveInDirection);
     // J3D_HOOKFUNC(sithVehicleControls_ExitRaft);
     // J3D_HOOKFUNC(sithVehicleControls_UpdateRaftPaddleSoundFx);
-    // J3D_HOOKFUNC(sithVehicleControls_SendMessageUser0);
-    // J3D_HOOKFUNC(sithVehicleControls_SendMessageUser1);
+    // J3D_HOOKFUNC(sithVehicleControls_SendMessageBoardingStarted);
+    // J3D_HOOKFUNC(sithVehicleControls_SendMessageBoardingFinished);
 }
 
 void sithVehicleControls_ResetGlobals(void)
@@ -165,12 +165,12 @@ void J3DAPI sithVehicleControls_UpdateRaftPaddleSoundFx(SithThing* pThing)
     J3D_TRAMPOLINE_CALL(sithVehicleControls_UpdateRaftPaddleSoundFx, pThing);
 }
 
-int J3DAPI sithVehicleControls_SendMessageUser0(SithThing* pThing)
+int J3DAPI sithVehicleControls_SendMessageBoardingStarted(SithThing* pThing)
 {
-    return J3D_TRAMPOLINE_CALL(sithVehicleControls_SendMessageUser0, pThing);
+    return J3D_TRAMPOLINE_CALL(sithVehicleControls_SendMessageBoardingStarted, pThing);
 }
 
-void J3DAPI sithVehicleControls_SendMessageUser1(SithThing* pThing)
+void J3DAPI sithVehicleControls_SendMessageBoardingFinished(SithThing* pThing)
 {
-    J3D_TRAMPOLINE_CALL(sithVehicleControls_SendMessageUser1, pThing);
+    J3D_TRAMPOLINE_CALL(sithVehicleControls_SendMessageBoardingFinished, pThing);
 }

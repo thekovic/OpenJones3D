@@ -626,6 +626,8 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersectionEx(const rdVec
     }
     else
     {
+        // TODO: maybe hit normal should also be calculated to hitPOS
+        //       even tho sithIntersect_CheckFaceVerticesIntersection didn't update hitPos in this case
         rdVector_Copy3(hitNorm, &pFace->normal);
     }
 
