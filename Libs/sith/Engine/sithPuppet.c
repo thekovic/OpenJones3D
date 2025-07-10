@@ -1863,6 +1863,11 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
 
             pThing->collide.movesize = 0.04f; // restore default move size
 
+        #if 0
+            // TODO: [DEAD] found in debug version code never executes
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1);
+        #else
             float distance = sithPlayerActions_SearchForCollision(pThing, &pThing->orient.lvec, &pHitSurf, &pHitFace, &pHitMesh, &pHitThing);
             if ( distance < 0.0f )
             {
@@ -1873,6 +1878,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
             {
                 sithPlayerActions_ActorGrabLedge(pThing, distance, pHitSurf, pHitFace, pHitMesh, pHitThing);
             }
+        #endif
 
             break;
         }

@@ -1149,6 +1149,9 @@ LABEL_102:
             break;
     }
 
+// Found in debug build
+// Only it always executed the code in if scope, there might be special preprocessor macro here
+#if 1
     memcpy(&newLookPos, &newOrient.dvec, sizeof(newLookPos));
     pCamera->pSector = sithCollision_FindSectorInRadius(pCamera->pSector, &pCamera->orient.dvec, &newLookPos, 0.0f);
     if ( v45 )
@@ -1168,7 +1171,7 @@ LABEL_102:
     memcpy(&sithCamera_g_camSpot, &newPos, sizeof(sithCamera_g_camSpot));
     memcpy(&sithCamera_g_camLookSpot, &newLookPos, sizeof(sithCamera_g_camLookSpot));
 
-    // Now check if camera is too close to focus thing, and in this cane make foused thing transparent
+    // Now check if camera is too close to focus thing, and in this cane make focused thing transparent
     lookDir.x = newLookPos.x - newPos.x;
     lookDir.y = newLookPos.y - newPos.y;
     lookDir.z = newLookPos.z - newPos.z;
@@ -1221,6 +1224,12 @@ LABEL_102:
         }
     #endif
     }
+#elif 0
+    // TODO: [DEAD] This code was found in debug build and was never executed
+    pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &pCamera->orient.dvec, 0.0);
+    rdMatrix_LookAt(&pCamera->orient, &pCamera->orient.dvec, &newPos, 0.0);
+    memcpy(&pCamera->curLookInterp, &newPos, sizeof(pCamera->curLookInterp));
+#endif
 
 LABEL_191:
     // Update global pos & rot delta states

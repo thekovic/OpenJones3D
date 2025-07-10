@@ -124,7 +124,7 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
 
     float hitDistance = 0.0f;
 
-    // TODO: Note, this is additional code found in debug version that is skipped.
+    // TODO: [DEAD] Note, this is additional code found in debug version that is skipped.
     //if ( true && pThing ) // maybe special collflag could be tested 
     if ( false )
     {
@@ -200,7 +200,68 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
     rdMatrix_TransformPoint34Acc(&pos, &tmat);
     rdMatrix_TransformVector34Acc(&dir, &tmat);
 
-    SithCollisionType hitType = sithIntersect_CheckSphereThingModelIntersection(&pos, &dir, moveDist, radius, &pComplex->renderData, pHitDistance, ppHitFace, ppHitMesh, hitNorm);
+    // TODO: [DEAD] following dead code (in if scope) was found in debug version
+    SithCollisionType hitType;
+    if ( false )
+    {
+        float heightHitDistance, widthHitDistance;
+        rdFace* heightHitFace;
+        rdFace* widthHitFace;
+        rdModel3Mesh* heightHitMesh;
+        rdModel3Mesh* widthHitMesh;
+        rdVector3 heightHitNormal, widthHitNormal;
+
+        SithCollisionType heightCollision = sithIntersect_CheckSphereThingModelIntersection(&pos, &dir, moveDist, pThing->collide.height, &pComplex->renderData, &heightHitDistance, &heightHitFace, &heightHitMesh, &heightHitNormal);
+        SithCollisionType widthCollision  = sithIntersect_CheckSphereThingModelIntersection(&pos, &dir, moveDist, pThing->collide.width, &pComplex->renderData, &widthHitDistance, &widthHitFace, &widthHitMesh, &widthHitNormal);
+
+        if ( !heightCollision || !widthCollision )
+        {
+            if ( heightCollision || !widthCollision )
+            {
+                if ( !widthCollision && heightCollision )
+                {
+                    hitType = heightCollision;
+                    *pHitDistance = heightHitDistance;
+                    *ppHitFace = heightHitFace;
+                    *ppHitMesh = heightHitMesh;
+                    *hitNorm = heightHitNormal;
+                }
+            }
+            else
+            {
+                hitType = widthCollision;
+                *pHitDistance = widthHitDistance;
+                *ppHitFace = widthHitFace;
+                *ppHitMesh = widthHitMesh;
+                *hitNorm = widthHitNormal;
+            }
+        }
+        else
+        {
+            if ( fabsf(rdVector_Dot3(moveNorm, &rdroid_g_zVector3)) <= 0.800000011920929 )
+            {
+                hitType = widthCollision;
+                *pHitDistance = widthHitDistance;
+                *ppHitFace = widthHitFace;
+                *ppHitMesh = widthHitMesh;
+                *hitNorm = widthHitNormal;
+            }
+            else
+            {
+                hitType = heightCollision;
+                *pHitDistance = heightHitDistance;
+                *ppHitFace = heightHitFace;
+                *ppHitMesh = heightHitMesh;
+                *hitNorm = heightHitNormal;
+            }
+        }
+    }
+    else
+    {
+        // This code is always executed in retail version
+        hitType = sithIntersect_CheckSphereThingModelIntersection(&pos, &dir, moveDist, radius, &pComplex->renderData, pHitDistance, ppHitFace, ppHitMesh, hitNorm);
+    }
+
     if ( !hitType )
     {
         return 0;

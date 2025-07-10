@@ -579,6 +579,13 @@ rdMaterial* J3DAPI sithMaterial_Load(const char* pName)
     pMat = &pWorld->aMaterials[pWorld->numMaterials];
     if ( rdMaterial_LoadEntry(aPath, pMat) )
     {
+        // TODO: [DEAD] Following dead code (in if statement) was found in debug version and is never executed in release version
+        if ( false )
+        {
+            SITHLOG_ERROR("Material %s not found, trying default.\n", pName);
+            return sithMaterial_Load("dflt.mat");
+        }
+
         SITHLOG_ERROR("Material %s not found.\n", pName);
         return NULL;
     }
