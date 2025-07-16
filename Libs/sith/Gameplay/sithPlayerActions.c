@@ -88,228 +88,16 @@ void sithPlayerActions_ResetGlobals(void)
     int sithPlayerActions_g_jewelFlyingPuppetTrackNum_tmp = -1;
     memcpy(&sithPlayerActions_g_jewelFlyingPuppetTrackNum, &sithPlayerActions_g_jewelFlyingPuppetTrackNum_tmp, sizeof(sithPlayerActions_g_jewelFlyingPuppetTrackNum));
 
-    //memset(&sithPlayerActions_climbPupTrackNum, 0, sizeof(sithPlayerActions_climbPupTrackNum));
     memset(&sithPlayerActions_g_pCurLedgeSurface, 0, sizeof(sithPlayerActions_g_pCurLedgeSurface));
     memset(&sithPlayerActions_g_pCurLedgeThingModelFace, 0, sizeof(sithPlayerActions_g_pCurLedgeThingModelFace));
     memset(&sithPlayerActions_g_pCurLedgeThingModel, 0, sizeof(sithPlayerActions_g_pCurLedgeThingModel));
     memset(&sithPlayerActions_g_pPlasma, 0, sizeof(sithPlayerActions_g_pPlasma));
     memset(&sithPlayerActions_g_bJewelFlying, 0, sizeof(sithPlayerActions_g_bJewelFlying));
     memset(&sithPlayerActions_g_bPlayerInvisible, 0, sizeof(sithPlayerActions_g_bPlayerInvisible));
-    //memset(&sithPlayerActions_msecCurActivateTime, 0, sizeof(sithPlayerActions_msecCurActivateTime));
     memset(&sithPlayerActions_g_pChalkWriteSurf, 0, sizeof(sithPlayerActions_g_pChalkWriteSurf));
     memset(&sithPlayerActions_g_chalkWritePos, 0, sizeof(sithPlayerActions_g_chalkWritePos));
     memset(&sithPlayerActions_g_pChalkWriteSector, 0, sizeof(sithPlayerActions_g_pChalkWriteSector));
 }
-
-//int J3DAPI sithPlayerActions_Activate(SithThing* pPlayer)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_Activate, pPlayer);
-//}
-
-//void J3DAPI sithPlayerActions_Jump(SithThing* pThing, float a2, int jumpDirection)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_Jump, pThing, a2, jumpDirection);
-//}
-//
-//void J3DAPI sithPlayerActions_MoveToPlayerPosition(SithThing* pThing, unsigned int playerNum)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_MoveToPlayerPosition, pThing, playerNum);
-//}
-//
-//void J3DAPI sithPlayerActions_PushItem(SithThing* pThing, SithThing* pItem, rdVector3* pDirection)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_PushItem, pThing, pItem, pDirection);
-//}
-//
-//void J3DAPI sithPlayerActions_PullItem(SithThing* pThing, SithThing* pItem, rdVector3* pDirection)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_PullItem, pThing, pItem, pDirection);
-//}
-//
-//SithInventoryItem* J3DAPI sithPlayerActions_ClimbPullUp(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_ClimbPullUp, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_ClimbMove(SithThing* pThing, SithSurface* pSurf, int direction)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_ClimbMove, pThing, pSurf, direction);
-//}
-//
-//void J3DAPI sithPlayerActions_UnmountWall(SithThing* pThing, int trackNum)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_UnmountWall, pThing, trackNum);
-//}
-//
-//void J3DAPI sithPlayerActions_ClimbOn1m(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_ClimbOn1m, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_ClimbOn2m(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_ClimbOn2m, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_LeapForward(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_LeapForward, pThing);
-//}
-
-//void J3DAPI sithPlayerActions_JumpForward(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_JumpForward, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_HopLeft(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_HopLeft, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_HopRight(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_HopRight, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_JumpRollBack(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_JumpRollBack, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_JumpRollForward(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_JumpRollForward, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_StrafeLeft(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_StrafeLeft, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_StrafeRight(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_StrafeRight, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_HopBack(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_HopBack, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_Stand2Crawl(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_Stand2Crawl, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_Crawl2Stand(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_Crawl2Stand, pThing);
-//}
-//
-//int J3DAPI sithPlayerActions_JumpStart(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_JumpStart, pThing);
-//}
-//
-//int J3DAPI sithPlayerActions_HasActiveWeapon(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_HasActiveWeapon, pThing);
-//}
-//
-//void J3DAPI sithPlayerActions_ClimbDownToClimb(SithThing* pThing, int bLedge)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_ClimbDownToClimb, pThing, bLedge);
-//}
-//
-//void J3DAPI sithPlayerActions_ClimbDownToHang(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_ClimbDownToHang, pThing);
-//}
-
-//int J3DAPI sithPlayerActions_CheckFloorAtPos(SithThing* pThing, rdVector3* pPos, int* a3)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_CheckFloorAtPos, pThing, pPos, a3);
-//}
-
-//double J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPYR, SithSurface** pLedgeSurf, rdFace** pLedgeThingFace, rdModel3Mesh** pLedgeThingMesh, SithThing** pLedgeThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_FindLedge, pThing, pPYR, pLedgeSurf, pLedgeThingFace, pLedgeThingMesh, pLedgeThing);
-//}
-//
-//int J3DAPI sithPlayerActions_CanClimbOn1m(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_CanClimbOn1m, pThing);
-//}
-//
-//int J3DAPI sithPlayerActions_CanClimbOn2m(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_CanClimbOn2m, pThing);
-//}
-//
-//int J3DAPI sithPlayerActions_CheckClimbDownWall(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_CheckClimbDownWall, pThing);
-//}
-//
-//int J3DAPI sithPlayerActions_GrabLedge(SithThing* pThing, float distance, SithSurface* pLedgeSurf, rdFace* pLedgeThingFace, const rdModel3Mesh* pLedgeThingMesh, SithThing* pLedgeThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_GrabLedge, pThing, distance, pLedgeSurf, pLedgeThingFace, pLedgeThingMesh, pLedgeThing);
-//}
-//
-//int J3DAPI sithPlayerActions_FindAndAttachToClimbWall(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_FindAndAttachToClimbWall, pThing);
-//}
-//
-//int J3DAPI sithPlayerActions_CanPullUp(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_CanPullUp, pThing);
-//}
-//
-//float J3DAPI sithPlayerActions_GetLedgeThingGrabPosZ(const SithThing* pThing, const rdFace* pFace, const rdModel3Mesh* pMesh)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_GetLedgeThingGrabPosZ, pThing, pFace, pMesh);
-//}
-//
-//void J3DAPI sithPlayerActions_StartInvisibility()
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_StartInvisibility);
-//}
-//
-//void J3DAPI sithPlayerActions_EndInvisibility()
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_EndInvisibility);
-//}
-//
-//int J3DAPI sithPlayerActions_IsInvisible()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_IsInvisible);
-//}
-//
-//int J3DAPI sithPlayerActions_StartJewelFlying()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_StartJewelFlying);
-//}
-//
-//int J3DAPI sithPlayerActions_EnableJewelFlying(SithThing* pPlasma)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_EnableJewelFlying, pPlasma);
-//}
-//
-//SithThing* J3DAPI sithPlayerActions_DisableJewelFlying()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithPlayerActions_DisableJewelFlying);
-//}
-//
-//void J3DAPI sithPlayerActions_CenterOnClimbSurface(SithThing* pThing, SithSurface* pSurface)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_CenterOnClimbSurface, pThing, pSurface);
-//}
-//
-//void J3DAPI sithPlayerActions_MoveToCrawlPosition(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithPlayerActions_MoveToCrawlPosition, pThing);
-//}
 
 int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
 {
@@ -995,7 +783,8 @@ void J3DAPI sithPlayerActions_ClimbPullUp(SithThing* pThing)
 
     sithPuppet_PlayForceMoveMode(pThing, SITHPUPPETSUBMODE_CLIMBPULLINGUP, NULL);
     sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
-    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1); // TODO: Also probably items should be disabled and not disabled since inventory is re-enabled in sithPuppet_StopForceMove
+    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory when climbing. Re-enabled in sithPuppet_StopForceMove
+                                                                       //        Originally it was enabled.
 }
 
 void J3DAPI sithPlayerActions_ClimbMove(SithThing* pThing, SithSurface* pSurf, int direction)
@@ -1110,7 +899,7 @@ void J3DAPI sithPlayerActions_ClimbOn2m(SithThing* pThing)
 }
 
 // Found in debug version, not used
-void sithPlayerActions_sub_461444()
+void sithPlayerActions_sub_461444(void)
 {}
 
 void J3DAPI sithPlayerActions_LeapForward(SithThing* pThing)
@@ -1769,7 +1558,7 @@ void J3DAPI sithPlayerActions_Crawl2Stand(SithThing* pThing)
 
     if ( bCanMove )
     {
-        sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1); // TODO: Either should be disabled and re-enabled in sithPuppet_StopForceMove
+        sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory items when crawling to stand. Re-enabled in sithPuppet_StopForceMove
         sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
         sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALKBACK);
 
@@ -2758,7 +2547,8 @@ int J3DAPI sithPlayerActions_FindAndAttachToClimbWall(SithThing* pThing)
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLIDLE, NULL);
 
             pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
-            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1); //TODO: [BUG] Bug items should be disabled
+            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory when climbing. Re-enabled in sithPuppet_StopForceMove
+                                                                               //        Originally it was bug and inventory was enabled when climbing on wall.
             break;
         }
     }

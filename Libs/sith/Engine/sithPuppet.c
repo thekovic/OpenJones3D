@@ -1801,6 +1801,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
             sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
             pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1); // Added: Enable inventory which was disabled in sithPlayerActions_CrawlToStand
             break;
         }
         case SITHPLAYERMOVE_CLIMB_DOWN_TO_MOUNT:
