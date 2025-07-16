@@ -411,13 +411,13 @@ void J3DAPI sithCogFunctionThing_PlayForceMoveMode(SithCog* pCog)
         }
         case SITHPUPPETSUBMODE_HOPLEFT:
         {
-            sithPlayerActions_JumpLeft(pThing);
+            sithPlayerActions_HopLeft(pThing);
             bAnimPlaying = true;
             break;
         }
         case SITHPUPPETSUBMODE_HOPRIGHT:
         {
-            sithPlayerActions_JumpRight(pThing);
+            sithPlayerActions_HopRight(pThing);
             bAnimPlaying = true;
             break;
         }

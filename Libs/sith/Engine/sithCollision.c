@@ -590,7 +590,6 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
     rdVector3 curthPos;
     int bCollided;
     float v26;
-    int moveToResult;
     float v30;
     rdVector3 v31;
 
@@ -599,7 +598,6 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
     rdVector3 v40;
     float distMoved;
     SithMoveInfo* pMoveInfo;
-    int v43;
     float v44;
     rdVector3 prevPos;
     float v46;
@@ -614,435 +612,447 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
     SITH_ASSERTREL(bCollideStartup);
     SITH_ASSERTREL(sithThing_ValidateThingPointer(sithWorld_g_pCurrentWorld, pThing));
 
-    if ( moveDist > 0.0f )
+    if ( moveDist <= 0.0f )
     {
-        rdVector_Copy3(&dest, moveNorm);
-        if ( pThing->collide.type == SITH_COLLIDE_NONE )
-        {
-            flags |= 5u;
-        }
+        SITHLOG_ERROR("MoveThing called for %s with distance %f.\n", pThing->aName, moveDist);
+        return 0.0f;
+    }
 
-        if ( pThing->moveType == SITH_MT_PATH )
-        {
-            /*v2 = flags;
-            (v2 & 0xFF) = flags | 4;
-            flags = v2;*/
-            flags |= 0x04;
-        }
+    rdVector_Copy3(&dest, moveNorm);
 
-        if ( (flags & 0x01) == 0 )
-        {
-            /*v6 = flags;
-            v6 = flags | 0x800;
-            flags = v6;*/
-            flags |= 0x800;
-        }
+    if ( pThing->collide.type == SITH_COLLIDE_NONE )
+    {
+        flags |= 0x05;
+    }
 
-        if ( pThing->type == SITH_THING_PLAYER )
-        {
-            /*v7 = flags;
-            v7 = flags | 0x8000;
-            flags = v7;*/
-            flags |= 0x8000;
-        }
+    if ( pThing->moveType == SITH_MT_PATH )
+    {
+        /*v2 = flags;
+        (v2 & 0xFF) = flags | 4;
+        flags = v2;*/
+        flags |= 0x04;
+    }
 
-        for ( pAttached = pThing->pAttachedThing; pAttached; pAttached = pAttached->pNextAttachedThing )
+    if ( (flags & 0x01) == 0 )
+    {
+        /*v6 = flags;
+        v6 = flags | 0x800;
+        flags = v6;*/
+        flags |= 0x800;
+    }
+
+    if ( pThing->type == SITH_THING_PLAYER )
+    {
+        /*v7 = flags;
+        v7 = flags | 0x8000;
+        flags = v7;*/
+        flags |= 0x8000;
+    }
+
+    for ( pAttached = pThing->pAttachedThing; pAttached; pAttached = pAttached->pNextAttachedThing )
+    {
+        if ( (pAttached->attach.flags & SITH_ATTACH_NOMOVE) == 0 )
         {
-            if ( (pAttached->attach.flags & SITH_ATTACH_NOMOVE) == 0 )
+            if ( pAttached->type == SITH_THING_PLAYER && pAttached->thingInfo.actorInfo.bForceMovePlay )
             {
-                if ( pAttached->type == SITH_THING_PLAYER && pAttached->thingInfo.actorInfo.bForceMovePlay )
+                rdVector_Copy3(&prevAttPos, &pAttached->pos);
+            }
+
+            distMoved = sithCollision_MoveThing(pAttached, moveNorm, moveDist, 0x40);
+            if ( pAttached->type == SITH_THING_PLAYER )
+            {
+                rdVector3 dAttPos;
+                rdVector_Sub3(&dAttPos, &prevAttPos, &pAttached->pos);
+                /* v32 = prevAttPos.x - pVictim->pos.x;
+                 v33 = prevAttPos.y - pVictim->pos.y;
+                 v34 = prevAttPos.z - pVictim->pos.z;*/
+                if ( pAttached->thingInfo.actorInfo.bForceMovePlay )
                 {
-                    rdVector_Copy3(&prevAttPos, &pAttached->pos);
+                    pAttached->forceMoveStartPos.x = pAttached->forceMoveStartPos.x + dAttPos.x;
+                    pAttached->forceMoveStartPos.y = pAttached->forceMoveStartPos.y + dAttPos.y;
+                    pAttached->forceMoveStartPos.z = pAttached->forceMoveStartPos.z + dAttPos.z;
                 }
+            }
 
-                distMoved = sithCollision_MoveThing(pAttached, moveNorm, moveDist, 0x40);
-                if ( pAttached->type == SITH_THING_PLAYER )
+            if ( distMoved < moveDist )
+            {
+                if ( (pAttached->attach.flags & SITH_ATTACH_THINGFACE) == 0
+                    || ((rdMatrix_TransformVector34(&v31, &pAttached->attach.pFace->normal, &pThing->orient),
+                        v30 = rdVector_Dot3(moveNorm, &v31),
+                        v30 >= 0.0f)
+                        ? (v18 = v30)
+                        : (v18 = -v30),
+                        v18 <= 0.0000099999997f ? (v17 = 0.0f) : (v17 = v30),
+                        v17 > 0.0f) )
                 {
-                    rdVector3 dAttPos;
-                    rdVector_Sub3(&dAttPos, &prevAttPos, &pAttached->pos);
-                    /* v32 = prevAttPos.x - pVictim->pos.x;
-                     v33 = prevAttPos.y - pVictim->pos.y;
-                     v34 = prevAttPos.z - pVictim->pos.z;*/
-                    if ( pAttached->thingInfo.actorInfo.bForceMovePlay )
+                    if ( (pThing->flags & SITH_TF_NOCRUSH) == 0 )
                     {
-                        pAttached->forceMoveStartPos.x = pAttached->forceMoveStartPos.x + dAttPos.x;
-                        pAttached->forceMoveStartPos.y = pAttached->forceMoveStartPos.y + dAttPos.y;
-                        pAttached->forceMoveStartPos.z = pAttached->forceMoveStartPos.z + dAttPos.z;
+                        damage = (moveDist - distMoved) * 100.0f;
+                        sithThing_DamageThing(pAttached, pThing, damage, SITH_DAMAGE_IMPACT);
                     }
-                }
 
-                if ( distMoved < moveDist )
-                {
-                    if ( (pAttached->attach.flags & SITH_ATTACH_THINGFACE) == 0
-                        || ((rdMatrix_TransformVector34(&v31, &pAttached->attach.pFace->normal, &pThing->orient),
-                            v30 = rdVector_Dot3(moveNorm, &v31),
-                            v30 >= 0.0f)
-                            ? (v18 = v30)
-                            : (v18 = -v30),
-                            v18 <= 0.0000099999997f ? (v17 = 0.0f) : (v17 = v30),
-                            v17 > 0.0f) )
-                    {
-                        if ( (pThing->flags & SITH_TF_NOCRUSH) == 0 )
-                        {
-                            damage = (moveDist - distMoved) * 100.0f;
-                            sithThing_DamageThing(pAttached, pThing, damage, SITH_DAMAGE_IMPACT);
-                        }
-
-                        moveDist = distMoved;
-                    }
+                    moveDist = distMoved;
                 }
             }
         }
+    }
 
-        sithCollision_dword_17F1090 = 0;
-        if ( pThing != sithPlayer_g_pLocalPlayerThing )
-        {
-            goto LABEL_61;
-        }
+    sithCollision_dword_17F1090 = 0;
+    if ( pThing != sithPlayer_g_pLocalPlayerThing )
+    {
+        goto LABEL_61;
+    }
 
-        if ( (pMoveInfo->physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
-            // if ((pMoveInfo->physics.flags & 0xF000000) != 0)
-        {
-            goto LABEL_61;
-        }
+    if ( (pMoveInfo->physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
+    {
+        goto LABEL_61;
+    }
 
-        moveStatus = pThing->moveStatus;
-        if ( moveStatus <= SITHPLAYERMOVE_STILL || moveStatus > SITHPLAYERMOVE_UNKNOWN_5 )
-        {
-            goto LABEL_61;
-        }
+    moveStatus = pThing->moveStatus;
+    if ( moveStatus <= SITHPLAYERMOVE_STILL || moveStatus > SITHPLAYERMOVE_UNKNOWN_5 )
+    {
+        goto LABEL_61;
+    }
 
-        if ( (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 || (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
-        {
-            pThing->moveStatus = SITHPLAYERMOVE_SWIMIDLE;
-            goto LABEL_61;
-        }
+    if ( (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 || (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
+    {
+        pThing->moveStatus = SITHPLAYERMOVE_SWIMIDLE;
+        goto LABEL_61;
+    }
+
+    // If player is attached to surface, check if it can move further on.
+    // If player is running do leap jump if jump was initiated and no floor/walkable surface is found
+    // If player is walking stop it's movement if no floor/walkable surface is found
+    if ( pThing->attach.flags != 0 )
+    {
+        prevPos = pThing->pos;
+        float moveScalar = (pThing->moveStatus != SITHPLAYERMOVE_WALKING && pThing->moveStatus != SITHPLAYERMOVE_RUNNING)
+            ? 3.0f
+            : 1.0f;
 
         rdVector3 moveToPos;
-        if ( pThing->attach.flags
-            && ((memcpy(&prevPos, &pThing->pos, sizeof(prevPos)), pThing->moveStatus != SITHPLAYERMOVE_WALKING) && pThing->moveStatus != SITHPLAYERMOVE_RUNNING
-                ? (moveToPos.x = (pThing->collide.movesize * 3.0f) * moveNorm->x + prevPos.x,
-                    moveToPos.y = (pThing->collide.movesize * 3.0f) * moveNorm->y + prevPos.y,
-                    moveToPos.z = (pThing->collide.movesize * 3.0f) * moveNorm->z + prevPos.z)
-                : (moveToPos.x = pThing->collide.movesize * moveNorm->x + prevPos.x,
-                    moveToPos.y = pThing->collide.movesize * moveNorm->y + prevPos.y,
-                    moveToPos.z = pThing->collide.movesize * moveNorm->z + prevPos.z),
-                (moveToResult = sithPlayerActions_CanMoveToPos(pThing, &moveToPos, &v43)) == 0 || moveToResult == 3) )
+        rdVector_ScaleAdd3(&moveToPos, moveNorm, pThing->collide.movesize * moveScalar, &prevPos);
+
+        // TODO: Maybe it'd be good to also check for floor result == 2 - non-floor surface 
+        //       and block the player from running onto it
+        int bSurfChange = 0;
+        int floorResult = sithPlayerActions_CheckFloorAtPos(pThing, &moveToPos, &bSurfChange);
+        if ( floorResult == 0 || floorResult == 3 )
         {
+            //  No floor found at moveToPos or ascending slope/steep surface (cliff, wall etc...)
+
             if ( pThing->moveStatus == SITHPLAYERMOVE_RUNNING )
             {
-                if ( moveToResult == 3 )
+                if ( floorResult == 3 ) // Running into inclining slope floor or non-floor cliff, wall etc... 
                 {
+                    // Stop player movement to not run into ascending surface
+                    // TODO: Setting pThing->moveStatus = SITHPLAYERMOVE_STILL will stop player running animation
                     memset(&pMoveInfo->physics.deltaVelocity, 0, sizeof(pMoveInfo->physics.deltaVelocity));
                     sithPuppet_g_bPlayerLeapForward = 0;
                     return 0.0f;
                 }
-                else
+                else // floorResult = 0 - No floor surface (non-floor surface, lava surface, non-standon thing, too steep surface
                 {
-                    if ( sithPuppet_g_bPlayerLeapForward != 1 )
+                    // Check if player is ready to jump fwd
+                    if ( sithPuppet_g_bPlayerLeapForward == 1 )
                     {
-                        goto LABEL_61;
+                        // Do leap jump
+                        pThing->moveStatus = SITHPLAYERMOVE_LEAPFWD;
+                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LEAPLEFT, 0);
+                        sithPuppet_g_bPlayerLeapForward = 0;
+                        return moveDist;
                     }
 
-                    pThing->moveStatus = SITHPLAYERMOVE_LEAPFWD;
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LEAPLEFT, 0);
-                    sithPuppet_g_bPlayerLeapForward = 0;
-                    return moveDist;
+                    // Allow further movement (i.e.: fall, slide down) since player is running but hasn't initiated a jump
                 }
             }
-            else
+            else // walking and other statuses
             {
                 if ( pThing->moveStatus == SITHPLAYERMOVE_WALKING )
                 {
                     pThing->moveStatus = SITHPLAYERMOVE_STILL;
                 }
 
+                // Stop player
                 memset(&pMoveInfo->physics.deltaVelocity, 0, sizeof(pMoveInfo->physics.deltaVelocity));
                 sithPuppet_g_bPlayerLeapForward = 0;
                 sithPhysics_ResetThingMovement(pThing);
                 return 0.0f;
             }
         }
-        else
+    }
+
+LABEL_61:
+    SithSector* pPrevSector = NULL;
+    while ( moveDist != 0.0f && v49 < 4 )
+    {
+        bCollided = 0;
+        rdVector_Copy3(&prevPos, &pThing->pos);
+
+        pPrevSector = pThing->pInSector;
+        v50 = moveDist;
+
+        rdVector_Copy3(&v40, &dest);
+
+
+        float distance = 0.0f; // Added: Init to 0
+        v26 = sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &dest, moveDist, pThing->collide.movesize, flags);
+        while ( !bCollided )
         {
-        LABEL_61:
-            SithSector* pPrevSector = NULL;
-            while ( moveDist != 0.0f && v49 < 4 )
+            SithCollision* pCollision = sithCollision_PopStack();
+            if ( !pCollision )
             {
-                bCollided = 0;
-                rdVector_Copy3(&prevPos, &pThing->pos);
-
-                pPrevSector = pThing->pInSector;
-                v50 = moveDist;
-
-                rdVector_Copy3(&v40, &dest);
-
-
-                float distance = 0.0f; // Added: Init to 0
-                v26 = sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &dest, moveDist, pThing->collide.movesize, flags);
-                while ( !bCollided )
-                {
-                    SithCollision* pCollision = sithCollision_PopStack();
-                    if ( !pCollision )
-                    {
-                        break;
-                    }
-
-                    distance = pCollision->distance;
-                    if ( distance != 0.0f )
-                    {
-                        pThing->pos.x = dest.x * distance + prevPos.x;
-                        pThing->pos.y = dest.y * distance + prevPos.y;
-                        pThing->pos.z = dest.z * distance + prevPos.z;
-                    }
-
-                    if ( distance >= moveDist )
-                    {
-                        memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
-                    }
-                    else
-                    {
-                        pThing->moveDir.x = (moveDist - distance) * dest.x;
-                        pThing->moveDir.y = (moveDist - distance) * dest.y;
-                        pThing->moveDir.z = (moveDist - distance) * dest.z;
-                        if ( pThing->moveType == SITH_MT_PHYSICS
-                            && (pThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) != 0
-                            && (pThing->moveInfo.physics.gravityForce.x != 0.0f
-                                || pThing->moveInfo.physics.gravityForce.y != 0.0f
-                                || pThing->moveInfo.physics.gravityForce.z != 0.0f) )
-                        {
-                            v44 = 1.0f - distance / moveDist;
-                            pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.gravityForce.x * -v44 + pThing->moveInfo.physics.velocity.x;
-                            pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.gravityForce.y * -v44 + pThing->moveInfo.physics.velocity.y;
-                            pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.gravityForce.z * -v44 + pThing->moveInfo.physics.velocity.z;
-                        }
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0 )
-                    {
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
-                        SITH_ASSERTREL(pCollision->pThingCollided != NULL);
-
-                        SithThingType type2 = pCollision->pThingCollided->type;
-                        SithThingType type1 = pThing->type;
-                        SITH_ASSERTREL(aCollideResults[type1][type2].pProcessFunc != NULL);
-
-                        if ( aCollideResults[type1][type2].bDifferentTypHandler )
-                        {
-                            bCollided = aCollideResults[type1][type2].pProcessFunc(pCollision->pThingCollided, pThing, pCollision, 1);
-                        }
-                        else
-                        {
-                            bCollided = aCollideResults[type1][type2].pProcessFunc(pThing, pCollision->pThingCollided, pCollision, 0);
-                        }
-                    }
-                    else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) != 0 )
-                    {
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pMirrorAdjoin != NULL);
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector != NULL);
-
-                        rdVector_Copy3(&curthPos, &pThing->pos);
-                        if ( (pCollision->pSurfaceCollided->flags & SITH_SURFACE_COGLINKED) != 0 )
-                        {
-                            sithCog_SurfaceSendMessage(pCollision->pSurfaceCollided, pThing, 8);
-                        }
-
-                        sithThing_SetSector(pThing, pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector, 0);
-                        bCollided = memcmp(&curthPos, &pThing->pos, sizeof(curthPos)) != 0;
-                    }
-                    else
-                    {
-                        SITH_ASSERTREL(pCollision->pThingCollided == NULL);
-                        SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
-
-                        if ( sithCollision_aThingSurfaceCollideResults[pThing->type] )
-                        {
-                            bCollided = sithCollision_aThingSurfaceCollideResults[pThing->type](pThing, pCollision->pSurfaceCollided, pCollision);
-                        }
-                        else
-                        {
-                            bCollided = sithCollision_HandleThingHitSurface(pThing, pCollision->pSurfaceCollided, pCollision);
-                        }
-                    }
-
-                    if ( v44 != 0.0f )
-                    {
-                        v19 = sithTime_g_frameTimeFlex * v44;
-                        pThing->moveDir.x = pThing->moveInfo.physics.velocity.x * v19;
-                        pThing->moveDir.y = pThing->moveInfo.physics.velocity.y * v19;
-                        pThing->moveDir.z = pThing->moveInfo.physics.velocity.z * v19;
-                        v44 = 0.0f;
-                    }
-                }
-
-                sithCollision_DecreaseStackLevel();
-                if ( bCollided )
-                {
-                    v46 = v46 + distance;
-                    if ( pThing->moveDir.x == 0.0f && pThing->moveDir.y == 0.0f && pThing->moveDir.z == 0.0f )
-                    {
-                        moveDist = 0.0f;
-                    }
-                    else
-                    {
-                        moveDist = stdMath_ClipNearZero(rdVector_Normalize3(&dest, &pThing->moveDir));
-                    }
-
-                    ++v49;
-                }
-                else
-                {
-                    pThing->pos.x = dest.x * moveDist + prevPos.x;
-                    pThing->pos.y = dest.y * moveDist + prevPos.y;
-                    pThing->pos.z = dest.z * moveDist + prevPos.z;
-
-                    memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
-                    v46 = v46 + moveDist;
-                    moveDist = 0.0f;
-                }
-
-                if ( (pThing->flags & SITH_TF_DESTROYED) != 0 )
-                {
-                    return v46;
-                }
+                break;
             }
 
-            if ( v49 >= 4 && pThing->moveType == SITH_MT_PHYSICS )
+            distance = pCollision->distance;
+            if ( distance != 0.0f )
             {
-                sithPhysics_ResetThingMovement(pThing);
+                pThing->pos.x = dest.x * distance + prevPos.x;
+                pThing->pos.y = dest.y * distance + prevPos.y;
+                pThing->pos.z = dest.z * distance + prevPos.z;
             }
 
-
-            v46 = stdMath_ClipNearZero(fabsf(v46));
-
-            if ( pThing->collide.type
-                && pThing->moveType == SITH_MT_PHYSICS
-                && (pThing->attach.flags & SITH_ATTACH_TAIL) == 0
-                && (pThing->type != SITH_THING_PLAYER || pThing->thingInfo.actorInfo.bForceMovePlay != 1)
-                && !sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, &pThing->pos, 0.0f, pThing->pInSector) )
+            if ( distance >= moveDist )
             {
-                if ( pThing->msecLifeLeft )
-                {
-                    SITHLOG_ERROR("Thing %s fell out of world, destroying.\n", pThing->aName);
-                    sithThing_DestroyThing(pThing);
-                }
-                else if ( pThing->type == SITH_THING_PLAYER )
-                {
-                    SITHLOG_ERROR("Thing %s in wrong sector, pushed back to last good position.\n", pThing->aName);
-                }
-
-                rdVector_Copy3(&pThing->pos, &prevPos);
-                rdVector_Copy3(&dest, &v40);
-                sithThing_SetSector(pThing, pPrevSector, 0);
-            }
-
-            for ( pAttached = pThing->pAttachedThing; pAttached; pAttached = pAttached->pNextAttachedThing )
-            {
-                if ( (pAttached->attach.flags & SITH_ATTACH_NOMOVE) != 0 && (pAttached->attach.flags & SITH_ATTACH_TAIL) == 0 )
-                {
-                    rdMatrix_TransformVector34(&pAttached->pos, &pAttached->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, &pThing->orient);
-                    rdVector_Add3Acc(&pAttached->pos, &pThing->pos);
-                    /*pAttached->pos.x = pAttached->pos.x + pThing->pos.x;
-                    pAttached->pos.y = pAttached->pos.y + pThing->pos.y;
-                    pAttached->pos.z = pAttached->pos.z + pThing->pos.z;*/
-
-                    if ( pAttached->pInSector != pThing->pInSector )
-                    {
-                        sithThing_SetSector(pAttached, pThing->pInSector, 0);
-                    }
-                }
-            }
-
-            if ( pThing->moveType == SITH_MT_PHYSICS )
-            {
-                if ( v46 == 0.0f )
-                {
-                    return 0.0f;
-                }
-                else if ( (flags & 0x40) != 0 )
-                {
-                    return v46;
-                }
-                else
-                {
-                    switch ( pThing->moveStatus )
-                    {
-                        case SITHPLAYERMOVE_HANGING:
-                        case SITHPLAYERMOVE_CLIMBIDLE:
-                        case SITHPLAYERMOVE_WHIPSWINGING:
-                        case SITHPLAYERMOVE_WHIPCLIMBIDLE:
-                        case SITHPLAYERMOVE_JUMPFWD:
-                        case SITHPLAYERMOVE_JUMPUP:
-                        case SITHPLAYERMOVE_CLIMBING_UP:
-                        case SITHPLAYERMOVE_CLIMBING_DOWN:
-                        case SITHPLAYERMOVE_CLIMBING_LEFT:
-                        case SITHPLAYERMOVE_CLIMBING_RIGHT:
-                        case SITHPLAYERMOVE_PULLINGUP:
-                        case SITHPLAYERMOVE_WHIP_CLIMB_START:
-                        case SITHPLAYERMOVE_JEEP_STILL:
-                        case SITHPLAYERMOVE_RAFT_STILL:
-                        case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_LEFT:
-                        case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_RIGHT:
-                        case SITHPLAYERMOVE_RAFT_TURN_LEFT:
-                        case SITHPLAYERMOVE_RAFT_TURN_RIGHT:
-                        case SITHPLAYERMOVE_RAFT_PADDLE_BACK_LEFT:
-                        case SITHPLAYERMOVE_RAFT_PADDLE_BACK_RIGHT:
-                        case SITHPLAYERMOVE_RAFT_STARTPADDLE_LEFT:
-                        case SITHPLAYERMOVE_RAFT_ENDPADDLE_LEFT:
-                        case SITHPLAYERMOVE_RAFT_ENDPADDLE_RIGHT:
-                        case SITHPLAYERMOVE_RAFT_STARTPADDLE_RIGHT:
-                        case SITHPLAYERMOVE_RAFT_PADDLERIGHT_STARTPADDLE_LEFT:
-                        case SITHPLAYERMOVE_RAFT_PADDLEL_LEFT_STARTPADDLE_RIGHT:
-                        case SITHPLAYERMOVE_JEEP_BOARDING:
-                        case SITHPLAYERMOVE_STAND_TO_CRAWL:
-                        case SITHPLAYERMOVE_CRAWL_TO_STAND:
-                        case SITHPLAYERMOVE_CLIMB_DOWN_TO_MOUNT:
-                        case SITHPLAYERMOVE_CLIMB_TO_HANG:
-                        case SITHPLAYERMOVE_RAFT_BOARDING:
-                        case SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT:
-                        case SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT:
-                        case SITHPLAYERMOVE_RAFT_UNBOARD_START:
-                        case SITHPLAYERMOVE_UNKNOWN_82:
-                        case SITHPLAYERMOVE_UNKNOWN_84:
-                        case SITHPLAYERMOVE_JEEP_UNBOARDING:
-                        case SITHPLAYERMOVE_JEWELFLYING:
-                        case SITHPLAYERMOVE_JEWELFLYING_UNKN1:
-                        case SITHPLAYERMOVE_JEWELFLYING_UNKN2:
-                        case SITHPLAYERMOVE_LEAPFWD:
-                            return v46;
-
-                        default:
-                            if ( (pThing->moveInfo.physics.flags & SITH_PF_RAFT) == 0
-                                && (!pThing->pAttachedThing || (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) == 0)
-                                && (pThing->attach.flags & SITH_ATTACH_TAIL) == 0 )
-                            {
-                                if ( pThing->attach.flags && (pThing->attach.flags & SITH_ATTACH_NOMOVE) == 0
-                                    || (pThing->moveInfo.physics.flags & SITH_PF_FLOORSTICK) != 0
-                                    && (pThing->moveInfo.physics.velocity.z < -2.0f ? (v11 = 0) : (v11 = pThing->moveInfo.physics.velocity.z <= 0.2f), v11) )
-                                {
-                                    sithPhysics_FindFloor(pThing, 0);
-                                }
-                            }
-
-                            break;
-                    }
-
-                    return v46;
-                }
+                memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
             }
             else
             {
-                return v46;
+                pThing->moveDir.x = (moveDist - distance) * dest.x;
+                pThing->moveDir.y = (moveDist - distance) * dest.y;
+                pThing->moveDir.z = (moveDist - distance) * dest.z;
+                if ( pThing->moveType == SITH_MT_PHYSICS
+                    && (pThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) != 0
+                    && (pThing->moveInfo.physics.gravityForce.x != 0.0f
+                        || pThing->moveInfo.physics.gravityForce.y != 0.0f
+                        || pThing->moveInfo.physics.gravityForce.z != 0.0f) )
+                {
+                    v44 = 1.0f - distance / moveDist;
+                    pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.gravityForce.x * -v44 + pThing->moveInfo.physics.velocity.x;
+                    pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.gravityForce.y * -v44 + pThing->moveInfo.physics.velocity.y;
+                    pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.gravityForce.z * -v44 + pThing->moveInfo.physics.velocity.z;
+                }
             }
+
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0 )
+            {
+                SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
+                SITH_ASSERTREL(pCollision->pThingCollided != NULL);
+
+                SithThingType type2 = pCollision->pThingCollided->type;
+                SithThingType type1 = pThing->type;
+                SITH_ASSERTREL(aCollideResults[type1][type2].pProcessFunc != NULL);
+
+                if ( aCollideResults[type1][type2].bDifferentTypHandler )
+                {
+                    bCollided = aCollideResults[type1][type2].pProcessFunc(pCollision->pThingCollided, pThing, pCollision, 1);
+                }
+                else
+                {
+                    bCollided = aCollideResults[type1][type2].pProcessFunc(pThing, pCollision->pThingCollided, pCollision, 0);
+                }
+            }
+            else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) != 0 )
+            {
+                SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
+                SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin != NULL);
+                SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pMirrorAdjoin != NULL);
+                SITH_ASSERTREL(pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector != NULL);
+
+                rdVector_Copy3(&curthPos, &pThing->pos);
+                if ( (pCollision->pSurfaceCollided->flags & SITH_SURFACE_COGLINKED) != 0 )
+                {
+                    sithCog_SurfaceSendMessage(pCollision->pSurfaceCollided, pThing, SITHCOG_MSG_CROSSED);
+                }
+
+                sithThing_SetSector(pThing, pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector, /*bNotify=*/0);
+                bCollided = memcmp(&curthPos, &pThing->pos, sizeof(curthPos)) != 0;
+            }
+            else
+            {
+                SITH_ASSERTREL(pCollision->pThingCollided == NULL);
+                SITH_ASSERTREL(pCollision->pSurfaceCollided != NULL);
+
+                if ( sithCollision_aThingSurfaceCollideResults[pThing->type] )
+                {
+                    bCollided = sithCollision_aThingSurfaceCollideResults[pThing->type](pThing, pCollision->pSurfaceCollided, pCollision);
+                }
+                else
+                {
+                    bCollided = sithCollision_HandleThingHitSurface(pThing, pCollision->pSurfaceCollided, pCollision);
+                }
+            }
+
+            if ( v44 != 0.0f )
+            {
+                v19 = sithTime_g_frameTimeFlex * v44;
+                pThing->moveDir.x = pThing->moveInfo.physics.velocity.x * v19;
+                pThing->moveDir.y = pThing->moveInfo.physics.velocity.y * v19;
+                pThing->moveDir.z = pThing->moveInfo.physics.velocity.z * v19;
+                v44 = 0.0f;
+            }
+        }
+
+        sithCollision_DecreaseStackLevel();
+        if ( bCollided )
+        {
+            v46 = v46 + distance;
+            if ( rdVector_IsZero3(&pThing->moveDir) )
+            {
+                moveDist = 0.0f;
+            }
+            else
+            {
+                moveDist = stdMath_ClipNearZero(rdVector_Normalize3(&dest, &pThing->moveDir));
+            }
+
+            ++v49;
+        }
+        else
+        {
+            pThing->pos.x = dest.x * moveDist + prevPos.x;
+            pThing->pos.y = dest.y * moveDist + prevPos.y;
+            pThing->pos.z = dest.z * moveDist + prevPos.z;
+
+            pThing->moveDir = rdroid_g_zeroVector3;
+            v46 = v46 + moveDist;
+            moveDist = 0.0f;
+        }
+
+        if ( (pThing->flags & SITH_TF_DESTROYED) != 0 )
+        {
+            return v46;
+        }
+    }
+
+    if ( v49 >= 4 && pThing->moveType == SITH_MT_PHYSICS )
+    {
+        sithPhysics_ResetThingMovement(pThing);
+    }
+
+    v46 = stdMath_ClipNearZero(fabsf(v46));
+
+    if ( pThing->collide.type
+        && pThing->moveType == SITH_MT_PHYSICS
+        && (pThing->attach.flags & SITH_ATTACH_TAIL) == 0
+        && (pThing->type != SITH_THING_PLAYER || pThing->thingInfo.actorInfo.bForceMovePlay != 1)
+        && !sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, &pThing->pos, 0.0f, pThing->pInSector) )
+    {
+        if ( pThing->msecLifeLeft )
+        {
+            SITHLOG_ERROR("Thing %s fell out of world, destroying.\n", pThing->aName);
+            sithThing_DestroyThing(pThing);
+        }
+        else if ( pThing->type == SITH_THING_PLAYER )
+        {
+            SITHLOG_ERROR("Thing %s in wrong sector, pushed back to last good position.\n", pThing->aName);
+        }
+
+        rdVector_Copy3(&pThing->pos, &prevPos);
+        rdVector_Copy3(&dest, &v40);
+        sithThing_SetSector(pThing, pPrevSector, 0);
+    }
+
+    for ( pAttached = pThing->pAttachedThing; pAttached; pAttached = pAttached->pNextAttachedThing )
+    {
+        if ( (pAttached->attach.flags & SITH_ATTACH_NOMOVE) != 0 && (pAttached->attach.flags & SITH_ATTACH_TAIL) == 0 )
+        {
+            rdMatrix_TransformVector34(&pAttached->pos, &pAttached->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, &pThing->orient);
+            rdVector_Add3Acc(&pAttached->pos, &pThing->pos);
+            /*pAttached->pos.x = pAttached->pos.x + pThing->pos.x;
+            pAttached->pos.y = pAttached->pos.y + pThing->pos.y;
+            pAttached->pos.z = pAttached->pos.z + pThing->pos.z;*/
+
+            if ( pAttached->pInSector != pThing->pInSector )
+            {
+                sithThing_SetSector(pAttached, pThing->pInSector, 0);
+            }
+        }
+    }
+
+    if ( pThing->moveType == SITH_MT_PHYSICS )
+    {
+        if ( v46 == 0.0f )
+        {
+            return 0.0f;
+        }
+        else if ( (flags & 0x40) != 0 )
+        {
+            return v46;
+        }
+        else
+        {
+            switch ( pThing->moveStatus )
+            {
+                case SITHPLAYERMOVE_HANGING:
+                case SITHPLAYERMOVE_CLIMBIDLE:
+                case SITHPLAYERMOVE_WHIPSWINGING:
+                case SITHPLAYERMOVE_WHIPCLIMBIDLE:
+                case SITHPLAYERMOVE_JUMPFWD:
+                case SITHPLAYERMOVE_JUMPUP:
+                case SITHPLAYERMOVE_CLIMBING_UP:
+                case SITHPLAYERMOVE_CLIMBING_DOWN:
+                case SITHPLAYERMOVE_CLIMBING_LEFT:
+                case SITHPLAYERMOVE_CLIMBING_RIGHT:
+                case SITHPLAYERMOVE_PULLINGUP:
+                case SITHPLAYERMOVE_WHIP_CLIMB_START:
+                case SITHPLAYERMOVE_JEEP_STILL:
+                case SITHPLAYERMOVE_RAFT_STILL:
+                case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_LEFT:
+                case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_RIGHT:
+                case SITHPLAYERMOVE_RAFT_TURN_LEFT:
+                case SITHPLAYERMOVE_RAFT_TURN_RIGHT:
+                case SITHPLAYERMOVE_RAFT_PADDLE_BACK_LEFT:
+                case SITHPLAYERMOVE_RAFT_PADDLE_BACK_RIGHT:
+                case SITHPLAYERMOVE_RAFT_STARTPADDLE_LEFT:
+                case SITHPLAYERMOVE_RAFT_ENDPADDLE_LEFT:
+                case SITHPLAYERMOVE_RAFT_ENDPADDLE_RIGHT:
+                case SITHPLAYERMOVE_RAFT_STARTPADDLE_RIGHT:
+                case SITHPLAYERMOVE_RAFT_PADDLERIGHT_STARTPADDLE_LEFT:
+                case SITHPLAYERMOVE_RAFT_PADDLEL_LEFT_STARTPADDLE_RIGHT:
+                case SITHPLAYERMOVE_JEEP_BOARDING:
+                case SITHPLAYERMOVE_STAND_TO_CRAWL:
+                case SITHPLAYERMOVE_CRAWL_TO_STAND:
+                case SITHPLAYERMOVE_CLIMB_DOWN_TO_MOUNT:
+                case SITHPLAYERMOVE_CLIMB_TO_HANG:
+                case SITHPLAYERMOVE_RAFT_BOARDING:
+                case SITHPLAYERMOVE_RAFT_UNBOARDING_LEFT:
+                case SITHPLAYERMOVE_RAFT_UNBOARDING_RIGHT:
+                case SITHPLAYERMOVE_RAFT_UNBOARD_START:
+                case SITHPLAYERMOVE_UNKNOWN_82:
+                case SITHPLAYERMOVE_UNKNOWN_84:
+                case SITHPLAYERMOVE_JEEP_UNBOARDING:
+                case SITHPLAYERMOVE_JEWELFLYING:
+                case SITHPLAYERMOVE_JEWELFLYING_UNKN1:
+                case SITHPLAYERMOVE_JEWELFLYING_UNKN2:
+                case SITHPLAYERMOVE_LEAPFWD:
+                    return v46;
+
+                default:
+                    if ( (pThing->moveInfo.physics.flags & SITH_PF_RAFT) == 0
+                        && (!pThing->pAttachedThing || (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) == 0)
+                        && (pThing->attach.flags & SITH_ATTACH_TAIL) == 0 )
+                    {
+                        if ( pThing->attach.flags && (pThing->attach.flags & SITH_ATTACH_NOMOVE) == 0
+                            || (pThing->moveInfo.physics.flags & SITH_PF_FLOORSTICK) != 0
+                            && (pThing->moveInfo.physics.velocity.z < -2.0f ? (v11 = 0) : (v11 = pThing->moveInfo.physics.velocity.z <= 0.2f), v11) )
+                        {
+                            sithPhysics_FindFloor(pThing, 0);
+                        }
+                    }
+
+                    break;
+            }
+
+            return v46;
         }
     }
     else
     {
-        SITHLOG_ERROR("MoveThing called for %s with distance %f.\n", pThing->aName, moveDist);
-        return 0.0f;
+        return v46;
     }
+
 }
 
 float J3DAPI sithCollision_SearchForCollisions(SithSector* pStartSector, SithThing* pThing, const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, int searchFlags)

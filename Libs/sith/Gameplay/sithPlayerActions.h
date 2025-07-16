@@ -12,14 +12,14 @@ J3D_EXTERN_C_START
 #define sithPlayerActions_g_jewelFlyingPuppetTrackNum J3D_DECL_FAR_VAR(sithPlayerActions_g_jewelFlyingPuppetTrackNum, int)
 // extern int sithPlayerActions_g_jewelFlyingPuppetTrackNum ;
 
-#define sithPlayerActions_g_pCurCollidedSurface J3D_DECL_FAR_VAR(sithPlayerActions_g_pCurCollidedSurface, SithSurface*)
-// extern SithSurface *sithPlayerActions_g_pCurCollidedSurface;
+#define sithPlayerActions_g_pCurLedgeSurface J3D_DECL_FAR_VAR(sithPlayerActions_g_pCurLedgeSurface, SithSurface*)
+// extern SithSurface *sithPlayerActions_g_pCurLedgeSurface;
 
-#define sithPlayerActions_g_pCurCollidedModelFace J3D_DECL_FAR_VAR(sithPlayerActions_g_pCurCollidedModelFace, rdFace*)
-// extern rdFace *sithPlayerActions_g_pCurCollidedModelFace;
+#define sithPlayerActions_g_pCurLedgeThingModelFace J3D_DECL_FAR_VAR(sithPlayerActions_g_pCurLedgeThingModelFace, rdFace*)
+// extern rdFace *sithPlayerActions_g_pCurLedgeThingModelFace;
 
-#define sithPlayerActions_g_pCurCollidedModel J3D_DECL_FAR_VAR(sithPlayerActions_g_pCurCollidedModel, rdModel3*)
-// extern rdModel3 *sithPlayerActions_g_pCurCollidedModel;
+#define sithPlayerActions_g_pCurLedgeThingModel J3D_DECL_FAR_VAR(sithPlayerActions_g_pCurLedgeThingModel, rdModel3*)
+// extern rdModel3 *sithPlayerActions_g_pCurLedgeThingModel;
 
 #define sithPlayerActions_g_pPlasma J3D_DECL_FAR_VAR(sithPlayerActions_g_pPlasma, SithThing*)
 // extern SithThing *sithPlayerActions_g_pPlasma;
@@ -33,54 +33,90 @@ J3D_EXTERN_C_START
 #define sithPlayerActions_g_pChalkWriteSurf J3D_DECL_FAR_VAR(sithPlayerActions_g_pChalkWriteSurf, SithSurface*)
 // extern SithSurface *sithPlayerActions_g_pChalkWriteSurf;
 
-#define sithPlayerActions_g_posChalkMarkWrite J3D_DECL_FAR_VAR(sithPlayerActions_g_posChalkMarkWrite, rdVector3)
-// extern rdVector3 sithPlayerActions_g_posChalkMarkWrite;
+#define sithPlayerActions_g_chalkWritePos J3D_DECL_FAR_VAR(sithPlayerActions_g_chalkWritePos, rdVector3)
+// extern rdVector3 sithPlayerActions_g_chalkWritePos;
 
 #define sithPlayerActions_g_pChalkWriteSector J3D_DECL_FAR_VAR(sithPlayerActions_g_pChalkWriteSector, SithSector*)
 // extern SithSector *sithPlayerActions_g_pChalkWriteSector;
 
 int J3DAPI sithPlayerActions_Activate(SithThing* pPlayer);
-void J3DAPI sithPlayerActions_Jump(SithThing* pThing, float a2, int jumpDirection);
-void J3DAPI sithPlayerActions_MoveToPlayerPosition(SithThing* pThing, unsigned int playerNum);
-void J3DAPI sithPlayerActions_PushItem(SithThing* pThing, SithThing* pItem, rdVector3* pDirection);
-void J3DAPI sithPlayerActions_PullItem(SithThing* pThing, SithThing* pItem, rdVector3* pDirection);
-SithInventoryItem* J3DAPI sithPlayerActions_ClimbPullUp(SithThing* pThing);
+
+void J3DAPI sithPlayerActions_MoveToPlayerPosition(SithThing* pThing, size_t playerNum);
+int J3DAPI sithPlayerActions_HasActiveWeapon(SithThing* pThing);
+
+void J3DAPI sithPlayerActions_PushItem(SithThing* pThing, SithThing* pItem, const rdVector3* pDirection);
+void J3DAPI sithPlayerActions_PullItem(SithThing* pThing, SithThing* pItem, const rdVector3* pDirection);
+
+int J3DAPI sithPlayerActions_CanPullUp(SithThing* pThing);
+void J3DAPI sithPlayerActions_ClimbPullUp(SithThing* pThing);
+
+void J3DAPI sithPlayerActions_CenterOnClimbSurface(SithThing* pThing, const SithSurface* pSurface); // Centers player on climb surface and moves player to climb surface sector. No thing attachment to climb surface is made 
+int J3DAPI sithPlayerActions_FindAndAttachToClimbWall(SithThing* pThing); // Finds climb world surfaces, attaches to it and makes climb mount animation
 void J3DAPI sithPlayerActions_ClimbMove(SithThing* pThing, SithSurface* pSurf, int direction);
 void J3DAPI sithPlayerActions_UnmountWall(SithThing* pThing, int trackNum);
+
+int J3DAPI sithPlayerActions_CanClimbOn1m(SithThing* pThing);
 void J3DAPI sithPlayerActions_ClimbOn1m(SithThing* pThing);
+
+int J3DAPI sithPlayerActions_CanClimbOn2m(SithThing* pThing);
 void J3DAPI sithPlayerActions_ClimbOn2m(SithThing* pThing);
+
+// Returns
+// 0 - none or unable to move (due to weapon other surfaces/things blocking the move)
+// 1 - climb wall
+// 2 - hang ledge
+// 3 - angled climb wall 
+int J3DAPI sithPlayerActions_CheckClimbDownWall(SithThing* pThing);
+void J3DAPI sithPlayerActions_ClimbDownToClimb(SithThing* pThing, int bLedge); // Climb down to climb surface
+void J3DAPI sithPlayerActions_ClimbDownToHang(SithThing* pThing); // Climb down to hang surface
+
+float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPYR, SithSurface** pLedgeSurf, rdFace** pLedgeThingFace, rdModel3Mesh** pLedgeThingMesh, SithThing** pLedgeThing);
+int J3DAPI sithPlayerActions_GrabLedge(SithThing* pThing, float distance, SithSurface* pLedgeSurf, rdFace* pLedgeThingFace, const rdModel3Mesh* pLedgeThingMesh, SithThing* pLedgeThing);
+
+void J3DAPI sithPlayerActions_Jump(SithThing* pThing, float speedFactor, int jumpDirection);
 void J3DAPI sithPlayerActions_LeapForward(SithThing* pThing);
 void J3DAPI sithPlayerActions_JumpForward(SithThing* pThing);
-void J3DAPI sithPlayerActions_JumpLeft(SithThing* pThing);
-void J3DAPI sithPlayerActions_JumpRight(SithThing* pThing);
+void J3DAPI sithPlayerActions_HopLeft(SithThing* pThing);
+void J3DAPI sithPlayerActions_HopRight(SithThing* pThing);
 void J3DAPI sithPlayerActions_JumpRollBack(SithThing* pThing);
 void J3DAPI sithPlayerActions_JumpRollForward(SithThing* pThing);
 void J3DAPI sithPlayerActions_StrafeLeft(SithThing* pThing);
 void J3DAPI sithPlayerActions_StrafeRight(SithThing* pThing);
 void J3DAPI sithPlayerActions_HopBack(SithThing* pThing);
+void J3DAPI sithPlayerActions_JumpStart(SithThing* pThing);
+
 void J3DAPI sithPlayerActions_Stand2Crawl(SithThing* pThing);
 void J3DAPI sithPlayerActions_Crawl2Stand(SithThing* pThing);
-int J3DAPI sithPlayerActions_JumpStart(SithThing* pThing);
-int J3DAPI sithPlayerActions_HasActiveWeapon(SithThing* pThing);
-void J3DAPI sithPlayerActions_ClimbToClimb(SithThing* pThing, int bLedge);
-void J3DAPI sithPlayerActions_ClimbToHang(SithThing* pThing);
-int J3DAPI sithPlayerActions_CanMoveToPos(SithThing* pThing, rdVector3* pPos, int* a3);
-double J3DAPI sithPlayerActions_SearchForCollision(SithThing* pThing, const rdVector3* pPYR, SithSurface** pHitSurf, rdFace** pHitFace, rdModel3Mesh** pHitMesh, SithThing** pHitThing);
-int J3DAPI sithPlayerActions_CanClimbOn1m(SithThing* pThing);
-int J3DAPI sithPlayerActions_CanClimbOn2m(SithThing* pThing);
-int J3DAPI sithPlayerActions_SearchClimbSurface(SithThing* pThing);
-int J3DAPI sithPlayerActions_ActorGrabLedge(SithThing* pThing, float distance, SithSurface* pHitSurf, rdFace* pHitFace, const rdModel3Mesh* pHitMesh, SithThing* pHitThing);
-int J3DAPI sithPlayerActions_ClimbDownToIdle(SithThing* pThing);
-int J3DAPI sithPlayerActions_CanPullUp(SithThing* pThing);
-float J3DAPI sithPlayerActions_GetFaceTopZ(const SithThing* pThing, const rdFace* pFace, const rdModel3Mesh* pMesh);
-void J3DAPI sithPlayerActions_StartInvisibility();
-void J3DAPI sithPlayerActions_EndInvisibility();
-int J3DAPI sithPlayerActions_IsInvisible();
-int J3DAPI sithPlayerActions_StartJewelFlying();
-int J3DAPI sithPlayerActions_EnableJewelFlying(SithThing* pPlasma);
-SithThing* J3DAPI sithPlayerActions_DisableJewelFlying();
-void J3DAPI sithPlayerActions_MoveToClimbSector(SithThing* pThing, SithSurface* pSurface);
-void J3DAPI sithPlayerActions_Crawl(SithThing* pThing);
+void J3DAPI sithPlayerActions_MoveToCrawlPosition(SithThing* pThing);
+
+/**
+ * Checks if there is a valid walkable floor/surface or standable thing at the specified position that the player can move to.
+ * Performs collision detection and surface angle validation to determine movement feasibility.
+ *
+ * @param pThing - The player/actor thing attempting to move
+ * @param pPos   - The target position to check for valid floor
+ * @param pbSurfaceChange (Optional) -  Output parameter: set to 1 if moving would change the surface/standable thing
+ *                       the player is currently attached to, 0 if no change
+ *
+ * @return floor status:
+ *         0 - No valid floor surface found (no world surface found, no standable thing found, slope or steep floor, blocked, lava, cliff wall, running in direction away of descending surface/ slope / wall)
+ *         1 - Valid floor found  (walkable world surface or standable thing)
+ *         2 - Non-floor world surface found (no sector found or tilted surface < 51 deg from vertical)
+ *         3 - Ascending floor slope surface or non-floor steep surface (wall, cliff) found in direction of running movement (only returned when player is running)
+ *             Note when running in the same direction as surface (away) e.g.: descending slope, 0 is returned instead
+ */
+int J3DAPI sithPlayerActions_CheckFloorAtPos(SithThing* pThing, rdVector3* pPos, int* pbSurfaceWillChange);
+
+void sithPlayerActions_StartInvisibility(void);
+void sithPlayerActions_EndInvisibility(void);
+int sithPlayerActions_IsInvisible(void);
+
+int sithPlayerActions_StartJewelFlying(void);
+void J3DAPI sithPlayerActions_EnableJewelFlying(SithThing* pPlasma);
+void J3DAPI sithPlayerActions_DisableJewelFlying();
+
+void J3DAPI sithPlayerActions_QuickTurnLeft(SithThing* pThing); // Added from debug
+void J3DAPI sithPlayerActions_QuickTurnRight(SithThing* pThing); // Added from debug
 
 // Helper hooking functions
 void sithPlayerActions_InstallHooks(void);

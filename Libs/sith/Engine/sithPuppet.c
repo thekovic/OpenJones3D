@@ -1693,7 +1693,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
             pThing->collide.movesize = 0.04f;
             if ( pThing->attach.attachedToStructure.pThingAttached )
             {
-                sithPlayerActions_MoveToClimbSector(pThing, pThing->attach.attachedToStructure.pSurfaceAttached);
+                sithPlayerActions_CenterOnClimbSurface(pThing, pThing->attach.attachedToStructure.pSurfaceAttached);
             }
 
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLIDLE, NULL);
@@ -1807,7 +1807,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
         {
             pThing->collide.movesize = 0.04f;
             sithPhysics_ResetThingMovement(pThing);
-            sithPlayerActions_ClimbDownToIdle(pThing);
+            sithPlayerActions_FindAndAttachToClimbWall(pThing);
             break;
         }
         case SITHPLAYERMOVE_CLIMB_TO_HANG:
@@ -1817,24 +1817,18 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
             pThing->collide.movesize = 0.01f;
             sithPhysics_ResetThingMovement(pThing);
 
-            bool bSomeBool = false;
-
-            rdVector3 moveNorm;
-            rdVector_Neg3(&moveNorm, &rdroid_g_zVector3);
-
+            rdVector3 moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3);
             sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &moveNorm, 0.07f, pThing->collide.movesize, 0xA00);
-            while ( 1 )
+
+            bool bSolidSurf = false;
+            SithCollision* pCollision;
+            while ( (pCollision = sithCollision_PopStack()) != NULL )
             {
-                SithCollision* pCollision = sithCollision_PopStack();
-                if ( !pCollision )
-                {
-                    break;
-                }
                 if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
                 {
                     if ( (pCollision->pSurfaceCollided->flags & SITH_SURFACE_LAVA) == 0 )
                     {
-                        bSomeBool = true;
+                        bSolidSurf = true;
                         break;
                     }
                 }
@@ -1843,42 +1837,44 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
                     if ( (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_NOPLAYERMOVE) != 0
                         && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_LAVA) == 0 )
                     {
-                        bSomeBool = true;
+                        bSolidSurf = true;
                         break;
                     }
                 }
                 else if ( (pCollision->type & SITHCOLLISION_THING) != 0 && (pCollision->pThingCollided->flags & SITH_TF_STANDON) != 0 )
                 {
-                    bSomeBool = true;
+                    bSolidSurf = true;
                     break;
                 }
             }
 
             sithCollision_DecreaseStackLevel();
 
-            SithSurface* pHitSurf  = NULL;
-            rdModel3Mesh* pHitMesh = NULL;
-            SithThing* pHitThing   = NULL;
-            rdFace* pHitFace       = NULL;
-
             pThing->collide.movesize = 0.04f; // restore default move size
 
-        #if 0
-            // TODO: [DEAD] found in debug version code never executes
-            pThing->moveStatus = SITHPLAYERMOVE_STILL;
-            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1);
-        #else
-            float distance = sithPlayerActions_SearchForCollision(pThing, &pThing->orient.lvec, &pHitSurf, &pHitFace, &pHitMesh, &pHitThing);
-            if ( distance < 0.0f )
+            // TODO: [DEAD] following if scope found in debug version code never executes
+            if ( false && bSolidSurf )
             {
-                pThing->moveStatus = SITHPLAYERMOVE_FALLING;
-                sithInventory_SetSwimmingInventory(pThing, 1);
+                pThing->moveStatus = SITHPLAYERMOVE_STILL;
+                sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1);
             }
             else
             {
-                sithPlayerActions_ActorGrabLedge(pThing, distance, pHitSurf, pHitFace, pHitMesh, pHitThing);
+                SithSurface* pHitSurf  = NULL;
+                rdModel3Mesh* pHitMesh = NULL;
+                SithThing* pHitThing   = NULL;
+                rdFace* pHitFace       = NULL;
+                float distance = sithPlayerActions_FindLedge(pThing, &pThing->orient.lvec, &pHitSurf, &pHitFace, &pHitMesh, &pHitThing);
+                if ( distance < 0.0f )
+                {
+                    pThing->moveStatus = SITHPLAYERMOVE_FALLING;
+                    sithInventory_SetSwimmingInventory(pThing, 1);
+                }
+                else
+                {
+                    sithPlayerActions_GrabLedge(pThing, distance, pHitSurf, pHitFace, pHitMesh, pHitThing);
+                }
             }
-        #endif
 
             break;
         }
@@ -2256,12 +2252,12 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                 }
                 case SITHPLAYERMOVE_JUMPLEFT:
                 {
-                    sithPlayerActions_JumpLeft(pThing);
+                    sithPlayerActions_HopLeft(pThing);
                     break;
                 }
                 case SITHPLAYERMOVE_JUMPRIGHT:
                 {
-                    sithPlayerActions_JumpRight(pThing);
+                    sithPlayerActions_HopRight(pThing);
                     break;
                 }
                 case SITHPLAYERMOVE_LEAPFWD:
@@ -2389,7 +2385,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                 pThing->moveInfo.physics.height = 0.045000002f;
                 pThing->moveInfo.physics.flags |= SITH_PF_ALIGNSURFACE;
                 pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNUP;
-                sithPlayerActions_Crawl(pThing);
+                sithPlayerActions_MoveToCrawlPosition(pThing);
             }
 
             break;
