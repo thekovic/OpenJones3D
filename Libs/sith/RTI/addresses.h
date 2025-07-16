@@ -603,11 +603,11 @@
 #define sithAnimate_StartSurfaceAnim_ADDR 0x00461AB0
 #define sithAnimate_StartMaterialAnim_ADDR 0x00461BE0
 #define sithAnimate_StartSurfaceLightAnim_ADDR 0x00461D00
-#define sithAnimate_StartSpriteSizeAnim_ADDR 0x00461E40
+#define sithAnimate_StartAnimateSpriteSize_ADDR 0x00461E40
 #define sithAnimate_StartSectorLightAnim_ADDR 0x00461FA0
 #define sithAnimate_StartThingLightAnim_ADDR 0x004620F0
-#define sithAnimate_StartThingMoveAnim_ADDR 0x004622C0
-#define sithAnimate_StartThingMoveAnimToPosAnim_ADDR 0x00462410
+#define sithAnimate_StartThingMove_ADDR 0x004622C0
+#define sithAnimate_StartThingMoveToPos_ADDR 0x00462410
 #define sithAnimate_StartThingFadeAnim_ADDR 0x004624C0
 #define sithAnimate_CameraZoom_ADDR 0x00462680
 #define sithAnimate_PushItem_ADDR 0x00462740
@@ -624,7 +624,6 @@
 #define sithAnimate_UpdateSpriteSizeAnim_ADDR 0x00462E10
 #define sithAnimate_UpdateLightAnim_ADDR 0x00463070
 #define sithAnimate_UpdateThingMoveAnim_ADDR 0x00463410
-#define sithAnimate_UpdateThingMovePosAnim_ADDR 0x00463550
 #define sithAnimate_UpdateThingFadeAnim_ADDR 0x004636E0
 #define sithAnimate_UpdateSurfaceScrollAnim_ADDR 0x00463830
 #define sithAnimate_UpdateSlideSkyAnim_ADDR 0x004638C0

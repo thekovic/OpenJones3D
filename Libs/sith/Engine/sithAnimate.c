@@ -97,7 +97,7 @@ void J3DAPI sithAnimate_UpdateCameraZoomAnim(SithAnimationSlot* pAnim, float sec
 void J3DAPI sithAnimate_UpdateSpriteSizeAnim(SithAnimationSlot* pAnim, float secDeltaTime);
 void J3DAPI sithAnimate_UpdateLightAnim(SithAnimationSlot* pAnim, float secDeltaTime);
 void J3DAPI sithAnimate_UpdateThingMoveAnim(SithAnimationSlot* pAnim, float secTimeDelta);
-void J3DAPI sithAnimate_UpdateThingMovePosAnim(SithAnimationSlot* pAnim, float secDeltaTime);
+void J3DAPI sithAnimate_UpdateThingMoveToPosAnim(SithAnimationSlot* pAnim, float secDeltaTime);
 void J3DAPI sithAnimate_UpdateThingFadeAnim(SithAnimationSlot* pAnim, float secDeltaTime);
 void J3DAPI sithAnimate_UpdateSurfaceScrollAnim(SithAnimationSlot* pAnim, float secDeltaTime, int animNum);
 void J3DAPI sithAnimate_UpdateSlideSkyAnim(SithAnimationSlot* pAnim, int skyType, float secDeltaTime, int animNum);
@@ -132,11 +132,11 @@ void sithAnimate_InstallHooks(void)
     J3D_HOOKFUNC(sithAnimate_StartSurfaceAnim);
     J3D_HOOKFUNC(sithAnimate_StartMaterialAnim);
     J3D_HOOKFUNC(sithAnimate_StartSurfaceLightAnim);
-    J3D_HOOKFUNC(sithAnimate_StartSpriteSizeAnim);
+    J3D_HOOKFUNC(sithAnimate_StartAnimateSpriteSize);
     J3D_HOOKFUNC(sithAnimate_StartSectorLightAnim);
     J3D_HOOKFUNC(sithAnimate_StartThingLightAnim);
-    J3D_HOOKFUNC(sithAnimate_StartThingMoveAnim);
-    J3D_HOOKFUNC(sithAnimate_StartThingMoveAnimToPosAnim);
+    J3D_HOOKFUNC(sithAnimate_StartThingMove);
+    J3D_HOOKFUNC(sithAnimate_StartThingMoveToPos);
     J3D_HOOKFUNC(sithAnimate_StartThingFadeAnim);
     J3D_HOOKFUNC(sithAnimate_CameraZoom);
     J3D_HOOKFUNC(sithAnimate_PushItem);
@@ -153,7 +153,7 @@ void sithAnimate_InstallHooks(void)
     J3D_HOOKFUNC(sithAnimate_UpdateSpriteSizeAnim);
     J3D_HOOKFUNC(sithAnimate_UpdateLightAnim);
     J3D_HOOKFUNC(sithAnimate_UpdateThingMoveAnim);
-    J3D_HOOKFUNC(sithAnimate_UpdateThingMovePosAnim);
+    J3D_HOOKFUNC(sithAnimate_UpdateThingMoveToPosAnim);
     J3D_HOOKFUNC(sithAnimate_UpdateThingFadeAnim);
     J3D_HOOKFUNC(sithAnimate_UpdateSurfaceScrollAnim);
     J3D_HOOKFUNC(sithAnimate_UpdateSlideSkyAnim);
@@ -549,7 +549,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartSurfaceLightAnim(SithSurface* pSurfac
     return pAnim;
 }
 
-SithAnimationSlot* J3DAPI sithAnimate_StartThingQuickTurnAnim(SithThing* pThing, int direction)
+SithAnimationSlot* J3DAPI sithAnimate_StartThingQuickTurn(SithThing* pThing, int direction)
 {
     SithAnimationSlot* pAnim = sithAnimate_NewAnim();
     if ( !pAnim )
@@ -575,7 +575,7 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingQuickTurnAnim(SithThing* pThing,
     return pAnim;
 }
 
-SithAnimationSlot* J3DAPI sithAnimate_StartSpriteSizeAnim(SithThing* pSprite, const rdVector3* start, const rdVector3* end, float timeDelta)
+SithAnimationSlot* J3DAPI sithAnimate_StartAnimateSpriteSize(SithThing* pSprite, const rdVector3* start, const rdVector3* end, float timeDelta)
 {
     SITH_ASSERTREL(pSprite);
 
@@ -699,23 +699,23 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingLightAnim(SithThing* pThing, con
     return pAnim;
 }
 
-SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnim(SithThing* pThing, const rdVector3* pDirection, float distance, float timeDelta)
+SithAnimationSlot* J3DAPI sithAnimate_StartThingMove(SithThing* pThing, const rdVector3* pDirection, float distance, float timeDelta)
 {
     if ( !pThing )
     {
-        SITHLOG_ERROR("Thing is NULL in sithAnimate_StartThingMoveAnim()\n");
+        SITHLOG_ERROR("Thing is NULL in sithAnimate_StartThingMove()\n");
         return NULL;
     }
 
     if ( rdVector_IsZero3(pDirection) )
     {
-        SITHLOG_ERROR("Direction is 0 in sithAnimate_StartThingMoveAnim(), %s\n", pThing->aName);
+        SITHLOG_ERROR("Direction is 0 in sithAnimate_StartThingMove(), %s\n", pThing->aName);
         return NULL;
     }
 
     if ( distance < 0.0f )
     {
-        SITHLOG_ERROR("Distance < 0, sithAnimate_StartThingMoveAnim(), %s\n", pThing->aName);
+        SITHLOG_ERROR("Distance < 0, sithAnimate_StartThingMove(), %s\n", pThing->aName);
         return NULL;
     }
 
@@ -746,11 +746,11 @@ SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnim(SithThing* pThing, cons
     return pAnim;
 }
 
-SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnimToPosAnim(SithThing* pThing, const rdVector3* pPos, float time)
+SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveToPos(SithThing* pThing, const rdVector3* pPos, float time)
 {
     if ( !pThing )
     {
-        SITHLOG_ERROR("Thing is NULL in sithAnimate_StartThingMoveAnimToPosAnim()\n");
+        SITHLOG_ERROR("Thing is NULL in sithAnimate_StartThingMoveToPos()\n");
         return NULL;
     }
 
@@ -956,7 +956,7 @@ void J3DAPI sithAnimate_Update(float secTimeDelta)
             }
             else if ( (pAnim->flags & SITHANIMATE_THING_MOVEPOS) != 0 )
             {
-                sithAnimate_UpdateThingMovePosAnim(pAnim, secTimeDelta);
+                sithAnimate_UpdateThingMoveToPosAnim(pAnim, secTimeDelta);
             }
             else if ( (pAnim->flags & SITHANIMATE_PUSHITEM) != 0 )
             {
@@ -1382,7 +1382,7 @@ void J3DAPI sithAnimate_UpdateThingMoveAnim(SithAnimationSlot* pAnim, float secT
     }
 }
 
-void J3DAPI sithAnimate_UpdateThingMovePosAnim(SithAnimationSlot* pAnim, float secDeltaTime)
+void J3DAPI sithAnimate_UpdateThingMoveToPosAnim(SithAnimationSlot* pAnim, float secDeltaTime)
 {
     // Update current distance
     rdVector_Sub3(&pAnim->direction3, &pAnim->thingEndPosition, &pAnim->pThing->pos);

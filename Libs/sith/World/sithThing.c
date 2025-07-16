@@ -719,7 +719,7 @@ int J3DAPI sithThing_Draw(SithThing* pThing)
         for ( SithThingSwapEntry* pEntry = pThing->pSwapList; pEntry; pEntry = pEntry->pNextEntry )
         {
             rdModel3_SetModelColor(pEntry->pSrcModel, &color);
-            /*int swapRef = */rdModel3_SwapMesh(pThing->renderData.data.pModel3, pEntry->meshNum, pEntry->pSrcModel, pEntry->srcMeshNum);
+            rdModel3_SwapMesh(pThing->renderData.data.pModel3, pEntry->meshNum, pEntry->pSrcModel, pEntry->srcMeshNum);
         }
 
         drawRes = rdThing_Draw(&pThing->renderData, &pThing->orient);
@@ -728,7 +728,7 @@ int J3DAPI sithThing_Draw(SithThing* pThing)
 
         for ( SithThingSwapEntry* pEntry = pThing->pSwapList; pEntry; pEntry = pEntry->pNextEntry )
         {
-            /*int swapRef = */rdModel3_SwapMesh(pThing->renderData.data.pModel3, pEntry->meshNum, pEntry->pSrcModel, pEntry->srcMeshNum);
+            rdModel3_SwapMesh(pThing->renderData.data.pModel3, pEntry->meshNum, pEntry->pSrcModel, pEntry->srcMeshNum);
             rdModel3_SetModelColor(pEntry->pSrcModel, &color);
         }
     }

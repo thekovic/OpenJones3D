@@ -2154,7 +2154,7 @@ void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing)
             end.x = size;
             end.y = size;
             end.z = 1.0f;
-            sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, 0.5f);
+            sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
         }
     }
 }

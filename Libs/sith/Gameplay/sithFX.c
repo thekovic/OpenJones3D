@@ -358,7 +358,7 @@ void J3DAPI sithFX_CreateBubble(SithThing* pThing)
         end.y = 0.02f;
         end.z = 0.0f;
         float time = (SITH_RANDF() - 0.5f) * 2.0f + 4.0f;
-        sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, time);
+        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
 
         rdVector3 vel;
         vel.x = SITH_RANDF() - 0.5f;
@@ -423,7 +423,7 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
         pSprite->orient.lvec.y = 0.0f;
         pSprite->orient.lvec.z = 1.0f;
         float time = SITH_RANDF() + 1.0f;
-        sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, time);
+        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
     }
 }
 
@@ -457,7 +457,7 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         pSprite->orient.lvec.y = 0.0f;
         pSprite->orient.lvec.z = 1.0f;
         float time = SITH_RANDF() + 1.5f;
-        sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, time);
+        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
     }
 
     if ( bCreateSplash )
@@ -502,7 +502,7 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &orient, pThing->pInSector, NULL);
         if ( pSprite )
         {
-            sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, 0.5f);
+            sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
         }
 
         // Create mist thing
@@ -527,7 +527,7 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &orient, pThing->pInSector, NULL);
         if ( pSprite )
         {
-            sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, 0.5f);
+            sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
         }
 
         // Create another mist thing
@@ -578,7 +578,7 @@ void J3DAPI sithFX_CreateRaftWake(SithThing* pThing)
 
         pSprite->thingInfo.spriteInfo.rollAngle = rollAngle + 180.0f;
 
-        sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, 0.5f);
+        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
     }
 }
 
@@ -693,7 +693,7 @@ void J3DAPI sithFX_CreateRowWaterFx(SithThing* pThing, float secTime)
     end.z = 0.0f;
 
     float time = SITH_RANDF() + 1.0f;
-    sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, time);
+    sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
 
     rdVector_Copy3(&sithFX_rowRippleLastPos, &ripplePos);
     sithFX_secLastCreatedRowRipple = sithTime_g_secGameTime;
@@ -741,7 +741,7 @@ void J3DAPI sithFX_CreateRipple(SithThing* pThing, float size)
         pSprite->orient.lvec.x = 0.0f;
         pSprite->orient.lvec.y = 0.0f;
         pSprite->orient.lvec.z = 1.0f;
-        sithAnimate_StartSpriteSizeAnim(pSprite, &start, &end, 2.5f);
+        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 2.5f);
     }
 }
 

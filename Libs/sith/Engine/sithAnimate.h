@@ -25,12 +25,12 @@ SithAnimationSlot* J3DAPI sithAnimate_StartSpriteAnim(SithThing* pSprite, float 
 SithAnimationSlot* J3DAPI sithAnimate_StartSurfaceAnim(SithSurface* pSurf, float fps, SithAnimateFlags flags);
 SithAnimationSlot* J3DAPI sithAnimate_StartMaterialAnim(rdMaterial* pMat, float fps, SithAnimateFlags flags);
 SithAnimationSlot* J3DAPI sithAnimate_StartSurfaceLightAnim(SithSurface* pSurface, const rdVector3* light, float timeDelta);
-SithAnimationSlot* J3DAPI sithAnimate_StartThingQuickTurnAnim(SithThing* pThing, int direction); // Added from debug
-SithAnimationSlot* J3DAPI sithAnimate_StartSpriteSizeAnim(SithThing* pSprite, const rdVector3* start, const rdVector3* end, float timeDelta);
+SithAnimationSlot* J3DAPI sithAnimate_StartThingQuickTurn(SithThing* pThing, int direction); // Added from debug
+SithAnimationSlot* J3DAPI sithAnimate_StartAnimateSpriteSize(SithThing* pSprite, const rdVector3* start, const rdVector3* end, float timeDelta);
 SithAnimationSlot* J3DAPI sithAnimate_StartSectorLightAnim(SithSector* pSector, const rdVector3* pNewLight, float timeDelta, SithAnimateFlags flags);
 SithAnimationSlot* J3DAPI sithAnimate_StartThingLightAnim(SithThing* pThing, const rdVector4* color, float timeDelta, SithAnimateFlags flags);
-SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnim(SithThing* pThing, const rdVector3* pDirection, float distance, float timeDelta);
-SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveAnimToPosAnim(SithThing* pThing, const rdVector3* pPos, float time);
+SithAnimationSlot* J3DAPI sithAnimate_StartThingMove(SithThing* pThing, const rdVector3* pDirection, float distance, float timeDelta);
+SithAnimationSlot* J3DAPI sithAnimate_StartThingMoveToPos(SithThing* pThing, const rdVector3* pPos, float time);
 SithAnimationSlot* J3DAPI sithAnimate_StartThingFadeAnim(SithThing* pThing, const rdVector4* startColor, const rdVector4* endColor, float timeDelta, SithAnimateFlags flags);
 SithAnimationSlot* J3DAPI sithAnimate_CameraZoom(SithCamera* pCamera, float fov, float timeDelta);
 SithAnimationSlot* J3DAPI sithAnimate_PushItem(SithThing* pActor, SithThing* pThing, const rdVector3* pDirection, int trackNum);

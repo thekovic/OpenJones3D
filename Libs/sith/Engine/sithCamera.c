@@ -1150,7 +1150,7 @@ LABEL_102:
     }
 
 // Found in debug build
-// Only it always executed the code in if scope, there might be special preprocessor macro here
+// Code in if scope is always executed, there might be special preprocessor macro here
 #if 1
     memcpy(&newLookPos, &newOrient.dvec, sizeof(newLookPos));
     pCamera->pSector = sithCollision_FindSectorInRadius(pCamera->pSector, &pCamera->orient.dvec, &newLookPos, 0.0f);
@@ -1226,6 +1226,7 @@ LABEL_102:
     }
 #elif 0
     // TODO: [DEAD] This code was found in debug build and was never executed
+    //       It's buggy code, don't know what's it's real purpose
     pCamera->pSector = sithCollision_FindSectorInRadius(pThing1->pInSector, &pThing1->pos, &pCamera->orient.dvec, 0.0);
     rdMatrix_LookAt(&pCamera->orient, &pCamera->orient.dvec, &newPos, 0.0);
     memcpy(&pCamera->curLookInterp, &newPos, sizeof(pCamera->curLookInterp));

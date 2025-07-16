@@ -344,7 +344,7 @@ void J3DAPI sithCogFunctionThing_AnimateSpriteSize(SithCog* pCog)
     // Altered: Added check for deltaTime to avoid unnecessary animation creation and spare animation slot
     if ( deltaTime > 0.0 )
     {
-        SithAnimationSlot* pAnim = sithAnimate_StartSpriteSizeAnim(pSprite, &vecStart, &vecEnd, deltaTime);
+        SithAnimationSlot* pAnim = sithAnimate_StartAnimateSpriteSize(pSprite, &vecStart, &vecEnd, deltaTime);
         if ( !pAnim )
         {
             STDLOG_ERROR("Cog %s: Unable to create animation for AnimateSpriteSize().\n", pCog->aName);
@@ -5299,7 +5299,7 @@ void J3DAPI sithCogFunctionThing_MoveThing(SithCog* pCog)
 
     if ( timeDelta > 0.0 )
     {
-        SithAnimationSlot* pAnim = sithAnimate_StartThingMoveAnim(pThing, &vecDirection, moveDist, timeDelta);
+        SithAnimationSlot* pAnim = sithAnimate_StartThingMove(pThing, &vecDirection, moveDist, timeDelta);
         if ( pAnim )
         {
             sithCogExec_PushInt(pCog, pAnim->animID);
@@ -5338,7 +5338,7 @@ void J3DAPI sithCogFunctionThing_MoveThingToPos(SithCog* pCog)
 
     if ( time > 0.0 )
     {
-        const SithAnimationSlot* pAnim = sithAnimate_StartThingMoveAnimToPosAnim(pThing, &pos, time);
+        const SithAnimationSlot* pAnim = sithAnimate_StartThingMoveToPos(pThing, &pos, time);
         sithCogExec_PushInt(pCog, pAnim ? pAnim->animID : -1);
     }
     else

@@ -72,7 +72,7 @@ void J3DAPI sithExplosion_CreateSpriteThing(SithThing* pThing)
                 else
                 {
                     float time = (float)pThingSprite->msecLifeLeft / 1000.0f;
-                    sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &pExplode->spriteStart, &pExplode->spriteEnd, time);
+                    sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &pExplode->spriteStart, &pExplode->spriteEnd, time);
                 }
             }
         }
@@ -150,7 +150,7 @@ void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode)
             {
                 if ( sithTime_g_msecGameTime >= pExplode->msecExpandTime && (pExplode->flags & SITH_EF_EXPAND) != 0 && (pExplode->flags & SITH_EF_FADE) != 0 )
                 {
-                    sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &start, &end, secAnimTime);
+                    sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &start, &end, secAnimTime);
                     pExplode->flags &= ~SITH_EF_FADE | SITH_EF_EXPAND;
                 }
             }
@@ -172,7 +172,7 @@ void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode)
                     secAnimTime = (float)(pExplode->msecFadeTime - sithTime_g_msecGameTime) / 1000.0f;
                 }
 
-                sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &start, &end, secAnimTime);
+                sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &start, &end, secAnimTime);
 
                 pExplode->msecExpandTime = sithTime_g_msecGameTime;
                 pExplode->flags &= ~SITH_EF_EXPAND;
@@ -196,7 +196,7 @@ void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode)
                     secAnimTime = (float)(pExplode->msecExpandTime - sithTime_g_msecGameTime) / 1000.0f;
                 }
 
-                sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &start, &end, secAnimTime);
+                sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &start, &end, secAnimTime);
 
                 pExplode->msecFadeTime = sithTime_g_msecGameTime;
                 pExplode->flags &= ~SITH_EF_FADE;
@@ -212,7 +212,7 @@ void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode)
                 end.z = sithExplosion_Lerp(pExplode->spriteStart.z, pExplode->spriteEnd.z, msecLifeLeft, deltaTime);
 
                 secAnimTime = (float)(pExplode->msecExpandTime - sithTime_g_msecGameTime) / 1000.0f;
-                sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &start, &end, secAnimTime);
+                sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &start, &end, secAnimTime);
 
                 pExplode->flags &= ~SITH_EF_FADE;
             }
@@ -224,7 +224,7 @@ void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode)
                 end.z = pExplode->spriteStart.z;
 
                 secAnimTime = (float)(pExplode->msecFadeTime - sithTime_g_msecGameTime) / 1000.0f;
-                sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &start, &end, secAnimTime);
+                sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &start, &end, secAnimTime);
 
                 pExplode->flags &= ~SITH_EF_EXPAND;// ~0x800 - SITH_EF_EXPAND
             }
@@ -239,7 +239,7 @@ void J3DAPI sithExplosion_UpdateExpandFade(SithExplosionInfo* pExplode)
                     secAnimTime = (float)(pExplode->msecFadeTime - sithTime_g_msecGameTime) / 1000.0f;
                 }
 
-                sithAnimate_StartSpriteSizeAnim(pExplode->pSprite, &start, &start, secAnimTime);
+                sithAnimate_StartAnimateSpriteSize(pExplode->pSprite, &start, &start, secAnimTime);
             }
 
             sithExplosion_bExpandFadeSet = true;
