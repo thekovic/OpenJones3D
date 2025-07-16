@@ -265,7 +265,7 @@ LABEL_4:
         if ( pCurMat )
         {
             // format = pCurMat->formatType;
-            if ( pCurMat->formatType == STDCOLOR_FORMAT_RGBA_1BIT_ALPHA )
+            if ( pCurMat->formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA )
             {
                 rdflags |= STD3D_RS_ALPHAREF_SET;
             }

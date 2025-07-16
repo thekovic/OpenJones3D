@@ -11,9 +11,9 @@ J3D_EXTERN_C_START
 
 typedef enum eStdColorFormatType
 {
-    STDCOLOR_FORMAT_RGB             = 0,
-    STDCOLOR_FORMAT_RGBA_1BIT_ALPHA = 1,
-    STDCOLOR_FORMAT_RGBA            = 2,
+    STDCOLOR_FORMAT_RGB                 = 0,
+    STDCOLOR_FORMAT_RGBA_1BITALPHA      = 1, // e.g.: RGBA5551
+    STDCOLOR_FORMAT_RGBA                = 2,
 } StdColorFormatType;
 
 typedef enum eColorMode J3D_ENUM_TYPE(int32_t)

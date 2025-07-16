@@ -556,22 +556,23 @@ void J3DAPI std3D_Close()
 
 void J3DAPI std3D_GetTextureFormat(StdColorFormatType type, ColorInfo* pDest, int* pbColorKeySet, LPDDCOLORKEY* ppColorKey)
 {
-    if ( type == STDCOLOR_FORMAT_RGBA_1BIT_ALPHA )
+    if ( type == STDCOLOR_FORMAT_RGBA_1BITALPHA )
     {
         *pbColorKeySet = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].bColorKey;
         *ppColorKey    = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].pColorKey;
-        memcpy(pDest, &std3D_aTextureFormats[std3D_RGBAKeyTextureFormat], sizeof(ColorInfo));
+        *pDest         = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ci;
     }
     else if ( type == STDCOLOR_FORMAT_RGBA )
     {
         *pbColorKeySet = std3D_aTextureFormats[std3D_RGBATextureFormat].bColorKey;
         *ppColorKey    = std3D_aTextureFormats[std3D_RGBATextureFormat].pColorKey;
-        memcpy(pDest, &std3D_aTextureFormats[std3D_RGBATextureFormat], sizeof(ColorInfo));
+        *pDest         = std3D_aTextureFormats[std3D_RGBATextureFormat].ci;
     }
     else
     {
         *pbColorKeySet = 0;
-        memcpy(pDest, &std3D_aTextureFormats[std3D_RGBTextureFormat], sizeof(ColorInfo));
+        *pDest         = std3D_aTextureFormats[std3D_RGBTextureFormat].ci;
+
     }
 }
 
@@ -584,7 +585,7 @@ StdColorFormatType J3DAPI std3D_GetColorFormat(const ColorInfo* pCi)
 
     if ( pCi->alphaBPP == 1 )
     {
-        return STDCOLOR_FORMAT_RGBA_1BIT_ALPHA;
+        return STDCOLOR_FORMAT_RGBA_1BITALPHA;
     }
 
     return STDCOLOR_FORMAT_RGBA;
@@ -869,15 +870,14 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     }
 
     DDPIXELFORMAT ddpixfmt = { 0 };
-    if ( formatType == STDCOLOR_FORMAT_RGBA_1BIT_ALPHA ) {
-        memcpy(&ddpixfmt, &std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ddPixelFmt, sizeof(ddpixfmt));
+    if ( formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA ) {
+        ddpixfmt = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ddPixelFmt;
     }
-
     else if ( formatType == STDCOLOR_FORMAT_RGBA ) {
-        memcpy(&ddpixfmt, &std3D_aTextureFormats[std3D_RGBATextureFormat].ddPixelFmt, sizeof(ddpixfmt));
+        ddpixfmt = std3D_aTextureFormats[std3D_RGBATextureFormat].ddPixelFmt;
     }
     else {
-        memcpy(&ddpixfmt, &std3D_aTextureFormats[std3D_RGBTextureFormat].ddPixelFmt, sizeof(ddpixfmt));
+        ddpixfmt = std3D_aTextureFormats[std3D_RGBTextureFormat].ddPixelFmt;
     }
 
     DDSURFACEDESC2 ddsdSrc  = { 0 };
