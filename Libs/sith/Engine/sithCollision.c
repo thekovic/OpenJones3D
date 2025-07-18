@@ -81,7 +81,7 @@ void sithCollision_InstallHooks(void)
     J3D_HOOKFUNC(sithCollision_PushThingCollision);
     J3D_HOOKFUNC(sithCollision_PushSurfaceCollision);
     J3D_HOOKFUNC(sithCollision_ParticleAndActorCollisionHandler);
-    J3D_HOOKFUNC(sithCollision_CheckDistance);
+    J3D_HOOKFUNC(sithCollision_CheckFloorDistance);
     J3D_HOOKFUNC(sithCollision_sub_4AAF30);
 }
 
@@ -2584,7 +2584,7 @@ int J3DAPI sithCollision_ParticleAndActorCollisionHandler(SithThing* pSrcThing, 
     return 1;
 }
 
-float J3DAPI sithCollision_CheckDistance(SithThing* pThing, const rdVector3* moveNorm)
+float J3DAPI sithCollision_CheckFloorDistance(SithThing* pThing, const rdVector3* moveNorm)
 {
     SithThing* pHitThing;
     rdVector3 dir;
@@ -2595,9 +2595,9 @@ float J3DAPI sithCollision_CheckDistance(SithThing* pThing, const rdVector3* mov
     int searchFlags;
 
     moveDist = 10.0f;
-    searchFlags = 528;
+    searchFlags = 0x210;
     distance = 10.0f;
-    sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, moveNorm, 10.0f, pThing->collide.movesize, 528);
+    sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, moveNorm, 10.0f, pThing->collide.movesize, 0x210);
     while ( 1 )
     {
         pCollision = sithCollision_PopStack();

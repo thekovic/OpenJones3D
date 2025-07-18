@@ -2404,7 +2404,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                     rdVector3 moveNorm;
                     rdVector_Neg3(&moveNorm, &rdroid_g_zVector3);
 
-                    if ( sithCollision_CheckDistance(pThing, &moveNorm) > 0.14f )
+                    if ( sithCollision_CheckFloorDistance(pThing, &moveNorm) > 0.14f )
                     {
                         sithPuppet_StopForceMove(pThing, 1);
 

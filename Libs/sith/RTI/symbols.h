@@ -824,7 +824,7 @@
 #define sithCollision_PushThingCollision_TYPE void (J3DAPI*)(SithThing*, float, SithCollisionType, rdModel3Mesh*, rdFace*, rdVector3*)
 #define sithCollision_PushSurfaceCollision_TYPE void (J3DAPI*)(SithSurface*, float, SithCollisionType, rdVector3*)
 #define sithCollision_ParticleAndActorCollisionHandler_TYPE int (J3DAPI*)(SithThing*, SithThing*, SithCollision*, int)
-#define sithCollision_CheckDistance_TYPE float (J3DAPI*)(SithThing*, const rdVector3*)
+#define sithCollision_CheckFloorDistance_TYPE float (J3DAPI*)(SithThing*, const rdVector3*)
 #define sithCollision_sub_4AAF30_TYPE int (J3DAPI*)(SithThing*, SithThing*)
 #define sithIntersect_IsSphereInSector_TYPE int (J3DAPI*)(const SithWorld*, const rdVector3*, float, const SithSector*)
 #define sithIntersect_CheckFaceVerticesIntersection_TYPE SithCollisionType (J3DAPI*)(const rdVector3*, float, const rdFace*, const rdVector3*, rdVector3*)

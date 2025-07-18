@@ -5237,7 +5237,7 @@ void J3DAPI sithCogFunctionThing_CheckFloorDistance(SithCog* pCog)
     rdVector3 moveNorm;
     rdVector_Neg3(&moveNorm, &rdroid_g_zVector3);
 
-    const float distance = sithCollision_CheckDistance(pThing, &moveNorm);
+    const float distance = sithCollision_CheckFloorDistance(pThing, &moveNorm);
     sithCogExec_PushFlex(pCog, distance);
 }
 

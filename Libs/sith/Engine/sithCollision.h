@@ -40,7 +40,7 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
 void J3DAPI sithCollision_PushThingCollision(SithThing* pHitThing, float distance, SithCollisionType hitType, rdModel3Mesh* pHitMesh, rdFace* pHitFace, rdVector3* hitNorm);
 void J3DAPI sithCollision_PushSurfaceCollision(SithSurface* pSurf, float distance, SithCollisionType hitType, rdVector3* pHitNorm);
 int J3DAPI sithCollision_ParticleAndActorCollisionHandler(SithThing* pSrcThing, SithThing* pThingCollided, SithCollision* pCollision, int bSecondThingIsSource);
-float J3DAPI sithCollision_CheckDistance(SithThing* pThing, const rdVector3* moveNorm);
+float J3DAPI sithCollision_CheckFloorDistance(SithThing* pThing, const rdVector3* moveNorm);
 int J3DAPI sithCollision_sub_4AAF30(SithThing* pThing1, SithThing* pThing2);
 
 // Helper hooking functions

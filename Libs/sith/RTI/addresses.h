@@ -825,7 +825,7 @@
 #define sithCollision_PushThingCollision_ADDR 0x004AAAE0
 #define sithCollision_PushSurfaceCollision_ADDR 0x004AABD0
 #define sithCollision_ParticleAndActorCollisionHandler_ADDR 0x004AAC90
-#define sithCollision_CheckDistance_ADDR 0x004AAD50
+#define sithCollision_CheckFloorDistance_ADDR 0x004AAD50
 #define sithCollision_sub_4AAF30_ADDR 0x004AAF30
 #define sithIntersect_IsSphereInSector_ADDR 0x004AF130
 #define sithIntersect_CheckFaceVerticesIntersection_ADDR 0x004AF2E0
