@@ -27,6 +27,7 @@
 
 #include <std/General/stdConffile.h>
 #include <std/General/stdHashtbl.h>
+#include <std/General/stdMath.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
@@ -436,22 +437,25 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
             rdPuppet_BuildJointMatrices(&pThing->renderData, &pThing->orient);
             pThing->renderData.bSkipBuildingJoints = 1;
 
-            rdVector3 moveNorm;
-            rdVector_Add3(&moveNorm, &pThing->renderData.paJointMatrices->dvec, &pThing->forceMoveStartPos);
-            rdVector_Sub3Acc(&moveNorm, &pThing->pos);
+            // Calculate new velocity based on force move start pos, current mesh position, and current thing position
+            rdVector3 newVel;
+            rdVector_Add3(&newVel, &pThing->renderData.paJointMatrices->dvec, &pThing->forceMoveStartPos);
+            rdVector_Sub3Acc(&newVel, &pThing->pos);
 
+            // Set new velocity and move thing
             float distMoved = 0.0f;
-            float moveDist = 0.0f;
-
-            if ( moveNorm.x != 0.0f || moveNorm.y != 0.0f || moveNorm.z != 0.0f )
+            float moveDist  = 0.0f;
+            if ( !rdVector_IsZero3(&newVel) )
             {
-                rdVector_Copy3(&pThing->moveInfo.physics.velocity, &moveNorm);
-                moveDist = rdVector_Normalize3Acc(&moveNorm);
-                distMoved = sithCollision_MoveThing(pThing, &moveNorm, moveDist, 0xA00);
+                pThing->moveInfo.physics.velocity = newVel;
+                moveDist = rdVector_Normalize3Acc(&newVel); // newVel becomes now moveNoem, i.e. move direction
+                distMoved = sithCollision_MoveThing(pThing, /*moveNorm=*/&newVel, moveDist, 0xA00);
             }
 
-            if ( moveDist * 0.25f > distMoved && pThing->type == SITH_THING_PLAYER )
+            // Fixed: Clip near zero 1/4 of moveDist to avoid stopping actor too easily
+            if ( stdMath_ClipNearZero(moveDist * 0.25f) > distMoved && pThing->type == SITH_THING_PLAYER )
             {
+                // TODO: All skipped moves should also be stopped at some specific movement block
                 switch ( pThing->moveStatus )
                 {
                     case SITHPLAYERMOVE_STILL:
@@ -484,10 +488,10 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
 
             if ( !bSkipUpdatingJoints )
             {
-                rdVector_Sub3(&moveNorm, &pThing->pos, &pThing->renderData.paJointMatrices->dvec);
+                rdVector_Sub3(&newVel, &pThing->pos, &pThing->renderData.paJointMatrices->dvec);
                 for ( size_t i = 0; i < pThing->renderData.data.pModel3->numHNodes; ++i )
                 {
-                    rdVector_Add3Acc(&pThing->renderData.paJointMatrices[i].dvec, &moveNorm);
+                    rdVector_Add3Acc(&pThing->renderData.paJointMatrices[i].dvec, &newVel);
                 }
             }
         }
