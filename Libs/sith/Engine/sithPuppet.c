@@ -2013,6 +2013,34 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
             sithPuppet_FreeTrackByIndex(pThing, track);
             break;
         }
+        case RDKEYMARKER_ACTIVATERIGHTARMREST:
+        {
+        #ifdef J3D_QOL_IMPROVEMENTS
+            switch ( pThing->moveStatus )
+            {
+                case SITHPLAYERMOVE_WHIPSWINGING: // Whip swing land key marker
+                {
+                    // Added
+                    // Player has landed after whip swing, check if height distance to solid floor is more than 0.2m.
+                    // And in this case stop animation and make player fall
+                    rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
+                    if ( sithCollision_CheckFloorDistance(pThing, &downDir) > 0.02f )
+                    {
+                        // Hight to floor is more than 0.2m, stop animation and make fall.
+                        sithPuppet_StopForceMove(pThing, /*bStopTracks=*/1);
+
+                        // Give a little push in forward direction
+                        pThing->moveInfo.physics.velocity.x = pThing->orient.lvec.x * 0.25f;
+                        pThing->moveInfo.physics.velocity.y = pThing->orient.lvec.y * 0.25f;
+                        pThing->moveInfo.physics.velocity.z = pThing->orient.lvec.z * 0.25f;
+
+                        pThing->moveStatus = SITHPLAYERMOVE_FALLING;
+                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_FALL, NULL);
+                    }
+                }
+            };
+        #endif
+        }  break;
         case RDKEYMARKER_LEFTFOOT:
         case RDKEYMARKER_RIGHTFOOT:
         case RDKEYMARKER_RUNLEFTFOOT:
