@@ -380,6 +380,15 @@ void J3DAPI sithControl_Update(float secDeltaTime, uint32_t msecDeltaTime)
                 if ( sithCamera_g_pCurCamera == &sithCamera_g_aCameras[SITHCAMERA_IDLECAMERANUM] )
                 {
                     SITHLOG_STATUS("Switch out of idle camera.\n");
+
+                #ifdef J3D_QOL_IMPROVEMENTS
+                    // Added: Shifts external camera position to current position of idle camera.
+                    //        This makes smooth transition of external camera to it's final position behind player position.
+                    rdVector3 curCamPos;
+                    sithCamera_GetCameraPosition(&sithCamera_g_aCameras[SITHCAMERA_IDLECAMERANUM], &curCamPos);
+                    sithCamera_SetCameraPosition(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], &curCamPos);
+                #endif
+
                     sithCamera_SetCurrentCamera(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM]);
                 }
             }
