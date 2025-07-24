@@ -113,47 +113,43 @@ void stdMemory_Close(void)
 
 void* J3DAPI stdMemory_Malloc(size_t size, const char* pFilename, size_t line)
 {
-    size_t totalBytes;
-    tMemoryHeader* pData;
-
-    pData = (tMemoryHeader*)std_g_pHS->pMalloc(size + sizeof(tMemoryHeap));
-    if ( !pData )
+    tMemoryHeap* pHeap = (tMemoryHeap*)std_g_pHS->pMalloc(STDMEMORY_GETHEAPALLOCSIZE(size)); // In stdPlatform module pMalloc is set to stdMemory_BlockMalloc
+    if ( !pHeap )
     {
-        return 0;
+        return NULL;
     }
 
-    pData->number = stdMemory_g_curState.totalAllocs;
-    pData->id = (uint32_t)pData;
-    pData->size = size;
-    pData->pFilename = pFilename;
-    pData->line = line;
-    pData->pNext = stdMemory_g_curState.header.pNext;
-    if ( pData->pNext )
+    pHeap->header.number    = stdMemory_g_curState.totalAllocs;
+    pHeap->header.id        = (uint32_t)pHeap;
+    pHeap->header.size      = size;
+    pHeap->header.pFilename = pFilename;
+    pHeap->header.line      = line;
+    pHeap->header.pNext     = stdMemory_g_curState.header.pNext;
+    if ( pHeap->header.pNext )
     {
-        pData->pNext->pPrev = pData;
+        pHeap->header.pNext->pPrev = &pHeap->header;
     }
 
-    pData->pPrev = &stdMemory_g_curState.header;
-    stdMemory_g_curState.header.pNext = pData;
+    pHeap->header.pPrev = &stdMemory_g_curState.header;
+    stdMemory_g_curState.header.pNext = &pHeap->header;
 
-    memset(&pData[1], 0xCC, size);
+    // Set the uninitialized memory pattern
+    memset(&pHeap->pMemory, STDMEMORY_UNINIT_PATTERN, size);
 
-    pData->magic = STDMEMORY_HEADERMAGIC;
-    *(int*)((char*)&pData[1].number + size) = STDMEMORY_HEADERMAGIC;
+    pHeap->header.magic = STDMEMORY_HEADERMAGIC;
+    *(void**)((char*)&pHeap->pMemory + size) = (void*)STDMEMORY_HEADERMAGIC; // Set end marker
+
     stdMemory_g_curState.totalBytes += size;
 
+    size_t totalBytes = stdMemory_g_curState.maxBytes;
     if ( stdMemory_g_curState.maxBytes <= stdMemory_g_curState.totalBytes )
     {
         totalBytes = stdMemory_g_curState.totalBytes;
     }
-    else
-    {
-        totalBytes = stdMemory_g_curState.maxBytes;
-    }
 
     stdMemory_g_curState.maxBytes = totalBytes;
     ++stdMemory_g_curState.totalAllocs;
-    return &pData[1];
+    return &pHeap->pMemory;
 }
 
 void J3DAPI stdMemory_Free(void* pBytes)
