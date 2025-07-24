@@ -47,7 +47,7 @@
 #define AudioLib_ResetCompressor_ADDR 0x004DFA20
 #define AudioLib_Uncompress_ADDR 0x004DFA40
 #define AudioLib_GetMouthPosition_ADDR 0x004DFB20
-#define AudioLib_GenerateLipSynchBlock_ADDR 0x004DFBF0
+#define AudioLib_GenerateLipSyncBlock_ADDR 0x004DFBF0
 #define AudioLib_CompressBlock_ADDR 0x004E0000
 #define AudioLib_UncompressBlock_ADDR 0x004E02F0
 #define AudioLib_WVSMCompressBlock_ADDR 0x004E0590

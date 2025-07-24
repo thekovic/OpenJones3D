@@ -2537,7 +2537,7 @@ int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPo
         }
 
         uint8_t aBuffer[8192];
-        int genDataSize = AudioLib_GenerateLipSynchBlock(
+        int genDataSize = AudioLib_GenerateLipSyncBlock(
             aBuffer,
             pSndData,
             60u,

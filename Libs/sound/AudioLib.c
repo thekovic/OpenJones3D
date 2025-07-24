@@ -18,7 +18,7 @@ void AudioLib_InstallHooks(void)
     // J3D_HOOKFUNC(AudioLib_ResetCompressor);
     // J3D_HOOKFUNC(AudioLib_Uncompress);
     // J3D_HOOKFUNC(AudioLib_GetMouthPosition);
-    // J3D_HOOKFUNC(AudioLib_GenerateLipSynchBlock);
+    // J3D_HOOKFUNC(AudioLib_GenerateLipSyncBlock);
     // J3D_HOOKFUNC(AudioLib_CompressBlock);
     // J3D_HOOKFUNC(AudioLib_UncompressBlock);
     J3D_HOOKFUNC(AudioLib_WVSMCompressBlock);
@@ -256,9 +256,9 @@ int J3DAPI AudioLib_GetMouthPosition(uint8_t* pData, int a2, uint8_t* pMouthPosX
     return J3D_TRAMPOLINE_CALL(AudioLib_GetMouthPosition, pData, a2, pMouthPosX, pMouthPosY);
 }
 
-int J3DAPI AudioLib_GenerateLipSynchBlock(uint8_t* pOutData, const uint8_t* pSndData, unsigned int a3, char a4, char a5, int sampleRate, int bitsPerSample, int numChannels, int a9, int sndDataSize)
+int J3DAPI AudioLib_GenerateLipSyncBlock(uint8_t* pOutData, const uint8_t* pSndData, unsigned int a3, char a4, char a5, int sampleRate, int bitsPerSample, int numChannels, int a9, int sndDataSize)
 {
-    return J3D_TRAMPOLINE_CALL(AudioLib_GenerateLipSynchBlock, pOutData, pSndData, a3, a4, a5, sampleRate, bitsPerSample, numChannels, a9, sndDataSize);
+    return J3D_TRAMPOLINE_CALL(AudioLib_GenerateLipSyncBlock, pOutData, pSndData, a3, a4, a5, sampleRate, bitsPerSample, numChannels, a9, sndDataSize);
 }
 
 // ADPCM compression
