@@ -62,6 +62,7 @@ typedef uintptr_t tFileHandle;
 
 typedef struct sLinkListNode tLinkListNode;
 typedef struct sMemoryHeader tMemoryHeader;
+typedef struct sMemoryBlock tMemoryBlock;
 typedef struct sSystemTexture tSystemTexture;
 typedef struct sGob Gob;
 
@@ -524,16 +525,17 @@ static_assert(sizeof(tMemoryState) == 44, "sizeof(tMemoryState) == 44");
 typedef struct sMemoryBlockHeader
 {
     size_t size;
-    void* pHeap;
+    tMemoryBlock* pBlock;
 } tMemoryBlockHeader;
 static_assert(sizeof(tMemoryBlockHeader) == 8, "sizeof(tMemoryBlockHeader) == 8");
 
-typedef struct sMemoryBlock
+struct sMemoryBlock
 {
-    tMemoryBlockHeader header;
-    size_t size;
-    int bAlloced;
-} tMemoryBlock;
+    tMemoryBlockHeader* pFirst;       // Start of the block sequence
+    tMemoryBlockHeader* pLargestFree; // Cache of the largest free block
+    size_t availableMem;
+    int bAllocated;
+};
 static_assert(sizeof(tMemoryBlock) == 16, "sizeof(tMemoryBlock) == 16");
 
 typedef struct sStdCommPlayerInfo
