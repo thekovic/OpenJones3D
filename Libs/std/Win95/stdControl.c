@@ -249,7 +249,7 @@ int stdControl_Open(void)
 
 bool stdControl_IsOpen(void)
 {
-    return stdControl_bStartup;
+    return stdControl_bOpen;
 }
 
 void stdControl_Close(void)
