@@ -2555,6 +2555,13 @@ int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPo
             Sound_pHS->pFree(pSndData);
         }
 
+        // Fixed: Check if generated data size is valid to avoid heap allocation errors
+        if ( genDataSize == 0 )
+        {
+            SOUNDLOG_ERROR("Sound_GenerateLipSync: Failed to generate lip sync data for sound %s\n", &soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->filePathOffset]);
+            goto error;
+        }
+
         pSndInfo->pLipSyncData = (uint8_t*)Sound_pHS->pMalloc(genDataSize);
         if ( pSndInfo->pLipSyncData )
         {
