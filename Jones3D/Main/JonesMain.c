@@ -2462,10 +2462,15 @@ J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSr
         ++filenamePos;
     }
 
-    STD_FORMAT(JonesMain_g_aErrorBuffer, "%s(%d):  %s\n", &pSrcFile[filenamePos], line, pErrorText);
-    std_g_pHS->pErrorPrint("ASSERT: %s", JonesMain_g_aErrorBuffer);
+    // Altered: Use local buffer instead of global buffer
+    char aErrorText[1024] = { 0 };
+    STD_FORMAT(aErrorText, "%s(%d):  %s\n", &pSrcFile[filenamePos], line, pErrorText);
+    std_g_pHS->pErrorPrint("ASSERT: %s", aErrorText);
 
-    MessageBox(NULL, JonesMain_g_aErrorBuffer, "Assert Handler", MB_TASKMODAL);
+    // Added: Log callstack backtrace
+    stdPlatform_PrintStackTrace(std_g_pHS->pErrorPrint, /*numFrames=*/64);
+
+    MessageBox(NULL, aErrorText, "Assert Handler", MB_TASKMODAL);
 
     DebugBreak();
     JonesMain_Shutdown();

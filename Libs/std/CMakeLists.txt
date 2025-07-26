@@ -16,6 +16,12 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     DirectX61c::dplayx
 )
 
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} PUBLIC
+        dbghelp # for minidump & stack trace
+    )
+endif()
+
 target_link_options(${PROJECT_NAME} INTERFACE "/SAFESEH:NO") # due to DirectX 6.1 libs
 
 # Organize source files in Visual Studio

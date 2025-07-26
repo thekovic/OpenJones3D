@@ -219,6 +219,9 @@ int WINAPI Indy3D_WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lp
     JonesMain_g_mainMutex = CreateMutex(NULL, /*CreateMutex=*/TRUE, "INDY3D");
     if ( GetLastError() != ERROR_ALREADY_EXISTS )
     {
+         //Added: signal handler for unhandled exceptions
+        stdPlatform_InstallSignalHandler();
+
         wkernel_SetProcessProc(JonesMain_Process);
         wkernel_SetStartupCallback(Startup);
         wkernel_SetShutdownCallback(JonesMain_Shutdown);

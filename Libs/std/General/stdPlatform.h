@@ -6,12 +6,16 @@
 
 J3D_EXTERN_C_START
 
+typedef void (J3DAPI* tStackTracePrintFunc)(const char*);
+
 int J3DAPI stdPlatform_InitServices(tHostServices* pHS);
 void J3DAPI stdPlatform_ClearServices(tHostServices* pHS);
 unsigned int stdPlatform_GetTimeMsec(void);
 
 J3DNORETURN void J3DAPI stdPlatform_Assert(const char* pErrorStr, const char* pFilename, int linenum);
 int stdPlatform_Printf(const char* format, ...);
+
+void stdPlatform_PrintStackTrace(tStackTracePrintFunc pfPrintFunc, size_t numFrames);
 
 void* J3DAPI stdPlatform_AllocHandle(size_t size);
 void J3DAPI stdPlatform_FreeHandle(void* pData);
@@ -21,6 +25,10 @@ int J3DAPI stdPlatform_LockHandle(int a1);
 void J3DAPI stdPlatform_UnlockHandle();
 
 bool J3DAPI stdPlatform_DirExists(const char* pPath);
+
+// Installs signal handler for unhandled exceptions and signals
+// On windows this will generate a minidump
+void J3DAPI stdPlatform_InstallSignalHandler(void);
 
 // Helper hooking functions
 void stdPlatform_InstallHooks(void);
