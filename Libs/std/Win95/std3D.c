@@ -1131,8 +1131,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
     }
 
     ddres = IDirect3DTexture2_Load(pD3DTex, pCacheTexture->pD3DSrcTexture);
-    while ( ddres == DDERR_OUTOFVIDEOMEMORY || ddres == D3DERR_TEXTURE_LOAD_FAILED ) // Added check for D3DERR_TEXTURE_LOAD_FAILED error (might be wrong). Note, Check for DDERR_OUTOFVIDEOMEMORY error is most likely wrong here because it's part of DDraw and DDrawSurface system. 
-    {
+    while ( ddres == DDERR_OUTOFVIDEOMEMORY || ddres == D3DERR_TEXTURE_LOAD_FAILED ) // Added check for D3DERR_TEXTURE_LOAD_FAILED error (might be wrong).
+    {                                                                                // Note, Check for DDERR_OUTOFVIDEOMEMORY error is most likely wrong here because it's part of DDraw and DDrawSurface system. 
         if ( !std3D_PurgeTextureCache(pCacheTexture->textureSize) )
         {
             STDLOG_ERROR("Error: Unable to purge texture cache for %x bytes!!!.\n", pCacheTexture->textureSize);
@@ -1227,9 +1227,11 @@ void J3DAPI std3D_ResetTextureCache()
 
 void J3DAPI std3D_UpdateFrameCount(tSystemTexture* pTexture)
 {
-    pTexture->frameNum = std3D_frameCount;
     std3D_RemoveTextureFromCacheList(pTexture);
     std3D_AddTextureToCacheList(pTexture);
+    pTexture->frameNum = std3D_frameCount; // Fixed: Moved frameNum update to the end of the function.
+                                           //        Originally it was updated at the beginning of the function, 
+                                           //        and the frameNum was immediately invalidated by call to std3D_RemoveTextureFromCacheList.
 }
 
 size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
@@ -1959,7 +1961,6 @@ HRESULT CALLBACK std3D_EnumTextureFormatsCallback(LPDDPIXELFORMAT lpDDPixFmt, LP
     return 1;
 }
 
-//
 void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture)
 {
     if ( std3D_pFirstTexCache )
