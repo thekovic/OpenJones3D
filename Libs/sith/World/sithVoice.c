@@ -199,7 +199,7 @@ int J3DAPI sithVoice_PlayThingVoice(SithThing* pThing, tSoundHandle hSnd, float 
     {
         for ( SithThingSwapEntry* pSwapEntry = pThing->pSwapList; pSwapEntry; pSwapEntry = pSwapEntry->pNextEntry )
         {
-            if ( strncmp(pSwapEntry->pSrcModel->aName, "head", 4u) == 0 )
+            if ( strneq(pSwapEntry->pSrcModel->aName, "head", 4u) )
             {
                 sithVoice_bThingHasSwapHead = true;
                 break;
@@ -343,7 +343,7 @@ void J3DAPI sithVoice_PlayVoice(SithCog* pCog)
     SITH_ASSERTREL(pThing->renderData.data.pModel3 != NULL);
 
     int guid = -1; // Fixed: Init to -1;
-    if ( strcmpi(pThing->renderData.data.pModel3->aName, "aet_gy.3do") == 0 )
+    if ( streqi(pThing->renderData.data.pModel3->aName, "aet_gy.3do") )
     {
         tSoundChannelHandle hChannel = sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
         if ( hChannel )
@@ -466,7 +466,7 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
 
     if ( pSubtitleText && pSoundFilename && sithVoice_bShowText )
     {
-        if ( (int)sithVoice_numSubtitleInfos > 0 && strcmp(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName) == 0 )
+        if ( (int)sithVoice_numSubtitleInfos > 0 && streq(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName) )
         {
             size_t numSubtitles = sithVoice_numSubtitleInfos;
 
@@ -474,7 +474,7 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
             char aVoiceLines[256]   = { 0 };
 
             unsigned int curTime = stdPlatform_GetTimeMsec();
-            while ( strcmp(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName) == 0
+            while ( streq(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName)
                 && (int)sithVoice_numSubtitleInfos > 0
                 && curTime < sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].msecEndTime )
             {
@@ -489,7 +489,7 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
                 --sithVoice_numSubtitleInfos;
             }
 
-            if ( strcmp(aVoiceLines, pSubtitleText) == 0 )
+            if ( streq(aVoiceLines, pSubtitleText) )
             {
                 unsigned int msecStartTime = stdPlatform_GetTimeMsec();
                 while ( sithVoice_numSubtitleInfos < numSubtitles )
@@ -517,7 +517,7 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
         uint32_t width, height;
         stdDisplay_GetBackBufferSize(&width, &height);
 
-        float fontWidth = 1.0f - (float)((double)width * SITHVOICE_TEXT_PADDING_X / SITHVOICE_REF_WIDTH);
+        float fontWidth       = 1.0f - (float)((double)width * SITHVOICE_TEXT_PADDING_X / SITHVOICE_REF_WIDTH);
         float textWidthScalar = 2.0f * fontWidth - 1.0f;
 
         while ( pCurLine )
@@ -650,8 +650,6 @@ void sithVoice_Draw(void)
             break;
         }
     }
-
-
 
     if ( bDraw && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].aSubtitleText) > 0 )
     {

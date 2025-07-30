@@ -87,7 +87,7 @@ int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat)
         goto error;
     }
 
-    if ( strncmp(header.magic, RDMAT_MAGIC, 4) != 0 )
+    if ( !strneq(header.magic, RDMAT_MAGIC, 4) )
     {
         RDLOG_ERROR("Error: Bad header for '%s'\n", pFilename);
 
@@ -213,7 +213,6 @@ int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat)
         rdroid_g_pHS->pFileClose(fh);
         return 0;
     }
-
 
 error:
     if ( fh )
