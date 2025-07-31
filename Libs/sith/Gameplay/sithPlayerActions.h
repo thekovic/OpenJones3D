@@ -70,7 +70,7 @@ int J3DAPI sithPlayerActions_CheckClimbDownWall(SithThing* pThing);
 void J3DAPI sithPlayerActions_ClimbDownToClimb(SithThing* pThing, int bLedge); // Climb down to climb surface
 void J3DAPI sithPlayerActions_ClimbDownToHang(SithThing* pThing); // Climb down to hang surface
 
-float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPYR, SithSurface** pLedgeSurf, rdFace** pLedgeThingFace, rdModel3Mesh** pLedgeThingMesh, SithThing** pLedgeThing);
+float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPYR, SithSurface** ppLedgeSurf, rdFace** ppLedgeThingFace, rdModel3Mesh** ppLedgeThingMesh, SithThing** ppLedgeThing);
 int J3DAPI sithPlayerActions_GrabLedge(SithThing* pThing, float distance, SithSurface* pLedgeSurf, rdFace* pLedgeThingFace, const rdModel3Mesh* pLedgeThingMesh, SithThing* pLedgeThing);
 
 void J3DAPI sithPlayerActions_Jump(SithThing* pThing, float speedFactor, int jumpDirection);

@@ -33,6 +33,7 @@
 uint32_t sithPlayerActions_msecCurActivateTime = 0; // Altered: Init to 0
 static const float sithPlayerActions_raftActivateSearchRadius = 0.07f;
 
+float J3DAPI sithPlayerActions_GetLedgeSurfaceGrabPosZ(const SithSurface* pLedgeSurf); // Added
 float J3DAPI sithPlayerActions_GetLedgeThingGrabPosZ(const SithThing* pThing, const rdFace* pFace, const rdModel3Mesh* pMesh);
 
 void sithPlayerActions_InstallHooks(void)
@@ -837,7 +838,7 @@ void J3DAPI sithPlayerActions_UnmountWall(SithThing* pThing, int trackNum)
 
     sithPhysics_ResetThingMovement(pThing);
 
-    // Leftover in debug version
+    // Leftover from debug version
     rdVector3 newLVec = { -pThing->orient.lvec.x, -pThing->orient.lvec.y, -pThing->orient.lvec.z };
 
     sithPuppet_RemoveAllTracks(pThing);
@@ -1805,7 +1806,7 @@ int sithPlayerActions_sub_462E59(void)
     return 0;
 }
 
-float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPYR, SithSurface** pLedgeSurf, rdFace** pLedgeThingFace, rdModel3Mesh** pLedgeThingMesh, SithThing** pLedgeThing)
+float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPYR, SithSurface** ppLedgeSurf, rdFace** ppLedgeThingFace, rdModel3Mesh** ppLedgeThingMesh, SithThing** ppLedgeThing)
 {
     J3D_UNUSED(pPYR);
     if ( sithPlayerActions_HasActiveWeapon(pThing) )
@@ -1813,7 +1814,8 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
         return -1.0f;
     }
 
-    // Try to find ledge surface in player's direction but at position 0.9m higher than current player position
+    // Try to find ledge surface in player's direction but at position 0.9m higher 
+    // than current player position, i.e. approximate position of up outstretched hands
     rdVector3 startPos = pThing->pos;
     startPos.z += 0.090000004f;
 
@@ -1831,11 +1833,11 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
 
     sithCollision_SearchForCollisions(pStartSector, pThing, &startPos, &pThing->orient.lvec, 0.090000004f, 0.0049999999f, 0xA00);
 
-    bool bSurfaceHit = false;
-    SithSurface* pCollidedSurf = NULL;
+    bool bSurfaceHit           = false;
+    SithSurface* pHitLedgeSurf = NULL;
 
-    bool bFaceHit = false;
-    rdFace* pCollidedThingFace = NULL;
+    bool bFaceHit         = false;
+    rdFace* pHitThingFace = NULL;
 
     float hitDistance = 0.0f;
 
@@ -1846,6 +1848,7 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
         {
             if ( pCollision->pSurfaceCollided && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_LEDGE) != 0 )
             {
+                // Check if player is oriented almost towards the ledge surface
                 rdVector3 hitNormal = RDVECTOR_NEG3(pCollision->pSurfaceCollided->face.normal); // Negate normal to get the hit surface normal
                 if ( rdVector_Dot3(&pThing->orient.lvec, &hitNormal) >= 0.949f )
                 {
@@ -1853,12 +1856,12 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
                     {
                         sithPlayerActions_g_pCurLedgeSurface = pCollision->pSurfaceCollided;
 
-                        pCollidedSurf = sithPlayerActions_g_pCurLedgeSurface;
+                        pHitLedgeSurf = sithPlayerActions_g_pCurLedgeSurface;
                         bSurfaceHit   = true;
                         hitDistance   = pCollision->distance;
                         if ( hitDistance < 0.0f )
                         {
-                            pCollidedSurf = NULL;
+                            pHitLedgeSurf = NULL;
                             bSurfaceHit = false;
                         }
                     }
@@ -1873,11 +1876,13 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
                 && (pCollision->pFaceCollided->flags & RD_FF_3DO_LEDGE) != 0 )
             {
                 sithPlayerActions_g_pCurLedgeThingModelFace = pCollision->pFaceCollided;
-                pCollidedThingFace = sithPlayerActions_g_pCurLedgeThingModelFace;
+                pHitThingFace = sithPlayerActions_g_pCurLedgeThingModelFace;
 
+                // Convert face normal to world space
                 rdVector3 hitNormal;
                 rdMatrix_TransformVector34(&hitNormal, &pCollision->pFaceCollided->normal, &pCollision->pThingCollided->orient);
 
+                // Check if player is oriented almost towards the ledge surface
                 rdVector3 negPlayerDir = RDVECTOR_NEG3(pThing->orient.lvec);
                 if ( rdVector_Dot3(&negPlayerDir, &hitNormal) > 0.949f )
                 {
@@ -1888,8 +1893,8 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
                         hitDistance = 0.0f;
                     }
 
-                    *pLedgeThingMesh  = pCollision->pMeshCollided;
-                    *pLedgeThing = pCollision->pThingCollided;
+                    *ppLedgeThingMesh = pCollision->pMeshCollided;
+                    *ppLedgeThing     = pCollision->pThingCollided;
 
                     sithPlayerActions_g_pCurLedgeThingModel     = pCollision->pThingCollided->renderData.data.pModel3;
                     sithPlayerActions_g_pCurLedgeThingModelFace = pCollision->pFaceCollided;
@@ -1903,14 +1908,32 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
 
     if ( bSurfaceHit || bFaceHit )
     {
-        // Now search if there is solid surface or standon thing object beneath current thing position that thing could land on
+        // Now search if there is any solid surface or standon thing object 0.4m beneath current thing position
+        // that thing could land on
         float curMovesize = pThing->collide.movesize;
         pThing->collide.movesize = 0.02f;
 
         sithPhysics_ResetThingMovement(pThing);
 
-        rdVector3 moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3); // Down vector
-        sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &moveNorm, 0.13f, pThing->collide.movesize, 0xA00);
+        // Fixed: Shift start position Z to ledge grab point Z position (height of ledge).
+        //        Originally it was just pThing->pos, and the search for collision was done 0.13 + radius (i.e. 0.09-insert position + 0.04) down from that position.
+        //        This caused the ledge grab to fail when the ledge start position was at 0.2 (2m) from the ground, but the ledge grab point was higher than 0.2.
+        startPos = pThing->pos;
+        startPos.z = bSurfaceHit
+            ? sithPlayerActions_GetLedgeSurfaceGrabPosZ(pHitLedgeSurf)
+            : sithPlayerActions_GetLedgeThingGrabPosZ(*ppLedgeThing, pHitThingFace, *ppLedgeThingMesh) + pThing->pos.z; // convert returned Z in world space to world coords
+
+        // Added: Find sector of new startPos
+        pStartSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
+        if ( !pStartSector )
+        {
+            return -1.0f;
+        }
+
+        rdVector3 moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3); // Down direction
+        sithCollision_SearchForCollisions(pStartSector, pThing, &startPos, &moveNorm, 0.21f, pThing->collide.movesize, 0xA00); // Total move dist of sphere's center is 2.1m. 
+                                                                                                                               // Combined with 0.2m radius, the total distance is 2.3m.
+                                                                                                                               // i.e.: indy should be at least 10 cm above when stretched out in hang position (2.2m).
 
         bool bSolidSurfFound = false;
         while ( (pCollision = sithCollision_PopStack()) != NULL )
@@ -1934,7 +1957,7 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
             }
             else if ( (pCollision->type & SITHCOLLISION_THING) != 0
                 && (pCollision->pThingCollided->flags & SITH_TF_STANDON) != 0
-                && pCollision->pThingCollided != *pLedgeThing )
+                && pCollision->pThingCollided != *ppLedgeThing )
             {
                 bSolidSurfFound = true;
                 break;
@@ -1954,12 +1977,12 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
 
     if ( bSurfaceHit )
     {
-        *pLedgeSurf = pCollidedSurf;
+        *ppLedgeSurf = pHitLedgeSurf;
         return hitDistance;
     }
     else if ( bFaceHit )
     {
-        *pLedgeThingFace = pCollidedThingFace;
+        *ppLedgeThingFace = pHitThingFace;
         return hitDistance;
     }
     else
@@ -2105,9 +2128,9 @@ int J3DAPI sithPlayerActions_CanClimbOn2m(SithThing* pThing)
     // player pos           |
     //----------------------|
 
-    float thingHeight  = sithPhysics_GetThingHeight(pThing);
+    float thingHeight  = sithPhysics_GetThingHeight(pThing); // height is thing insert offset
     rdVector3 startPos = pThing->pos;
-    startPos.z = startPos.z - thingHeight + 0.15000001f;
+    startPos.z = startPos.z - thingHeight + 0.15000001f; // TODO: Should z be almost at thing height (e.g. 2 * thingHeight)?
 
     SithSector* pFoundSec = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
     if ( !pFoundSec )
@@ -2127,7 +2150,7 @@ int J3DAPI sithPlayerActions_CanClimbOn2m(SithThing* pThing)
         if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             if ( pCollision->pSurfaceCollided
-                && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_LEDGE) != 0
+                && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_LEDGE) != 0 // TODO: The ledge check could possible be removed, since there is no need for this optimization anymore (Do check if there are any level cases where climb on 2m should be prevented)
                 && pCollision->distance < 0.039999999f ) // 0.04 is default player collision size
             {
                 bFoundClimb = true;
@@ -2437,32 +2460,20 @@ int J3DAPI sithPlayerActions_GrabLedge(SithThing* pThing, float distance, SithSu
     if ( pLedgeSurf )
     {
         // Find highest Z coordinate of surface vertices
-        rdFace* pSurfFace = &pLedgeSurf->face;
-        float ledgeTopZ   = sithWorld_g_pCurrentWorld->aVertices[pSurfFace->aVertices[0]].z;
-
-        for ( size_t i = 1; i < pSurfFace->numVertices; ++i )
-        {
-            float vertexZ = sithWorld_g_pCurrentWorld->aVertices[pSurfFace->aVertices[i]].z;
-            if ( vertexZ > ledgeTopZ )
-            {
-                ledgeTopZ = vertexZ;
-            }
-        }
+        // Note, OG in-place calculation was done 
+        float ledgeTopZ = sithPlayerActions_GetLedgeSurfaceGrabPosZ(pLedgeSurf);
 
         // Calculate distance from player to surface plane
         rdVector3 altPos  = pThing->pos;
-        //altPos.z = ledgeTopZ;
+        altPos.z = ledgeTopZ;
 
-        float playerToLedgeDist  = rdMath_DistancePointToPlane(&altPos, &pSurfFace->normal, &sithWorld_g_pCurrentWorld->aVertices[pSurfFace->aVertices[0]]);
+        float playerToLedgeDist  = rdMath_DistancePointToPlane(&altPos, &pLedgeSurf->face.normal, &sithWorld_g_pCurrentWorld->aVertices[pLedgeSurf->face.aVertices[0]]);
 
         // Move player to ledge surface
         rdVector_MultAcc3(&pThing->pos, &pThing->orient.lvec, playerToLedgeDist);
 
         // Move player back 0.24m and position 1.18m below ledge top
         rdVector_MultAcc3(&pThing->pos, &pThing->orient.lvec, -0.024f);
-        //pThing->pos.x -= pThing->orient.lvec.x * 0.024f;
-        //pThing->pos.y -= pThing->orient.lvec.y * 0.024f;
-        //pThing->pos.z -= pThing->orient.lvec.z * 0.024f;
         pThing->pos.z = ledgeTopZ - 0.118f; // move to ledge hand grabbing position
 
         // Update sector if needed
@@ -2479,8 +2490,9 @@ int J3DAPI sithPlayerActions_GrabLedge(SithThing* pThing, float distance, SithSu
     else if ( pLedgeThingFace )
     {
         // Get grab point Z coordinate for thing ledge
+        // Note, the returned Z coordinate is in world space
         float ledgeTopZ = sithPlayerActions_GetLedgeThingGrabPosZ(pLedgeThing, pLedgeThingFace, pLedgeThingMesh);
-        ledgeTopZ += pLedgeThing->pos.z;
+        ledgeTopZ += pLedgeThing->pos.z; // Convert to world coordinate
 
         // Transform model face and vertex to world space
         rdVector3 worldFaceNormal;
@@ -2499,14 +2511,10 @@ int J3DAPI sithPlayerActions_GrabLedge(SithThing* pThing, float distance, SithSu
         float playerToLedgeDist  = rdMath_DistancePointToPlane(&altPos, &worldFaceNormal, &worldVertex);
 
         // Move player to ledge face
-        // Move player to ledge face
         rdVector_MultAcc3(&pThing->pos, &pThing->orient.lvec, playerToLedgeDist);
 
         // Move player back 0.24m and position 1.18m below ledge top
         rdVector_MultAcc3(&pThing->pos, &pThing->orient.lvec, -0.024f);
-        //pThing->pos.x -= pThing->orient.lvec.x * 0.024f;
-        //pThing->pos.y -= pThing->orient.lvec.y * 0.024f;
-        //pThing->pos.z -= pThing->orient.lvec.z * 0.024f;
         pThing->pos.z = ledgeTopZ - 0.118f;
 
         // Update sector if needed
@@ -2696,6 +2704,28 @@ int J3DAPI sithPlayerActions_CanPullUp(SithThing* pThing)
     return bCanMoveUp;
 }
 
+float J3DAPI sithPlayerActions_GetLedgeSurfaceGrabPosZ(const SithSurface* pLedgeSurf)
+{
+    // Find highest Z coordinate of surface vertices
+
+    const rdFace* pFace = &pLedgeSurf->face;
+    if ( pFace->numVertices <= 0 ) // Added
+    {
+        return 0.0f;
+    }
+
+    float topZ  = sithWorld_g_pCurrentWorld->aVertices[pFace->aVertices[0]].z;
+    for ( size_t i = 1; i < pFace->numVertices; ++i )
+    {
+        float vertexZ = sithWorld_g_pCurrentWorld->aVertices[pFace->aVertices[i]].z;
+        if ( vertexZ > topZ )
+        {
+            topZ = vertexZ;
+        }
+    }
+    return topZ;
+}
+
 float J3DAPI sithPlayerActions_GetLedgeThingGrabPosZ(const SithThing* pThing, const rdFace* pFace, const rdModel3Mesh* pMesh)
 {
     if ( pFace->numVertices <= 0 )
@@ -2707,17 +2737,17 @@ float J3DAPI sithPlayerActions_GetLedgeThingGrabPosZ(const SithThing* pThing, co
     rdVector3 tvert;
     rdMatrix_TransformVector34(&tvert, &pMesh->apVertices[*pFace->aVertices], &pThing->orient);
 
-    float maxZ = tvert.z;
+    float topZ = tvert.z;
     for ( size_t i = 1; i < pFace->numVertices; ++i )
     {
         rdMatrix_TransformVector34(&tvert, &pMesh->apVertices[pFace->aVertices[i]], &pThing->orient);
-        if ( tvert.z > maxZ )
+        if ( tvert.z > topZ )
         {
-            maxZ = tvert.z;
+            topZ = tvert.z;
         }
     }
 
-    return maxZ;
+    return topZ;
 }
 
 void sithPlayerActions_StartInvisibility(void)
