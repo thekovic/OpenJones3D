@@ -1,3 +1,33 @@
+## v0.4.0
+### General:
+  - Refactored & added new rdVector functions: (5239a55)
+    * `rdVector_IsZero2`, `rdVector_IsZero3`, `rdVector_IsZero4`
+    * `rdVector_ScaleAdd2Acc`, `rdVector_ScaleAdd3Acc`, `rdVector_ScaleAdd4Acc`
+    * `rdVector_MultAcc2`, `rdVector_MultAcc3`, `rdVector_MultAcc4` 
+  - Added dead code found in debug version (b042bea)
+  - Added new `RDVECTOR_NEG3` macro (e78e93b)
+  - Fixed names of thing move animation functions in `sithAnimate` module (db77fe8)
+  - Renamed `sithCollision_CheckDistance` to `sithCollision_CheckFloorDistance` (b0b6116)
+  - Fixed returning correct variable in `stdControl_IsOpen` (ae3146d)
+  - Added check for zero size in lip sync data generation to prevent allocation errors (f79736b)
+  - Added functionality to write user-mode minidump information when an unhandled exception occurs (6fc4ad5)
+  - Added stack trace printing to the log when an assert error occurs (6fc4ad5)
+  - Implemented missing block allocation functions of `stdMemory` module (b99b92a)
+  - Implemented modules:
+    * `sithPlayerActions` (67f2eab)
+
+### Display & Render:
+  - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)  
+    Fixes issue [#28](https://github.com/smlu/OpenJones3D/issues/28)
+
+### Game play:
+  - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
+  - [QOL] Enhanced whip-swing movement to stop animation early and make Indy fall when landing on non-solid surfaces (air) (8a2548c)
+  - [QOL] Enhanced smooth transition of idle camera to external camera (572aaec)
+  - Fixed ledge detection (32acc4c)  
+    This fixes detection of ledges positioned 0.2 units (2 meters) from the ground.  
+    Fixes issue [#20](https://github.com/smlu/OpenJones3D/issues/20)
+
 ## v0.3.1
 ### General:
   - Fixed radius of fading plate 3DO models (5d705fb)
