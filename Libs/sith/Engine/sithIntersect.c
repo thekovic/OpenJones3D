@@ -330,9 +330,6 @@ int J3DAPI sithIntersect_CheckSphereIntersection(const rdVector3* startPos, cons
 {
     rdVector3 dir;
     rdVector_Sub3(&dir, endPos, startPos);
-    /*dir.x = endPos->x - startPos->x;
-    dir.y = endPos->y - startPos->y;
-    dir.z = endPos->z - startPos->z;*/
 
     float maxDist = radius + size;
 
@@ -465,15 +462,9 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceHitVerticesIntersection(co
 
             rdVector3 dVertStartPos;
             rdVector_Sub3(&dVertStartPos, startPos, pVert);
-            /*dVertStartPos.x = startPos->x - pVert->x;
-            dVertStartPos.y = startPos->y - pVert->y;
-            dVertStartPos.z = startPos->z - pVert->z;*/
 
             rdVector3 dverts;
             rdVector_Sub3(&dverts, pNextVert, pVert);
-            /*dverts.x = pNextVert->x - pVert->x;
-            dverts.y = pNextVert->y - pVert->y;
-            dverts.z = pNextVert->z - pVert->z;*/
 
             float vertdist = rdVector_Normalize3Acc(&dverts);
             float dot = rdVector_Dot3(&dverts, &dVertStartPos);
@@ -526,7 +517,9 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceHitVerticesIntersection(co
 
 int J3DAPI sithIntersect_CheckSphereHit(const rdVector3* startPos, const rdVector3* moveNorm, float moveDistance, float radius, const rdVector3* normal, const rdVector3* point, float* pSphereHitDist, int colflags)
 {
-    //dist = (startPos->x - point->x) * normal->x + (startPos->y - point->y) * normal->y + (startPos->z - point->z) * normal->z;
+    // Function calculates sphere-plane intersection
+
+    // Calculate distance from start point to plane
     double dist = rdMath_DistancePointToPlane(startPos, normal, point);
     dist = stdMath_ClipNearZero((float)dist);
     if ( dist < 0.0f )
@@ -534,14 +527,17 @@ int J3DAPI sithIntersect_CheckSphereHit(const rdVector3* startPos, const rdVecto
         return 0;
     }
 
+    // Sub sphere radius to get distance from sphere's surface
     dist -= radius;
     if ( dist > moveDistance )
     {
         return 0;
     }
 
+    // Calc. direction dot
+    // Dot is negated to get positive dot when the motion is toward the plane
     double dot = -(rdVector_Dot3(normal, moveNorm));
-    if ( dist < 0.0f )
+    if ( dist < 0.0f ) // If away from plane
     {
         *pSphereHitDist = 0.0f;
         if ( (colflags & 0x400) != 0 )
@@ -562,6 +558,7 @@ int J3DAPI sithIntersect_CheckSphereHit(const rdVector3* startPos, const rdVecto
         return 0;
     }
 
+    // Calculate the amount of movement along moveNorm needed so the sphere surface reaches the plane
     *pSphereHitDist = (float)(dist / dot);
     if ( *pSphereHitDist < 0.0f )
     {
@@ -593,78 +590,16 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersectionEx(const rdVec
     if ( *hitDist == 0.0f )
     {
         rdVector_Copy3(&hitPos, startPos);
-
-
-        //dist = rdMath_DistancePointToPlane(&hitPos, &pFace->normal, &aVertices[*pFace->aVertices]);
-        ///*dist = (hitPos.x - aVertices[*pFace->aVertices].x) * pFace->normal.x
-        //          + (hitPos.y - aVertices[*pFace->aVertices].y) * pFace->normal.y
-        //          + (hitPos.z - aVertices[*pFace->aVertices].z) * pFace->normal.z;*/
-
-        //dist = stdMath_ClipNearZero(dist);
-        //if ( dist < 0.0f )
-        //{
-        //    dist = -dist;
-        //}
-
-        //if ( dist <= 0.0000099999997f )
-        //{
-        //    dist = 0.0f;
-        //}
-
-    /*    if ( dist != 0.0f )
-        {
-            hitPos.x = pFace->normal.x * -dist + hitPos.x;
-            hitPos.y = pFace->normal.y * -dist + hitPos.y;
-            hitPos.z = pFace->normal.z * -dist + hitPos.z;
-        }*/
     }
     else
     {
         hitPos.x = moveNorm->x * *hitDist + startPos->x;
         hitPos.y = moveNorm->y * *hitDist + startPos->y;
         hitPos.z = moveNorm->z * *hitDist + startPos->z;
-
-        // dist = rdMath_DistancePointToPlane(&hitPos, &pFace->normal, &aVertices[*pFace->aVertices]);
-        ///*v11 = (hitPos.x - aVertices[*pFace->aVertices].x) * pFace->normal.x
-        //    + (hitPos.y - aVertices[*pFace->aVertices].y) * pFace->normal.y
-        //    + (hitPos.z - aVertices[*pFace->aVertices].z) * pFace->normal.z;*/
-
-        //dist = stdMath_ClipNearZero(dist);
-        ////if ( dist < 0.0f )
-        ////{
-        ////    dist = -dist;
-        ////}
-
-        ////if ( dist <= 0.0000099999997f )
-        ////{
-        ////    dist = 0.0f;
-        ////}
-
-        //if ( dist != 0.0f )
-        //{
-        //    hitPos.x = pFace->normal.x * -dist + hitPos.x;
-        //    hitPos.y = pFace->normal.y * -dist + hitPos.y;
-        //    hitPos.z = pFace->normal.z * -dist + hitPos.z;
-        //}
     }
 
     float dist = rdMath_DistancePointToPlane(&hitPos, &pFace->normal, &aVertices[*pFace->aVertices]);
-    /*v11 = (hitPos.x - aVertices[*pFace->aVertices].x) * pFace->normal.x
-        + (hitPos.y - aVertices[*pFace->aVertices].y) * pFace->normal.y
-        + (hitPos.z - aVertices[*pFace->aVertices].z) * pFace->normal.z;*/
-
-    dist = stdMath_ClipNearZero(dist);
-    //if ( dist < 0.0f )
-    //{
-    //    dist = -dist;
-    //}
-
-    //if ( dist <= 0.0000099999997f )
-    //{
-    //    dist = 0.0f;
-    //}
-
-    if ( dist != 0.0f )
+    if ( stdMath_ClipNearZero(dist) != 0.0f )
     {
         hitPos.x = pFace->normal.x * -dist + hitPos.x;
         hitPos.y = pFace->normal.y * -dist + hitPos.y;
@@ -679,9 +614,6 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersectionEx(const rdVec
     SithCollisionType hitType = sithIntersect_CheckFaceVerticesIntersection(&hitPos, radius, pFace, aVertices, &hitPos);
     if ( hitType == SITHCOLLISION_FACEEDGE || hitType == SITHCOLLISION_FACEVERTEX )
     {
-        /*hitNorm->x = startPos->x - hitPos.x;
-        hitNorm->y = startPos->y - hitPos.y;
-        hitNorm->z = startPos->z - hitPos.z;*/
         rdVector_Sub3(hitNorm, startPos, &hitPos);
         rdVector_Normalize3Acc(hitNorm);
     }
@@ -699,7 +631,7 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersection(const rdVecto
 {
     SITH_ASSERTREL((startPos != NULL) && (pFace != NULL) && (aVertices != NULL));
     SITH_ASSERTREL((hitDist != NULL) && (moveNorm != NULL)); // Fixed check for hitDist != NULL, was hitPos != NULL
-    //SITH_ASSERTREL((hitPos != NULL) && (moveNorm != NULL));
+    //SITH_ASSERTREL((hitPos != NULL) && (moveNorm != NULL)); // Removed
     SITH_ASSERTREL(radius >= 0.0f);
     if ( !sithIntersect_CheckSphereHit(startPos, moveNorm, moveDistance, radius, &pFace->normal, &aVertices[*pFace->aVertices], hitDist, flags) )
     {
@@ -715,7 +647,7 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereFaceIntersection(const rdVecto
     hitPos.x = moveNorm->x * *hitDist + startPos->x;
     hitPos.y = moveNorm->y * *hitDist + startPos->y;
     hitPos.z = moveNorm->z * *hitDist + startPos->z;
-    return sithIntersect_CheckFaceVerticesIntersection(&hitPos, radius, pFace, aVertices, 0);
+    return sithIntersect_CheckFaceVerticesIntersection(&hitPos, radius, pFace, aVertices, NULL);
 }
 
 int J3DAPI sithIntersect_CheckThingBoundBoxIntersection(const SithThing* pThing1, const SithThing* pThing2, const rdVector3* moveNorm, float moveDist, float* hitDist)

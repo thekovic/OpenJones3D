@@ -38,7 +38,7 @@ static const rdVector3 sithCamera_vecCameraOffsetSlideForward  = { { 0.16500001f
 static const rdVector3 sithCamera_vecCameraOffsetSlideBackward = { { 0.16500001f }, { -0.2f }, { 0.029999999f } };
 static const rdVector3 sithCamera_vecCameraOffsetJumpRollback  = { { 0.0f }, { -0.30000001f }, { 0.064999998f } };
 
-static const rdVector3 sithCamera_vecOffsetCamType40  = { { 0.0f }, { 1.0f }, { 1.0f } };
+static rdVector3 sithCamera_vecOffsetCamType40  = { { 0.0f }, { 1.0f }, { 1.0f } };
 
 static const rdVector3 sithCamera_idleCamOffset = { { 0.0f }, { -0.2f }, { 0.064999998f } };
 static rdMatrix34 sithCamera_idleCamOrient;
