@@ -113,8 +113,17 @@ int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat)
 
     int bColorKey = 0;
     LPDDCOLORKEY pColorKey;
-    ColorInfo ci;
-    std3D_GetTextureFormat(pMat->formatType, &ci, &bColorKey, &pColorKey);
+    ColorInfo desiredColorFormat;
+    std3D_GetTextureFormat(pMat->formatType, &desiredColorFormat, &bColorKey, &pColorKey);
+
+    // Fixed: Use correct color format type, since it might be different than stored texture format (e.g. RGBA5551 -> RGBA8888; STDCOLOR_FORMAT_RGBA_1BITALPHA -> STDCOLOR_FORMAT_RGBA).
+    //        This fixes rendering issue where converted 1-bit alpha texture will still be interpreted as 1-bit alpha texture and
+    //        when alpha reaches certain threshold (0xA0 - 0.627 or lower) the polygon becomes invisible (not rendered). See std3D_SetRenderState.
+    // 
+    //        Note: Due to this change all 1-bit alpha textures of 3DO models that were changed to 32bit format will be pushed to alpha buffer of rdCache (see rdModel3_DrawFace).
+    //              Since there might be now more alpha polygons to render than in the OG version the rdCahce alpha buffer had to be increased or risking some polygons not being rendered, i.e.: transparent adjoin surfaces.
+    //              Example of this issue is intro cutscene of 9 - Olmec Valley level, where river is briefly not rendered due too small alpha buffer size.
+    pMat->formatType = std3D_GetColorFormat(&desiredColorFormat);
 
     rdMatCelInfo celInfo;
     rdMatTextureCelInfo texcelInfo;
@@ -190,7 +199,7 @@ int J3DAPI rdMaterial_LoadEntry(const char* pFilename, rdMaterial* pMat)
             stdDisplay_VBufferUnlock(apVBuffers[j]);
             if ( apVBuffers[j]->rasterInfo.colorInfo.colorMode && std3D_GetNumTextureFormats() )
             {
-                apVBuffers[j] = stdDisplay_VBufferConvertColorFormat(&ci, apVBuffers[j], bColorKey, pColorKey);
+                apVBuffers[j] = stdDisplay_VBufferConvertColorFormat(&desiredColorFormat, apVBuffers[j], bColorKey, pColorKey);
             }
 
             rasterInfo.width  >>= 1; // /2

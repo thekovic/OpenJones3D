@@ -22,7 +22,7 @@ static rdVector4 rdCache_aVertIntensities[RDCACHE_VERTBUFFERSIZE] = { 0 }; // Fi
 
 
 static size_t rdCache_numAlphaProcFaces               = 0;
-static rdCacheProcEntry rdCache_aAlphaProcFaces[2048] = { 0 };
+static rdCacheProcEntry rdCache_aAlphaProcFaces[4096] = { 0 };
 
 static size_t rdCache_numUsedAlphaVertices = 0;
 static D3DTLVERTEX rdCache_aAlphaVertices[RDCACHE_VERTBUFFERSIZE]      = { 0 };
