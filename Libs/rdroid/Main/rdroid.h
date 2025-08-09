@@ -52,7 +52,7 @@ J3D_EXTERN_C_START
     J3DLOG_FATAL(rdroid_g_pHS, message)
 
 #define RD_ASSERT(condition) \
-    J3D_ASSERTREL(condition, rdroid_g_pHS )
+    J3D_ASSERT(condition, rdroid_g_pHS )
 
 #define RD_ASSERTREL(condition) \
     J3D_ASSERTREL(condition, rdroid_g_pHS )
