@@ -3,13 +3,22 @@
 
 #include <rdroid/Engine/rdClip.h>
 #include <rdroid/Main/rdroid.h>
+#include <rdroid/Math/rdvector.h>
 #include <rdroid/RTI/symbols.h>
 
 #include <std/General/stdUtil.h>
 
-rdVector3* rdQClip_pDestVert   = NULL;
-rdVector3* rdQClip_pSourceVert = NULL;
-rdVector3 rdQClip_aWorkVerts[RDQCLIP_MAXWORKVERTS];
+static rdVector3* rdQClip_pDestVert   = NULL;
+static rdVector3* rdQClip_pSourceVert = NULL;
+static rdVector3 rdQClip_aWorkVerts[RDQCLIP_MAXWORKVERTS];
+
+static rdVector2* rdQClip_pSourceTVert = NULL;
+static rdVector2* rdQClip_pDestTVert   = NULL;
+static rdVector2 rdQClip_aWorkTVerts[RDQCLIP_MAXWORKVERTS];
+
+static rdVector4* rdQClip_pSourceVertIntensity = NULL;
+static rdVector4* rdQClip_pDestVertIntensity   = NULL;
+static rdVector4 rdQClip_aWorkVertIntensities[RDQCLIP_MAXWORKVERTS];
 
 void rdQClip_InstallHooks(void)
 {
@@ -19,9 +28,7 @@ void rdQClip_InstallHooks(void)
 }
 
 void rdQClip_ResetGlobals(void)
-{
-
-}
+{}
 
 size_t J3DAPI rdQClip_VerticesInFrustrum(const rdClipFrustum* pFrustrum, const rdVector3* aVertices, size_t numVertices)
 {
@@ -114,6 +121,92 @@ size_t J3DAPI rdQClip_VerticesInFrustrum(const rdClipFrustum* pFrustrum, const r
     return numVertices;
 }
 
+int J3DAPI rdQClip_Face3T(const rdClipFrustum* pFrustum, rdVector3* aVerts, rdVector2* aTexVerts, rdVector4* aIntensities, size_t numVertices)
+{
+    RD_ASSERT(aVerts != rdQClip_aWorkVerts);
+    RD_ASSERT(aTexVerts != rdQClip_aWorkTVerts);
+    RD_ASSERT(aIntensities != rdQClip_aWorkVertIntensities);
+
+    rdClip_g_faceStatus = 0;
+
+    rdQClip_pSourceVert = aVerts;
+    rdQClip_pDestVert   = rdQClip_aWorkVerts;
+
+    rdQClip_pSourceTVert = aTexVerts;
+    rdQClip_pDestTVert   = rdQClip_aWorkTVerts;
+
+    rdQClip_pSourceVertIntensity = aIntensities;
+    rdQClip_pDestVertIntensity   = rdQClip_aWorkVertIntensities;
+
+    size_t clipindex = 0;
+
+    rdVector3* pPrevVert    = &aVerts[numVertices - 1];
+    rdVector2* pPrevTVert   = &aTexVerts[numVertices - 1];
+    rdVector4* pPrevVertInt = &aIntensities[numVertices - 1];
+
+    rdVector3* pCurVert    = aVerts;
+    rdVector2* pCurTVert   = aTexVerts;
+    rdVector4* pCurVertInt = aIntensities;
+
+    for ( size_t i = 0; i < numVertices; ++i )
+    {
+        if ( pPrevVert->y >= (double)pFrustum->nearPlane || pCurVert->y >= (double)pFrustum->nearPlane )
+        {
+            if ( pPrevVert->y != pFrustum->nearPlane
+                && pCurVert->y != pFrustum->nearPlane
+                && (pPrevVert->y < (double)pFrustum->nearPlane || pCurVert->y < (double)pFrustum->nearPlane) )
+            {
+                float clipFactor = (pFrustum->nearPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
+                rdQClip_pDestVert[clipindex].y = pFrustum->nearPlane;
+                rdQClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * clipFactor + pPrevVert->z;
+                rdQClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * clipFactor + pPrevVert->x;
+
+                rdQClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVert->x) * clipFactor + pPrevTVert->x;
+                rdQClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVert->y) * clipFactor + pPrevTVert->y;
+
+                rdQClip_pDestVertIntensity[clipindex].x = (pCurVertInt->x - pPrevVertInt->x) * clipFactor + pPrevVertInt->x;
+                rdQClip_pDestVertIntensity[clipindex].y = (pCurVertInt->y - pPrevVertInt->y) * clipFactor + pPrevVertInt->y;
+                rdQClip_pDestVertIntensity[clipindex].z = (pCurVertInt->z - pPrevVertInt->z) * clipFactor + pPrevVertInt->z;
+                rdQClip_pDestVertIntensity[clipindex].w = (pCurVertInt->w - pPrevVertInt->w) * clipFactor + pPrevVertInt->w;
+
+                clipindex++;
+                rdClip_g_faceStatus |= 1;
+            }
+
+            if ( pCurVert->y >= (double)pFrustum->nearPlane )
+            {
+                rdQClip_pDestVert[clipindex]          = *pCurVert;
+                rdQClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdQClip_pDestVertIntensity[clipindex] = *pCurVertInt;
+                clipindex++;
+            }
+        }
+
+        RD_ASSERTREL(clipindex < 80);
+
+        pPrevVert    = pCurVert++;
+        pPrevTVert   = pCurTVert++;
+        pPrevVertInt = pCurVertInt++;
+    }
+
+    if ( clipindex < 3 )
+    {
+        rdClip_g_faceStatus |= 0x40u;
+        return clipindex;
+    }
+
+    if ( rdQClip_pDestVert == aVerts )
+    {
+        return clipindex;
+    }
+
+    rdVector_Copy3List(aVerts, rdQClip_pDestVert, clipindex);
+    rdVector_Copy2List(aTexVerts, rdQClip_pDestTVert, clipindex);
+    rdVector_Copy4List(aIntensities, rdQClip_pDestVertIntensity, clipindex);
+
+    return clipindex;
+}
+
 int J3DAPI rdQClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, size_t numVertices)
 {
     rdClip_g_faceStatus = 0;
@@ -129,23 +222,22 @@ int J3DAPI rdQClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
         if ( pPrevVert->y >= (double)pFrustrum->nearPlane || pCurVert->y >= (double)pFrustrum->nearPlane )
         {
             if ( pPrevVert->y != pFrustrum->nearPlane
-              && pCurVert->y != pFrustrum->nearPlane
-              && (pPrevVert->y < (double)pFrustrum->nearPlane || pCurVert->y < (double)pFrustrum->nearPlane) )
+                && pCurVert->y != pFrustrum->nearPlane
+                && (pPrevVert->y < (double)pFrustrum->nearPlane || pCurVert->y < (double)pFrustrum->nearPlane) )
             {
                 float clipFactor = (pFrustrum->nearPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 rdQClip_pDestVert[clipindex].y = pFrustrum->nearPlane;
                 rdQClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * clipFactor + pPrevVert->z;
-                rdQClip_pDestVert[clipindex++].x = (pCurVert->x - pPrevVert->x) * clipFactor + pPrevVert->x;
+                rdQClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * clipFactor + pPrevVert->x;
 
-                /* v3 = rdClip_g_faceStatus;
-                 (v3 & 0xFF) = rdClip_g_faceStatus | 1;
-                 rdClip_g_faceStatus = v3;*/
+                clipindex++;
                 rdClip_g_faceStatus |= 0x01;
             }
 
             if ( pCurVert->y >= (double)pFrustrum->nearPlane )
             {
-                memcpy(&rdQClip_pDestVert[clipindex++], pCurVert, sizeof(rdVector3));
+                rdQClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -153,18 +245,16 @@ int J3DAPI rdQClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
         pPrevVert = pCurVert++;
     }
 
-    if ( clipindex >= 3 )
-    {
-        if ( rdQClip_pDestVert != aVertices )
-        {
-            memcpy(aVertices, rdQClip_pDestVert, sizeof(aVertices[0]) * clipindex);
-        }
-
-        return clipindex;
-    }
-    else
+    if ( clipindex < 3 )
     {
         rdClip_g_faceStatus |= 0x40u;
         return clipindex;
     }
+
+    if ( rdQClip_pDestVert != aVertices )
+    {
+        rdVector_Copy3List(aVertices, rdQClip_pDestVert, clipindex);
+    }
+
+    return clipindex;
 }
