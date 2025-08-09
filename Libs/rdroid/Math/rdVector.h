@@ -36,9 +36,14 @@ void J3DAPI rdVector_Set2(rdVector2* dest, float x, float y); // Added
 void J3DAPI rdVector_Set3(rdVector3* dest, float x, float y, float z);
 void J3DAPI rdVector_Set4(rdVector4* dest, float x, float y, float z, float w);
 
-void J3DAPI rdVector_Copy2(rdVector2* dest, const rdVector2* src); // Added
-void J3DAPI rdVector_Copy3(rdVector3* dest, const rdVector3* src); // Added
-void J3DAPI rdVector_Copy4(rdVector4* dest, const rdVector4* src); // Added
+void J3DAPI rdVector_Copy2(rdVector2* dest, const rdVector2* src); // Added from debug
+void J3DAPI rdVector_Copy2List(rdVector2* dest, const rdVector2* src, size_t num); // Added
+
+void J3DAPI rdVector_Copy3(rdVector3* dest, const rdVector3* src); // Added from debug
+void J3DAPI rdVector_Copy3List(rdVector3* dest, const rdVector3* src, size_t num); // Added
+
+void J3DAPI rdVector_Copy4(rdVector4* dest, const rdVector4* src); // Added from debug
+void J3DAPI rdVector_Copy4List(rdVector4* dest, const rdVector4* src, size_t num); // Added
 
 void J3DAPI rdVector_Neg2(rdVector2* dest, const rdVector2* src); // Added from debug version
 void J3DAPI rdVector_Neg3(rdVector3* dest, const rdVector3* src);
@@ -210,14 +215,29 @@ inline void J3DAPI rdVector_Copy2(rdVector2* dest, const rdVector2* src)
     memcpy(dest, src, sizeof(rdVector2));
 }
 
+inline void J3DAPI rdVector_Copy2List(rdVector2* dest, const rdVector2* src, size_t num)
+{
+    memcpy(dest, src, sizeof(rdVector2) * num);
+}
+
 inline void J3DAPI rdVector_Copy3(rdVector3* dest, const rdVector3* src)
 {
     memcpy(dest, src, sizeof(rdVector3));
 }
 
+inline void J3DAPI rdVector_Copy3List(rdVector3* dest, const rdVector3* src, size_t num)
+{
+    memcpy(dest, src, sizeof(rdVector3) * num);
+}
+
 inline void J3DAPI rdVector_Copy4(rdVector4* dest, const rdVector4* src)
 {
     memcpy(dest, src, sizeof(rdVector4));
+}
+
+inline void J3DAPI rdVector_Copy4List(rdVector4* dest, const rdVector4* src, size_t num)
+{
+    memcpy(dest, src, sizeof(rdVector4) * num);
 }
 
 inline void J3DAPI rdVector_Neg2(rdVector2* dest, const rdVector2* src)
