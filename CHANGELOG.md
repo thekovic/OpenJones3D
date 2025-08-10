@@ -12,6 +12,12 @@
   - Added check for zero size in lip sync data generation to prevent allocation errors (f79736b)
   - Added functionality to write user-mode minidump information when an unhandled exception occurs (6fc4ad5)
   - Added stack trace printing to the log when an assert error occurs (6fc4ad5)
+  - Fixed debug assert macro in `rdroid` module (4ec9416)
+  - Added functions for copying array of `rdVector*` (58ade59)
+  - Added `rdQClip_Face3T` from debug version (7f9159a)
+  - Renamed developer commands (357c287)  
+    * `interface` -> `menu`
+    * `indicator` -> `hud`
   - Implemented missing block allocation functions of `stdMemory` module (b99b92a)
   - Implemented modules:
     * `sithPlayerActions` (67f2eab)
@@ -19,6 +25,10 @@
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)  
     Fixes issue [#28](https://github.com/smlu/OpenJones3D/issues/28)
+  - Fixed missing alpha lerp & fixed minor bugs in `rdClip_Face3T` clip function (a8b6907)
+  - Renamed function `rdClip_QFaceW` to `rdClip_QClipFaceW` (7c87a38)
+  - Added new clipping function `rdClip_QClipFaceT` from debug version (7c87a38)
+  - Fixed vertex intensities and minor bugs in `rdPrimit3_ClipFace` clip function (b87f3b9)
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
