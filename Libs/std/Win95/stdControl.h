@@ -4,6 +4,14 @@
 #include <std/types.h>
 #include <std/RTI/addresses.h>
 
+//#ifdef J3D_DIRECTX6
+#include <DirectX6/dinput.h>
+//#elif defined(J3D_DIRECTX9)
+//#include <dinput.h>
+//#endif 
+
+
+
 #include <stdbool.h>
 
 J3D_EXTERN_C_START

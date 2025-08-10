@@ -259,7 +259,7 @@ LABEL_4:
             pCurMat = pCurPoly->pMaterial;
         }
 
-        LPDIRECT3DTEXTURE2 pD3DCachedTex = NULL;
+        tSysTexture* pCachedTexture = NULL;
         if ( pCurMat )
         {
             // format = pCurMat->formatType;
@@ -308,7 +308,7 @@ LABEL_4:
                 rdCache_AddToTextureCache(pTex, pCurMat->formatType);
             }
 
-            pD3DCachedTex = pTex->pD3DCachedTex;
+            pCachedTexture = pTex->pCachedTexture;
         }
 
         size_t totalIndices = 0;
@@ -417,7 +417,7 @@ LABEL_4:
                 || fflags != pCurPoly->flags )
             {
                 RD_ASSERTREL(rdCache_totalVerts < RDCACHE_VERTBUFFERSIZE);
-                std3D_DrawRenderList(pD3DCachedTex, rdflags, rdCache_aHWVertices, rdCache_totalVerts, rdCache_aVertIndices, totalIndices);
+                std3D_DrawRenderList(pCachedTexture, rdflags, rdCache_aHWVertices, rdCache_totalVerts, rdCache_aVertIndices, totalIndices);
                 goto LABEL_4;
             }
         }
@@ -455,7 +455,7 @@ void J3DAPI rdCache_SendWireframeFaceListToHardware(size_t numPolys, rdCacheProc
 
 void J3DAPI rdCache_AddToTextureCache(tSystemTexture* pTexture, StdColorFormatType format)
 {
-    if ( pTexture->pD3DCachedTex ) {
+    if ( pTexture->pCachedTexture ) {
         std3D_UpdateFrameCount(pTexture);
     }
     else {

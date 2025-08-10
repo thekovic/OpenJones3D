@@ -7359,6 +7359,12 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
         if ( pFormat )
         {
             STD_FORMAT(aResolutionText, pFormat, pDisplayInfo->aModes[i].rasterInfo.width, pDisplayInfo->aModes[i].rasterInfo.height);
+            if ( pDisplayInfo->aModes[i].refreshRate > 0 )
+            {
+                size_t pos = strlen(aResolutionText);
+                stdUtil_Format(&aResolutionText[pos], STD_ARRAYLEN(aResolutionText) - pos, " (%d Hz)", pDisplayInfo->aModes[i].refreshRate);
+
+            }
         }
 
         if ( pDisplayInfo->aModes[i].aspectRatio == 1.0f && pDisplayInfo->aModes[i].rasterInfo.width >= 512 && pDisplayInfo->aModes[i].rasterInfo.height >= 384 )
@@ -7374,6 +7380,8 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
                         STD_STRCPY(pData->aVideoModes[videomodeNum].aResolutionText, aResolutionText);
                         pData->numVideoModes++;
                     }
+
+                    // Fill color depth combo box
 
                     int colorDepthIdx = 0; // Fixed: Init to 0
                     int colorDepthMask = 0; // Fixed: Init to 0
@@ -7429,7 +7437,8 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
 
                     if ( pDisplayInfo->aModes[i].rasterInfo.width == curVideoMode.rasterInfo.width
                         && pDisplayInfo->aModes[i].rasterInfo.height == curVideoMode.rasterInfo.height
-                        && pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp == curVideoMode.rasterInfo.colorInfo.bpp )
+                        && pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp == curVideoMode.rasterInfo.colorInfo.bpp
+                        && (pDisplayInfo->aModes[i].refreshRate == 0 || pDisplayInfo->aModes[i].refreshRate == curVideoMode.refreshRate) ) // Added: Add refresh rate check
                     {
                         selVideoModeNum   = (size_t)videomodeNum;
                         bHasCurVideoMode  = true;
@@ -7561,6 +7570,7 @@ void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, 
                 wuRegistry_SaveInt("Width", pSettings->width);
                 wuRegistry_SaveInt("Height", pSettings->height);
                 wuRegistry_SaveInt("BPP", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.colorInfo.bpp);
+                wuRegistry_SaveInt("Refresh Rate", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].refreshRate); // Added
 
                 // Set new fog config
 
@@ -7726,6 +7736,7 @@ int J3DAPI jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(const StdDisplayIn
         return 0;
     }
 
+#if defined(J3D_DIRECTX6)
     switch ( bpp )
     {
         case 16:
@@ -7737,6 +7748,13 @@ int J3DAPI jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(const StdDisplayIn
         case 32:
             return pDisplayInfo->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_32;
     }
+#elif defined(J3D_DIRECTX9)
+    J3D_UNUSED(pDisplayInfo);
+    J3D_UNUSED(pSettings);
+    if ( bpp == 24 || bpp == 32 ) return 1;
+#else 
+#error "Unsupported 3D API"
+#endif
 
     return 0;
 }

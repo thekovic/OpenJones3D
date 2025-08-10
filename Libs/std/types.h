@@ -1,19 +1,121 @@
 #ifndef STD_TYPES_H
 #define STD_TYPES_H
-#include <stdint.h>
+
+#if defined(J3D_DIRECTX6)
+#undef DIRECT3D_VERSION
 #include <d3d.h>
 #include <ddraw.h>
-#include <dinput.h>
-#include <dplay.h>
+#elif defined(J3D_DIRECTX9)
+#undef DIRECT3D_VERSION
+#ifdef J3D_DEBUG
+#define D3D_DEBUG_INFO // TODO: comment out when done
+#endif
+#include <d3d9.h>
+#else
+#error "Unsupported GAPI"
+#endif
+
+#include <stdint.h>
+//#include <dinput.h>
+#include <DirectX6/dplay.h>
 #include <j3dcore/j3d.h>
 
 J3D_EXTERN_C_START
 
+#if defined(J3D_DIRECTX6)
+
+typedef DDCAPS_DX6 tSysDisplayDeviceCaps;
+typedef D3DDEVICEDESC tSysDevice3DDesc;
+typedef IDirectDraw4 tSysDevice3D;
+
+typedef DDPIXELFORMAT tSysPixelFormat;
+typedef DDSURFACEDESC2 tSysSurfaceDesc;
+typedef IDirectDrawSurface4 tSysSurface;
+typedef IDirect3DTexture2 tSysTexture;
+
+#elif defined(J3D_DIRECTX9)
+
+#define D3DRGBA D3DCOLOR_COLORVALUE
+#define RGBA_MAKE D3DCOLOR_ARGB 
+#define D3DRGB(r, g , b) \
+     D3DCOLOR_XRGB((DWORD)((r)*255.f),(DWORD)((g)*255.f),(DWORD)((b)*255.f))
+
+typedef D3DCAPS9 tSysDisplayDeviceCaps;
+typedef D3DCAPS9 tSysDevice3DDesc;
+typedef IDirect3DDevice9 tSysDevice3D;
+
+typedef D3DFORMAT tSysPixelFormat;
+typedef D3DSURFACE_DESC tSysSurfaceDesc;
+typedef IDirect3DSurface9 tSysSurface;
+typedef IDirect3DTexture9 tSysTexture;
+typedef void* LPDDCOLORKEY;
+
+typedef struct sD3DTLVERTEX
+{
+    /* Screen coordinates */
+    union
+    {
+        float sx;
+        float dvSX;
+    };
+
+    union
+    {
+        float sy;
+        float dvSY;
+    };
+
+    union
+    {
+        float sz;
+        float dvSZ;
+    };
+
+    /* Reciprocal of homogeneous w */
+    union
+    {
+        float rhw;
+        float dvRHW;
+    };
+
+    /* Vertex color */
+    union
+    {
+        D3DCOLOR color;
+        D3DCOLOR dcColor;
+    };
+
+    /* Specular component of vertex */
+    union
+    {
+        D3DCOLOR specular;
+        D3DCOLOR dcSpecular;
+    };
+
+    /* Texture coordinates */
+    union
+    {
+        float tu;
+        float dvTU;
+    };
+
+    union
+    {
+        float tv;
+        float dvTV;
+    };
+} D3DTLVERTEX, * LPD3DTLVERTEX;
+
+// The FVF format for D3DTLVERTEX
+#define D3DTLVERTEX_FVF (D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1)
+
+#endif // J3D_DIRECTX6
+
 typedef enum eStdColorFormatType
 {
-    STDCOLOR_FORMAT_RGB                 = 0,
-    STDCOLOR_FORMAT_RGBA_1BITALPHA      = 1, // e.g.: RGBA5551
-    STDCOLOR_FORMAT_RGBA                = 2,
+    STDCOLOR_FORMAT_RGB            = 0,
+    STDCOLOR_FORMAT_RGBA_1BITALPHA = 1, // e.g.: RGBA5551
+    STDCOLOR_FORMAT_RGBA           = 2,
 } StdColorFormatType;
 
 typedef enum eColorMode J3D_ENUM_TYPE(int32_t)
@@ -227,18 +329,6 @@ struct sMemoryHeader
 };
 static_assert(sizeof(tMemoryHeader) == 32, "sizeof(tMemoryHeader) == 32");
 
-struct sSystemTexture
-{
-    DDSURFACEDESC2 ddsd;
-    LPDIRECT3DTEXTURE2 pD3DSrcTexture;
-    LPDIRECT3DTEXTURE2 pD3DCachedTex;
-    size_t textureSize;
-    size_t frameNum;
-    tSystemTexture* pPrevCachedTexture;
-    tSystemTexture* pNextCachedTexture;
-};
-static_assert(sizeof(tSystemTexture) == 148, "sizeof(tSystemTexture) == 148");
-
 typedef struct sColorInfo
 {
     tColorMode colorMode;
@@ -296,10 +386,10 @@ static_assert(sizeof(tRasterInfo) == 76, "sizeof(tRasterInfo) == 76");
 
 typedef struct sVSurface
 {
-    LPDIRECTDRAWSURFACE4 pDDSurf;
-    DDSURFACEDESC2 ddSurfDesc;
+    tSysSurface* pSysSurface;
+    tSysSurfaceDesc desc;
 } tVSurface;
-static_assert(sizeof(tVSurface) == 128, "sizeof(tVSurface) == 128");
+//static_assert(sizeof(tVSurface) == 128, "sizeof(tVSurface) == 128");
 
 typedef struct sVBuffer
 {
@@ -311,7 +401,26 @@ typedef struct sVBuffer
     int unknown1;
     tVSurface surface;
 } tVBuffer;
-static_assert(sizeof(tVBuffer) == 224, "sizeof(tVBuffer) == 224");
+//static_assert(sizeof(tVBuffer) == 224, "sizeof(tVBuffer) == 224");
+
+struct sSystemTexture
+{
+#ifdef J3D_DIRECTX6
+    tSysSurfaceDesc desc;
+    tSysTexture* pTexture;
+#else 
+    // VBuffer storage - completely device independent
+    tVBuffer** apMipmaps;  // Array of VBuffer pointers (one per mip level)
+    size_t numMipLevels;    // Number of mip levels
+    tSysPixelFormat format; // DirectX format for video memory texture
+#endif
+    tSysTexture* pCachedTexture;
+    size_t textureSize;
+    size_t frameNum;
+    tSystemTexture* pPrevCachedTexture;
+    tSystemTexture* pNextCachedTexture;
+};
+//static_assert(sizeof(tSystemTexture) == 148, "sizeof(tSystemTexture) == 148");
 
 typedef struct sCircularBuffer
 {
@@ -332,17 +441,20 @@ typedef struct sStdDisplayDevice
     int bWindowRenderNotSupported;
     size_t totalVideoMemory;
     size_t freeVideoMemory;
-    DDCAPS_DX6 ddcaps;
+    tSysDisplayDeviceCaps caps;
     GUID guid;
 } StdDisplayDevice;
-static_assert(sizeof(StdDisplayDevice) == 672, "sizeof(StdDisplayDevice) == 672");
+//static_assert(sizeof(StdDisplayDevice) == 672, "sizeof(StdDisplayDevice) == 672");
 
 typedef struct sStdVideoMode
 {
     float aspectRatio;
     tRasterInfo rasterInfo;
+#ifndef J3D_DIRECTX6
+    uint32_t refreshRate;
+#endif
 } StdVideoMode;
-static_assert(sizeof(StdVideoMode) == 80, "sizeof(StdVideoMode) == 80");
+//static_assert(sizeof(StdVideoMode) == 80, "sizeof(StdVideoMode) == 80");
 
 typedef struct sDevice3D
 {
@@ -363,7 +475,7 @@ typedef struct sDevice3D
     char deviceDescription[128];
     size_t totalMemory;
     size_t availableMemory;
-    D3DDEVICEDESC d3dDesc;
+    tSysDevice3DDesc d3dDesc;
     GUID duid;
     int unknown146;
     int unknown147;
@@ -438,7 +550,7 @@ typedef struct sDevice3D
     int unknown216;
     int unknown217;
 } Device3D;
-static_assert(sizeof(Device3D) == 872, "sizeof(Device3D) == 872");
+//static_assert(sizeof(Device3D) == 872, "sizeof(Device3D) == 872");
 
 typedef struct sDXStatus
 {
@@ -455,16 +567,16 @@ typedef struct sStdDisplayInfo
     size_t numDevices;
     Device3D* aDevices;
 } StdDisplayInfo;
-static_assert(sizeof(StdDisplayInfo) == 688, "sizeof(StdDisplayInfo) == 688");
+//static_assert(sizeof(StdDisplayInfo) == 688, "sizeof(StdDisplayInfo) == 688");
 
 typedef struct sStdTextureFormat
 {
     ColorInfo ci;
     int bColorKey;
     LPDDCOLORKEY pColorKey;
-    DDPIXELFORMAT ddPixelFmt;
+    tSysPixelFormat ddPixelFmt;
 } StdTextureFormat;
-static_assert(sizeof(StdTextureFormat) == 96, "sizeof(StdTextureFormat) == 96");
+//static_assert(sizeof(StdTextureFormat) == 96, "sizeof(StdTextureFormat) == 96");
 
 typedef struct sStdDisplayEnvironment
 {
@@ -472,13 +584,6 @@ typedef struct sStdDisplayEnvironment
     StdDisplayInfo* aDisplayInfos;
 } StdDisplayEnvironment;
 static_assert(sizeof(StdDisplayEnvironment) == 8, "sizeof(StdDisplayEnvironment) == 8");
-
-typedef struct sStdInputDevice
-{
-    LPDIRECTINPUTDEVICEA pDIDevice;
-    DIDEVCAPS diDevCaps;
-} StdInputDevice;
-static_assert(sizeof(StdInputDevice) == 48, "sizeof(StdInputDevice) == 48");
 
 typedef struct sStdControlAxis
 {
@@ -490,14 +595,6 @@ typedef struct sStdControlAxis
     float scale;
 } StdControlAxis;
 static_assert(sizeof(StdControlAxis) == 24, "sizeof(StdControlAxis) == 24");
-
-typedef struct sStdControlJoystickDevice
-{
-    DIDEVICEINSTANCEA dinstance;
-    LPDIRECTINPUTDEVICE2A pDIDevice;
-    DIDEVCAPS caps;
-} StdControlJoystickDevice;
-static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystickDevice) == 628");
 
 typedef struct sStdFadeFactor
 {

@@ -2,9 +2,16 @@
 #define SOUND_TYPES_H
 #include <stdint.h>
 #include <Mmreg.h>
-#include <dsound.h>
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
+
+#if defined (J3D_DIRECTX6)
+#include <DirectX6/dsound.h>
+#elif defined (J3D_DIRECTX9)
+#include <dsound.h>
+#else
+#error "Unsuported system sound API. Please define J3D_DIRECTX6 or J3D_DIRECTX9 in your project."
+#endif
 
 J3D_EXTERN_C_START
 
@@ -71,7 +78,6 @@ typedef struct sSoundSpatialInfo SoundSpatialInfo;
 
 typedef int (J3DAPI* SoundGetThingInfoCallback)(int thingID, SoundThingInfo* pInfo);
 typedef void (J3DAPI* SoundCalcListenerSoundMixFunc)(const SoundSpatialInfo*, float* volume, float* pan, float* pitch);
-typedef uint8_t* (J3DAPI* SoundDriverGetSoundBufferDataFunc)(LPDIRECTSOUNDBUFFER pDSBuf, uint32_t* pSoundDataSize, uint32_t* pbCompressed);
 
 
 typedef struct sSoundInfo

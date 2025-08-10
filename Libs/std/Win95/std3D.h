@@ -29,7 +29,7 @@ size_t std3D_GetNumTextureFormats(void);
 int std3D_StartScene(void);
 void std3D_EndScene(void);
 
-void J3DAPI std3D_DrawRenderList(LPDIRECT3DTEXTURE2 pTex, Std3DRenderState rdflags, LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices);
+void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices);
 void J3DAPI std3D_DrawLineStrip(LPD3DTLVERTEX aVerts, size_t numVerts);
 void J3DAPI std3D_DrawPointList(LPD3DTLVERTEX aVerts, size_t numVerts);
 void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags);

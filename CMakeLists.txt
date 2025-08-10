@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(OpenJones3D VERSION 0.3.1)
+project(OpenJones3D VERSION 0.4.0)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -15,8 +15,22 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
 option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)
 
+# --- GAPI options ---
+# Add an option to enable DirectX 9 support. Default is ON, meaning DirectX 6 is used.
+option(JONES3D_USE_DIRECTX9 "Build with DirectX 9 support" ON)
+
 if(JONES3D_QOL_IMPROVEMENTS)
-    add_compile_definitions(J3D_QOL_IMPROVEMENTS=1)
+    set(J3D_QOL_IMPROVEMENTS on)
+endif()
+
+if(JONES3D_USE_DIRECTX9)
+    message(STATUS "Configuring for DirectX 9")
+    set(J3D_DIRECTX9 ON) # Set the variable for the header template
+
+else()
+    message(STATUS "Configuring for vanilla DirectX 6 (default)")
+    set(J3D_DIRECTX6 ON) # Set the variable for the header template
+    set(J3D_COLORKEYSUPPORTED ON)
 endif()
 
 # Configure the version header file

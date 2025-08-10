@@ -1,7 +1,5 @@
-#include <dinput.h>
-
-#include "stdControl.h"
-#include "stdWin95.h"
+#include <std/Win95/stdControl.h>
+#include <std/Win95/stdWin95.h>
 
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
@@ -9,6 +7,22 @@
 #include <std/General/stdPlatform.h>
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
+
+
+typedef struct sStdInputDevice
+{
+    LPDIRECTINPUTDEVICEA pDIDevice;
+    DIDEVCAPS diDevCaps;
+} StdInputDevice;
+static_assert(sizeof(StdInputDevice) == 48, "sizeof(StdInputDevice) == 48");
+
+typedef struct sStdControlJoystickDevice
+{
+    DIDEVICEINSTANCEA dinstance;
+    LPDIRECTINPUTDEVICE2A pDIDevice;
+    DIDEVCAPS caps;
+} StdControlJoystickDevice;
+static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystickDevice) == 628");
 
 #define STDCONTROL_MOUSE_BUFFERSIZE 32u
 

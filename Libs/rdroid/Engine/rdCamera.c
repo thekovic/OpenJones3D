@@ -416,7 +416,7 @@ void J3DAPI rdCamera_PerspProject(rdVector3* pDestVertex, const rdVector3* pSrcV
     //     x
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
-    float tz = rdCamera_g_pCurCamera->focalLength / pSrcVertex->y;
+    float tz    = rdCamera_g_pCurCamera->focalLength / pSrcVertex->y;
     float scale = rdCamera_g_pCurCamera->aspectRatio * tz;
     pDestVertex->x = pSrcVertex->x * scale + pCanvas->center.x; // Fixed: Multiplied focalLength by aspectRatio
     pDestVertex->y = pCanvas->center.y - pSrcVertex->z * scale;
@@ -445,7 +445,7 @@ void J3DAPI rdCamera_PerspProjectSquare(rdVector3* pDestVertex, const rdVector3*
     //     x
 
     const rdCanvas* pCanvas = rdCamera_g_pCurCamera->pCanvas;
-    float tz = 1.0f / pSrcVertex->y;
+    float tz    = 1.0f / pSrcVertex->y;
     float scale = rdCamera_g_pCurCamera->focalLength * tz;
     pDestVertex->x = pSrcVertex->x * scale + pCanvas->center.x;
     pDestVertex->y = pCanvas->center.y - pSrcVertex->z * scale;

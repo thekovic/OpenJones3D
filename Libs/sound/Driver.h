@@ -4,9 +4,9 @@
 #include <sound/types.h>
 #include <sound/RTI/addresses.h>
 
-#include <dsound.h>
-
 J3D_EXTERN_C_START
+
+typedef uint8_t* (J3DAPI* SoundDriverGetSoundBufferDataFunc)(LPDIRECTSOUNDBUFFER pDSBuf, uint32_t* pSoundDataSize, uint32_t* pbCompressed);
 
 int J3DAPI SoundDriver_Open(int bNoSound3D, int bGlobalFocus, HWND hwnd, LPDIRECTSOUND pDirectSound, SoundCalcListenerSoundMixFunc pfCalcListenerSoundMix, SoundDriverGetSoundBufferDataFunc pfGetSoundBufferData, tPrintfFunc pfLogError);
 void SoundDriver_Close(void);

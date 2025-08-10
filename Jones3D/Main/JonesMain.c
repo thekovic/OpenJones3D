@@ -987,8 +987,11 @@ void J3DAPI JonesMain_OnAppActivate(HWND hWnd, int bActivated)
             }
 
             JonesDisplay_UpdateDualScreenWindowSize(&JonesMain_state.displaySettings);
-            stdDisplay_Refresh(1);
+            // Fixed: Changed the order of following 2 calls
+            //        OG refresh was called before ResetTextureCache
+            // Note: std3D_ResetTextureCache, not needed in Dx9 case since refresh will signal texture cache reset
             std3D_ResetTextureCache();
+            stdDisplay_Refresh(1);
 
             if ( sithWorld_g_pCurrentWorld )
             {
@@ -2683,7 +2686,8 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     JonesMain_curVideoMode.aspectRatio                    = 1.0f;
     JonesMain_curVideoMode.rasterInfo.width               = wuRegistry_GetInt("Width", 640);
     JonesMain_curVideoMode.rasterInfo.height              = wuRegistry_GetInt("Height", 480);
-    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32); // Altered: Changed 16 bpp to 32
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32);          // Altered: Changed 16 bpp to 32
+    JonesMain_curVideoMode.refreshRate                    = wuRegistry_GetInt("Refresh Rate", 60); // Added
     JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
 
     pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
@@ -3043,7 +3047,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
         pState->displaySettings.bWindowMode = IsDlgButtonChecked(hWnd, 1002) == 1; // window mode
         pState->bDevMode = IsDlgButtonChecked(hWnd, 1007) == 1;// devmode
 
-        pState->displaySettings.width = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.width;
+        pState->displaySettings.width  = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.width;
         pState->displaySettings.height = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.height;
 
         // Get selected level & Save settings
@@ -3056,6 +3060,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             wuRegistry_SaveInt("Width", pState->displaySettings.width);
             wuRegistry_SaveInt("Height", pState->displaySettings.height);
             wuRegistry_SaveInt("BPP", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.colorInfo.bpp);
+            wuRegistry_SaveInt("Refresh Rate", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].refreshRate);
             wuRegistry_SaveInt("Filter", pState->displaySettings.filter);
 
             wuRegistry_SaveStr("StartLevel", pState->aCurLevelFilename);
@@ -3156,14 +3161,23 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
         {
             if ( JonesMain_CurDisplaySupportsBPP(&pConfig->displaySettings, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp) )
             {
-                STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp);  // Changed: Moved in this scope
+                 // Changed: Moved in this scope
+                if ( pDisplay->aModes[modeNum].refreshRate )
+                {
+                    STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp (%d Hz)", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp, pDisplay->aModes[modeNum].refreshRate);  // Added: refresh rate fromat
+                }
+                else
+                {
+                    STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp);
+                }
+
                 int itemIdx = ComboBox_AddString(hCBDisplayMode, std_g_genBuffer);
                 ComboBox_SetItemData(hCBDisplayMode, itemIdx, modeNum);
-
                 // Select mode
                 if ( pDisplay->aModes[modeNum].rasterInfo.width == JonesMain_curVideoMode.rasterInfo.width
                     && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
-                    && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
+                    && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp
+                    && (pDisplay->aModes[modeNum].refreshRate == 0 || pDisplay->aModes[modeNum].refreshRate == JonesMain_curVideoMode.refreshRate) )
                 {
                     ComboBox_SetCurSel(hCBDisplayMode, itemIdx);
                     bDriverSet = true;
@@ -3239,7 +3253,8 @@ size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList,
     StdDisplayInfo* pDisplay = &pList->aDisplayInfos[deviceNum];
     for ( size_t i = 0; i < pList->aDisplayInfos[deviceNum].numModes; ++i )
     {
-        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == pVideoMode->rasterInfo.colorInfo.bpp ) // Fixed: Changed hardcoded 16 BPP check to pVideoMode BPP compare
+        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == pVideoMode->rasterInfo.colorInfo.bpp && // Fixed: Changed hardcoded 16 BPP check to pVideoMode BPP compare
+            (pDisplay->aModes[i].refreshRate == 0 || pDisplay->aModes[i].refreshRate == pVideoMode->refreshRate) ) // Added: Add refresh rate check
         {
             if ( pDisplay->aModes[i].rasterInfo.width == pVideoMode->rasterInfo.width && pDisplay->aModes[i].rasterInfo.height == pVideoMode->rasterInfo.height )
             {
@@ -3255,6 +3270,7 @@ size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList,
 
 bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSettings, size_t bpp)
 {
+#if defined(J3D_DIRECTX6)
     StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum];
     switch ( bpp )
     {
@@ -3267,6 +3283,12 @@ bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSetting
         case 32:
             return (pDisplay->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_32) != 0;
     }
+#elif defined(J3D_DIRECTX9)
+    J3D_UNUSED(pSettings);
+    if ( bpp == 32 ) return 1;
+#else 
+#error "Unsupported 3D API"
+#endif
 
     return false;
 }

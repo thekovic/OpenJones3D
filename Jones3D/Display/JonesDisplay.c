@@ -90,10 +90,12 @@ int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings)
         return 1;
     }
 
-    if ( pSettings->bWindowMode ) {
+    if ( pSettings->bWindowMode )
+    {
         wkernel_SetWindowStyle(WS_VISIBLE | WS_OVERLAPPEDWINDOW); // 0x10CF0000
     }
-    else {
+    else
+    {
         wkernel_SetWindowStyle(WS_POPUP | WS_VISIBLE);
     }
 
@@ -188,6 +190,8 @@ int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings)
 
 void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, JonesDisplaySettings* pDisplaySettings)
 {
+    // TODO: should return error if videomode couldn't be selected
+
     pDisplaySettings->bWindowMode  = 0;
     pDisplaySettings->bDualMonitor = 0;
     pDisplaySettings->bBuffering   = 0;
@@ -225,6 +229,7 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
             videoMode.rasterInfo.width               = 640; // TODO: make 16:9 res
             videoMode.rasterInfo.height              = 480;
             videoMode.rasterInfo.colorInfo.bpp       = 16;  // TODO: make it 24/32 BPP
+            videoMode.refreshRate                    = 60;  // Added
             videoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
             pDisplaySettings->videoModeNum = JonesMain_FindClosestVideoMode(pEnv, &videoMode, pDisplaySettings->displayDeviceNum);
             memcpy(&videoMode, &pInfo->aModes[pDisplaySettings->videoModeNum], sizeof(videoMode));
@@ -238,6 +243,7 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
             wuRegistry_SaveInt("Width", pDisplaySettings->width);
             wuRegistry_SaveInt("Height", pDisplaySettings->height);
             wuRegistry_SaveInt("BPP", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].rasterInfo.colorInfo.bpp);
+            wuRegistry_SaveInt("Refresh Rate", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].refreshRate);
             wuRegistry_SaveInt("Filter", pDisplaySettings->filter);
             wuRegistry_SaveIntEx("InWindow", pDisplaySettings->bWindowMode);
             wuRegistry_SaveIntEx("Dual Monitor", pDisplaySettings->bDualMonitor);
@@ -325,7 +331,7 @@ void J3DAPI JonesDisplay_OpenLoadScreen(const char* pMatFilePath, float wlStartX
         ++JonesDisplay_openLoadScreenCounter;
     }
 
-    stdDisplay_DisableVSync(true); // Added: This will speed up loading since it will not sync to screen refresh rate allowing higher fps 
+    stdDisplay_DisableVSync(true); // Added: This will speed up loading since it will not sync to screen refresh rate allowing higher fps
     JonesDisplay_pWallpaper = rdWallpaper_New(pMatFilePath);
     JonesDisplay_pWallLine  = rdWallpaper_NewWallLine(wlStartX, wlStartY, wlEndX, wlEndY, &JonesDisplay_wallLineColor);
 
@@ -347,7 +353,10 @@ void JonesDisplay_CloseLoadScreen(void)
     }
     JonesDisplay_pWallLine = NULL;
 
-    stdDisplay_DisableVSync(false); // Added, re-enable VSync
+    if ( JonesDisplay_openLoadScreenCounter > 1 )
+    {
+        stdDisplay_DisableVSync(false); // Added, re-enable VSync after finish loading level (state 2 or 3)
+    }
 }
 
 void J3DAPI JonesDisplay_UpdateLoadProgress(float progress)

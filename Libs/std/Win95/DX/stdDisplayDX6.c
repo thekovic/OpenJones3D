@@ -1,5 +1,5 @@
-#include "stdDisplay.h"
-#include "stdWin95.h"
+#include <std/Win95/stdDisplay.h>
+#include <std/Win95/stdWin95.h>
 
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
@@ -9,6 +9,10 @@
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
 
+// Public globals
+tVBuffer stdDisplay_g_backBuffer = { 0 };
+
+// Private globals
 static bool stdDisplay_bStartup    = false;
 static bool stdDisplay_bOpen       = false;
 static bool stdDisplay_bModeSet    = false;
@@ -199,7 +203,7 @@ void stdDisplay_InstallHooks(void)
     J3D_HOOKFUNC(stdDisplay_DDEnumCallback);
     J3D_HOOKFUNC(stdDisplay_EnumVideoModesCallback);
     J3D_HOOKFUNC(stdDisplay_SetAspectRatio);
-    J3D_HOOKFUNC(stdDisplay_GetDirectDraw);
+    J3D_HOOKFUNC(stdDisplay_GetSystemDevice);
     J3D_HOOKFUNC(stdDisplay_SetWindowMode);
     J3D_HOOKFUNC(stdDisplay_SetFullscreenMode);
     J3D_HOOKFUNC(stdDisplay_ReleaseBuffers);
@@ -270,6 +274,8 @@ static void J3DAPI stdDisplay_SetPixels32(uint32_t* pPixels32, uint32_t pixel, s
 
 int stdDisplay_Startup(void)
 {
+    STDLOG_STATUS("Starting stdDisplay system using DirectDraw 9 GAPI ...\n");
+
     if ( stdDisplay_bStartup ) {
         return 1;
     }
@@ -407,7 +413,7 @@ int J3DAPI stdDisplay_SetMode(size_t modeNum, int bFullscreen, size_t numBackBuf
 
     int fheight = -(stdDisplay_pCurVideoMode->rasterInfo.width < 640);
     fheight = fheight & 0xF4;
-    stdDisplay_hFont = CreateFontA(fheight + 24, 0, 0, 0, FW_NORMAL, 0, 0, 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH, "Arial");
+    stdDisplay_hFont = CreateFont(fheight + 24, 0, 0, 0, FW_NORMAL, 0, 0, 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH, "Arial");
 
     stdDisplay_dword_5D73D8  = 0;
     stdDisplay_dword_5D73DC  = 0;
@@ -469,6 +475,11 @@ int J3DAPI stdDisplay_GetCurrentDevice(StdDisplayDevice* pDevice)
     return 0;
 }
 
+const StdDisplayDevice* stdDisplay_GetAllDevices(void)
+{
+    return stdDisplay_aDisplayDevices;
+}
+
 void J3DAPI stdDisplay_Refresh(int bReload)
 {
     if ( stdDisplay_bOpen && stdDisplay_bModeSet && bReload )
@@ -499,9 +510,9 @@ void J3DAPI stdDisplay_Refresh(int bReload)
                 }
             }
 
-            if ( stdDisplay_g_frontBuffer.surface.pDDSurf )
+            if ( stdDisplay_g_frontBuffer.surface.pSysSurface )
             {
-                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pDDSurf);
+                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
                 if ( ddres != DD_OK )
                 {
                     STDLOG_ERROR("Error %s on restore front buffer.\n", stdDisplay_DDGetStatus(ddres));
@@ -509,9 +520,9 @@ void J3DAPI stdDisplay_Refresh(int bReload)
                 }
             }
         }
-        else if ( stdDisplay_g_backBuffer.surface.pDDSurf )
+        else if ( stdDisplay_g_backBuffer.surface.pSysSurface )
         {
-            ddres = IDirectDrawSurface4_Restore(stdDisplay_g_backBuffer.surface.pDDSurf);
+            ddres = IDirectDrawSurface4_Restore(stdDisplay_g_backBuffer.surface.pSysSurface);
             if ( ddres != DD_OK )
             {
                 STDLOG_ERROR("Error %s on restore front buffer.\n", stdDisplay_DDGetStatus(ddres));
@@ -519,15 +530,30 @@ void J3DAPI stdDisplay_Refresh(int bReload)
             }
         }
 
-        if ( stdDisplay_zBuffer.pDDSurf )
+        if ( stdDisplay_zBuffer.pSysSurface )
         {
-            ddres = IDirectDrawSurface4_Restore(stdDisplay_zBuffer.pDDSurf);
+            ddres = IDirectDrawSurface4_Restore(stdDisplay_zBuffer.pSysSurface);
             if ( ddres != DD_OK )
             {
                 STDLOG_ERROR("Error %s on restore zBuffer.\n", stdDisplay_DDGetStatus(ddres));
             }
         }
     }
+}
+
+void stdDisplay_RegisterDevicePreResetCallback(tDisplayDevicePreResetCallback pCallback)
+{
+    // TODO: Implement this function if needed
+}
+
+void stdDisplay_RegisterDevicePostResetCallback(tDisplayDevicePostResetCallback pCallback)
+{
+    // TODO: Implement this function if needed
+}
+
+void J3DAPI stdDisplay_UnregisterDeviceResetCallback(tDisplayDevicePostResetCallback pCallback)
+{
+    // TODO: Implement this function if needed
 }
 
 tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseVSurface, int bUseVideoMemory)
@@ -556,37 +582,37 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
         vbuffer->bVideoMemory = 0;
         vbuffer->lockRefCount = 1;
 
-        memset(&vbuffer->surface.ddSurfDesc, 0, sizeof(vbuffer->surface.ddSurfDesc));
-        vbuffer->surface.ddSurfDesc.dwSize = sizeof(DDSURFACEDESC2);
-        vbuffer->surface.ddSurfDesc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
-        vbuffer->surface.ddSurfDesc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+        memset(&vbuffer->surface.desc, 0, sizeof(vbuffer->surface.desc));
+        vbuffer->surface.desc.dwSize = sizeof(DDSURFACEDESC2);
+        vbuffer->surface.desc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
+        vbuffer->surface.desc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 
         if ( !bUseVideoMemory ) {
-            vbuffer->surface.ddSurfDesc.ddsCaps.dwCaps = DDSCAPS_SYSTEMMEMORY | DDSCAPS_OFFSCREENPLAIN;
+            vbuffer->surface.desc.ddsCaps.dwCaps = DDSCAPS_SYSTEMMEMORY | DDSCAPS_OFFSCREENPLAIN;
         }
 
-        vbuffer->surface.ddSurfDesc.dwWidth  = vbuffer->rasterInfo.width;
-        vbuffer->surface.ddSurfDesc.dwHeight = vbuffer->rasterInfo.height;
-        HRESULT ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &vbuffer->surface.ddSurfDesc, &vbuffer->surface.pDDSurf, NULL);
+        vbuffer->surface.desc.dwWidth  = vbuffer->rasterInfo.width;
+        vbuffer->surface.desc.dwHeight = vbuffer->rasterInfo.height;
+        HRESULT ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &vbuffer->surface.desc, &vbuffer->surface.pSysSurface, NULL);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when creating a DirectDraw vbuffer surface.\n", stdDisplay_DDGetStatus(ddres));
             return NULL;
         }
 
-        ddres = IDirectDrawSurface4_GetSurfaceDesc(vbuffer->surface.pDDSurf, &vbuffer->surface.ddSurfDesc);
+        ddres = IDirectDrawSurface4_GetSurfaceDesc(vbuffer->surface.pSysSurface, &vbuffer->surface.desc);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when getting desc of surface.\n", stdDisplay_DDGetStatus(ddres));
             return NULL;
         }
 
-        if ( (vbuffer->surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (vbuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
             vbuffer->bVideoMemory = 1;
         }
 
-        vbuffer->rasterInfo.rowSize  = vbuffer->surface.ddSurfDesc.dwLinearSize;
-        vbuffer->rasterInfo.rowWidth = vbuffer->surface.ddSurfDesc.dwLinearSize / bbp;
+        vbuffer->rasterInfo.rowSize  = vbuffer->surface.desc.dwLinearSize;
+        vbuffer->rasterInfo.rowWidth = vbuffer->surface.desc.dwLinearSize / bbp;
         return vbuffer;
     }
     else
@@ -610,10 +636,10 @@ void J3DAPI stdDisplay_VBufferFree(tVBuffer* pVBuffer)
     {
         if ( pVBuffer->lockRefCount == 1 )
         {
-            if ( pVBuffer->surface.pDDSurf )
+            if ( pVBuffer->surface.pSysSurface )
             {
-                IDirectDrawSurface4_Release(pVBuffer->surface.pDDSurf);
-                pVBuffer->surface.pDDSurf = NULL;
+                IDirectDrawSurface4_Release(pVBuffer->surface.pSysSurface);
+                pVBuffer->surface.pSysSurface = NULL;
             }
         }
     }
@@ -634,8 +660,8 @@ int J3DAPI stdDisplay_VBufferLock(tVBuffer* pVBuffer)
     {
         if ( pVBuffer->lockRefCount == 1 )
         {
-            if ( (pVBuffer->surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER) != 0
-                && (pVBuffer->surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_MODEX) != 0 ) {
+            if ( (pVBuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER) != 0
+                && (pVBuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_MODEX) != 0 ) {
                 return 0;
             }
 
@@ -697,7 +723,7 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
             return 1;
         }
 
-        DWORD dwCaps = pVBuffer->surface.ddSurfDesc.ddsCaps.dwCaps;
+        DWORD dwCaps = pVBuffer->surface.desc.ddsCaps.dwCaps;
         return ((dwCaps & DDSCAPS_FRONTBUFFER) == 0 || (dwCaps & DDSCAPS_MODEX) == 0)
             && stdDisplay_ColorFillSurface(&pVBuffer->surface, color, pRect) == 0;
     }
@@ -917,31 +943,31 @@ int J3DAPI stdDisplay_CreateZBuffer(LPDDPIXELFORMAT pPixelFormat, int bSystemMem
         return 1;
     }
 
-    memset(&stdDisplay_zBuffer.ddSurfDesc, 0, sizeof(stdDisplay_zBuffer.ddSurfDesc));
-    stdDisplay_zBuffer.ddSurfDesc.dwHeight = stdDisplay_g_backBuffer.rasterInfo.height;
-    stdDisplay_zBuffer.ddSurfDesc.dwWidth  = stdDisplay_g_backBuffer.rasterInfo.width;
-    stdDisplay_zBuffer.ddSurfDesc.dwSize   = sizeof(DDSURFACEDESC2);
-    stdDisplay_zBuffer.ddSurfDesc.dwFlags  = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;// DDSD_PIXELFORMAT  | DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH
-    stdDisplay_zBuffer.ddSurfDesc.ddsCaps.dwCaps = bSystemMemory != 0
+    memset(&stdDisplay_zBuffer.desc, 0, sizeof(stdDisplay_zBuffer.desc));
+    stdDisplay_zBuffer.desc.dwHeight = stdDisplay_g_backBuffer.rasterInfo.height;
+    stdDisplay_zBuffer.desc.dwWidth  = stdDisplay_g_backBuffer.rasterInfo.width;
+    stdDisplay_zBuffer.desc.dwSize   = sizeof(DDSURFACEDESC2);
+    stdDisplay_zBuffer.desc.dwFlags  = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;// DDSD_PIXELFORMAT  | DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH
+    stdDisplay_zBuffer.desc.ddsCaps.dwCaps = bSystemMemory != 0
         ? DDSCAPS_ZBUFFER | DDSCAPS_SYSTEMMEMORY
         : DDSCAPS_ZBUFFER | DDSCAPS_VIDEOMEMORY;
 
-    memcpy(&stdDisplay_zBuffer.ddSurfDesc.ddpfPixelFormat, pPixelFormat, sizeof(stdDisplay_zBuffer.ddSurfDesc.ddpfPixelFormat));
-    HRESULT ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_zBuffer.ddSurfDesc, &stdDisplay_zBuffer.pDDSurf, NULL);
+    memcpy(&stdDisplay_zBuffer.desc.ddpfPixelFormat, pPixelFormat, sizeof(stdDisplay_zBuffer.desc.ddpfPixelFormat));
+    HRESULT ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_zBuffer.desc, &stdDisplay_zBuffer.pSysSurface, NULL);
     if ( ddres != DD_OK )
     {
         STDLOG_ERROR("Error %s when creating zBuffer DDraw surface.\n", stdDisplay_DDGetStatus(ddres));
         return 1;
     }
 
-    ddres = IDirectDrawSurface4_AddAttachedSurface(stdDisplay_g_backBuffer.surface.pDDSurf, stdDisplay_zBuffer.pDDSurf);
+    ddres = IDirectDrawSurface4_AddAttachedSurface(stdDisplay_g_backBuffer.surface.pSysSurface, stdDisplay_zBuffer.pSysSurface);
     if ( ddres != DD_OK )
     {
         STDLOG_ERROR("Error %s when attaching zbuffer.\n", stdDisplay_DDGetStatus(ddres));
         return 1;
     }
 
-    ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_zBuffer.pDDSurf, &stdDisplay_zBuffer.ddSurfDesc);
+    ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_zBuffer.pSysSurface, &stdDisplay_zBuffer.desc);
     if ( ddres != DD_OK )
     {
         STDLOG_ERROR("Error %s when getting zbuffer surface description.\n", stdDisplay_DDGetStatus(ddres));
@@ -1048,9 +1074,9 @@ BOOL PASCAL stdDisplay_DDEnumCallback(GUID* lpGUID, LPSTR szDriverName, LPSTR sz
         return 0;
     }
 
-    memset(&pDevice->ddcaps, 0, sizeof(pDevice->ddcaps));
-    pDevice->ddcaps.dwSize = sizeof(DDCAPS_DX6);
-    ddres = IDirectDraw_GetCaps(lpDD, (LPDDCAPS)&pDevice->ddcaps, 0);
+    memset(&pDevice->caps, 0, sizeof(pDevice->caps));
+    pDevice->caps.dwSize = sizeof(DDCAPS_DX6);
+    ddres = IDirectDraw_GetCaps(lpDD, (LPDDCAPS)&pDevice->caps, 0);
     if ( ddres != DD_OK )
     {
         STDLOG_ERROR("Error %s when reading DDraw CAPS.\n", stdDisplay_DDGetStatus(ddres));
@@ -1058,10 +1084,10 @@ BOOL PASCAL stdDisplay_DDEnumCallback(GUID* lpGUID, LPSTR szDriverName, LPSTR sz
         return 0;
     }
 
-    pDevice->bWindowRenderNotSupported = (pDevice->ddcaps.dwCaps2 & DDCAPS2_CANRENDERWINDOWED) == 0;
-    pDevice->bHAL                      = (pDevice->ddcaps.dwCaps & DDCAPS_3D) != 0;
-    pDevice->totalVideoMemory          = pDevice->ddcaps.dwVidMemTotal;
-    pDevice->freeVideoMemory           = pDevice->ddcaps.dwVidMemFree;
+    pDevice->bWindowRenderNotSupported = (pDevice->caps.dwCaps2 & DDCAPS2_CANRENDERWINDOWED) == 0;
+    pDevice->bHAL                      = (pDevice->caps.dwCaps & DDCAPS_3D) != 0;
+    pDevice->totalVideoMemory          = pDevice->caps.dwVidMemTotal;
+    pDevice->freeVideoMemory           = pDevice->caps.dwVidMemFree;
 
     STDLOG_STATUS("Found %s DD Device: %s [%s]\n", pDevice->bHAL ? "3D" : "Non-3D", pDevice->aDeviceName, pDevice->aDriverName);
     STDLOG_STATUS("Memory: 0x%x out of 0x%x free\n", pDevice->freeVideoMemory, pDevice->totalVideoMemory);
@@ -1189,7 +1215,7 @@ void J3DAPI stdDisplay_SetAspectRatio(StdVideoMode* pMode)
     }
 }
 
-LPDIRECTDRAW4 stdDisplay_GetDirectDraw(void)
+tSysDevice3D* stdDisplay_GetSystemDevice(void)
 {
     return stdDisplay_lpDD;
 }
@@ -1219,12 +1245,12 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
         stdDisplay_g_frontBuffer.bVideoMemory     = 0;
         stdDisplay_g_frontBuffer.pPixels          = NULL;
 
-        memset(&stdDisplay_g_frontBuffer.surface.ddSurfDesc, 0, sizeof(stdDisplay_g_frontBuffer.surface.ddSurfDesc));
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwSize         = sizeof(DDSURFACEDESC2);
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwFlags        = DDSD_CAPS;
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+        memset(&stdDisplay_g_frontBuffer.surface.desc, 0, sizeof(stdDisplay_g_frontBuffer.surface.desc));
+        stdDisplay_g_frontBuffer.surface.desc.dwSize         = sizeof(DDSURFACEDESC2);
+        stdDisplay_g_frontBuffer.surface.desc.dwFlags        = DDSD_CAPS;
+        stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
 
-        ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_g_frontBuffer.surface.ddSurfDesc, &stdDisplay_g_frontBuffer.surface.pDDSurf, NULL);
+        ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_g_frontBuffer.surface.desc, &stdDisplay_g_frontBuffer.surface.pSysSurface, NULL);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when creating the DirectDraw primary surface.\n", stdDisplay_DDGetStatus(ddres));
@@ -1247,7 +1273,7 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
             return 0;
         }
 
-        ddres = IDirectDrawSurface4_SetClipper(stdDisplay_g_frontBuffer.surface.pDDSurf, pDDClipper);
+        ddres = IDirectDrawSurface4_SetClipper(stdDisplay_g_frontBuffer.surface.pSysSurface, pDDClipper);
         if ( ddres != DD_OK )
         {
             IDirectDrawClipper_Release(pDDClipper);
@@ -1257,34 +1283,34 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
 
         IDirectDrawClipper_Release(pDDClipper);
 
-        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_frontBuffer.surface.pDDSurf, &stdDisplay_g_frontBuffer.surface.ddSurfDesc);
+        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_frontBuffer.surface.pSysSurface, &stdDisplay_g_frontBuffer.surface.desc);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when getting desc of DirectDraw primary surface.\n", stdDisplay_DDGetStatus(ddres));
             return 0;
         }
 
-        pDisplayMode->rasterInfo.width   = stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwWidth;
-        pDisplayMode->rasterInfo.height  = stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwHeight;
-        pDisplayMode->rasterInfo.rowSize = stdDisplay_g_frontBuffer.surface.ddSurfDesc.lPitch;
+        pDisplayMode->rasterInfo.width   = stdDisplay_g_frontBuffer.surface.desc.dwWidth;
+        pDisplayMode->rasterInfo.height  = stdDisplay_g_frontBuffer.surface.desc.dwHeight;
+        pDisplayMode->rasterInfo.rowSize = stdDisplay_g_frontBuffer.surface.desc.lPitch;
         stdDisplay_SetAspectRatio(pDisplayMode);
 
-        if ( (stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddpfPixelFormat.dwFlags & (DDPF_PALETTEINDEXED2 | DDPF_PALETTEINDEXED1 | DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXED4)) != 0 )
+        if ( (stdDisplay_g_frontBuffer.surface.desc.ddpfPixelFormat.dwFlags & (DDPF_PALETTEINDEXED2 | DDPF_PALETTEINDEXED1 | DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXED4)) != 0 )
         {
             // We don't support palette
             return 0;
         }
 
         // Set front buffer raster color info
-        if ( (stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddpfPixelFormat.dwFlags & DDPF_RGB) != 0 ) // IF RGB
+        if ( (stdDisplay_g_frontBuffer.surface.desc.ddpfPixelFormat.dwFlags & DDPF_RGB) != 0 ) // IF RGB
         {
             ColorInfo* pCI = &pDisplayMode->rasterInfo.colorInfo;
             memset(pCI, 0, sizeof(*pCI)); // Added: init to zero
             pCI->colorMode  = STDCOLOR_RGB;
-            pCI->bpp       = stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddpfPixelFormat.dwRGBBitCount;
+            pCI->bpp       = stdDisplay_g_frontBuffer.surface.desc.ddpfPixelFormat.dwRGBBitCount;
 
 
-            DDPIXELFORMAT* pFormat = &stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddpfPixelFormat;
+            DDPIXELFORMAT* pFormat = &stdDisplay_g_frontBuffer.surface.desc.ddpfPixelFormat;
             stdColor_CalcColorBits(pFormat->dwRBitMask, &pCI->redBPP, &pCI->redPosShift, &pCI->redPosShiftRight);
             stdColor_CalcColorBits(pFormat->dwGBitMask, &pCI->greenBPP, &pCI->greenPosShift, &pCI->greenPosShiftRight);
             stdColor_CalcColorBits(pFormat->dwBBitMask, &pCI->blueBPP, &pCI->bluePosShift, &pCI->bluePosShiftRight);
@@ -1317,24 +1343,24 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
 
         // Update raster info of front buffer
         memcpy(&stdDisplay_g_frontBuffer.rasterInfo, &pDisplayMode->rasterInfo, sizeof(stdDisplay_g_frontBuffer.rasterInfo));
-        stdDisplay_g_frontBuffer.rasterInfo.rowSize  = stdDisplay_g_frontBuffer.surface.ddSurfDesc.lPitch;
-        stdDisplay_g_frontBuffer.rasterInfo.rowWidth = stdDisplay_g_frontBuffer.surface.ddSurfDesc.lPitch / (bpp / 8);
+        stdDisplay_g_frontBuffer.rasterInfo.rowSize  = stdDisplay_g_frontBuffer.surface.desc.lPitch;
+        stdDisplay_g_frontBuffer.rasterInfo.rowWidth = stdDisplay_g_frontBuffer.surface.desc.lPitch / (bpp / 8);
 
-        if ( (stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
             stdDisplay_g_frontBuffer.bVideoMemory = 1;
         }
     }
 
     // Set back buffer
     {
-        memset(&stdDisplay_g_backBuffer.surface.ddSurfDesc, 0, sizeof(stdDisplay_g_backBuffer.surface.ddSurfDesc));
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwSize         = sizeof(DDSURFACEDESC2);
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwFlags        = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwWidth        = width;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwHeight       = height;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_OFFSCREENPLAIN;
+        memset(&stdDisplay_g_backBuffer.surface.desc, 0, sizeof(stdDisplay_g_backBuffer.surface.desc));
+        stdDisplay_g_backBuffer.surface.desc.dwSize         = sizeof(DDSURFACEDESC2);
+        stdDisplay_g_backBuffer.surface.desc.dwFlags        = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
+        stdDisplay_g_backBuffer.surface.desc.dwWidth        = width;
+        stdDisplay_g_backBuffer.surface.desc.dwHeight       = height;
+        stdDisplay_g_backBuffer.surface.desc.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_OFFSCREENPLAIN;
 
-        ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_g_backBuffer.surface.ddSurfDesc, &stdDisplay_g_backBuffer.surface.pDDSurf, NULL);
+        ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_g_backBuffer.surface.desc, &stdDisplay_g_backBuffer.surface.pSysSurface, NULL);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s creating off-screen back buffer.\n", stdDisplay_DDGetStatus(ddres));
@@ -1345,38 +1371,38 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
         stdDisplay_g_backBuffer.lockSurfRefCount = 0;
         stdDisplay_g_backBuffer.bVideoMemory = 1;
 
-        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_backBuffer.surface.pDDSurf, &stdDisplay_g_backBuffer.surface.ddSurfDesc);
+        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_backBuffer.surface.pSysSurface, &stdDisplay_g_backBuffer.surface.desc);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when getting desc of back buffer rendering surface.\n", stdDisplay_DDGetStatus(ddres));
             return 0;
         }
 
-        stdDisplay_g_backBuffer.rasterInfo.width   = stdDisplay_g_backBuffer.surface.ddSurfDesc.dwWidth;
-        stdDisplay_g_backBuffer.rasterInfo.height  = stdDisplay_g_backBuffer.surface.ddSurfDesc.dwHeight;
-        stdDisplay_g_backBuffer.rasterInfo.rowSize = stdDisplay_g_backBuffer.surface.ddSurfDesc.lPitch;
+        stdDisplay_g_backBuffer.rasterInfo.width   = stdDisplay_g_backBuffer.surface.desc.dwWidth;
+        stdDisplay_g_backBuffer.rasterInfo.height  = stdDisplay_g_backBuffer.surface.desc.dwHeight;
+        stdDisplay_g_backBuffer.rasterInfo.rowSize = stdDisplay_g_backBuffer.surface.desc.lPitch;
 
-        if ( (stdDisplay_g_backBuffer.surface.ddSurfDesc.ddpfPixelFormat.dwFlags & (DDPF_PALETTEINDEXED2 | DDPF_PALETTEINDEXED1 | DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXED4)) != 0 )
+        if ( (stdDisplay_g_backBuffer.surface.desc.ddpfPixelFormat.dwFlags & (DDPF_PALETTEINDEXED2 | DDPF_PALETTEINDEXED1 | DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXED4)) != 0 )
         {
             // We don't support palette
             return 0;
         }
 
-        if ( (stdDisplay_g_backBuffer.surface.ddSurfDesc.ddpfPixelFormat.dwFlags & DDPF_RGB) != 0 )
+        if ( (stdDisplay_g_backBuffer.surface.desc.ddpfPixelFormat.dwFlags & DDPF_RGB) != 0 )
         {
             ColorInfo* pCI = &stdDisplay_g_backBuffer.rasterInfo.colorInfo;
             memset(pCI, 0, sizeof(*pCI)); // Added: init to zero
             pCI->colorMode = STDCOLOR_RGB;
-            pCI->bpp       = stdDisplay_g_backBuffer.surface.ddSurfDesc.ddpfPixelFormat.dwRGBBitCount;
+            pCI->bpp       = stdDisplay_g_backBuffer.surface.desc.ddpfPixelFormat.dwRGBBitCount;
 
-            DDPIXELFORMAT* pFormat = &stdDisplay_g_backBuffer.surface.ddSurfDesc.ddpfPixelFormat;
+            DDPIXELFORMAT* pFormat = &stdDisplay_g_backBuffer.surface.desc.ddpfPixelFormat;
             stdColor_CalcColorBits(pFormat->dwRBitMask, &pCI->redBPP, &pCI->redPosShift, &pCI->redPosShiftRight);
             stdColor_CalcColorBits(pFormat->dwGBitMask, &pCI->greenBPP, &pCI->greenPosShift, &pCI->greenPosShiftRight);
             stdColor_CalcColorBits(pFormat->dwBBitMask, &pCI->blueBPP, &pCI->bluePosShift, &pCI->bluePosShiftRight);
         }
 
         stdDisplay_coopLevelFlags = DDSCL_NORMAL;
-        stdDisplay_g_backBuffer.rasterInfo.rowSize  = stdDisplay_g_backBuffer.surface.ddSurfDesc.lPitch; // TODO: fyi the row size was already set few lines above
+        stdDisplay_g_backBuffer.rasterInfo.rowSize  = stdDisplay_g_backBuffer.surface.desc.lPitch; // TODO: fyi the row size was already set few lines above
         stdDisplay_g_backBuffer.rasterInfo.rowWidth = stdDisplay_g_backBuffer.rasterInfo.rowSize / (stdDisplay_g_backBuffer.rasterInfo.colorInfo.bpp / 8);
     }
 
@@ -1414,32 +1440,32 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
         stdDisplay_g_frontBuffer.pPixels          = NULL;
         memcpy(&stdDisplay_g_frontBuffer.rasterInfo, &pDisplayMode->rasterInfo, sizeof(stdDisplay_g_frontBuffer.rasterInfo));
 
-        memset(&stdDisplay_g_frontBuffer.surface.ddSurfDesc, 0, sizeof(stdDisplay_g_frontBuffer.surface.ddSurfDesc));
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwSize            = sizeof(DDSURFACEDESC2);
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwWidth           = pDisplayMode->rasterInfo.width;
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwHeight          = pDisplayMode->rasterInfo.height;
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwBackBufferCount = numBackBuffers;
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.dwFlags           = DDSD_BACKBUFFERCOUNT | DDSD_CAPS;
-        stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddsCaps.dwCaps    = DDSCAPS_3DDEVICE | DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
+        memset(&stdDisplay_g_frontBuffer.surface.desc, 0, sizeof(stdDisplay_g_frontBuffer.surface.desc));
+        stdDisplay_g_frontBuffer.surface.desc.dwSize            = sizeof(DDSURFACEDESC2);
+        stdDisplay_g_frontBuffer.surface.desc.dwWidth           = pDisplayMode->rasterInfo.width;
+        stdDisplay_g_frontBuffer.surface.desc.dwHeight          = pDisplayMode->rasterInfo.height;
+        stdDisplay_g_frontBuffer.surface.desc.dwBackBufferCount = numBackBuffers;
+        stdDisplay_g_frontBuffer.surface.desc.dwFlags           = DDSD_BACKBUFFERCOUNT | DDSD_CAPS;
+        stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps    = DDSCAPS_3DDEVICE | DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
 
-        ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_g_frontBuffer.surface.ddSurfDesc, &stdDisplay_g_frontBuffer.surface.pDDSurf, NULL);
+        ddres = IDirectDraw4_CreateSurface(stdDisplay_lpDD, &stdDisplay_g_frontBuffer.surface.desc, &stdDisplay_g_frontBuffer.surface.pSysSurface, NULL);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when creating the DirectDraw primary surface.\n", stdDisplay_DDGetStatus(ddres));
             return ddres;
         }
 
-        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_frontBuffer.surface.pDDSurf, &stdDisplay_g_frontBuffer.surface.ddSurfDesc);
+        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_frontBuffer.surface.pSysSurface, &stdDisplay_g_frontBuffer.surface.desc);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when getting desc of DirectDraw primary surface.\n", stdDisplay_DDGetStatus(ddres));
             return ddres;
         }
 
-        stdDisplay_g_frontBuffer.rasterInfo.rowSize  = stdDisplay_g_frontBuffer.surface.ddSurfDesc.lPitch;
-        stdDisplay_g_frontBuffer.rasterInfo.rowWidth = stdDisplay_g_frontBuffer.surface.ddSurfDesc.lPitch / bbpp;
+        stdDisplay_g_frontBuffer.rasterInfo.rowSize  = stdDisplay_g_frontBuffer.surface.desc.lPitch;
+        stdDisplay_g_frontBuffer.rasterInfo.rowWidth = stdDisplay_g_frontBuffer.surface.desc.lPitch / bbpp;
 
-        if ( (stdDisplay_g_frontBuffer.surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
             stdDisplay_g_frontBuffer.bVideoMemory = 1;
         }
     }
@@ -1452,18 +1478,18 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
         stdDisplay_g_backBuffer.pPixels          = 0;
         memcpy(&stdDisplay_g_backBuffer.rasterInfo, &pDisplayMode->rasterInfo, sizeof(stdDisplay_g_backBuffer.rasterInfo));
 
-        memset(&stdDisplay_g_backBuffer.surface.ddSurfDesc, 0, sizeof(stdDisplay_g_backBuffer.surface.ddSurfDesc));
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwSize            = sizeof(DDSURFACEDESC2);
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwWidth           = pDisplayMode->rasterInfo.width;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwHeight          = pDisplayMode->rasterInfo.height;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwFlags           = DDSD_BACKBUFFERCOUNT | DDSD_CAPS;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.ddsCaps.dwCaps    = DDSCAPS_3DDEVICE | DDSCAPS_BACKBUFFER;
-        stdDisplay_g_backBuffer.surface.ddSurfDesc.dwBackBufferCount = numBackBuffers;
+        memset(&stdDisplay_g_backBuffer.surface.desc, 0, sizeof(stdDisplay_g_backBuffer.surface.desc));
+        stdDisplay_g_backBuffer.surface.desc.dwSize            = sizeof(DDSURFACEDESC2);
+        stdDisplay_g_backBuffer.surface.desc.dwWidth           = pDisplayMode->rasterInfo.width;
+        stdDisplay_g_backBuffer.surface.desc.dwHeight          = pDisplayMode->rasterInfo.height;
+        stdDisplay_g_backBuffer.surface.desc.dwFlags           = DDSD_BACKBUFFERCOUNT | DDSD_CAPS;
+        stdDisplay_g_backBuffer.surface.desc.ddsCaps.dwCaps    = DDSCAPS_3DDEVICE | DDSCAPS_BACKBUFFER;
+        stdDisplay_g_backBuffer.surface.desc.dwBackBufferCount = numBackBuffers;
 
         ddres = IDirectDrawSurface4_GetAttachedSurface(
-            stdDisplay_g_frontBuffer.surface.pDDSurf,
-            &stdDisplay_g_backBuffer.surface.ddSurfDesc.ddsCaps,
-            &stdDisplay_g_backBuffer.surface.pDDSurf
+            stdDisplay_g_frontBuffer.surface.pSysSurface,
+            &stdDisplay_g_backBuffer.surface.desc.ddsCaps,
+            &stdDisplay_g_backBuffer.surface.pSysSurface
         );
         if ( ddres != DD_OK )
         {
@@ -1471,19 +1497,19 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
             return ddres;
         }
 
-        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_backBuffer.surface.pDDSurf, &stdDisplay_g_backBuffer.surface.ddSurfDesc);
+        ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_backBuffer.surface.pSysSurface, &stdDisplay_g_backBuffer.surface.desc);
         if ( ddres != DD_OK )
         {
             STDLOG_ERROR("Error %s when getting desc of DirectDraw back surface.\n", stdDisplay_DDGetStatus(ddres));
             return ddres;
         }
 
-        if ( (stdDisplay_g_backBuffer.surface.ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (stdDisplay_g_backBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
             stdDisplay_g_backBuffer.bVideoMemory = 1;
         }
 
-        stdDisplay_g_backBuffer.rasterInfo.rowSize  = stdDisplay_g_backBuffer.surface.ddSurfDesc.lPitch;
-        stdDisplay_g_backBuffer.rasterInfo.rowWidth = stdDisplay_g_backBuffer.surface.ddSurfDesc.lPitch / bbpp;
+        stdDisplay_g_backBuffer.rasterInfo.rowSize  = stdDisplay_g_backBuffer.surface.desc.lPitch;
+        stdDisplay_g_backBuffer.rasterInfo.rowWidth = stdDisplay_g_backBuffer.surface.desc.lPitch / bbpp;
     }
 
     STDLOG_STATUS("Primary buffer in %s memory.\n", stdDisplay_g_frontBuffer.bVideoMemory ? "VIDEO" : "SYSTEM");
@@ -1493,14 +1519,14 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
 
 void J3DAPI stdDisplay_ReleaseBuffers()
 {
-    if ( stdDisplay_zBuffer.pDDSurf )
+    if ( stdDisplay_zBuffer.pSysSurface )
     {
-        IDirectDrawSurface4_DeleteAttachedSurface(stdDisplay_g_backBuffer.surface.pDDSurf, 0, stdDisplay_zBuffer.pDDSurf);
-        IDirectDrawSurface4_Release(stdDisplay_zBuffer.pDDSurf);
+        IDirectDrawSurface4_DeleteAttachedSurface(stdDisplay_g_backBuffer.surface.pSysSurface, 0, stdDisplay_zBuffer.pSysSurface);
+        IDirectDrawSurface4_Release(stdDisplay_zBuffer.pSysSurface);
     }
 
-    if ( stdDisplay_g_frontBuffer.surface.pDDSurf ) {
-        IDirectDrawSurface4_Release(stdDisplay_g_frontBuffer.surface.pDDSurf);
+    if ( stdDisplay_g_frontBuffer.surface.pSysSurface ) {
+        IDirectDrawSurface4_Release(stdDisplay_g_frontBuffer.surface.pSysSurface);
     }
 
     memset(&stdDisplay_zBuffer, 0, sizeof(stdDisplay_zBuffer));
@@ -1512,18 +1538,18 @@ uint8_t* J3DAPI stdDisplay_LockSurface(tVSurface* pVSurf)
 {
     while ( 1 )
     {
-        HRESULT ddres = IDirectDrawSurface4_Lock(pVSurf->pDDSurf, NULL, &pVSurf->ddSurfDesc, DDLOCK_WAIT, NULL);
+        HRESULT ddres = IDirectDrawSurface4_Lock(pVSurf->pSysSurface, NULL, &pVSurf->desc, DDLOCK_WAIT, NULL);
         if ( ddres == DD_OK ) {
             break;
         }
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            if ( (pVSurf->ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
-                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pDDSurf);
+            if ( (pVSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
+                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             }
             else {
-                ddres = IDirectDrawSurface4_Restore(pVSurf->pDDSurf);
+                ddres = IDirectDrawSurface4_Restore(pVSurf->pSysSurface);
             }
         }
 
@@ -1534,25 +1560,25 @@ uint8_t* J3DAPI stdDisplay_LockSurface(tVSurface* pVSurf)
         }
     }
 
-    return (uint8_t*)pVSurf->ddSurfDesc.lpSurface;
+    return (uint8_t*)pVSurf->desc.lpSurface;
 }
 
 int J3DAPI stdDisplay_UnlockSurface(tVSurface* pSurf)
 {
     while ( 1 )
     {
-        HRESULT ddres = IDirectDrawSurface4_Unlock(pSurf->pDDSurf, 0);
+        HRESULT ddres = IDirectDrawSurface4_Unlock(pSurf->pSysSurface, 0);
         if ( ddres == DD_OK ) {
             break;
         }
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            if ( (pSurf->ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
-                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pDDSurf);
+            if ( (pSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
+                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             }
             else {
-                ddres = IDirectDrawSurface4_Restore(pSurf->pDDSurf);
+                ddres = IDirectDrawSurface4_Restore(pSurf->pSysSurface);
             }
         }
 
@@ -1586,20 +1612,20 @@ int stdDisplay_Update(void)
                 // Although the device driver might support DDFLIP_NOVSYNC option it is still too slow to run at max fps possible.
                 // To circumvent this and run at max fps wee use blt function instead.
                 // Note, useful for speeding up game load times
-                ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pDDSurf, NULL, stdDisplay_g_backBuffer.surface.pDDSurf, NULL, DDBLT_WAIT, NULL);
+                ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL, stdDisplay_g_backBuffer.surface.pSysSurface, NULL, DDBLT_WAIT, NULL);
             }
             else {
-                ddres = IDirectDrawSurface4_Flip(stdDisplay_g_frontBuffer.surface.pDDSurf, NULL, 0);
+                ddres = IDirectDrawSurface4_Flip(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL, 0);
             }
 
-            //if ( !stdDisplay_bNoSync || (stdDisplay_pCurDevice->ddcaps.dwCaps2 & DDCAPS2_FLIPNOVSYNC) != 0 ) {
+            //if ( !stdDisplay_bNoSync || (stdDisplay_pCurDevice->caps.dwCaps2 & DDCAPS2_FLIPNOVSYNC) != 0 ) {
             //    int test = stdDisplay_bNoSync ? DDFLIP_NOVSYNC : 0;
-            //    ddres = IDirectDrawSurface4_Flip(stdDisplay_g_frontBuffer.surface.pDDSurf, NULL, stdDisplay_bNoSync ? DDFLIP_NOVSYNC : 0);
+            //    ddres = IDirectDrawSurface4_Flip(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL, stdDisplay_bNoSync ? DDFLIP_NOVSYNC : 0);
             //}
             //else
             //{
             //    // The device driver doesn't support DDFLIP_NOVSYNC option so this is a way around
-            //    ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pDDSurf, NULL, stdDisplay_g_backBuffer.surface.pDDSurf, NULL, DDBLT_WAIT, NULL);
+            //    ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL, stdDisplay_g_backBuffer.surface.pSysSurface, NULL, DDBLT_WAIT, NULL);
             //}
         }
         else
@@ -1627,7 +1653,7 @@ int stdDisplay_Update(void)
                 IDirectDraw4_WaitForVerticalBlank(stdDisplay_lpDD, DDWAITVB_BLOCKBEGIN, NULL);
             }
 
-            ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pDDSurf, &dstRect, stdDisplay_g_backBuffer.surface.pDDSurf, &srcRect, DDBLT_WAIT, NULL);
+            ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pSysSurface, &dstRect, stdDisplay_g_backBuffer.surface.pSysSurface, &srcRect, DDBLT_WAIT, NULL);
         }
 
         if ( ddres == DD_OK ) {
@@ -1636,7 +1662,7 @@ int stdDisplay_Update(void)
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pDDSurf);
+            ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             if ( ddres != DD_OK )
             {
                 STDLOG_ERROR("Error %s when flipping the page.\n", stdDisplay_DDGetStatus(ddres));
@@ -1645,7 +1671,7 @@ int stdDisplay_Update(void)
 
             if ( !stdDisplay_bFullscreen )
             {
-                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_backBuffer.surface.pDDSurf);
+                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_backBuffer.surface.pSysSurface);
                 if ( ddres != DD_OK )
                 {
                     STDLOG_ERROR("Error %s when flipping the page.\n", stdDisplay_DDGetStatus(ddres));
@@ -1687,8 +1713,8 @@ int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, c
 
         rect.left   = 0;
         rect.top    = 0;
-        rect.right  = pSurf->ddSurfDesc.dwWidth;
-        rect.bottom = pSurf->ddSurfDesc.dwHeight;
+        rect.right  = pSurf->desc.dwWidth;
+        rect.bottom = pSurf->desc.dwHeight;
     }
 
     DDBLTFX ddbltfx;
@@ -1698,18 +1724,18 @@ int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, c
 
     while ( 1 )
     {
-        HRESULT ddres = IDirectDrawSurface4_Blt(pSurf->pDDSurf, &rect, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddbltfx);
+        HRESULT ddres = IDirectDrawSurface4_Blt(pSurf->pSysSurface, &rect, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddbltfx);
         if ( ddres == DD_OK ) {
             break;
         }
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            if ( (pSurf->ddSurfDesc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
-                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pDDSurf);
+            if ( (pSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
+                ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             }
             else {
-                ddres = IDirectDrawSurface4_Restore(pSurf->pDDSurf);
+                ddres = IDirectDrawSurface4_Restore(pSurf->pSysSurface);
             }
         }
 
@@ -1777,7 +1803,7 @@ HDC stdDisplay_GetFrontBufferDC(void)
     }
 
     HDC hdc = 0;
-    HRESULT ddres = IDirectDrawSurface4_GetDC(stdDisplay_g_frontBuffer.surface.pDDSurf, &hdc);
+    HRESULT ddres = IDirectDrawSurface4_GetDC(stdDisplay_g_frontBuffer.surface.pSysSurface, &hdc);
     if ( ddres == DD_OK ) {
         return hdc;
     }
@@ -1790,7 +1816,7 @@ void J3DAPI stdDisplay_ReleaseFrontBufferDC(HDC hdc)
 {
     if ( stdDisplay_bOpen && stdDisplay_bModeSet )
     {
-        HRESULT ddres = IDirectDrawSurface4_ReleaseDC(stdDisplay_g_frontBuffer.surface.pDDSurf, hdc);
+        HRESULT ddres = IDirectDrawSurface4_ReleaseDC(stdDisplay_g_frontBuffer.surface.pSysSurface, hdc);
         if ( ddres != DD_OK ) {
             STDLOG_ERROR("Error %s when releasing DC of front buffer.\n", stdDisplay_DDGetStatus(ddres));
         }
@@ -1805,8 +1831,8 @@ HDC stdDisplay_GetBackBufferDC(void)
     }
 
     HDC hdc = NULL;
-    HRESULT ddres = IDirectDrawSurface4_GetDC(stdDisplay_g_backBuffer.surface.pDDSurf, &hdc);
-    if ( ddres != DD_OK ) {
+    HRESULT ddres = IDirectDrawSurface4_GetDC(stdDisplay_g_backBuffer.surface.pSysSurface, &hdc);
+    if ( ddres != DD_OK ) { // TODO: BUG should be ddres == DD_OK
         return hdc;
     }
 
@@ -1818,7 +1844,7 @@ void J3DAPI stdDisplay_ReleaseBackBufferDC(HDC hdc)
 {
     if ( stdDisplay_bOpen && stdDisplay_bModeSet )
     {
-        HRESULT ddres = IDirectDrawSurface4_ReleaseDC(stdDisplay_g_backBuffer.surface.pDDSurf, hdc);
+        HRESULT ddres = IDirectDrawSurface4_ReleaseDC(stdDisplay_g_backBuffer.surface.pSysSurface, hdc);
         if ( ddres != DD_OK ) {
             STDLOG_ERROR("Error %s when releasing DC of back buffer.\n", stdDisplay_DDGetStatus(ddres));
         }
@@ -1834,20 +1860,20 @@ int stdDisplay_FlipToGDISurface(void)
     return dderr;
 }
 
-int J3DAPI stdDisplay_CanRenderWindowed()
+int stdDisplay_CanRenderWindowed(void)
 {
     if ( !stdDisplay_lpDD ) {
         return -1;
     }
 
-    DDCAPS ddcaps;
-    memset(&ddcaps, 0, sizeof(ddcaps));
-    ddcaps.dwSize = sizeof(DDCAPS);
-    if ( IDirectDraw4_GetCaps(stdDisplay_lpDD, &ddcaps, 0) != DD_OK ) {
+    DDCAPS caps;
+    memset(&caps, 0, sizeof(caps));
+    caps.dwSize = sizeof(DDCAPS);
+    if ( IDirectDraw4_GetCaps(stdDisplay_lpDD, &caps, 0) != DD_OK ) {
         return -1;
     }
 
-    return ddcaps.dwCaps2 & DDCAPS2_CANRENDERWINDOWED;
+    return caps.dwCaps2 & DDCAPS2_CANRENDERWINDOWED;
 }
 
 
@@ -1861,14 +1887,14 @@ int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer)
 
     if ( bFrontBuffer )
     {
-        IDirectDrawSurface4_GetClipper(stdDisplay_g_frontBuffer.surface.pDDSurf, &pClipper);
+        IDirectDrawSurface4_GetClipper(stdDisplay_g_frontBuffer.surface.pSysSurface, &pClipper);
         if ( pClipper ) {
             return 1; // Clipper already set for buffer
         }
     }
     else
     {
-        IDirectDrawSurface4_GetClipper(stdDisplay_g_backBuffer.surface.pDDSurf, &pClipper);
+        IDirectDrawSurface4_GetClipper(stdDisplay_g_backBuffer.surface.pSysSurface, &pClipper);
         if ( pClipper ) {
             return 1; // Clipper already set for buffer
         }
@@ -1889,12 +1915,12 @@ int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer)
         return 0;
     }
 
-    LPDIRECTDRAWSURFACE4 pDDSurf = stdDisplay_g_frontBuffer.surface.pDDSurf;
+    LPDIRECTDRAWSURFACE4 pSysSurface = stdDisplay_g_frontBuffer.surface.pSysSurface;
     if ( !bFrontBuffer ) {
-        pDDSurf = stdDisplay_g_backBuffer.surface.pDDSurf;
+        pSysSurface = stdDisplay_g_backBuffer.surface.pSysSurface;
     }
 
-    ddres = IDirectDrawSurface4_SetClipper(pDDSurf, pClipper);
+    ddres = IDirectDrawSurface4_SetClipper(pSysSurface, pClipper);
     if ( ddres != DD_OK )
     {
         STDLOG_ERROR("Error %s when attaching clipper to primary surface.\n", stdDisplay_DDGetStatus(ddres));
@@ -1912,13 +1938,13 @@ HRESULT J3DAPI stdDisplay_RemoveBufferClipper(int bFrontBuffer)
     }
 
     if ( bFrontBuffer ) {
-        return IDirectDrawSurface4_SetClipper(stdDisplay_g_frontBuffer.surface.pDDSurf, NULL);
+        return IDirectDrawSurface4_SetClipper(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL);
     }
 
-    return IDirectDrawSurface4_SetClipper(stdDisplay_g_backBuffer.surface.pDDSurf, NULL);
+    return IDirectDrawSurface4_SetClipper(stdDisplay_g_backBuffer.surface.pSysSurface, NULL);
 }
 
-int J3DAPI stdDisplay_IsFullscreen()
+int stdDisplay_IsFullscreen(void)
 {
     return stdDisplay_bFullscreen;
 }
@@ -1932,7 +1958,7 @@ int J3DAPI stdDisplay_LockBackBuffer(void** pSurface, uint32_t* pWidth, uint32_t
     DDSURFACEDESC2 dddesc = { 0 }; // Added: Init to zero
     dddesc.dwSize = sizeof(DDSURFACEDESC2);
     HRESULT ddres = IDirectDrawSurface4_Lock(
-        stdDisplay_g_backBuffer.surface.pDDSurf,
+        stdDisplay_g_backBuffer.surface.pSysSurface,
         NULL,
         &dddesc,
         DDLOCK_NOSYSLOCK | DDLOCK_WRITEONLY | DDLOCK_WAIT,
@@ -1953,7 +1979,7 @@ int J3DAPI stdDisplay_LockBackBuffer(void** pSurface, uint32_t* pWidth, uint32_t
     {
         stdDisplay_Refresh(1);
         ddres = IDirectDrawSurface4_Lock(
-            stdDisplay_g_backBuffer.surface.pDDSurf,
+            stdDisplay_g_backBuffer.surface.pSysSurface,
             NULL,
             &dddesc,
             DDLOCK_NOSYSLOCK | DDLOCK_WRITEONLY | DDLOCK_WAIT,
@@ -1979,7 +2005,7 @@ void stdDisplay_UnlockBackBuffer(void)
 {
     if ( stdDisplay_bOpen && stdDisplay_bModeSet )
     {
-        HRESULT ddres = IDirectDrawSurface4_Unlock(stdDisplay_g_backBuffer.surface.pDDSurf, 0);
+        HRESULT ddres = IDirectDrawSurface4_Unlock(stdDisplay_g_backBuffer.surface.pSysSurface, 0);
         if ( ddres != DD_OK ) {
             STDLOG_ERROR("Error %s when unlocking back buffer.\n", stdDisplay_DDGetStatus(ddres));
         }

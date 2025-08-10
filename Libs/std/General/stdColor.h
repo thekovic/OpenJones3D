@@ -113,6 +113,42 @@ static const ColorInfo stdColor_cfRGB8888 =
     .alphaPosShiftRight = 0
 };
 
+static const ColorInfo stdColor_cfARGB4444 =
+{
+    .colorMode          = STDCOLOR_RGBA,
+    .bpp                = 16,
+    .redBPP             = 4,
+    .greenBPP           = 4,
+    .blueBPP            = 4,
+    .redPosShift        = 8,
+    .greenPosShift      = 4,
+    .bluePosShift       = 0,
+    .redPosShiftRight   = 4,
+    .greenPosShiftRight = 4,
+    .bluePosShiftRight  = 4,
+    .alphaBPP           = 4,
+    .alphaPosShift      = 12,
+    .alphaPosShiftRight = 4
+};
+
+static const ColorInfo stdColor_cfARGB5551 =
+{
+    .colorMode          = STDCOLOR_RGBA,
+    .bpp                = 16,
+    .redBPP             = 5,
+    .greenBPP           = 5,
+    .blueBPP            = 5,
+    .redPosShift        = 10,
+    .greenPosShift      = 5,
+    .bluePosShift       = 0,
+    .redPosShiftRight   = 3,
+    .greenPosShiftRight = 3,
+    .bluePosShiftRight  = 3,
+    .alphaBPP           = 1,
+    .alphaPosShift      = 15,
+    .alphaPosShiftRight = 7
+};
+
 static const ColorInfo stdColor_cfABGR8888 =
 {
     .colorMode          = STDCOLOR_RGBA,

@@ -73,6 +73,7 @@ typedef enum eSoundModuleState
     SOUNDSTATE_OPEN        = 3,
 } SoundModuleState;
 
+
 // Note don't change the int types of vars that are being serialized on save/restore
 
 // Module state
