@@ -4,6 +4,7 @@
 #include <rdroid/Engine/rdCamera.h>
 #include <rdroid/Engine/rdClip.h>
 #include <rdroid/Primitives/rdPrimit2.h>
+#include <rdroid/Math/rdMath.h>
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
 #include <rdroid/RTI/symbols.h>
@@ -89,17 +90,16 @@ void J3DAPI rdPrimit3_DrawClippedCircle(const rdVector3* pPos, float radius, flo
 
 void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode geoMode, rdLightMode lightMode, const rdPrimit3* pSrc, rdPrimit3* pDest, const rdVector2* pTexVertOffset)
 {
-    float green;
-    float red;
-    float alpha;
-    float blue;
+    RD_ASSERT(pDest->aVertices); // Added: Ensure destination aVertices is not NULL
+    RD_ASSERT(pSrc->aVertices); // Added: Ensure source aVertices is not NULL
+    RD_ASSERT(pSrc->aVertIdxs); // Added: Ensure source aVertIdxs is not NULL
 
     switch ( geoMode )
     {
         case RD_GEOMETRY_NONE:
             for ( size_t i = 0; i < pSrc->numVertices; ++i )
             {
-                rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
             }
 
             if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -117,7 +117,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
         case RD_GEOMETRY_WIREFRAME:
             for ( size_t i = 0; i < pSrc->numVertices; ++i )
             {
-                rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
             }
 
             if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -138,7 +138,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                 case RD_LIGHTING_LIT:
                     for ( size_t i = 0; i < pSrc->numVertices; ++i )
                     {
-                        rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                        pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
                     }
 
                     if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -155,7 +155,7 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                 case RD_LIGHTING_DIFFUSE:
                     for ( size_t i = 0; i < pSrc->numVertices; ++i )
                     {
-                        rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                        pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
                     }
 
                     if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -174,146 +174,24 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                            pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
 
                             // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
+                            // Verify if not adding intensities alpha is ok.
 
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red < 0.0f )
-                            {
-                                red = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red > 1.0f )
-                            {
-                                red = 1.0f;
-                            }
-                            else
-                            {
-                                red = pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red;
-                            }
-
-                            pDest->aVertLights[i].red = red;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green < 0.0f )
-                            {
-                                green = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green > 1.0f )
-                            {
-                                green = 1.0f;
-                            }
-                            else
-                            {
-                                green = pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green;
-                            }
-
-                            pDest->aVertLights[i].green = green;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue < 0.0f )
-                            {
-                                blue = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue > 1.0f )
-                            {
-                                blue = 1.0f;
-                            }
-                            else
-                            {
-                                blue = pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue;
-                            }
-
-                            pDest->aVertLights[i].blue = blue;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha < 0.0f )
-                            {
-                                alpha = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha > 1.0f )
-                            {
-                                alpha = 1.0f;
-                            }
-                            else
-                            {
-                                alpha = pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha;
-                            }
-
-                            pDest->aVertLights[i].alpha = alpha;
+                            pDest->aVertLights[i] = pSrc->aVertLights[pSrc->aVertIdxs[i]];
+                            rdVector_Add4(&pDest->aVertLights[i], &pSrc->aVertLights[pSrc->aVertIdxs[i]], &pSrc->aVertIntensities[i]); // Fixed: Add aVertIntensities[i].alpha. OG set dest alpha to aVertLights[i].alpha
+                            rdMath_ClampVector4Acc(&pDest->aVertLights[i], 0.0f, 1.0f);
                         }
                     }
                     else
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+                            pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
 
-                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red < 0.0f )
-                            {
-                                red = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red > 1.0f )
-                            {
-                                red = 1.0f;
-                            }
-                            else
-                            {
-                                red = pSrc->aVertLights[pSrc->aVertIdxs[i]].red;
-                            }
-
-                            pDest->aVertLights[i].red = red;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green < 0.0f )
-                            {
-                                green = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green > 1.0f )
-                            {
-                                green = 1.0f;
-                            }
-                            else
-                            {
-                                green = pSrc->aVertLights[pSrc->aVertIdxs[i]].green;
-                            }
-
-                            pDest->aVertLights[i].green = green;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue < 0.0f )
-                            {
-                                blue = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue > 1.0f )
-                            {
-                                blue = 1.0f;
-                            }
-                            else
-                            {
-                                blue = pSrc->aVertLights[pSrc->aVertIdxs[i]].blue;
-                            }
-
-                            pDest->aVertLights[i].blue = blue;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha < 0.0f )
-                            {
-                                alpha = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha > 1.0f )
-                            {
-                                alpha = 1.0f;
-                            }
-                            else
-                            {
-                                alpha = pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha;
-                            }
-
-                            pDest->aVertLights[i].alpha = alpha;
+                            pDest->aVertLights[i] = pSrc->aVertLights[pSrc->aVertIdxs[i]];
+                            rdMath_ClampVector4Acc(&pDest->aVertLights[i], 0.0f, 1.0f);
                         }
                     }
 
@@ -335,17 +213,23 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
             break;
 
         case RD_GEOMETRY_FULL:
+            RD_ASSERT(pDest->aVertLights); // Added: Ensure aVertLights is allocated
             if ( lightMode >= RD_LIGHTING_NONE )
             {
                 if ( lightMode <= RD_LIGHTING_DIFFUSE )
                 {
                     for ( size_t i = 0; i < pSrc->numVertices; ++i )
                     {
-                        rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
-                        rdVector_Copy2(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]]);
+                        pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
 
-                        pDest->aTexVertices[i].x = pDest->aTexVertices[i].x + pTexVertOffset->x;
-                        pDest->aTexVertices[i].y = pDest->aTexVertices[i].y + pTexVertOffset->y;
+                        pDest->aTexVertices[i] = pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+                        rdVector_Add2Acc(&pDest->aTexVertices[i], pTexVertOffset);
+
+                        // Fixed: Set vertex intensities to vertex lights, fixes alpha value for transparent polygons with no litting
+                        if ( pSrc->aVertIntensities )
+                        {
+                            pDest->aVertLights[i] = pSrc->aVertIntensities[i];
+                        }
                     }
 
                     if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
@@ -359,158 +243,114 @@ void J3DAPI rdPrimit3_ClipFace(const rdClipFrustum* pFrustrum, rdGeometryMode ge
                 }
                 else if ( lightMode == RD_LIGHTING_GOURAUD )
                 {
-                    if ( pSrc->aVertIntensities )
+                    if ( pSrc->aVertLights ) // Fixed: Add check null
                     {
-                        for ( size_t i = 0; i < pSrc->numVertices; ++i )
+                        if ( pSrc->aVertIntensities )
                         {
-                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
-                            rdVector_Copy2(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]]);
-
-                            pDest->aTexVertices[i].x = pDest->aTexVertices[i].x + pTexVertOffset->x;
-                            pDest->aTexVertices[i].y = pDest->aTexVertices[i].y + pTexVertOffset->y;
-
-                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red < 0.0f )
+                            for ( size_t i = 0; i < pSrc->numVertices; ++i )
                             {
-                                red = 0.0f;
-                            }
+                                pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
 
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red > 1.0f )
-                            {
-                                red = 1.0f;
-                            }
-                            else
-                            {
-                                red = pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red;
-                            }
+                                pDest->aTexVertices[i] = pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+                                rdVector_Add2Acc(&pDest->aTexVertices[i], pTexVertOffset);
 
-                            pDest->aVertLights[i].red = red;
+                                // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
+                                // Verify if not adding intensities alpha is ok.
 
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green < 0.0f )
-                            {
-                                green = 0.0f;
-                            }
+                                pDest->aVertLights[i] = pSrc->aVertLights[pSrc->aVertIdxs[i]];
+                                rdVector_Add4(&pDest->aVertLights[i], &pSrc->aVertLights[pSrc->aVertIdxs[i]], &pSrc->aVertIntensities[i]); // Fixed: Add aVertIntensities[i].alpha. OG set dest alpha to aVertLights[i].alpha
+                                rdMath_ClampVector4Acc(&pDest->aVertLights[i], 0.0f, 1.0f);
 
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green > 1.0f )
-                            {
-                                green = 1.0f;
-                            }
-                            else
-                            {
-                                green = pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green;
-                            }
+                                /*if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red < 0.0f )
+                                {
+                                    red = 0.0f;
+                                }
 
-                            pDest->aVertLights[i].green = green;
+                                else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red > 1.0f )
+                                {
+                                    red = 1.0f;
+                                }
+                                else
+                                {
+                                    red = pSrc->aVertLights[pSrc->aVertIdxs[i]].red + pSrc->aVertIntensities[i].red;
+                                }
 
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue < 0.0f )
-                            {
-                                blue = 0.0f;
-                            }
+                                pDest->aVertLights[i].red = red;
 
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue > 1.0f )
-                            {
-                                blue = 1.0f;
-                            }
-                            else
-                            {
-                                blue = pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue;
-                            }
+                                if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green < 0.0f )
+                                {
+                                    green = 0.0f;
+                                }
 
-                            pDest->aVertLights[i].blue = blue;
+                                else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green > 1.0f )
+                                {
+                                    green = 1.0f;
+                                }
+                                else
+                                {
+                                    green = pSrc->aVertLights[pSrc->aVertIdxs[i]].green + pSrc->aVertIntensities[i].green;
+                                }
 
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha < 0.0f )
-                            {
-                                alpha = 0.0f;
-                            }
+                                pDest->aVertLights[i].green = green;
 
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha > 1.0f )
-                            {
-                                alpha = 1.0f;
-                            }
-                            else
-                            {
-                                alpha = pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha;
-                            }
+                                if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue < 0.0f )
+                                {
+                                    blue = 0.0f;
+                                }
 
-                            pDest->aVertLights[i].alpha = alpha;
+                                else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue > 1.0f )
+                                {
+                                    blue = 1.0f;
+                                }
+                                else
+                                {
+                                    blue = pSrc->aVertLights[pSrc->aVertIdxs[i]].blue + pSrc->aVertIntensities[i].blue;
+                                }
+
+                                pDest->aVertLights[i].blue = blue;
+
+                                if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha < 0.0f )
+                                {
+                                    alpha = 0.0f;
+                                }
+
+                                else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha > 1.0f )
+                                {
+                                    alpha = 1.0f;
+                                }
+                                else
+                                {
+                                    alpha = pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha;
+                                }
+
+                                pDest->aVertLights[i].alpha = alpha;*/
+                            }
+                        }
+                        else
+                        {
+                            for ( size_t i = 0; i < pSrc->numVertices; ++i )
+                            {
+                                pDest->aVertices[i]    = pSrc->aVertices[pSrc->aVertIdxs[i]];
+
+                                pDest->aTexVertices[i] = pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+                                rdVector_Add2Acc(&pDest->aTexVertices[i], pTexVertOffset);
+
+                                // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
+
+
+                                pDest->aVertLights[i] = pSrc->aVertLights[pSrc->aVertIdxs[i]];
+                                rdMath_ClampVector4Acc(&pDest->aVertLights[i], 0.0f, 1.0f);
+                            }
                         }
                     }
                     else
                     {
                         for ( size_t i = 0; i < pSrc->numVertices; ++i )
                         {
-                            rdVector_Copy3(&pDest->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
-                            rdVector_Copy2(&pDest->aTexVertices[i], &pSrc->aTexVertices[pSrc->aTexVertIdxs[i]]);
+                            pDest->aVertices[i]    = pSrc->aVertices[pSrc->aVertIdxs[i]];
 
-                            pDest->aTexVertices[i].x = pDest->aTexVertices[i].x + pTexVertOffset->x;
-                            pDest->aTexVertices[i].y = pDest->aTexVertices[i].y + pTexVertOffset->y;
-
-                            // TODO: verify if it's a bug assigning to pDest->aVertLights[i] instead of pSrc->aVertLights[pSrc->aVertIdxs[i]]
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red < 0.0f )
-                            {
-                                red = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].red > 1.0f )
-                            {
-                                red = 1.0f;
-                            }
-                            else
-                            {
-                                red = pSrc->aVertLights[pSrc->aVertIdxs[i]].red;
-                            }
-
-                            pDest->aVertLights[i].red = red;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green < 0.0f )
-                            {
-                                green = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].green > 1.0f )
-                            {
-                                green = 1.0f;
-                            }
-                            else
-                            {
-                                green = pSrc->aVertLights[pSrc->aVertIdxs[i]].green;
-                            }
-
-                            pDest->aVertLights[i].green = green;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue < 0.0f )
-                            {
-                                blue = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].blue > 1.0f )
-                            {
-                                blue = 1.0f;
-                            }
-                            else
-                            {
-                                blue = pSrc->aVertLights[pSrc->aVertIdxs[i]].blue;
-                            }
-
-                            pDest->aVertLights[i].blue = blue;
-
-                            if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha < 0.0f )
-                            {
-                                alpha = 0.0f;
-                            }
-
-                            else if ( pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha > 1.0f )
-                            {
-                                alpha = 1.0f;
-                            }
-                            else
-                            {
-                                alpha = pSrc->aVertLights[pSrc->aVertIdxs[i]].alpha;
-                            }
-
-                            pDest->aVertLights[i].alpha = alpha;
+                            pDest->aTexVertices[i] = pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+                            rdVector_Add2Acc(&pDest->aTexVertices[i], pTexVertOffset);
                         }
                     }
 
