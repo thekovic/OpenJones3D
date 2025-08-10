@@ -25,7 +25,10 @@ static rdVector4 rdClip_aWorkVertIntensities[MAX_CLIP_VERTICIES] = { 0 };
 static rdVector4* rdClip_pSourceVertIntensity;
 static rdVector4* rdClip_pDestVertIntensity;
 
-static rdVector3 rdClip_aWorkFaceVerts[144] = { 0 };
+static rdVector3 rdClip_aWorkFaceVerts[144]           = { 0 };
+static rdVector2 rdClip_aWorkFaceTVerts[144]          = { 0 };
+static rdVector4 rdClip_aWorkFaceVertLight[144]       = { 0 };
+static rdVector4 rdClip_aWorkFaceVertIntensities[144] = { 0 };
 
 void rdClip_InstallHooks(void)
 {
@@ -46,7 +49,7 @@ void rdClip_InstallHooks(void)
     J3D_HOOKFUNC(rdClip_Face3T);
     J3D_HOOKFUNC(rdClip_Face3TOrtho);
     J3D_HOOKFUNC(rdClip_SphereInFrustrum);
-    J3D_HOOKFUNC(rdClip_QFace3W);
+    J3D_HOOKFUNC(rdClip_QClipFaceW);
     J3D_HOOKFUNC(rdClip_FaceToPlane);
     J3D_HOOKFUNC(rdClip_VerticesToPlane);
 }
@@ -389,7 +392,6 @@ int J3DAPI rdClip_Point3(const rdClipFrustum* pFrustum, const rdVector3* pPoint)
     return pPoint->z >= orthoBottomPlane;
 }
 
-
 int J3DAPI rdClip_ClipFacePVS(rdClipFrustum* pFrustrum, const rdPrimit3* pSrc, rdPrimit3* pDest)
 {
     for ( size_t i = 0; i < pSrc->numVertices; ++i )
@@ -600,7 +602,6 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
     }
 
     // Bottom clipping
-
     paCurSrc           = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paCurSrc;
@@ -3898,12 +3899,67 @@ RdFrustumCull J3DAPI rdClip_SphereInFrustrum(const rdClipFrustum* pFrustum, cons
     return bInFrustum == 0 ? RDFRUSTUMCULL_INTERSECT : RDFRUSTUMCULL_INSIDE;
 }
 
-void J3DAPI rdClip_QFace3W(const rdClipFrustum* pFrustrum, const rdPrimit3* pSrc, rdPrimit3* pDst)
+int J3DAPI rdClip_QClipFaceT(rdClipFrustum* pFrustrum, const rdPrimit3* pSrc, rdPrimit3* pDest, const rdVector2* pTVOffset)
+{
+    if ( pSrc->aVertIntensities )
+    {
+        for ( size_t i = 0; i < pSrc->numVertices; ++i )
+        {
+            pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
+
+            pDest->aTexVertices[i], pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+            rdVector_Add2Acc(&pDest->aTexVertices[i], pTVOffset);
+
+            rdVector_Add4(&pDest->aVertLights[i], &pSrc->aVertLights[pSrc->aVertIdxs[i]], &pSrc->aVertIntensities[i]);
+            rdMath_ClampVector4Acc(&pDest->aVertLights[i], 0.0f, 1.0f);
+        }
+    }
+    else if ( pSrc->aVertLights ) // Fixed: Check for not null
+    {
+        for ( size_t i = 0; i < pSrc->numVertices; ++i )
+        {
+            pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
+
+            pDest->aTexVertices[i] = pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+            rdVector_Add2Acc(&pDest->aTexVertices[i], pTVOffset);
+
+            pDest->aVertLights[i] = pSrc->aVertLights[pSrc->aVertIdxs[i]];
+            rdMath_ClampVector4Acc(&pDest->aVertLights[i], 0.0f, 1.0f);
+        }
+    }
+    else // Added
+    {
+        for ( size_t i = 0; i < pSrc->numVertices; ++i )
+        {
+            pDest->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
+
+            pDest->aTexVertices[i] = pSrc->aTexVertices[pSrc->aTexVertIdxs[i]];
+            rdVector_Add2Acc(&pDest->aTexVertices[i], pTVOffset);
+        }
+    }
+
+    if ( rdCamera_g_pCurCamera->projectType == RDCAMERA_PROJECT_PERSPECTIVE )
+    {
+        pDest->numVertices = rdQClip_VerticesInFrustrum(pFrustrum, pDest->aVertices, pSrc->numVertices);
+        if ( pDest->numVertices )
+        {
+            pDest->numVertices = rdQClip_Face3T(pFrustrum, pDest->aVertices, pDest->aTexVertices, pDest->aVertLights, pSrc->numVertices);
+        }
+    }
+    else
+    {
+        pDest->numVertices = rdClip_Face3TOrtho(pFrustrum, pDest->aVertices, pDest->aTexVertices, pDest->aVertLights, pSrc->numVertices);
+    }
+
+    return pDest->numVertices;
+}
+
+void J3DAPI rdClip_QClipFaceW(const rdClipFrustum* pFrustrum, const rdPrimit3* pSrc, rdPrimit3* pDst)
 {
 
     for ( size_t i = 0; i < pSrc->numVertices; ++i )
     {
-        rdVector_Copy3(&pDst->aVertices[i], &pSrc->aVertices[pSrc->aVertIdxs[i]]);
+        pDst->aVertices[i] = pSrc->aVertices[pSrc->aVertIdxs[i]];
     }
 
     pDst->numVertices = rdQClip_VerticesInFrustrum(pFrustrum, pDst->aVertices, pSrc->numVertices);
@@ -3922,7 +3978,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
 
     for ( size_t i = 0; i < pFace->numVertices; ++i )
     {
-        rdVector_Copy3(&rdClip_aWorkFaceVerts[i], &aVerts[pFace->aVertices[i]]);
+        rdClip_aWorkFaceVerts[i] = aVerts[pFace->aVertices[i]];
     }
 
     if ( !rdQClip_VerticesInFrustrum(pFrustrum, rdClip_aWorkFaceVerts, pFace->numVertices) )
@@ -3937,20 +3993,12 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
     float invFarPlane  = rdCamera_g_pCurCamera->invFarClipPlane;
     float focalLength  = rdCamera_g_pCurCamera->focalLength * rdCamera_g_pCurCamera->aspectRatio; // Fixed: Multiplied focalLength by aspectRatio to account camera aspect ratio
 
-    int result = 0;
-
     if ( aLightColors )
     {
         if ( aVertColors )
         {
-            for ( size_t i = 0; ; ++i )
+            for ( size_t i = 0; i < pFace->numVertices; ++i )
             {
-                result = 1;
-                if ( i >= pFace->numVertices )
-                {
-                    break;
-                }
-
                 float invY = 1.0f / rdClip_aWorkFaceVerts[i].y;
                 float  scale = focalLength * invY;
 
@@ -3959,7 +4007,7 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
                 pOutVert->sy = ccenterY - rdClip_aWorkFaceVerts[i].z * scale;
                 pOutVert->sz = (invY - invNearPlane) * invFarPlane;
 
-                pOutVert->rhw = invY * 0.03125f; // 0.03125f - 1/ 32
+                pOutVert->rhw = invY / 32;
 
                 pOutVert->tu = aTexVerts[pFace->aTexVertices[i]].x + pFace->texVertOffset.x;
                 pOutVert->tv = aTexVerts[pFace->aTexVertices[i]].y + pFace->texVertOffset.y;
@@ -3971,14 +4019,8 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
         }
         else
         {
-            for ( size_t i = 0; ; ++i )
+            for ( size_t i = 0; i < pFace->numVertices; ++i )
             {
-                result = i;
-                if ( i >= pFace->numVertices )
-                {
-                    break;
-                }
-
                 float invY = 1.0f / rdClip_aWorkFaceVerts[i].y;
                 float  scale = focalLength * invY;
 
@@ -3987,25 +4029,19 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
                 pOutVert->sy = ccenterY - rdClip_aWorkFaceVerts[i].z * scale;
                 pOutVert->sz = (invY - invNearPlane) * invFarPlane;
 
-                pOutVert->rhw = invY * 0.03125f; // 0.03125f - 1/ 32
+                pOutVert->rhw = invY / 32;
 
                 pOutVert->tu = aTexVerts[pFace->aTexVertices[i]].x + pFace->texVertOffset.x;
                 pOutVert->tv = aTexVerts[pFace->aTexVertices[i]].y + pFace->texVertOffset.y;
 
-                rdVector_Copy4(&pProcFace->aVertIntensities[i], &aLightColors[pFace->aVertices[i]]);
+                pProcFace->aVertIntensities[i] = aLightColors[pFace->aVertices[i]];
             }
         }
     }
     else
     {
-        for ( size_t i = 0; ; ++i )
+        for ( size_t i = 0; i < pFace->numVertices; ++i )
         {
-            result = 1;
-            if ( i >= pFace->numVertices )
-            {
-                break;
-            }
-
             float invY  = 1.0f / rdClip_aWorkFaceVerts[i].y;
             float  scale = focalLength * invY;
 
@@ -4014,14 +4050,14 @@ int J3DAPI rdClip_FaceToPlane(const rdClipFrustum* pFrustrum, rdCacheProcEntry* 
             pOutVert->sy = ccenterY - rdClip_aWorkFaceVerts[i].z * scale;
             pOutVert->sz = (invY - invNearPlane) * invFarPlane;
 
-            pOutVert->rhw = invY * 0.03125f; // 0.03125f - 1/ 32
+            pOutVert->rhw = invY / 32;
 
             pOutVert->tu = aTexVerts[pFace->aTexVertices[i]].x + pFace->texVertOffset.x;
             pOutVert->tv = aTexVerts[pFace->aTexVertices[i]].y + pFace->texVertOffset.y;
         }
     }
 
-    return result;
+    return 1;
 }
 
 void J3DAPI rdClip_VerticesToPlane(rdCacheProcEntry* pProcFace, const rdVector3* aVerts, const rdVector2* aTexVerts, size_t numVerts)
@@ -4045,7 +4081,7 @@ void J3DAPI rdClip_VerticesToPlane(rdCacheProcEntry* pProcFace, const rdVector3*
         pOutVert->sy = ccenterY - aVerts[i].z * scale;
         pOutVert->sz = (invY - invNearClipPlane) * invFarClipPlane;
 
-        pOutVert->rhw = invY * 0.03125f; // 0.03125f - 1/ 32
+        pOutVert->rhw = invY / 32;
 
         pOutVert->tu = aTexVerts[i].x;
         pOutVert->tv = aTexVerts[i].y;

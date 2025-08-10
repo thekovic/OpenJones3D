@@ -339,8 +339,8 @@ void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum
         sithRender_BuildVisibleSector(pSector, pFrustrum);
     }
 
-    int bBuildingSector        = pSector->bBuildingSector;
-    pSector->bBuildingSector   = 1;
+    int bBuildingSector           = pSector->bBuildingSector;
+    pSector->bBuildingSector      = 1;
     sithRender_faceView.aVertices = sithWorld_g_pCurrentWorld->aTransformedVertices;
 
     for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
@@ -615,7 +615,7 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
         }
     }
 
-    // Assign sector+s frustum
+    // Assign sectors frustum
     memcpy(&sithRender_aSectorFrustrums[sithRender_numSecorFrustrums], pFrustrum, sizeof(rdClipFrustum));
     pSector->pClipFrustum = &sithRender_aSectorFrustrums[sithRender_numSecorFrustrums++];
 
@@ -688,113 +688,118 @@ void sithRender_RenderSectors(void)
 
             rdVector3 camDir;
             rdVector_Sub3(&camDir, &sithCamera_g_pCurCamera->lookPos, &sithWorld_g_pCurrentWorld->aVertices[*pSurf->face.aVertices]);
-            if ( rdVector_Dot3(&pSurf->face.normal, &camDir) > 0.0f ) // If surface is facing camera
+            if ( rdVector_Dot3(&pSurf->face.normal, &camDir) <= 0.0f ) // If surface is not facing camera
             {
-                if ( pSurf->pAdjoin && (pSurf->face.flags & RD_FF_TEX_TRANSLUCENT) != 0 )
+                continue;
+            }
+
+            if ( pSurf->pAdjoin && (pSurf->face.flags & RD_FF_TEX_TRANSLUCENT) != 0 )
+            {
+                if ( sithRender_numAlphaAdjoins < STD_ARRAYLEN(sithRender_aAlphaAdjoins) )
                 {
-                    if ( sithRender_numAlphaAdjoins < STD_ARRAYLEN(sithRender_aAlphaAdjoins) )
-                    {
-                        sithRender_aAlphaAdjoins[sithRender_numAlphaAdjoins++] = pSurf;
-                    }
-                    // Maybe add log when alpha adjoin couldn't be processed
+                    sithRender_aAlphaAdjoins[sithRender_numAlphaAdjoins++] = pSurf;
                 }
-                else
+                // Maybe add log when alpha adjoin couldn't be processed
+            }
+            else
+            {
+                // Rotate surface to camera orientation
+                if ( pSurf->renderTick != sithMain_g_curRenderTick )
                 {
-                    // Rotate surface to camera orientation
-                    if ( pSurf->renderTick != sithMain_g_curRenderTick )
+                    for ( size_t i = 0; i < pSurf->face.numVertices; ++i )
                     {
-                        for ( size_t i = 0; i < pSurf->face.numVertices; ++i )
+                        int vertIdx = pSurf->face.aVertices[i];
+                        if ( sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] != sithMain_g_curRenderTick )
                         {
-                            int vertIdx = pSurf->face.aVertices[i];
-                            if ( sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] != sithMain_g_curRenderTick )
-                            {
-                                rdMatrix_TransformPoint34(
-                                    &sithWorld_g_pCurrentWorld->aTransformedVertices[vertIdx],
-                                    &sithWorld_g_pCurrentWorld->aVertices[vertIdx],
-                                    &rdCamera_g_pCurCamera->orient
-                                );
-                                sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] = sithMain_g_curRenderTick;
-                            }
+                            rdMatrix_TransformPoint34(
+                                &sithWorld_g_pCurrentWorld->aTransformedVertices[vertIdx],
+                                &sithWorld_g_pCurrentWorld->aVertices[vertIdx],
+                                &rdCamera_g_pCurCamera->orient
+                            );
+                            sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] = sithMain_g_curRenderTick;
                         }
-
-                        pSurf->renderTick = sithMain_g_curRenderTick;
                     }
 
-                    rdCacheProcEntry* pPoly = rdCache_GetProcEntry();
-                    if ( !pPoly )
+                    pSurf->renderTick = sithMain_g_curRenderTick;
+                }
+
+                rdCacheProcEntry* pPoly = rdCache_GetProcEntry();
+                if ( !pPoly )
+                {
+                    // TODO: Add maybe log
+                    continue;
+                }
+
+                // Render sky surface
+                if ( (pSurf->flags & (SITH_SURFACE_CEILINGSKY | SITH_SURFACE_HORIZONSKY)) != 0 )
+                {
+                    // Clip vertices and transform to camera space
+                    sithRender_clipFaceView.aVertices  = sithRender_aClipVertices;
+                    sithRender_faceView.numVertices    = pSurf->face.numVertices;
+                    sithRender_faceView.aVertIdxs      = pSurf->face.aVertices;
+
+                    rdClip_QClipFaceW(pSector->pClipFrustum, &sithRender_faceView, &sithRender_clipFaceView);
+                    if ( sithRender_clipFaceView.numVertices < 3 )
                     {
-                        // TODO: Add maybe log
+                        continue;
+                    }
+                    // There are enough clipped vertices to render n-gon,
+                    // first let's project them to NDC space
+                    rdCamera_g_pCurCamera->pfProjectList(sithRender_aSurfaceTransformedVertices, sithRender_aClipVertices, sithRender_clipFaceView.numVertices);
+
+                    pPoly->flags     = pSurf->face.flags;
+                    pPoly->pMaterial = pSurf->face.pMaterial;
+
+                    // Now make sky poly from transformed vertices
+                    if ( (pSurf->flags & SITH_SURFACE_HORIZONSKY) != 0 )
+                    {
+                        sithRenderSky_HorizonFaceToPlane(pPoly, &pSurf->face, sithRender_aSurfaceTransformedVertices, sithRender_clipFaceView.numVertices);
+                    }
+                    else if ( (pSurf->flags & SITH_SURFACE_CEILINGSKY) != 0 )
+                    {
+                        sithRenderSky_CeilingFaceToPlane(pPoly, &pSurf->face, sithRender_aClipVertices, sithRender_aSurfaceTransformedVertices, sithRender_clipFaceView.numVertices);
+                    }
+
+                    pPoly->matCelNum = pSurf->face.matCelNum;
+                    rdCache_AddProcFace(sithRender_clipFaceView.numVertices);
+
+                    ++sithRender_g_numArchPolys;
+                }
+                else // Not a sky surface
+                {
+                    // Clip vertices and transform to NDC screen space
+                    if ( !rdClip_FaceToPlane(pSector->pClipFrustum, pPoly, &pSurf->face, sithWorld_g_pCurrentWorld->aTransformedVertices, sithWorld_g_pCurrentWorld->aTexVerticies, sithWorld_g_pCurrentWorld->aVertDynamicLights, pSurf->aIntensities) )
+                    {
+                        // Face is fully outside frustrum
                         continue;
                     }
 
-                    // Render sky surface
-                    if ( (pSurf->flags & (SITH_SURFACE_CEILINGSKY | SITH_SURFACE_HORIZONSKY)) != 0 )
+                    pPoly->lightingMode = pSurf->face.lightingMode;
+                    if ( pPoly->lightingMode >= sithRender_lightMode )
                     {
-                        // Clip vertices and transform to camera space
-                        sithRender_clipFaceView.aVertices  = sithRender_aClipVertices;
-                        sithRender_faceView.numVertices    = pSurf->face.numVertices;
-                        sithRender_faceView.aVertIdxs      = pSurf->face.aVertices;
-
-                        rdClip_QFace3W(pSector->pClipFrustum, &sithRender_faceView, &sithRender_clipFaceView);
-                        if ( sithRender_clipFaceView.numVertices >= 3 )
-                        {
-                            // There are enough clipped vertices to render n-gon,
-                            // first let's project them to NDC space
-                            rdCamera_g_pCurCamera->pfProjectList(sithRender_aSurfaceTransformedVertices, sithRender_aClipVertices, sithRender_clipFaceView.numVertices);
-
-                            pPoly->flags     = pSurf->face.flags;
-                            pPoly->pMaterial = pSurf->face.pMaterial;
-
-                            // Now make sky poly from transformed vertices
-                            if ( (pSurf->flags & SITH_SURFACE_HORIZONSKY) != 0 )
-                            {
-                                sithRenderSky_HorizonFaceToPlane(pPoly, &pSurf->face, sithRender_aSurfaceTransformedVertices, sithRender_clipFaceView.numVertices);
-                            }
-                            else if ( (pSurf->flags & SITH_SURFACE_CEILINGSKY) != 0 )
-                            {
-                                sithRenderSky_CeilingFaceToPlane(pPoly, &pSurf->face, sithRender_aClipVertices, sithRender_aSurfaceTransformedVertices, sithRender_clipFaceView.numVertices);
-                            }
-
-                            pPoly->matCelNum = pSurf->face.matCelNum;
-                            rdCache_AddProcFace(sithRender_clipFaceView.numVertices);
-
-                            ++sithRender_g_numArchPolys;
-                        }
+                        pPoly->lightingMode = sithRender_lightMode;
                     }
-                    else // Not a sky surface
+
+                    // TODO: Clamp maybe vector to 0.0f - 1.0f?
+                    rdVector_Add4(&pPoly->extraLight, &pSurf->face.extraLight, &pSector->extraLight);
+
+                    // TODO: Also camera ambient light is not set (rdCamera_SetAmbientLight), but the alpha adjoin surfaces has ambient light set to sed.extraLight + sec.ambientLight
+
+                    pPoly->flags = pSurf->face.flags;
+                    if ( (pSurf->flags & SITH_SURFACE_CEILINGSKY) != 0 ) // TODO: ???
                     {
-                        // Clip vertices and transform to NDC screen space
-
-                        if ( rdClip_FaceToPlane(pSector->pClipFrustum, pPoly, &pSurf->face, sithWorld_g_pCurrentWorld->aTransformedVertices, sithWorld_g_pCurrentWorld->aTexVerticies, sithWorld_g_pCurrentWorld->aVertDynamicLights, pSurf->aIntensities) )
-                        {
-                            pPoly->lightingMode = pSurf->face.lightingMode;
-                            if ( pPoly->lightingMode >= sithRender_lightMode )
-                            {
-                                pPoly->lightingMode = sithRender_lightMode;
-                            }
-
-                            rdVector_Add4(&pPoly->extraLight, &pSurf->face.extraLight, &pSector->extraLight);
-                            // TODO: Clamp maybe vector to 0.0f - 1.0f?
-
-                            // Also camera ambient light is not set (rdCamera_SetAmbientLight), but the alpha adjoin surfaces has ambient light set to sed.extraLight + sec.ambientLight
-
-                            pPoly->flags = pSurf->face.flags;
-                            if ( (pSurf->flags & SITH_SURFACE_CEILINGSKY) != 0 ) // TODO: ???
-                            {
-                                sithRenderSky_CeilingFaceToPlane(pPoly, &pSurf->face, sithRender_aClipVertices, sithRender_aSurfaceTransformedVertices, pSurf->face.numVertices);
-                            }
-                            else
-                            {
-                                pPoly->flags |= extraFaceFlags;
-                            }
-
-                            pPoly->pMaterial = pSurf->face.pMaterial;
-                            pPoly->matCelNum = pSurf->face.matCelNum;
-                            rdCache_AddProcFace(pSurf->face.numVertices);
-
-                            ++sithRender_g_numArchPolys;
-                        }
+                        sithRenderSky_CeilingFaceToPlane(pPoly, &pSurf->face, sithRender_aClipVertices, sithRender_aSurfaceTransformedVertices, pSurf->face.numVertices);
                     }
+                    else
+                    {
+                        pPoly->flags |= extraFaceFlags;
+                    }
+
+                    pPoly->pMaterial = pSurf->face.pMaterial;
+                    pPoly->matCelNum = pSurf->face.matCelNum;
+                    rdCache_AddProcFace(pSurf->face.numVertices);
+
+                    ++sithRender_g_numArchPolys;
                 }
             }
         }
@@ -1204,20 +1209,23 @@ void sithRender_RenderAlphaAdjoins(void)
 
         pPoly->lightingMode = pSurf->face.lightingMode >= sithRender_lightMode ? sithRender_lightMode : pSurf->face.lightingMode;
 
-        if ( rdClip_FaceToPlane(pSector->pClipFrustum, pPoly, &pSurf->face, sithWorld_g_pCurrentWorld->aTransformedVertices, sithWorld_g_pCurrentWorld->aTexVerticies, sithWorld_g_pCurrentWorld->aVertDynamicLights, pSurf->aIntensities) )
+        if ( !rdClip_FaceToPlane(pSector->pClipFrustum, pPoly, &pSurf->face, sithWorld_g_pCurrentWorld->aTransformedVertices, sithWorld_g_pCurrentWorld->aTexVerticies, sithWorld_g_pCurrentWorld->aVertDynamicLights, pSurf->aIntensities) )
         {
-            rdVector_Add4(&pPoly->extraLight, &pSurf->face.extraLight, &pSector->extraLight);
-            // TODO: Maybe clamp [0.0,1.0]
-
-            pPoly->matCelNum = pSurf->face.matCelNum;
-            pPoly->flags     = extraFaceFlags | pSurf->face.flags;
-            pPoly->pMaterial = pSurf->face.pMaterial;
-
-            rdCache_AddAlphaProcFace(pSurf->face.numVertices);
-
-            ++sithRender_g_numAlphaArchPolys;
-            bFlush = true;
+            // Face is fully outside frustrum
+            continue;
         }
+
+        rdVector_Add4(&pPoly->extraLight, &pSurf->face.extraLight, &pSector->extraLight);
+        // TODO: Maybe clamp [0.0,1.0]
+
+        pPoly->matCelNum = pSurf->face.matCelNum;
+        pPoly->flags     = extraFaceFlags | pSurf->face.flags;
+        pPoly->pMaterial = pSurf->face.pMaterial;
+
+        rdCache_AddAlphaProcFace(pSurf->face.numVertices);
+
+        ++sithRender_g_numAlphaArchPolys;
+        bFlush = true;
     }
 
     if ( bFlush )
