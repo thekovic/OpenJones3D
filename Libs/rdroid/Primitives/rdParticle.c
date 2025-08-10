@@ -397,60 +397,63 @@ int J3DAPI rdParticle_Draw(const rdThing* pParticle, const rdMatrix34* pOrient)
         rdParticle_aFaceVerts[3].y = rdParticle_aTransformedVerts[i].y;
         rdParticle_aFaceVerts[3].z = rdParticle_aTransformedVerts[i].z + prdParticle->sizeHalf;
 
+
         size_t numVertsInFrustum = rdQClip_VerticesInFrustrum(rdCamera_g_pCurCamera->pFrustum, rdParticle_aFaceVerts, STD_ARRAYLEN(rdParticle_aFaceVerts));
-        if ( numVertsInFrustum == STD_ARRAYLEN(rdParticle_aFaceVerts) )
+        if ( numVertsInFrustum != STD_ARRAYLEN(rdParticle_aFaceVerts) )
         {
-            rdCacheProcEntry* pPoly = NULL;
-            bAlpha = bAlpha && rdParticle_aFaceVerts[0].y < 1.5f;
-            if ( bAlpha )
-            {
-                pPoly = rdCache_GetAlphaProcEntry();
-            }
-            else
-            {
-                pPoly = rdCache_GetProcEntry();
-            }
+            continue;
+        }
 
-            if ( !pPoly )
-            {
-                return 0;
-            }
+        rdCacheProcEntry* pPoly = NULL;
+        bAlpha = bAlpha && rdParticle_aFaceVerts[0].y < 1.5f;
+        if ( bAlpha )
+        {
+            pPoly = rdCache_GetAlphaProcEntry();
+        }
+        else
+        {
+            pPoly = rdCache_GetProcEntry();
+        }
 
-            rdClip_VerticesToPlane(pPoly, rdParticle_aFaceVerts, rdParticle_aFaceTexVerts, STD_ARRAYLEN(rdParticle_aFaceVerts));
+        if ( !pPoly )
+        {
+            return 0;
+        }
 
-            rdVector_Copy4(&pPoly->aVertIntensities[0], &ambientLight);
-            rdVector_Copy4(&pPoly->aVertIntensities[1], &ambientLight);
-            rdVector_Copy4(&pPoly->aVertIntensities[2], &ambientLight);
-            rdVector_Copy4(&pPoly->aVertIntensities[3], &ambientLight);
+        rdClip_VerticesToPlane(pPoly, rdParticle_aFaceVerts, rdParticle_aFaceTexVerts, STD_ARRAYLEN(rdParticle_aFaceVerts));
 
-            pPoly->extraLight.red   = 0.0f;
-            pPoly->extraLight.green = 0.0f;
-            pPoly->extraLight.blue  = 0.0f;
-            pPoly->extraLight.alpha = 1.0f;
+        pPoly->aVertIntensities[0] = ambientLight;
+        pPoly->aVertIntensities[1] = ambientLight;
+        pPoly->aVertIntensities[2] = ambientLight;
+        pPoly->aVertIntensities[3] = ambientLight;
 
-            pPoly->lightingMode = prdParticle->lightningMode;;
-            pPoly->pMaterial    = prdParticle->pMaterial;
-            pPoly->matCelNum    = prdParticle->aVertMatCelNums[i];
+        pPoly->extraLight.red   = 0.0f;
+        pPoly->extraLight.green = 0.0f;
+        pPoly->extraLight.blue  = 0.0f;
+        pPoly->extraLight.alpha = 1.0f;
 
-            rdVector_Copy4(&pPoly->extraLight, &prdParticle->aExtraLights[i]);
+        pPoly->lightingMode = prdParticle->lightningMode;
+        pPoly->pMaterial    = prdParticle->pMaterial;
+        pPoly->matCelNum    = prdParticle->aVertMatCelNums[i];
 
-            pPoly->flags = RD_FF_FOG_ENABLED | RD_FF_TEX_CLAMP_Y | RD_FF_TEX_CLAMP_X | RD_FF_TEX_TRANSLUCENT; // TODO: The RD_FF_TEX_TRANSLUCENT is set also for non-alpha poly, verify if this is a bug
+        pPoly->extraLight = prdParticle->aExtraLights[i];
 
-            // Fixed: Disable fog rendering for poly when fog is globally disabled
-            //        OG: Poly fog rendering was enabled by default which lead to undesired render effect when fog is disabled in level (i.e.: fog color is applied)
-            if ( !sithWorld_g_pCurrentWorld->fog.bEnabled ) // TODO: add special function that will enable/disable fog rendering
-            {
-                pPoly->flags &= ~RD_FF_FOG_ENABLED;
-            }
+        pPoly->flags = RD_FF_FOG_ENABLED | RD_FF_TEX_CLAMP_Y | RD_FF_TEX_CLAMP_X | RD_FF_TEX_TRANSLUCENT; // TODO: The RD_FF_TEX_TRANSLUCENT is set also for non-alpha poly, verify if this is a bug
 
-            if ( bAlpha )
-            {
-                pPoly->flags |= RD_FF_ZWRITE_DISABLED;
-                rdCache_AddAlphaProcFace(STD_ARRAYLEN(rdParticle_aFaceVerts));
-            }
-            else {
-                rdCache_AddProcFace(STD_ARRAYLEN(rdParticle_aFaceVerts));
-            }
+        // Fixed: Disable fog rendering for poly when fog is globally disabled
+        //        OG: Poly fog rendering was enabled by default which lead to undesired render effect when fog is disabled in level (i.e.: fog color is applied)
+        if ( !sithWorld_g_pCurrentWorld->fog.bEnabled ) // TODO: add special function that will enable/disable fog rendering
+        {
+            pPoly->flags &= ~RD_FF_FOG_ENABLED;
+        }
+
+        if ( bAlpha )
+        {
+            pPoly->flags |= RD_FF_ZWRITE_DISABLED;
+            rdCache_AddAlphaProcFace(STD_ARRAYLEN(rdParticle_aFaceVerts));
+        }
+        else {
+            rdCache_AddProcFace(STD_ARRAYLEN(rdParticle_aFaceVerts));
         }
     }
 

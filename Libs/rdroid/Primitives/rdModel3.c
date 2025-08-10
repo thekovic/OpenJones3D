@@ -1722,68 +1722,72 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
     }
 
     // Clip/transform to clip space
-    // Fyi, grimengine uses either rdPrim3_ClipFace or rdPrim3_NoClipFace because it additionally clips away meshes polys that are not in clip frustum 
-    if ( rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aTransformedVertices, pCurMesh->apTexVertices, pCurMesh->aLightIntensities, NULL) )
+    // Fyi, grimengine uses either rdPrim3_ClipFace or rdPrim3_NoClipFace because it does manual clipping of polys that are not in clip frustum 
+    // We expect HW / GPU API will do the clipping for us
+    if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aTransformedVertices, pCurMesh->apTexVertices, pCurMesh->aLightIntensities, NULL) )
     {
-        rdVector_Copy4(&pPoly->extraLight, &pFace->extraLight);
+        // Poly is fully outside of the frustum
+        return;
+    }
 
-        if ( pPoly->lightingMode == RD_LIGHTING_DIFFUSE )
+    rdVector_Copy4(&pPoly->extraLight, &pFace->extraLight);
+
+    if ( pPoly->lightingMode == RD_LIGHTING_DIFFUSE )
+    {
+        // Note: grim engine also uses pre-calculated light directions (aLocalLightDir)
+
+        rdVector3 faceNormal = pFace->normal;
+        if ( bIsBackFace )
         {
-            // Note: grim engine also uses pre-calculated light directions (aLocalLightDir)
-
-            rdVector3 faceNormal = pFace->normal;
-            if ( bIsBackFace )
-            {
-                rdVector_Neg3Acc(&faceNormal);
-            }
-
-            rdVector4 faceIntensity = { 0 };
-            rdLight_CalcFaceIntensity(
-                rdCamera_g_pCurCamera->aLights, // TODO: use apMeshLights
-                aLocalLightPos,
-                rdCamera_g_pCurCamera->numLights, // TODO: use numMeshLights
-                pFace,
-                &faceNormal,
-                pCurMesh->apVertices,
-                rdCamera_g_pCurCamera->attenuationMin,
-                &faceIntensity
-            );
-
-            rdVector_Add4Acc(&pPoly->extraLight, &faceIntensity);
+            rdVector_Neg3Acc(&faceNormal);
         }
 
-        if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
+        rdVector4 faceIntensity = { 0 };
+        rdLight_CalcFaceIntensity(
+            rdCamera_g_pCurCamera->aLights, // TODO: use apMeshLights
+            aLocalLightPos,
+            rdCamera_g_pCurCamera->numLights, // TODO: use numMeshLights
+            pFace,
+            &faceNormal,
+            pCurMesh->apVertices,
+            rdCamera_g_pCurCamera->attenuationMin,
+            &faceIntensity
+        );
+
+        rdVector_Add4Acc(&pPoly->extraLight, &faceIntensity);
+    }
+
+    if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
+    {
+        rdVector_Add4Acc(&pPoly->extraLight, &rdCamera_g_pCurCamera->ambientLight);
+    }
+
+    if ( pMeshColor->alpha != 1.0f )
+    {
+        pPoly->extraLight.alpha = 1.0f;
+        for ( size_t i = 0; i < pFace->numVertices; ++i )
         {
-            rdVector_Add4Acc(&pPoly->extraLight, &rdCamera_g_pCurCamera->ambientLight);
+            pPoly->aVertIntensities[i].alpha = pMeshColor->alpha;
         }
+    }
 
-        if ( pMeshColor->alpha != 1.0f )
-        {
-            pPoly->extraLight.alpha = 1.0f;
-            for ( size_t i = 0; i < pFace->numVertices; ++i )
-            {
-                pPoly->aVertIntensities[i].alpha = pMeshColor->alpha;
-            }
-        }
+    pPoly->flags     = pFace->flags | extraFaceFlags;
+    pPoly->matCelNum = pFace->matCelNum;
+    pPoly->pMaterial = pFace->pMaterial;
 
-        pPoly->flags     = pFace->flags | extraFaceFlags;
-        pPoly->matCelNum = pFace->matCelNum;
-        pPoly->pMaterial = pFace->pMaterial;
+    if ( pMeshColor->alpha != 1.0f ) {
+        pPoly->flags |= RD_FF_TEX_TRANSLUCENT;
+    }
 
-        if ( pMeshColor->alpha != 1.0f ) {
-            pPoly->flags |= RD_FF_TEX_TRANSLUCENT;
-        }
-
-        if ( bTranslucent )
-        {
-            ++rdModel3_g_numDrawnAlphaFaces;
-            rdCache_AddAlphaProcFace(pFace->numVertices);
-        }
-        else
-        {
-            ++rdModel3_g_numDrawnFaces;
-            rdCache_AddProcFace(pFace->numVertices);
-        }
+    if ( bTranslucent )
+    {
+        ++rdModel3_g_numDrawnAlphaFaces;
+        rdCache_AddAlphaProcFace(pFace->numVertices);
+    }
+    else
+    {
+        ++rdModel3_g_numDrawnFaces;
+        rdCache_AddProcFace(pFace->numVertices);
     }
 }
 

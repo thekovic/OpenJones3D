@@ -12,7 +12,7 @@ int J3DAPI rdPolyline_NewEntry(rdPolyline* pLine, const char* pName, const char*
 void J3DAPI rdPolyline_Free(rdPolyline* pPolyline);
 void J3DAPI rdPolyline_FreeEntry(rdPolyline* pPolyline);
 int J3DAPI rdPolyline_Draw(const rdThing* pLine, const rdMatrix34* pOrient);
-void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const rdVector3* aVertices, const rdVector2* aUVs);
+void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const rdVector3* aVerts, const rdVector2* aTVerts);
 
 // Helper hooking functions
 void rdPolyline_InstallHooks(void);

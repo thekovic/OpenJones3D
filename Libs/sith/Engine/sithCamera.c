@@ -239,7 +239,7 @@ int J3DAPI sithCamera_NewEntry(SithCamera* pCamera, uint32_t a2, SithCameraType 
     pCamera->lookInterpState      = -1;
     pCamera->focusInterpState     = -1;
 
-    rdCamera_NewEntry(&pCamera->rdCamera, fov, 0, 0.015625f, 64.0f, aspect);
+    rdCamera_NewEntry(&pCamera->rdCamera, fov, 0, 0.015625f, 64.0f, aspect); // 0.015625f - 1 / 64
     rdCamera_SetAttenuation(&pCamera->rdCamera, SITHCAMERA_ATTENUATIONMIN, SITHCAMERA_ATTENUATIONMAX);
 
     if ( pCanvas )

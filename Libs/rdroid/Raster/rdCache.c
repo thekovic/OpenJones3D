@@ -60,11 +60,9 @@ void rdCache_InstallHooks(void)
 }
 
 void rdCache_ResetGlobals(void)
-{
+{}
 
-}
-
-void J3DAPI rdCache_Startup()
+void rdCache_Startup(void)
 {
     memset(rdCache_aHWVertices, 0, sizeof(rdCache_aHWVertices)); // Fixed: num bytes to the bytes size of rdCache_aHWVertices. Was STD_ARRAYLEN(rdCache_aHWVertices)
     rdCache_frameNum = 0;

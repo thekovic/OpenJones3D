@@ -215,40 +215,45 @@ int J3DAPI rdPolyline_Draw(const rdThing* pLine, const rdMatrix34* pOrient)
     return 1;
 }
 
-void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const rdVector3* aVertices, const rdVector2* aUVs)
+void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const rdVector3* aVerts, const rdVector2* aTVerts)
 {
     J3D_UNUSED(pLine);
     rdCacheProcEntry* pPoly = rdCache_GetAlphaProcEntry();
-    if ( pPoly )
+    if ( !pPoly )
     {
-
-        if ( rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aVertices, aUVs, 0, 0) )
-        {
-            for ( size_t i = 0; i < pFace->numVertices; ++i )
-            {
-                rdVector_Copy4(&pPoly->aVertIntensities[i], &pFace->extraLight);
-            }
-
-            if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
-            {
-                rdVector_Add4Acc(&pPoly->extraLight, &rdCamera_g_pCurCamera->ambientLight);
-                rdMath_ClampVector4Acc(&pPoly->extraLight, 0.0f, 1.0f); // Added: Clamp to [0,1.0]
-            }
-
-            pPoly->flags = pFace->flags;
-            pPoly->flags |= RD_FF_FOG_ENABLED | RD_FF_ZWRITE_DISABLED | RD_FF_TEX_TRANSLUCENT;
-
-            // Fixed: Disable fog rendering for poly when fog is globally disabled
-            //        OG: Poly fog rendering was enabled by default which lead to undesired render effect when fog is disabled in level (i.e.: fog color is applied)
-            if ( !sithWorld_g_pCurrentWorld->fog.bEnabled ) // // TODO: add special function that will enable/disable fog rendering
-            {
-                pPoly->flags &= ~RD_FF_FOG_ENABLED;
-            }
-
-            pPoly->matCelNum    = pFace->matCelNum;
-            pPoly->lightingMode = RD_LIGHTING_NONE;
-            pPoly->pMaterial    = pFace->pMaterial;
-            rdCache_AddAlphaProcFace(pFace->numVertices);
-        }
+        // TODO: Maybe log error?
+        return;
     }
+
+    if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aVerts, aTVerts, NULL, NULL) )
+    {
+        // Polyline face is fully outside the camera frustum
+        return;
+    }
+
+    for ( size_t i = 0; i < pFace->numVertices; ++i )
+    {
+        rdVector_Copy4(&pPoly->aVertIntensities[i], &pFace->extraLight);
+    }
+
+    if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
+    {
+        rdVector_Add4Acc(&pPoly->extraLight, &rdCamera_g_pCurCamera->ambientLight);
+        rdMath_ClampVector4Acc(&pPoly->extraLight, 0.0f, 1.0f); // Added: Clamp to [0,1.0]
+    }
+
+    pPoly->flags = pFace->flags;
+    pPoly->flags |= RD_FF_FOG_ENABLED | RD_FF_ZWRITE_DISABLED | RD_FF_TEX_TRANSLUCENT;
+
+    // Fixed: Disable fog rendering for poly when fog is globally disabled
+    //        OG: Poly fog rendering was enabled by default which lead to undesired render effect when fog is disabled in level (i.e.: fog color is applied)
+    if ( !sithWorld_g_pCurrentWorld->fog.bEnabled ) // // TODO: add special function that will enable/disable fog rendering
+    {
+        pPoly->flags &= ~RD_FF_FOG_ENABLED;
+    }
+
+    pPoly->matCelNum    = pFace->matCelNum;
+    pPoly->lightingMode = RD_LIGHTING_NONE;
+    pPoly->pMaterial    = pFace->pMaterial;
+    rdCache_AddAlphaProcFace(pFace->numVertices);
 }

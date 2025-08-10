@@ -289,11 +289,12 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
 
     if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, &pSprite3->face, &rdSprite_aView.rvec, pSprite3->aTexVerts, 0, 0) )
     {
+        // Poly is fully outside the camera frustum
         return 0;
     }
 
     pPoly->aVertIntensities->alpha = pSprite3->face.extraLight.alpha;
-    rdVector_Copy4(&pPoly->extraLight, &pSprite3->face.extraLight);
+    pPoly->extraLight = pSprite3->face.extraLight;
 
     if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
     {
