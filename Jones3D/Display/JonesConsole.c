@@ -159,10 +159,10 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_Sounds, "sounds", SITHCONSOLE_DEVMODE);
 
     sithConsole_RegisterCommand(JonesConsole_DevMode, "devmode", 0);  // Added
-    sithConsole_RegisterCommand(JonesConsole_InEditor, "ineditor", SITHCONSOLE_DEVMODE);  // Added
-    sithConsole_RegisterCommand(JonesConsole_Money, "money", SITHCONSOLE_DEVMODE);  // Added
-    sithConsole_RegisterCommand(JonesConsole_Interface, "interface", SITHCONSOLE_DEVMODE);  // Added
-    sithConsole_RegisterCommand(JonesConsole_Indicator, "indicator", SITHCONSOLE_DEVMODE);  // Added
+    sithConsole_RegisterCommand(JonesConsole_InEditor, "ineditor", SITHCONSOLE_DEVMODE); // Added
+    sithConsole_RegisterCommand(JonesConsole_Money, "money", SITHCONSOLE_DEVMODE);       // Added
+    sithConsole_RegisterCommand(JonesConsole_Interface, "menu", SITHCONSOLE_DEVMODE);    // Added
+    sithConsole_RegisterCommand(JonesConsole_Indicator, "hud", SITHCONSOLE_DEVMODE);     // Added
 
     // Added
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ) {
