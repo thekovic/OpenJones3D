@@ -133,7 +133,7 @@
 #define rdClip_Face3T_TYPE int (J3DAPI*)(const rdClipFrustum*, rdVector3*, rdVector2*, rdVector4*, size_t)
 #define rdClip_Face3TOrtho_TYPE int (J3DAPI*)(const rdClipFrustum*, rdVector3*, rdVector2*, rdVector4*, size_t)
 #define rdClip_SphereInFrustrum_TYPE RdFrustumCull (J3DAPI*)(const rdClipFrustum*, const rdVector3*, float)
-#define rdClip_QFace3W_TYPE void (J3DAPI*)(const rdClipFrustum*, const rdPrimit3*, rdPrimit3*)
+#define rdClip_QClipFaceW_TYPE void (J3DAPI*)(const rdClipFrustum*, const rdPrimit3*, rdPrimit3*)
 #define rdClip_FaceToPlane_TYPE int (J3DAPI*)(const rdClipFrustum*, rdCacheProcEntry*, const rdFace*, const rdVector3*, const rdVector2*, const rdVector4*, const rdVector4*)
 #define rdClip_VerticesToPlane_TYPE void (J3DAPI*)(rdCacheProcEntry*, const rdVector3*, const rdVector2*, size_t)
 #define rdPolyline_New_TYPE rdPolyline* (J3DAPI*)(const char*, const char*, const char*, float, float, float, rdGeometryMode, rdLightMode, const rdVector4*)

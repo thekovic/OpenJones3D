@@ -135,7 +135,7 @@
 #define rdClip_Face3T_ADDR 0x004D59D0
 #define rdClip_Face3TOrtho_ADDR 0x004D6E70
 #define rdClip_SphereInFrustrum_ADDR 0x004D7E60
-#define rdClip_QFace3W_ADDR 0x004D7FD0
+#define rdClip_QClipFaceW_ADDR 0x004D7FD0
 #define rdClip_FaceToPlane_ADDR 0x004D8050
 #define rdClip_VerticesToPlane_ADDR 0x004D84B0
 #define rdPolyline_New_ADDR 0x004D8600
