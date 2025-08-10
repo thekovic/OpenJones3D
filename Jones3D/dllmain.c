@@ -161,7 +161,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
             // Enable HIDPI
             SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-        #ifdef _DEBUG
+        #ifdef J3D_DEBUG
             // For debugging purposes to stop execution here
             MessageBox(NULL, "Attached to Indy3D.exe process.", "Jones3D",
                 MB_ICONINFORMATION | MB_DEFBUTTON1
