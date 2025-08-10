@@ -403,7 +403,9 @@ int J3DAPI rdClip_ClipFacePVS(rdClipFrustum* pFrustrum, const rdPrimit3* pSrc, r
 
 int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size_t numVertices)
 {
-    // Start with left clipping
+    // The difference between this and rdClip_Face3W is that this function
+    // does not clip the face against the frustrum far plane.
+
     rdClip_g_faceStatus = 0;
     rdClip_pSourceVert  = aVertices;
     rdClip_pDestVert    = rdClip_aWorkVerts;
@@ -412,15 +414,16 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
     rdVector3* pPrevVert = &aVertices[numVertices - 1];
     rdVector3* pCurVert  = aVertices;
 
+    //Start with left clipping
     for ( size_t i = 0; i < numVertices; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->leftPlane;
-        float curPlaneProjY = pCurVert->y * pFrustrum->leftPlane;
-        if ( pPrevVert->x >= prevPlaneProjY || pCurVert->x >= curPlaneProjY )
+        float curPlaneProjY  = pCurVert->y * pFrustrum->leftPlane;
+        if ( pPrevVert->x >= (double)prevPlaneProjY || pCurVert->x >= (double)curPlaneProjY )
         {
             if ( pPrevVert->x != prevPlaneProjY
                 && pCurVert->x != curPlaneProjY
-                && (pPrevVert->x < prevPlaneProjY || pCurVert->x < curPlaneProjY) )
+                && (pPrevVert->x < (double)prevPlaneProjY || pCurVert->x < (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
@@ -433,7 +436,7 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                 float dY = fabsf(pCurVert->y - pPrevVert->y);
                 float dX = fabsf(pCurVert->x - pPrevVert->x);
                 float lerpFactor = 0.0f;
-                if ( dY <= dX )
+                if ( dY <= (double)dX )
                 {
                     lerpFactor = (clippedX - pPrevVert->x) / (pCurVert->x - pPrevVert->x);
                 }
@@ -444,14 +447,16 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
 
                 rdClip_pDestVert[clipindex].x = clippedX;
                 rdClip_pDestVert[clipindex].y = clippedY;
-                rdClip_pDestVert[clipindex++].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x10;
             }
 
-            if ( pCurVert->x >= curPlaneProjY )
+            if ( pCurVert->x >= (double)curPlaneProjY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -464,13 +469,14 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
         return clipindex;
     }
 
-    // Right clipping 
+    // Right clipping
     rdVector3* paCurSrc = rdClip_pDestVert;
     rdClip_pDestVert    = rdClip_pSourceVert;
     rdClip_pSourceVert  = paCurSrc;
 
     size_t numVerts = clipindex;
     clipindex       = 0;
+
     pPrevVert       = &paCurSrc[numVerts - 1];
     pCurVert        = paCurSrc;
 
@@ -478,11 +484,11 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->rightPlane;
         float curPlaneProjY  = pCurVert->y * pFrustrum->rightPlane;
-        if ( pPrevVert->x <= prevPlaneProjY || pCurVert->x <= curPlaneProjY )
+        if ( pPrevVert->x <= (double)prevPlaneProjY || pCurVert->x <= (double)curPlaneProjY )
         {
             if ( pPrevVert->x != prevPlaneProjY
                 && pCurVert->x != curPlaneProjY
-                && (pPrevVert->x > prevPlaneProjY || pCurVert->x > curPlaneProjY) )
+                && (pPrevVert->x > (double)prevPlaneProjY || pCurVert->x > (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->rightPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
@@ -495,7 +501,7 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                 float dY = fabsf(pCurVert->y - pPrevVert->y);
                 float dX = fabsf(pCurVert->x - pPrevVert->x);
                 float lerpFactor = 0.0;
-                if ( dY <= dX )
+                if ( dY <= (double)dX )
                 {
                     lerpFactor = (clippedX - pPrevVert->x) / (pCurVert->x - pPrevVert->x);
                 }
@@ -504,16 +510,18 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = clippedX;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
+                rdClip_pDestVert[clipindex].x = clippedX;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x20;
             }
 
-            if ( pCurVert->x <= curPlaneProjY )
+            if ( pCurVert->x <= (double)curPlaneProjY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -526,13 +534,14 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
         return clipindex;
     }
 
-    // Top Clipping
+    //Top Clipping
     paCurSrc           = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paCurSrc;
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paCurSrc[numVerts - 1];
     pCurVert  = paCurSrc;
 
@@ -540,14 +549,14 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->topPlane;
         float curPlaneProjY  = pCurVert->y * pFrustrum->topPlane;
-        if ( pPrevVert->z <= prevPlaneProjY || pCurVert->z <= curPlaneProjY )
+        if ( pPrevVert->z <= (double)prevPlaneProjY || pCurVert->z <= (double)curPlaneProjY )
         {
             if ( pPrevVert->z != prevPlaneProjY
                 && pCurVert->z != curPlaneProjY
-                && (pPrevVert->z > prevPlaneProjY || pCurVert->z > curPlaneProjY) )
+                && (pPrevVert->z > (double)prevPlaneProjY || pCurVert->z > (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
-                float clippedY = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
+                float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
                 if ( planeProj != 0.0f ) {
                     clippedY = clippedY / planeProj;
                 }
@@ -557,7 +566,7 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                 float dY = fabsf(pCurVert->y - pPrevVert->y);
                 float dZ = fabsf(pCurVert->z - pPrevVert->z);
                 float lerpFactor = 0.0f;
-                if ( dY <= dZ )
+                if ( dY <= (double)dZ )
                 {
                     lerpFactor = (clippedZ - pPrevVert->z) / (pCurVert->z - pPrevVert->z);
                 }
@@ -566,16 +575,18 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = clippedZ;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = clippedZ;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x04;
             }
 
-            if ( pCurVert->z <= curPlaneProjY )
+            if ( pCurVert->z <= (double)curPlaneProjY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -589,12 +600,14 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
     }
 
     // Bottom clipping
+
     paCurSrc           = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paCurSrc;
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paCurSrc[numVerts - 1];
     pCurVert  = paCurSrc;
 
@@ -602,11 +615,11 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->bottomPlane;
         float curPlaneProjY  = pCurVert->y * pFrustrum->bottomPlane;
-        if ( pPrevVert->z >= prevPlaneProjY || pCurVert->z >= curPlaneProjY )
+        if ( pPrevVert->z >= (double)prevPlaneProjY || pCurVert->z >= (double)curPlaneProjY )
         {
             if ( pPrevVert->z != prevPlaneProjY
                 && pCurVert->z != curPlaneProjY
-                && (pPrevVert->z < prevPlaneProjY || pCurVert->z < curPlaneProjY) )
+                && (pPrevVert->z < (double)prevPlaneProjY || pCurVert->z < (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->bottomPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;;
@@ -619,7 +632,7 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                 float dY = fabsf(pCurVert->y - pPrevVert->y);
                 float dZ = fabsf(pCurVert->z - pPrevVert->z);
                 float lerpFactor = 0.0f;
-                if ( dY <= dZ )
+                if ( dY <= (double)dZ )
                 {
                     lerpFactor = (clippedZ - pPrevVert->z) / (pCurVert->z - pPrevVert->z);
                 }
@@ -628,16 +641,18 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = clippedZ;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = clippedZ;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x08;
             }
 
-            if ( pCurVert->z >= curPlaneProjY )
+            if ( pCurVert->z >= (double)curPlaneProjY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -650,35 +665,38 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
         return clipindex;
     }
 
-    // Now do near clipping 
+    // Now do near clipping
     paCurSrc = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paCurSrc;
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paCurSrc[numVerts - 1];
     pCurVert  = paCurSrc;
 
     for ( size_t i = 0; i < numVerts; ++i )
     {
-        if ( pPrevVert->y >= pFrustrum->nearPlane || pCurVert->y >= pFrustrum->nearPlane )
+        if ( pPrevVert->y >= (double)pFrustrum->nearPlane || pCurVert->y >= (double)pFrustrum->nearPlane )
         {
             if ( pPrevVert->y != pFrustrum->nearPlane
                 && pCurVert->y != pFrustrum->nearPlane
-                && (pPrevVert->y < pFrustrum->nearPlane || pCurVert->y < pFrustrum->nearPlane) )
+                && (pPrevVert->y < (double)pFrustrum->nearPlane || pCurVert->y < (double)pFrustrum->nearPlane) )
             {
                 float planeProj = (pFrustrum->nearPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
-                rdClip_pDestVert[clipindex].y   = pFrustrum->nearPlane;
-                rdClip_pDestVert[clipindex].z   = (pCurVert->z - pPrevVert->z) * planeProj + pPrevVert->z;
-                rdClip_pDestVert[clipindex++].x = (pCurVert->x - pPrevVert->x) * planeProj + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = pFrustrum->nearPlane;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * planeProj + pPrevVert->z;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * planeProj + pPrevVert->x;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x01;
             }
 
-            if ( pCurVert->y >= pFrustrum->nearPlane )
+            if ( pCurVert->y >= (double)pFrustrum->nearPlane )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -686,22 +704,22 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
         pPrevVert = pCurVert++;
     }
 
-    if ( clipindex >= 3 )
+    if ( clipindex < 3 )
     {
-        if ( rdClip_pDestVert != aVertices )
-        {
-            memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-        }
+        rdClip_g_faceStatus |= 0x41;
         return clipindex;
     }
 
-    rdClip_g_faceStatus |= 0x41;
+    if ( rdClip_pDestVert != aVertices )
+    {
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    }
     return clipindex;
 }
 
 int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, size_t numVertices)
 {
-    // Do left plane clipping
+   // Do left plane clipping
     rdClip_g_faceStatus = 0;
     rdClip_pSourceVert  = aVertices;
     rdClip_pDestVert    = rdClip_aWorkVerts;
@@ -713,15 +731,15 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
     for ( size_t i = 0; i < numVertices; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->leftPlane;
-        float curPlaneProyY = pCurVert->y * pFrustrum->leftPlane;
-        if ( pPrevVert->x >= prevPlaneProjY || pCurVert->x >= curPlaneProyY )
+        float curPlaneProyY  = pCurVert->y * pFrustrum->leftPlane;
+        if ( pPrevVert->x >= (double)prevPlaneProjY || pCurVert->x >= (double)curPlaneProyY )
         {
             if ( pPrevVert->x != prevPlaneProjY
                 && pCurVert->x != curPlaneProyY
-                && (pPrevVert->x < prevPlaneProjY || pCurVert->x < curPlaneProyY) )
+                && (pPrevVert->x < (double)prevPlaneProjY || pCurVert->x < (double)curPlaneProyY) )
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
-                float clippedY = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
+                float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
                 if ( planeProj != 0.0f )
                 {
                     clippedY = clippedY / planeProj;
@@ -729,11 +747,11 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
 
                 float clippedX = pFrustrum->leftPlane * clippedY;
 
-                float  dY = fabsf(pCurVert->y - pPrevVert->y);
-                float  dX = fabsf(pCurVert->x - pPrevVert->x);
+                float dY = fabsf(pCurVert->y - pPrevVert->y);
+                float dX = fabsf(pCurVert->x - pPrevVert->x);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dX )
+                if ( dY <= (double)dX )
                 {
                     lerpFactor = (clippedX - pPrevVert->x) / (pCurVert->x - pPrevVert->x);
                 }
@@ -742,16 +760,18 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = clippedX;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
+                rdClip_pDestVert[clipindex].x = clippedX;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x10;
             }
 
-            if ( pCurVert->x >= curPlaneProyY )
+            if ( pCurVert->x >= (double)curPlaneProyY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -764,26 +784,26 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
         return clipindex;
     }
 
-
-    // Do right plane clipping
+    //Do right plane clipping
     rdVector3* paVerts = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paVerts;
 
     size_t numVerts = clipindex;
     clipindex       = 0;
+
     pPrevVert       = &paVerts[numVerts - 1];
     pCurVert        = paVerts;
 
     for ( size_t i = 0; i < numVerts; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->rightPlane;
-        float curPlaneProyY = pCurVert->y * pFrustrum->rightPlane;
-        if ( pPrevVert->x <= prevPlaneProjY || pCurVert->x <= curPlaneProyY )
+        float curPlaneProyY  = pCurVert->y * pFrustrum->rightPlane;
+        if ( pPrevVert->x <= (double)prevPlaneProjY || pCurVert->x <= (double)curPlaneProyY )
         {
             if ( pPrevVert->x != prevPlaneProjY
                 && pCurVert->x != curPlaneProyY
-                && (pPrevVert->x > prevPlaneProjY || pCurVert->x > curPlaneProyY) )
+                && (pPrevVert->x > (double)prevPlaneProjY || pCurVert->x > (double)curPlaneProyY) )
             {
                 float planeProj = pFrustrum->rightPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
@@ -798,7 +818,7 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                 float dX = fabsf(pCurVert->x - pPrevVert->x);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dX )
+                if ( dY <= (double)dX )
                 {
                     lerpFactor = (clippedX - pPrevVert->x) / (pCurVert->x - pPrevVert->x);
                 }
@@ -807,16 +827,18 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = clippedX;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
+                rdClip_pDestVert[clipindex].x = clippedX;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x20;
             }
 
-            if ( pCurVert->x <= curPlaneProyY )
+            if ( pCurVert->x <= (double)curPlaneProyY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -829,13 +851,14 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
         return clipindex;
     }
 
-    // Do top plane clipping
+    //Do top plane clipping
     paVerts = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paVerts;
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paVerts[numVerts - 1];
     pCurVert  = paVerts;
 
@@ -844,14 +867,14 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
         float prevPlaneProjY = pPrevVert->y * pFrustrum->topPlane;
         float curPlaneProyY  = pCurVert->y * pFrustrum->topPlane;
 
-        if ( pPrevVert->z <= prevPlaneProjY || pCurVert->z <= curPlaneProyY )
+        if ( pPrevVert->z <= (double)prevPlaneProjY || pCurVert->z <= (double)curPlaneProyY )
         {
             if ( pPrevVert->z != prevPlaneProjY
                 && pCurVert->z != curPlaneProyY
-                && (pPrevVert->z > prevPlaneProjY || pCurVert->z > curPlaneProyY) )
+                && (pPrevVert->z > (double)prevPlaneProjY || pCurVert->z > (double)curPlaneProyY) )
             {
                 float  planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
-                float clippedY = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
+                float clippedY   = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
                 if ( planeProj != 0.0f )
                 {
                     clippedY = clippedY / planeProj;
@@ -863,7 +886,7 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                 float dZ = fabsf(pCurVert->z - pPrevVert->z);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dZ )
+                if ( dY <= (double)dZ )
                 {
                     lerpFactor = (clippedZ - pPrevVert->z) / (pCurVert->z - pPrevVert->z);
                 }
@@ -872,16 +895,18 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = clippedZ;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = clippedZ;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x04;
             }
 
-            if ( pCurVert->z <= curPlaneProyY )
+            if ( pCurVert->z <= (double)curPlaneProyY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -894,13 +919,14 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
         return clipindex;
     }
 
-    // Do bottom plane clipping
+   // Do bottom plane clipping
     paVerts = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paVerts;
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paVerts[numVerts - 1];
     pCurVert  = paVerts;
 
@@ -909,14 +935,14 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
         float prevPlaneProjY = pPrevVert->y * pFrustrum->bottomPlane;
         float curPlaneProyY  = pCurVert->y * pFrustrum->bottomPlane;
 
-        if ( pPrevVert->z >= prevPlaneProjY || pCurVert->z >= curPlaneProyY )
+        if ( pPrevVert->z >= (double)prevPlaneProjY || pCurVert->z >= (double)curPlaneProyY )
         {
             if ( pPrevVert->z != prevPlaneProjY
                 && pCurVert->z != curPlaneProyY
-                && (pPrevVert->z < prevPlaneProjY || pCurVert->z < curPlaneProyY) )
+                && (pPrevVert->z < (double)prevPlaneProjY || pCurVert->z < (double)curPlaneProyY) )
             {
                 float planeProj = pFrustrum->bottomPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
-                float clippedY = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
+                float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
                 if ( planeProj != 0.0f )
                 {
                     clippedY = clippedY / planeProj;
@@ -928,7 +954,7 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                 float dZ = fabsf(pCurVert->z - pPrevVert->z);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dZ )
+                if ( dY <= (double)dZ )
                 {
                     lerpFactor = (clippedZ - pPrevVert->z) / (pCurVert->z - pPrevVert->z);
                 }
@@ -937,16 +963,18 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
                     lerpFactor = (clippedY - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 }
 
-                rdClip_pDestVert[clipindex].x   = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
-                rdClip_pDestVert[clipindex].y   = clippedY;
-                rdClip_pDestVert[clipindex++].z = clippedZ;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = clippedY;
+                rdClip_pDestVert[clipindex].z = clippedZ;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x08;
             }
 
-            if ( pCurVert->z >= curPlaneProyY )
+            if ( pCurVert->z >= (double)curPlaneProyY )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -959,35 +987,38 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
         return clipindex;
     }
 
-    // Do near/far plane clipping
+    // Do near / far plane clipping
     paVerts = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paVerts;
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paVerts[numVerts - 1];
     pCurVert  = paVerts;
 
     for ( size_t i = 0; i < numVerts; ++i )
     {
-        if ( pPrevVert->y >= pFrustrum->nearPlane || pCurVert->y >= pFrustrum->nearPlane )
+        if ( pPrevVert->y >= (double)pFrustrum->nearPlane || pCurVert->y >= (double)pFrustrum->nearPlane )
         {
             if ( pPrevVert->y != pFrustrum->nearPlane
                 && pCurVert->y != pFrustrum->nearPlane
-                && (pPrevVert->y < pFrustrum->nearPlane || pCurVert->y < pFrustrum->nearPlane) )
+                && (pPrevVert->y < (double)pFrustrum->nearPlane || pCurVert->y < (double)pFrustrum->nearPlane) )
             {
                 float lerpFactor = (pFrustrum->nearPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
-                rdClip_pDestVert[clipindex].y   = pFrustrum->nearPlane;
-                rdClip_pDestVert[clipindex].z   = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
-                rdClip_pDestVert[clipindex++].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = pFrustrum->nearPlane;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x01;
             }
 
-            if ( pCurVert->y >= pFrustrum->nearPlane )
+            if ( pCurVert->y >= (double)pFrustrum->nearPlane )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -1005,7 +1036,7 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
     {
         if ( rdClip_pDestVert != aVertices )
         {
-            memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
+            rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
         }
 
         return clipindex;
@@ -1017,28 +1048,31 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
 
     numVerts  = clipindex;
     clipindex = 0;
+
     pPrevVert = &paVerts[numVerts - 1];
     pCurVert  = paVerts;
 
     for ( size_t i = 0; i < numVerts; ++i )
     {
-        if ( pPrevVert->y <= pFrustrum->farPlane || pCurVert->y <= pFrustrum->farPlane )
+        if ( pPrevVert->y <= (double)pFrustrum->farPlane || pCurVert->y <= (double)pFrustrum->farPlane )
         {
             if ( pPrevVert->y != pFrustrum->farPlane
                 && pCurVert->y != pFrustrum->farPlane
-                && (pPrevVert->y > pFrustrum->farPlane || pCurVert->y > pFrustrum->farPlane) )
+                && (pPrevVert->y > (double)pFrustrum->farPlane || pCurVert->y > (double)pFrustrum->farPlane) )
             {
                 float lerpFactor = (pFrustrum->farPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
-                rdClip_pDestVert[clipindex].y   = pFrustrum->farPlane;
-                rdClip_pDestVert[clipindex].z   = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
-                rdClip_pDestVert[clipindex++].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
+                rdClip_pDestVert[clipindex].y = pFrustrum->farPlane;
+                rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
+                rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x02;
             }
 
-            if ( pCurVert->y <= pFrustrum->farPlane )
+            if ( pCurVert->y <= (double)pFrustrum->farPlane )
             {
-                rdVector_Copy3(&rdClip_pDestVert[clipindex++], pCurVert);
+                rdClip_pDestVert[clipindex] = *pCurVert;
+                clipindex++;
             }
         }
 
@@ -1053,7 +1087,7 @@ int J3DAPI rdClip_Face3W(const rdClipFrustum* pFrustrum, rdVector3* aVertices, s
 
     if ( rdClip_pDestVert != aVertices )
     {
-        memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
     }
 
     return clipindex;
@@ -1263,7 +1297,7 @@ int J3DAPI rdClip_Face3WOrtho(const rdClipFrustum* pFrustrum, rdVector3* aVertic
     {
         if ( rdClip_pDestVert != aVertices )
         {
-            memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
+            rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
         }
 
         return clipindex;
@@ -1311,7 +1345,7 @@ int J3DAPI rdClip_Face3WOrtho(const rdClipFrustum* pFrustrum, rdVector3* aVertic
 
     if ( rdClip_pDestVert != aVertices )
     {
-        memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
     }
 
     return clipindex;
@@ -1319,13 +1353,13 @@ int J3DAPI rdClip_Face3WOrtho(const rdClipFrustum* pFrustrum, rdVector3* aVertic
 
 int J3DAPI rdClip_Face3S(const rdClipFrustum* pFrustrum, rdVector3* aVertices, size_t numVertices)
 {
-    // Note, the code was simplified to omit boilerplate code
+    //Note, the code was simplified to omit boilerplate code
     return rdClip_Face3W(pFrustrum, aVertices, numVertices);
 }
 
 int J3DAPI rdClip_Face3SOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertices, size_t numVertices)
 {
-    // Note, the code was simplified to omit boilerplate code
+    //Note, the code was simplified to omit boilerplate code
     return rdClip_Face3WOrtho(pFrustum, aVertices, numVertices);
 }
 
@@ -1685,8 +1719,8 @@ int J3DAPI rdClip_Face3GS(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             return clipindex;
         }
 
-        memcpy(aVertices, rdClip_pDestVert, sizeof(*aVertices) * clipindex);
-        memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(*aIntensities) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+        rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
         return clipindex;
     }
 
@@ -1747,8 +1781,8 @@ int J3DAPI rdClip_Face3GS(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
         return clipindex;
     }
 
-    memcpy(aVertices, rdClip_pDestVert, sizeof(*aVertices) * clipindex);
-    memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(*aIntensities) * clipindex);
+    rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
     return clipindex;
 }
 
@@ -2019,8 +2053,8 @@ int J3DAPI rdClip_Face3GSOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertic
             return clipindex;
         }
 
-        memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-        memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(rdVector4) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+        rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
         return clipindex;
     }
 
@@ -2082,8 +2116,8 @@ int J3DAPI rdClip_Face3GSOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertic
         return clipindex;
     }
 
-    memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-    memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(rdVector4) * clipindex);
+    rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
     return clipindex;
 }
 
@@ -2139,7 +2173,7 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
                 rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
                 rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
-                rdClip_pDestTVert[clipindex++].y   = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
+                rdClip_pDestTVert[clipindex++].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
                 rdClip_g_faceStatus |= 0x10;
             }
@@ -2213,7 +2247,7 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
                 rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
                 rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
-                rdClip_pDestTVert[clipindex++].y   = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
+                rdClip_pDestTVert[clipindex++].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
                 rdClip_g_faceStatus |= 0x20;
             }
@@ -2286,7 +2320,7 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
                 rdClip_pDestVert[clipindex].z = clippedZ;
 
                 rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
-                rdClip_pDestTVert[clipindex++].y   = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
+                rdClip_pDestTVert[clipindex++].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
                 rdClip_g_faceStatus |= 0x04;
             }
@@ -2358,9 +2392,10 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
                 rdClip_pDestVert[clipindex].y = clippedY;
                 rdClip_pDestVert[clipindex].z = clippedZ;
 
-                rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
-                rdClip_pDestTVert[clipindex].y   = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
+                rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
+                rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x08;
             }
 
@@ -2440,8 +2475,8 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             return clipindex;
         }
 
-        memcpy(aVertices, rdClip_pDestVert, sizeof(*aVertices) * clipindex);
-        memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+        rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
         return clipindex;
     }
 
@@ -2474,7 +2509,7 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
                 rdClip_pDestVert[clipindex].x = (pCurVert->x - pPrevVert->x) * lerpFactor + pPrevVert->x;
 
                 rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
-                rdClip_pDestTVert[clipindex++].y   = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
+                rdClip_pDestTVert[clipindex++].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
                 rdClip_g_faceStatus |= 0x02;
             }
@@ -2501,8 +2536,8 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
         return clipindex;
     }
 
-    memcpy(aVertices, rdClip_pDestVert, sizeof(*aVertices) * clipindex);
-    memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
+    rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
     return clipindex;
 }
 
@@ -2537,7 +2572,7 @@ int J3DAPI rdClip_Face3GTOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertic
                 rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
                 rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVert->x) * lerpFactor + pPrevTVert->x;
-                rdClip_pDestTVert[clipindex++].y   = (pCurTVert->y - pPrevTVert->y) * lerpFactor + pPrevTVert->y;
+                rdClip_pDestTVert[clipindex++].y = (pCurTVert->y - pPrevTVert->y) * lerpFactor + pPrevTVert->y;
 
                 rdClip_g_faceStatus |= 0x10;
             }
@@ -2588,7 +2623,7 @@ int J3DAPI rdClip_Face3GTOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertic
                 rdClip_pDestVert[clipindex].z = (pCurVert->z - pPrevVert->z) * lerpFactor + pPrevVert->z;
 
                 rdClip_pDestTVert[clipindex].x   = (pCurTVert->x - pPrevTVert->x) * lerpFactor + pPrevTVert->x;
-                rdClip_pDestTVert[clipindex++].y   = (pCurTVert->y - pPrevTVert->y) * lerpFactor + pPrevTVert->y;
+                rdClip_pDestTVert[clipindex++].y = (pCurTVert->y - pPrevTVert->y) * lerpFactor + pPrevTVert->y;
 
                 rdClip_g_faceStatus |= 0x20;
             }
@@ -2769,8 +2804,8 @@ int J3DAPI rdClip_Face3GTOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertic
             return clipindex;
         }
 
-        memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-        memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+        rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
         return clipindex;
     }
 
@@ -2830,13 +2865,21 @@ int J3DAPI rdClip_Face3GTOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertic
         return clipindex;
     }
 
-    memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-    memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
+    rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
     return clipindex;
 }
 
 int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, rdVector2* aTexVertices, rdVector4* aIntensities, size_t numVertices)
 {
+    // TODO: Clipping of vert intensities is buggy, needs to be fixed
+    // TODO: There is discrepancy in the clipping algorithm between the original code and this one.
+
+    // Added: Ensure that the input arrays are not the same as the work arrays
+    RD_ASSERT(aVertices != rdClip_aWorkVerts);
+    RD_ASSERT(aTexVertices != rdClip_aWorkTVerts);
+    RD_ASSERT(aIntensities != rdClip_aWorkVertIntensities);
+
     rdClip_g_faceStatus = 0;
 
     rdClip_pSourceVert  = aVertices;
@@ -2859,15 +2902,16 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
     rdVector4* pPrevIntens = &aIntensities[numVertices - 1];
     rdVector4* pCurIntens  = aIntensities;
 
+    // LEFT PLANE CLIPPING
     for ( size_t i = 0; i < numVertices; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->leftPlane;
-        float curPlaneProjY = pCurVert->y * pFrustrum->leftPlane;
+        float curPlaneProjY  = pCurVert->y * pFrustrum->leftPlane;
         if ( pPrevVert->x >= prevPlaneProjY || pCurVert->x >= curPlaneProjY )
         {
             if ( pPrevVert->x != prevPlaneProjY
                 && pCurVert->x != curPlaneProjY
-                && (pPrevVert->x < prevPlaneProjY || pCurVert->x < curPlaneProjY) )
+                && (pPrevVert->x < (double)prevPlaneProjY || pCurVert->x < (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
@@ -2881,7 +2925,7 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 float dX = fabsf(pCurVert->x - pPrevVert->x);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dX )
+                if ( dY <= (double)dX )
                 {
                     lerpFactor = (clippedX - pPrevVert->x) / (pCurVert->x - pPrevVert->x);
                 }
@@ -2897,24 +2941,28 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
                 rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
-                rdClip_pDestVertIntensity[clipindex].x   = (pCurIntens->x - pPrevIntens->x) * lerpFactor + pPrevIntens->x;
-                rdClip_pDestVertIntensity[clipindex].y   = (pCurIntens->y - pPrevIntens->y) * lerpFactor + pPrevIntens->y;
-                rdClip_pDestVertIntensity[clipindex++].z = (pCurIntens->z - pPrevIntens->z) * lerpFactor + pPrevIntens->z;
+                rdClip_pDestVertIntensity[clipindex].red   = (pCurIntens->red - pPrevIntens->red) * lerpFactor + pPrevIntens->red;
+                rdClip_pDestVertIntensity[clipindex].green = (pCurIntens->green - pPrevIntens->green) * lerpFactor + pPrevIntens->green;
+                rdClip_pDestVertIntensity[clipindex].blue  = (pCurIntens->blue - pPrevIntens->blue) * lerpFactor + pPrevIntens->blue;
+                rdClip_pDestVertIntensity[clipindex].alpha = (pCurIntens->alpha - pPrevIntens->alpha) * lerpFactor + pPrevIntens->alpha;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x10;
             }
 
-            if ( pCurVert->x >= curPlaneProjY )
+            if ( pCurVert->x >= (double)curPlaneProjY )
             {
-                memcpy(&rdClip_pDestVert[clipindex], pCurVert, sizeof(rdVector3));
-                memcpy(&rdClip_pDestTVert[clipindex], pCurTVert, sizeof(*rdClip_pDestTVert));
-                memcpy(&rdClip_pDestVertIntensity[clipindex++], pCurIntens, sizeof(rdClip_pDestVertIntensity));
+                rdClip_pDestVert[clipindex]          = *pCurVert;
+                rdClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdClip_pDestVertIntensity[clipindex] = *pCurIntens;
+                clipindex++;
             }
         }
 
         RD_ASSERTREL(clipindex < STD_ARRAYLEN(rdClip_aWorkVerts));
         pPrevVert   = pCurVert++;
         pPrevTVerts = pCurTVert++;
+        pPrevIntens = pCurIntens++;
     }
 
     if ( clipindex < 3 )
@@ -2945,15 +2993,16 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
     pCurTVert       = paTVerts;
     pCurIntens      = paIntens;
 
+    // RIGHT PLANE CLIPPING
     for ( size_t i = 0; i < numVerts; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->rightPlane;
         float curPlaneProjY = pCurVert->y * pFrustrum->rightPlane;
-        if ( pPrevVert->x <= prevPlaneProjY || pCurVert->x <= curPlaneProjY )
+        if ( pPrevVert->x <= (double)prevPlaneProjY || pCurVert->x <= (double)curPlaneProjY )
         {
             if ( pPrevVert->x != prevPlaneProjY
                 && pCurVert->x != curPlaneProjY
-                && (pPrevVert->x > prevPlaneProjY || pCurVert->x > curPlaneProjY) )
+                && (pPrevVert->x > (double)prevPlaneProjY || pCurVert->x > (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->rightPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
@@ -2968,7 +3017,7 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 float dX = fabsf(pCurVert->x - pPrevVert->x);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dX )
+                if ( dY <= (double)dX )
                 {
                     lerpFactor = (clippedX - pPrevVert->x) / (pCurVert->x - pPrevVert->x);
                 }
@@ -2984,19 +3033,21 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
                 rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
-                rdClip_pDestVertIntensity[clipindex].x   = (pCurIntens->x - pPrevIntens->x) * lerpFactor + pPrevIntens->x;
-                rdClip_pDestVertIntensity[clipindex].y   = (pCurIntens->y - pPrevIntens->y) * lerpFactor + pPrevIntens->y;
-                rdClip_pDestVertIntensity[clipindex++].z = (pCurIntens->z - pPrevIntens->z) * lerpFactor + pPrevIntens->z;
+                rdClip_pDestVertIntensity[clipindex].red   = (pCurIntens->red - pPrevIntens->red) * lerpFactor + pPrevIntens->red;
+                rdClip_pDestVertIntensity[clipindex].green = (pCurIntens->green - pPrevIntens->green) * lerpFactor + pPrevIntens->green;
+                rdClip_pDestVertIntensity[clipindex].blue  = (pCurIntens->blue - pPrevIntens->blue) * lerpFactor + pPrevIntens->blue;
+                rdClip_pDestVertIntensity[clipindex].alpha = (pCurIntens->alpha - pPrevIntens->alpha) * lerpFactor + pPrevIntens->alpha;
 
-
+                clipindex++;
                 rdClip_g_faceStatus |= 0x20;
             }
 
-            if ( pCurVert->x <= curPlaneProjY )
+            if ( pCurVert->x <= (double)curPlaneProjY )
             {
-                memcpy(&rdClip_pDestVert[clipindex], pCurVert, sizeof(rdVector3));
-                memcpy(&rdClip_pDestTVert[clipindex], pCurTVert, sizeof(*rdClip_pDestTVert));
-                memcpy(&rdClip_pDestVertIntensity[clipindex++], pCurIntens, sizeof(rdClip_pDestVertIntensity));
+                rdClip_pDestVert[clipindex]          = *pCurVert;
+                rdClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdClip_pDestVertIntensity[clipindex] = *pCurIntens;
+                clipindex++;
             }
         }
 
@@ -3034,15 +3085,16 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
     pCurTVert   = paTVerts;
     pCurIntens  = paIntens;
 
+    // TOP PLANE CLIPPING
     for ( size_t i = 0; i < numVerts; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->topPlane;
         float curPlaneProjY = pCurVert->y * pFrustrum->topPlane;
-        if ( pPrevVert->z <= prevPlaneProjY || pCurVert->z <= curPlaneProjY )
+        if ( pPrevVert->z <= (double)prevPlaneProjY || pCurVert->z <= (double)curPlaneProjY )
         {
             if ( pPrevVert->z != prevPlaneProjY
                 && pCurVert->z != curPlaneProjY
-                && (pPrevVert->z > prevPlaneProjY || pCurVert->z > curPlaneProjY) )
+                && (pPrevVert->z > (double)prevPlaneProjY || pCurVert->z > (double)curPlaneProjY) )
             {
                 float planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;;
@@ -3056,7 +3108,7 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 float dZ = fabsf(pCurVert->z - pPrevVert->z);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dZ )
+                if ( dY <= (double)dZ )
                 {
                     lerpFactor = (clippedZ - pPrevVert->z) / (pCurVert->z - pPrevVert->z);
                 }
@@ -3072,18 +3124,21 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
                 rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
-                rdClip_pDestVertIntensity[clipindex].x   = (pCurIntens->x - pPrevIntens->x) * lerpFactor + pPrevIntens->x;
-                rdClip_pDestVertIntensity[clipindex].y   = (pCurIntens->y - pPrevIntens->y) * lerpFactor + pPrevIntens->y;
-                rdClip_pDestVertIntensity[clipindex++].z = (pCurIntens->z - pPrevIntens->z) * lerpFactor + pPrevIntens->z;
+                rdClip_pDestVertIntensity[clipindex].red   = (pCurIntens->red - pPrevIntens->red) * lerpFactor + pPrevIntens->red;
+                rdClip_pDestVertIntensity[clipindex].green = (pCurIntens->green - pPrevIntens->green) * lerpFactor + pPrevIntens->green;
+                rdClip_pDestVertIntensity[clipindex].blue  = (pCurIntens->blue - pPrevIntens->blue) * lerpFactor + pPrevIntens->blue;
+                rdClip_pDestVertIntensity[clipindex].alpha = (pCurIntens->alpha - pPrevIntens->alpha) * lerpFactor + pPrevIntens->alpha;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x04;
             }
 
-            if ( pCurVert->z <= curPlaneProjY )
+            if ( pCurVert->z <= (double)curPlaneProjY )
             {
-                memcpy(&rdClip_pDestVert[clipindex], pCurVert, sizeof(rdVector3));
-                memcpy(&rdClip_pDestTVert[clipindex], pCurTVert, sizeof(*rdClip_pDestTVert));
-                memcpy(&rdClip_pDestVertIntensity[clipindex++], pCurIntens, sizeof(rdClip_pDestVertIntensity));
+                rdClip_pDestVert[clipindex]          = *pCurVert;
+                rdClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdClip_pDestVertIntensity[clipindex] = *pCurIntens;
+                clipindex++;
             }
         }
 
@@ -3121,11 +3176,12 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
     pCurTVert   = paTVerts;
     pCurIntens  = paIntens;
 
+    // BOTTOM PLANE CLIPPING
     for ( size_t i = 0; i < numVerts; ++i )
     {
         float prevPlaneProjY = pPrevVert->y * pFrustrum->bottomPlane;
         float curPlaneProjY = pCurVert->y * pFrustrum->bottomPlane;
-        if ( pPrevVert->z >= prevPlaneProjY || pCurVert->z >= curPlaneProjY )
+        if ( pPrevVert->z >= (double)prevPlaneProjY || pCurVert->z >= (double)curPlaneProjY )
         {
             if ( pPrevVert->z != prevPlaneProjY
                 && pCurVert->z != curPlaneProjY
@@ -3143,7 +3199,7 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 float dZ = fabsf(pCurVert->z - pPrevVert->z);
 
                 float lerpFactor = 0.0f;
-                if ( dY <= dZ )
+                if ( dY <= (double)dZ )
                 {
                     lerpFactor = (clippedZ - pPrevVert->z) / (pCurVert->z - pPrevVert->z);
                 }
@@ -3159,19 +3215,21 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
                 rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
-                rdClip_pDestVertIntensity[clipindex].x   = (pCurIntens->x - pPrevIntens->x) * lerpFactor + pPrevIntens->x;
-                rdClip_pDestVertIntensity[clipindex].y   = (pCurIntens->y - pPrevIntens->y) * lerpFactor + pPrevIntens->y;
-                rdClip_pDestVertIntensity[clipindex++].z = (pCurIntens->z - pPrevIntens->z) * lerpFactor + pPrevIntens->z;
+                rdClip_pDestVertIntensity[clipindex].red   = (pCurIntens->red - pPrevIntens->red) * lerpFactor + pPrevIntens->red;
+                rdClip_pDestVertIntensity[clipindex].green = (pCurIntens->green - pPrevIntens->green) * lerpFactor + pPrevIntens->green;
+                rdClip_pDestVertIntensity[clipindex].blue  = (pCurIntens->blue - pPrevIntens->blue) * lerpFactor + pPrevIntens->blue;
+                rdClip_pDestVertIntensity[clipindex].alpha = (pCurIntens->alpha - pPrevIntens->alpha) * lerpFactor + pPrevIntens->alpha;
 
-
+                clipindex++;
                 rdClip_g_faceStatus |= 0x08;
             }
 
-            if ( pCurVert->z >= curPlaneProjY )
+            if ( pCurVert->z >= (double)curPlaneProjY )
             {
-                memcpy(&rdClip_pDestVert[clipindex], pCurVert, sizeof(rdVector3));
-                memcpy(&rdClip_pDestTVert[clipindex], pCurTVert, sizeof(*rdClip_pDestTVert));
-                memcpy(&rdClip_pDestVertIntensity[clipindex++], pCurIntens, sizeof(rdClip_pDestVertIntensity));
+                rdClip_pDestVert[clipindex]          = *pCurVert;
+                rdClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdClip_pDestVertIntensity[clipindex] = *pCurIntens;
+                clipindex++;
             }
         }
 
@@ -3209,13 +3267,14 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
     pCurTVert   = paTVerts;
     pCurIntens  = paIntens;
 
+    // NEAR PLANE CLIPPING
     for ( size_t i = 0; i < numVerts; ++i )
     {
-        if ( pPrevVert->y >= pFrustrum->nearPlane || pCurVert->y >= pFrustrum->nearPlane )
+        if ( pPrevVert->y >= (double)pFrustrum->nearPlane || pCurVert->y >= (double)pFrustrum->nearPlane )
         {
             if ( pPrevVert->y != pFrustrum->nearPlane
                 && pCurVert->y != pFrustrum->nearPlane
-                && (pPrevVert->y < pFrustrum->nearPlane || pCurVert->y < pFrustrum->nearPlane) )
+                && (pPrevVert->y < (double)pFrustrum->nearPlane || pCurVert->y < (double)pFrustrum->nearPlane) )
             {
                 float lerpFactor = (pFrustrum->nearPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 rdClip_pDestVert[clipindex].y = pFrustrum->nearPlane;
@@ -3225,18 +3284,21 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
                 rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
-                rdClip_pDestVertIntensity[clipindex].x   = (pCurIntens->x - pPrevIntens->x) * lerpFactor + pPrevIntens->x;
-                rdClip_pDestVertIntensity[clipindex].y   = (pCurIntens->y - pPrevIntens->y) * lerpFactor + pPrevIntens->y;
-                rdClip_pDestVertIntensity[clipindex++].z = (pCurIntens->z - pPrevIntens->z) * lerpFactor + pPrevIntens->z;
+                rdClip_pDestVertIntensity[clipindex].red   = (pCurIntens->red - pPrevIntens->red) * lerpFactor + pPrevIntens->red;
+                rdClip_pDestVertIntensity[clipindex].green = (pCurIntens->green - pPrevIntens->green) * lerpFactor + pPrevIntens->green;
+                rdClip_pDestVertIntensity[clipindex].blue  = (pCurIntens->blue - pPrevIntens->blue) * lerpFactor + pPrevIntens->blue;
+                rdClip_pDestVertIntensity[clipindex].alpha = (pCurIntens->alpha - pPrevIntens->alpha) * lerpFactor + pPrevIntens->alpha;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x01;
             }
 
-            if ( pCurVert->y >= pFrustrum->nearPlane )
+            if ( pCurVert->y >= (double)pFrustrum->nearPlane )
             {
-                memcpy(&rdClip_pDestVert[clipindex], pCurVert, sizeof(rdVector3));
-                memcpy(&rdClip_pDestTVert[clipindex], pCurTVert, sizeof(*rdClip_pDestTVert));
-                memcpy(&rdClip_pDestVertIntensity[clipindex++], pCurIntens, sizeof(rdClip_pDestVertIntensity));
+                rdClip_pDestVert[clipindex]          = *pCurVert;
+                rdClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdClip_pDestVertIntensity[clipindex] = *pCurIntens;
+                clipindex++;
             }
         }
 
@@ -3259,12 +3321,14 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
             return clipindex;
         }
 
-        memcpy(aVertices, rdClip_pDestVert, sizeof(*aVertices) * clipindex);
-        memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
-        memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(*aIntensities) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+        rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
+        rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
+
         return clipindex;
     }
 
+    // FAR PLANE CLIPPING
     paVerts            = rdClip_pDestVert;
     rdClip_pDestVert   = rdClip_pSourceVert;
     rdClip_pSourceVert = paVerts;
@@ -3290,11 +3354,11 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
 
     for ( size_t i = 0; i < numVerts; ++i )
     {
-        if ( pPrevVert->y <= pFrustrum->farPlane || pCurVert->y <= pFrustrum->farPlane )
+        if ( pPrevVert->y <= (double)pFrustrum->farPlane || pCurVert->y <= (double)pFrustrum->farPlane )
         {
             if ( pPrevVert->y != pFrustrum->farPlane
                 && pCurVert->y != pFrustrum->farPlane
-                && (pPrevVert->y > pFrustrum->farPlane || pCurVert->y > pFrustrum->farPlane) )
+                && (pPrevVert->y > (double)pFrustrum->farPlane || pCurVert->y > (double)pFrustrum->farPlane) )
             {
                 float lerpFactor = (pFrustrum->farPlane - pPrevVert->y) / (pCurVert->y - pPrevVert->y);
                 rdClip_pDestVert[clipindex].y = pFrustrum->farPlane;
@@ -3304,18 +3368,21 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
                 rdClip_pDestTVert[clipindex].x = (pCurTVert->x - pPrevTVerts->x) * lerpFactor + pPrevTVerts->x;
                 rdClip_pDestTVert[clipindex].y = (pCurTVert->y - pPrevTVerts->y) * lerpFactor + pPrevTVerts->y;
 
-                rdClip_pDestVertIntensity[clipindex].x   = (pCurIntens->x - pPrevIntens->x) * lerpFactor + pPrevIntens->x;
-                rdClip_pDestVertIntensity[clipindex].y   = (pCurIntens->y - pPrevIntens->y) * lerpFactor + pPrevIntens->y;
-                rdClip_pDestVertIntensity[clipindex++].z = (pCurIntens->z - pPrevIntens->z) * lerpFactor + pPrevIntens->z;
+                rdClip_pDestVertIntensity[clipindex].red   = (pCurIntens->red - pPrevIntens->red) * lerpFactor + pPrevIntens->red;
+                rdClip_pDestVertIntensity[clipindex].green = (pCurIntens->green - pPrevIntens->green) * lerpFactor + pPrevIntens->green;
+                rdClip_pDestVertIntensity[clipindex].blue  = (pCurIntens->blue - pPrevIntens->blue) * lerpFactor + pPrevIntens->blue;
+                rdClip_pDestVertIntensity[clipindex].alpha = (pCurIntens->alpha - pPrevIntens->alpha) * lerpFactor + pPrevIntens->alpha;
 
+                clipindex++;
                 rdClip_g_faceStatus |= 0x02;
             }
 
-            if ( pCurVert->y <= pFrustrum->farPlane )
+            if ( pCurVert->y <= (double)pFrustrum->farPlane )
             {
-                memcpy(&rdClip_pDestVert[clipindex], pCurVert, sizeof(rdVector3));
-                memcpy(&rdClip_pDestTVert[clipindex], pCurTVert, sizeof(*rdClip_pDestTVert));
-                memcpy(&rdClip_pDestVertIntensity[clipindex++], pCurIntens, sizeof(rdClip_pDestVertIntensity));
+                rdClip_pDestVert[clipindex]          = *pCurVert;
+                rdClip_pDestTVert[clipindex]         = *pCurTVert;
+                rdClip_pDestVertIntensity[clipindex] = *pCurIntens;
+                clipindex++;
             }
         }
 
@@ -3335,9 +3402,10 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
         return clipindex;
     }
 
-    memcpy(aVertices, rdClip_pDestVert, sizeof(*aVertices) * clipindex);
-    memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
-    memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(*aIntensities) * clipindex);
+    rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
+    rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
+
     return clipindex;
 }
 
@@ -3671,9 +3739,9 @@ int J3DAPI rdClip_Face3TOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertice
             return clipindex;
         }
 
-        memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-        memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
-        memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(*aIntensities) * clipindex);
+        rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+        rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
+        rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
         return clipindex;
     }
 
@@ -3747,9 +3815,9 @@ int J3DAPI rdClip_Face3TOrtho(const rdClipFrustum* pFrustum, rdVector3* aVertice
         return clipindex;
     }
 
-    memcpy(aVertices, rdClip_pDestVert, sizeof(rdVector3) * clipindex);
-    memcpy(aTexVertices, rdClip_pDestTVert, sizeof(*aTexVertices) * clipindex);
-    memcpy(aIntensities, rdClip_pDestVertIntensity, sizeof(*aIntensities) * clipindex);
+    rdVector_Copy3List(aVertices, rdClip_pDestVert, clipindex);
+    rdVector_Copy2List(aTexVertices, rdClip_pDestTVert, clipindex);
+    rdVector_Copy4List(aIntensities, rdClip_pDestVertIntensity, clipindex);
     return clipindex;
 }
 
