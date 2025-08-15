@@ -25,6 +25,8 @@
     #define J3D_32BIT 1
 #endif
 
+#cmakedefine J3D_QOL_IMPROVEMENTS
+
 #cmakedefine J3D_DIRECTX6
 #cmakedefine J3D_DIRECTX9
 

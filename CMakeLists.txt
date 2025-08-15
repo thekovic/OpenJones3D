@@ -20,13 +20,13 @@ option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)
 option(JONES3D_USE_DIRECTX9 "Build with DirectX 9 support" ON)
 
 if(JONES3D_QOL_IMPROVEMENTS)
+    message(STATUS "QOL improvements enabled")
     set(J3D_QOL_IMPROVEMENTS on)
 endif()
 
 if(JONES3D_USE_DIRECTX9)
     message(STATUS "Configuring for DirectX 9")
     set(J3D_DIRECTX9 ON) # Set the variable for the header template
-
 else()
     message(STATUS "Configuring for vanilla DirectX 6 (default)")
     set(J3D_DIRECTX6 ON) # Set the variable for the header template
