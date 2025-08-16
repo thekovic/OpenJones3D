@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-if (J3D_DIRECTX6 OR J3D_DIRECTX9)
+if (J3D_DIRECTX6)
     set(EXTERNAL_MODULES
         DirectX61c
     )

@@ -7,7 +7,7 @@
 J3D_EXTERN_C_START
 
 #define SmushPlay_SysStartup_ADDR 0x004E30B0
-#define SmushPlay_SysStartup_TYPE int (J3DAPI*)(HWND, LPDIRECTSOUND)
+#define SmushPlay_SysStartup_TYPE int (J3DAPI*)(HWND, tDirectSound*)
 
 #define SmushPlay_SysShutdown_ADDR 0x004E33A0
 #define SmushPlay_SysShutdown_TYPE int (*)(void)
@@ -51,7 +51,7 @@ typedef struct sSmushBitmap
 } SmushBitmap;
 
 
-inline int J3DAPI SmushPlay_SysStartup(HWND hwnd, LPDIRECTSOUND pDSound)
+inline int J3DAPI SmushPlay_SysStartup(HWND hwnd, tDirectSound* pDSound)
 {
     return J3D_TRAMPOLINE_CALL(SmushPlay_SysStartup, hwnd, pDSound);
 }

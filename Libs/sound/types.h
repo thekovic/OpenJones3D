@@ -15,6 +15,14 @@
 
 J3D_EXTERN_C_START
 
+#if defined (J3D_DIRECTX6)
+typedef IDirectSoundBuffer tSysSoundBuffer;
+#elif defined (J3D_DIRECTX9)
+typedef IDirectSoundBuffer8 tSysSoundBuffer;
+#else
+#error "Unsuported system sound API. Please define J3D_DIRECTX6 or J3D_DIRECTX9 in your project."
+#endif
+
 typedef enum eSoundOpenFlags
 {
     SOUNDOPEN_NO3DSOUND           = 0x02,
@@ -103,7 +111,7 @@ typedef struct sSoundChannel
     int priority;
     tSoundHandle hSnd;
     int thingId;
-    LPDIRECTSOUNDBUFFER pDSoundBuffer;
+    tSysSoundBuffer* pDSoundBuffer;
     rdVector3 playPos;
     float volume;
     float pitch;

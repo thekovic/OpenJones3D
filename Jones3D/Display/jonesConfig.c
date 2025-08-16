@@ -7440,8 +7440,8 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
                         && pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp == curVideoMode.rasterInfo.colorInfo.bpp
                         && (pDisplayInfo->aModes[i].refreshRate == 0 || pDisplayInfo->aModes[i].refreshRate == curVideoMode.refreshRate) ) // Added: Add refresh rate check
                     {
-                        selVideoModeNum   = (size_t)videomodeNum;
-                        bHasCurVideoMode  = true;
+                        selVideoModeNum  = (size_t)videomodeNum;
+                        bHasCurVideoMode = true;
                         ComboBox_SetCurSel(hCBColorDepth, ComboBox_FindString(hCBColorDepth, 0, aResolutionText));
                     }
                 }
