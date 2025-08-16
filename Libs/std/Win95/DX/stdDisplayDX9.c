@@ -9,6 +9,9 @@
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
 
+#define STDDISPLAY_MINFRAMERATE 30
+#define STDDISPLAY_MAXFRAMERATE 60
+
 // Public globals
 tVBuffer stdDisplay_g_backBuffer = { 0 };
 
@@ -23,9 +26,6 @@ static bool stdDisplay_bDeviceLost = false;
 static LPDIRECT3D9 stdDisplay_pD3D9;
 static LPDIRECT3DDEVICE9 stdDisplay_pD3DDevice;
 
-//static LPDIRECT3DSURFACE9 stdDisplay_pDepthStencil;
-//static LPDIRECT3DSURFACE9 stdDisplay_pOffscreenSurface;
-
 static D3DPRESENT_PARAMETERS stdDisplay_presentParams;
 static D3DCAPS9 stdDisplay_deviceCaps;
 
@@ -33,11 +33,12 @@ static int stdDisplay_backbufWidth   = 0;
 static int stdDisplay_backbufHeight  = 0;
 static tVSurface stdDisplay_zBuffer;
 
+static const D3DFORMAT stdDisplay_aSupportedFormats[] = { D3DFMT_R8G8B8, D3DFMT_A8R8G8B8, D3DFMT_X8R8G8B8 };
 static StdVideoMode* stdDisplay_pCurVideoMode   = NULL;
 static StdVideoMode stdDisplay_primaryVideoMode = { 0 };
 
 static size_t stdDisplay_numVideoModes          = 0;
-static StdVideoMode stdDisplay_aVideoModes[64]  = { 0 };
+static StdVideoMode stdDisplay_aVideoModes[512] = { 0 };
 
 static size_t stdDisplay_curDevice;
 static StdDisplayDevice* stdDisplay_pCurDevice = NULL;
@@ -182,7 +183,7 @@ void stdDisplay_ResetGlobals(void)
 
 int stdDisplay_Startup(void)
 {
-    STDLOG_STATUS("Starting stdDisplay system using DirectX 9 GAPI ...\n");
+    STDLOG_STATUS("Starting display system using DirectX 9 GAPI ...\n");
     if ( stdDisplay_bStartup ) {
         return 1;
     }
@@ -1017,52 +1018,78 @@ static int J3DAPI stdDisplay_EnumerateVideoModes(UINT adapter)
         return 0;
     }
 
-    D3DFORMAT formats[] = { D3DFMT_X8R8G8B8 };// D3DFMT_R8G8B8, D3DFMT_A8R8G8B8, D3DFMT_X8R8G8B8, D3DFMT_R5G6B5, D3DFMT_X1R5G5B5 };
-
-    for ( size_t fmt = 0; fmt < STD_ARRAYLEN(formats); fmt++ )
+    D3DDISPLAYMODE curDesktopMode = { 0 };
+    HRESULT hr = IDirect3D9_GetAdapterDisplayMode(stdDisplay_pD3D9, adapter, &curDesktopMode);
+    if ( FAILED(hr) )
     {
-        UINT modeCount = IDirect3D9_GetAdapterModeCount(stdDisplay_pD3D9, adapter, formats[fmt]);
+        STDLOG_ERROR("Error: Could not get adapter display mode for adapter %d.\n", adapter);
+        return 0;
+    }
 
-        for ( UINT i = 0; i < modeCount && stdDisplay_numVideoModes < STD_ARRAYLEN(stdDisplay_aVideoModes); i++ )
+    // Chech that the current desktop mode is supported
+    bool bFmtSupported = false;
+    for ( size_t i = 0; i < STD_ARRAYLEN(stdDisplay_aSupportedFormats); i++ )
+    {
+        if ( stdDisplay_aSupportedFormats[i] == curDesktopMode.Format )
         {
-            D3DDISPLAYMODE mode;
-            HRESULT hr = IDirect3D9_EnumAdapterModes(stdDisplay_pD3D9, adapter, formats[fmt], i, &mode);
-            if ( FAILED(hr) ) {
-                continue;
-            }
-
-            // Filter out modes below 24-bit color and 30 Hz
-            int bpp = stdDisplay_BppFromD3DFormat(mode.Format);
-            if ( bpp < 32 || mode.RefreshRate < 30 ) {
-                continue;
-            }
-
-            StdVideoMode* pVideoMode = &stdDisplay_aVideoModes[stdDisplay_numVideoModes];
-            pVideoMode->refreshRate       = mode.RefreshRate;
-            pVideoMode->rasterInfo.width  = mode.Width;
-            pVideoMode->rasterInfo.height = mode.Height;
-
-            // Set color bit information based on format
-            if ( !stdDisplay_GetVideoColorFormat(mode.Format, &pVideoMode->rasterInfo.colorInfo) )
-            {
-                STDLOG_ERROR("Couldn't get color info for format %d, adapter: %d videomode: %d ", mode.Format, adapter, i);
-                continue;
-            }
-
-            // Calculate row information
-            unsigned int bytesPerPixel = bpp / 8;
-            pVideoMode->rasterInfo.rowSize  = pVideoMode->rasterInfo.width * bytesPerPixel;
-            pVideoMode->rasterInfo.rowWidth = pVideoMode->rasterInfo.width;
-            pVideoMode->rasterInfo.size     = pVideoMode->rasterInfo.rowSize * pVideoMode->rasterInfo.height;
-            stdDisplay_SetAspectRatio(pVideoMode);
-
-            // Check memory requirements (simplified for D3D9)
-            size_t requiredVRam = 3 * pVideoMode->rasterInfo.size;
-            STDLOG_STATUS("Video Mode: %ux%u %u bit (%u Hz), Required: %u bytes.\n", pVideoMode->rasterInfo.width, pVideoMode->rasterInfo.height, bpp, pVideoMode->refreshRate, requiredVRam);
-
-            ++stdDisplay_numVideoModes;
+            bFmtSupported  = true;
+            break;
         }
     }
+
+    if ( !bFmtSupported )
+    {
+        STDLOG_ERROR("stdDisplay_EnumerateVideoModes: Current desktop mode format %d is not supported by stdDisplay.\n", curDesktopMode.Format);
+        return 0;
+    }
+    STDLOG_DEBUG("stdDisplay_EnumerateVideoModes: Using current desktop mode format: %d\n", curDesktopMode.Format);
+
+    UINT modeCount = IDirect3D9_GetAdapterModeCount(stdDisplay_pD3D9, adapter, curDesktopMode.Format);
+    for ( UINT i = 0; i < modeCount && stdDisplay_numVideoModes < STD_ARRAYLEN(stdDisplay_aVideoModes); i++ )
+    {
+        D3DDISPLAYMODE mode;
+        hr = IDirect3D9_EnumAdapterModes(stdDisplay_pD3D9, adapter, curDesktopMode.Format, i, &mode);
+        if ( FAILED(hr) ) {
+            continue;
+        }
+
+        // Filter out modes below 24-bit color and 30 Hz
+        int bpp = stdDisplay_BppFromD3DFormat(mode.Format);
+        if ( bpp < 24 || mode.RefreshRate < STDDISPLAY_MINFRAMERATE || mode.RefreshRate > STDDISPLAY_MAXFRAMERATE ) {
+            continue;
+        }
+
+        StdVideoMode* pVideoMode = &stdDisplay_aVideoModes[stdDisplay_numVideoModes];
+        pVideoMode->refreshRate       = mode.RefreshRate;
+        pVideoMode->rasterInfo.width  = mode.Width;
+        pVideoMode->rasterInfo.height = mode.Height;
+
+        // Set color bit information based on format
+        if ( !stdDisplay_GetVideoColorFormat(mode.Format, &pVideoMode->rasterInfo.colorInfo) )
+        {
+            STDLOG_ERROR("Couldn't get color info for format %d, adapter: %d videomode: %d ", mode.Format, adapter, i);
+            continue;
+        }
+
+        // Calculate row information
+        unsigned int bytesPerPixel = bpp / 8;
+        pVideoMode->rasterInfo.rowSize  = pVideoMode->rasterInfo.width * bytesPerPixel;
+        pVideoMode->rasterInfo.rowWidth = pVideoMode->rasterInfo.width;
+        pVideoMode->rasterInfo.size     = pVideoMode->rasterInfo.rowSize * pVideoMode->rasterInfo.height;
+        stdDisplay_SetAspectRatio(pVideoMode);
+
+        // Check memory requirements (copied from DX6)
+        size_t requiredVRam = 3 * pVideoMode->rasterInfo.size;
+        STDLOG_STATUS("Video Mode: %ux%u %u bit (%u Hz), Required: %u bytes.\n", pVideoMode->rasterInfo.width, pVideoMode->rasterInfo.height, bpp, pVideoMode->refreshRate, requiredVRam);
+
+        ++stdDisplay_numVideoModes;
+    }
+
+    if ( modeCount > STD_ARRAYLEN(stdDisplay_aVideoModes) - stdDisplay_numVideoModes )
+    {
+        STDLOG_WARNING("Too many video modes for adapter %d, only %zu modes supported.\n", adapter, STD_ARRAYLEN(stdDisplay_aVideoModes) - stdDisplay_numVideoModes);
+    }
+
 
     return stdDisplay_numVideoModes;
 }
@@ -1201,145 +1228,7 @@ static int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode
         }
     }
 
-    //// Get the actual swap chain back buffer to determine format
-    //LPDIRECT3DSURFACE9 pSwapChainBuffer;
-    //HRESULT hr = IDirect3DDevice9_GetBackBuffer(stdDisplay_pD3DDevice, 0, 0, D3DBACKBUFFER_TYPE_MONO, &pSwapChainBuffer);
-    //if ( FAILED(hr) )
-    //{
-    //    STDLOG_ERROR("Error %s when getting swap chain buffer for format detection.\n", stdDisplay_D3DGetStatus(hr));
-    //    return 0;
-    //}
-
-    //  // Get surface description from swap chain buffer
-    //D3DSURFACE_DESC surfDesc;
-    //hr = IDirect3DSurface9_GetDesc(pSwapChainBuffer, &surfDesc);
-    //IDirect3DSurface9_Release(pSwapChainBuffer);  // Release the swap chain buffer reference
-    //if ( FAILED(hr) )
-    //{
-    //    STDLOG_ERROR("Error %s when getting swap chain buffer description.\n", stdDisplay_D3DGetStatus(hr));
-    //    return 0;
-    //}
-
     return stdDisplay_InitBuffers(stdDisplay_pD3DDevice, pDisplayMode, /*bWindowMode=*/true, stdDisplay_presentParams.BackBufferCount);
-
-    //// Front buffer
-    //{
-    //    stdDisplay_g_frontBuffer.lockRefCount     = 1;
-    //    stdDisplay_g_frontBuffer.lockSurfRefCount = 0;
-    //    stdDisplay_g_frontBuffer.bVideoMemory     = 1; // D3D9, surfaces are typically in video memory
-    //    stdDisplay_g_frontBuffer.pPixels          = NULL;
-
-    //    // Get front buffer surface (implicit swap chain's front buffer)
-    //    hr = IDirect3DDevice9_GetFrontBufferData(stdDisplay_pD3DDevice, 0, stdDisplay_g_frontBuffer.surface.pSysSurface);
-    //    if ( FAILED(hr) )
-    //    {
-    //        // Create a surface for front buffer access
-    //        hr = IDirect3DDevice9_CreateOffscreenPlainSurface(stdDisplay_pD3DDevice,
-    //            stdDisplay_presentParams.BackBufferWidth,
-    //            stdDisplay_presentParams.BackBufferHeight,
-    //            stdDisplay_presentParams.BackBufferFormat,
-    //            D3DPOOL_SYSTEMMEM,
-    //            &stdDisplay_g_frontBuffer.surface.pSysSurface,
-    //            NULL
-    //        );
-
-    //        if ( FAILED(hr) )
-    //        {
-    //            STDLOG_ERROR("Error %s when creating the D3D front buffer surface.\n", stdDisplay_D3DGetStatus(hr));
-    //            return 0;
-    //        }
-    //    }
-
-    //    // Get surface description
-    //    hr = IDirect3DSurface9_GetDesc(stdDisplay_g_frontBuffer.surface.pSysSurface, &stdDisplay_g_frontBuffer.surface.desc);
-    //    if ( FAILED(hr) )
-    //    {
-    //        STDLOG_ERROR("Error %s when getting desc of D3D front buffer surface.\n", stdDisplay_D3DGetStatus(hr));
-    //        return 0;
-    //    }
-
-    //    pDisplayMode->rasterInfo.width               = stdDisplay_g_frontBuffer.surface.desc.Width;
-    //    pDisplayMode->rasterInfo.height              = stdDisplay_g_frontBuffer.surface.desc.Height;
-    //    pDisplayMode->rasterInfo.colorInfo.bpp       = stdDisplay_BppFromD3DFormat(stdDisplay_g_frontBuffer.surface.desc.Format);
-    //    pDisplayMode->rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
-
-    //    // Set up color format based on surface format
-    //    switch ( stdDisplay_g_frontBuffer.surface.desc.Format )
-    //    {
-    //        case D3DFMT_R8G8B8:
-    //        case D3DFMT_X8R8G8B8:
-    //        case D3DFMT_A8R8G8B8:
-    //            pDisplayMode->rasterInfo.colorInfo.redBPP   = 8;
-    //            pDisplayMode->rasterInfo.colorInfo.greenBPP = 8;
-    //            pDisplayMode->rasterInfo.colorInfo.blueBPP  = 8;
-    //            pDisplayMode->rasterInfo.colorInfo.redPosShift = 16;
-    //            pDisplayMode->rasterInfo.colorInfo.greenPosShift = 8;
-    //            pDisplayMode->rasterInfo.colorInfo.bluePosShift  = 0;
-    //            break;
-    //    }
-
-    //    unsigned int bpp = pDisplayMode->rasterInfo.colorInfo.bpp / 8;
-    //    pDisplayMode->rasterInfo.rowSize  = pDisplayMode->rasterInfo.width * bpp;
-    //    pDisplayMode->rasterInfo.rowWidth = pDisplayMode->rasterInfo.width;
-    //    pDisplayMode->rasterInfo.size     = pDisplayMode->rasterInfo.height * pDisplayMode->rasterInfo.width * bpp;
-    //    stdDisplay_SetAspectRatio(pDisplayMode);
-
-    //    // Setup buffer structures
-    //    stdDisplay_g_frontBuffer.rasterInfo = pDisplayMode->rasterInfo;
-    //}
-
-    //// Get back buffer
-    //{
-    //    hr = IDirect3DDevice9_GetBackBuffer(stdDisplay_pD3DDevice, 0, 0, D3DBACKBUFFER_TYPE_MONO, &stdDisplay_g_backBuffer.surface.pSysSurface);
-    //    if ( FAILED(hr) )
-    //    {
-    //        STDLOG_ERROR("Error %s when getting back buffer.\n", stdDisplay_D3DGetStatus(hr));
-    //        return 0;
-    //    }
-
-    //    // Update display mode with actual back buffer format
-    //    hr = IDirect3DSurface9_GetDesc(stdDisplay_g_backBuffer.surface.pSysSurface, &stdDisplay_g_backBuffer.surface.desc);
-    //    if ( FAILED(hr) )
-    //    {
-    //        STDLOG_ERROR("Error %s when getting desc of back buffer rendering surface.\n", stdDisplay_D3DGetStatus(hr));
-    //        return 0;
-    //    }
-
-    //    // Setup buffer structures
-    //    stdDisplay_g_backBuffer.lockRefCount     = 1;
-    //    stdDisplay_g_backBuffer.lockSurfRefCount = 0;
-    //    stdDisplay_g_backBuffer.bVideoMemory     = 1;
-    //    stdDisplay_g_backBuffer.pPixels          = NULL;
-    //    stdDisplay_g_backBuffer.rasterInfo       = pDisplayMode->rasterInfo;
-
-    //    // Update raster info with actual back buffer dimensions
-    //    stdDisplay_g_backBuffer.rasterInfo.width               = stdDisplay_g_backBuffer.surface.desc.Width;
-    //    stdDisplay_g_backBuffer.rasterInfo.height              = stdDisplay_g_backBuffer.surface.desc.Height;
-    //    stdDisplay_g_backBuffer.rasterInfo.colorInfo.bpp       = stdDisplay_BppFromD3DFormat(stdDisplay_g_backBuffer.surface.desc.Format);
-    //    stdDisplay_g_backBuffer.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
-
-    //    // Set up color format based on surface format
-    //    switch ( stdDisplay_g_backBuffer.surface.desc.Format )
-    //    {
-    //        case D3DFMT_R8G8B8:
-    //        case D3DFMT_X8R8G8B8:
-    //        case D3DFMT_A8R8G8B8:
-    //            stdDisplay_g_backBuffer.rasterInfo.colorInfo.redBPP   = 8;
-    //            stdDisplay_g_backBuffer.rasterInfo.colorInfo.greenBPP = 8;
-    //            stdDisplay_g_backBuffer.rasterInfo.colorInfo.blueBPP  = 8;
-    //            stdDisplay_g_backBuffer.rasterInfo.colorInfo.redPosShift = 16;
-    //            stdDisplay_g_backBuffer.rasterInfo.colorInfo.greenPosShift = 8;
-    //            stdDisplay_g_backBuffer.rasterInfo.colorInfo.bluePosShift  = 0;
-    //            break;
-    //    }
-
-    //    unsigned int bpp = pDisplayMode->rasterInfo.colorInfo.bpp / 8;
-    //    stdDisplay_g_backBuffer.rasterInfo.rowSize  = pDisplayMode->rasterInfo.width * bpp;
-    //    stdDisplay_g_backBuffer.rasterInfo.rowWidth = pDisplayMode->rasterInfo.width;
-    //    stdDisplay_g_backBuffer.rasterInfo.size     = pDisplayMode->rasterInfo.height * pDisplayMode->rasterInfo.width * bpp;
-    //}
-
-    //return 1;
 }
 
 int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayMode, size_t numBackBuffers)
