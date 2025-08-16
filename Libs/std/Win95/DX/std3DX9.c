@@ -267,13 +267,13 @@ static void std3D_OnDisplayDeviceReset(tSysDevice3D* pDevice)
 {
     J3D_UNUSED(pDevice);
     // Release any cached texture before device is changed
-    STDLOG_DEBUG("Received signal that display device is about to be changed, clearing texture cache...\n");
+    STDLOG_DEBUG("Received display device to be reset signal. Clearing texture cache...\n");
     std3D_ResetTextureCache();
 }
 
 static void std3D_OnDisplayDevicePostReset(tSysDevice3D* pDevice)
 {
-    STDLOG_DEBUG("Received signal that display device has been changed, re-initializing the system \n");
+    STDLOG_DEBUG("Received display device reset signal. Re-initializing the system...\n");
     std3D_pD3Device = pDevice;
     std3D_InitSystem();
 }
@@ -281,7 +281,7 @@ static void std3D_OnDisplayDevicePostReset(tSysDevice3D* pDevice)
 static void std3D_OnDisplayDeviceRelease(tSysDevice3D* pDevice)
 {
     J3D_UNUSED(pDevice);
-    STDLOG_DEBUG("Received signal that display device is about to be released, clearing texture cache...\n");
+    STDLOG_DEBUG("Received signal that display device is about to be released. Clearing texture cache...\n");
     std3D_ResetTextureCache();
 }
 
@@ -425,15 +425,9 @@ void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LP
 
     std3D_SetRenderState(rdflags);
 
-    // Set vertex format for pre-transformed vertices
-    HRESULT d3dres = IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1);
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s SetFVF.\n", std3D_D3DGetStatus(d3dres));
-    }
-
     if ( pTex != std3D_pD3DTex )
     {
-        d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, (IDirect3DBaseTexture9*)pTex);
+        HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, (IDirect3DBaseTexture9*)pTex);
         if ( d3dres != D3D_OK ) {
             STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
         }
@@ -473,18 +467,7 @@ void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LP
         }
     }
 
-      // Ensure we're in wireframe mode for line drawing
-    d3dres = IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FILLMODE, D3DFILL_SOLID);
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s SetRenderState FILLMODE.\n", std3D_D3DGetStatus(d3dres));
-    }
-
-    if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_CLIPPING, TRUE) != D3D_OK )
-    {
-        return;
-    }
-
-    d3dres = IDirect3DDevice9_DrawIndexedPrimitiveUP(
+    HRESULT d3dres = IDirect3DDevice9_DrawIndexedPrimitiveUP(
         std3D_pD3Device,
         D3DPT_TRIANGLELIST,
         0,
@@ -545,19 +528,7 @@ void J3DAPI std3D_DrawLineStrip(LPD3DTLVERTEX aVerts, size_t numVerts)
         }
     }
 
-    // Set vertex format for pre-transformed vertices
-    HRESULT d3dres = IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1);
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s SetFVF.\n", std3D_D3DGetStatus(d3dres));
-    }
-
-      // Ensure we're in wireframe mode for line drawing
-    d3dres = IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FILLMODE, D3DFILL_WIREFRAME);
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s SetRenderState FILLMODE.\n", std3D_D3DGetStatus(d3dres));
-    }
-
-    d3dres = IDirect3DDevice9_DrawPrimitiveUP(
+    HRESULT d3dres = IDirect3DDevice9_DrawPrimitiveUP(
         std3D_pD3Device,
         D3DPT_LINESTRIP,
         numVerts - 1,
@@ -578,13 +549,7 @@ void J3DAPI std3D_DrawPointList(LPD3DTLVERTEX aVerts, size_t numVerts)
         return;
     }
 
-    // Set vertex format for pre-transformed vertices
-    HRESULT d3dres = IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1);
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s SetFVF.\n", std3D_D3DGetStatus(d3dres));
-    }
-
-    d3dres = IDirect3DDevice9_DrawPrimitiveUP(
+    HRESULT d3dres = IDirect3DDevice9_DrawPrimitiveUP(
         std3D_pD3Device,
         D3DPT_POINTLIST,
         numVerts,
@@ -996,29 +961,6 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
         goto error;
     }
 
-    //d3dres = IDirect3DDevice9_UpdateTexture(std3D_pD3Device, (IDirect3DBaseTexture9*)pCacheTexture->pTexture, (IDirect3DBaseTexture9*)pD3DTex);
-    //while ( d3dres == D3DERR_OUTOFVIDEOMEMORY )
-    //{
-    //    if ( !std3D_PurgeTextureCache(pCacheTexture->textureSize) )
-    //    {
-    //        STDLOG_ERROR("Error: Unable to purge texture cache for %x bytes!!!.\n", pCacheTexture->textureSize);
-    //        goto error;
-    //    }
-    //    d3dres = IDirect3DDevice9_UpdateTexture(std3D_pD3Device, (IDirect3DBaseTexture9*)pCacheTexture->pTexture, (IDirect3DBaseTexture9*)pD3DTex);
-    //}
-
-    //if ( d3dres == D3D_OK )
-    //{
-    //    // Success
-    //    pCacheTexture->pCachedTexture = pD3DTex;
-    //    pCacheTexture->frameNum       = std3D_frameCount;
-    //    std3D_AddTextureToCacheList(pCacheTexture);
-    //    return;
-    //}
-
-    //STDLOG_ERROR("Error %s updating texture.\n", std3D_D3DGetStatus(d3dres));
-
-
     // Copy from device-independent texture to video memory using direct pixel access
     for ( uint32_t mmNum = 0; mmNum < pCacheTexture->numMipLevels; ++mmNum )
     {
@@ -1395,6 +1337,11 @@ size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
 int std3D_InitRenderState(void)
 {
     std3D_renderState = 0;
+
+   // Set vertex format for pre-transformed vertices
+    if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1) != D3D_OK ) {
+        return 0;
+    }
 
     if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ZENABLE, TRUE) != D3D_OK )
     {
