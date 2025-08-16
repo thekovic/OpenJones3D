@@ -6,7 +6,7 @@
 
 J3D_EXTERN_C_START
 
-typedef void (J3DAPI* tStackTracePrintFunc)(const char*);
+typedef void (J3DAPI* tStackTracePrintFunc)(const char*, ...);
 
 int J3DAPI stdPlatform_InitServices(tHostServices* pHS);
 void J3DAPI stdPlatform_ClearServices(tHostServices* pHS);

@@ -73,7 +73,7 @@ int J3DAPI stdPlatform_InitServices(tHostServices* pHS)
     pHS->pLockHandle   = stdPlatform_LockHandle;
     pHS->pUnlockHandle = stdPlatform_UnlockHandle;
 
-    return CoInitialize(0);
+    return CoInitialize(NULL);
 }
 
 void J3DAPI stdPlatform_ClearServices(tHostServices* pHS)
