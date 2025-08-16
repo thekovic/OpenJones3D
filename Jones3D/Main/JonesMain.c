@@ -3285,7 +3285,7 @@ bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSetting
     }
 #elif defined(J3D_DIRECTX9)
     J3D_UNUSED(pSettings);
-    if ( bpp == 32 ) return 1;
+    if ( bpp == 24 || bpp == 32 ) return 1;
 #else 
 #error "Unsupported 3D API"
 #endif
