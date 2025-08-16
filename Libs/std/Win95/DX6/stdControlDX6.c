@@ -11,15 +11,15 @@
 
 typedef struct sStdInputDevice
 {
-    LPDIRECTINPUTDEVICEA pDIDevice;
+    LPDIRECTINPUTDEVICE pDIDevice;
     DIDEVCAPS diDevCaps;
 } StdInputDevice;
 static_assert(sizeof(StdInputDevice) == 48, "sizeof(StdInputDevice) == 48");
 
 typedef struct sStdControlJoystickDevice
 {
-    DIDEVICEINSTANCEA dinstance;
-    LPDIRECTINPUTDEVICE2A pDIDevice;
+    DIDEVICEINSTANCE dinstance;
+    LPDIRECTINPUTDEVICE2 pDIDevice;
     DIDEVCAPS caps;
 } StdControlJoystickDevice;
 static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystickDevice) == 628");
@@ -29,7 +29,7 @@ static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystic
 static bool stdControl_bStartup = false;
 static bool stdControl_bOpen    = false;
 
-static LPDIRECTINPUTA stdControl_pDI = NULL;
+static LPDIRECTINPUT stdControl_pDI = NULL;
 
 static bool stdControl_bReadMouse               = true;
 static POINT stdControl_mousePos                = { 0, 0 };
@@ -189,7 +189,7 @@ int J3DAPI stdControl_Startup(int bKeyboardForeground)
         STDLOG_ERROR("DirectInputCreate returned %s.\n", stdControl_DIGetStatus(hres));
         return 1;
     }
-    else if ( IDirectInput_EnumDevices(stdControl_pDI, 0U, stdControl_EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY) != DI_OK )
+    else if ( IDirectInput_EnumDevices(stdControl_pDI, 0U, stdControl_EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY) != DI_OK ) // Note, 0 indicates all devices
     {
         STDLOG_ERROR("Could not create DInput Joystick device.\n");
         return 1;
@@ -312,6 +312,7 @@ int J3DAPI stdControl_EnableAxis(int axisID)
 void stdControl_ReadControls(void)
 {
     STD_ASSERTREL(stdControl_bStartup && stdControl_bOpen);
+
     if ( stdControl_bControlsActive )
     {
         stdControl_bControlsIdle = true;
@@ -326,7 +327,7 @@ void stdControl_ReadControls(void)
 
         if ( stdControl_bMouseSensitivityEnabled )
         {
-            memset(stdControl_aAxisStates, 0, 7u);
+            memset(stdControl_aAxisStates, 0, 7u); // TTODO: Why only 7 bytes?
         }
         else
         {
@@ -679,7 +680,6 @@ int stdControl_ToggleMouse(void)
     return stdControl_bReadMouse;
 }
 
-
 int J3DAPI stdControl_EnableMouse(int bEnable)
 {
     if ( bEnable != stdControl_bReadMouse )
@@ -883,7 +883,7 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
             goto error;
         }
 
-        stdControl_keyboard.diDevCaps.dwSize = 44;
+        stdControl_keyboard.diDevCaps.dwSize = sizeof(stdControl_keyboard.diDevCaps);
         hres = IDirectInputDevice_GetCapabilities(stdControl_keyboard.pDIDevice, &stdControl_keyboard.diDevCaps);
         if FAILED(hres)
         {
@@ -895,7 +895,6 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
         {
             goto error;
         }
-
 
         HWND hwnd = stdWin95_GetWindow();
         hres = bForeground
@@ -932,13 +931,13 @@ void stdControl_InitMouse(void)
 {
     if ( stdControl_pDI )
     {
-        HRESULT hres = IDirectInput_CreateDevice(stdControl_pDI, &GUID_SysMouse, &stdControl_mouse.pDIDevice, 0);
+        HRESULT hres = IDirectInput_CreateDevice(stdControl_pDI, &GUID_SysMouse, &stdControl_mouse.pDIDevice, NULL);
         if FAILED(hres)
         {
             goto error;
         }
 
-        stdControl_mouse.diDevCaps.dwSize = 44;
+        stdControl_mouse.diDevCaps.dwSize = sizeof(stdControl_mouse.diDevCaps);;
         hres = IDirectInputDevice_GetCapabilities(stdControl_mouse.pDIDevice, &stdControl_mouse.diDevCaps);
         if FAILED(hres)
         {
@@ -975,7 +974,7 @@ void stdControl_InitMouse(void)
                 IDirectInputDevice_Release(stdControl_mouse.pDIDevice);
             }
 
-            stdControl_mouse.pDIDevice = 0;
+            stdControl_mouse.pDIDevice = NULL;
             return;
         }
 
@@ -1229,7 +1228,7 @@ BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, 
 {
     J3D_UNUSED(pContext);
 
-    DWORD dwDevType = pdidInstance->dwDevType;
+    DWORD dwDevType = GET_DIDEVICE_TYPE(pdidInstance->dwDevType);
     if ( dwDevType == DIDEVTYPE_MOUSE )
     {
         STDLOG_STATUS("Mouse:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
@@ -1274,7 +1273,7 @@ BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, 
         }
     }
 
-    return TRUE;
+    return DIENUM_CONTINUE;
 }
 
 void stdControl_ResetMousePos(void)

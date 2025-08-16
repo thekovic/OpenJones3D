@@ -7,6 +7,7 @@ file(GLOB_RECURSE HEADERS *.h)
 if(J3D_DIRECTX6)
   # Remove DX9 files.
     list(FILTER SOURCES EXCLUDE REGEX ".*DX9\\.c$")
+    list(FILTER SOURCES EXCLUDE REGEX "stdComm.c$")
 elseif(J3D_DIRECTX9)
     # Remove DX6 files.
     list(FILTER SOURCES EXCLUDE REGEX ".*DX6\\.c$")
@@ -32,8 +33,7 @@ else() # J3D_DIRECTX9
     target_link_libraries(${PROJECT_NAME} PUBLIC
         d3d9
         dxguid
-        DirectX61c::dinput
-        DirectX61c::dplayx
+        dinput8
     )
 endif()
 

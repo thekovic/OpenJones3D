@@ -8,18 +8,17 @@
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
 
-
 typedef struct sStdInputDevice
 {
-    LPDIRECTINPUTDEVICEA pDIDevice;
+    LPDIRECTINPUTDEVICE8 pDIDevice;
     DIDEVCAPS diDevCaps;
 } StdInputDevice;
 static_assert(sizeof(StdInputDevice) == 48, "sizeof(StdInputDevice) == 48");
 
 typedef struct sStdControlJoystickDevice
 {
-    DIDEVICEINSTANCEA dinstance;
-    LPDIRECTINPUTDEVICE2A pDIDevice;
+    DIDEVICEINSTANCE dinstance;
+    LPDIRECTINPUTDEVICE8 pDIDevice;
     DIDEVCAPS caps;
 } StdControlJoystickDevice;
 static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystickDevice) == 628");
@@ -29,7 +28,7 @@ static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystic
 static bool stdControl_bStartup = false;
 static bool stdControl_bOpen    = false;
 
-static LPDIRECTINPUTA stdControl_pDI = NULL;
+static LPDIRECTINPUT8 stdControl_pDI = NULL;
 
 static bool stdControl_bReadMouse               = true;
 static POINT stdControl_mousePos                = { 0, 0 };
@@ -114,7 +113,7 @@ void stdControl_ReadJoysticks(void);
 void stdControl_ReadMouse(void);
 
 const char* J3DAPI stdControl_DIGetStatus(int HRESULT);
-BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, LPVOID pContext);
+BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCE pdidInstance, LPVOID pContext);
 
 void stdControl_InstallHooks(void)
 {
@@ -162,6 +161,7 @@ void stdControl_ResetGlobals(void)
 
 int J3DAPI stdControl_Startup(int bKeyboardForeground)
 {
+    STDLOG_STATUS("Starting control system with DirectInput8 as backend...\n");
     if ( stdControl_bStartup )
     {
         return 1;
@@ -183,15 +183,16 @@ int J3DAPI stdControl_Startup(int bKeyboardForeground)
     memset(stdControl_aJoystickDevices, 0, sizeof(stdControl_aJoystickDevices));
 
     HINSTANCE hInstance = stdWin95_GetInstance();
-    HRESULT hres = DirectInputCreate(hInstance, DIRECTINPUT_VERSION, &stdControl_pDI, NULL);
+    HRESULT hres = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, &IID_IDirectInput8, &stdControl_pDI, NULL);
     if ( hres != DI_OK )
     {
-        STDLOG_ERROR("DirectInputCreate returned %s.\n", stdControl_DIGetStatus(hres));
+        STDLOG_ERROR("DirectInput8Create returned %s.\n", stdControl_DIGetStatus(hres));
         return 1;
     }
-    else if ( IDirectInput_EnumDevices(stdControl_pDI, 0U, stdControl_EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY) != DI_OK )
+
+    if ( IDirectInput8_EnumDevices(stdControl_pDI, DI8DEVCLASS_ALL, stdControl_EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY) != DI_OK )
     {
-        STDLOG_ERROR("Could not create DInput Joystick device.\n");
+        STDLOG_ERROR("Could not enumerate DInput devices.\n");
         return 1;
     }
 
@@ -216,16 +217,16 @@ void stdControl_Shutdown(void)
         stdControl_bStartup = false;
         if ( stdControl_mouse.pDIDevice )
         {
-            IDirectInputDevice_Unacquire(stdControl_mouse.pDIDevice);
-            IDirectInputDevice_Release(stdControl_mouse.pDIDevice);
+            IDirectInputDevice8_Unacquire(stdControl_mouse.pDIDevice);
+            IDirectInputDevice8_Release(stdControl_mouse.pDIDevice);
         }
 
         memset(&stdControl_mouse, 0, sizeof(stdControl_mouse));
 
         if ( stdControl_keyboard.pDIDevice )
         {
-            IDirectInputDevice_Unacquire(stdControl_keyboard.pDIDevice);
-            IDirectInputDevice_Release(stdControl_keyboard.pDIDevice);
+            IDirectInputDevice8_Unacquire(stdControl_keyboard.pDIDevice);
+            IDirectInputDevice8_Release(stdControl_keyboard.pDIDevice);
         }
 
         memset(&stdControl_keyboard, 0, sizeof(stdControl_keyboard));
@@ -234,8 +235,8 @@ void stdControl_Shutdown(void)
         {
             if ( stdControl_aJoystickDevices[i].pDIDevice )
             {
-                IDirectInputDevice2_Unacquire(stdControl_aJoystickDevices[i].pDIDevice);
-                IDirectInputDevice2_Release(stdControl_aJoystickDevices[i].pDIDevice);
+                IDirectInputDevice8_Unacquire(stdControl_aJoystickDevices[i].pDIDevice);
+                IDirectInputDevice8_Release(stdControl_aJoystickDevices[i].pDIDevice);
             }
         }
 
@@ -243,7 +244,7 @@ void stdControl_Shutdown(void)
         memset(stdControl_aJoystickDevices, 0, sizeof(stdControl_aJoystickDevices));
         if ( stdControl_pDI )
         {
-            IDirectInput_Release(stdControl_pDI);
+            IDirectInput8_Release(stdControl_pDI);
             stdControl_pDI = 0;
         }
     }
@@ -277,9 +278,10 @@ void stdControl_Close(void)
 
 void stdControl_Reset(void)
 {
-    stdControl_bReadMouse     = false;
-    stdControl_bReadJoysticks = false;
+    stdControl_bReadMouse               = false;
+    stdControl_bReadJoysticks           = false;
     stdControl_bMouseSensitivityEnabled = false;
+
     for ( size_t i = 0; i < STDCONTROL_MAX_AXES; i++ )
     {
         stdControl_aAxes[i].flags &= ~STDCONTROL_AXIS_ENABLED;
@@ -312,6 +314,7 @@ int J3DAPI stdControl_EnableAxis(int axisID)
 void stdControl_ReadControls(void)
 {
     STD_ASSERTREL(stdControl_bStartup && stdControl_bOpen);
+
     if ( stdControl_bControlsActive )
     {
         stdControl_bControlsIdle = true;
@@ -326,7 +329,7 @@ void stdControl_ReadControls(void)
 
         if ( stdControl_bMouseSensitivityEnabled )
         {
-            memset(stdControl_aAxisStates, 0, 7u);
+            memset(stdControl_aAxisStates, 0, 7u); // TTODO: Why only 7 bytes?
         }
         else
         {
@@ -613,19 +616,19 @@ int J3DAPI stdControl_SetActivation(int bActive)
     {
         if ( stdControl_bReadMouse && stdControl_mouse.pDIDevice )
         {
-            hr = IDirectInputDevice_Acquire(stdControl_mouse.pDIDevice);
+            hr = IDirectInputDevice8_Acquire(stdControl_mouse.pDIDevice);
         }
 
         if ( stdControl_keyboard.pDIDevice )
         {
-            IDirectInputDevice_Acquire(stdControl_keyboard.pDIDevice);
+            IDirectInputDevice8_Acquire(stdControl_keyboard.pDIDevice);
         }
 
         for ( size_t joyNum = 0; joyNum < stdControl_numJoystickDevices; ++joyNum )
         {
             if ( stdControl_aJoystickDevices[joyNum].pDIDevice )
             {
-                IDirectInputDevice2_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
+                IDirectInputDevice8_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
             }
         }
 
@@ -635,19 +638,19 @@ int J3DAPI stdControl_SetActivation(int bActive)
     {
         if ( stdControl_mouse.pDIDevice )
         {
-            hr = IDirectInputDevice_Unacquire(stdControl_mouse.pDIDevice);
+            hr = IDirectInputDevice8_Unacquire(stdControl_mouse.pDIDevice);
         }
 
         if ( stdControl_keyboard.pDIDevice )
         {
-            IDirectInputDevice_Unacquire(stdControl_keyboard.pDIDevice);
+            IDirectInputDevice8_Unacquire(stdControl_keyboard.pDIDevice);
         }
 
         for ( size_t joyNum = 0; joyNum < stdControl_numJoystickDevices; ++joyNum )
         {
             if ( stdControl_aJoystickDevices[joyNum].pDIDevice )
             {
-                IDirectInputDevice2_Unacquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
+                IDirectInputDevice8_Unacquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
             }
         }
 
@@ -662,7 +665,7 @@ int stdControl_ToggleMouse(void)
     if ( stdControl_bReadMouse )
     {
         stdControl_bReadMouse = false;
-        if ( stdControl_mouse.pDIDevice && SUCCEEDED(IDirectInputDevice_Unacquire(stdControl_mouse.pDIDevice)) )
+        if ( stdControl_mouse.pDIDevice && SUCCEEDED(IDirectInputDevice8_Unacquire(stdControl_mouse.pDIDevice)) )
         {
             stdControl_ShowMouseCursor(1);
         }
@@ -670,7 +673,7 @@ int stdControl_ToggleMouse(void)
     else
     {
         stdControl_bReadMouse = true;
-        if ( stdControl_mouse.pDIDevice && SUCCEEDED(IDirectInputDevice_Acquire(stdControl_mouse.pDIDevice)) )
+        if ( stdControl_mouse.pDIDevice && SUCCEEDED(IDirectInputDevice8_Acquire(stdControl_mouse.pDIDevice)) )
         {
             stdControl_ShowMouseCursor(0);
         }
@@ -678,7 +681,6 @@ int stdControl_ToggleMouse(void)
 
     return stdControl_bReadMouse;
 }
-
 
 int J3DAPI stdControl_EnableMouse(int bEnable)
 {
@@ -756,35 +758,28 @@ void stdControl_InitJoysticks(void)
 {
     for ( size_t joyNum = 0; joyNum < stdControl_numJoystickDevices; ++joyNum )
     {
-        LPDIRECTINPUTDEVICEA lpd = NULL;
-        if FAILED(IDirectInput_CreateDevice(stdControl_pDI, &stdControl_aJoystickDevices[joyNum].dinstance.guidInstance, &lpd, 0))
-        {
-            STDLOG_ERROR("Could not create DInput Joystick device.\n");
-        }
-
-        int hres = IDirectInputDevice_QueryInterface(lpd, &IID_IDirectInputDevice2A, (LPVOID*)&stdControl_aJoystickDevices[joyNum].pDIDevice);
-        IDirectInputDevice_Release(lpd);
-
+        HRESULT hres = IDirectInput8_CreateDevice(stdControl_pDI, &stdControl_aJoystickDevices[joyNum].dinstance.guidInstance, &stdControl_aJoystickDevices[joyNum].pDIDevice, NULL);
         if FAILED(hres)
         {
+            STDLOG_ERROR("Could not create DInput8 Joystick device.\n");
             goto error;
         }
 
         stdControl_aJoystickDevices[joyNum].caps.dwSize = sizeof(DIDEVCAPS);
-        hres = IDirectInputDevice2_GetCapabilities(stdControl_aJoystickDevices[joyNum].pDIDevice, &stdControl_aJoystickDevices[joyNum].caps);
+        hres = IDirectInputDevice8_GetCapabilities(stdControl_aJoystickDevices[joyNum].pDIDevice, &stdControl_aJoystickDevices[joyNum].caps);
         if FAILED(hres)
         {
             goto error;
         }
 
-        hres = IDirectInputDevice2_SetDataFormat(stdControl_aJoystickDevices[joyNum].pDIDevice, &c_dfDIJoystick);
+        hres = IDirectInputDevice8_SetDataFormat(stdControl_aJoystickDevices[joyNum].pDIDevice, &c_dfDIJoystick);
         if FAILED(hres)
         {
             goto error;
         }
 
         HWND hwnd = stdWin95_GetWindow();
-        hres = IDirectInputDevice2_SetCooperativeLevel(stdControl_aJoystickDevices[joyNum].pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_EXCLUSIVE);
+        hres = IDirectInputDevice8_SetCooperativeLevel(stdControl_aJoystickDevices[joyNum].pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_EXCLUSIVE);
         if FAILED(hres)
         {
             goto error;
@@ -797,42 +792,42 @@ void stdControl_InitJoysticks(void)
         dirange.diph.dwObj        = DIJOFS_X;
         dirange.diph.dwHow        = DIPH_BYOFFSET;
 
-        if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
+        if SUCCEEDED(IDirectInputDevice8_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
             stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_Y;
-        if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
+        if SUCCEEDED(IDirectInputDevice8_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
             stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_Z;
-        if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
+        if SUCCEEDED(IDirectInputDevice8_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
             stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_Z(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_RX;
-        if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
+        if SUCCEEDED(IDirectInputDevice8_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
             stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RX(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_RY;
-        if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
+        if SUCCEEDED(IDirectInputDevice8_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
             stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RY(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
         dirange.diph.dwObj = DIJOFS_RZ;
-        if SUCCEEDED(IDirectInputDevice2_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
+        if SUCCEEDED(IDirectInputDevice8_GetProperty(stdControl_aJoystickDevices[joyNum].pDIDevice, DIPROP_RANGE, &dirange.diph))
         {
             stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RZ(joyNum), dirange.lMin, dirange.lMax, 0.2f);
         }
 
-        if ( GET_DIDEVICE_SUBTYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DIDEVTYPEJOYSTICK_GAMEPAD )
+        if ( GET_DIDEVICE_TYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DI8DEVTYPE_GAMEPAD )
         {
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum)].flags |= STDCONTROL_AXIS_GAMEPAD;
@@ -844,25 +839,23 @@ void stdControl_InitJoysticks(void)
 
         if ( (stdControl_aJoystickDevices[joyNum].caps.dwFlags & DIDC_FORCEFEEDBACK) != 0 )
         {
-            // TODO: missing logic
-           /* v11 = 20;
-            v12 = 16;
-            v13 = 0;
-            v14 = 0;
-            v15 = 0;*/
+            // DX8 Note: Force feedback initialization would be different in DX8
+            // Could use IDirectInputDevice8::CreateEffect and IDirectInputEffect interface
+            // TODO: missing logic for force feedback setup
         }
 
-        hres = IDirectInputDevice2_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
+        hres = IDirectInputDevice8_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
         if FAILED(hres)
         {
         error:
             STDLOG_STATUS("%s error Acquiring Joystick.\n", stdControl_DIGetStatus(hres));
             if ( stdControl_aJoystickDevices[joyNum].pDIDevice )
             {
-                IDirectInputDevice2_Release(stdControl_aJoystickDevices[joyNum].pDIDevice);
+                IDirectInputDevice8_Release(stdControl_aJoystickDevices[joyNum].pDIDevice);
             }
 
             stdControl_aJoystickDevices[joyNum].pDIDevice = NULL;
+
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_X(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Y(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
             stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Z(joyNum)].flags &= ~STDCONTROL_AXIS_REGISTERED;
@@ -877,30 +870,29 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
 {
     if ( stdControl_pDI )
     {
-        HRESULT hres = IDirectInput_CreateDevice(stdControl_pDI, &GUID_SysKeyboard, &stdControl_keyboard.pDIDevice, 0);
+        HRESULT hres = IDirectInput8_CreateDevice(stdControl_pDI, &GUID_SysKeyboard, &stdControl_keyboard.pDIDevice, NULL);
         if FAILED(hres)
         {
             goto error;
         }
 
-        stdControl_keyboard.diDevCaps.dwSize = 44;
-        hres = IDirectInputDevice_GetCapabilities(stdControl_keyboard.pDIDevice, &stdControl_keyboard.diDevCaps);
+        stdControl_keyboard.diDevCaps.dwSize = sizeof(stdControl_keyboard.diDevCaps);
+        hres = IDirectInputDevice8_GetCapabilities(stdControl_keyboard.pDIDevice, &stdControl_keyboard.diDevCaps);
         if FAILED(hres)
         {
             goto error;
         }
 
-        hres = IDirectInputDevice_SetDataFormat(stdControl_keyboard.pDIDevice, &c_dfDIKeyboard);
+        hres = IDirectInputDevice8_SetDataFormat(stdControl_keyboard.pDIDevice, &c_dfDIKeyboard);
         if FAILED(hres)
         {
             goto error;
         }
-
 
         HWND hwnd = stdWin95_GetWindow();
         hres = bForeground
-            ? IDirectInputDevice_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)
-            : IDirectInputDevice_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
+            ? IDirectInputDevice8_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE)
+            : IDirectInputDevice8_SetCooperativeLevel(stdControl_keyboard.pDIDevice, hwnd, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
         if ( FAILED(hres) )
         {
             goto error;
@@ -913,7 +905,7 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
         didpw.diph.dwHow        = DIPH_DEVICE;
         didpw.dwData            = STD_ARRAYLEN(stdControl_aKeyboardState); // input buffer size
 
-        hres = IDirectInputDevice_SetProperty(stdControl_keyboard.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph);
+        hres = IDirectInputDevice8_SetProperty(stdControl_keyboard.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph);
         if ( hres != DI_OK && hres != DI_PROPNOEFFECT ) // Fixed: Added check for DI_PROPNOEFFECT
         {
         error:
@@ -921,7 +913,7 @@ void J3DAPI stdControl_InitKeyboard(int bForeground)
 
             if ( stdControl_keyboard.pDIDevice )
             {
-                IDirectInputDevice_Release(stdControl_keyboard.pDIDevice);
+                IDirectInputDevice8_Release(stdControl_keyboard.pDIDevice);
             }
             stdControl_keyboard.pDIDevice = NULL;
         }
@@ -932,27 +924,27 @@ void stdControl_InitMouse(void)
 {
     if ( stdControl_pDI )
     {
-        HRESULT hres = IDirectInput_CreateDevice(stdControl_pDI, &GUID_SysMouse, &stdControl_mouse.pDIDevice, 0);
+        HRESULT hres = IDirectInput8_CreateDevice(stdControl_pDI, &GUID_SysMouse, &stdControl_mouse.pDIDevice, NULL);
         if FAILED(hres)
         {
             goto error;
         }
 
-        stdControl_mouse.diDevCaps.dwSize = 44;
-        hres = IDirectInputDevice_GetCapabilities(stdControl_mouse.pDIDevice, &stdControl_mouse.diDevCaps);
+        stdControl_mouse.diDevCaps.dwSize = sizeof(stdControl_mouse.diDevCaps);
+        hres = IDirectInputDevice8_GetCapabilities(stdControl_mouse.pDIDevice, &stdControl_mouse.diDevCaps);
         if FAILED(hres)
         {
             goto error;
         }
 
-        hres = IDirectInputDevice_SetDataFormat(stdControl_mouse.pDIDevice, &c_dfDIMouse);
+        hres = IDirectInputDevice8_SetDataFormat(stdControl_mouse.pDIDevice, &c_dfDIMouse);
         if FAILED(hres)
         {
             goto error;
         }
 
         HWND hwnd = stdWin95_GetWindow();
-        hres = IDirectInputDevice_SetCooperativeLevel(stdControl_mouse.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_EXCLUSIVE);
+        hres = IDirectInputDevice8_SetCooperativeLevel(stdControl_mouse.pDIDevice, hwnd, DISCL_FOREGROUND | DISCL_EXCLUSIVE);
         if ( FAILED(hres) )
         {
             goto error;
@@ -965,17 +957,17 @@ void stdControl_InitMouse(void)
         didpw.diph.dwHow        = DIPH_DEVICE;
         didpw.dwData            = STDCONTROL_MOUSE_BUFFERSIZE; // input buffer size
 
-        hres = IDirectInputDevice_SetProperty(stdControl_mouse.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph);
+        hres = IDirectInputDevice8_SetProperty(stdControl_mouse.pDIDevice, DIPROP_BUFFERSIZE, &didpw.diph);
         if ( hres != DI_OK && hres != DI_PROPNOEFFECT ) // Fixed: Added check for DI_PROPNOEFFECT
         {
         error:
             STDLOG_STATUS("%s error Acquiring Mouse.\n", stdControl_DIGetStatus(hres));
             if ( stdControl_mouse.pDIDevice )
             {
-                IDirectInputDevice_Release(stdControl_mouse.pDIDevice);
+                IDirectInputDevice8_Release(stdControl_mouse.pDIDevice);
             }
 
-            stdControl_mouse.pDIDevice = 0;
+            stdControl_mouse.pDIDevice = NULL;
             return;
         }
 
@@ -1000,7 +992,7 @@ void J3DAPI stdControl_EnableAxisRead(size_t axis)
 
 void stdControl_ReadKeyboard(void)
 {
-    HRESULT hr = IDirectInputDevice_GetDeviceState(stdControl_keyboard.pDIDevice, STD_ARRAYLEN(stdControl_aKeyboardState), stdControl_aKeyboardState);
+    HRESULT hr = IDirectInputDevice8_GetDeviceState(stdControl_keyboard.pDIDevice, STD_ARRAYLEN(stdControl_aKeyboardState), stdControl_aKeyboardState);
     if ( hr != DIERR_NOTACQUIRED && hr != DIERR_INPUTLOST )
     {
         if ( hr == DI_OK )
@@ -1015,7 +1007,7 @@ void stdControl_ReadKeyboard(void)
         STDLOG_ERROR("GetDeviceState from keyboard returned %s.\n", stdControl_DIGetStatus(hr));
     }
 
-    hr = IDirectInputDevice_Acquire(stdControl_keyboard.pDIDevice);
+    hr = IDirectInputDevice8_Acquire(stdControl_keyboard.pDIDevice);
     if ( hr != DI_OK && hr != DIERR_OTHERAPPHASPRIO )
     {
         STDLOG_ERROR("Acquire keyboard returned %s.\n", stdControl_DIGetStatus(hr));
@@ -1026,20 +1018,20 @@ void stdControl_ReadJoysticks(void)
 {
     for ( size_t joyNum = 0; joyNum < stdControl_numJoystickDevices; joyNum++ )
     {
-        HRESULT hr = IDirectInputDevice2_Poll(stdControl_aJoystickDevices[joyNum].pDIDevice);
+        HRESULT hr = IDirectInputDevice8_Poll(stdControl_aJoystickDevices[joyNum].pDIDevice);
         if FAILED(hr)
         {
             STDLOG_STATUS("%s error Poll Joystick.\n", stdControl_DIGetStatus(hr));
-            IDirectInputDevice2_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
+            IDirectInputDevice8_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
             return;
         }
 
         DIJOYSTATE jstate;
-        hr = IDirectInputDevice2_GetDeviceState(stdControl_aJoystickDevices[joyNum].pDIDevice, sizeof(DIJOYSTATE), &jstate);
+        hr = IDirectInputDevice8_GetDeviceState(stdControl_aJoystickDevices[joyNum].pDIDevice, sizeof(DIJOYSTATE), &jstate);
         if FAILED(hr)
         {
             STDLOG_STATUS("%s error GetDeviceState Joystick.\n", stdControl_DIGetStatus(hr));
-            IDirectInputDevice2_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
+            IDirectInputDevice8_Acquire(stdControl_aJoystickDevices[joyNum].pDIDevice);
             return;
         }
 
@@ -1110,14 +1102,14 @@ void stdControl_ReadMouse(void)
     }
 
     DIMOUSESTATE mouseState;
-    HRESULT hr = IDirectInputDevice_GetDeviceState(stdControl_mouse.pDIDevice, sizeof(DIMOUSESTATE), &mouseState);
+    HRESULT hr = IDirectInputDevice8_GetDeviceState(stdControl_mouse.pDIDevice, sizeof(DIMOUSESTATE), &mouseState);
     if ( hr != DI_OK )
     {
         if ( hr != DIERR_NOTACQUIRED && hr != DIERR_INPUTLOST ) {
             STDLOG_ERROR("GetDeviceState(mouse) returned %s.\n", stdControl_DIGetStatus(hr));
         }
 
-        hr = IDirectInputDevice_Acquire(stdControl_mouse.pDIDevice);
+        hr = IDirectInputDevice8_Acquire(stdControl_mouse.pDIDevice);
         if ( hr != DI_OK && hr != DIERR_OTHERAPPHASPRIO )
         {
             STDLOG_ERROR("Acquire mouse returned %s.\n", stdControl_DIGetStatus(hr));
@@ -1154,7 +1146,7 @@ void stdControl_ReadMouse(void)
     }
 
     DWORD bufferSize = STDCONTROL_MOUSE_BUFFERSIZE;
-    hr = IDirectInputDevice_GetDeviceData(stdControl_mouse.pDIDevice, sizeof(DIDEVICEOBJECTDATA), aMouseBuffer, &bufferSize, 0);
+    hr = IDirectInputDevice8_GetDeviceData(stdControl_mouse.pDIDevice, sizeof(DIDEVICEOBJECTDATA), aMouseBuffer, &bufferSize, 0);
     if ( hr != DI_OK )
     {
         if ( hr == DI_BUFFEROVERFLOW )
@@ -1166,7 +1158,7 @@ void stdControl_ReadMouse(void)
         }
         else
         {
-            hr = IDirectInputDevice_Acquire(stdControl_mouse.pDIDevice);
+            hr = IDirectInputDevice8_Acquire(stdControl_mouse.pDIDevice);
             if ( hr != DIERR_OTHERAPPHASPRIO )
             {
                 STDLOG_ERROR("GetDeviceData from mouse returned %s.\n", stdControl_DIGetStatus(hr));
@@ -1224,62 +1216,180 @@ const char* J3DAPI stdControl_DIGetStatus(int HRESULT)
 
     return pError;
 }
-
-BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCEA pdidInstance, LPVOID pContext)
+BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCE pdidInstance, LPVOID pContext)
 {
     J3D_UNUSED(pContext);
+    DWORD dwDevType = GET_DIDEVICE_TYPE(pdidInstance->dwDevType);
 
-    DWORD dwDevType = pdidInstance->dwDevType;
-    if ( dwDevType == DIDEVTYPE_MOUSE )
+    if ( dwDevType == DI8DEVTYPE_MOUSE )
     {
         STDLOG_STATUS("Mouse:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
     }
-    else if ( dwDevType == DIDEVTYPE_KEYBOARD )
+    else if ( dwDevType == DI8DEVTYPE_KEYBOARD )
     {
         STDLOG_STATUS("Keyboard:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
     }
-    else if ( dwDevType == DIDEVTYPE_JOYSTICK && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    else if ( dwDevType == DI8DEVTYPE_JOYSTICK && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
     {
-        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCEA));
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
+
+        // DX8 Note: Joystick subtypes are simplified in DirectInput8
+        switch ( GET_DIDEVICE_SUBTYPE(pdidInstance->dwDevType) )
+        {
+            case DI8DEVTYPEJOYSTICK_LIMITED:
+                STDLOG_STATUS("Joystick (Limited):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEJOYSTICK_STANDARD:
+                STDLOG_STATUS("Joystick (Standard):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            default:
+                STDLOG_STATUS("Joystick (Unknown):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+        }
+    }
+    else if ( dwDevType == DI8DEVTYPE_REMOTE && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    {
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
+        STDLOG_STATUS("Remote Control:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+    }
+    else if ( dwDevType == DI8DEVTYPE_SUPPLEMENTAL && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    {
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
 
         switch ( GET_DIDEVICE_SUBTYPE(pdidInstance->dwDevType) )
         {
-            case DIDEVTYPEJOYSTICK_TRADITIONAL:
-                STDLOG_STATUS("Joystick:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+            case DI8DEVTYPESUPPLEMENTAL_2NDHANDCONTROLLER:
+                STDLOG_STATUS("Supplemental (2nd Hand):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
                 break;
-
-            case DIDEVTYPEJOYSTICK_FLIGHTSTICK:
-                STDLOG_STATUS("Flightstick:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
-                break;
-
-            case DIDEVTYPEJOYSTICK_GAMEPAD:
-                STDLOG_STATUS("Gamepad:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
-                break;
-
-            case DIDEVTYPEJOYSTICK_RUDDER:
-                STDLOG_STATUS("Rudder:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
-                break;
-
-            case DIDEVTYPEJOYSTICK_WHEEL:
-                STDLOG_STATUS("Wheel:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
-                break;
-
-            case DIDEVTYPEJOYSTICK_HEADTRACKER:
+            case DI8DEVTYPESUPPLEMENTAL_HEADTRACKER:
                 STDLOG_STATUS("HeadTracker:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
                 break;
-
+            case DI8DEVTYPESUPPLEMENTAL_HANDTRACKER:
+                STDLOG_STATUS("Hand Tracker:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_SHIFTSTICKGATE:
+                STDLOG_STATUS("Shift Stick:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_SHIFTER:
+                STDLOG_STATUS("Shifter:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_THROTTLE:
+                STDLOG_STATUS("Throttle:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_SPLITTHROTTLE:
+                STDLOG_STATUS("Split Throttle:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_COMBINEDPEDALS:
+                STDLOG_STATUS("Combined Pedals:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_DUALPEDALS:
+                STDLOG_STATUS("Dual Pedals:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_THREEPEDALS:
+                STDLOG_STATUS("Three Pedals:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPESUPPLEMENTAL_RUDDERPEDALS:
+                STDLOG_STATUS("Rudder:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
             default:
-                STDLOG_STATUS("Unknown:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                STDLOG_STATUS("Supplemental:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+        }
+    }
+    else if ( dwDevType == DI8DEVTYPE_SCREENPOINTER )
+    {
+        STDLOG_STATUS("Screen Pointer:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+    }
+    else if ( dwDevType == DI8DEVTYPE_DEVICECTRL )
+    {
+        STDLOG_STATUS("Device Control:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+    }
+    else if ( dwDevType == DI8DEVTYPE_GAMEPAD && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    {
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
+
+        switch ( GET_DIDEVICE_SUBTYPE(pdidInstance->dwDevType) )
+        {
+            case DI8DEVTYPEGAMEPAD_STANDARD:
+                STDLOG_STATUS("Gamepad (Standard):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEGAMEPAD_TILT:
+                STDLOG_STATUS("Gamepad (Tilt):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            default:
+                STDLOG_STATUS("Gamepad:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+        }
+    }
+    else if ( dwDevType == DI8DEVTYPE_DRIVING && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    {
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
+
+        switch ( GET_DIDEVICE_SUBTYPE(pdidInstance->dwDevType) )
+        {
+            case DI8DEVTYPEDRIVING_COMBINEDPEDALS:
+                STDLOG_STATUS("Wheel (Combined Pedals):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEDRIVING_DUALPEDALS:
+                STDLOG_STATUS("Wheel (Dual Pedals):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEDRIVING_THREEPEDALS:
+                STDLOG_STATUS("Wheel (Three Pedals):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEDRIVING_HANDHELD:
+                STDLOG_STATUS("Driving (Handheld):%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            default:
+                STDLOG_STATUS("Wheel:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+        }
+    }
+    else if ( dwDevType == DI8DEVTYPE_FLIGHT && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    {
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
+
+        switch ( GET_DIDEVICE_SUBTYPE(pdidInstance->dwDevType) )
+        {
+            case DI8DEVTYPEFLIGHT_STICK:
+                STDLOG_STATUS("Flightstick:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEFLIGHT_YOKE:
+                STDLOG_STATUS("Flight Yoke:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPEFLIGHT_RC:
+                STDLOG_STATUS("Flight RC:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            default:
+                STDLOG_STATUS("Flightstick:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+        }
+    }
+    else if ( dwDevType == DI8DEVTYPE_1STPERSON && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+    {
+        memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
+
+        switch ( GET_DIDEVICE_SUBTYPE(pdidInstance->dwDevType) )
+        {
+            case DI8DEVTYPE1STPERSON_SIXDOF:
+                STDLOG_STATUS("HeadTracker:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            case DI8DEVTYPE1STPERSON_SHOOTER:
+                STDLOG_STATUS("Shooter:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+                break;
+            default:
+                STDLOG_STATUS("1st Person:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
                 break;
         }
     }
 
-    return TRUE;
+    return DIENUM_CONTINUE;
 }
 
 void stdControl_ResetMousePos(void)
 {
     // TODO: missing `mousePos` reset
+    /*stdControl_mousePos.x = 0;
+    stdControl_mousePos.y = 0;*/
     stdControl_aAxisStates[STDCONTROL_AID_MOUSE_X] = 0;
     stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Y] = 0;
     stdControl_aAxisStates[STDCONTROL_AID_MOUSE_Z] = 0;
@@ -1336,7 +1446,7 @@ void J3DAPI stdControl_ShowMouseCursor(int bShow)
 
 int J3DAPI stdControl_IsGamePad(int joyNum)
 {
-    return GET_DIDEVICE_SUBTYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DIDEVTYPEJOYSTICK_GAMEPAD;
+    return GET_DIDEVICE_TYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DI8DEVTYPE_GAMEPAD;
 }
 
 void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivity)
@@ -1361,3 +1471,45 @@ void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivit
         stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].scale     = 1.0f / (float)(stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max - stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].center);
     }
 }
+
+/*
+ * DirectInput8 Porting Notes:
+ *
+ * Key changes made from DirectInput 6/7 to DirectInput8:
+ *
+ * 1. Interface Names:
+ *    - All IDirectInput* interfaces now use IDirectInput8*
+ *    - All IDirectInputDevice* interfaces now use IDirectInputDevice8*
+ *    - Removed need for IDirectInputDevice2* interface (merged into 8)
+ *
+ * 2. Creation Functions:
+ *    - DirectInputCreate() -> DirectInput8Create()
+ *    - Must use IID_IDirectInput8 instead of older IIDs
+ *    - CreateDevice now returns IDirectInputDevice8 directly, no QueryInterface needed
+ *
+ * 3. EnumDevices Callback:
+ *    - Callback parameter changed from LPCDIDEVICEOBJECTINSTANCE to LPCDIDEVICEINSTANCE
+ *    - Use DI8DEVCLASS_* constants instead of older DIDEVTYPE_* for device classes
+ *    - Return DIENUM_CONTINUE/DIENUM_STOP instead of TRUE/FALSE for clarity
+ *
+ * 4. Method Names:
+ *    - All method calls updated to use IDirectInput8* and IDirectInputDevice8* prefixes
+ *    - Core functionality remains the same (SetDataFormat, SetCooperativeLevel, etc.)
+ *
+ * 5. Compatibility:
+ *    - Most data formats (c_dfDIKeyboard, c_dfDIMouse, c_dfDIJoystick) remain compatible
+ *    - DIMOUSESTATE, DIJOYSTATE structures unchanged
+ *    - Property handling (DIPROP_RANGE, DIPROP_BUFFERSIZE) remains the same
+ *
+ * 6. Force Feedback:
+ *    - Force feedback system was redesigned in DX8
+ *    - Would need to use IDirectInputDevice8::CreateEffect instead of older methods
+ *    - IDirectInputEffect interface handles effect management
+ *
+ * 7. Removed Features:
+ *    - Some older DirectInput 3/5 compatibility features removed
+ *    - Cleaner interface with fewer legacy method variants
+ *
+ * The core input reading logic (keyboard, mouse, joystick state polling)
+ * remains functionally identical between versions.
+ */

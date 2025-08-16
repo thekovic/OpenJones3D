@@ -16,14 +16,12 @@
 #endif
 
 #include <stdint.h>
-//#include <dinput.h>
-#include <DirectX6/dplay.h>
 #include <j3dcore/j3d.h>
 
 J3D_EXTERN_C_START
 
 #if defined(J3D_DIRECTX6)
-
+// Direct3D & DirectDraw
 typedef DDCAPS_DX6 tSysDisplayDeviceCaps;
 typedef D3DDEVICEDESC tSysDevice3DDesc;
 typedef IDirectDraw4 tSysDevice3D;
@@ -34,7 +32,13 @@ typedef IDirectDrawSurface4 tSysSurface;
 typedef IDirect3DTexture2 tSysTexture;
 
 #elif defined(J3D_DIRECTX9)
+// DirectPlay
+#define DPID_ALLPLAYERS   0
+#define DPSEND_GUARANTEED 0x00000001
+#define DPERR_GENERIC     E_FAIL
+typedef DWORD DPID;
 
+// Direct3D stuff
 #define D3DRGBA D3DCOLOR_COLORVALUE
 #define RGBA_MAKE D3DCOLOR_ARGB 
 #define D3DRGB(r, g , b) \
@@ -53,57 +57,23 @@ typedef void* LPDDCOLORKEY;
 typedef struct sD3DTLVERTEX
 {
     /* Screen coordinates */
-    union
-    {
-        float sx;
-        float dvSX;
-    };
-
-    union
-    {
-        float sy;
-        float dvSY;
-    };
-
-    union
-    {
-        float sz;
-        float dvSZ;
-    };
+    float sx;
+    float sy;
+    float sz;
 
     /* Reciprocal of homogeneous w */
-    union
-    {
-        float rhw;
-        float dvRHW;
-    };
+    float rhw;
 
     /* Vertex color */
-    union
-    {
-        D3DCOLOR color;
-        D3DCOLOR dcColor;
-    };
+    D3DCOLOR color;
 
     /* Specular component of vertex */
-    union
-    {
-        D3DCOLOR specular;
-        D3DCOLOR dcSpecular;
-    };
+    D3DCOLOR specular;
 
     /* Texture coordinates */
-    union
-    {
-        float tu;
-        float dvTU;
-    };
+    float tu;
+    float tv;
 
-    union
-    {
-        float tv;
-        float dvTV;
-    };
 } D3DTLVERTEX, * LPD3DTLVERTEX;
 
 // The FVF format for D3DTLVERTEX

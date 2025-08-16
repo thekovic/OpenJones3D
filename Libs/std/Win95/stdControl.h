@@ -4,13 +4,14 @@
 #include <std/types.h>
 #include <std/RTI/addresses.h>
 
-//#ifdef J3D_DIRECTX6
+#ifdef J3D_DIRECTX6
 #include <DirectX6/dinput.h>
-//#elif defined(J3D_DIRECTX9)
-//#include <dinput.h>
-//#endif 
-
-
+#elif defined(J3D_DIRECTX9)
+#  ifndef DIRECTINPUT_VERSION
+#       define DIRECTINPUT_VERSION 0x0800
+#  endif
+#include <dinput.h>
+#endif 
 
 #include <stdbool.h>
 
