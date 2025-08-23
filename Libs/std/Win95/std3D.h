@@ -4,6 +4,8 @@
 #include <std/types.h>
 #include <std/RTI/addresses.h>
 
+#include "stdShader.h"
+
 J3D_EXTERN_C_START
 
 #define std3D_g_fogDensity J3D_DECL_FAR_VAR(std3D_g_fogDensity, float)
@@ -14,6 +16,8 @@ J3D_EXTERN_C_START
 
 int std3D_Startup(void);
 void std3D_Shutdown(void);
+
+const Device3D* std3D_GetCurrentDevice(void); // Added
 
 size_t std3D_GetNumDevices(void);
 const Device3D* std3D_GetAllDevices(void);
@@ -55,6 +59,14 @@ void std3D_ClearZBuffer(void);
 
 StdDisplayEnvironment* J3DAPI std3D_BuildDisplayEnvironment();
 void J3DAPI std3D_FreeDisplayEnvironment(StdDisplayEnvironment* pEnv);
+
+#if defined(J3D_DIRECTX9) || defined(J3D_DIRECTX6)
+const char* J3DAPI std3D_D3DGetStatus(HRESULT res);
+tSysDevice3D* std3D_GetD3DDevice(void); // Added
+#endif // J3D_DIRECTX9 || J3D_DIRECTX6
+
+// New funcs
+bool J3DAPI std3D_IsShaderSystemActive(void);
 
 // Helper hooking functions
 void std3D_InstallHooks(void);

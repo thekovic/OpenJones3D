@@ -10,7 +10,7 @@
 #include <std/RTI/symbols.h>
 
 #define STDDISPLAY_MINFRAMERATE 30
-#define STDDISPLAY_MAXFRAMERATE 60
+#define STDDISPLAY_MAXFRAMERATE 256
 
 // Public globals
 tVBuffer stdDisplay_g_backBuffer = { 0 };
@@ -1215,7 +1215,7 @@ static int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode
             stdDisplay_curDevice,
             D3DDEVTYPE_HAL,
             hWnd,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING, // IMPORTANT: Do not use hardware vertex processing as it might not support polygon clipping
+            D3DCREATE_HARDWARE_VERTEXPROCESSING, // IMPORTANT: Use hardware vertex processing only when shader system is active otherwise as it might not support polygon clipping
                                                  //            even when device caps.PrimitiveMiscCaps have D3DPMISCCAPS_CLIPTLVERTS flag set
             &stdDisplay_presentParams,
             &stdDisplay_pD3DDevice
@@ -1276,7 +1276,7 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
             stdDisplay_curDevice,
             D3DDEVTYPE_HAL,
             hwnd,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING, // IMPORTANT: Do not use hardware vertex processing as it might not support polygon clipping
+            D3DCREATE_HARDWARE_VERTEXPROCESSING, // IMPORTANT: Use hardware vertex processing only when shader system is active otherwise as it might not support polygon clipping
                                                  //            even when device caps.PrimitiveMiscCaps have D3DPMISCCAPS_CLIPTLVERTS flag set
             &stdDisplay_presentParams,
             &stdDisplay_pD3DDevice
@@ -1294,7 +1294,7 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
                 stdDisplay_curDevice,
                 D3DDEVTYPE_HAL,
                 hwnd,
-                D3DCREATE_SOFTWARE_VERTEXPROCESSING, // IMPORTANT: Do not use hardware vertex processing as it might not support polygon clipping
+                D3DCREATE_HARDWARE_VERTEXPROCESSING, // IMPORTANT: Use hardware vertex processing only when shader system is active otherwise as it might not support polygon clipping
                                                      //            even when device caps.PrimitiveMiscCaps have D3DPMISCCAPS_CLIPTLVERTS flag set
                 &stdDisplay_presentParams,
                 &stdDisplay_pD3DDevice

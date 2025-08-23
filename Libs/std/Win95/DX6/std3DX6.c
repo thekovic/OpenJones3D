@@ -259,7 +259,6 @@ static void J3DAPI std3D_GetZBufferFormat(DDPIXELFORMAT* pPixelFormat);
 static void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture);
 static void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture);
 static int J3DAPI std3D_PurgeTextureCache(size_t size);
-static const char* J3DAPI std3D_D3DGetStatus(HRESULT res);
 
 void std3D_InstallHooks(void)
 {
@@ -367,6 +366,11 @@ void std3D_Shutdown(void)
     std3D_pDirect3D  = NULL;
     std3D_numDevices = 0;
     bStartup         = false;
+}
+
+const Device3D* std3D_GetCurrentDevice(void)
+{
+    return std3D_pCurDevice;
 }
 
 size_t std3D_GetNumDevices(void)
@@ -2179,4 +2183,14 @@ void J3DAPI std3D_FreeDisplayEnvironment(StdDisplayEnvironment* pEnv)
 void J3DAPI std3D_SetFindAllDevices(int bFindAll)
 {
     std3D_bFindAllD3Devices = bFindAll;
+}
+
+tSysDevice3D* std3D_GetD3DDevice(void)
+{
+    return std3D_pD3Device;
+}
+
+bool J3DAPI std3D_IsShaderSystemActive(void)
+{
+    return false;
 }

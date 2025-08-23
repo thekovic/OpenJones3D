@@ -8,15 +8,31 @@ if(J3D_DIRECTX6)
   # Remove DX9 files.
     list(FILTER SOURCES EXCLUDE REGEX ".*DX9\\.c$")
     list(FILTER SOURCES EXCLUDE REGEX "stdComm.c$")
+
+    set(SHADERS "")
+    set(SHADER_INCLUDES "")
 elseif(J3D_DIRECTX9)
     # Remove DX6 files.
     list(FILTER SOURCES EXCLUDE REGEX ".*DX6\\.c$")
+
+    # Collect shader files
+    set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Win95/DX9/Shaders")
+    file(GLOB SHADERS
+        "${SHADER_DIR}/*.hlsl"
+    )
+    file(GLOB SHADER_INCLUDES
+        "${SHADER_DIR}/*.hlsli"
+    )
+
 endif()
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HEADERS})
+# Make project target for DirectX 9
+add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES})
 
+# Add global includes
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+# Link libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC 
     j3dcore
     Winmm # timeGetTime
@@ -29,12 +45,44 @@ if (J3D_DIRECTX6)
         DirectX61c::dinput
         DirectX61c::dplayx
     )
-else() # J3D_DIRECTX9
+elseif(J3D_DIRECTX9) 
     target_link_libraries(${PROJECT_NAME} PUBLIC
         d3d9
         dxguid
         dinput8
     )
+
+    # Define HLSL shaders to be compiled
+    foreach(SHADER ${SHADERS})
+        get_filename_component(FILE_NAME ${SHADER} NAME_WE) # name without extension
+        set(HEADER_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Win95/DX9/Shaders/std_${FILE_NAME}.h")
+
+        # Get shader type from filename
+        set(SHADER_MODEL "3.0")
+        if(FILE_NAME MATCHES "_vs$")
+            set(SHADER_TYPE "Vertex")
+        elseif(FILE_NAME MATCHES "_ps$")
+            set(SHADER_TYPE "Pixel")
+        else()
+            message(FATAL_ERROR "Unknown shader type for ${FILE_NAME} - expected _vs or _ps suffix!")
+        endif()
+
+        # Adjust shader compilation properties
+        set_source_files_properties(${SHADER} PROPERTIES
+            VS_SHADER_TYPE ${SHADER_TYPE}
+            VS_SHADER_MODEL ${SHADER_MODEL}
+            VS_SHADER_ENTRYPOINT "main"
+            VS_SHADER_OUTPUT_HEADER_FILE "${HEADER_FILE}"
+            VS_SHADER_OBJECT_FILE_NAME ""
+            VS_SHADER_VARIABLE_NAME "std_${FILE_NAME}"
+        )
+
+        # Add dependency so headers are built before your game compiles
+        list(APPEND GENERATED_HEADERS ${HEADER_FILE})
+    endforeach()
+
+    add_custom_target(CompileShaders DEPENDS ${GENERATED_HEADERS})
+    add_dependencies(${PROJECT_NAME} CompileShaders)
 endif()
 
 if (WIN32)
@@ -46,4 +94,4 @@ endif()
 target_link_options(${PROJECT_NAME} INTERFACE "/SAFESEH:NO") # due to DirectX 6.1 libs
 
 # Organize source files in Visual Studio
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES} ${GENERATED_HEADERS})

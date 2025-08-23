@@ -1,5 +1,6 @@
 #include <std/Win95/std3D.h>
 #include <std/Win95/stdDisplay.h>
+#include <std/Win95/stdShader.h>
 
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
@@ -11,6 +12,10 @@
 
 #include <math.h>
 
+#include "Shaders/std_default_vs.h"
+#include "Shaders/std_default_ps.h"
+#include "Shaders/std_default_wf_ps.h"
+
 #define STD3D_DEFAULT_MAX_VERTICES 512
 
 static bool bStartup    = false;
@@ -19,6 +24,7 @@ static bool std3D_bOpen = false;
 static LPDIRECT3D9 std3D_pDirect3D       = NULL;
 static LPDIRECT3DDEVICE9 std3D_pD3Device = NULL;
 static D3DRECT std3D_activeRect          = { 0 };
+static_assert(sizeof(std3D_activeRect) == 4 * sizeof(float), "sizeof(std3D_activeRect) == 4 * sizeof(float)"); // Must be 4 floats to be used in shader
 
 static size_t std3D_frameCount                  = 1;
 static float std3D_zDepth                       = 0.0f;
@@ -26,11 +32,12 @@ static Std3DRenderState std3D_renderState       = 0;
 static LPDIRECT3DTEXTURE9 std3D_pD3DTex         = NULL;
 static Std3DMipmapFilterType std3D_mipmapFilter = -1;
 
-static bool std3D_bRenderFog      = true;
-static bool std3D_bFogTable       = false;
-static float std3D_fogDepthFactor = 0.0f;
-static float std3D_fogStartDepth  = 0.0f;
-static float std3D_fogEndDepth    = 0.0f;
+static bool std3D_bRenderFog          = true;
+static bool std3D_bFogTable           = false;
+static float std3D_fogDepthFactor     = 0.0f;
+static float std3D_fogStartDepth      = 0.0f;
+static float std3D_fogEndDepth        = 0.0f;
+static StdShaderVector std3D_fogColor = { 0 };
 
 static bool std3D_bFindAllD3Devices = false;
 static size_t std3D_curDevice       = 0;
@@ -98,7 +105,34 @@ static bool J3DAPI std3D_GetZBufferFormat(tSysPixelFormat* pPixelFormat);
 static void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture);
 static void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture);
 static int J3DAPI std3D_PurgeTextureCache(size_t size);
-static const char* J3DAPI std3D_D3DGetStatus(HRESULT res);
+
+int std3D_InitVertexBuffers(void);
+void std3D_ReleaseVertexBuffers(void);
+
+int std3D_InitShaderSystem(void);
+void std3D_ShutdownShaderSystem(void);
+
+#define RDCACHE_MAXFACEVERTICES 64 
+#define RDCACHE_MAXVERTICES 32768 
+#define RDCACHE_VERTBUFFERSIZE RDCACHE_MAXVERTICES * RDCACHE_MAXFACEVERTICES
+
+// Global state
+
+// VBO & IBO
+static bool std3D_bUseBuffers    = false;
+static const size_t std3D_vbSize = RDCACHE_VERTBUFFERSIZE;
+static size_t std3D_vbOffset     = 0;
+static IDirect3DVertexBuffer9* std3D_pVertexBuffer = NULL;
+
+static const size_t std3D_ibSize = RDCACHE_VERTBUFFERSIZE * 3;
+static size_t std3D_ibOffset     = 0;
+static IDirect3DIndexBuffer9* std3D_pIndexBuffer = NULL;
+
+// Shader system state
+static bool std3D_bShadersActive = true;
+static StdShaderHandle std3D_defaultShader = STDSHADER_INVALIDHANDLE;
+static StdShaderHandle std3D_defaultShaderWf = STDSHADER_INVALIDHANDLE;
+static StdShaderHandle std3D_activeShader = STDSHADER_INVALIDHANDLE;
 
 void std3D_InstallHooks(void)
 {
@@ -162,13 +196,20 @@ int std3D_Startup(void)
         return 0;
     }
 
+    if ( !stdShader_Startup() )
+    {
+        STDLOG_ERROR("Error initializing shader system.\n");
+        return 0;
+    }
+
     if ( !std3D_BuildDeviceList() )
     {
         STDLOG_ERROR("Error building device list.\n");
         return 0;
     }
 
-    if ( std3D_numDevices == 0 ) {
+    if ( std3D_numDevices == 0 )
+    {
         return 0;
     }
 
@@ -178,9 +219,12 @@ int std3D_Startup(void)
 
 void std3D_Shutdown(void)
 {
-    if ( std3D_bOpen ) {
+    if ( std3D_bOpen )
+    {
         std3D_Close();
     }
+
+    stdShader_Shutdown();
 
     memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
     memset(std3D_aDevices, 0, sizeof(std3D_aDevices));
@@ -189,6 +233,11 @@ void std3D_Shutdown(void)
     std3D_pDirect3D     = NULL;
     std3D_numDevices    = 0;
     bStartup            = false;
+}
+
+const Device3D* std3D_GetCurrentDevice(void)
+{
+    return std3D_pCurDevice;
 }
 
 size_t std3D_GetNumDevices(void)
@@ -248,6 +297,17 @@ static int std3D_InitSystem(void)
     std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
     std3D_RGBATextureFormat    = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
 
+    if ( !std3D_InitVertexBuffers() )
+    {
+        return 0;
+    }
+
+    if ( !std3D_InitShaderSystem() )
+    {
+        STDLOG_ERROR("Error initializing pShader system.\n");
+        return 0;
+    }
+
     if ( !std3D_InitRenderState() )
     {
         STDLOG_ERROR("Error initializing render state.\n");
@@ -269,6 +329,8 @@ static void std3D_OnDisplayDeviceReset(tSysDevice3D* pDevice)
     // Release any cached texture before device is changed
     STDLOG_DEBUG("Received display device to be reset signal. Clearing texture cache...\n");
     std3D_ResetTextureCache();
+    std3D_ShutdownShaderSystem();
+    std3D_ReleaseVertexBuffers();
 }
 
 static void std3D_OnDisplayDevicePostReset(tSysDevice3D* pDevice)
@@ -281,8 +343,10 @@ static void std3D_OnDisplayDevicePostReset(tSysDevice3D* pDevice)
 static void std3D_OnDisplayDeviceRelease(tSysDevice3D* pDevice)
 {
     J3D_UNUSED(pDevice);
-    STDLOG_DEBUG("Received signal that display device is about to be released. Clearing texture cache...\n");
+    STDLOG_DEBUG("Received signal that display device is about to be released. Releasing all resources...\n");
     std3D_ResetTextureCache();
+    std3D_ShutdownShaderSystem();
+    std3D_ReleaseVertexBuffers();
 }
 
 int J3DAPI std3D_Open(size_t deviceNum)
@@ -308,7 +372,8 @@ int J3DAPI std3D_Open(size_t deviceNum)
     std3D_curDevice  = deviceNum;
     std3D_pCurDevice = &std3D_aDevices[deviceNum];
 
-    // Get D3D device from stdDisplay (already created)
+    // Get D3D device from stdDisplay (should be already created)
+    // Note, should be called before std3D_InitSystem()
     std3D_pD3Device = stdDisplay_GetSystemDevice();
     if ( !std3D_pD3Device )
     {
@@ -344,6 +409,8 @@ int J3DAPI std3D_Open(size_t deviceNum)
 void std3D_Close(void)
 {
     std3D_ResetTextureCache();
+    std3D_ShutdownShaderSystem();
+    std3D_ReleaseVertexBuffers();
 
     std3D_numTextureFormats    = 0;
     std3D_curDevice            = 0;
@@ -403,6 +470,22 @@ int std3D_StartScene(void)
     }
 
     std3D_pD3DTex = NULL;
+
+    if ( std3D_bShadersActive )
+    {
+        StdShaderViewport vp =
+        {
+            (float)std3D_activeRect.x1, // x
+            (float)std3D_activeRect.y1, // y
+            (float)std3D_activeRect.x2, // width
+            (float)std3D_activeRect.y2  // height
+        };
+        if ( !stdShader_SetViewport(vp) )
+        {
+            // error
+        }
+    }
+
     return d3dres;
 }
 
@@ -415,6 +498,136 @@ void std3D_EndScene(void)
     std3D_pD3DTex = NULL;
 }
 
+static int std3D_CopyVertexDataToBuffer(const LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices)
+{
+    // Check for buffer wraparound
+    DWORD lockFlags =  D3DLOCK_NOOVERWRITE;
+    if ( std3D_vbOffset + numVerts > std3D_vbSize || (std3D_ibOffset + numIndices > std3D_ibSize) )
+    {
+        lockFlags = D3DLOCK_DISCARD;
+        std3D_vbOffset = 0;
+        std3D_ibOffset = 0;
+    }
+
+    if ( std3D_vbOffset == 0 )
+    {
+        lockFlags = D3DLOCK_DISCARD;
+    }
+
+    // Copy vertices to vertex buffer at current offset
+    size_t vbOffsetBytes   = std3D_vbOffset * sizeof(D3DTLVERTEX);
+    size_t vbCopySizeBytes = numVerts * sizeof(D3DTLVERTEX);
+    void* pVertData        = NULL;
+    HRESULT hr = IDirect3DVertexBuffer9_Lock(std3D_pVertexBuffer, (UINT)vbOffsetBytes, (UINT)vbCopySizeBytes, &pVertData, lockFlags);
+    if ( hr != D3D_OK )
+    {
+        STDLOG_ERROR("Error %s while locking vertex buffer.\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    memcpy(pVertData, aVerts, vbCopySizeBytes);
+    IDirect3DVertexBuffer9_Unlock(std3D_pVertexBuffer);
+
+    // Copy indices to buffer at current offset
+    if ( !aIndices || numIndices == 0 )
+    {
+        return 1;
+    }
+
+    size_t ibOffsetBytes   = std3D_ibOffset * sizeof(WORD);
+    size_t ibCopySizeBytes = numIndices * sizeof(WORD);
+    void* pIndexData       = NULL;
+    hr = IDirect3DIndexBuffer9_Lock(std3D_pIndexBuffer, ibOffsetBytes, ibCopySizeBytes, &pIndexData, lockFlags);
+    if ( hr != D3D_OK )
+    {
+        STDLOG_ERROR("Error %s while locking index buffer.\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    memcpy(pIndexData, aIndices, ibCopySizeBytes);
+    IDirect3DIndexBuffer9_Unlock(std3D_pIndexBuffer);
+
+    return 1;
+}
+
+int std3D_DrawIndexedPrimitive(D3DPRIMITIVETYPE type, LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices)
+{
+     // Copy vertices to buffers
+    if ( !std3D_CopyVertexDataToBuffer(aVerts, numVerts, aIndices, numIndices) )
+    {
+        return 0;
+    }
+
+    // Draw
+    HRESULT hr = IDirect3DDevice9_DrawIndexedPrimitive(
+        std3D_pD3Device,
+        type,
+        (INT)std3D_vbOffset,
+        0,
+        (UINT)numVerts,
+        (UINT)std3D_ibOffset,
+        (UINT)(numIndices / 3)
+    );
+
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("DrawIndexedPrimitive failed: %s\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    // Drawing succeeded, advance offsets
+    std3D_vbOffset += numVerts;
+    std3D_ibOffset += numIndices;
+
+    return 1;
+}
+
+int std3D_DrawPrimitive(D3DPRIMITIVETYPE type, LPD3DTLVERTEX aVerts, size_t numVerts)
+{
+     // Copy vertices to buffers
+    if ( !std3D_CopyVertexDataToBuffer(aVerts, numVerts, NULL, 0) )
+    {
+        return 0;
+    }
+
+    // Draw
+    HRESULT hr = IDirect3DDevice9_DrawPrimitive(
+        std3D_pD3Device,
+        type,
+        (UINT)std3D_vbOffset,
+        numVerts - 1
+    );
+
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("DrawPrimitive failed: %s\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    // Drawing succeeded, advance offsets
+    std3D_vbOffset += numVerts;
+    return 1;
+}
+
+void std3D_UpdateShaderState(StdShaderHandle activeShader)
+{
+    if ( activeShader == STDSHADER_INVALIDHANDLE ) return;
+
+    // Set shader
+    if ( activeShader != std3D_activeShader )
+    {
+        if ( !stdShader_SetActiveShader(activeShader) )
+        {
+            // Failed to set active shader
+            return;
+        }
+
+        // Apply shader parameters
+        stdShader_ApplyShaderParams(activeShader);
+        std3D_activeShader = activeShader;
+    }
+}
+
 void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices)
 {
     if ( numVerts > (unsigned int)std3D_g_maxVertices )
@@ -423,65 +636,75 @@ void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LP
         return;
     }
 
+    if ( std3D_bShadersActive )
+    {
+        std3D_UpdateShaderState(std3D_defaultShader);
+    }
+
     std3D_SetRenderState(rdflags);
 
+    // Set texture
     if ( pTex != std3D_pD3DTex )
     {
         HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, (IDirect3DBaseTexture9*)pTex);
-        if ( d3dres != D3D_OK ) {
+        if ( d3dres != D3D_OK )
+        {
             STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
         }
-        else {
+        else
+        {
             std3D_pD3DTex = pTex;
         }
     }
 
+    // Fog processing
     if ( std3D_bFogTable )
     {
-        D3DTLVERTEX* pCurVert = aVerts;
         for ( size_t i = 0; i < numVerts; ++i )
         {
+            D3DTLVERTEX* pCurVert = &aVerts[i];
+            pCurVert->specular = 0xFF000000;
             if ( pCurVert->rhw > 0.0 )
             {
+                pCurVert->specular = 0;
                 float depth = (std3D_fogEndDepth - pCurVert->rhw * std3D_zDepth) * std3D_fogDepthFactor;
                 if ( depth < 1.0 )
                 {
-                    if ( depth >= 0.0 ) {
+                    pCurVert->specular = 0xFF000000;
+                    if ( depth >= 0.0 )
+                    {
                         pCurVert->specular = (int)((1.0 - depth) * 255.0) << 24;
                     }
-                    else {
-                        pCurVert->specular = 0xFF000000;
-                    }
-                }
-                else
-                {
-                    pCurVert->specular = 0;
                 }
             }
-            else
-            {
-                pCurVert->specular = 0xFF000000;
-            }
-
-            ++pCurVert;
         }
     }
 
-    HRESULT d3dres = IDirect3DDevice9_DrawIndexedPrimitiveUP(
-        std3D_pD3Device,
-        D3DPT_TRIANGLELIST,
-        0,
-        numVerts,
-        numIndices / 3,
-        aIndices,
-        D3DFMT_INDEX16,
-        aVerts,
-        sizeof(D3DTLVERTEX)
-    );
-
-    if ( d3dres != D3D_OK )
+    if ( std3D_bUseBuffers )
     {
-        STDLOG_ERROR("Error %s DrawIndexedPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
+        if ( !std3D_DrawIndexedPrimitive(D3DPT_TRIANGLELIST, aVerts, numVerts, aIndices, numIndices) )
+        {
+             // draw failed
+        }
+    }
+    else
+    {
+        HRESULT d3dres = IDirect3DDevice9_DrawIndexedPrimitiveUP(
+            std3D_pD3Device,
+            D3DPT_TRIANGLELIST,
+            0,
+            numVerts,
+            numIndices / 3,
+            aIndices,
+            D3DFMT_INDEX16,
+            aVerts,
+            sizeof(D3DTLVERTEX)
+        );
+
+        if ( d3dres != D3D_OK )
+        {
+            STDLOG_ERROR("Error %s DrawIndexedPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
+        }
     }
 }
 
@@ -508,36 +731,32 @@ void J3DAPI std3D_DrawLineStrip(LPD3DTLVERTEX aVerts, size_t numVerts)
         return;
     }
 
-
-    if ( numVerts > std3D_g_maxVertices || numVerts < 2 ) {
-        STDLOG_ERROR("Invalid vertex count %d (max: %d, min: 2).\n", numVerts, std3D_g_maxVertices);
-        return;
+    if ( std3D_bShadersActive )
+    {
+        std3D_UpdateShaderState(std3D_defaultShaderWf);
     }
 
-    if ( !aVerts ) {
-        STDLOG_ERROR("NULL vertex pointer.\n");
-        return;
-    }
-
-    // Validate vertex data
-    for ( size_t i = 0; i < numVerts; ++i ) {
-        if ( !isfinite(aVerts[i].sx) || !isfinite(aVerts[i].sy) ||
-            !isfinite(aVerts[i].sz) || !isfinite(aVerts[i].rhw) ) {
-            STDLOG_ERROR("Invalid vertex data at index %d in line strip.\n", i);
-            return;
+    if ( std3D_bUseBuffers )
+    {
+        if ( !std3D_DrawPrimitive(D3DPT_LINESTRIP, aVerts, numVerts) )
+        {
+             // draw failed
         }
     }
+    else
+    {
+        HRESULT d3dres = IDirect3DDevice9_DrawPrimitiveUP(
+            std3D_pD3Device,
+            D3DPT_LINESTRIP,
+            numVerts - 1,
+            aVerts,
+            sizeof(D3DTLVERTEX)
+        );
 
-    HRESULT d3dres = IDirect3DDevice9_DrawPrimitiveUP(
-        std3D_pD3Device,
-        D3DPT_LINESTRIP,
-        numVerts - 1,
-        aVerts,
-        sizeof(D3DTLVERTEX)
-    );
-
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s DrawPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
+        if ( d3dres != D3D_OK )
+        {
+            STDLOG_ERROR("Error %s DrawPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
+        }
     }
 }
 
@@ -549,16 +768,31 @@ void J3DAPI std3D_DrawPointList(LPD3DTLVERTEX aVerts, size_t numVerts)
         return;
     }
 
-    HRESULT d3dres = IDirect3DDevice9_DrawPrimitiveUP(
-        std3D_pD3Device,
-        D3DPT_POINTLIST,
-        numVerts,
-        aVerts,
-        sizeof(D3DTLVERTEX)
-    );
+    if ( std3D_bShadersActive )
+    {
+        std3D_UpdateShaderState(std3D_defaultShaderWf);
+    }
 
-    if ( d3dres != D3D_OK ) {
-        STDLOG_ERROR("Error %s DrawPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
+    if ( std3D_bUseBuffers )
+    {
+        if ( !std3D_DrawPrimitive(D3DPT_LINESTRIP, aVerts, numVerts) )
+        {
+             // draw failed
+        }
+    }
+    else
+    {
+        HRESULT d3dres = IDirect3DDevice9_DrawPrimitiveUP(
+            std3D_pD3Device,
+            D3DPT_POINTLIST,
+            numVerts,
+            aVerts,
+            sizeof(D3DTLVERTEX)
+        );
+
+        if ( d3dres != D3D_OK ) {
+            STDLOG_ERROR("Error %s DrawPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
+        }
     }
 }
 
@@ -598,11 +832,28 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
 
         if ( (std3D_renderState & STD3D_RS_FOG_ENABLED) != (rdflags & STD3D_RS_FOG_ENABLED) )
         {
-            if ( (rdflags & STD3D_RS_FOG_ENABLED) != 0 && std3D_bRenderFog ) {
-                IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGENABLE, TRUE);
+            if ( (rdflags & STD3D_RS_FOG_ENABLED) != 0 && std3D_bRenderFog )
+            {
+                if ( std3D_bShadersActive )
+                {
+                    stdShader_SetFog(std3D_bRenderFog, std3D_fogStartDepth, std3D_fogEndDepth, std3D_fogDepthFactor, std3D_fogColor);
+                }
+                else
+                {
+                    IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGENABLE, TRUE);
+
+                }
             }
-            else {
-                IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGENABLE, FALSE);
+            else
+            {
+                if ( std3D_bShadersActive )
+                {
+                    stdShader_DisableFog();
+                }
+                else
+                {
+                    IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGENABLE, FALSE);
+                }
             }
         }
 
@@ -653,123 +904,6 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         std3D_renderState = rdflags;
     }
 }
-
-//void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuffers, size_t numMipLevels, StdColorFormatType formatType)
-//{
-//    memset(pTexture, 0, sizeof(tSystemTexture));
-//
-//    if ( std3D_numTextureFormats == 0 ) {
-//        return;
-//    }
-//
-//    // Get mipmap buffer at LOD 0
-//    tVBuffer* pVBuffer = *apVBuffers;
-//    uint32_t texHeight = 0, texWidth = 0;
-//    std3D_GetValidDimensions(pVBuffer->rasterInfo.width, pVBuffer->rasterInfo.height, &texWidth, &texHeight);
-//
-//    while ( numMipLevels > 1 && (pVBuffer->rasterInfo.width > texWidth || pVBuffer->rasterInfo.height > texHeight) )
-//    {
-//        --numMipLevels;
-//        pVBuffer = *++apVBuffers;
-//        std3D_GetValidDimensions(pVBuffer->rasterInfo.width, pVBuffer->rasterInfo.height, &texWidth, &texHeight);
-//    }
-//
-//    size_t texSize = (pVBuffer->rasterInfo.colorInfo.bpp * texHeight * texWidth) / 8;
-//    if ( std3D_mipmapFilter == STD3D_MIPMAPFILTER_NONE ) {
-//        numMipLevels = 1;
-//    }
-//
-//    D3DFORMAT d3dFormat = D3DFMT_UNKNOWN;
-//    if ( formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA ) {
-//        d3dFormat = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ddPixelFmt;
-//    }
-//    else if ( formatType == STDCOLOR_FORMAT_RGBA ) {
-//        d3dFormat = std3D_aTextureFormats[std3D_RGBATextureFormat].ddPixelFmt;
-//    }
-//    else {
-//        d3dFormat = std3D_aTextureFormats[std3D_RGBTextureFormat].ddPixelFmt;
-//    }
-//
-//    LPDIRECT3DTEXTURE9 pD3DTex = NULL;
-//    HRESULT d3dres = IDirect3DDevice9_CreateTexture(
-//        std3D_pD3Device,
-//        texWidth,
-//        texHeight,
-//        numMipLevels,
-//        0, // Usage
-//        d3dFormat,
-//        D3DPOOL_SCRATCH, // IMPORTANT: Must be in scratch system memory in order to make cached texture later on
-//        &pD3DTex,
-//        NULL
-//    );
-//
-//    if ( d3dres != D3D_OK )
-//    {
-//        STDLOG_ERROR("Error %s when creating Direct3D texture.\n", std3D_D3DGetStatus(d3dres));
-//        goto error;
-//    }
-//
-//    for ( size_t mmNum = 0; mmNum < numMipLevels; ++mmNum )
-//    {
-//        D3DLOCKED_RECT lockedRect = { 0 };
-//        d3dres = IDirect3DTexture9_LockRect(pD3DTex, mmNum, &lockedRect, NULL, 0);
-//        if ( d3dres != D3D_OK )
-//        {
-//            STDLOG_ERROR("Error %s when locking texture level %d.\n", std3D_D3DGetStatus(d3dres), mmNum);
-//            goto error;
-//        }
-//
-//        // Copy pixels from input VBuffer mipmap to texture
-//        tColorMode colorMode = apVBuffers[mmNum]->rasterInfo.colorInfo.colorMode;
-//        if ( colorMode )
-//        {
-//            if ( colorMode > STDCOLOR_PAL && colorMode <= STDCOLOR_RGBA )
-//            {
-//                stdDisplay_VBufferLock(apVBuffers[mmNum]);
-//
-//
-//                D3DSURFACE_DESC desc = { 0 };
-//                IDirect3DTexture9_GetLevelDesc(pD3DTex, mmNum, &desc);
-//
-//                for ( size_t row = 0; row < desc.Height; ++row )
-//                {
-//                    void* pSrcPixels  = &apVBuffers[mmNum]->pPixels[apVBuffers[mmNum]->rasterInfo.rowSize * row];
-//                    void* pDestPixels = (uint8_t*)lockedRect.pBits + row * lockedRect.Pitch;
-//                    size_t rowBytes   = J3DMIN(apVBuffers[mmNum]->rasterInfo.rowSize, lockedRect.Pitch);
-//                    memcpy(pDestPixels, pSrcPixels, rowBytes);
-//                }
-//                stdDisplay_VBufferUnlock(apVBuffers[mmNum]);
-//            }
-//        }
-//        else {
-//            STDLOG_ERROR("Can't use paletized textures.\n");
-//        }
-//
-//        // TODO: Verify if following code done in dx6 is needed (Proly not)
-//        // If current texture size differs from input texture size
-//        // Create new texture with correct size and copy over current texture
-//
-//        d3dres = IDirect3DTexture9_UnlockRect(pD3DTex, mmNum);
-//        if ( d3dres != D3D_OK )
-//        {
-//            STDLOG_ERROR("Error %s when unlocking texture level %d.\n", std3D_D3DGetStatus(d3dres), mmNum);
-//            goto error;
-//        }
-//    }
-//
-//    IDirect3DTexture9_GetLevelDesc(pD3DTex, 0, &pTexture->desc);
-//    pTexture->pTexture    = pD3DTex;
-//    pTexture->textureSize = texSize;
-//    return;
-//
-//error:
-//    if ( pD3DTex ) {
-//        IDirect3DTexture9_Release(pD3DTex);
-//    }
-//
-//    STDLOG_ERROR("Done error exit from std3D_AllocSystemTexture.\n");
-//    return;
-//}
 
 void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuffers, size_t numMipLevels, StdColorFormatType formatType)
 {
@@ -1042,173 +1176,6 @@ error:
     STDLOG_ERROR("Done error exit from std3D_AddToTextureCache.\n");
 }
 
-//void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorFormatType format)
-//{
-//    J3D_UNUSED(format);
-//
-//    STD_ASSERTREL(pCacheTexture);
-//
-//    LPDIRECT3DTEXTURE9 pD3DTex = NULL;
-//
-//    if ( !pCacheTexture->pTexture )
-//    {
-//        STDLOG_ERROR("No Source texture.\n");
-//        goto error;
-//    }
-//
-//    if ( pCacheTexture->textureSize > std3D_pCurDevice->availableMemory ) {
-//        std3D_PurgeTextureCache(pCacheTexture->textureSize);
-//    }
-//
-//    HRESULT d3dres = IDirect3DDevice9_CreateTexture(
-//        std3D_pD3Device,
-//        pCacheTexture->desc.Width,
-//        pCacheTexture->desc.Height,
-//        IDirect3DTexture9_GetLevelCount(pCacheTexture->pTexture),
-//        0, // Usage
-//        pCacheTexture->desc.Format,
-//        D3DPOOL_MANAGED, // IMPORTANT: Must be managed video/system memory to copy pixel data to
-//        &pD3DTex,
-//        NULL
-//    );
-//
-//    while ( d3dres == D3DERR_OUTOFVIDEOMEMORY )
-//    {
-//        if ( !std3D_PurgeTextureCache(pCacheTexture->textureSize) )
-//        {
-//            STDLOG_ERROR("Error: Unable to purge texture cache for %x bytes!!!.\n", pCacheTexture->textureSize);
-//            pD3DTex = NULL;
-//            goto error;
-//        }
-//
-//        d3dres = IDirect3DDevice9_CreateTexture(
-//            std3D_pD3Device,
-//            pCacheTexture->desc.Width,
-//            pCacheTexture->desc.Height,
-//            IDirect3DTexture9_GetLevelCount(pCacheTexture->pTexture),
-//            0, // Usage
-//            pCacheTexture->desc.Format,
-//            D3DPOOL_MANAGED,
-//            &pD3DTex,
-//            NULL
-//        );
-//    }
-//
-//    if ( d3dres != D3D_OK )
-//    {
-//        STDLOG_ERROR("Error %s creating Direct3D texture for cache.\n", std3D_D3DGetStatus(d3dres));
-//        goto error;
-//    }
-//
-//    //d3dres = IDirect3DDevice9_UpdateTexture(std3D_pD3Device, (IDirect3DBaseTexture9*)pCacheTexture->pTexture, (IDirect3DBaseTexture9*)pD3DTex);
-//    //while ( d3dres == D3DERR_OUTOFVIDEOMEMORY )
-//    //{
-//    //    if ( !std3D_PurgeTextureCache(pCacheTexture->textureSize) )
-//    //    {
-//    //        STDLOG_ERROR("Error: Unable to purge texture cache for %x bytes!!!.\n", pCacheTexture->textureSize);
-//    //        goto error;
-//    //    }
-//    //    d3dres = IDirect3DDevice9_UpdateTexture(std3D_pD3Device, (IDirect3DBaseTexture9*)pCacheTexture->pTexture, (IDirect3DBaseTexture9*)pD3DTex);
-//    //}
-//
-//    //if ( d3dres == D3D_OK )
-//    //{
-//    //    // Success
-//    //    pCacheTexture->pCachedTexture = pD3DTex;
-//    //    pCacheTexture->frameNum       = std3D_frameCount;
-//    //    std3D_AddTextureToCacheList(pCacheTexture);
-//    //    return;
-//    //}
-//
-//    //STDLOG_ERROR("Error %s updating texture.\n", std3D_D3DGetStatus(d3dres));
-//
-//
-//    // Copy from device-independent texture to video memory using direct pixel access
-//    uint32_t numMipLevels = IDirect3DTexture9_GetLevelCount(pCacheTexture->pTexture);
-//    for ( uint32_t mmNum = 0; mmNum < numMipLevels; ++mmNum )
-//    {
-//        // Lock source texture (device-independent, D3DPOOL_SCRATCH)
-//        D3DLOCKED_RECT srcRect = { 0 };
-//        d3dres = IDirect3DTexture9_LockRect(pCacheTexture->pTexture, mmNum, &srcRect, NULL, D3DLOCK_READONLY);
-//        if ( d3dres != D3D_OK )
-//        {
-//            STDLOG_ERROR("Error %s locking source texture level %d.\n", std3D_D3DGetStatus(d3dres), mmNum);
-//            goto error;
-//        }
-//
-//        // Lock destination texture (video memory, D3DPOOL_MANAGED)
-//        D3DLOCKED_RECT destRect = { 0 };
-//        d3dres = IDirect3DTexture9_LockRect(pD3DTex, mmNum, &destRect, NULL, 0);
-//
-//        while ( d3dres == D3DERR_OUTOFVIDEOMEMORY )
-//        {
-//            // Unlock source before retrying
-//            IDirect3DTexture9_UnlockRect(pCacheTexture->pTexture, mmNum);
-//
-//            if ( !std3D_PurgeTextureCache(pCacheTexture->textureSize) )
-//            {
-//                STDLOG_ERROR("Error: Unable to purge texture cache for %x bytes!!!.\n", pCacheTexture->textureSize);
-//                goto error;
-//            }
-//
-//            // Re-lock source
-//            d3dres = IDirect3DTexture9_LockRect(pCacheTexture->pTexture, mmNum, &srcRect, NULL, D3DLOCK_READONLY);
-//            if ( d3dres != D3D_OK ) {
-//                STDLOG_ERROR("Error %s re-locking source texture level %d.\n", std3D_D3DGetStatus(d3dres), mmNum);
-//                goto error;
-//            }
-//
-//            // Retry locking destination
-//            d3dres = IDirect3DTexture9_LockRect(pD3DTex, mmNum, &destRect, NULL, 0);
-//        }
-//
-//        if ( d3dres != D3D_OK )
-//        {
-//            IDirect3DTexture9_UnlockRect(pCacheTexture->pTexture, mmNum);
-//            STDLOG_ERROR("Error %s locking destination texture level %d.\n", std3D_D3DGetStatus(d3dres), mmNum);
-//            goto error;
-//        }
-//
-//        // Get mip level dimensions
-//        D3DSURFACE_DESC desc = { 0 };
-//        IDirect3DTexture9_GetLevelDesc(pD3DTex, mmNum, &desc);
-//
-//        // Copy pixel data row by row
-//        for ( uint32_t row = 0; row < desc.Height; ++row )
-//        {
-//            void* pSrcPixels  = (uint8_t*)srcRect.pBits + row * srcRect.Pitch;
-//            void* pDestPixels = (uint8_t*)destRect.pBits + row * destRect.Pitch;
-//            size_t rowBytes   = J3DMIN(srcRect.Pitch, destRect.Pitch);
-//            memcpy(pDestPixels, pSrcPixels, rowBytes);
-//        }
-//
-//        // Unlock both textures
-//        IDirect3DTexture9_UnlockRect(pCacheTexture->pTexture, mmNum);
-//        d3dres = IDirect3DTexture9_UnlockRect(pD3DTex, mmNum);
-//        if ( d3dres != D3D_OK )
-//        {
-//            STDLOG_ERROR("Error %s unlocking destination texture level %d.\n", std3D_D3DGetStatus(d3dres), mmNum);
-//            goto error;
-//        }
-//    }
-//
-//    // Success
-//    pCacheTexture->pCachedTexture = pD3DTex;
-//    pCacheTexture->frameNum       = std3D_frameCount;
-//    std3D_AddTextureToCacheList(pCacheTexture);
-//    return;
-//
-//error:
-//    if ( pD3DTex ) {
-//        IDirect3DTexture9_Release(pD3DTex);
-//    }
-//
-//    pCacheTexture->pCachedTexture = NULL;
-//    pCacheTexture->frameNum       = 0;
-//    STDLOG_ERROR("Done error exit from std3D_AddToTextureCache.\n");
-//}
-
-
 size_t J3DAPI std3D_GetMipMapCount(const tSystemTexture* pTexture)
 {
     if ( !pTexture ) {
@@ -1216,12 +1183,6 @@ size_t J3DAPI std3D_GetMipMapCount(const tSystemTexture* pTexture)
     }
 
     return pTexture->numMipLevels;
-
-  /*  if ( !pTexture || !pTexture->pTexture ) {
-        return 0;
-    }
-
-    return IDirect3DTexture9_GetLevelCount(pTexture->pTexture);*/
 }
 
 void std3D_ResetTextureCache(void)
@@ -1294,7 +1255,8 @@ size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
                 matchLevel = 2;
                 if ( pMatch->colorMode == STDCOLOR_RGB )
                 {
-                    if ( pFormat->ci.redBPP == pMatch->redBPP && pFormat->ci.greenBPP == pMatch->greenBPP && pFormat->ci.blueBPP == pMatch->blueBPP ) {
+                    if ( pFormat->ci.redBPP == pMatch->redBPP && pFormat->ci.greenBPP == pMatch->greenBPP && pFormat->ci.blueBPP == pMatch->blueBPP )
+                    {
                         return i;
                     }
                 }
@@ -1339,7 +1301,16 @@ int std3D_InitRenderState(void)
     std3D_renderState = 0;
 
    // Set vertex format for pre-transformed vertices
-    if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1) != D3D_OK ) {
+    if ( !std3D_bShadersActive )
+    {
+        if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1) != D3D_OK ) {
+            return 0;
+        }
+    }
+
+    // Make sure clipping is enabled
+    if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_CLIPPING, TRUE) != D3D_OK )
+    {
         return 0;
     }
 
@@ -1528,12 +1499,17 @@ int std3D_InitRenderState(void)
 
     if ( !(std3D_pCurDevice->d3dDesc.RasterCaps & D3DPRASTERCAPS_FOGTABLE) && !(std3D_pCurDevice->d3dDesc.RasterCaps & D3DPRASTERCAPS_FOGVERTEX) )
     {
-        std3D_bRenderFog = 0;
+        std3D_bRenderFog = false;
     }
 
     if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGENABLE, FALSE) != D3D_OK )
     {
         return 0;
+    }
+
+    if ( std3D_bShadersActive )
+    {
+        stdShader_DisableFog();
     }
 
     if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FILLMODE, D3DFILL_SOLID) != D3D_OK )
@@ -1617,27 +1593,95 @@ int J3DAPI std3D_SetProjection(float fov, float nearPlane, float farPlane)
 void J3DAPI std3D_EnableFog(int bEnabled, float density)
 {
     std3D_bRenderFog = bEnabled;
+    if ( !std3D_pCurDevice || !std3D_pD3Device )
+    {
+        std3D_bFogTable  = false;
+        return;
+    }
+
     std3D_g_fogDensity = density;
-    std3D_bFogTable = std3D_bRenderFog; // In DX9, we'll handle fog manually if needed
+
+    if ( std3D_bShadersActive )
+    {
+        return;
+    }
+
+     // Get device capabilities
+    D3DCAPS9 caps;
+    if ( FAILED(IDirect3DDevice9_GetDeviceCaps(std3D_pD3Device, &caps)) )
+    {
+        std3D_bRenderFog = false;
+        return;
+    }
+
+    // Check fog support
+    bool bTableFogSupported = (caps.RasterCaps & D3DPRASTERCAPS_FOGTABLE) != 0;
+    bool bVertexFogSupported = (caps.RasterCaps & D3DPRASTERCAPS_FOGVERTEX) != 0;
+
+    if ( !bTableFogSupported && !bVertexFogSupported && !std3D_bShadersActive )
+    {
+        std3D_bRenderFog = false;
+    }
+
+    std3D_bFogTable = bTableFogSupported && std3D_bRenderFog && !std3D_bShadersActive;
 }
 
 void J3DAPI std3D_SetFog(float red, float green, float blue, float startDepth, float endDepth)
 {
+    // Update table stare
     std3D_EnableFog(std3D_bRenderFog, std3D_g_fogDensity);
-    if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGCOLOR, D3DCOLOR_COLORVALUE(red, green, blue, 1.0f)) == D3D_OK )
+
+    if ( std3D_bShadersActive )
     {
-        if ( std3D_g_fogDensity == 0.0f ) {
-            IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGTABLEMODE, D3DFOG_NONE);
-        }
-        else if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGTABLEMODE, D3DFOG_LINEAR) == D3D_OK )
+        // Store fog parameters for shader use
+        std3D_fogStartDepth  = startDepth;
+        std3D_fogEndDepth    = (2.0f - std3D_g_fogDensity) * endDepth;
+        std3D_fogDepthFactor = 1.0f / (std3D_fogEndDepth - std3D_fogStartDepth);
+
+        std3D_fogColor[0] = red;
+        std3D_fogColor[1] = green;
+        std3D_fogColor[2] = blue;
+        std3D_fogColor[3] = 1.0f;
+    }
+    else
+    {
+        if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGCOLOR, D3DRGB(red, green, blue)) == D3D_OK )
         {
-            endDepth = (2.0f - std3D_g_fogDensity) * endDepth;
-            if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGSTART, *(DWORD*)(&startDepth)) == D3D_OK
-                && IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGEND, *(DWORD*)(&endDepth)) == D3D_OK )
+            if ( std3D_g_fogDensity == 0.0f )
             {
-                std3D_fogStartDepth  = startDepth;
-                std3D_fogEndDepth    = endDepth;
-                std3D_fogDepthFactor = 1.0f / (endDepth - startDepth);
+                IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGTABLEMODE, D3DFOG_NONE);
+                IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGVERTEXMODE, D3DFOG_NONE);
+            }
+            else
+            {
+                endDepth = (2.0f - std3D_g_fogDensity) * endDepth;
+
+                bool bSuccess = false;
+                if ( std3D_bFogTable )
+                {
+                    // Use table fog for pre-transformed vertices
+                    if ( SUCCEEDED(IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGTABLEMODE, D3DFOG_LINEAR)) )
+                    {
+                        bSuccess = IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGSTART, *(DWORD*)(&startDepth)) == D3D_OK
+                            && IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGEND, *(DWORD*)(&endDepth)) == D3D_OK;
+                    }
+                }
+                else
+                {
+                    // Use vertex fog (for non-pre-transformed vertices)
+                    if ( SUCCEEDED(IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR)) )
+                    {
+                        bSuccess = IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGSTART, *(DWORD*)(&startDepth)) == D3D_OK
+                            && IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_FOGEND, *(DWORD*)(&endDepth)) == D3D_OK;
+                    }
+                }
+
+                if ( bSuccess )
+                {
+                    std3D_fogStartDepth  = startDepth;
+                    std3D_fogEndDepth    = endDepth;
+                    std3D_fogDepthFactor = 1.0f / (endDepth - startDepth);
+                }
             }
         }
     }
@@ -1651,7 +1695,7 @@ void std3D_ClearZBuffer(void)
             std3D_pD3Device,
             1,
             &std3D_activeRect,
-            D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, // TODO: Add D3DCLEAR_TARGET when enabled
+            D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL | D3DCLEAR_TARGET, // TODO: Add D3DCLEAR_TARGET when enabled
             0,    // Color (black)
             1.0f, // Z value
             0     // Stencil value
@@ -1742,19 +1786,22 @@ static int std3D_BuildDeviceList(void)
 
     // Get display devices from stdDisplay module
     size_t numDisplayDevices = stdDisplay_GetNumDevices();
-    if ( numDisplayDevices == 0 ) {
+    if ( numDisplayDevices == 0 )
+    {
         return 0;
     }
 
     for ( size_t i = 0; i < numDisplayDevices && std3D_numDevices < STD_ARRAYLEN(std3D_aDevices); ++i )
     {
         StdDisplayDevice displayDevice = { 0 };
-        if ( stdDisplay_GetDevice(i, &displayDevice) ) {
+        if ( stdDisplay_GetDevice(i, &displayDevice) )
+        {
             continue;
         }
 
         // Skip non-HAL devices if not finding all devices
-        if ( !std3D_bFindAllD3Devices && !displayDevice.bHAL ) {
+        if ( !std3D_bFindAllD3Devices && !displayDevice.bHAL )
+        {
             continue;
         }
 
@@ -1974,7 +2021,8 @@ const char* J3DAPI std3D_D3DGetStatus(HRESULT res)
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(std3D_aD3DStatusTbl); ++i )
     {
-        if ( std3D_aD3DStatusTbl[i].code == res ) {
+        if ( std3D_aD3DStatusTbl[i].code == res )
+        {
             return std3D_aD3DStatusTbl[i].text;
         }
     }
@@ -2102,4 +2150,152 @@ void J3DAPI std3D_FreeDisplayEnvironment(StdDisplayEnvironment* pEnv)
 void J3DAPI std3D_SetFindAllDevices(int bFindAll)
 {
     std3D_bFindAllD3Devices = bFindAll;
+}
+
+int std3D_InitVertexBuffers(void)
+{
+    std3D_vbOffset = 0;
+    std3D_ibOffset = 0;
+
+    // Create vertex buffer
+    HRESULT hr = IDirect3DDevice9_CreateVertexBuffer(
+        std3D_pD3Device,
+        std3D_vbSize * sizeof(D3DTLVERTEX),
+        D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
+        0, // FVF not used with vertex declarations
+        D3DPOOL_DEFAULT,
+        &std3D_pVertexBuffer,
+        NULL
+    );
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("Failed to create vertex buffer: %s\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    // Create index buffer
+    hr = IDirect3DDevice9_CreateIndexBuffer(
+        std3D_pD3Device,
+        std3D_ibSize * sizeof(WORD),
+        D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
+        D3DFMT_INDEX16,
+        D3DPOOL_DEFAULT,
+        &std3D_pIndexBuffer,
+        NULL
+    );
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("Failed to create index buffer: %s\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    // Set vertex/index buffers
+    hr = IDirect3DDevice9_SetStreamSource(std3D_pD3Device, 0, std3D_pVertexBuffer, 0, sizeof(D3DTLVERTEX));
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("Failed to set vertex buffer: %s\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    hr = IDirect3DDevice9_SetIndices(std3D_pD3Device, std3D_pIndexBuffer);
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("Failed to set index buffer: %s\n", std3D_D3DGetStatus(hr));
+        return 0;
+    }
+
+    return 1;
+}
+
+void std3D_ReleaseVertexBuffers(void)
+{
+    if ( std3D_pVertexBuffer )
+    {
+        IDirect3DVertexBuffer9_Release(std3D_pVertexBuffer);
+        std3D_pVertexBuffer = NULL;
+    }
+
+    if ( std3D_pIndexBuffer )
+    {
+        IDirect3DIndexBuffer9_Release(std3D_pIndexBuffer);
+        std3D_pIndexBuffer = NULL;
+    }
+}
+
+int std3D_InitShaderSystem(void)
+{
+    std3D_bShadersActive = false;
+    if ( std3D_pCurDevice->d3dDesc.PixelShaderVersion < D3DPS_VERSION(3, 0) ||
+        std3D_pCurDevice->d3dDesc.VertexShaderVersion < D3DVS_VERSION(3, 0) )
+    {
+        STDLOG_STATUS("Shader system disabled, due to not meeting minimum shader version requirements.\n"
+            "  Pixel Shader Version: %d.%d, Vertex Shader Version: %d.%d\n",
+            D3DSHADER_VERSION_MAJOR(std3D_pCurDevice->d3dDesc.PixelShaderVersion),
+            D3DSHADER_VERSION_MINOR(std3D_pCurDevice->d3dDesc.PixelShaderVersion),
+            D3DSHADER_VERSION_MAJOR(std3D_pCurDevice->d3dDesc.VertexShaderVersion),
+            D3DSHADER_VERSION_MINOR(std3D_pCurDevice->d3dDesc.VertexShaderVersion)
+        );
+        return 1;
+    }
+
+    if ( !stdShader_Open() )
+    {
+        return 0;
+    }
+
+    // Create default shader
+    std3D_defaultShader = stdShader_Create("std_default", std_default_vs, std_default_ps);
+    if ( !std3D_defaultShader )
+    {
+        STDLOG_ERROR("Failed to create default shader\n");
+        return 0;
+    }
+
+    std3D_defaultShaderWf = stdShader_Create("std_default", std_default_vs, std_default_wf_ps);
+    if ( !std3D_defaultShader )
+    {
+        STDLOG_ERROR("Failed to create default wf shader\n");
+        return 0;
+    }
+
+    if ( !stdShader_RegisterShaderParam(std3D_defaultShaderWf, "g_wireframeColor", STDSHADER_TYPE_PIXEL, STDSHADER_PARAM_VECTOR4, /*registerIndex=*/0) )
+    {
+        return 0;
+    }
+
+    StdShaderParamValue val;
+    val.type = STDSHADER_PARAM_VECTOR4;
+    val.value.vector[0] = 1.0f; // Red
+    val.value.vector[1] = 1.0f; // Green
+    val.value.vector[2] = 1.0f; // Blue
+    val.value.vector[3] = 1.0f; // Alpha
+    if ( !stdShader_SetShaderParam(std3D_defaultShaderWf, "g_wireframeColor", STDSHADER_TYPE_PIXEL, &val) )
+    {
+        return 0;
+    }
+
+    std3D_bShadersActive = true;
+    return 1;
+}
+
+void std3D_ShutdownShaderSystem(void)
+{
+    if ( std3D_defaultShader )
+    {
+        stdShader_Free(std3D_defaultShader);
+        std3D_defaultShader = STDSHADER_INVALIDHANDLE;
+    }
+
+    std3D_activeShader = STDSHADER_INVALIDHANDLE; // Important, reset active shader to STDSHADER_INVALIDHANDLE to avoid dangling handle on next system init
+    stdShader_Close();
+}
+
+tSysDevice3D* std3D_GetD3DDevice(void)
+{
+    return std3D_pD3Device;
+}
+
+bool J3DAPI std3D_IsShaderSystemActive(void)
+{
+    return std3D_bShadersActive;
 }

@@ -544,16 +544,19 @@ void J3DAPI stdDisplay_Refresh(int bReload)
 void stdDisplay_RegisterDevicePreResetCallback(tDisplayDevicePreResetCallback pCallback)
 {
     // TODO: Implement this function if needed
+    J3D_UNUSED(pCallback);
 }
 
 void stdDisplay_RegisterDevicePostResetCallback(tDisplayDevicePostResetCallback pCallback)
 {
     // TODO: Implement this function if needed
+    J3D_UNUSED(pCallback);
 }
 
 void J3DAPI stdDisplay_UnregisterDeviceResetCallback(tDisplayDevicePostResetCallback pCallback)
 {
     // TODO: Implement this function if needed
+    J3D_UNUSED(pCallback);
 }
 
 tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseVSurface, int bUseVideoMemory)
@@ -934,7 +937,7 @@ const char* J3DAPI stdDisplay_DDGetStatus(HRESULT status)
     return "Unknown Error";
 }
 
-int J3DAPI stdDisplay_CreateZBuffer(LPDDPIXELFORMAT pPixelFormat, int bSystemMemory)
+int J3DAPI stdDisplay_CreateZBuffer(const tSysPixelFormat* pPixelFormat, int bSystemMemory)
 {
     // Added
     if ( !stdDisplay_bOpen )
@@ -1115,6 +1118,9 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
     pMode->rasterInfo.height  = lpDDSurfaceDesc->dwHeight;
     pMode->rasterInfo.rowSize = lpDDSurfaceDesc->lPitch;
     stdDisplay_SetAspectRatio(pMode);
+
+    // TODO: dwRefreshRate might not return refresh rate
+    pMode->refreshRate = lpDDSurfaceDesc->dwRefreshRate;
 
     uint32_t pfflags = lpDDSurfaceDesc->ddpfPixelFormat.dwFlags;
     if ( (pfflags & DDPF_PALETTEINDEXED8) != 0 )
