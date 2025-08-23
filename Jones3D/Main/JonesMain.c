@@ -2598,14 +2598,12 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     CHAR aText[128] = { 0 }; // Added: Init to 0
     if ( GetComputerName(aText, &nSize) )
     {
-        stdUtil_ToWStringEx(pConfig->waPlayerName, aText, STD_ARRAYLEN(pConfig->waPlayerName) - 1);
+        STD_TOWSTR(pConfig->waPlayerName, aText);
     }
     else
     {
-        stdUtil_ToWStringEx(pConfig->waPlayerName, "NoName", STD_ARRAYLEN(pConfig->waPlayerName) - 1);
+        STD_TOWSTR(pConfig->waPlayerName, "NoName");
     }
-
-    pConfig->waPlayerName[STD_ARRAYLEN(pConfig->waPlayerName) - 1] = 0;
 
     // Removed: rdModel3K module not supported 
     //if ( wuRegistry_GetIntEx("Katmai", 1) && rdModel3K_sub_4E2ED0() )
@@ -2649,18 +2647,27 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
 
     wuRegistry_GetStr("Display", aText, STD_ARRAYLEN(aText), "");
 
+    // Altered: Changed to use first found HAL display if no display is found
+    int halDisplayIdx = -1;
+    bool bFoundDisplay = false;
     for ( size_t i = 0; i < JonesMain_pStartupDisplayEnv->numInfos; ++i )
     {
-        if ( JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL )
+        if ( halDisplayIdx == -1 && JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL )
         {
-            pConfig->displaySettings.displayDeviceNum = i;
+            halDisplayIdx = i;
         }
 
         if ( streq(JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName, aText) )
         {
             pConfig->displaySettings.displayDeviceNum = i;
+            bFoundDisplay = true;
             break;
         }
+    }
+
+    if ( !bFoundDisplay && halDisplayIdx != -1 )
+    {
+        pConfig->displaySettings.displayDeviceNum = halDisplayIdx;
     }
 
     StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum];
@@ -2691,8 +2698,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
 
     pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
-
-    memcpy(&JonesMain_curVideoMode, &pDisplay->aModes[pConfig->displaySettings.videoModeNum], sizeof(JonesMain_curVideoMode));
+    JonesMain_curVideoMode = pDisplay->aModes[pConfig->displaySettings.videoModeNum];
 
     pConfig->displaySettings.width  = JonesMain_curVideoMode.rasterInfo.width;
     pConfig->displaySettings.height = JonesMain_curVideoMode.rasterInfo.height;
