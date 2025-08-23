@@ -14,9 +14,19 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
 option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)
+option(JONES3D_SPEEDRUN_BUILD "Enable vanilla bugs and glitches used in speedruns" OFF)
 
-if(JONES3D_QOL_IMPROVEMENTS)
+if (JONES3D_QOL_IMPROVEMENTS)
+    message(STATUS "QOL improvements enabled")
     add_compile_definitions(J3D_QOL_IMPROVEMENTS=1)
+else()
+    set(JONES3D_SPEEDRUN_BUILD ON)
+endif()
+
+if (JONES3D_SPEEDRUN_BUILD)
+    message(STATUS "Speedrun build enabled")
+    set(J3D_SPEEDRUN_BUILD on)
+    set(JONES3D_BUILD_SUFFIX "-sr")
 endif()
 
 # Configure the version header file
