@@ -5,6 +5,7 @@
 #undef DIRECT3D_VERSION
 #include <d3d.h>
 #include <ddraw.h>
+#include <DirectX6/dplay.h>
 #elif defined(J3D_DIRECTX9)
 #undef DIRECT3D_VERSION
 #ifdef J3D_DEBUG
@@ -420,9 +421,7 @@ typedef struct sStdVideoMode
 {
     float aspectRatio;
     tRasterInfo rasterInfo;
-#ifndef J3D_DIRECTX6
     uint32_t refreshRate;
-#endif
 } StdVideoMode;
 //static_assert(sizeof(StdVideoMode) == 80, "sizeof(StdVideoMode) == 80");
 
