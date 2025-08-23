@@ -112,19 +112,17 @@ void std3D_ReleaseVertexBuffers(void);
 int std3D_InitShaderSystem(void);
 void std3D_ShutdownShaderSystem(void);
 
-#define RDCACHE_MAXFACEVERTICES 64 
-#define RDCACHE_MAXVERTICES 32768 
-#define RDCACHE_VERTBUFFERSIZE RDCACHE_MAXVERTICES * RDCACHE_MAXFACEVERTICES
-
 // Global state
 
 // VBO & IBO
-static bool std3D_bUseBuffers    = false;
-static const size_t std3D_vbSize = RDCACHE_VERTBUFFERSIZE;
+#define STD3D_VERTBUFFERSIZE STD3D_MAXVERTICES * STD3D_MAXFACEVERTICES
+
+static bool std3D_bUseBuffers    = false; // Slow for small geometry, so disabled by default. Consider hybrid approach later
+static const size_t std3D_vbSize = STD3D_VERTBUFFERSIZE;
 static size_t std3D_vbOffset     = 0;
 static IDirect3DVertexBuffer9* std3D_pVertexBuffer = NULL;
 
-static const size_t std3D_ibSize = RDCACHE_VERTBUFFERSIZE * 3;
+static const size_t std3D_ibSize = STD3D_VERTBUFFERSIZE * 3;
 static size_t std3D_ibOffset     = 0;
 static IDirect3DIndexBuffer9* std3D_pIndexBuffer = NULL;
 
@@ -282,7 +280,8 @@ static int std3D_InitSystem(void)
     }
 
     std3D_g_maxVertices = std3D_pCurDevice->maxVertexCount;
-    if ( std3D_g_maxVertices == 0 ) {
+    if ( std3D_g_maxVertices == 0 )
+    {
         std3D_g_maxVertices = STD3D_DEFAULT_MAX_VERTICES;
     }
     STDLOG_STATUS("Max vertices: %d.\n", std3D_g_maxVertices);
@@ -501,24 +500,31 @@ void std3D_EndScene(void)
 static int std3D_CopyVertexDataToBuffer(const LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices)
 {
     // Check for buffer wraparound
-    DWORD lockFlags =  D3DLOCK_NOOVERWRITE;
-    if ( std3D_vbOffset + numVerts > std3D_vbSize || (std3D_ibOffset + numIndices > std3D_ibSize) )
+    DWORD vbLockFlags = D3DLOCK_NOOVERWRITE;
+    DWORD ibLockFlags = D3DLOCK_NOOVERWRITE;
+
+    // Only discard if we actually need to wrap
+    bool vbNeedsWrap = (std3D_vbOffset + numVerts > std3D_vbSize);
+    bool ibNeedsWrap = (std3D_ibOffset + numIndices > std3D_ibSize);
+
+    if ( vbNeedsWrap )
     {
-        lockFlags = D3DLOCK_DISCARD;
+        vbLockFlags = D3DLOCK_DISCARD;
         std3D_vbOffset = 0;
+    }
+
+    if ( ibNeedsWrap )
+    {
+        ibLockFlags = D3DLOCK_DISCARD;
         std3D_ibOffset = 0;
     }
 
-    if ( std3D_vbOffset == 0 )
-    {
-        lockFlags = D3DLOCK_DISCARD;
-    }
 
     // Copy vertices to vertex buffer at current offset
     size_t vbOffsetBytes   = std3D_vbOffset * sizeof(D3DTLVERTEX);
     size_t vbCopySizeBytes = numVerts * sizeof(D3DTLVERTEX);
     void* pVertData        = NULL;
-    HRESULT hr = IDirect3DVertexBuffer9_Lock(std3D_pVertexBuffer, (UINT)vbOffsetBytes, (UINT)vbCopySizeBytes, &pVertData, lockFlags);
+    HRESULT hr = IDirect3DVertexBuffer9_Lock(std3D_pVertexBuffer, (UINT)vbOffsetBytes, (UINT)vbCopySizeBytes, &pVertData, vbLockFlags);
     if ( hr != D3D_OK )
     {
         STDLOG_ERROR("Error %s while locking vertex buffer.\n", std3D_D3DGetStatus(hr));
@@ -529,23 +535,22 @@ static int std3D_CopyVertexDataToBuffer(const LPD3DTLVERTEX aVerts, size_t numVe
     IDirect3DVertexBuffer9_Unlock(std3D_pVertexBuffer);
 
     // Copy indices to buffer at current offset
-    if ( !aIndices || numIndices == 0 )
+    // Lock index buffer (if needed)
+    if ( aIndices && numIndices > 0 )
     {
-        return 1;
-    }
+        size_t ibOffsetBytes   = std3D_ibOffset * sizeof(WORD);
+        size_t ibCopySizeBytes = numIndices * sizeof(WORD);
+        void* pIndexData       = NULL;
+        hr = IDirect3DIndexBuffer9_Lock(std3D_pIndexBuffer, ibOffsetBytes, ibCopySizeBytes, &pIndexData, ibLockFlags);
+        if ( hr != D3D_OK )
+        {
+            STDLOG_ERROR("Error %s while locking index buffer.\n", std3D_D3DGetStatus(hr));
+            return 0;
+        }
 
-    size_t ibOffsetBytes   = std3D_ibOffset * sizeof(WORD);
-    size_t ibCopySizeBytes = numIndices * sizeof(WORD);
-    void* pIndexData       = NULL;
-    hr = IDirect3DIndexBuffer9_Lock(std3D_pIndexBuffer, ibOffsetBytes, ibCopySizeBytes, &pIndexData, lockFlags);
-    if ( hr != D3D_OK )
-    {
-        STDLOG_ERROR("Error %s while locking index buffer.\n", std3D_D3DGetStatus(hr));
-        return 0;
+        memcpy(pIndexData, aIndices, ibCopySizeBytes);
+        IDirect3DIndexBuffer9_Unlock(std3D_pIndexBuffer);
     }
-
-    memcpy(pIndexData, aIndices, ibCopySizeBytes);
-    IDirect3DIndexBuffer9_Unlock(std3D_pIndexBuffer);
 
     return 1;
 }

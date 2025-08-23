@@ -6,6 +6,10 @@
 
 #include "stdShader.h"
 
+// Added following macros from rdCache to use for VBO & IBO sizes
+#define STD3D_MAXFACEVERTICES 64 
+#define STD3D_MAXVERTICES     32768
+
 J3D_EXTERN_C_START
 
 #define std3D_g_fogDensity J3D_DECL_FAR_VAR(std3D_g_fogDensity, float)
