@@ -76,10 +76,10 @@ void J3DAPI sithPlayer_Open(const wchar_t* awName)
 
 void sithPlayer_Close(void)
 {
+#ifndef J3D_SPEEDRUN_BUILD
     // TODO: maybe track open/close state like in other modules
 
-    // Fixed: Reset IMP state (in case IMP is active).
-    //        This is required to avoid IMP being activated in the next level, as the state is not reset on open.
+    // Fixed: Reset IMP state (in case IMP is active). This is required to avoid IMP being activated in the next level, as the state is not reset on open.
     sithPlayer_g_impFireType = -1;
 
     // Fixed: Reset player state to visible as it is not reset on open, nor in sithPlayerActions module and it will be present in the next level.
@@ -90,6 +90,7 @@ void sithPlayer_Close(void)
 
     // Fixed: Disable swimming inventory, which could be set by jewel flying system or by cog script.
     sithInventory_SetSwimmingInventory(sithPlayer_g_pLocalPlayerThing, /*bItemsAvailable=*/1);
+#endif // !J3D_SPEEDRUN_BUILD
 
     sithPlayer_g_pLocalPlayerThing = NULL;
     sithPlayer_g_pLocalPlayer      = NULL;
