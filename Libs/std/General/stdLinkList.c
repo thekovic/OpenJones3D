@@ -78,7 +78,6 @@ void J3DAPI stdLinkList_RemoveNode(tLinkListNode* pCur)
     pCur->prev = NULL;
 }
 
-
 void J3DAPI stdLinklist_NewList(tLinkListNode* pFirstOfNewList)
 {
     STD_ASSERTREL(pFirstOfNewList != NULL);
