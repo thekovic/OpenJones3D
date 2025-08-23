@@ -1,4 +1,4 @@
-#include "stdComm.h"
+#include <std/Win95/stdComm.h>
 
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
