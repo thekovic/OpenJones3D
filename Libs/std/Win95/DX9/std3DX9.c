@@ -58,10 +58,6 @@ static bool std3D_bHasRGBTextureFormat           = false;
 static size_t std3D_numTextureFormats            = 0;
 static StdTextureFormat std3D_aTextureFormats[8] = { 0 };
 
-static const ColorInfo std3D_cfRGB565   = { STDCOLOR_RGB,  16, 5, 6, 5, 11,  5, 0, 3, 2, 3, 0, 0, 0 };
-static const ColorInfo std3D_cfRGB5551  = { STDCOLOR_RGBA, 16, 5, 5, 5, 11,  6, 1, 3, 3, 3, 1, 0, 7 };
-static const ColorInfo std3D_cfRGB4444  = { STDCOLOR_RGBA, 16, 4, 4, 4, 12,  8, 4, 4, 4, 4, 4, 0, 4 };
-
 static const DXStatus std3D_aD3DStatusTbl[30] =
 {
     { D3D_OK,                                "D3D_OK" },
@@ -619,7 +615,7 @@ void std3D_UpdateShaderState(StdShaderHandle activeShader)
     if ( activeShader == STDSHADER_INVALIDHANDLE ) return;
 
     // Set shader
-    if ( activeShader != std3D_activeShader )
+    if ( activeShader != std3D_activeShader || stdShader_IsShaderDirty(activeShader) )
     {
         if ( !stdShader_SetActiveShader(activeShader) )
         {

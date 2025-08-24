@@ -189,6 +189,7 @@ bool J3DAPI stdShader_Open()
     stdShader_bOpen = true;
     return true;
 }
+
 void stdShader_Close(void)
 {
     if ( !stdShader_bOpen )
@@ -551,7 +552,9 @@ bool J3DAPI stdShader_SetShaderParam(StdShaderHandle sh, const char* pName, StdS
             pName, type, pShader->base.aName, pParam->value.type, pValue->type);
     }
 
-    pParam->value = *pValue;
+    pParam->value        = *pValue;
+    pShader->base.bDirty = true;
+
     return true;
 }
 
@@ -602,5 +605,13 @@ bool J3DAPI stdShader_ApplyShaderParams(StdShaderHandle sh)
         }
     }
 
+    pShader->base.bDirty = false;
     return true;
+}
+
+bool J3DAPI stdShader_IsShaderDirty(StdShaderHandle sh)
+{
+    StdShaderDX9* pShader = stdShader_GetShaderPtr(sh);
+    STD_ASSERT(pShader->pVertexShader); //Only in debug, check if shader is initialized
+    return pShader->base.bDirty;
 }

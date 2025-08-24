@@ -67,6 +67,7 @@ typedef struct sStdShader
 {
     char aName[64];
     StdShaderTypeParams aTypeParams[STDSHADER_MAX_TYPES]; // Array of parameters for vertex and pixel shaders
+    bool bDirty;
 } StdShader;
 
 
@@ -92,6 +93,7 @@ void J3DAPI stdShader_Free(StdShaderHandle sh);
 bool J3DAPI stdShader_RegisterShaderParam(StdShaderHandle sh, const char* pName, StdShaderType type, StdShaderParamType valueType, size_t registerIndex); // Register shader parameter
 bool J3DAPI stdShader_SetShaderParam(StdShaderHandle sh, const char* pName, StdShaderType type, const StdShaderParamValue* pValue); // Set registered shader parameter value
 bool J3DAPI stdShader_ApplyShaderParams(StdShaderHandle sh); // Apply all registered shader parameters to device
+bool J3DAPI stdShader_IsShaderDirty(StdShaderHandle sh); // Check if shader has dirty parameters that need to be applied
 
 J3D_EXTERN_C_END
 #endif // STD_STDSHADER_H
