@@ -119,7 +119,7 @@ float4 ApplyFog(float4 color, float depth) // depth should be vertex rhw in scre
        // Calculate linear fog factor
        // fogFactor = (rhw - fogStart) / (fogEnd - fogStart)
        // Using pre-calculated 1/(end-start) in g_fogParams.z for efficiency
-        float fogFactor = (depth - g_fogParams.x) * g_fogParams.z;       
+        float fogFactor = (depth - g_fogParams.x) * g_fogParams.z;
         fogFactor = saturate(fogFactor); // Clamp fog factor to [0, 1] range
 
        // Apply fog
