@@ -12,6 +12,8 @@ J3D_EXTERN_C_START
 typedef float StdShaderVector[4];
 typedef StdShaderVector StdShaderViewport;
 
+typedef float StdShaderMatrix[4][4];
+
 typedef size_t StdShaderHandle;
 
 #define STDSHADER_INVALIDHANDLE ((StdShaderHandle)0)
@@ -42,7 +44,7 @@ typedef struct sStdShaderParamValue
     {
         float floatValue;
         StdShaderVector vector;
-        float matrix[16];
+        StdShaderMatrix matrix;
         tSysTexture* pTexture;
     } value;
 } StdShaderParamValue;

@@ -589,7 +589,7 @@ bool J3DAPI stdShader_ApplyShaderParams(StdShaderHandle sh)
                         hr = STDSHADER_SETSHADERCONSTANTF(stdShader_pDevice, type, pParam->registerIndex, pParam->value.value.vector, 1);
                         break;
                     case STDSHADER_PARAM_MATRIX:
-                        STDSHADER_SETSHADERCONSTANTF(stdShader_pDevice, type, pParam->registerIndex, pParam->value.value.matrix, STD_ARRAYLEN(pParam->value.value.matrix));
+                        STDSHADER_SETSHADERCONSTANTF(stdShader_pDevice, type, pParam->registerIndex, (const float*)pParam->value.value.matrix, 4);
                         break;
                     case STDSHADER_PARAM_TEXTURE:
                         hr = IDirect3DDevice9_SetTexture(stdShader_pDevice, pParam->registerIndex, (IDirect3DBaseTexture9*)pParam->value.value.pTexture);
