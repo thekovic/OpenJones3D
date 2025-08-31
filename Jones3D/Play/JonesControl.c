@@ -24,8 +24,7 @@ void JonesControl_InstallHooks(void)
 }
 
 void JonesControl_ResetGlobals(void)
-{
-}
+{}
 
 int JonesControl_Startup(void)
 {
@@ -110,17 +109,11 @@ int J3DAPI JonesControl_ProcessControls(SithThing* pPlayer, float secDeltaTime)
 void JonesControl_EnableJoystickAxes(void)
 {
     int joystickCount = stdControl_GetNumJoysticks();
-    if ( joystickCount > 0 )
+    for ( size_t i = 0; i < joystickCount; ++i )
     {
-        int axisId = 2;
-        do
-        {
-            stdControl_EnableAxis(axisId - 2);
-            stdControl_EnableAxis(axisId - 1);
-            stdControl_EnableAxis(axisId);
-            stdControl_EnableAxis(axisId + 3);
-            axisId += 6;
-            --joystickCount;
-        } while ( joystickCount );
+        stdControl_EnableAxis(STDCONTROL_GET_JOYSTICK_AXIS_X(i)); // 6 * i + 0
+        stdControl_EnableAxis(STDCONTROL_GET_JOYSTICK_AXIS_Y(i)); // 6 * i + 1
+        stdControl_EnableAxis(STDCONTROL_GET_JOYSTICK_AXIS_Z(i)); // 6 * i + 2
+        stdControl_EnableAxis(STDCONTROL_GET_JOYSTICK_AXIS_RZ(i));  // 6 * i + 5
     }
 }

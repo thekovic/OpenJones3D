@@ -4909,7 +4909,6 @@ void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
     {
         sithControl_RebindMouse();
     }
-
     else if ( pSettings->bWindowMode )
     {
         stdControl_EnableMouse(0);
