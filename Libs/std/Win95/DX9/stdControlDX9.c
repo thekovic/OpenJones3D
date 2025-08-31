@@ -1442,6 +1442,12 @@ BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCE pdidInstance, L
         return DIENUM_CONTINUE; // continue to find other devices
     }
 
+    if ( dwDevType == DI8DEVTYPE_DEVICE )
+    {
+        STDLOG_DEBUG("Skipping unspecified device:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+        return DIENUM_CONTINUE; // continue to find other devices
+    }
+
     // Check if the device is an XInput device (e.g.: xbox controller)
     if ( stdControl_IsXInputDevice(&pdidInstance->guidProduct) )
     {
