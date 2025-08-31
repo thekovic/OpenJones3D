@@ -1651,6 +1651,7 @@ void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orien
                 rdVector_Sub3(&dir, &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &orient->dvec);
                 // TODO: grimengine check if (pCurMesh->radius + pLight->minRadius <= rdVector_Len3(&dir)) continue;
 
+                // Convert light to mesh local space
                 rdMatrix_TransformPoint34(&aLocalLightPos[numMeshLights], &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &orthOrient);
                 apMeshLights[numMeshLights] = pLight;
                 ++numMeshLights;
