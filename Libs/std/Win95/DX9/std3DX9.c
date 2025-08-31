@@ -92,22 +92,6 @@ static const DXStatus std3D_aD3DStatusTbl[30] =
     { E_POINTER,                             "E_POINTER" }
 };
 
-static int std3D_InitRenderState(void);
-static int std3D_BuildDeviceList(void);
-static void std3D_InitTextureFormats(void);
-
-static int std3D_CreateViewport(void);
-static bool J3DAPI std3D_GetZBufferFormat(tSysPixelFormat* pPixelFormat);
-static void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture);
-static void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture);
-static int J3DAPI std3D_PurgeTextureCache(size_t size);
-
-int std3D_InitVertexBuffers(void);
-void std3D_ReleaseVertexBuffers(void);
-
-int std3D_InitShaderSystem(void);
-void std3D_ShutdownShaderSystem(void);
-
 // Global state
 
 // VBO & IBO
@@ -127,6 +111,24 @@ static bool std3D_bShadersActive = true;
 static StdShaderHandle std3D_defaultShader = STDSHADER_INVALIDHANDLE;
 static StdShaderHandle std3D_defaultShaderWf = STDSHADER_INVALIDHANDLE;
 static StdShaderHandle std3D_activeShader = STDSHADER_INVALIDHANDLE;
+
+static int std3D_InitRenderState(void);
+static int std3D_BuildDeviceList(void);
+static void std3D_InitTextureFormats(void);
+
+static int std3D_CreateViewport(void);
+static bool J3DAPI std3D_GetZBufferFormat(tSysPixelFormat* pPixelFormat);
+static void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture);
+static void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture);
+static int J3DAPI std3D_PurgeTextureCache(size_t size);
+
+int std3D_InitVertexBuffers(void);
+void std3D_ReleaseVertexBuffers(void);
+
+int std3D_InitShaderSystem(void);
+void std3D_ShutdownShaderSystem(void);
+
+static void std3D_UpdateShaderState(StdShaderHandle activeShader);
 
 void std3D_InstallHooks(void)
 {
@@ -244,7 +246,7 @@ const Device3D* std3D_GetAllDevices(void)
     return std3D_aDevices;
 }
 
-static int std3D_InitSystem(void)
+static bool std3D_InitSystem(void)
 {
     tSysPixelFormat pixelFormat = { 0 };
     if ( std3D_GetZBufferFormat(&pixelFormat) )
@@ -252,7 +254,7 @@ static int std3D_InitSystem(void)
         if ( stdDisplay_CreateZBuffer(&pixelFormat, std3D_pCurDevice->bHAL == 0) )
         {
             STDLOG_ERROR("Error creating Z buffer.\n");
-            return 0;
+            return false;
         }
     }
     else
@@ -266,13 +268,13 @@ static int std3D_InitSystem(void)
     if ( !std3D_numTextureFormats || !std3D_bHasRGBTextureFormat )
     {
         STDLOG_ERROR("Error no texture formats found.\n");
-        return 0;
+        return false;
     }
 
     if ( !std3D_CreateViewport() )
     {
         STDLOG_ERROR("Error creating viewport.\n");
-        return 0;
+        return false;
     }
 
     std3D_g_maxVertices = std3D_pCurDevice->maxVertexCount;
@@ -294,38 +296,43 @@ static int std3D_InitSystem(void)
 
     if ( !std3D_InitVertexBuffers() )
     {
-        return 0;
+        return false;
     }
 
     if ( !std3D_InitShaderSystem() )
     {
         STDLOG_ERROR("Error initializing pShader system.\n");
-        return 0;
+        return false;
     }
 
     if ( !std3D_InitRenderState() )
     {
         STDLOG_ERROR("Error initializing render state.\n");
-        return 0;
+        return false;
     }
 
     if ( stdDisplay_GetTextureMemory(&std3D_pCurDevice->totalMemory, &std3D_pCurDevice->availableMemory) )
     {
         // Since we failed to get texture memory info indicate that opening failed
-        return 0;
+        return false;
     }
 
-    return 1;
+    return true;
 }
+
+static void std3D_ReleaseSystemResources(void)
+{
+    std3D_ResetTextureCache();
+    std3D_ShutdownShaderSystem();
+    std3D_ReleaseVertexBuffers();
+};
 
 static void std3D_OnDisplayDeviceReset(tSysDevice3D* pDevice)
 {
     J3D_UNUSED(pDevice);
     // Release any cached texture before device is changed
-    STDLOG_DEBUG("Received display device to be reset signal. Clearing texture cache...\n");
-    std3D_ResetTextureCache();
-    std3D_ShutdownShaderSystem();
-    std3D_ReleaseVertexBuffers();
+    STDLOG_DEBUG("Received display device to be reset signal. Releasing system resources...\n");
+    std3D_ReleaseSystemResources();
 }
 
 static void std3D_OnDisplayDevicePostReset(tSysDevice3D* pDevice)
@@ -338,10 +345,8 @@ static void std3D_OnDisplayDevicePostReset(tSysDevice3D* pDevice)
 static void std3D_OnDisplayDeviceRelease(tSysDevice3D* pDevice)
 {
     J3D_UNUSED(pDevice);
-    STDLOG_DEBUG("Received signal that display device is about to be released. Releasing all resources...\n");
-    std3D_ResetTextureCache();
-    std3D_ShutdownShaderSystem();
-    std3D_ReleaseVertexBuffers();
+    STDLOG_DEBUG("Received signal that display device is about to be released. Releasing system resources...\n");
+    std3D_ReleaseSystemResources();
 }
 
 int J3DAPI std3D_Open(size_t deviceNum)
@@ -403,9 +408,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
 
 void std3D_Close(void)
 {
-    std3D_ResetTextureCache();
-    std3D_ShutdownShaderSystem();
-    std3D_ReleaseVertexBuffers();
+    std3D_ReleaseSystemResources();
 
     std3D_numTextureFormats    = 0;
     std3D_curDevice            = 0;
@@ -460,8 +463,11 @@ int std3D_StartScene(void)
     ++std3D_frameCount;
 
     HRESULT d3dres = IDirect3DDevice9_BeginScene(std3D_pD3Device);
-    if ( d3dres != D3D_OK ) {
+    if ( d3dres != D3D_OK )
+    {
         STDLOG_ERROR("Error %s beginning scene.\n", std3D_D3DGetStatus(d3dres));
+        std3D_pD3DTex = NULL;
+        return d3dres;
     }
 
     std3D_pD3DTex = NULL;
