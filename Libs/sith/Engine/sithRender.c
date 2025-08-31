@@ -1149,7 +1149,7 @@ int J3DAPI sithRender_RenderThing(SithThing* pThing)
         return drawResult;
     }
 
-    // Note: Looks like some part of the code is missing. 
+    // Note: Looks like some part of the code is missing.
     // In JKDF2 (OpenJKDF2), here is section of code that adds light flashing effect to player view
     stdMath_Dist3D1(pThing->transformedPos.x, pThing->transformedPos.y, pThing->transformedPos.z);
 
