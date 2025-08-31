@@ -1055,7 +1055,7 @@ void stdControl_ReadJoysticks(void)
             stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joyNum, btnNum), jstate.rgbButtons[btnNum], stdControl_curReadTime);
         }
 
-        for ( size_t j = 0; j < stdControl_aJoystickDevices[joyNum].caps.dwPOVs && j < 4; ++j )
+        for ( size_t j = 0; j < stdControl_aJoystickDevices[joyNum].caps.dwPOVs && j < STDCONTROL_MAX_JOYSTICK_POVCONTROLERS; ++j )
         {
             DWORD pov = jstate.rgdwPOV[j];
             bool bCentred = (uint16_t)pov == 0xFFFF;// POVCentered = (LOWORD(dwPOV) == 0xFFFF);

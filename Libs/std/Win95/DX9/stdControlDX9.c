@@ -8,6 +8,17 @@
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
 
+#include <Xinput.h>
+#pragma comment(lib,"Xinput.lib")
+
+#include <wbemidl.h>
+#include <oleauto.h>
+#pragma comment(lib, "wbemuuid.lib")
+
+
+#define STDCONTROL_COMSAFE_RELEASE(p) { if (p) { (p)->lpVtbl->Release(p); (p) = NULL; } }
+
+
 typedef struct sStdInputDevice
 {
     LPDIRECTINPUTDEVICE8 pDIDevice;
@@ -23,7 +34,29 @@ typedef struct sStdControlJoystickDevice
 } StdControlJoystickDevice;
 static_assert(sizeof(StdControlJoystickDevice) == 628, "sizeof(StdControlJoystickDevice) == 628");
 
+typedef struct sStdControlXInputDevice
+{
+    DWORD userIndex;
+    bool bConnected;
+    bool bIsGamepad;
+    XINPUT_STATE state;
+    XINPUT_CAPABILITIES caps;
+    XINPUT_VIBRATION vibration;
+
+    float leftStickDeadZone;
+    float rightStickDeadZone;
+    float triggerThreshold;
+} StdControlXInputDevice;
+
 #define STDCONTROL_MOUSE_BUFFERSIZE 32u
+
+// XInput constants
+#define STDCONTROL_XINPUT_GAMEPAD_THUMB_MINVALUE  -32768
+#define STDCONTROL_XINPUT_GAMEPAD_THUMB_MAXVALUE  32767
+
+#define STDCONTROL_XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE
+#define STDCONTROL_XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE
+#define STDCONTROL_XINPUT_GAMEPAD_TRIGGER_THRESHOLD    XINPUT_GAMEPAD_TRIGGER_THRESHOLD
 
 static bool stdControl_bStartup = false;
 static bool stdControl_bOpen    = false;
@@ -41,7 +74,7 @@ static uint8_t stdControl_aKeyboardState[STDCONTROL_MAX_KEYBOARD_BUTTONS] = { 0 
 
 static bool stdControl_bReadJoysticks        = false;
 static size_t  stdControl_numJoystickDevices = 0;
-static StdControlJoystickDevice stdControl_aJoystickDevices[STDCONTROL_MAX_JOYSTICK_DEVICES] = { 0 };
+static StdControlJoystickDevice stdControl_aJoystickDevices[STDCONTROL_MAX_JOYSTICK_DEVICES - STDCONTROL_MAX_GAMEPAD_DEVICES] = { 0 }; // TODO: After gamepad implementation has dedicated slots reduce to STDCONTROL_MAX_JOYSTICK_DEVICES
 
 static StdControlAxis stdControl_aAxes[STDCONTROL_MAX_AXES] = { 0 };
 static int stdControl_aAxisStates[STDCONTROL_MAX_AXES]      = { 0 };
@@ -102,6 +135,13 @@ static const DXStatus stdControl_aDIStatusTbl[34] = {
     { DIERR_EFFECTPLAYING,          "DIERR_EFFECTPLAYING" }
 };
 
+// XInput static variables
+//static bool stdControl_bUseXInput = true;
+static bool stdControl_bReadXInput = false;
+static size_t stdControl_numXInputDevices = 0;
+static StdControlXInputDevice stdControl_aXInputDevices[XUSER_MAX_COUNT] = { 0 };
+static DWORD stdControl_lastXInputCheck = 0;
+
 void stdControl_InitJoysticks(void);
 void J3DAPI stdControl_InitKeyboard(int bForeground);
 void stdControl_InitMouse(void);
@@ -114,6 +154,13 @@ void stdControl_ReadMouse(void);
 
 const char* J3DAPI stdControl_DIGetStatus(int HRESULT);
 BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCE pdidInstance, LPVOID pContext);
+
+// XInput functions
+void stdControl_InitXInput(void);
+void stdControl_ReadXInput(void);
+void stdControl_ShutdownXInput(void);
+float J3DAPI stdControl_ApplyXInputDeadzone(SHORT value, float deadzone);
+void J3DAPI stdControl_SetXInputVibration(int controllerIndex, float leftMotor, float rightMotor);
 
 void stdControl_InstallHooks(void)
 {
@@ -161,7 +208,7 @@ void stdControl_ResetGlobals(void)
 
 int J3DAPI stdControl_Startup(int bKeyboardForeground)
 {
-    STDLOG_STATUS("Starting control system with DirectInput8 as backend...\n");
+    STDLOG_STATUS("Starting control system with DirectInput8 and XInput as backend...\n");
     if ( stdControl_bStartup )
     {
         return 1;
@@ -198,6 +245,7 @@ int J3DAPI stdControl_Startup(int bKeyboardForeground)
 
     stdControl_InitKeyboard(bKeyboardForeground);
     stdControl_InitJoysticks();
+    stdControl_InitXInput();
     stdControl_InitMouse();
     stdControl_Reset();
 
@@ -215,6 +263,8 @@ void stdControl_Shutdown(void)
     if ( stdControl_bStartup )
     {
         stdControl_bStartup = false;
+
+        // Cleanup mouse
         if ( stdControl_mouse.pDIDevice )
         {
             IDirectInputDevice8_Unacquire(stdControl_mouse.pDIDevice);
@@ -223,6 +273,7 @@ void stdControl_Shutdown(void)
 
         memset(&stdControl_mouse, 0, sizeof(stdControl_mouse));
 
+        // Cleanup keyboard
         if ( stdControl_keyboard.pDIDevice )
         {
             IDirectInputDevice8_Unacquire(stdControl_keyboard.pDIDevice);
@@ -231,6 +282,7 @@ void stdControl_Shutdown(void)
 
         memset(&stdControl_keyboard, 0, sizeof(stdControl_keyboard));
 
+        // Cleanup joysticks
         for ( size_t i = 0; i < stdControl_numJoystickDevices; i++ )
         {
             if ( stdControl_aJoystickDevices[i].pDIDevice )
@@ -242,11 +294,15 @@ void stdControl_Shutdown(void)
 
         stdControl_numJoystickDevices = 0;
         memset(stdControl_aJoystickDevices, 0, sizeof(stdControl_aJoystickDevices));
+
         if ( stdControl_pDI )
         {
             IDirectInput8_Release(stdControl_pDI);
             stdControl_pDI = 0;
         }
+
+        // Cleanup XInput
+        stdControl_ShutdownXInput();
     }
 }
 
@@ -280,6 +336,7 @@ void stdControl_Reset(void)
 {
     stdControl_bReadMouse               = false;
     stdControl_bReadJoysticks           = false;
+    stdControl_bReadXInput              = false;
     stdControl_bMouseSensitivityEnabled = false;
 
     for ( size_t i = 0; i < STDCONTROL_MAX_AXES; i++ )
@@ -341,6 +398,11 @@ void stdControl_ReadControls(void)
         if ( stdControl_bReadJoysticks )
         {
             stdControl_ReadJoysticks();
+        }
+
+        if ( stdControl_bReadXInput )
+        {
+            stdControl_ReadXInput();
         }
 
         stdControl_ReadMouse();
@@ -575,7 +637,7 @@ void J3DAPI stdControl_UpdateKeyState(int keyId, int bPressed, unsigned int tick
 {
     if ( bPressed && !stdControl_aKeyInfo[keyId] )
     {
-        stdControl_aKeyInfo[keyId] = true;
+        stdControl_aKeyInfo[keyId]      = true;
         stdControl_aKeyIdleTimes[keyId] = stdControl_curReadTime - tickTime;
         ++stdControl_aKeyPressed[keyId];
     }
@@ -983,10 +1045,10 @@ void J3DAPI stdControl_EnableAxisRead(size_t axis)
     {
         stdControl_bReadMouse = true;
     }
-
     else if ( axis < STDCONTROL_AID_MOUSE_X )
     {
         stdControl_bReadJoysticks = true;
+        stdControl_bReadXInput    = true;
     }
 }
 
@@ -1048,7 +1110,7 @@ void stdControl_ReadJoysticks(void)
             stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joyNum, btnNum), jstate.rgbButtons[btnNum], stdControl_curReadTime);
         }
 
-        for ( size_t j = 0; j < stdControl_aJoystickDevices[joyNum].caps.dwPOVs && j < 4; ++j )
+        for ( size_t j = 0; j < stdControl_aJoystickDevices[joyNum].caps.dwPOVs && j < STDCONTROL_MAX_JOYSTICK_POVCONTROLERS; ++j )
         {
             DWORD pov = jstate.rgdwPOV[j];
             bool bCentred = (uint16_t)pov == 0xFFFF;// POVCentered = (LOWORD(dwPOV) == 0xFFFF);
@@ -1172,7 +1234,7 @@ void stdControl_ReadMouse(void)
             DIDEVICEOBJECTDATA* pData = &aMouseBuffer[i];
             if ( pData->dwOfs >= DIMOFS_BUTTON0 && pData->dwOfs <= DIMOFS_BUTTON3 )// IF 12 - DIMOFS_BUTTON0 ... 15 - DIMOFS_BUTTON3
             {
-                static_assert((STDCONTROL_KID_MOUSE_LBUTTON - DIMOFS_BUTTON0) == 628, "(STDCONTROL_KID_MOUSE_LBUTTON - DIMOFS_BUTTON0) == 628");
+                static_assert((STDCONTROL_KID_MOUSE_LBUTTON - DIMOFS_BUTTON0) == 820, "(STDCONTROL_KID_MOUSE_LBUTTON - DIMOFS_BUTTON0) == 820");
                 stdControl_UpdateKeyState(pData->dwOfs + (STDCONTROL_KID_MOUSE_LBUTTON - DIMOFS_BUTTON0), pData->dwData & 0x80, pData->dwTimeStamp);// pCurData->dwData & 0x80 -> extract mouse button press state i.e.: not zero - button went down
             }
         }
@@ -1216,20 +1278,179 @@ const char* J3DAPI stdControl_DIGetStatus(int HRESULT)
 
     return pError;
 }
+
+BOOL stdControl_IsXInputDevice(const GUID* pGuidProductFromDirectInput)
+{
+    IWbemLocator* pIWbemLocator        = NULL;
+    IEnumWbemClassObject* pEnumDevices = NULL;
+    IWbemClassObject* pDevices[20]     = { 0 };
+    IWbemServices* pIWbemServices      = NULL;
+
+    BSTR bstrNamespace   = NULL;
+    BSTR bstrDeviceID    = NULL;
+    BSTR bstrClassName   = NULL;
+    bool bIsXinputDevice = false;
+
+    // CoInit if needed
+    HRESULT hr = CoInitialize(NULL);
+    bool bCleanupCOM = SUCCEEDED(hr);
+
+    // So we can call VariantClear() later, even if we never had a successful IWbemClassObject::Get().
+    VARIANT var = { 0 };
+    VariantInit(&var);
+
+    // Create WMI
+    hr = CoCreateInstance(&CLSID_WbemLocator,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        &IID_IWbemLocator,
+        (LPVOID*)&pIWbemLocator);
+    if ( FAILED(hr) || pIWbemLocator == NULL )
+    {
+        goto LCleanup;
+    }
+
+    bstrNamespace = SysAllocString(L"\\\\.\\root\\cimv2");  if ( bstrNamespace == NULL ) goto LCleanup;
+    bstrClassName = SysAllocString(L"Win32_PNPEntity");     if ( bstrClassName == NULL ) goto LCleanup;
+    bstrDeviceID  = SysAllocString(L"DeviceID");            if ( bstrDeviceID == NULL )  goto LCleanup;
+
+    // Connect to WMI 
+    hr = pIWbemLocator->lpVtbl->ConnectServer(pIWbemLocator, bstrNamespace, NULL, NULL, 0L, 0L, NULL, NULL, &pIWbemServices);
+    if ( FAILED(hr) || pIWbemServices == NULL )
+    {
+        goto LCleanup;
+    }
+
+    // Switch security level to IMPERSONATE. 
+    hr = CoSetProxyBlanket((IUnknown*)pIWbemServices,
+        RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL,
+        RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE,
+        NULL, EOAC_NONE);
+    if ( FAILED(hr) )
+    {
+        goto LCleanup;
+    }
+
+    hr = pIWbemServices->lpVtbl->CreateInstanceEnum(pIWbemServices, bstrClassName, 0, NULL, &pEnumDevices);
+    if ( FAILED(hr) || pEnumDevices == NULL )
+    {
+        goto LCleanup;
+    }
+
+    // Loop over all devices
+    for ( ;;)
+    {
+        ULONG uReturned = 0;
+        hr = pEnumDevices->lpVtbl->Next(pEnumDevices, 10000, sizeof(pDevices) / sizeof(pDevices[0]), pDevices, &uReturned);
+        if ( FAILED(hr) )
+        {
+            goto LCleanup;
+        }
+
+        if ( uReturned == 0 )
+            break;
+
+        for ( size_t iDevice = 0; iDevice < uReturned; ++iDevice )
+        {
+            if ( pDevices[iDevice] == NULL ) continue;  // Safety check to shut up IntelliSense
+
+            // For each device, get its device ID
+            hr = pDevices[iDevice]->lpVtbl->Get(pDevices[iDevice], bstrDeviceID, 0L, &var, NULL, NULL);
+            if ( SUCCEEDED(hr) && V_VT(&var) == VT_BSTR && V_BSTR(&var) != NULL )
+            {
+                // Check if the device ID contains "IG_".  If it does, then it's an XInput device
+                // This information cannot be found from DirectInput 
+                if ( wcsstr(V_BSTR(&var), L"IG_") )
+                {
+                    // If it does, then get the VID/PID from var.bstrVal
+                    DWORD dwPid = 0, dwVid = 0;
+                    WCHAR* strVid = wcsstr(V_BSTR(&var), L"VID_");
+                    if ( strVid && swscanf_s(strVid, L"VID_%4X", &dwVid) != 1 )
+                    {
+                        dwVid = 0;
+                    }
+
+                    WCHAR* strPid = wcsstr(V_BSTR(&var), L"PID_");
+                    if ( strPid && swscanf_s(strPid, L"PID_%4X", &dwPid) != 1 )
+                    {
+                        dwPid = 0;
+                    }
+
+                    // Compare the VID/PID to the DInput device
+                    DWORD dwVidPid = MAKELONG(dwVid, dwPid);
+                    if ( dwVidPid == pGuidProductFromDirectInput->Data1 )
+                    {
+                        bIsXinputDevice = true;
+                        goto LCleanup;
+                    }
+                }
+            }
+            VariantClear(&var);
+            STDCONTROL_COMSAFE_RELEASE(pDevices[iDevice]);
+        }
+    }
+
+LCleanup:
+    VariantClear(&var);
+
+    if ( bstrNamespace )
+    {
+        SysFreeString(bstrNamespace);
+    }
+
+    if ( bstrDeviceID )
+    {
+        SysFreeString(bstrDeviceID);
+    }
+
+    if ( bstrClassName )
+    {
+        SysFreeString(bstrClassName);
+    }
+
+    for ( size_t iDevice = 0; iDevice < sizeof(pDevices) / sizeof(pDevices[0]); ++iDevice )
+    {
+        STDCONTROL_COMSAFE_RELEASE(pDevices[iDevice]);
+    }
+
+    STDCONTROL_COMSAFE_RELEASE(pEnumDevices);
+    STDCONTROL_COMSAFE_RELEASE(pIWbemLocator);
+    STDCONTROL_COMSAFE_RELEASE(pIWbemServices);
+
+    if ( bCleanupCOM )
+    {
+        CoUninitialize();
+    }
+
+    return bIsXinputDevice;
+}
+
 BOOL CALLBACK stdControl_EnumDevicesCallback(LPCDIDEVICEINSTANCE pdidInstance, LPVOID pContext)
 {
     J3D_UNUSED(pContext);
-    DWORD dwDevType = GET_DIDEVICE_TYPE(pdidInstance->dwDevType);
 
+    DWORD dwDevType = GET_DIDEVICE_TYPE(pdidInstance->dwDevType);
     if ( dwDevType == DI8DEVTYPE_MOUSE )
     {
         STDLOG_STATUS("Mouse:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+        return DIENUM_CONTINUE; // continue to find other devices
     }
-    else if ( dwDevType == DI8DEVTYPE_KEYBOARD )
+
+    if ( dwDevType == DI8DEVTYPE_KEYBOARD )
     {
         STDLOG_STATUS("Keyboard:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+        return DIENUM_CONTINUE; // continue to find other devices
     }
-    else if ( dwDevType == DI8DEVTYPE_JOYSTICK && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
+
+    // Check if the device is an XInput device (e.g.: xbox controller)
+    if ( stdControl_IsXInputDevice(&pdidInstance->guidProduct) )
+    {
+        STDLOG_DEBUG("Skipping XInput device:%s:%s\n", pdidInstance->tszProductName, pdidInstance->tszInstanceName);
+        return DIENUM_CONTINUE; // skip XInput devices
+    }
+
+    // Handle joystick, gamepad, and other devices
+    if ( dwDevType == DI8DEVTYPE_JOYSTICK && stdControl_numJoystickDevices < STD_ARRAYLEN(stdControl_aJoystickDevices) )
     {
         memcpy(&stdControl_aJoystickDevices[stdControl_numJoystickDevices++].dinstance, pdidInstance, sizeof(DIDEVICEINSTANCE));
 
@@ -1406,16 +1627,41 @@ size_t stdControl_GetMaxJoystickButtons(void)
         }
     }
 
+    if ( stdControl_numXInputDevices > 0 && maxButtons < 10 )
+    {
+        maxButtons = 10; // XInput devices have at least 10 buttons
+    }
+
     return maxButtons;
 }
 
 size_t stdControl_GetNumJoysticks(void)
 {
-    return stdControl_numJoystickDevices;
+    return stdControl_numJoystickDevices + stdControl_numXInputDevices; // TODO: when gamepad dedicated slots are added remove XInput devices from this count
 }
 
 const char* J3DAPI stdControl_GetJoysticDescription(int joyNum)
 {
+    if ( joyNum < 0 || joyNum >= (int)stdControl_GetNumJoysticks() )
+    {
+        return "";
+    }
+
+    if ( joyNum >= (int)stdControl_numJoystickDevices )
+    {
+        joyNum -= stdControl_numJoystickDevices;
+        if ( joyNum >= (int)stdControl_numXInputDevices || !stdControl_aXInputDevices[joyNum].bConnected )
+        {
+            return "";
+        }
+        STD_FORMAT(
+            stdControl_aStrBuf,
+            "XInput%d:Gamepad",
+            stdControl_aXInputDevices[joyNum].userIndex + 1
+        );
+        return stdControl_aStrBuf;
+    }
+
     STD_FORMAT(
         stdControl_aStrBuf,
         "%s:%s",
@@ -1446,7 +1692,15 @@ void J3DAPI stdControl_ShowMouseCursor(int bShow)
 
 int J3DAPI stdControl_IsGamePad(int joyNum)
 {
-    return GET_DIDEVICE_TYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DI8DEVTYPE_GAMEPAD;
+    // TODO: when gamepad dedicated slots are added, use those instead
+    if ( joyNum < 0 || joyNum >= (int)stdControl_GetNumJoysticks() )
+    {
+        return 0;
+    }
+
+    return joyNum > stdControl_numJoystickDevices
+        ? stdControl_aXInputDevices[joyNum - stdControl_numJoystickDevices].bIsGamepad
+        : GET_DIDEVICE_TYPE(stdControl_aJoystickDevices[joyNum].dinstance.dwDevType) == DI8DEVTYPE_GAMEPAD;
 }
 
 void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivity)
@@ -1470,4 +1724,303 @@ void J3DAPI stdControl_SetMouseSensitivity(float xSensitivity, float ySensitivit
         stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].center    = (2 * stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max + 1) / 2 - stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max;
         stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].scale     = 1.0f / (float)(stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].max - stdControl_aAxes[STDCONTROL_AID_MOUSE_Y].center);
     }
+}
+
+void stdControl_InitXInput(void)
+{
+    STDLOG_DEBUG("Initializing XInput controllers...\n");
+
+    // Initialize XInput devices
+    for ( size_t i = 0; i < XUSER_MAX_COUNT; i++ )
+    {
+        memset(&stdControl_aXInputDevices[i], 0, sizeof(StdControlXInputDevice));
+
+        XINPUT_STATE state = { 0 };
+        DWORD result = XInputGetState(i, &state);
+
+        if ( result == ERROR_SUCCESS )
+        {
+            StdControlXInputDevice* pDevice = &stdControl_aXInputDevices[i];
+            pDevice->userIndex      = i;
+            pDevice->bConnected     = true;
+            pDevice->state          = state;
+
+            // Get capabilities
+            result = XInputGetCapabilities(i, XINPUT_FLAG_GAMEPAD, &pDevice->caps);
+            if ( result == ERROR_SUCCESS )
+            {
+                pDevice->bIsGamepad = (pDevice->caps.Type == XINPUT_DEVTYPE_GAMEPAD);
+                if ( !pDevice->bIsGamepad )
+                {
+                    STDLOG_DEBUG("XInput Device %d is not a gamepad (type %d). Skipping...\n", i, pDevice->caps.Type);
+                    memset(pDevice, 0, sizeof(*pDevice));
+                    continue;
+                }
+
+                // Set default deadzones
+                pDevice->leftStickDeadZone  = (float)STDCONTROL_XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32767.0f;
+                pDevice->rightStickDeadZone = (float)STDCONTROL_XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32767.0f;
+                pDevice->triggerThreshold   = (float)STDCONTROL_XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 255.0f;
+
+                STDLOG_DEBUG("Found XInput Gamepad at user index %d\n", i);
+
+                // Register axes using existing joystick slot system
+                size_t gamepadSlot = stdControl_numJoystickDevices + stdControl_numXInputDevices; // TODO: when gamepad dedicated slots are added, use those instead
+
+                // Left stick
+                stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_X(gamepadSlot), -32768, 32767, pDevice->leftStickDeadZone);
+                stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_Y(gamepadSlot), -32768, 32767, pDevice->leftStickDeadZone);
+
+                // Right stick
+                stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RX(gamepadSlot), -32768, 32767, pDevice->rightStickDeadZone);
+                stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RY(gamepadSlot), -32768, 32767, pDevice->rightStickDeadZone);
+
+                // Triggers
+                stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_Z(gamepadSlot), 0, 255, pDevice->triggerThreshold);
+                stdControl_RegisterAxis(STDCONTROL_GET_JOYSTICK_AXIS_RZ(gamepadSlot), 0, 255, pDevice->triggerThreshold);
+
+                // Mark as gamepad axes
+                stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_X(gamepadSlot)].flags  |= STDCONTROL_AXIS_GAMEPAD;
+                stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Y(gamepadSlot)].flags  |= STDCONTROL_AXIS_GAMEPAD;
+                stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RX(gamepadSlot)].flags |= STDCONTROL_AXIS_GAMEPAD;
+                stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RY(gamepadSlot)].flags |= STDCONTROL_AXIS_GAMEPAD;
+                stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_Z(gamepadSlot)].flags  |= STDCONTROL_AXIS_GAMEPAD;
+                stdControl_aAxes[STDCONTROL_GET_JOYSTICK_AXIS_RZ(gamepadSlot)].flags |= STDCONTROL_AXIS_GAMEPAD;
+
+                stdControl_numXInputDevices++;
+            }
+        }
+    }
+
+    stdControl_lastXInputCheck = stdPlatform_GetTimeMsec();
+    STDLOG_STATUS("Total XInput gamepad controllers found: %d\n", stdControl_numXInputDevices);
+}
+
+void stdControl_ReadXInput(void)
+{
+    for ( size_t deviceIndex = 0; deviceIndex < stdControl_numXInputDevices; deviceIndex++ )
+    {
+        StdControlXInputDevice* pDevice = &stdControl_aXInputDevices[deviceIndex];
+
+        XINPUT_STATE state;
+        DWORD result = XInputGetState(pDevice->userIndex, &state);
+        if ( result == ERROR_SUCCESS )
+        {
+            if ( !pDevice->bConnected )
+            {
+                pDevice->bConnected = true;
+                STDLOG_STATUS("XInput device %d reconnected\n", pDevice->userIndex);
+            }
+
+            if ( pDevice->state.dwPacketNumber == state.dwPacketNumber )
+            {
+                // No change in state
+                continue;
+            }
+
+            // Calculate joystick slot (after DirectInput joysticks)
+            size_t joySlot = stdControl_numJoystickDevices + deviceIndex;
+
+            // Read analog sticks with deadzone
+            SHORT leftX = state.Gamepad.sThumbLX;
+            SHORT leftY = state.Gamepad.sThumbLY;
+
+            SHORT rightX = state.Gamepad.sThumbRX;
+            SHORT rightY = state.Gamepad.sThumbRY;
+
+            // Apply deadzones
+            float deadzonedLeftX  = stdControl_ApplyXInputDeadzone(leftX, pDevice->leftStickDeadZone);
+            float deadzonedLeftY  = stdControl_ApplyXInputDeadzone(leftY, pDevice->leftStickDeadZone);
+
+            float deadzonedRightX = stdControl_ApplyXInputDeadzone(rightX, pDevice->rightStickDeadZone);
+            float deadzonedRightY = stdControl_ApplyXInputDeadzone(rightY, pDevice->rightStickDeadZone);
+
+            // Set axis states using existing joystick slot system
+            stdControl_aAxisStates[STDCONTROL_GET_JOYSTICK_AXIS_X(joySlot)] = (int)deadzonedLeftX;
+            stdControl_aAxisStates[STDCONTROL_GET_JOYSTICK_AXIS_Y(joySlot)] = (int)deadzonedLeftY;
+
+            stdControl_aAxisStates[STDCONTROL_GET_JOYSTICK_AXIS_RX(joySlot)] = (int)deadzonedRightX;
+            stdControl_aAxisStates[STDCONTROL_GET_JOYSTICK_AXIS_RY(joySlot)] = (int)deadzonedRightY;
+
+            // Read triggers
+            BYTE leftTrigger  = state.Gamepad.bLeftTrigger;
+            if ( leftTrigger < STDCONTROL_XINPUT_GAMEPAD_TRIGGER_THRESHOLD )
+            {
+                leftTrigger = 0;
+            }
+
+            BYTE rightTrigger = state.Gamepad.bRightTrigger;
+            if ( rightTrigger < STDCONTROL_XINPUT_GAMEPAD_TRIGGER_THRESHOLD )
+            {
+                rightTrigger = 0;
+            }
+
+            stdControl_aAxisStates[STDCONTROL_GET_JOYSTICK_AXIS_Z(joySlot)]  = leftTrigger;
+            stdControl_aAxisStates[STDCONTROL_GET_JOYSTICK_AXIS_RZ(joySlot)] = rightTrigger;
+
+            // Read buttons using existing joystick button slots
+            WORD buttons = state.Gamepad.wButtons;
+            // Map XInput buttons to joystick button slots
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 0), ((buttons & XINPUT_GAMEPAD_A) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 1), ((buttons & XINPUT_GAMEPAD_B) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 2), ((buttons & XINPUT_GAMEPAD_X) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 3), ((buttons & XINPUT_GAMEPAD_Y) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 4), ((buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 5), ((buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 6), ((buttons & XINPUT_GAMEPAD_BACK) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 7), ((buttons & XINPUT_GAMEPAD_START) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 8), ((buttons & XINPUT_GAMEPAD_LEFT_THUMB) != 0), stdControl_curReadTime);
+            stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETBUTTON(joySlot, 9), ((buttons & XINPUT_GAMEPAD_RIGHT_THUMB) != 0), stdControl_curReadTime);
+
+            // Map D-pad to POV using existing POV slot system
+            // Treat D-pad as POV 0
+            int povState = -1;
+
+            if ( buttons & XINPUT_GAMEPAD_DPAD_UP && buttons & XINPUT_GAMEPAD_DPAD_RIGHT )
+            {
+                povState = 45 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_RIGHT && buttons & XINPUT_GAMEPAD_DPAD_DOWN )
+            {
+                povState = 135 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_DOWN && buttons & XINPUT_GAMEPAD_DPAD_LEFT )
+            {
+                povState = 225 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_LEFT && buttons & XINPUT_GAMEPAD_DPAD_UP )
+            {
+                povState = 315 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_UP )
+            {
+                povState = 0 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_RIGHT )
+            {
+                povState = 90 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_DOWN )
+            {
+                povState = 180 * DI_DEGREES;
+            }
+            else if ( buttons & XINPUT_GAMEPAD_DPAD_LEFT )
+            {
+                povState = 270 * DI_DEGREES;
+            }
+
+            // Convert POV state to individual direction buttons using existing logic
+            DWORD pov = (povState == -1) ? 0xFFFF : (DWORD)povState;
+            bool bCentred = (uint16_t)pov == 0xFFFF;
+
+            // North (Up)
+            if ( pov < 225 * DI_DEGREES || pov > 315 * DI_DEGREES || bCentred )
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 0), 0, stdControl_curReadTime);
+            }
+            else
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 0), 1, stdControl_curReadTime);
+            }
+
+            // East (Right)
+            if ( pov < 315 * DI_DEGREES && pov > 45 * DI_DEGREES || bCentred )
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 1), 0, stdControl_curReadTime);
+            }
+            else
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 1), 1, stdControl_curReadTime);
+            }
+
+            // South (Down)
+            if ( pov < 45 * DI_DEGREES || pov > 135 * DI_DEGREES || bCentred )
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 2), 0, stdControl_curReadTime);
+            }
+            else
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 2), 1, stdControl_curReadTime);
+            }
+
+            // West (Left)
+            if ( pov < 135 * DI_DEGREES || pov > 225 * DI_DEGREES || bCentred )
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 3), 0, stdControl_curReadTime);
+            }
+            else
+            {
+                stdControl_UpdateKeyState(STDCONTROL_JOYSTICK_GETPOV(joySlot, 0, 3), 1, stdControl_curReadTime);
+            }
+
+            pDevice->state = state;
+        }
+        else if ( result == ERROR_DEVICE_NOT_CONNECTED )
+        {
+            if ( pDevice->bConnected )
+            {
+                pDevice->bConnected = false;
+                STDLOG_STATUS("XInput device %d disconnected\n", pDevice->userIndex);
+            }
+        }
+    }
+}
+
+// XInput cleanup function
+void stdControl_ShutdownXInput(void)
+{
+    // Stop all vibration
+    for ( size_t i = 0; i < stdControl_numXInputDevices; i++ )
+    {
+        if ( stdControl_aXInputDevices[i].bConnected )
+        {
+            XINPUT_VIBRATION vibration = { 0, 0 };
+            XInputSetState(i, &vibration);
+        }
+    }
+
+    stdControl_numXInputDevices = 0;
+    memset(stdControl_aXInputDevices, 0, sizeof(stdControl_aXInputDevices));
+}
+
+float J3DAPI stdControl_ApplyXInputDeadzone(SHORT value, float deadzone)
+{
+    float normalizedValue = (float)value / (float)STDCONTROL_XINPUT_GAMEPAD_THUMB_MAXVALUE;
+    float absValue = fabsf(normalizedValue);
+
+    if ( absValue < deadzone )
+    {
+        return 0.0f; // Within deadzone
+    }
+
+    // Scale the value to account for deadzone
+    float sign = normalizedValue >= 0.0f ? 1.0f : -1.0f;
+    float adjustedValue = (absValue - deadzone) / (1.0f - deadzone);
+
+    return sign * adjustedValue * (float)STDCONTROL_XINPUT_GAMEPAD_THUMB_MAXVALUE;
+}
+
+// XInput vibration function
+void J3DAPI stdControl_SetXInputVibration(int controllerIndex, float leftMotor, float rightMotor)
+{
+    if ( controllerIndex < 0 || controllerIndex >= stdControl_numXInputDevices )
+    {
+        return;
+    }
+
+    if ( !stdControl_aXInputDevices[controllerIndex].bConnected )
+    {
+        return;
+    }
+
+    // Clamp values to 0.0-1.0 range
+    leftMotor  = STDMATH_CLAMP(leftMotor, 0.0f, 1.0f);
+    rightMotor = STDMATH_CLAMP(rightMotor, 0.0f, 1.0f);
+
+    XINPUT_VIBRATION vibration;
+    vibration.wLeftMotorSpeed  = (WORD)(leftMotor * 65535.0f);
+    vibration.wRightMotorSpeed = (WORD)(rightMotor * 65535.0f);
+
+    XInputSetState(controllerIndex, &vibration);
+    stdControl_aXInputDevices[controllerIndex].vibration = vibration;
 }
