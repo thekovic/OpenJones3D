@@ -14,14 +14,27 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
 option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)
+option(JONES3D_SPEEDRUN_BUILD "Enable vanilla bugs and glitches used in speedruns" OFF)
 
 # --- GAPI options ---
 # Add an option to enable DirectX 9 support. Default is ON, meaning DirectX 6 is used.
 option(JONES3D_USE_DIRECTX9 "Build with DirectX 9 support" ON)
+#---------------------
 
 if(JONES3D_QOL_IMPROVEMENTS)
     message(STATUS "QOL improvements enabled")
-    set(J3D_QOL_IMPROVEMENTS on)
+    set(J3D_QOL_IMPROVEMENTS ON)
+else()
+    # Legacy build, enable the speedrun build option to restore all vanilla engine quirks and bugs
+    set(JONES3D_SPEEDRUN_BUILD ON)
+endif()
+
+if (JONES3D_SPEEDRUN_BUILD)  
+    message(STATUS "Speedrun build enabled")
+    set(J3D_SPEEDRUN_BUILD on)
+    if (JONES3D_QOL_IMPROVEMENTS)
+      set(JONES3D_BUILD_SUFFIX "-sr") # Add '-sr' version suffix when not legacy build
+    endif()
 endif()
 
 if(JONES3D_USE_DIRECTX9)

@@ -1986,15 +1986,16 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                         }
                     }
 
-                #ifdef J3D_QOL_IMPROVEMENTS
+                #ifdef J3D_SPEEDRUN_BUILD
+                    // Altered: Moved to after above player check
+                    sithPhysics_ResetThingMovement(pThing);
+                #else
                     // Movement must not be reset if the player is falling
                     // as it will cause the falling velocity to be reset 
                     // making it possible to fall from high places without taking damage
                     if ( pThing->moveStatus != SITHPLAYERMOVE_FALLING ) {
                         sithPhysics_ResetThingMovement(pThing);
                     }
-                #else
-                    sithPhysics_ResetThingMovement(pThing); // Altered: Moved to after above player check
                 #endif
 
                     break;

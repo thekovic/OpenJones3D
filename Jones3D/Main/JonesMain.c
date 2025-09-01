@@ -2740,6 +2740,9 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
 {
     J3D_UNUSED(wParam);
 
+    // Added: Adjust window title to aid new user support.
+    SetWindowText(hDlg, "Welcome to OpenJones3D");
+
     // Populate display driver combo box list
     HWND hDlgItem = GetDlgItem(hDlg, 1030); // Display driver
     for ( size_t i = 0; i < JonesMain_pStartupDisplayEnv->numInfos; ++i )
