@@ -184,7 +184,6 @@ bool J3DAPI stdShader_Open()
         return false;
     }
 
-    stdShader_numLights   = 0;
     stdShader_maxVsParams = pDevice->d3dDesc.MaxVertexShaderConst - STDSHADERDX9_VS_CONSTANTS_START_REGISTER; // Typically 256
 
     stdShader_bOpen = true;
