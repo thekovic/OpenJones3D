@@ -398,10 +398,11 @@ void J3DAPI sithRender_BuildVisibleSurface(SithSurface* pSurface)
             int vertIdx = pSurface->face.aVertices[i];
             if ( sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] != sithMain_g_curRenderTick )
             {
+                // Transform vertices to view space
                 rdMatrix_TransformPoint34(
                     &sithWorld_g_pCurrentWorld->aTransformedVertices[vertIdx],
                     &sithWorld_g_pCurrentWorld->aVertices[vertIdx],
-                    &rdCamera_g_pCurCamera->orient
+                    &rdCamera_g_pCurCamera->viewMatrix
                 );
                 sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] = sithMain_g_curRenderTick;
             }
@@ -703,7 +704,7 @@ void sithRender_RenderSectors(void)
             }
             else
             {
-                // Rotate surface to camera orientation
+                // Transform vertices to view space (camera space)
                 if ( pSurf->renderTick != sithMain_g_curRenderTick )
                 {
                     for ( size_t i = 0; i < pSurf->face.numVertices; ++i )
@@ -714,7 +715,7 @@ void sithRender_RenderSectors(void)
                             rdMatrix_TransformPoint34(
                                 &sithWorld_g_pCurrentWorld->aTransformedVertices[vertIdx],
                                 &sithWorld_g_pCurrentWorld->aVertices[vertIdx],
-                                &rdCamera_g_pCurCamera->orient
+                                &rdCamera_g_pCurCamera->viewMatrix
                             );
                             sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] = sithMain_g_curRenderTick;
                         }
@@ -993,8 +994,8 @@ void sithRender_RenderThings(void)
                 && ((sithCamera_g_pCurCamera->type & (SITHCAMERA_ORBITAL | SITHCAMERA_UNKNOWN_40 | SITHCAMERA_IDLE | SITHCAMERA_UNKNOWN_10 | SITHCAMERA_CINEMATIC | SITHCAMERA_EXTERNAL)) != 0
                     || pCurThing != sithCamera_g_pCurCamera->pPrimaryFocusThing) )
             {
-                // Transform thing pos to camera orient
-                rdMatrix_TransformPoint34(&pCurThing->transformedPos, &pCurThing->pos, &rdCamera_g_pCurCamera->orient);
+                // Transform thing pos to view (camera) space
+                rdMatrix_TransformPoint34(&pCurThing->transformedPos, &pCurThing->pos, &rdCamera_g_pCurCamera->viewMatrix);
 
                 rdThing* prdThing = &pCurThing->renderData;
                 float radius = 0.0f; // Added: Init to 0;
@@ -1017,8 +1018,8 @@ void sithRender_RenderThings(void)
                             radius = prdThing->data.pModel3->size;
                         }
 
-                        // Set sector point light 
-                        // 
+                        // Set sector point light
+                        //
                         // TODO [bug]: sithRender_numSectorPointLights is never incremented, but changing this breaks thin illumination as the light will affect also things from other sectors
                         //             Maybe just a temp var can be used for light can be used instead and we can then increase limitation of max thing light?
                         rdVector_Copy4(&sithRender_aSectorPointLights[sithRender_numSectorPointLights].color, &pSector->light.color);
@@ -1055,8 +1056,7 @@ void sithRender_RenderThings(void)
                 else
                 {
                     // Render only if thing is inside frustum or intersects with frustum
-                    RdFrustumCull cull = rdClip_SphereInFrustrum(pSector->pClipFrustum, &pCurThing->transformedPos, radius);
-                    prdThing->frustumCull = cull;
+                    prdThing->frustumCull = rdClip_SphereInFrustrum(pSector->pClipFrustum, &pCurThing->transformedPos, radius);
                     if ( prdThing->frustumCull != RDFRUSTUMCULL_OUTSIDE )
                     {
                         bRender = true;
@@ -1181,7 +1181,8 @@ void sithRender_RenderAlphaAdjoins(void)
 
         rdCamera_SetAmbientLight(rdCamera_g_pCurCamera, &ambientLight);
 
-        if ( pSurf->renderTick != sithMain_g_curRenderTick ) // transform surface verts to camera space if not done for current frame yet
+        // Transform vertices to view (camera) space
+        if ( pSurf->renderTick != sithMain_g_curRenderTick )
         {
             for ( size_t vertNum = 0; vertNum < pSurf->face.numVertices; ++vertNum )
             {
@@ -1191,7 +1192,7 @@ void sithRender_RenderAlphaAdjoins(void)
                     rdMatrix_TransformPoint34(
                         &sithWorld_g_pCurrentWorld->aTransformedVertices[vertIdx],
                         &sithWorld_g_pCurrentWorld->aVertices[vertIdx],
-                        &rdCamera_g_pCurCamera->orient
+                        &rdCamera_g_pCurCamera->viewMatrix
                     );
                     sithWorld_g_pCurrentWorld->aVertexRenderTickIds[vertIdx] = sithMain_g_curRenderTick;
                 }

@@ -17,7 +17,7 @@
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
-rdVector3 rdPolyline_aVerticesCache[4];
+rdVector3 rdPolyline_aView[4];
 
 void rdPolyline_InstallHooks(void)
 {
@@ -30,9 +30,7 @@ void rdPolyline_InstallHooks(void)
 }
 
 void rdPolyline_ResetGlobals(void)
-{
-    // memset(&rdPolyline_aVerticesCache, 0, sizeof(rdPolyline_aVerticesCache));
-}
+{}
 
 rdPolyline* J3DAPI rdPolyline_New(const char* pName, const char* pMatFilename, const char* pMatFilename2, float length, float baseRadius, float tipRadius, rdGeometryMode geoMode, rdLightMode lightMode, const rdVector4* pColor)
 {
@@ -163,19 +161,21 @@ int J3DAPI rdPolyline_Draw(const rdThing* pLine, const rdMatrix34* pOrient)
 {
     rdPolyline* pPolyline = pLine->data.pPolyline;
 
-    rdMatrix34 mat;
-    rdMatrix_Multiply34(&mat, &rdCamera_g_pCurCamera->orient, pOrient);
+    // Combine polyline model matrix with camera view matrix
+    rdMatrix34 viewMatrix;
+    rdMatrix_Multiply34(&viewMatrix, &rdCamera_g_pCurCamera->viewMatrix, pOrient);
 
     rdVector3 vecFwd;
     vecFwd.x = 0.0f;
     vecFwd.y = pPolyline->length;
     vecFwd.z = 0.0f;
 
+    // Transform polyline end point to view space
     rdVector3 vecEnd;
-    rdMatrix_TransformPoint34(&vecEnd, &vecFwd, &mat);
+    rdMatrix_TransformPoint34(&vecEnd, &vecFwd, &viewMatrix);
 
-    float deX   = vecEnd.x - mat.dvec.x;
-    float deZ   = vecEnd.z - mat.dvec.z;
+    float deX   = vecEnd.x - viewMatrix.dvec.x;
+    float deZ   = vecEnd.z - viewMatrix.dvec.z;
     float xzLen = sqrtf(deX * deX + deZ * deZ);
 
     float sinv  = -deX / xzLen;
@@ -195,27 +195,27 @@ int J3DAPI rdPolyline_Draw(const rdThing* pLine, const rdMatrix34* pOrient)
     float cosv;
     stdMath_SinCos(angle, &sinv, &cosv);
 
-    rdPolyline_aVerticesCache[0].x = pPolyline->tipRadius * cosv - xzLen * sinv + mat.dvec.x;
-    rdPolyline_aVerticesCache[0].y = vecEnd.y;
-    rdPolyline_aVerticesCache[0].z = pPolyline->tipRadius * sinv + xzLen * cosv + mat.dvec.z;
+    rdPolyline_aView[0].x = pPolyline->tipRadius * cosv - xzLen * sinv + viewMatrix.dvec.x;
+    rdPolyline_aView[0].y = vecEnd.y;
+    rdPolyline_aView[0].z = pPolyline->tipRadius * sinv + xzLen * cosv + viewMatrix.dvec.z;
 
-    rdPolyline_aVerticesCache[1].x = -pPolyline->tipRadius * cosv - xzLen * sinv + mat.dvec.x;
-    rdPolyline_aVerticesCache[1].y = vecEnd.y;
-    rdPolyline_aVerticesCache[1].z = -pPolyline->tipRadius * sinv + xzLen * cosv + mat.dvec.z;
+    rdPolyline_aView[1].x = -pPolyline->tipRadius * cosv - xzLen * sinv + viewMatrix.dvec.x;
+    rdPolyline_aView[1].y = vecEnd.y;
+    rdPolyline_aView[1].z = -pPolyline->tipRadius * sinv + xzLen * cosv + viewMatrix.dvec.z;
 
-    rdPolyline_aVerticesCache[2].x = -pPolyline->baseRadius * cosv - 0.0f * sinv + mat.dvec.x;
-    rdPolyline_aVerticesCache[2].y = mat.dvec.y;
-    rdPolyline_aVerticesCache[2].z =  -pPolyline->baseRadius * sinv + 0.0f * cosv + mat.dvec.z;
+    rdPolyline_aView[2].x = -pPolyline->baseRadius * cosv - 0.0f * sinv + viewMatrix.dvec.x;
+    rdPolyline_aView[2].y = viewMatrix.dvec.y;
+    rdPolyline_aView[2].z = -pPolyline->baseRadius * sinv + 0.0f * cosv + viewMatrix.dvec.z;
 
-    rdPolyline_aVerticesCache[3].x = pPolyline->baseRadius * cosv - 0.0f * sinv + mat.dvec.x;
-    rdPolyline_aVerticesCache[3].y = mat.dvec.y;
-    rdPolyline_aVerticesCache[3].z = pPolyline->baseRadius * sinv + 0.0f * cosv + mat.dvec.z;
+    rdPolyline_aView[3].x = pPolyline->baseRadius * cosv - 0.0f * sinv + viewMatrix.dvec.x;
+    rdPolyline_aView[3].y = viewMatrix.dvec.y;
+    rdPolyline_aView[3].z = pPolyline->baseRadius * sinv + 0.0f * cosv + viewMatrix.dvec.z;
 
-    rdPolyline_DrawFace(pLine, &pPolyline->face, rdPolyline_aVerticesCache, pPolyline->apUVs);
+    rdPolyline_DrawFace(pLine, &pPolyline->face, rdPolyline_aView, pPolyline->apUVs);
     return 1;
 }
 
-void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const rdVector3* aVerts, const rdVector2* aTVerts)
+void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const rdVector3* aVerts, const rdVector2* aTVerts) // aVerts should be transformed to view space
 {
     J3D_UNUSED(pLine);
     rdCacheProcEntry* pPoly = rdCache_GetAlphaProcEntry();
@@ -225,6 +225,7 @@ void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const
         return;
     }
 
+    // Transform verts to screen space and assign to poly
     if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aVerts, aTVerts, NULL, NULL) )
     {
         // Polyline face is fully outside the camera frustum

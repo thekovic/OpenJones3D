@@ -19,7 +19,7 @@
 #include <std/General/stdUtil.h>
 
 static rdVector3 sithShadow_aVertices[4];
-static rdVector3 sithShadow_aTransformedVertices[STD_ARRAYLEN(sithShadow_aVertices)];
+static rdVector3 sithShadow_aView[STD_ARRAYLEN(sithShadow_aVertices)];
 static const rdVector2 sithShadow_aShadowUVs[STD_ARRAYLEN(sithShadow_aVertices)] = { { 0.0f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f } };
 
 void sithShadow_InstallHooks(void)
@@ -265,11 +265,13 @@ void J3DAPI sithShadow_DrawShadow(const rdMatrix34* orient, float size, float sc
     sithShadow_aVertices[3].y = sithShadow_aVertices[1].x;
     sithShadow_aVertices[3].z = 0.0f;
 
+    // Rotate vertices to orient model matrix (world space) and transform to view (camera) space
     rdMatrix34 tmat;
-    rdMatrix_Multiply34(&tmat, &rdCamera_g_pCurCamera->orient, orient);
-    rdMatrix_TransformPointList34(&tmat, sithShadow_aVertices, sithShadow_aTransformedVertices, STD_ARRAYLEN(sithShadow_aTransformedVertices));
+    rdMatrix_Multiply34(&tmat, &rdCamera_g_pCurCamera->viewMatrix, orient);
+    rdMatrix_TransformPointList34(&tmat, sithShadow_aVertices, sithShadow_aView, STD_ARRAYLEN(sithShadow_aView));
 
-    rdClip_VerticesToPlane(pPoly, sithShadow_aTransformedVertices, sithShadow_aShadowUVs, STD_ARRAYLEN(sithShadow_aShadowUVs));
+    // Project vertices to screen space and assign to poly
+    rdClip_VerticesToPlane(pPoly, sithShadow_aView, sithShadow_aShadowUVs, STD_ARRAYLEN(sithShadow_aShadowUVs));
 
     pPoly->lightingMode = RD_LIGHTING_GOURAUD;
     pPoly->flags        = RD_FF_ZWRITE_DISABLED | RD_FF_TEX_CLAMP_Y | RD_FF_TEX_CLAMP_X | RD_FF_TEX_TRANSLUCENT;
@@ -334,9 +336,11 @@ void J3DAPI sithShadow_DrawWalkShadow(float size, float scale, const rdVector3* 
     sithShadow_aVertices[3].y = rleg->y - sy + ey;
     sithShadow_aVertices[3].z = rleg->z;
 
-    rdMatrix_TransformPointList34(&rdCamera_g_pCurCamera->orient, sithShadow_aVertices, sithShadow_aTransformedVertices, STD_ARRAYLEN(sithShadow_aTransformedVertices));
+    // Transform vertices to view space
+    rdMatrix_TransformPointList34(&rdCamera_g_pCurCamera->viewMatrix, sithShadow_aVertices, sithShadow_aView, STD_ARRAYLEN(sithShadow_aView));
 
-    rdClip_VerticesToPlane(pPoly, sithShadow_aTransformedVertices, sithShadow_aShadowUVs, STD_ARRAYLEN(sithShadow_aShadowUVs));
+    // Project vertices to screen space and assign to poly
+    rdClip_VerticesToPlane(pPoly, sithShadow_aView, sithShadow_aShadowUVs, STD_ARRAYLEN(sithShadow_aShadowUVs));
 
     pPoly->lightingMode = RD_LIGHTING_GOURAUD;
     pPoly->flags        = RD_FF_ZWRITE_DISABLED | RD_FF_TEX_CLAMP_Y | RD_FF_TEX_CLAMP_X | RD_FF_TEX_TRANSLUCENT;

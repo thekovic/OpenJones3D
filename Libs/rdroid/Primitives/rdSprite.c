@@ -26,9 +26,7 @@ void rdSprite_InstallHooks(void)
 }
 
 void rdSprite_ResetGlobals(void)
-{
-    //memset(&rdSprite_aView, 0, sizeof(rdSprite_aView));
-}
+{}
 
 rdSprite3* J3DAPI rdSprite_New(int type, const char* pName, const char* pMatNam, float width, float height, rdGeometryMode geomode, rdLightMode lightmode, const rdVector4* pExtraLight, const rdVector3* pOffset)
 {
@@ -175,7 +173,8 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
     }
     else
     {
-        rdMatrix_TransformPoint34(&tpos, &orient->dvec, &rdCamera_g_pCurCamera->orient);
+        // Transform position to view space
+        rdMatrix_TransformPoint34(&tpos, &orient->dvec, &rdCamera_g_pCurCamera->viewMatrix);
     }
 
     RdFrustumCull frustumCull = prdThing->frustumCull;
@@ -281,13 +280,15 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
     {
         for ( size_t i = 0; i < 4; ++i )
         {
+            // Transform matrix to view space
             rdVector3 tvec;
-            rdMatrix_TransformPoint34(&tvec, (const rdVector3*)&rdSprite_aView.rvec + i, &rdCamera_g_pCurCamera->orient);
+            rdMatrix_TransformPoint34(&tvec, (const rdVector3*)&rdSprite_aView.rvec + i, &rdCamera_g_pCurCamera->viewMatrix);
             rdVector_Copy3(&rdSprite_aView.rvec + i, &tvec);
         }
     }
 
-    if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, &pSprite3->face, &rdSprite_aView.rvec, pSprite3->aTexVerts, 0, 0) )
+    // Project vertices to screen space and assign them to pPoly
+    if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, &pSprite3->face, &rdSprite_aView.rvec, pSprite3->aTexVerts, NULL, NULL) )
     {
         // Poly is fully outside the camera frustum
         return 0;

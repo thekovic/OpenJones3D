@@ -2682,7 +2682,7 @@ typedef struct sSithCamera
     SithSector* pSector;
     rdVector3 offset;
     rdVector3 vecUnknown1;
-    rdMatrix34 orient;
+    rdMatrix34 orient;    // camera world matrix
     rdVector3 lookPos;
     rdVector3 lookPYR;
     rdCamera rdCamera;

@@ -357,9 +357,9 @@ int J3DAPI rdCamera_SetFrustrum(rdCamera* pCamera, rdClipFrustum* pFrustrum, int
 
 void J3DAPI rdCamera_Update(const rdMatrix34* orient)
 {
-    rdMatrix_InvertOrtho34(&rdCamera_g_pCurCamera->orient, orient); // Transform to view matrix (i.e.: inverse of orient)
-    memcpy(&rdCamera_g_camMatrix, orient, sizeof(rdCamera_g_camMatrix)); // Copy camera transformation matrix
-    rdMatrix_ExtractAngles34(&rdCamera_g_camMatrix, &rdCamera_g_camPYR);
+    rdMatrix_InvertOrtho34(&rdCamera_g_pCurCamera->viewMatrix, orient);  // Transform to view matrix (i.e.: inverse of orient)
+    memcpy(&rdCamera_g_camMatrix, orient, sizeof(rdCamera_g_camMatrix)); // Copy camera model matrix
+    rdMatrix_ExtractAngles34(&rdCamera_g_camMatrix, &rdCamera_g_camPYR); // Set camera pitch, yaw, roll from world matrix
 }
 
 void J3DAPI rdCamera_OrthoProject(rdVector3* pDestVertex, const rdVector3* pSrcVertex)

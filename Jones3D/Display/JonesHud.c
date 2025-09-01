@@ -71,7 +71,7 @@ static int JonesHud_hudState = 0;
 static float JonesHud_nearClipPlane  = 0.0f;
 static rdCamera* JonesHud_pHudCamera = NULL;
 static rdCanvas* JonesHud_pHudCanvas = NULL;
-static rdMatrix34 JonesHud_camViewMatrix = { 0 };
+static rdMatrix34 JonesHud_camMatrix = { 0 }; // camera world matrix
 
 static size_t JonesHud_msecTime = 0;
 static size_t JonesHud_msecDeltaTime = 0;
@@ -475,11 +475,11 @@ int JonesHud_Open(void)
     rdCamera* pCurCamera = rdCamera_g_pCurCamera;
     rdCamera_SetCurrent(JonesHud_pHudCamera);
 
-    rdMatrix_Identity34(&JonesHud_camViewMatrix);
-    rdMatrix_PostRotate34(&JonesHud_camViewMatrix, &JonesHud_camViewPyr);
-    JonesHud_camViewMatrix.dvec = JonesHud_camViewPos;
+    rdMatrix_Identity34(&JonesHud_camMatrix);
+    rdMatrix_PostRotate34(&JonesHud_camMatrix, &JonesHud_camViewPyr);
+    JonesHud_camMatrix.dvec = JonesHud_camViewPos;
 
-    rdCamera_Update(&JonesHud_camViewMatrix);
+    rdCamera_Update(&JonesHud_camMatrix);
     JonesHud_nearClipPlane = JonesHud_pHudCamera->pFrustum->nearPlane + 1.0f;// probably unused
 
     // Restore previous camera
@@ -717,7 +717,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
             // Change cur camera to HUD camera
             rdCamera* pCurCam = rdCamera_g_pCurCamera;
             rdCamera_SetCurrent(JonesHud_pHudCamera);
-            rdCamera_Update(&JonesHud_camViewMatrix);
+            rdCamera_Update(&JonesHud_camMatrix);
 
             if ( !JonesHud_RenderFadeHealthIndicator(JonesHud_bFadeHealthHUD) )
             {
@@ -2566,8 +2566,9 @@ void J3DAPI JonesHud_RenderMenuItem(JonesHudMenuItem* pItem)
                 orient.dvec.y = pos.y;
                 orient.dvec.z = pos.z;
 
+                // Transform position to view space (rotated for orient [world space])
                 rdMatrix34 tmat;
-                rdMatrix_Multiply34(&tmat, &orient, &rdCamera_g_pCurCamera->orient);
+                rdMatrix_Multiply34(&tmat, &orient, &rdCamera_g_pCurCamera->viewMatrix);
                 rdCamera_PerspProject(&pos, &tmat.dvec);
 
                 rdFontColor fontColor;
@@ -4265,10 +4266,10 @@ int J3DAPI JonesHud_DrawCredits(int bEndCredits, tSoundChannelHandle hSndChannel
     else if ( JonesHud_bSkipUpdateCredits // At credits end
         && !JonesHud_bEndingCredits
         && (!JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
-        || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
+            || !JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
             || JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx]
             && JonesHud_apCreditsMats[JonesHud_creditsCurMatIdx + 1]
-                && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
+            && (float)(msecCurTime - JonesHud_msecCreditsFadeStart) >= 1000.0f) )
     {
         if ( hSndChannel )
         {

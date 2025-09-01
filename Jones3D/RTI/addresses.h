@@ -448,7 +448,7 @@
 #define JonesHud_indScale_ADDR 0x005543B8
 #define JonesHud_curCelNum_ADDR 0x005543BC
 #define JonesHud_msecTime_ADDR 0x005543C0
-#define JonesHud_camViewMatrix_ADDR 0x005543C8
+#define JonesHud_camMatrix_ADDR 0x005543C8
 #define JonesHud_pCreditsFont2_ADDR 0x005543F8
 #define JonesHud_aSlectedNdsFilePath_ADDR 0x00554400
 #define JonesHud_rootMenuItemId_ADDR 0x00554480

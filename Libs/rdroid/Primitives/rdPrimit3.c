@@ -21,15 +21,18 @@ void rdPrimit3_ResetGlobals(void)
 
 int J3DAPI rdPrimit3_DrawPoint(rdVector3* pPoint, int32_t* pPPoint, uint32_t color)
 {
+     // Transform point to view space
     rdVector3 tpoint;
-    rdMatrix_TransformPoint34(&tpoint, pPoint, &rdCamera_g_pCurCamera->orient);
+    rdMatrix_TransformPoint34(&tpoint, pPoint, &rdCamera_g_pCurCamera->viewMatrix);
     if ( !rdClip_Point3(rdCamera_g_pCurCamera->pFrustum, &tpoint) )
     {
         return 0;
     }
 
+    // Project point to screen space
     rdVector3 ppoint;
     rdCamera_g_pCurCamera->pfProject(&ppoint, &tpoint);
+
     int32_t x = (int32_t)ppoint.x;
     int32_t y = (int32_t)ppoint.y;
     if ( pPPoint )
@@ -55,12 +58,13 @@ int J3DAPI rdPrimit3_DrawPoint(rdVector3* pPoint, int32_t* pPPoint, uint32_t col
 
 int J3DAPI rdPrimit3_DrawClippedLine(rdVector3* pPoint1, rdVector3* pPoint2, uint32_t color)
 {
-    rdVector3 ppoint2;
-    rdVector3 ppoint1;
-    rdVector3 tpoint2;
-    rdVector3 tpoint1;
-    rdMatrix_TransformPoint34(&tpoint1, pPoint1, &rdCamera_g_pCurCamera->orient);
-    rdMatrix_TransformPoint34(&tpoint2, pPoint2, &rdCamera_g_pCurCamera->orient);
+    // Transform points to view space
+    rdVector3 tpoint2, tpoint1;
+    rdMatrix_TransformPoint34(&tpoint1, pPoint1, &rdCamera_g_pCurCamera->viewMatrix);
+    rdMatrix_TransformPoint34(&tpoint2, pPoint2, &rdCamera_g_pCurCamera->viewMatrix);
+
+    // Project points to screen space
+    rdVector3 ppoint1, ppoint2;
     rdCamera_g_pCurCamera->pfProject(&ppoint1, &tpoint1);
     rdCamera_g_pCurCamera->pfProject(&ppoint2, &tpoint2);
     return rdPrimit2_DrawClippedLine2(ppoint1.x, ppoint1.y, ppoint2.x, ppoint2.y, color);
@@ -68,14 +72,16 @@ int J3DAPI rdPrimit3_DrawClippedLine(rdVector3* pPoint1, rdVector3* pPoint2, uin
 
 void J3DAPI rdPrimit3_DrawClippedCircle(const rdVector3* pPos, float radius, float step, uint32_t color, uint32_t pattern)
 {
+    // Transform center to view space
     rdVector3 center;
-    rdMatrix_TransformPoint34(&center, pPos, &rdCamera_g_pCurCamera->orient);
+    rdMatrix_TransformPoint34(&center, pPos, &rdCamera_g_pCurCamera->viewMatrix);
 
     if ( center.y > 0.0f )
     {
         rdVector3 circlePoint = center;
         circlePoint.x += radius;
 
+        // Project center and point to screen space
         rdVector3 projCenter, projCirclePoint;
         rdCamera_g_pCurCamera->pfProject(&projCenter, &center);
         rdCamera_g_pCurCamera->pfProject(&projCirclePoint, &circlePoint);

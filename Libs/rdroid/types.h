@@ -325,7 +325,7 @@ typedef struct srdCamera
 {
     rdCameraProjType projectType;
     rdCanvas* pCanvas;
-    rdMatrix34 orient;
+    rdMatrix34 viewMatrix; // Camera view matrix (for converting world to view space)
     float fov;
     float focalLength;
     float aspectRatio;

@@ -2337,7 +2337,7 @@
 #define sithIntersect_aSphereHitIndices_ADDR 0x0053C440
 #define sithDSS_aPuppetCallbacks_ADDR 0x0053C7A0
 #define sithShadow_aShadowUVs_ADDR 0x0053C9F8
-#define sithShadow_aTransformedVertices_ADDR 0x0059C180
+#define sithShadow_aView_ADDR 0x0059C180
 #define sithShadow_aVertices_ADDR 0x0059C1B0
 #define sithCog_aCogLinkSectors_ADDR 0x005557D8
 #define sithCog_aThingLinks_ADDR 0x005577D8
