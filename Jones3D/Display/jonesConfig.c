@@ -4722,37 +4722,6 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     // Default to Run option
     CheckDlgButton(hDlg, 1202, jonesConfig_gamePlayOptions_bDefaultRun);// CB default run
 
-    // Added: Check box "High Poly Objects"
-    // Get the position of the base checkbox
-    RECT rectCBShowText;
-    GetWindowRect(hCBShowText, &rectCBShowText);
-
-    // Convert screen coordinates to client coordinates
-    POINT pt = { rectCBShowText.left, rectCBShowText.top };
-    ScreenToClient(hDlg, &pt);
-
-    // Calculate the position for the new checkbox
-    int x = pt.x;
-    int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + 14;
-
-    // Create the Hi-Poly checkbox
-    HWND hCBHiPoly = CreateWindow(
-        "BUTTON",               // Class name for button/checkbox
-        "JONES_STR_HIPOLY",     // Text displayed on the checkbox
-        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-        x,
-        y,
-        150,                   // Width
-        20,                    // Height
-        hDlg,                  // Parent window handle (the dialog)
-        (HMENU)1053,           // Control ID
-        GetModuleHandle(NULL), // Instance handle
-        NULL                   // Additional creation config
-    );
-    J3D_UNUSED(hCBHiPoly);
-
-    CheckDlgButton(hDlg, 1053, sithModel_IsHiPolyEnabled());
-
     // Difficulty slider and text
     HWND hDifSlider = GetDlgItem(hDlg, 1050); // Difficulty slider control
 
@@ -4801,27 +4770,6 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
         HWND  hDifText = GetDlgItem(hDlg, 1215); // Difficulty text control
         SetWindowText(hDifText, pDifficultyStr);
     }
-
-
-    // Added: Resize dialog to fit in new check box
-    RECT rectDlg;
-    GetWindowRect(hDlg, &rectDlg);
-    SetWindowPos(hDlg, NULL, 0, 0, rectDlg.right - rectDlg.left, (rectDlg.bottom - rectDlg.top) + 28, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-
-    // Added: Move OK & Cancel buttons down
-    HWND hBtnOk     = GetDlgItem(hDlg, 1);
-    RECT rectBtnOk;
-    GetWindowRect(hBtnOk, &rectBtnOk);
-    POINT ptBtnOk = { rectBtnOk.left, rectBtnOk.top + (rectBtnOk.bottom - rectBtnOk.top) / 2 + 14 };
-    ScreenToClient(hDlg, &ptBtnOk);
-    SetWindowPos(hBtnOk, NULL, ptBtnOk.x, ptBtnOk.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
-
-    HWND hBtnCancel = GetDlgItem(hDlg, 2);
-    RECT rectBtnCancel;
-    GetWindowRect(hBtnCancel, &rectBtnCancel);
-    POINT ptBtnCancel = { rectBtnCancel.left, rectBtnCancel.top + (rectBtnCancel.bottom - rectBtnCancel.top) / 2 + 14 };
-    ScreenToClient(hDlg, &ptBtnCancel);
-    SetWindowPos(hBtnCancel, NULL, ptBtnCancel.x, ptBtnCancel.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
     return 1;
 }
@@ -4873,23 +4821,6 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
         else
         {
             sithControl_g_controlOptions &= ~0x02;
-        }
-
-        // Added
-        // Get & save HiPoly option
-        int bCurBHiPoly = sithModel_IsHiPolyEnabled();
-
-        int bHiPoly = IsDlgButtonChecked(hDlg, 1053);
-        sithModel_EnableHiPoly(bHiPoly);
-        wuRegistry_SaveIntEx("HiPoly", bHiPoly);
-
-        if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
-        {
-            const char* pNoteStr = jonesString_GetString("JONES_STR_HIPOLYGO");
-            if ( pNoteStr ) {
-                pNoteStr = "You must quit and restart the game for the high poly option to take effect.";
-            }
-            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_GMPLY_OPTS", pNoteStr, 137);
         }
 
         // Close dialog
@@ -7879,6 +7810,13 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
     SendMessage(hFogSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, (LPARAM)sithRender_g_fogDensity);
     SendMessage(hFogSliderCtrl, TBM_SETPAGESIZE, 0, 5u);
 
+    // Added
+    // Enable and init  HiPoly check button
+    HWND hHiPolyBtn = GetDlgItem(hDlg, 1052);
+    EnableWindow(hHiPolyBtn, 1);
+    ShowWindow(hHiPolyBtn, 1);
+    CheckDlgButton(hDlg, 1052, sithModel_IsHiPolyEnabled());
+
     SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
     return 1;
 }
@@ -8014,6 +7952,25 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             pSettings->filter = jonesConfig_advanceDisplaySettings_curFilterMode;
             jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
 
+            // Added
+            // Get & Save HiPoly option
+            int bCurBHiPoly = sithModel_IsHiPolyEnabled();
+
+            int bHiPoly = IsDlgButtonChecked(hDlg, 1052);
+            sithModel_EnableHiPoly(bHiPoly);
+            wuRegistry_SaveIntEx("HiPoly", bHiPoly);
+
+            if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
+            {
+                const char* pNoteStr = jonesString_GetString("JONES_STR_HIPOLYGO");
+                if ( !pNoteStr )
+                {
+                    pNoteStr = "You must quit and restart the game for the high poly option to take effect.";
+                }
+                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_GMPLY_OPTS", pNoteStr, 136); // 136 - TV icon
+            }
+
+            // Close dialog
             EndDialog(hDlg, ctrlID);
         } break;
 

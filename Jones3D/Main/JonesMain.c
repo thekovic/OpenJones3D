@@ -2641,7 +2641,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.lightMode = wuRegistry_GetInt("Lighting Mode", RD_LIGHTING_GOURAUD);
 
     int bHiPoly = wuRegistry_GetIntEx("HiPoly", 1); // Changed: Enable by default, was disabled
-    sithModel_EnableHiPoly(bHiPoly);
+    sithModel_EnableHiPoly(bHiPoly); // Added
 
     JonesMain_pStartupDisplayEnv = pDisplayEnv;
 
