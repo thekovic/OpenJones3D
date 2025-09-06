@@ -2823,16 +2823,30 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     hDlgItem = GetDlgItem(hDlg, 1012);
     itemIdx = ComboBox_AddString(hDlgItem, "None");
     ComboBox_SetItemData(hDlgItem, itemIdx, 0);
+    if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_NONE )
+    {
+        selectedItemIdx = itemIdx;
+    }
 
     itemIdx = ComboBox_AddString(hDlgItem, "Bilinear");
     ComboBox_SetItemData(hDlgItem, itemIdx, 1);
-    ComboBox_SetCurSel(hDlgItem, itemIdx);// Select bilinear as defult
+    if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_BILINEAR )
+    {
+        selectedItemIdx = itemIdx;
+    }
 
     itemIdx = ComboBox_AddString(hDlgItem, "Trilinear");
     ComboBox_SetItemData(hDlgItem, itemIdx, 2);
+    if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_TRILINEAR )
+    {
+        selectedItemIdx = itemIdx;
+    }
 
-    // Added
-    // Enable and init  HiPoly check button
+    // Altered: Select filter mode from config. Original bilinear mode was always selected
+    ComboBox_SetCurSel(hDlgItem, selectedItemIdx);
+
+   // Added
+   // Enable and init  HiPoly check button
     hDlgItem = GetDlgItem(hDlg, 1051);
     EnableWindow(hDlgItem, 1);
     ShowWindow(hDlgItem, 1);
