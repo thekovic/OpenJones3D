@@ -27,7 +27,6 @@ typedef DDCAPS_DX6 tSysDisplayDeviceCaps;
 typedef IDirectDraw4 tSysDisplayDevice;
 
 typedef D3DDEVICEDESC tSysDevice3DDesc;
-typedef IDirectDraw4 tSysDevice3D;
 typedef IDirect3DDevice3 tSysDevice3D;
 
 typedef DDPIXELFORMAT tSysPixelFormat;
@@ -49,6 +48,8 @@ typedef DWORD DPID;
      D3DCOLOR_XRGB((DWORD)((r)*255.f),(DWORD)((g)*255.f),(DWORD)((b)*255.f))
 
 typedef D3DCAPS9 tSysDisplayDeviceCaps;
+typedef IDirect3DDevice9 tSysDisplayDevice;
+
 typedef D3DCAPS9 tSysDevice3DDesc;
 typedef IDirect3DDevice9 tSysDevice3D;
 
@@ -521,6 +522,7 @@ typedef struct sDevice3D
     int unknown215;
     int unknown216;
     int unknown217;
+    bool bAnisotropicFilteringSupported; // Added
 } Device3D;
 //static_assert(sizeof(Device3D) == 872, "sizeof(Device3D) == 872");
 

@@ -866,14 +866,28 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
             }
         }
 
+        // Update texture filtering
         if ( (std3D_renderState & STD3D_RS_TEXFILTER_ANISOTROPIC) != (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) )
         {
-            if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0 )
+            if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0 && std3D_pCurDevice->bAnisotropicFilteringSupported )
             {
-                IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
+                if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+                {
+                    IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
+                }
+                else if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
+                {
+                    IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+                }
+                else if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
+                {
+                    IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+                }
+
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
             }
-            else if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
+            else if ( ((rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0 || !std3D_pCurDevice->bAnisotropicFilteringSupported)
+                && (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
             {
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
@@ -934,7 +948,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     }
 
     size_t texSize = (pVBuffer->rasterInfo.colorInfo.bpp * texHeight * texWidth) / 8;
-    if ( std3D_mipmapFilter == STD3D_MIPMAPFILTER_NONE ) {
+    if ( std3D_mipmapFilter == STD3D_MIPMAPFILTER_NONE )
+    {
         numMipLevels = 1;
     }
 
@@ -1347,11 +1362,29 @@ int std3D_InitRenderState(void)
     }
 
     // Set texture filtering
-    if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+    if ( std3D_pCurDevice->bAnisotropicFilteringSupported )
     {
-        if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC) != D3D_OK )
+        if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAXANISOTROPY, std3D_pCurDevice->d3dDesc.MaxAnisotropy) != D3D_OK )
         {
             return 0;
+        }
+    }
+
+    if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MINFANISOTROPIC) != 0 )
+    {
+        if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+        {
+            if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC) != D3D_OK )
+            {
+                return 0;
+            }
+        }
+        else
+        {
+            if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) != D3D_OK )
+            {
+                return 0;
+            }
         }
 
         if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC) != D3D_OK )
@@ -1375,7 +1408,6 @@ int std3D_InitRenderState(void)
 
         std3D_renderState |= STD3D_RS_TEXFILTER_BILINEAR;
     }
-
     else if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
     {
         if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT) != D3D_OK )
@@ -1538,7 +1570,6 @@ int std3D_InitRenderState(void)
 
 int J3DAPI std3D_SetMipmapFilter(Std3DMipmapFilterType filter)
 {
-    HRESULT d3dres = D3D_OK;
     if ( filter == STD3D_MIPMAPFILTER_TRILINEAR
         && (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MIPFLINEAR) == 0 )
     {
@@ -1551,6 +1582,7 @@ int J3DAPI std3D_SetMipmapFilter(Std3DMipmapFilterType filter)
         filter = STD3D_MIPMAPFILTER_NONE;
     }
 
+    HRESULT d3dres = D3D_OK;
     if ( filter != std3D_mipmapFilter )
     {
         switch ( filter )
@@ -1820,19 +1852,20 @@ static int std3D_BuildDeviceList(void)
         STD_STRCPY(pD3DDriver->deviceDescription, displayDevice.aDeviceName);
         STD_STRCPY(pD3DDriver->deviceName, displayDevice.aDriverName);
 
-        pD3DDriver->bHAL                         = displayDevice.bHAL;
-        pD3DDriver->d3dDesc                      = displayDevice.caps;
-        pD3DDriver->bTexturePerspectiveSupported = TRUE; // Always supported in DX9
-        pD3DDriver->hasZBuffer                   = TRUE; // Always supported in DX9
-        pD3DDriver->bSqareOnlyTexture            = (displayDevice.caps.TextureCaps & D3DPTEXTURECAPS_SQUAREONLY) != 0;
-        pD3DDriver->bAlphaTextureSupported       = (displayDevice.caps.TextureCaps & D3DPTEXTURECAPS_ALPHA) != 0;
-        pD3DDriver->bColorkeyTextureSupported    = TRUE; // Always supported in DX9
-        pD3DDriver->bStippledShadeSupported      = FALSE; // Not commonly used in DX9
-        pD3DDriver->minTexWidth                  = 1;
-        pD3DDriver->minTexHeight                 = 1;
-        pD3DDriver->maxTexWidth                  = displayDevice.caps.MaxTextureWidth;
-        pD3DDriver->maxTexHeight                 = displayDevice.caps.MaxTextureHeight;
-        pD3DDriver->bAlphaBlendSupported         = (displayDevice.caps.SrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
+        pD3DDriver->bHAL                           = displayDevice.bHAL;
+        pD3DDriver->d3dDesc                        = displayDevice.caps;
+        pD3DDriver->bTexturePerspectiveSupported   = TRUE; // Always supported in DX9
+        pD3DDriver->hasZBuffer                     = TRUE; // Always supported in DX9
+        pD3DDriver->bSqareOnlyTexture              = (displayDevice.caps.TextureCaps & D3DPTEXTURECAPS_SQUAREONLY) != 0;
+        pD3DDriver->bAlphaTextureSupported         = (displayDevice.caps.TextureCaps & D3DPTEXTURECAPS_ALPHA) != 0;
+        pD3DDriver->bColorkeyTextureSupported      = TRUE; // Always supported in DX9
+        pD3DDriver->bStippledShadeSupported        = FALSE; // Not commonly used in DX9
+        pD3DDriver->minTexWidth                    = 1;
+        pD3DDriver->minTexHeight                   = 1;
+        pD3DDriver->maxTexWidth                    = displayDevice.caps.MaxTextureWidth;
+        pD3DDriver->maxTexHeight                   = displayDevice.caps.MaxTextureHeight;
+        pD3DDriver->bAnisotropicFilteringSupported = (displayDevice.caps.RasterCaps & D3DPRASTERCAPS_ANISOTROPY) != 0;
+        pD3DDriver->bAlphaBlendSupported           = (displayDevice.caps.SrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
             && (displayDevice.caps.DestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0;
 
         pD3DDriver->maxVertexCount = displayDevice.caps.MaxVertexIndex;

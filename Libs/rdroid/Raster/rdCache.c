@@ -230,27 +230,31 @@ LABEL_4:
 
         if ( (fflags & RD_FF_TEX_CLAMP_X) != 0 )
         {
-            rdflags = STD3D_RS_TEX_CPAMP_U | STD3D_RS_SUBPIXEL_CORRECTION | STD3D_RS_UNKNOWN_2 | STD3D_RS_UNKNOWN_1;
+            rdflags |= STD3D_RS_TEX_CPAMP_U;
         }
 
         if ( (fflags & RD_FF_TEX_CLAMP_Y) != 0 )
         {
-            rdflags |= STD3D_RS_TEX_CPAMP_V;  // 0x1000 - STD3D_RS_TEX_CPAMP_V
+            rdflags |= STD3D_RS_TEX_CPAMP_V;
         }
 
         if ( (fflags & RD_FF_TEX_FILTER_NEAREST) == 0 )
         {
+        #ifdef J3D_QOL_IMPROVEMENTS
+            rdflags |= STD3D_RS_TEXFILTER_ANISOTROPIC; // Altered: Use STD3D_RS_TEXFILTER_ANISOTROPIC.
+        #else
             rdflags |= STD3D_RS_TEXFILTER_BILINEAR;
+        #endif
         }
 
         if ( (fflags & RD_FF_ZWRITE_DISABLED) != 0 )
         {
-            rdflags |=  STD3D_RS_ZWRITE_DISABLED;  // 0x2000 - STD3D_RS_ZWRITE_DISABLED
+            rdflags |=  STD3D_RS_ZWRITE_DISABLED;
         }
 
         if ( (fflags & RD_FF_FOG_ENABLED) != 0 )
         {
-            rdflags |= STD3D_RS_FOG_ENABLED;  // 0x8000 - STD3D_RS_FOG_ENABLED
+            rdflags |= STD3D_RS_FOG_ENABLED;
         }
 
         rdMaterial* pCurMat = NULL;

@@ -798,16 +798,29 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
             }
         }
 
-        // Added
+        // Update texture filtering
+        // Added: Added handling anisotropic filtering
         if ( (std3D_renderState & STD3D_RS_TEXFILTER_ANISOTROPIC) != (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) )
         {
-            if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0
-                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+            if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0 && std3D_pCurDevice->bAnisotropicFilteringSupported )
             {
-                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_ANISOTROPIC);
-                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFG_ANISOTROPIC);
+                if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+                {
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_ANISOTROPIC);
+                }
+                else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
+                {
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
+                }
+                else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
+                {
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_POINT);
+                }
+
+                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_ANISOTROPIC);
             }
-            else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
+            else if ( ((rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0 || !std3D_pCurDevice->bAnisotropicFilteringSupported)
+                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
             {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR);
@@ -871,7 +884,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     }
 
     size_t texSize = (pVBuffer->rasterInfo.colorInfo.bpp * texHeight * texWidth) / 8;
-    if ( std3D_mipmapFilter == STD3D_MIPMAPFILTER_NONE ) {
+    if ( std3D_mipmapFilter == STD3D_MIPMAPFILTER_NONE )
+    {
         numMipLevels = 1;
     }
 
@@ -1326,20 +1340,41 @@ int std3D_InitRenderState(void)
 
     std3D_renderState |= STD3D_RS_UNKNOWN_1;
 
-    if ( std3D_SetMipmapFilter(STD3D_MIPMAPFILTER_TRILINEAR) ) // Added: Changed from STD3D_MIPMAPFILTER_BILINEAR to STD3D_MIPMAPFILTER_TRILINEAR
+    if ( std3D_SetMipmapFilter(STD3D_MIPMAPFILTER_TRILINEAR) ) // Altered: Changed from STD3D_MIPMAPFILTER_BILINEAR to STD3D_MIPMAPFILTER_TRILINEAR
     {
         return 0;
     }
 
-    // Added
-    if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+     // Set texture filtering
+
+    // Added: Set anisotropy to max
+    if ( std3D_pCurDevice->bAnisotropicFilteringSupported )
     {
-        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_ANISOTROPIC) != D3D_OK )
+        if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ANISOTROPY, std3D_pCurDevice->d3dDesc.dwMaxAnisotropy) != D3D_OK )
         {
             return 0;
         }
+    }
 
-        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFG_ANISOTROPIC) != D3D_OK )
+    // Added: Add anisotropic tex filtering
+    if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MINFANISOTROPIC) != 0 )
+    {
+        if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
+        {
+            if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_ANISOTROPIC) != D3D_OK )
+            {
+                return 0;
+            }
+        }
+        else
+        {
+            if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR) != D3D_OK )
+            {
+                return 0;
+            }
+        }
+
+        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_ANISOTROPIC) != D3D_OK )
         {
             return 0;
         }
@@ -1360,7 +1395,6 @@ int std3D_InitRenderState(void)
 
         std3D_renderState |= STD3D_RS_TEXFILTER_BILINEAR;
     }
-
     else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
     {
         if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_POINT) != D3D_OK )
@@ -1835,11 +1869,12 @@ HRESULT CALLBACK std3D_D3DEnumDevicesCallback(GUID* lpGuid, LPSTR lpDeviceDescri
         return 1;
     }
 
-    pD3DDriver->bTexturePerspectiveSupported = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) != 0;
-    pD3DDriver->hasZBuffer                   = pD3DDriver->d3dDesc.dwDeviceZBufferBitDepth != 0;
-    pD3DDriver->bSqareOnlyTexture            = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_SQUAREONLY) != 0;
-    pD3DDriver->bAlphaTextureSupported       = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_ALPHA) != 0;
-    pD3DDriver->bColorkeyTextureSupported    = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_TRANSPARENCY) != 0;
+    pD3DDriver->bTexturePerspectiveSupported   = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) != 0;
+    pD3DDriver->hasZBuffer                     = pD3DDriver->d3dDesc.dwDeviceZBufferBitDepth != 0;
+    pD3DDriver->bSqareOnlyTexture              = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_SQUAREONLY) != 0;
+    pD3DDriver->bAlphaTextureSupported         = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_ALPHA) != 0;
+    pD3DDriver->bColorkeyTextureSupported      = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_TRANSPARENCY) != 0;
+    pD3DDriver->bAnisotropicFilteringSupported = (pD3DDriver->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_ANISOTROPY) != 0; // Added
 
     pD3DDriver->bStippledShadeSupported =
         (pD3DDriver->d3dDesc.dpcTriCaps.dwShadeCaps & D3DPSHADECAPS_ALPHAFLATBLEND) == 0 &&
