@@ -535,8 +535,8 @@ void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowMo
     if ( bWindowModeSupported )
     {
         JonesDialog_pfGetDrawBufferDC = stdDisplay_GetFrontBufferDC;
-        JonesDialog_pfReleaseDC = stdDisplay_ReleaseFrontBufferDC;
-        JonesDialog_cursorPointIdx = 1;
+        JonesDialog_pfReleaseDC       = stdDisplay_ReleaseFrontBufferDC;
+        JonesDialog_cursorPointIdx    = 1;
         if ( stdDisplay_IsFullscreen() )
         {
             JonesDialog_pfFlipPage = stdDisplay_FlipToGDISurface;
@@ -551,9 +551,9 @@ void J3DAPI JonesDialog_SetGameState(JonesDialogGameState* pState, int bWindowMo
     else
     {
         JonesDialog_pfGetDrawBufferDC = stdDisplay_GetBackBufferDC;
-        JonesDialog_pfReleaseDC = stdDisplay_ReleaseBackBufferDC;
-        JonesDialog_cursorPointIdx = 0;
-        JonesDialog_pfFlipPage = stdDisplay_Update;
+        JonesDialog_pfReleaseDC       = stdDisplay_ReleaseBackBufferDC;
+        JonesDialog_cursorPointIdx    = 0;
+        JonesDialog_pfFlipPage        = stdDisplay_Update;
     }
 
     if ( JonesDialog_AllocOffScreenDIBSection(&pState->bOffScreenDBIAllocSkipped) )
@@ -1279,7 +1279,7 @@ int J3DAPI JonesDialog_AllocOffScreenGDISection(GDIDIBSectionInfo* pInfo, HDC hd
             }
 
             SelectObject(pInfo->hScreenDC, pInfo->hBitmap);
-            return pInfo->hBitmap == 0;
+            return pInfo->hBitmap == NULL;
         }
     }
 }
@@ -1310,29 +1310,26 @@ void J3DAPI JonesDialog_FreeScreenDIBSection()
 
 int J3DAPI JonesDialog_AllocOffScreenDIBSection(int* pBSkipedAllocation)
 {
-    uint32_t LastError;
-    HDC drawDC;
-    StdVideoMode pDisplayMode;
-    HDC screenDC;
-
-    if ( stdDisplay_GetCurrentVideoMode(&pDisplayMode) )
+    ;
+    StdVideoMode displayMode;
+    if ( stdDisplay_GetCurrentVideoMode(&displayMode) )
     {
         return 1;
     }
 
-    drawDC = stdDisplay_GetFrontBufferDC();
-    screenDC = CreateCompatibleDC(drawDC);
+    HDC drawDC   = stdDisplay_GetFrontBufferDC();
+    HDC screenDC = CreateCompatibleDC(drawDC);
     if ( JonesDialog_AllocOffScreenGDISection(&JonesDialog_GDIDIBSectionInfoOffScreen, screenDC, 0, pBSkipedAllocation) )
     {
+        stdDisplay_ReleaseFrontBufferDC(drawDC); // Fixed: Release dc
         return 1;
     }
 
     JonesDialog_GDIDIBSectionInfoOffScreen.bHasDC = 1;
     if ( !*pBSkipedAllocation
-        && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, pDisplayMode.rasterInfo.width, pDisplayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
+        && !BitBlt(JonesDialog_GDIDIBSectionInfoOffScreen.hScreenDC, 0, 0, displayMode.rasterInfo.width, displayMode.rasterInfo.height, drawDC, 0, 0, SRCCOPY) )
     {
-        LastError = GetLastError();
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, LastError, 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, 0);
+        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, JonesDialog_szErrorBuffer, STD_ARRAYLEN(JonesDialog_szErrorBuffer) - 1, NULL);
         STDLOG_ERROR("JonesDialog_AllocOffScreenDIBSection: BitBlt failed.  Reason: %s", JonesDialog_szErrorBuffer);
     }
 
