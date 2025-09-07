@@ -2621,7 +2621,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.bWindowMode  = wuRegistry_GetIntEx("InWindow", 0);
     pConfig->displaySettings.bDualMonitor = wuRegistry_GetIntEx("Dual Monitor", 0);
     pConfig->displaySettings.bBuffering   = wuRegistry_GetIntEx("Buffering", 0);
-    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", STD3D_MIPMAPFILTER_BILINEAR); // bilinear
+    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", STD3D_MIPMAPFILTER_TRILINEAR); // Altered: Set trilinear as default (OG bilinear)
 
     pConfig->displaySettings.bFog       = wuRegistry_GetIntEx("Fog", 1);
     pConfig->displaySettings.fogDensity = wuRegistry_GetFloat("Fog Density", 1.0f);
@@ -2753,7 +2753,7 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
             int itemIdx = ComboBox_AddString(hDlgItem, std_g_genBuffer);
             ComboBox_SetItemData(hDlgItem, itemIdx, i);
 
-            // Select diver if matches the one in settings
+            // Select driver if matches the one stored in settings
             if ( i == pConfig->displaySettings.displayDeviceNum )
             {
                 ComboBox_SetCurSel(hDlgItem, itemIdx);
@@ -2829,14 +2829,14 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     }
 
     itemIdx = ComboBox_AddString(hDlgItem, "Bilinear");
-    ComboBox_SetItemData(hDlgItem, itemIdx, 1);
+    ComboBox_SetItemData(hDlgItem, itemIdx, STD3D_MIPMAPFILTER_BILINEAR);
     if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_BILINEAR )
     {
         selectedItemIdx = itemIdx;
     }
 
     itemIdx = ComboBox_AddString(hDlgItem, "Trilinear");
-    ComboBox_SetItemData(hDlgItem, itemIdx, 2);
+    ComboBox_SetItemData(hDlgItem, itemIdx, STD3D_MIPMAPFILTER_TRILINEAR);
     if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_TRILINEAR )
     {
         selectedItemIdx = itemIdx;
