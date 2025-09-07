@@ -507,6 +507,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
         std3D_aTextureFormats[std3D_RGBATextureFormat].pColorKey = NULL;
     }
 
+    std3D_mipmapFilter = -1; // Fixed: Reset mipmap filter to be able to set filter to newly created device in std3D_SetMipmapFilter
     if ( !std3D_InitRenderState() )
     {
         STDLOG_ERROR("Error initializing render state.\n");
@@ -551,6 +552,7 @@ void J3DAPI std3D_Close()
         std3D_pD3Device = NULL;
     }
 
+    std3D_mipmapFilter         = -1; // Added: invalidate mipmap filter
     std3D_numTextureFormats    = 0;
     std3D_curDevice            = 0;
     std3D_pCurDevice           = NULL;

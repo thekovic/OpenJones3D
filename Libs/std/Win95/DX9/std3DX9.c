@@ -305,6 +305,7 @@ static bool std3D_InitSystem(void)
         return false;
     }
 
+    std3D_mipmapFilter = -1; // Must be reset
     if ( !std3D_InitRenderState() )
     {
         STDLOG_ERROR("Error initializing render state.\n");
@@ -410,6 +411,7 @@ void std3D_Close(void)
 {
     std3D_ReleaseSystemResources();
 
+    std3D_mipmapFilter         = -1;
     std3D_numTextureFormats    = 0;
     std3D_curDevice            = 0;
     std3D_pCurDevice           = NULL;
