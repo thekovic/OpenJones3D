@@ -10,6 +10,12 @@
 #define STD3D_MAXFACEVERTICES 64 
 #define STD3D_MAXVERTICES     32768
 
+#define STD3D_CFG_MIPMAPAUTOGEN     "Mipmap AutoGen"
+#define STD3D_CFG_ANISOTROPICFILTER "Anisotropic Filter"
+
+#define STD3D_CFG_MSAAENABLED "MSAA"
+#define STD3D_CFG_MSAASAMPLES "MSAA Samples"
+
 J3D_EXTERN_C_START
 
 #define std3D_g_fogDensity J3D_DECL_FAR_VAR(std3D_g_fogDensity, float)
@@ -28,7 +34,7 @@ const Device3D* std3D_GetAllDevices(void);
 void J3DAPI std3D_SetFindAllDevices(int bFindAll);
 
 int J3DAPI std3D_Open(size_t deviceNum);
-void J3DAPI std3D_Close();
+void std3D_Close(void);
 
 void J3DAPI std3D_GetTextureFormat(StdColorFormatType type, ColorInfo* pDest, int* pbColorKeySet, LPDDCOLORKEY* ppColorKey);
 StdColorFormatType J3DAPI std3D_GetColorFormat(const ColorInfo* pCi);
@@ -70,7 +76,10 @@ tSysDevice3D* std3D_GetD3DDevice(void); // Added
 #endif // J3D_DIRECTX9 || J3D_DIRECTX6
 
 // New funcs
-bool J3DAPI std3D_IsShaderSystemActive(void);
+bool std3D_IsShaderSystemActive(void);
+bool std3D_IsAnisotropicFilteringSupported(void); // Checks if underlying GAPI supports anisotropic texute filtering. Note, device might still not support it.
+bool std3D_IsMipmapAutoGenSupported(void);        // Checks if underlying GAPI supports automatic generation of Mipmaps. Note, device might still not support it.
+bool std3D_IsMSAASupported(void);                 // Checks if underlying GAPI supports Multisample anti-aliasing (MSAA). Note, device might still not support it.
 
 // Helper hooking functions
 void std3D_InstallHooks(void);

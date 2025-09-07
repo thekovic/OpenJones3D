@@ -523,6 +523,7 @@ typedef struct sDevice3D
     int unknown216;
     int unknown217;
     bool bAnisotropicFilteringSupported; // Added
+    bool bMipmapAutoGenSupported; // Added
 } Device3D;
 //static_assert(sizeof(Device3D) == 872, "sizeof(Device3D) == 872");
 

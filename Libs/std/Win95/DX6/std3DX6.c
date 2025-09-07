@@ -531,7 +531,7 @@ int J3DAPI std3D_Open(size_t deviceNum)
     return 1;
 }
 
-void J3DAPI std3D_Close()
+void std3D_Close(void)
 {
     std3D_ResetTextureCache();
     if ( std3D_pDDPalette )
@@ -1875,6 +1875,7 @@ HRESULT CALLBACK std3D_D3DEnumDevicesCallback(GUID* lpGuid, LPSTR lpDeviceDescri
     pD3DDriver->bAlphaTextureSupported         = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_ALPHA) != 0;
     pD3DDriver->bColorkeyTextureSupported      = (pD3DDriver->d3dDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_TRANSPARENCY) != 0;
     pD3DDriver->bAnisotropicFilteringSupported = (pD3DDriver->d3dDesc.dpcTriCaps.dwRasterCaps & D3DPRASTERCAPS_ANISOTROPY) != 0; // Added
+    pD3DDriver->bMipmapAutoGenSupported        = false; // Added
 
     pD3DDriver->bStippledShadeSupported =
         (pD3DDriver->d3dDesc.dpcTriCaps.dwShadeCaps & D3DPSHADECAPS_ALPHAFLATBLEND) == 0 &&
@@ -2227,7 +2228,22 @@ tSysDevice3D* std3D_GetD3DDevice(void)
     return std3D_pD3Device;
 }
 
-bool J3DAPI std3D_IsShaderSystemActive(void)
+bool std3D_IsShaderSystemActive(void)
+{
+    return false;
+}
+
+bool std3D_IsAnisotropicFilteringSupported(void)
+{
+    return false;
+}
+
+bool std3D_IsMipmapAutoGenSupported(void)
+{
+    return false;
+}
+
+bool std3D_IsMSAASupported(void)
 {
     return false;
 }

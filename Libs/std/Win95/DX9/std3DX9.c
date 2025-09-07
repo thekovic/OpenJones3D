@@ -10,6 +10,8 @@
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
 
+#include <w32util/wuRegistry.h>
+
 #include <math.h>
 
 #include "Shaders/std_default_vs.h"
@@ -26,10 +28,13 @@ static LPDIRECT3DDEVICE9 std3D_pD3Device = NULL;
 static D3DRECT std3D_activeRect          = { 0 };
 static_assert(sizeof(std3D_activeRect) == 4 * sizeof(float), "sizeof(std3D_activeRect) == 4 * sizeof(float)"); // Must be 4 floats to be used in shader
 
-static size_t std3D_frameCount                  = 1;
-static float std3D_zDepth                       = 0.0f;
-static Std3DRenderState std3D_renderState       = 0;
-static LPDIRECT3DTEXTURE9 std3D_pD3DTex         = NULL;
+static size_t std3D_frameCount            = 1;
+static float std3D_zDepth                 = 0.0f;
+static Std3DRenderState std3D_renderState = 0;
+static LPDIRECT3DTEXTURE9 std3D_pD3DTex   = NULL;
+
+static bool std3D_bAnisotropicFilter; // Added
+static bool std3D_bAutoGenMipmap;     // Added
 static Std3DMipmapFilterType std3D_mipmapFilter = -1;
 
 static bool std3D_bRenderFog          = true;
@@ -262,6 +267,21 @@ static bool std3D_InitSystem(void)
         STDLOG_WARNING("Warning: No stencil Z buffer format found, using default without stencil.\n");
     }
 
+    // Get autogen support
+    std3D_bAutoGenMipmap = wuRegistry_GetInt(STD3D_CFG_MIPMAPAUTOGEN, 1);
+    if ( std3D_bAutoGenMipmap && !std3D_pCurDevice->bMipmapAutoGenSupported )
+    {
+        STDLOG_WARNING("Warning: Automatic mipmap generation disabled, no device support!\n");
+        std3D_bAutoGenMipmap = false;
+    }
+
+    std3D_bAnisotropicFilter = wuRegistry_GetInt(STD3D_CFG_ANISOTROPICFILTER, 1);
+    if ( std3D_bAnisotropicFilter && !std3D_pCurDevice->bAnisotropicFilteringSupported )
+    {
+        STDLOG_WARNING("Warning: Anisotropic filtering disabled, no device support!\n");
+        std3D_bAutoGenMipmap = false;
+    }
+
     // Initialize texture formats
     std3D_InitTextureFormats();
 
@@ -326,7 +346,7 @@ static void std3D_ReleaseSystemResources(void)
     std3D_ResetTextureCache();
     std3D_ShutdownShaderSystem();
     std3D_ReleaseVertexBuffers();
-};
+}
 
 static void std3D_OnDisplayDeviceReset(tSysDevice3D* pDevice)
 {
@@ -409,6 +429,10 @@ int J3DAPI std3D_Open(size_t deviceNum)
 
 void std3D_Close(void)
 {
+    stdDisplay_RegisterDevicePreResetCallback(NULL);
+    stdDisplay_RegisterDevicePostResetCallback(NULL);
+    stdDisplay_RegisterDeviceReleaseCallback(NULL);
+
     std3D_ReleaseSystemResources();
 
     std3D_mipmapFilter         = -1;
@@ -869,7 +893,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         // Update texture filtering
         if ( (std3D_renderState & STD3D_RS_TEXFILTER_ANISOTROPIC) != (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) )
         {
-            if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0 && std3D_pCurDevice->bAnisotropicFilteringSupported )
+            if ( (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) != 0 && std3D_bAnisotropicFilter )
             {
                 if ( (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFANISOTROPIC) != 0 )
                 {
@@ -886,7 +910,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
 
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
             }
-            else if ( ((rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0 || !std3D_pCurDevice->bAnisotropicFilteringSupported)
+            else if ( ((rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0 || !std3D_bAnisotropicFilter)
                 && (std3D_pCurDevice->d3dDesc.TextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
             {
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
@@ -1079,12 +1103,15 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
         std3D_PurgeTextureCache(pCacheTexture->textureSize);
     }
 
+    const size_t numMipmaps = std3D_bAutoGenMipmap ? 1 : pCacheTexture->numMipLevels;
+    const DWORD usage       = std3D_bAutoGenMipmap ? D3DUSAGE_AUTOGENMIPMAP : 0;
+
     HRESULT d3dres = IDirect3DDevice9_CreateTexture(
         std3D_pD3Device,
         pCacheTexture->apMipmaps[0]->rasterInfo.width,
         pCacheTexture->apMipmaps[0]->rasterInfo.height,
-        pCacheTexture->numMipLevels,
-        0, // Usage
+        std3D_bAutoGenMipmap ? 0 : numMipmaps,
+        usage,
         pCacheTexture->format,
         D3DPOOL_MANAGED, // IMPORTANT: Must be managed video/system memory to copy pixel data to
         &pD3DTex,
@@ -1104,8 +1131,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
             std3D_pD3Device,
             pCacheTexture->apMipmaps[0]->rasterInfo.width,
             pCacheTexture->apMipmaps[0]->rasterInfo.height,
-            pCacheTexture->numMipLevels,
-            0, // Usage
+            std3D_bAutoGenMipmap ? 0 : numMipmaps,
+            usage,
             pCacheTexture->format,
             D3DPOOL_MANAGED, // IMPORTANT: Must be managed video/system memory to copy pixel data to
             &pD3DTex,
@@ -1119,8 +1146,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
         goto error;
     }
 
-    // Copy from device-independent texture to video memory using direct pixel access
-    for ( uint32_t mmNum = 0; mmNum < pCacheTexture->numMipLevels; ++mmNum )
+    // Copy from device-independent texture to video memory using direct pixel access and LOD 0 texture only
+    for ( uint32_t mmNum = 0; mmNum < numMipmaps; ++mmNum )
     {
         if ( !stdDisplay_VBufferLock(pCacheTexture->apMipmaps[mmNum]) )
         {
@@ -1362,7 +1389,7 @@ int std3D_InitRenderState(void)
     }
 
     // Set texture filtering
-    if ( std3D_pCurDevice->bAnisotropicFilteringSupported )
+    if ( std3D_bAnisotropicFilter )
     {
         if ( IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_MAXANISOTROPY, std3D_pCurDevice->d3dDesc.MaxAnisotropy) != D3D_OK )
         {
@@ -1865,6 +1892,8 @@ static int std3D_BuildDeviceList(void)
         pD3DDriver->maxTexWidth                    = displayDevice.caps.MaxTextureWidth;
         pD3DDriver->maxTexHeight                   = displayDevice.caps.MaxTextureHeight;
         pD3DDriver->bAnisotropicFilteringSupported = (displayDevice.caps.RasterCaps & D3DPRASTERCAPS_ANISOTROPY) != 0;
+        pD3DDriver->bMipmapAutoGenSupported        = (displayDevice.caps.Caps2 & D3DCAPS2_CANAUTOGENMIPMAP) != 0;
+
         pD3DDriver->bAlphaBlendSupported           = (displayDevice.caps.SrcBlendCaps & D3DPBLENDCAPS_SRCALPHA) != 0
             && (displayDevice.caps.DestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0;
 
@@ -2340,4 +2369,19 @@ tSysDevice3D* std3D_GetD3DDevice(void)
 bool J3DAPI std3D_IsShaderSystemActive(void)
 {
     return std3D_bShadersActive;
+}
+
+bool std3D_IsAnisotropicFilteringSupported(void)
+{
+    return true;
+}
+
+bool std3D_IsMipmapAutoGenSupported(void)
+{
+    return true;
+}
+
+bool std3D_IsMSAASupported(void)
+{
+    return true;
 }
