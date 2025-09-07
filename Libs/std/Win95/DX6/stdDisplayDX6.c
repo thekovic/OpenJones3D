@@ -570,7 +570,7 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
     }
 
     vbuffer->pPixels          = NULL;
-    vbuffer->lockSurfRefCount = 0;
+    vbuffer->lockRefCount = 0;
     memcpy(&vbuffer->rasterInfo, pRasterInfo, sizeof(vbuffer->rasterInfo));
 
     vbuffer->unknown1 = 0;
@@ -583,7 +583,7 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
     if ( bUseVSurface && stdDisplay_bOpen )
     {
         vbuffer->bVideoMemory = 0;
-        vbuffer->lockRefCount = 1;
+        vbuffer->type = VBUFFER_HARDWARE;
 
         memset(&vbuffer->surface.desc, 0, sizeof(vbuffer->surface.desc));
         vbuffer->surface.desc.dwSize = sizeof(DDSURFACEDESC2);
@@ -610,7 +610,8 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
             return NULL;
         }
 
-        if ( (vbuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (vbuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 )
+        {
             vbuffer->bVideoMemory = 1;
         }
 
@@ -620,14 +621,15 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
     }
     else
     {
-        vbuffer->lockRefCount = 0;
+        vbuffer->type         = VBUFFER_SOFTWARE;
         vbuffer->bVideoMemory = 0;
-        vbuffer->pPixels = (uint8_t*)STDMALLOC(vbuffer->rasterInfo.size);
-        if ( !vbuffer->pPixels ) {
+        vbuffer->pPixels      = (uint8_t*)STDMALLOC(vbuffer->rasterInfo.size);
+        if ( !vbuffer->pPixels )
+        {
             return NULL;
         }
 
-        vbuffer->lockSurfRefCount = 1;
+        vbuffer->lockRefCount = 1;
         return vbuffer;
     }
 }
@@ -635,21 +637,21 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
 void J3DAPI stdDisplay_VBufferFree(tVBuffer* pVBuffer)
 {
     STD_ASSERTREL(pVBuffer != NULL);
-    if ( pVBuffer->lockRefCount )
+    if ( pVBuffer->type == VBUFFER_SOFTWARE )
     {
-        if ( pVBuffer->lockRefCount == 1 )
+        if ( pVBuffer->pPixels )
         {
-            if ( pVBuffer->surface.pSysSurface )
-            {
-                IDirectDrawSurface4_Release(pVBuffer->surface.pSysSurface);
-                pVBuffer->surface.pSysSurface = NULL;
-            }
+            stdMemory_Free(pVBuffer->pPixels);
+            pVBuffer->pPixels = NULL;
         }
     }
-    else if ( pVBuffer->pPixels )
+    else if ( pVBuffer->type == VBUFFER_HARDWARE )
     {
-        stdMemory_Free(pVBuffer->pPixels);
-        pVBuffer->pPixels = 0;
+        if ( pVBuffer->surface.pSysSurface )
+        {
+            IDirectDrawSurface4_Release(pVBuffer->surface.pSysSurface);
+            pVBuffer->surface.pSysSurface = NULL;
+        }
     }
 
     stdMemory_Free(pVBuffer);
@@ -659,26 +661,25 @@ int J3DAPI stdDisplay_VBufferLock(tVBuffer* pVBuffer)
 {
     STD_ASSERTREL(pVBuffer != NULL);
 
-    if ( pVBuffer->lockRefCount )
+    if ( pVBuffer->type == VBUFFER_SOFTWARE )
     {
-        if ( pVBuffer->lockRefCount == 1 )
-        {
-            if ( (pVBuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER) != 0
-                && (pVBuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_MODEX) != 0 ) {
-                return 0;
-            }
-
-            pVBuffer->pPixels = stdDisplay_LockSurface(&pVBuffer->surface);
-            if ( !pVBuffer->pPixels ) {
-                return 0;
-            }
-
-            ++pVBuffer->lockSurfRefCount;
-        }
+        ++pVBuffer->lockRefCount;
     }
-    else
+    else if ( pVBuffer->type == VBUFFER_HARDWARE )
     {
-        ++pVBuffer->lockSurfRefCount;
+        if ( (pVBuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_FRONTBUFFER) != 0
+            && (pVBuffer->surface.desc.ddsCaps.dwCaps & DDSCAPS_MODEX) != 0 )
+        {
+            return 0;
+        }
+
+        pVBuffer->pPixels = stdDisplay_LockSurface(&pVBuffer->surface);
+        if ( !pVBuffer->pPixels )
+        {
+            return 0;
+        }
+
+        ++pVBuffer->lockRefCount;
     }
 
     return 1;
@@ -686,29 +687,31 @@ int J3DAPI stdDisplay_VBufferLock(tVBuffer* pVBuffer)
 
 int J3DAPI stdDisplay_VBufferUnlock(tVBuffer* pVBuffer)
 {
-    int result;
-
     STD_ASSERTREL(pVBuffer != NULL);
-    if ( pVBuffer->lockRefCount == 0 )
+    if ( pVBuffer->type == VBUFFER_SOFTWARE )
     {
-        if ( pVBuffer->lockSurfRefCount ) {
-            --pVBuffer->lockSurfRefCount;
+        if ( pVBuffer->lockRefCount )
+        {
+            --pVBuffer->lockRefCount;
         }
 
         return 1;
     }
 
-    if ( pVBuffer->lockRefCount != 1 ) {
+    if ( pVBuffer->type != VBUFFER_HARDWARE )
+    {
         return 1;
     }
 
-    if ( pVBuffer->lockSurfRefCount == 0 ) {
+    if ( pVBuffer->lockRefCount == 0 )
+    {
         return 0;
     }
 
-    result = stdDisplay_UnlockSurface(&pVBuffer->surface);
-    if ( !result ) {
-        --pVBuffer->lockSurfRefCount;
+    int result = stdDisplay_UnlockSurface(&pVBuffer->surface);
+    if ( !result )
+    {
+        --pVBuffer->lockRefCount;
     }
 
     return result;
@@ -718,9 +721,9 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
 {
     STD_ASSERTREL(pVBuffer != NULL);
 
-    if ( pVBuffer->lockRefCount )
+    if ( pVBuffer->type )
     {
-        if ( pVBuffer->lockRefCount != 1 )
+        if ( pVBuffer->type != VBUFFER_HARDWARE )
         {
             // Skip filling because more than 1 refs is using this buffer
             return 1;
@@ -1246,8 +1249,8 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
     // Set front buffer
     // We also set pDisplayMode in this scope
     {
-        stdDisplay_g_frontBuffer.lockRefCount     = 1;
-        stdDisplay_g_frontBuffer.lockSurfRefCount = 0;
+        stdDisplay_g_frontBuffer.type             = VBUFFER_HARDWARE;
+        stdDisplay_g_frontBuffer.lockRefCount = 0;
         stdDisplay_g_frontBuffer.bVideoMemory     = 0;
         stdDisplay_g_frontBuffer.pPixels          = NULL;
 
@@ -1373,9 +1376,9 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
             return 0;
         }
 
-        stdDisplay_g_backBuffer.lockRefCount = 1;
-        stdDisplay_g_backBuffer.lockSurfRefCount = 0;
-        stdDisplay_g_backBuffer.bVideoMemory = 1;
+        stdDisplay_g_backBuffer.type             = VBUFFER_HARDWARE;
+        stdDisplay_g_backBuffer.lockRefCount = 0;
+        stdDisplay_g_backBuffer.bVideoMemory     = 1;
 
         ddres = IDirectDrawSurface4_GetSurfaceDesc(stdDisplay_g_backBuffer.surface.pSysSurface, &stdDisplay_g_backBuffer.surface.desc);
         if ( ddres != DD_OK )
@@ -1440,9 +1443,9 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
 
     // Setup front buffer
     {
-        stdDisplay_g_frontBuffer.lockSurfRefCount = 0;
+        stdDisplay_g_frontBuffer.lockRefCount = 0;
         stdDisplay_g_frontBuffer.bVideoMemory     = 0;
-        stdDisplay_g_frontBuffer.lockRefCount     = 1;
+        stdDisplay_g_frontBuffer.type             = VBUFFER_HARDWARE;
         stdDisplay_g_frontBuffer.pPixels          = NULL;
         memcpy(&stdDisplay_g_frontBuffer.rasterInfo, &pDisplayMode->rasterInfo, sizeof(stdDisplay_g_frontBuffer.rasterInfo));
 
@@ -1478,10 +1481,10 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
 
     // Setup back buffer
     {
-        stdDisplay_g_backBuffer.lockSurfRefCount = 0;
+        stdDisplay_g_backBuffer.lockRefCount = 0;
         stdDisplay_g_backBuffer.bVideoMemory     = 0;
-        stdDisplay_g_backBuffer.lockRefCount     = 1;
-        stdDisplay_g_backBuffer.pPixels          = 0;
+        stdDisplay_g_backBuffer.type             = VBUFFER_HARDWARE;
+        stdDisplay_g_backBuffer.pPixels          = NULL;
         memcpy(&stdDisplay_g_backBuffer.rasterInfo, &pDisplayMode->rasterInfo, sizeof(stdDisplay_g_backBuffer.rasterInfo));
 
         memset(&stdDisplay_g_backBuffer.surface.desc, 0, sizeof(stdDisplay_g_backBuffer.surface.desc));

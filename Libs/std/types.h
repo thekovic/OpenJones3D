@@ -135,6 +135,12 @@ typedef enum eStd3DRenderState
     STD3D_RS_TEXFILTER_ANISOTROPIC = 0x10000 // Added
 } Std3DRenderState;
 
+typedef enum eVBufferType
+{
+    VBUFFER_SOFTWARE = 0,   // Raw pixels allocated on heap
+    VBUFFER_HARDWARE = 1,   // hardware surface
+} VBufferType;
+
 typedef uintptr_t tFileHandle;
 
 typedef struct sLinkListNode tLinkListNode;
@@ -368,12 +374,12 @@ typedef struct sVSurface
 
 typedef struct sVBuffer
 {
+    VBufferType type;
     size_t lockRefCount;
-    size_t lockSurfRefCount;
     int bVideoMemory;
     tRasterInfo rasterInfo;
     uint8_t* pPixels;
-    int unknown1;
+    int unknown1; // could be another surface option
     tVSurface surface;
 } tVBuffer;
 //static_assert(sizeof(tVBuffer) == 224, "sizeof(tVBuffer) == 224");

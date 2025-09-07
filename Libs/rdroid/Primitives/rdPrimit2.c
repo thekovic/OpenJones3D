@@ -124,7 +124,7 @@ int J3DAPI rdPrimit2_DrawLine(rdCanvas* pCanvas, int x1, int y1, int x2, int y2,
     {
         // Lock buffer if needed
         bool bVBLocked = false;
-        if ( pCanvas->pVBuffer->lockRefCount == 1 )
+        if ( pCanvas->pVBuffer->type == VBUFFER_HARDWARE )
         {
             bVBLocked = true;
             stdDisplay_VBufferLock(pCanvas->pVBuffer);

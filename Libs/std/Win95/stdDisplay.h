@@ -10,10 +10,7 @@ typedef void (*tDisplayDevicePreResetCallback)(tSysDevice3D*);
 typedef void (*tDisplayDevicePostResetCallback)(tSysDevice3D*);
 typedef void (*tDisplayDeviceReleaseCallback)(tSysDevice3D*);
 
-#define stdDisplay_g_frontBuffer J3D_DECL_FAR_VAR(stdDisplay_g_frontBuffer, tVBuffer)
-// extern tVBuffer stdDisplay_g_frontBuffer;
-
-//#define stdDisplay_g_backBuffer J3D_DECL_FAR_VAR(stdDisplay_g_backBuffer, tVBuffer)
+extern tVBuffer stdDisplay_g_frontBuffer;
 extern tVBuffer stdDisplay_g_backBuffer;
 
 int stdDisplay_Startup(void);
@@ -37,9 +34,9 @@ int stdDisplay_Update(void); // Flips back & front buffers
 
 void J3DAPI stdDisplay_Refresh(int bReload); // If called with bReload = true it will re-set the current video mode
 
-void stdDisplay_RegisterDevicePreResetCallback(tDisplayDevicePreResetCallback pCallback); // Added, Register callback which is called when display device is about to reset
+void stdDisplay_RegisterDevicePreResetCallback(tDisplayDevicePreResetCallback pCallback);   // Added, Register callback which is called when display device is about to reset
 void stdDisplay_RegisterDevicePostResetCallback(tDisplayDevicePostResetCallback pCallback); // Added, Register callback which is called after display device has been reset
-void stdDisplay_RegisterDeviceReleaseCallback(tDisplayDeviceReleaseCallback pCallback); // Added, Register callback which is called when display device is released
+void stdDisplay_RegisterDeviceReleaseCallback(tDisplayDeviceReleaseCallback pCallback);     // Added, Register callback which is called when display device is about to be released
 
 size_t stdDisplay_GetNumDevices(void);
 int J3DAPI stdDisplay_GetDevice(size_t deviceNum, StdDisplayDevice* pDest); // Copies display  device at deviceNum to pDest
@@ -71,8 +68,10 @@ void J3DAPI stdDisplay_SetDefaultResolution(uint32_t width, uint32_t height);
 
 HDC stdDisplay_GetFrontBufferDC(void);
 void J3DAPI stdDisplay_ReleaseFrontBufferDC(HDC hdc);
+
 HDC stdDisplay_GetBackBufferDC(void);
 void J3DAPI stdDisplay_ReleaseBackBufferDC(HDC hdc);
+
 int stdDisplay_FlipToGDISurface(void);
 
 int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer);
