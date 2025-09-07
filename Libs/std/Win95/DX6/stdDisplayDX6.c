@@ -1221,7 +1221,7 @@ void J3DAPI stdDisplay_SetAspectRatio(StdVideoMode* pMode)
     }
 }
 
-tSysDevice3D* stdDisplay_GetSystemDevice(void)
+tSysDisplayDevice* stdDisplay_GetSystemDevice(void)
 {
     return stdDisplay_lpDD;
 }

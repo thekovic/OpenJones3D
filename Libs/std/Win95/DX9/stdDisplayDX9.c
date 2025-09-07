@@ -1169,7 +1169,7 @@ LPDIRECT3D9 stdDisplay_GetDirect3D(void)
     return stdDisplay_pD3D9;
 }
 
-tSysDevice3D* stdDisplay_GetSystemDevice(void)
+tSysDisplayDevice* stdDisplay_GetSystemDevice(void)
 {
     return stdDisplay_pD3DDevice;
 }

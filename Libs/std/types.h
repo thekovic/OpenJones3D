@@ -24,8 +24,11 @@ J3D_EXTERN_C_START
 #if defined(J3D_DIRECTX6)
 // Direct3D & DirectDraw
 typedef DDCAPS_DX6 tSysDisplayDeviceCaps;
+typedef IDirectDraw4 tSysDisplayDevice;
+
 typedef D3DDEVICEDESC tSysDevice3DDesc;
 typedef IDirectDraw4 tSysDevice3D;
+typedef IDirect3DDevice3 tSysDevice3D;
 
 typedef DDPIXELFORMAT tSysPixelFormat;
 typedef DDSURFACEDESC2 tSysSurfaceDesc;
