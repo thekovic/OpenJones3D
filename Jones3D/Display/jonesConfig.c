@@ -210,7 +210,7 @@ static int jonesConfig_displaySettings_bUpdateSliderText = 1;
 
 // Advance display settings dialog
 static HFONT jonesConfig_hFontAdvanceDisplaySettingsDialog = NULL; // Fixed: Added init. to NULL
-static Std3DMipmapFilterType jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+static Std3DMipmapFilterType jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR; // Altered: Changed to Trilinear from Bilinear
 static int jonesConfig_advanceDisplaySettings_perfLevel = 4;
 
 // Sound settings dialog
@@ -7644,8 +7644,10 @@ INT_PTR CALLBACK jonesConfig_AdvanceDisplaySettingsDialogProc(HWND hWnd, UINT uM
 
         case WM_INITDIALOG:
         {
-            jonesConfig_hFontAdvanceDisplaySettingsDialog = jonesConfig_InitDialog(hWnd, 0, 148);
+            // Altered: Switched order so InitDialog affects any new items added to dialog 
             int inited = jonesConfig_InitAdvanceDisplaySettingsDialog(hWnd, wParam, (JonesDisplaySettingsDialogData*)lParam);
+            jonesConfig_hFontAdvanceDisplaySettingsDialog = jonesConfig_InitDialog(hWnd, NULL, 148);
+
             SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
             return inited;
         }
@@ -7773,14 +7775,17 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
     {
         case STD3D_MIPMAPFILTER_NONE:
             CheckRadioButton(hDlg, 1088, 1090, 1088);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_NONE; // Fixed: assign config filtermode to cache var, OG was missing this assignment
             break;
 
         case STD3D_MIPMAPFILTER_BILINEAR:
             CheckRadioButton(hDlg, 1088, 1090, 1089);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR; // Fixed: assign config filtermode to cache var, OG was missing this assignment
             break;
 
         case STD3D_MIPMAPFILTER_TRILINEAR:
             CheckRadioButton(hDlg, 1088, 1090, 1090);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR; // Fixed: assign config filtermode to cache var, OG was missing this assignment
             break;
     }
 
@@ -7810,12 +7815,101 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
     SendMessage(hFogSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, (LPARAM)sithRender_g_fogDensity);
     SendMessage(hFogSliderCtrl, TBM_SETPAGESIZE, 0, 5u);
 
-    // Added
-    // Enable and init  HiPoly check button
+    // New option items
+    const int spacing = 15; // TODO: make it static
+    UINT dpi = GetDpiForWindow(hDlg);
+    int x = MulDiv(20, dpi, USER_DEFAULT_SCREEN_DPI);
+    int y = MulDiv(190, dpi, USER_DEFAULT_SCREEN_DPI);
+    int h = MulDiv(14, dpi, USER_DEFAULT_SCREEN_DPI);
+
+    // Added: Adds check box for Anti-Aliasing (MSAA) option
+    if ( std3D_IsMSAASupported() )
+    {
+        int w = MulDiv(120, dpi, USER_DEFAULT_SCREEN_DPI);
+
+        // Create the MSAA checkbox
+        HWND hCbMSAA = CreateWindow(
+            "Button",
+            "Anti-Aliasing (MSAA)",
+            WS_CHILD | BS_AUTOCHECKBOX | BS_VCENTER | WS_VISIBLE | WS_GROUP | WS_TABSTOP,
+            x,
+            y,
+            w,
+            h,
+            hDlg,                  // Parent window handle
+            (HMENU)1053,           // Control ID
+            GetModuleHandle(NULL),
+            NULL                   // Additional creation config
+        );
+        J3D_UNUSED(hCbMSAA);
+
+        CheckDlgButton(hDlg, 1053, wuRegistry_GetInt(STD3D_CFG_MSAAENABLED, 1));
+    }
+
+    // Added: Adds check box for Anti-Aliasing (MSAA) option
+    if ( std3D_IsMipmapAutoGenSupported() )
+    {
+        y += MulDiv(spacing, dpi, USER_DEFAULT_SCREEN_DPI);
+        int w = MulDiv(120, dpi, USER_DEFAULT_SCREEN_DPI);
+
+        // Create new auto gen mipmap checkbox
+        HWND hCbMSAA = CreateWindow(
+            "Button",
+            "Auto Gen. Mipmaps",
+            WS_CHILD | BS_AUTOCHECKBOX | BS_VCENTER | WS_VISIBLE | WS_GROUP | WS_TABSTOP,
+            x,
+            y,
+            w,
+            h,
+            hDlg,                  // Parent window handle
+            (HMENU)1054,           // Control ID
+            GetModuleHandle(NULL),
+            NULL                   // Additional creation config
+        );
+        J3D_UNUSED(hCbMSAA);
+
+        CheckDlgButton(hDlg, 1054, wuRegistry_GetInt(STD3D_CFG_MIPMAPAUTOGEN, 1));
+    }
+
+     // Added: Adds check box for anisotropic filtering option
+    if ( std3D_IsAnisotropicFilteringSupported() )
+    {
+        y += MulDiv(spacing, dpi, USER_DEFAULT_SCREEN_DPI);
+        int w = MulDiv(120, dpi, USER_DEFAULT_SCREEN_DPI);
+
+        // Create new auto gen mipmap checkbox
+        HWND hCbMSAA = CreateWindow(
+            "Button",
+            "Anisotropic Filtering",
+            WS_CHILD | BS_AUTOCHECKBOX | BS_VCENTER | WS_VISIBLE | WS_GROUP | WS_TABSTOP,
+            x,
+            y,
+            w,
+            h,
+            hDlg,                  // Parent window handle
+            (HMENU)1055,           // Control ID
+            GetModuleHandle(NULL),
+            NULL                   // Additional creation config
+        );
+        J3D_UNUSED(hCbMSAA);
+
+        CheckDlgButton(hDlg, 1055, wuRegistry_GetInt(STD3D_CFG_ANISOTROPICFILTER, 1));
+    }
+
+    // Added: Enable and init HiPoly check button
     HWND hHiPolyBtn = GetDlgItem(hDlg, 1052);
     EnableWindow(hHiPolyBtn, 1);
     ShowWindow(hHiPolyBtn, 1);
     CheckDlgButton(hDlg, 1052, sithModel_IsHiPolyEnabled());
+
+    // Move HiPoly checkbox to new position
+    y += MulDiv(spacing, dpi, USER_DEFAULT_SCREEN_DPI);
+    SetWindowPos(hHiPolyBtn, NULL, x, y, MulDiv(105, dpi, USER_DEFAULT_SCREEN_DPI), h, SWP_NOZORDER | SWP_NOREDRAW);
+
+    // Added: Move TV icon down
+    x = MulDiv(35, dpi, USER_DEFAULT_SCREEN_DPI);
+    y += MulDiv(spacing * 2, dpi, USER_DEFAULT_SCREEN_DPI);
+    SetWindowPos(GetDlgItem(hDlg, 1098), NULL, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOREDRAW);
 
     SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
     return 1;
@@ -7915,13 +8009,15 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             CheckRadioButton(hDlg, 1093, 1095, 1095);
             jonesConfig_advanceDisplaySettings_perfLevel = 4;
 
-            // Set default to no buffering
-            CheckRadioButton(hDlg, 1091, 1092, 1091);
-            pSettings->bBuffering = 0;
+            // Set buffering
+            // Altered: Changed to triple buffering from OG double buffering
+            CheckRadioButton(hDlg, 1091, 1092, 1092);
+            pSettings->bBuffering = 1;
 
-            // Set default to bilinear
-            CheckRadioButton(hDlg, 1088, 1090, 1089);
-            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+            // Set default to trilinear
+            // Altered: Original was set to bilinear
+            CheckRadioButton(hDlg, 1088, 1090, 1090);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR;
             break;
         }
 
@@ -7950,7 +8046,8 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             }
 
             pSettings->filter = jonesConfig_advanceDisplaySettings_curFilterMode;
-            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+            //jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR; // Fixed: Removed, as cached filtermode is now set in init function, 
+            //                                                                                           as the mipmap filter radio boxes might not be changed and then the wrong filter mode would be set here
 
             // Added
             // Get & Save HiPoly option
@@ -7968,6 +8065,27 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
                     pNoteStr = "You must quit and restart the game for the high poly option to take effect.";
                 }
                 jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_GMPLY_OPTS", pNoteStr, 136); // 136 - TV icon
+            }
+
+            // Added: Grab MSAA option state
+            if ( std3D_IsMSAASupported() )
+            {
+                int bMSAA= IsDlgButtonChecked(hDlg, 1053);
+                wuRegistry_SaveIntEx(STD3D_CFG_MSAAENABLED, bMSAA ? 1 : 0);
+            }
+
+            // Added: Grab mipmap auto gen option
+            if ( std3D_IsMSAASupported() )
+            {
+                int bAutoGen = IsDlgButtonChecked(hDlg, 1054);
+                wuRegistry_SaveIntEx(STD3D_CFG_MIPMAPAUTOGEN, bAutoGen ? 1 : 0);
+            }
+
+            // Added: Grab Mipmap auto gen option
+            if ( std3D_IsAnisotropicFilteringSupported() )
+            {
+                int bAniso = IsDlgButtonChecked(hDlg, 1055);
+                wuRegistry_SaveIntEx(STD3D_CFG_ANISOTROPICFILTER, bAniso ? 1 : 0);
             }
 
             // Close dialog
