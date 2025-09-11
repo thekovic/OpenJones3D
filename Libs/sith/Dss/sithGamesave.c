@@ -432,6 +432,12 @@ int sithGamesave_Process(void)
     {
         if ( !sithGamesave_bThumbnail )
         {
+            // Fixed: Make sure back buffer is inited (DirectX 9 could reset device in between calls)
+            if ( !stdDisplay_g_backBuffer.surface.pSysSurface )
+            {
+                return 1;
+            }
+
             sithGamesave_SetThumbnailImage(&stdDisplay_g_backBuffer);
             sithGamesave_hBmpThumbnail = sithGamesave_CreateThumbnail();
         }
@@ -795,7 +801,7 @@ void J3DAPI sithGamesave_SetThumbnailImage(tVBuffer* pVBuffer)
 
         // Clone the thumbnail image to sithGamesave_pThumbnailImage
         tRasterInfo rasterInfo = pVBuffer->rasterInfo;
-        sithGamesave_pThumbnailImage = stdDisplay_VBufferNew(&rasterInfo, 0, 0);
+        sithGamesave_pThumbnailImage = stdDisplay_VBufferNew(&rasterInfo, /*bUseVSurface=*/0, /*bUseVideoMemory=*/0);
         if ( sithGamesave_pThumbnailImage )
         {
             size_t pixelSize = sithGamesave_pThumbnailImage->rasterInfo.rowSize / (unsigned int)sithGamesave_pThumbnailImage->rasterInfo.rowWidth;

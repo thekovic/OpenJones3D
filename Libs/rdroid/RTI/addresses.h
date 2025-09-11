@@ -302,7 +302,7 @@
 #define rdClip_aWorkVertIntensities_ADDR 0x014DDFF0
 #define rdClip_g_faceStatus_ADDR 0x014DE4F4
 #define rdClip_aWorkFaceVerts_ADDR 0x014DE4F8
-#define rdPolyline_aVerticesCache_ADDR 0x014DEBB8
+#define rdPolyline_aView_ADDR 0x014DEBB8
 #define rdSprite_aView_ADDR 0x014DF838
 #define rdQClip_pDestVert_ADDR 0x014E0BCC
 #define rdQClip_pSourceVert_ADDR 0x014E0E50

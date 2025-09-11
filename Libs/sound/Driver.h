@@ -4,53 +4,61 @@
 #include <sound/types.h>
 #include <sound/RTI/addresses.h>
 
-#include <dsound.h>
-
 J3D_EXTERN_C_START
 
-int J3DAPI SoundDriver_Open(int bNoSound3D, int bGlobalFocus, HWND hwnd, LPDIRECTSOUND pDirectSound, SoundCalcListenerSoundMixFunc pfCalcListenerSoundMix, SoundDriverGetSoundBufferDataFunc pfGetSoundBufferData, tPrintfFunc pfLogError);
+#if defined (J3D_DIRECTX6)
+typedef IDirectSound tDirectSound;
+#elif defined (J3D_DIRECTX9)
+typedef IDirectSound8 tDirectSound;
+#else
+#error "Unsuported system sound API. Please define J3D_DIRECTX6 or J3D_DIRECTX9 in your project."
+#endif
+
+typedef uint8_t* (J3DAPI* SoundDriverGetSoundBufferDataFunc)(tSysSoundBuffer* pDSBuf, uint32_t* pSoundDataSize, uint32_t* pbCompressed);
+
+int J3DAPI SoundDriver_Open(int bNoSound3D, int bGlobalFocus, HWND hwnd, tDirectSound* pDirectSound, SoundCalcListenerSoundMixFunc pfCalcListenerSoundMix, SoundDriverGetSoundBufferDataFunc pfGetSoundBufferData, tPrintfFunc pfLogError);
 void SoundDriver_Close(void);
 
 void J3DAPI SoundDriver_SetMaxVolume(float volume);
-LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_CreateAndPlay(size_t samplesPerSec, size_t nBitsPerSample, size_t numChannels, const uint8_t* pSoundData, size_t dataSize, tSoundChannelFlag* pFlags, LPDIRECTSOUNDBUFFER pSBuffer);
-void J3DAPI SoundDriver_Release(LPDIRECTSOUNDBUFFER pDSBuf);
-void J3DAPI SoundDriver_Play(LPDIRECTSOUNDBUFFER pDSBuf, int bLoop);
-void J3DAPI SoundDriver_Stop(LPDIRECTSOUNDBUFFER pDSBuf);
+tSysSoundBuffer* J3DAPI SoundDriver_CreateAndPlay(size_t samplesPerSec, size_t nBitsPerSample, size_t numChannels, const uint8_t* pSoundData, size_t dataSize, tSoundChannelFlag* pFlags, tSysSoundBuffer* pSBuffer);
+void J3DAPI SoundDriver_Release(tSysSoundBuffer* pDSBuf);
+void J3DAPI SoundDriver_Play(tSysSoundBuffer* pDSBuf, int bLoop);
+void J3DAPI SoundDriver_Stop(tSysSoundBuffer* pDSBuf);
 
-void J3DAPI SoundDriver_SetVolume(LPDIRECTSOUNDBUFFER pDSBuf, float volume);
-float J3DAPI SoundDriver_GetVolume(LPDIRECTSOUNDBUFFER pDSBuf);
+void J3DAPI SoundDriver_SetVolume(tSysSoundBuffer* pDSBuf, float volume);
+float J3DAPI SoundDriver_GetVolume(tSysSoundBuffer* pDSBuf);
 
-void J3DAPI SoundDriver_SetPan(LPDIRECTSOUNDBUFFER pDSoundBuf, float pan);
-float J3DAPI SoundDriver_GetPan(LPDIRECTSOUNDBUFFER pDSBuf); // Added: From debug
+void J3DAPI SoundDriver_SetPan(tSysSoundBuffer* pDSoundBuf, float pan);
+float J3DAPI SoundDriver_GetPan(tSysSoundBuffer* pDSBuf); // Added: From debug
 
-void J3DAPI SoundDriver_SetFrequency(LPDIRECTSOUNDBUFFER pDSBuf, float freq);
-float J3DAPI SoundDriver_GetFrequency(LPDIRECTSOUNDBUFFER pDSBuf);
+void J3DAPI SoundDriver_SetFrequency(tSysSoundBuffer* pDSBuf, float freq);
+float J3DAPI SoundDriver_GetFrequency(tSysSoundBuffer* pDSBuf);
 
-size_t J3DAPI SoundDriver_GetCurrentPosition(LPDIRECTSOUNDBUFFER pDSoundBuf);
-tSoundChannelFlag J3DAPI SoundDriver_GetStatusAndCaps(LPDIRECTSOUNDBUFFER pDSBuffer);
+size_t J3DAPI SoundDriver_GetCurrentPosition(tSysSoundBuffer* pDSoundBuf);
+tSoundChannelFlag J3DAPI SoundDriver_GetStatusAndCaps(tSysSoundBuffer* pDSBuffer);
 
 void J3DAPI SoundDriver_SetListenerPosition(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient);
 void SoundDriver_ListenerCommitDeferred(void);
 
-void J3DAPI SoundDriver_SetPosAndVelocity(LPDIRECTSOUNDBUFFER pBuffer, float x, float y, float z, float velX, float velY, float velZ, float minDistance, float maxDistance);
+void J3DAPI SoundDriver_SetPosAndVelocity(tSysSoundBuffer* pBuffer, float x, float y, float z, float velX, float velY, float velZ, float minDistance, float maxDistance);
 
-int J3DAPI SoundDriver_Update3DSound(LPDIRECTSOUNDBUFFER* ppDSBuf, float x, float y, float z, float volume, float pitch, tSoundChannelFlag* pChannelFlags, float minRadius, float maxRadius, SoundEnvFlags envflags);
+int J3DAPI SoundDriver_Update3DSound(tSysSoundBuffer** ppDSBuf, float x, float y, float z, float volume, float pitch, tSoundChannelFlag* pChannelFlags, float minRadius, float maxRadius, SoundEnvFlags envflags);
 
 void J3DAPI SoundDriver_SetGlobals(float distanceFactor, float minDistance, float maxDistance, float rolloffFactor, float dopplerFactor);
 
 int SoundDriver_Has3DHW(void);
 int SoundDriver_Use3DCaps(void); // Added: From debug version
-LPDIRECTSOUND SoundDriver_GetDSound(void);
+tDirectSound* SoundDriver_GetDSound(void);
 
-LPDIRECTSOUND J3DAPI SoundDriver_CreateDirectSound(int bNoSound3D);
-void J3DAPI SoundDriver_ReleaseDirectSound(LPDIRECTSOUND pDSound);
+tDirectSound* J3DAPI SoundDriver_CreateDirectSound(int bNoSound3D);
+void J3DAPI SoundDriver_ReleaseDirectSound(tDirectSound* pDSound);
 
 void SoundDriver_CreateListener(void);
 void SoundDriver_ReleaseListener(void);
 
-void J3DAPI SoundDriver_SetOuputFormat(LPDIRECTSOUND pDSound, uint32_t nSamplesPerSec, uint32_t nBitsPerSample, uint32_t numChannels);
+void J3DAPI SoundDriver_SetOuputFormat(tDirectSound* pDSound, uint32_t nSamplesPerSec, uint32_t nBitsPerSample, uint32_t numChannels);
 
-LPDIRECTSOUNDBUFFER J3DAPI SoundDriver_GetPrimaryDSBuffer(LPDIRECTSOUND pDSound);
+tSysSoundBuffer* J3DAPI SoundDriver_GetPrimaryDSBuffer(tDirectSound* pDSound);
 void J3DAPI SoundDriver_ReleasePrimaryDSBuffer();
 
 int J3DAPI SoundDriver_GetDecibelVolume(float volume);

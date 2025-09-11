@@ -84,13 +84,13 @@ void J3DAPI rdLight_CalcVertexIntensities(const rdLight** apLights, const rdVect
         {
             const rdLight* pLight = apLights[j];
 
-            rdVector3 vecDir;
-            rdVector_Sub3(&vecDir, &aLightPos[j], &aVertices[i]);
-            float dist = rdVector_Len3(&vecDir);
+            rdVector3 lightDir;
+            rdVector_Sub3(&lightDir, &aLightPos[j], &aVertices[i]);
+            float dist = rdVector_Len3(&lightDir);
             if ( dist < (double)pLight->minRadius )
             {
-                rdVector_Normalize3Acc(&vecDir);
-                float dot = rdVector_Dot3(&aVertexNormal[i], &vecDir);
+                rdVector_Normalize3Acc(&lightDir);
+                float dot = rdVector_Dot3(&aVertexNormal[i], &lightDir);
                 if ( dot > 0.0f )
                 {
                     if ( dist < (double)pLight->maxRadius )

@@ -10,12 +10,15 @@ J3D_EXTERN_C_START
 #define RDCAMERA_FOVMIN   5.0f
 #define RDCAMERA_FOVMAX 179.0f
 
+// Current camera orientation
 #define rdCamera_g_camPYR J3D_DECL_FAR_VAR(rdCamera_g_camPYR, rdVector3)
 // extern rdVector3 rdCamera_g_camPYR;
 
+// Current camera
 #define rdCamera_g_pCurCamera J3D_DECL_FAR_VAR(rdCamera_g_pCurCamera, rdCamera*)
 // extern rdCamera *rdCamera_g_pCurCamera;
 
+// Current camera invert view matrix (for converting from view space to world space)
 #define rdCamera_g_camMatrix J3D_DECL_FAR_VAR(rdCamera_g_camMatrix, rdMatrix34)
 // extern rdMatrix34 rdCamera_g_camMatrix;
 
@@ -33,8 +36,9 @@ int J3DAPI rdCamera_SetOrthoScale(rdCamera* pCamera, float scale); // Added
 void J3DAPI rdCamera_SetAspectRatio(rdCamera* pCamera, float ratio);
 int J3DAPI rdCamera_SetFrustrum(rdCamera* pCamera, rdClipFrustum* pFrustrum, int left, int top, int right, int bottom);
 
-void J3DAPI rdCamera_Update(const rdMatrix34* orient);
+void J3DAPI rdCamera_Update(const rdMatrix34* orient); // Sets camera view matrix from world matrix, and rdCamera_g_camMatrix and rdCamera_g_camPYR from world matrix
 
+// Projection functions from view (camera) space to screen space
 void J3DAPI rdCamera_OrthoProject(rdVector3* pDestVertex, const rdVector3* pSrcVertex);
 void J3DAPI rdCamera_OrthoProjectLst(rdVector3* pDestVerts, const rdVector3* pSrcVerts, size_t numVerts);
 void J3DAPI rdCamera_OrthoProjectSquare(rdVector3* pDestVertex, const rdVector3* pSrcVertex);

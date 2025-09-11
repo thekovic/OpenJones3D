@@ -230,27 +230,31 @@ LABEL_4:
 
         if ( (fflags & RD_FF_TEX_CLAMP_X) != 0 )
         {
-            rdflags = STD3D_RS_TEX_CPAMP_U | STD3D_RS_SUBPIXEL_CORRECTION | STD3D_RS_UNKNOWN_2 | STD3D_RS_UNKNOWN_1;
+            rdflags |= STD3D_RS_TEX_CPAMP_U;
         }
 
         if ( (fflags & RD_FF_TEX_CLAMP_Y) != 0 )
         {
-            rdflags |= STD3D_RS_TEX_CPAMP_V;  // 0x1000 - STD3D_RS_TEX_CPAMP_V
+            rdflags |= STD3D_RS_TEX_CPAMP_V;
         }
 
         if ( (fflags & RD_FF_TEX_FILTER_NEAREST) == 0 )
         {
+        #ifdef J3D_QOL_IMPROVEMENTS
+            rdflags |= STD3D_RS_TEXFILTER_ANISOTROPIC; // Altered: Use STD3D_RS_TEXFILTER_ANISOTROPIC.
+        #else
             rdflags |= STD3D_RS_TEXFILTER_BILINEAR;
+        #endif
         }
 
         if ( (fflags & RD_FF_ZWRITE_DISABLED) != 0 )
         {
-            rdflags |=  STD3D_RS_ZWRITE_DISABLED;  // 0x2000 - STD3D_RS_ZWRITE_DISABLED
+            rdflags |=  STD3D_RS_ZWRITE_DISABLED;
         }
 
         if ( (fflags & RD_FF_FOG_ENABLED) != 0 )
         {
-            rdflags |= STD3D_RS_FOG_ENABLED;  // 0x8000 - STD3D_RS_FOG_ENABLED
+            rdflags |= STD3D_RS_FOG_ENABLED;
         }
 
         rdMaterial* pCurMat = NULL;
@@ -259,7 +263,7 @@ LABEL_4:
             pCurMat = pCurPoly->pMaterial;
         }
 
-        LPDIRECT3DTEXTURE2 pD3DCachedTex = NULL;
+        tSysTexture* pCachedTexture = NULL;
         if ( pCurMat )
         {
             // format = pCurMat->formatType;
@@ -308,7 +312,7 @@ LABEL_4:
                 rdCache_AddToTextureCache(pTex, pCurMat->formatType);
             }
 
-            pD3DCachedTex = pTex->pD3DCachedTex;
+            pCachedTexture = pTex->pCachedTexture;
         }
 
         size_t totalIndices = 0;
@@ -417,7 +421,7 @@ LABEL_4:
                 || fflags != pCurPoly->flags )
             {
                 RD_ASSERTREL(rdCache_totalVerts < RDCACHE_VERTBUFFERSIZE);
-                std3D_DrawRenderList(pD3DCachedTex, rdflags, rdCache_aHWVertices, rdCache_totalVerts, rdCache_aVertIndices, totalIndices);
+                std3D_DrawRenderList(pCachedTexture, rdflags, rdCache_aHWVertices, rdCache_totalVerts, rdCache_aVertIndices, totalIndices);
                 goto LABEL_4;
             }
         }
@@ -455,7 +459,7 @@ void J3DAPI rdCache_SendWireframeFaceListToHardware(size_t numPolys, rdCacheProc
 
 void J3DAPI rdCache_AddToTextureCache(tSystemTexture* pTexture, StdColorFormatType format)
 {
-    if ( pTexture->pD3DCachedTex ) {
+    if ( pTexture->pCachedTexture ) {
         std3D_UpdateFrameCount(pTexture);
     }
     else {

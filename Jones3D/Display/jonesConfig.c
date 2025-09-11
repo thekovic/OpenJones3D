@@ -210,7 +210,7 @@ static int jonesConfig_displaySettings_bUpdateSliderText = 1;
 
 // Advance display settings dialog
 static HFONT jonesConfig_hFontAdvanceDisplaySettingsDialog = NULL; // Fixed: Added init. to NULL
-static Std3DMipmapFilterType jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+static Std3DMipmapFilterType jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR; // Altered: Changed to Trilinear from Bilinear
 static int jonesConfig_advanceDisplaySettings_perfLevel = 4;
 
 // Sound settings dialog
@@ -4722,37 +4722,6 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     // Default to Run option
     CheckDlgButton(hDlg, 1202, jonesConfig_gamePlayOptions_bDefaultRun);// CB default run
 
-    // Added: Check box "High Poly Objects"
-    // Get the position of the base checkbox
-    RECT rectCBShowText;
-    GetWindowRect(hCBShowText, &rectCBShowText);
-
-    // Convert screen coordinates to client coordinates
-    POINT pt = { rectCBShowText.left, rectCBShowText.top };
-    ScreenToClient(hDlg, &pt);
-
-    // Calculate the position for the new checkbox
-    int x = pt.x;
-    int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + 14;
-
-    // Create the Hi-Poly checkbox
-    HWND hCBHiPoly = CreateWindow(
-        "BUTTON",               // Class name for button/checkbox
-        "JONES_STR_HIPOLY",     // Text displayed on the checkbox
-        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-        x,
-        y,
-        150,                   // Width
-        20,                    // Height
-        hDlg,                  // Parent window handle (the dialog)
-        (HMENU)1053,           // Control ID
-        GetModuleHandle(NULL), // Instance handle
-        NULL                   // Additional creation config
-    );
-    J3D_UNUSED(hCBHiPoly);
-
-    CheckDlgButton(hDlg, 1053, sithModel_IsHiPolyEnabled());
-
     // Difficulty slider and text
     HWND hDifSlider = GetDlgItem(hDlg, 1050); // Difficulty slider control
 
@@ -4801,27 +4770,6 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
         HWND  hDifText = GetDlgItem(hDlg, 1215); // Difficulty text control
         SetWindowText(hDifText, pDifficultyStr);
     }
-
-
-    // Added: Resize dialog to fit in new check box
-    RECT rectDlg;
-    GetWindowRect(hDlg, &rectDlg);
-    SetWindowPos(hDlg, NULL, 0, 0, rectDlg.right - rectDlg.left, (rectDlg.bottom - rectDlg.top) + 28, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-
-    // Added: Move OK & Cancel buttons down
-    HWND hBtnOk     = GetDlgItem(hDlg, 1);
-    RECT rectBtnOk;
-    GetWindowRect(hBtnOk, &rectBtnOk);
-    POINT ptBtnOk = { rectBtnOk.left, rectBtnOk.top + (rectBtnOk.bottom - rectBtnOk.top) / 2 + 14 };
-    ScreenToClient(hDlg, &ptBtnOk);
-    SetWindowPos(hBtnOk, NULL, ptBtnOk.x, ptBtnOk.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
-
-    HWND hBtnCancel = GetDlgItem(hDlg, 2);
-    RECT rectBtnCancel;
-    GetWindowRect(hBtnCancel, &rectBtnCancel);
-    POINT ptBtnCancel = { rectBtnCancel.left, rectBtnCancel.top + (rectBtnCancel.bottom - rectBtnCancel.top) / 2 + 14 };
-    ScreenToClient(hDlg, &ptBtnCancel);
-    SetWindowPos(hBtnCancel, NULL, ptBtnCancel.x, ptBtnCancel.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
     return 1;
 }
@@ -4875,23 +4823,6 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
             sithControl_g_controlOptions &= ~0x02;
         }
 
-        // Added
-        // Get & save HiPoly option
-        int bCurBHiPoly = sithModel_IsHiPolyEnabled();
-
-        int bHiPoly = IsDlgButtonChecked(hDlg, 1053);
-        sithModel_EnableHiPoly(bHiPoly);
-        wuRegistry_SaveIntEx("HiPoly", bHiPoly);
-
-        if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
-        {
-            const char* pNoteStr = jonesString_GetString("JONES_STR_HIPOLYGO");
-            if ( pNoteStr ) {
-                pNoteStr = "You must quit and restart the game for the high poly option to take effect.";
-            }
-            jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_GMPLY_OPTS", pNoteStr, 137);
-        }
-
         // Close dialog
         EndDialog(hDlg, controlID);
     }
@@ -4909,7 +4840,6 @@ void J3DAPI jonesConfig_EnableMouseControl(int bEnable)
     {
         sithControl_RebindMouse();
     }
-
     else if ( pSettings->bWindowMode )
     {
         stdControl_EnableMouse(0);
@@ -7359,6 +7289,12 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
         if ( pFormat )
         {
             STD_FORMAT(aResolutionText, pFormat, pDisplayInfo->aModes[i].rasterInfo.width, pDisplayInfo->aModes[i].rasterInfo.height);
+            if ( pDisplayInfo->aModes[i].refreshRate > 0 )
+            {
+                size_t pos = strlen(aResolutionText);
+                stdUtil_Format(&aResolutionText[pos], STD_ARRAYLEN(aResolutionText) - pos, " (%d Hz)", pDisplayInfo->aModes[i].refreshRate);
+
+            }
         }
 
         if ( pDisplayInfo->aModes[i].aspectRatio == 1.0f && pDisplayInfo->aModes[i].rasterInfo.width >= 512 && pDisplayInfo->aModes[i].rasterInfo.height >= 384 )
@@ -7374,6 +7310,8 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
                         STD_STRCPY(pData->aVideoModes[videomodeNum].aResolutionText, aResolutionText);
                         pData->numVideoModes++;
                     }
+
+                    // Fill color depth combo box
 
                     int colorDepthIdx = 0; // Fixed: Init to 0
                     int colorDepthMask = 0; // Fixed: Init to 0
@@ -7429,10 +7367,11 @@ int J3DAPI jonesConfig_InitDisplaySettingsDialog(HWND hDlg, int a2, JonesDisplay
 
                     if ( pDisplayInfo->aModes[i].rasterInfo.width == curVideoMode.rasterInfo.width
                         && pDisplayInfo->aModes[i].rasterInfo.height == curVideoMode.rasterInfo.height
-                        && pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp == curVideoMode.rasterInfo.colorInfo.bpp )
+                        && pDisplayInfo->aModes[i].rasterInfo.colorInfo.bpp == curVideoMode.rasterInfo.colorInfo.bpp
+                        && (pDisplayInfo->aModes[i].refreshRate == 0 || pDisplayInfo->aModes[i].refreshRate == curVideoMode.refreshRate) ) // Added: Add refresh rate check
                     {
-                        selVideoModeNum   = (size_t)videomodeNum;
-                        bHasCurVideoMode  = true;
+                        selVideoModeNum  = (size_t)videomodeNum;
+                        bHasCurVideoMode = true;
                         ComboBox_SetCurSel(hCBColorDepth, ComboBox_FindString(hCBColorDepth, 0, aResolutionText));
                     }
                 }
@@ -7561,6 +7500,7 @@ void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, 
                 wuRegistry_SaveInt("Width", pSettings->width);
                 wuRegistry_SaveInt("Height", pSettings->height);
                 wuRegistry_SaveInt("BPP", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.colorInfo.bpp);
+                wuRegistry_SaveInt("Refresh Rate", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].refreshRate); // Added
 
                 // Set new fog config
 
@@ -7704,8 +7644,10 @@ INT_PTR CALLBACK jonesConfig_AdvanceDisplaySettingsDialogProc(HWND hWnd, UINT uM
 
         case WM_INITDIALOG:
         {
-            jonesConfig_hFontAdvanceDisplaySettingsDialog = jonesConfig_InitDialog(hWnd, 0, 148);
+            // Altered: Switched order so InitDialog affects any new items added to dialog 
             int inited = jonesConfig_InitAdvanceDisplaySettingsDialog(hWnd, wParam, (JonesDisplaySettingsDialogData*)lParam);
+            jonesConfig_hFontAdvanceDisplaySettingsDialog = jonesConfig_InitDialog(hWnd, NULL, 148);
+
             SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
             return inited;
         }
@@ -7726,6 +7668,7 @@ int J3DAPI jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(const StdDisplayIn
         return 0;
     }
 
+#if defined(J3D_DIRECTX6)
     switch ( bpp )
     {
         case 16:
@@ -7737,6 +7680,13 @@ int J3DAPI jonesConfig_DisplaySettings_Get3DDeviceSupportsBPP(const StdDisplayIn
         case 32:
             return pDisplayInfo->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_32;
     }
+#elif defined(J3D_DIRECTX9)
+    J3D_UNUSED(pDisplayInfo);
+    J3D_UNUSED(pSettings);
+    if ( bpp == 24 || bpp == 32 ) return 1;
+#else 
+#error "Unsupported 3D API"
+#endif
 
     return 0;
 }
@@ -7825,14 +7775,17 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
     {
         case STD3D_MIPMAPFILTER_NONE:
             CheckRadioButton(hDlg, 1088, 1090, 1088);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_NONE; // Fixed: assign config filtermode to cache var, OG was missing this assignment
             break;
 
         case STD3D_MIPMAPFILTER_BILINEAR:
             CheckRadioButton(hDlg, 1088, 1090, 1089);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR; // Fixed: assign config filtermode to cache var, OG was missing this assignment
             break;
 
         case STD3D_MIPMAPFILTER_TRILINEAR:
             CheckRadioButton(hDlg, 1088, 1090, 1090);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR; // Fixed: assign config filtermode to cache var, OG was missing this assignment
             break;
     }
 
@@ -7861,6 +7814,102 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
     SendMessage(hFogSliderCtrl, TBM_SETTICFREQ, 5u, 0);
     SendMessage(hFogSliderCtrl, TBM_SETPOS, /*re-draw=*/TRUE, (LPARAM)sithRender_g_fogDensity);
     SendMessage(hFogSliderCtrl, TBM_SETPAGESIZE, 0, 5u);
+
+    // New option items
+    const int spacing = 15; // TODO: make it static
+    UINT dpi = GetDpiForWindow(hDlg);
+    int x = MulDiv(20, dpi, USER_DEFAULT_SCREEN_DPI);
+    int y = MulDiv(190, dpi, USER_DEFAULT_SCREEN_DPI);
+    int h = MulDiv(14, dpi, USER_DEFAULT_SCREEN_DPI);
+
+    // Added: Adds check box for Anti-Aliasing (MSAA) option
+    if ( std3D_IsMSAASupported() )
+    {
+        int w = MulDiv(120, dpi, USER_DEFAULT_SCREEN_DPI);
+
+        // Create the MSAA checkbox
+        HWND hCbMSAA = CreateWindow(
+            "Button",
+            "Anti-Aliasing (MSAA)",
+            WS_CHILD | BS_AUTOCHECKBOX | BS_VCENTER | WS_VISIBLE | WS_GROUP | WS_TABSTOP,
+            x,
+            y,
+            w,
+            h,
+            hDlg,                  // Parent window handle
+            (HMENU)1053,           // Control ID
+            GetModuleHandle(NULL),
+            NULL                   // Additional creation config
+        );
+        J3D_UNUSED(hCbMSAA);
+
+        CheckDlgButton(hDlg, 1053, wuRegistry_GetInt(STD3D_CFG_MSAAENABLED, 1));
+    }
+
+    // Added: Adds check box for Anti-Aliasing (MSAA) option
+    if ( std3D_IsMipmapAutoGenSupported() )
+    {
+        y += MulDiv(spacing, dpi, USER_DEFAULT_SCREEN_DPI);
+        int w = MulDiv(120, dpi, USER_DEFAULT_SCREEN_DPI);
+
+        // Create new auto gen mipmap checkbox
+        HWND hCbMSAA = CreateWindow(
+            "Button",
+            "Auto Gen. Mipmaps",
+            WS_CHILD | BS_AUTOCHECKBOX | BS_VCENTER | WS_VISIBLE | WS_GROUP | WS_TABSTOP,
+            x,
+            y,
+            w,
+            h,
+            hDlg,                  // Parent window handle
+            (HMENU)1054,           // Control ID
+            GetModuleHandle(NULL),
+            NULL                   // Additional creation config
+        );
+        J3D_UNUSED(hCbMSAA);
+
+        CheckDlgButton(hDlg, 1054, wuRegistry_GetInt(STD3D_CFG_MIPMAPAUTOGEN, 1));
+    }
+
+     // Added: Adds check box for anisotropic filtering option
+    if ( std3D_IsAnisotropicFilteringSupported() )
+    {
+        y += MulDiv(spacing, dpi, USER_DEFAULT_SCREEN_DPI);
+        int w = MulDiv(120, dpi, USER_DEFAULT_SCREEN_DPI);
+
+        // Create new auto gen mipmap checkbox
+        HWND hCbMSAA = CreateWindow(
+            "Button",
+            "Anisotropic Filtering",
+            WS_CHILD | BS_AUTOCHECKBOX | BS_VCENTER | WS_VISIBLE | WS_GROUP | WS_TABSTOP,
+            x,
+            y,
+            w,
+            h,
+            hDlg,                  // Parent window handle
+            (HMENU)1055,           // Control ID
+            GetModuleHandle(NULL),
+            NULL                   // Additional creation config
+        );
+        J3D_UNUSED(hCbMSAA);
+
+        CheckDlgButton(hDlg, 1055, wuRegistry_GetInt(STD3D_CFG_ANISOTROPICFILTER, 1));
+    }
+
+    // Added: Enable and init HiPoly check button
+    HWND hHiPolyBtn = GetDlgItem(hDlg, 1052);
+    EnableWindow(hHiPolyBtn, 1);
+    ShowWindow(hHiPolyBtn, 1);
+    CheckDlgButton(hDlg, 1052, sithModel_IsHiPolyEnabled());
+
+    // Move HiPoly checkbox to new position
+    y += MulDiv(spacing, dpi, USER_DEFAULT_SCREEN_DPI);
+    SetWindowPos(hHiPolyBtn, NULL, x, y, MulDiv(105, dpi, USER_DEFAULT_SCREEN_DPI), h, SWP_NOZORDER | SWP_NOREDRAW);
+
+    // Added: Move TV icon down
+    x = MulDiv(35, dpi, USER_DEFAULT_SCREEN_DPI);
+    y += MulDiv(spacing * 2, dpi, USER_DEFAULT_SCREEN_DPI);
+    SetWindowPos(GetDlgItem(hDlg, 1098), NULL, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOREDRAW);
 
     SetWindowLongPtr(hDlg, DWL_USER, (LONG_PTR)pData);
     return 1;
@@ -7960,13 +8009,15 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             CheckRadioButton(hDlg, 1093, 1095, 1095);
             jonesConfig_advanceDisplaySettings_perfLevel = 4;
 
-            // Set default to no buffering
-            CheckRadioButton(hDlg, 1091, 1092, 1091);
-            pSettings->bBuffering = 0;
+            // Set buffering
+            // Altered: Changed to triple buffering from OG double buffering
+            CheckRadioButton(hDlg, 1091, 1092, 1092);
+            pSettings->bBuffering = 1;
 
-            // Set default to bilinear
-            CheckRadioButton(hDlg, 1088, 1090, 1089);
-            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+            // Set default to trilinear
+            // Altered: Original was set to bilinear
+            CheckRadioButton(hDlg, 1088, 1090, 1090);
+            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR;
             break;
         }
 
@@ -7995,8 +8046,49 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             }
 
             pSettings->filter = jonesConfig_advanceDisplaySettings_curFilterMode;
-            jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_BILINEAR;
+            //jonesConfig_advanceDisplaySettings_curFilterMode = STD3D_MIPMAPFILTER_TRILINEAR; // Fixed: Removed, as cached filtermode is now set in init function, 
+            //                                                                                           as the mipmap filter radio boxes might not be changed and then the wrong filter mode would be set here
 
+            // Added
+            // Get & Save HiPoly option
+            int bCurBHiPoly = sithModel_IsHiPolyEnabled();
+
+            int bHiPoly = IsDlgButtonChecked(hDlg, 1052);
+            sithModel_EnableHiPoly(bHiPoly);
+            wuRegistry_SaveIntEx("HiPoly", bHiPoly);
+
+            if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
+            {
+                const char* pNoteStr = jonesString_GetString("JONES_STR_HIPOLYGO");
+                if ( !pNoteStr )
+                {
+                    pNoteStr = "You must quit and restart the game for the high poly option to take effect.";
+                }
+                jonesConfig_ShowMessageDialog(hDlg, "JONES_STR_GMPLY_OPTS", pNoteStr, 136); // 136 - TV icon
+            }
+
+            // Added: Grab MSAA option state
+            if ( std3D_IsMSAASupported() )
+            {
+                int bMSAA= IsDlgButtonChecked(hDlg, 1053);
+                wuRegistry_SaveIntEx(STD3D_CFG_MSAAENABLED, bMSAA ? 1 : 0);
+            }
+
+            // Added: Grab mipmap auto gen option
+            if ( std3D_IsMSAASupported() )
+            {
+                int bAutoGen = IsDlgButtonChecked(hDlg, 1054);
+                wuRegistry_SaveIntEx(STD3D_CFG_MIPMAPAUTOGEN, bAutoGen ? 1 : 0);
+            }
+
+            // Added: Grab Mipmap auto gen option
+            if ( std3D_IsAnisotropicFilteringSupported() )
+            {
+                int bAniso = IsDlgButtonChecked(hDlg, 1055);
+                wuRegistry_SaveIntEx(STD3D_CFG_ANISOTROPICFILTER, bAniso ? 1 : 0);
+            }
+
+            // Close dialog
             EndDialog(hDlg, ctrlID);
         } break;
 

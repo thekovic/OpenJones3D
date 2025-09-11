@@ -168,6 +168,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
             );
         #endif
 
+        #ifdef J3D_DIRECTX6
             // Remove DX6 resolutions cap
             if ( !RemoveDirect3D3ResolutionCap() )
             {
@@ -176,6 +177,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  dwReason, LPVOID lpReserved)
                     MB_ICONINFORMATION | MB_DEFBUTTON1
                 );
             }
+        #endif
 
             // Init function hooks
             if ( !InstallHooks() )
@@ -542,6 +544,7 @@ void* memfind(const void* l, size_t l_len, const void* s, size_t s_len)
     return NULL;
 }
 
+#ifdef J3D_DIRECTX6
 /**
  * @brief Removes IDirect3D3 2048-pixel resolution cap on device creation
  *
@@ -584,3 +587,4 @@ bool RemoveDirect3D3ResolutionCap(void)
 
     return true;
 }
+#endif

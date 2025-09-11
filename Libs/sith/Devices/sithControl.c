@@ -736,7 +736,7 @@ void sithControl_RegisterControlFunctions(void)
     sithControl_RegisterKeyFunction(SITHCONTROL_CAMERAZOOMIN);
     sithControl_RegisterKeyFunction(SITHCONTROL_CAMERAZOOMOUT);
 
-    // Note this if scope if removed in release version but we'll keep it
+    // Note this if scope is removed in release version but we'll keep it
     //if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
         sithControl_RegisterKeyFunction(SITHCONTROL_MLOOK);

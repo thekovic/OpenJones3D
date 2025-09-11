@@ -76,7 +76,7 @@
 #define stdDisplay_DDEnumCallback_ADDR 0x004BB130
 #define stdDisplay_EnumVideoModesCallback_ADDR 0x004BB370
 #define stdDisplay_SetAspectRatio_ADDR 0x004BB6A0
-#define stdDisplay_GetDirectDraw_ADDR 0x004BB700
+#define stdDisplay_GetSystemDevice_ADDR 0x004BB700
 #define stdDisplay_SetWindowMode_ADDR 0x004BB710
 #define stdDisplay_SetFullscreenMode_ADDR 0x004BBE30
 #define stdDisplay_ReleaseBuffers_ADDR 0x004BC1B0

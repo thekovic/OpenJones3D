@@ -1586,7 +1586,7 @@ void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orien
     if ( pMesh->geoMode )
     {
         rdVector3 tpos;
-        rdMatrix_TransformPoint34(&tpos, &orient->dvec, &rdCamera_g_pCurCamera->orient);
+        rdMatrix_TransformPoint34(&tpos, &orient->dvec, &rdCamera_g_pCurCamera->viewMatrix); // Transform mesh position to camera view space
         // GrimEngine does this:
         //    if ( pThing->frustrumCullStatus ) // status here can be either 0 (in frustum) or 1 (intersect) and not 2 because such thing would be skipped for drawing in rdModel3_Draw
         //    {
@@ -1608,13 +1608,14 @@ void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orien
         //       meshFrustrumCull = 0;
         //    }
 
-         // Transform mesh vertices to camera spaces and oriented to orient
+        // Rotate vertices for orient model matrix (world space) and transform them to view (camera) space
         rdMatrix34 tmat;
-        rdMatrix_Multiply34(&tmat, &rdCamera_g_pCurCamera->orient, orient);
-        rdMatrix_TransformPointList34(&tmat, pCurMesh->apVertices, aView, pCurMesh->numVertices);
+        rdMatrix_Multiply34(&tmat, &rdCamera_g_pCurCamera->viewMatrix, orient); // Combine model-view matrices
+        rdMatrix_TransformPointList34(&tmat, pCurMesh->apVertices, aView, pCurMesh->numVertices); // Transform vertices to view space (i.e. rotate to orinet and convert to view space)
 
-        rdMatrix34 orthOrient;
-        rdMatrix_InvertOrtho34(&orthOrient, orient);
+        // Calculate model matrix
+        rdMatrix34 InvModelMatrix;
+        rdMatrix_InvertOrtho34(&InvModelMatrix, orient);
 
         lightingMode = pCurMesh->lightMode;
         if ( curLightingMode < lightingMode )
@@ -1634,7 +1635,8 @@ void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orien
                 rdVector_Sub3(&dir, &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &orient->dvec);
                 // TODO: grimengine check if (pCurMesh->radius + pLight->minRadius <= rdVector_Len3(&dir)) continue;
 
-                rdMatrix_TransformPoint34(&aLocalLightPos[numMeshLights], &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &orthOrient);
+                // Transform light to model local position
+                rdMatrix_TransformPoint34(&aLocalLightPos[numMeshLights], &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &InvModelMatrix);
                 apMeshLights[numMeshLights] = pLight;
                 ++numMeshLights;
             }
@@ -1651,7 +1653,8 @@ void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orien
                 rdVector_Sub3(&dir, &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &orient->dvec);
                 // TODO: grimengine check if (pCurMesh->radius + pLight->minRadius <= rdVector_Len3(&dir)) continue;
 
-                rdMatrix_TransformPoint34(&aLocalLightPos[numMeshLights], &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &orthOrient);
+                // Transform light to mesh local space
+                rdMatrix_TransformPoint34(&aLocalLightPos[numMeshLights], &rdCamera_g_pCurCamera->aLightPositions[pLight->num], &InvModelMatrix);
                 apMeshLights[numMeshLights] = pLight;
                 ++numMeshLights;
             }
@@ -1674,12 +1677,14 @@ void J3DAPI rdModel3_DrawMesh(const rdModel3Mesh* pMesh, const rdMatrix34* orien
             }
         }
 
-        rdMatrix_TransformPoint34(&localCamera, &rdCamera_g_camMatrix.dvec, &orthOrient);
+        // Transform camera world position to mesh local position
+        rdMatrix_TransformPoint34(&localCamera, &rdCamera_g_camMatrix.dvec, &InvModelMatrix);
 
         for ( size_t i = 0; i < pMesh->numFaces; ++i )
         {
             const rdFace* pFace = &pMesh->aFaces[i];
 
+            // Draw mesh face if it's 1st vertex is facing camera, or backface culling is disabled
             rdVector3 dir;
             rdVector_Sub3(&dir, &localCamera, &pCurMesh->apVertices[*pFace->aVertices]);
             float dot = rdVector_Dot3(&pFace->normal, &dir);
@@ -1721,7 +1726,7 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
         pPoly->lightingMode = lightingMode;
     }
 
-    // Clip/transform to clip space
+    // Project vertices to view space and assign to poly
     // Fyi, grimengine uses either rdPrim3_ClipFace or rdPrim3_NoClipFace because it does manual clipping of polys that are not in clip frustum 
     // We expect HW / GPU API will do the clipping for us
     if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aTransformedVertices, pCurMesh->apTexVertices, pCurMesh->aLightIntensities, NULL) )

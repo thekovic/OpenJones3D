@@ -376,8 +376,8 @@ int J3DAPI rdParticle_Draw(const rdThing* pParticle, const rdMatrix34* pOrient)
     ambientLight.alpha = 1.0f;
 
     rdMatrix34 tmat;
-    rdMatrix_Multiply34(&tmat, &rdCamera_g_pCurCamera->orient, pOrient);
-    rdMatrix_TransformPointList34(&tmat, prdParticle->aVerticies, rdParticle_aTransformedVerts, prdParticle->numVertices);
+    rdMatrix_Multiply34(&tmat, &rdCamera_g_pCurCamera->viewMatrix, pOrient); // Combine model and view matrices
+    rdMatrix_TransformPointList34(&tmat, prdParticle->aVerticies, rdParticle_aTransformedVerts, prdParticle->numVertices); // Transform verts to view space
 
     for ( size_t i = 0; i < prdParticle->numVertices; ++i )
     {
@@ -397,7 +397,7 @@ int J3DAPI rdParticle_Draw(const rdThing* pParticle, const rdMatrix34* pOrient)
         rdParticle_aFaceVerts[3].y = rdParticle_aTransformedVerts[i].y;
         rdParticle_aFaceVerts[3].z = rdParticle_aTransformedVerts[i].z + prdParticle->sizeHalf;
 
-
+        // Check all verts are in frustum
         size_t numVertsInFrustum = rdQClip_VerticesInFrustrum(rdCamera_g_pCurCamera->pFrustum, rdParticle_aFaceVerts, STD_ARRAYLEN(rdParticle_aFaceVerts));
         if ( numVertsInFrustum != STD_ARRAYLEN(rdParticle_aFaceVerts) )
         {
@@ -420,7 +420,7 @@ int J3DAPI rdParticle_Draw(const rdThing* pParticle, const rdMatrix34* pOrient)
             return 0;
         }
 
-        rdClip_VerticesToPlane(pPoly, rdParticle_aFaceVerts, rdParticle_aFaceTexVerts, STD_ARRAYLEN(rdParticle_aFaceVerts));
+        rdClip_VerticesToPlane(pPoly, rdParticle_aFaceVerts, rdParticle_aFaceTexVerts, STD_ARRAYLEN(rdParticle_aFaceVerts)); // Project verts to screen space
 
         pPoly->aVertIntensities[0] = ambientLight;
         pPoly->aVertIntensities[1] = ambientLight;

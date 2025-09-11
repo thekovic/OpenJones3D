@@ -33,11 +33,11 @@
 #include <sith/World/sithVoice.h>
 #include <sith/World/sithWorld.h>
 
-#include <smush/SmushPlay.h>
-
 #include <sound/AudioLib.h>
 #include <sound/Sound.h>
 #include <sound/Driver.h>
+
+#include <smush/SmushPlay.h>
 
 #include <std/General/std.h>
 #include <std/General/stdCircBuf.h>
@@ -987,8 +987,11 @@ void J3DAPI JonesMain_OnAppActivate(HWND hWnd, int bActivated)
             }
 
             JonesDisplay_UpdateDualScreenWindowSize(&JonesMain_state.displaySettings);
-            stdDisplay_Refresh(1);
+            // Fixed: Changed the order of following 2 calls
+            //        OG refresh was called before ResetTextureCache
+            // Note: std3D_ResetTextureCache, not needed in Dx9 case since refresh will signal texture cache reset
             std3D_ResetTextureCache();
+            stdDisplay_Refresh(1);
 
             if ( sithWorld_g_pCurrentWorld )
             {
@@ -1981,7 +1984,7 @@ int JonesMain_PlayIntroMovie(void)
         return result;
     }
 
-    LPDIRECTSOUND pDSound = SoundDriver_GetDSound();
+    tDirectSound* pDSound = SoundDriver_GetDSound();
     HWND hwnd = stdWin95_GetWindow();
     SmushPlay_SysStartup(hwnd, pDSound);
     SmushPlay_SetGlobalVolume((size_t)(JonesMain_state.soundSettings.maxSoundVolume * 127.0f));
@@ -2595,14 +2598,12 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     CHAR aText[128] = { 0 }; // Added: Init to 0
     if ( GetComputerName(aText, &nSize) )
     {
-        stdUtil_ToWStringEx(pConfig->waPlayerName, aText, STD_ARRAYLEN(pConfig->waPlayerName) - 1);
+        STD_TOWSTR(pConfig->waPlayerName, aText);
     }
     else
     {
-        stdUtil_ToWStringEx(pConfig->waPlayerName, "NoName", STD_ARRAYLEN(pConfig->waPlayerName) - 1);
+        STD_TOWSTR(pConfig->waPlayerName, "NoName");
     }
-
-    pConfig->waPlayerName[STD_ARRAYLEN(pConfig->waPlayerName) - 1] = 0;
 
     // Removed: rdModel3K module not supported 
     //if ( wuRegistry_GetIntEx("Katmai", 1) && rdModel3K_sub_4E2ED0() )
@@ -2620,7 +2621,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.bWindowMode  = wuRegistry_GetIntEx("InWindow", 0);
     pConfig->displaySettings.bDualMonitor = wuRegistry_GetIntEx("Dual Monitor", 0);
     pConfig->displaySettings.bBuffering   = wuRegistry_GetIntEx("Buffering", 0);
-    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", STD3D_MIPMAPFILTER_BILINEAR); // bilinear
+    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", STD3D_MIPMAPFILTER_TRILINEAR); // Altered: Set trilinear as default (OG bilinear)
 
     pConfig->displaySettings.bFog       = wuRegistry_GetIntEx("Fog", 1);
     pConfig->displaySettings.fogDensity = wuRegistry_GetFloat("Fog Density", 1.0f);
@@ -2640,24 +2641,33 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.lightMode = wuRegistry_GetInt("Lighting Mode", RD_LIGHTING_GOURAUD);
 
     int bHiPoly = wuRegistry_GetIntEx("HiPoly", 1); // Changed: Enable by default, was disabled
-    sithModel_EnableHiPoly(bHiPoly);
+    sithModel_EnableHiPoly(bHiPoly); // Added
 
     JonesMain_pStartupDisplayEnv = pDisplayEnv;
 
     wuRegistry_GetStr("Display", aText, STD_ARRAYLEN(aText), "");
 
+    // Altered: Changed to use first found HAL display if no display is found
+    int halDisplayIdx = -1;
+    bool bFoundDisplay = false;
     for ( size_t i = 0; i < JonesMain_pStartupDisplayEnv->numInfos; ++i )
     {
-        if ( JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL )
+        if ( halDisplayIdx == -1 && JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.bHAL )
         {
-            pConfig->displaySettings.displayDeviceNum = i;
+            halDisplayIdx = i;
         }
 
         if ( streq(JonesMain_pStartupDisplayEnv->aDisplayInfos[i].displayDevice.aDriverName, aText) )
         {
             pConfig->displaySettings.displayDeviceNum = i;
+            bFoundDisplay = true;
             break;
         }
+    }
+
+    if ( !bFoundDisplay && halDisplayIdx != -1 )
+    {
+        pConfig->displaySettings.displayDeviceNum = halDisplayIdx;
     }
 
     StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pConfig->displaySettings.displayDeviceNum];
@@ -2683,12 +2693,12 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     JonesMain_curVideoMode.aspectRatio                    = 1.0f;
     JonesMain_curVideoMode.rasterInfo.width               = wuRegistry_GetInt("Width", 640);
     JonesMain_curVideoMode.rasterInfo.height              = wuRegistry_GetInt("Height", 480);
-    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32); // Altered: Changed 16 bpp to 32
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32);          // Altered: Changed 16 bpp to 32
+    JonesMain_curVideoMode.refreshRate                    = wuRegistry_GetInt("Refresh Rate", 60); // Added
     JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
 
     pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
-
-    memcpy(&JonesMain_curVideoMode, &pDisplay->aModes[pConfig->displaySettings.videoModeNum], sizeof(JonesMain_curVideoMode));
+    JonesMain_curVideoMode = pDisplay->aModes[pConfig->displaySettings.videoModeNum];
 
     pConfig->displaySettings.width  = JonesMain_curVideoMode.rasterInfo.width;
     pConfig->displaySettings.height = JonesMain_curVideoMode.rasterInfo.height;
@@ -2743,7 +2753,7 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
             int itemIdx = ComboBox_AddString(hDlgItem, std_g_genBuffer);
             ComboBox_SetItemData(hDlgItem, itemIdx, i);
 
-            // Select diver if matches the one in settings
+            // Select driver if matches the one stored in settings
             if ( i == pConfig->displaySettings.displayDeviceNum )
             {
                 ComboBox_SetCurSel(hDlgItem, itemIdx);
@@ -2813,16 +2823,30 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
     hDlgItem = GetDlgItem(hDlg, 1012);
     itemIdx = ComboBox_AddString(hDlgItem, "None");
     ComboBox_SetItemData(hDlgItem, itemIdx, 0);
+    if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_NONE )
+    {
+        selectedItemIdx = itemIdx;
+    }
 
     itemIdx = ComboBox_AddString(hDlgItem, "Bilinear");
-    ComboBox_SetItemData(hDlgItem, itemIdx, 1);
-    ComboBox_SetCurSel(hDlgItem, itemIdx);// Select bilinear as defult
+    ComboBox_SetItemData(hDlgItem, itemIdx, STD3D_MIPMAPFILTER_BILINEAR);
+    if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_BILINEAR )
+    {
+        selectedItemIdx = itemIdx;
+    }
 
     itemIdx = ComboBox_AddString(hDlgItem, "Trilinear");
-    ComboBox_SetItemData(hDlgItem, itemIdx, 2);
+    ComboBox_SetItemData(hDlgItem, itemIdx, STD3D_MIPMAPFILTER_TRILINEAR);
+    if ( pConfig->displaySettings.filter == STD3D_MIPMAPFILTER_TRILINEAR )
+    {
+        selectedItemIdx = itemIdx;
+    }
 
-    // Added
-    // Enable and init  HiPoly check button
+    // Altered: Select filter mode from config. Original bilinear mode was always selected
+    ComboBox_SetCurSel(hDlgItem, selectedItemIdx);
+
+   // Added
+   // Enable and init  HiPoly check button
     hDlgItem = GetDlgItem(hDlg, 1051);
     EnableWindow(hDlgItem, 1);
     ShowWindow(hDlgItem, 1);
@@ -3046,7 +3070,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
         pState->displaySettings.bWindowMode = IsDlgButtonChecked(hWnd, 1002) == 1; // window mode
         pState->bDevMode = IsDlgButtonChecked(hWnd, 1007) == 1;// devmode
 
-        pState->displaySettings.width = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.width;
+        pState->displaySettings.width  = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.width;
         pState->displaySettings.height = JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.height;
 
         // Get selected level & Save settings
@@ -3059,6 +3083,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             wuRegistry_SaveInt("Width", pState->displaySettings.width);
             wuRegistry_SaveInt("Height", pState->displaySettings.height);
             wuRegistry_SaveInt("BPP", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.colorInfo.bpp);
+            wuRegistry_SaveInt("Refresh Rate", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].refreshRate);
             wuRegistry_SaveInt("Filter", pState->displaySettings.filter);
 
             wuRegistry_SaveStr("StartLevel", pState->aCurLevelFilename);
@@ -3159,14 +3184,23 @@ void J3DAPI JonesMain_DevDialogInitDisplayDevices(HWND hDlg, JonesState* pConfig
         {
             if ( JonesMain_CurDisplaySupportsBPP(&pConfig->displaySettings, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp) )
             {
-                STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp);  // Changed: Moved in this scope
+                 // Changed: Moved in this scope
+                if ( pDisplay->aModes[modeNum].refreshRate )
+                {
+                    STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp (%d Hz)", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp, pDisplay->aModes[modeNum].refreshRate);  // Added: refresh rate fromat
+                }
+                else
+                {
+                    STD_FORMAT(std_g_genBuffer, "%dx%d %dbpp", pDisplay->aModes[modeNum].rasterInfo.width, pDisplay->aModes[modeNum].rasterInfo.height, pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp);
+                }
+
                 int itemIdx = ComboBox_AddString(hCBDisplayMode, std_g_genBuffer);
                 ComboBox_SetItemData(hCBDisplayMode, itemIdx, modeNum);
-
                 // Select mode
                 if ( pDisplay->aModes[modeNum].rasterInfo.width == JonesMain_curVideoMode.rasterInfo.width
                     && pDisplay->aModes[modeNum].rasterInfo.height == JonesMain_curVideoMode.rasterInfo.height
-                    && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp )
+                    && pDisplay->aModes[modeNum].rasterInfo.colorInfo.bpp == JonesMain_curVideoMode.rasterInfo.colorInfo.bpp
+                    && (pDisplay->aModes[modeNum].refreshRate == 0 || pDisplay->aModes[modeNum].refreshRate == JonesMain_curVideoMode.refreshRate) )
                 {
                     ComboBox_SetCurSel(hCBDisplayMode, itemIdx);
                     bDriverSet = true;
@@ -3242,7 +3276,8 @@ size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList,
     StdDisplayInfo* pDisplay = &pList->aDisplayInfos[deviceNum];
     for ( size_t i = 0; i < pList->aDisplayInfos[deviceNum].numModes; ++i )
     {
-        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == pVideoMode->rasterInfo.colorInfo.bpp ) // Fixed: Changed hardcoded 16 BPP check to pVideoMode BPP compare
+        if ( pDisplay->aModes[i].rasterInfo.colorInfo.bpp == pVideoMode->rasterInfo.colorInfo.bpp && // Fixed: Changed hardcoded 16 BPP check to pVideoMode BPP compare
+            (pDisplay->aModes[i].refreshRate == 0 || pDisplay->aModes[i].refreshRate == pVideoMode->refreshRate) ) // Added: Add refresh rate check
         {
             if ( pDisplay->aModes[i].rasterInfo.width == pVideoMode->rasterInfo.width && pDisplay->aModes[i].rasterInfo.height == pVideoMode->rasterInfo.height )
             {
@@ -3258,6 +3293,7 @@ size_t J3DAPI JonesMain_FindClosestVideoMode(const StdDisplayEnvironment* pList,
 
 bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSettings, size_t bpp)
 {
+#if defined(J3D_DIRECTX6)
     StdDisplayInfo* pDisplay = &JonesMain_pStartupDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum];
     switch ( bpp )
     {
@@ -3270,6 +3306,12 @@ bool J3DAPI JonesMain_CurDisplaySupportsBPP(const JonesDisplaySettings* pSetting
         case 32:
             return (pDisplay->aDevices[pSettings->device3DNum].d3dDesc.dwDeviceRenderBitDepth & DDBD_32) != 0;
     }
+#elif defined(J3D_DIRECTX9)
+    J3D_UNUSED(pSettings);
+    if ( bpp == 24 || bpp == 32 ) return 1;
+#else 
+#error "Unsupported 3D API"
+#endif
 
     return false;
 }

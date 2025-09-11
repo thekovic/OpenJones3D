@@ -1,11 +1,16 @@
 ## v0.4.0
 ### General:
+  - Added **DirectX 9** port:
+    * Added Direct3D9 port for `stdDisplay` & `std3D` modules (6290b4b)
+    * Added DirectInput8 port for `stdControl` module (a465622)
+    * Added DirectSound8 port for `sound` module (9fde6dc)
+    * Abstracted `stdComm` (a465622)
   - Refactored & added new rdVector functions: (5239a55)
     * `rdVector_IsZero2`, `rdVector_IsZero3`, `rdVector_IsZero4`
     * `rdVector_ScaleAdd2Acc`, `rdVector_ScaleAdd3Acc`, `rdVector_ScaleAdd4Acc`
     * `rdVector_MultAcc2`, `rdVector_MultAcc3`, `rdVector_MultAcc4` 
   - Added dead code found in debug version (b042bea)
-  - Added new `RDVECTOR_NEG3` macro (e78e93b)
+  - Added new macro `RDVECTOR_NEG3` (e78e93b)
   - Fixed names of thing move animation functions in `sithAnimate` module (db77fe8)
   - Renamed `sithCollision_CheckDistance` to `sithCollision_CheckFloorDistance` (b0b6116)
   - Fixed returning correct variable in `stdControl_IsOpen` (ae3146d)
@@ -15,20 +20,35 @@
   - Fixed debug assert macro in `rdroid` module (4ec9416)
   - Added functions for copying array of `rdVector*` (58ade59)
   - Added `rdQClip_Face3T` from debug version (7f9159a)
-  - Renamed developer commands (357c287)  
+  - Renamed developer console commands (357c287)  
     * `interface` -> `menu`
     * `indicator` -> `hud`
   - Implemented missing block allocation functions of `stdMemory` module (b99b92a)
   - Implemented modules:
     * `sithPlayerActions` (67f2eab)
+  - Moved high poly option to advance display settings (7b58bff)
+  - Fixed selecting stored MipMap filter mode in developer dialog (ad1633c)
+  - Added new graphic options for MSAA, anisotropic texture filtering and mipmap auto gen to display settings (77df36d)
+  - Set trilinear texture filtering and triple buffer option as default options in display settings (77df36d)
+  - Fixed releasing of front buffer DC object (84a53aa)
+  - Renamed `rdCamera` field `orient` to `viewMatrix` (5382bba)
 
 ### Display & Render:
-  - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)  
+  - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)
     Fixes issue [#28](https://github.com/smlu/OpenJones3D/issues/28)
   - Fixed missing alpha lerp & fixed minor bugs in `rdClip_Face3T` clip function (a8b6907)
   - Renamed function `rdClip_QFaceW` to `rdClip_QClipFaceW` (7c87a38)
   - Added new clipping function `rdClip_QClipFaceT` from debug version (7c87a38)
   - Fixed vertex intensities and minor bugs in `rdPrimit3_ClipFace` clip function (b87f3b9)
+  - Implemented basic HLSL shader system with support for VBO & IBO (fb26728)
+  - Fixed selecting first HAL display device in developer dialog (6a1551e)
+  - Renamed `rdCamera.orient` field to `rdCamera.viewMatrix` (5382bba)
+  - Fixed resetting cached mipmap filter on std3D init/close (7eee500)  
+    This resolve issue with mipmap filter not being set when `std3D` is reopened (changed display settings).
+  - Changed default mipmap filter to trilinear (b2a322e)
+  - Added support for anisotropic texture filtering (737d83c)
+  - Added support for MSAA anti-aliasing (9a1bc12)
+  - Added auto generation of mipmap texture chain (b7e7273)
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
@@ -37,6 +57,8 @@
   - Fixed ledge detection (32acc4c)  
     This fixes detection of ledges positioned 0.2 units (2 meters) from the ground.  
     Fixes issue [#20](https://github.com/smlu/OpenJones3D/issues/20)
+  - [DX9] Implemented XInput API for game pad controllers (f4a6e61)
+  - Added `speedrun` build option to enable vanilla engine quirks and bugs that can be leveraged in speedrun gameplay [PR #23](https://github.com/smlu/OpenJones3D/pull/23)
 
 ## v0.3.1
 ### General:

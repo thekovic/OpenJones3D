@@ -933,7 +933,7 @@ SithAnimationSlot* J3DAPI sithAnimate_PullItem(SithThing* pActor, SithThing* pIt
 
 void J3DAPI sithAnimate_Update(float secTimeDelta)
 {
-    int curLastUsedAnimNum = lastUsedAnimNum;
+    int curLastUsedAnimNum = lastUsedAnimNum; // Note, the number has to be cached, as it can change during the loop, i.e.: anim can be freed in the process of updating
     for ( int animNum = 0; animNum <= curLastUsedAnimNum; animNum++ )
     {
         SithAnimationSlot* pAnim = &aAnims[animNum];

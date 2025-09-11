@@ -425,7 +425,7 @@ int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
 
                         // Stick raft player to water & set camera focus to raft player
                         sithPhysics_FindFloor(pRaftPlayerThing, 1);
-                        sithCamera_SetCameraFocus(&sithCamera_g_aCameras[1], pRaftPlayerThing, NULL);
+                        sithCamera_SetCameraFocus(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], pRaftPlayerThing, NULL);
 
                         // Play raft boarding animation
                         pRaftPlayerThing->moveStatus = SITHPLAYERMOVE_RAFT_BOARDING;

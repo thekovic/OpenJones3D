@@ -6,11 +6,12 @@
 
 J3D_EXTERN_C_START
 
-#define stdDisplay_g_frontBuffer J3D_DECL_FAR_VAR(stdDisplay_g_frontBuffer, tVBuffer)
-// extern tVBuffer stdDisplay_g_frontBuffer;
+typedef void (*tDisplayDevicePreResetCallback)(tSysDevice3D*);
+typedef void (*tDisplayDevicePostResetCallback)(tSysDevice3D*);
+typedef void (*tDisplayDeviceReleaseCallback)(tSysDevice3D*);
 
-#define stdDisplay_g_backBuffer J3D_DECL_FAR_VAR(stdDisplay_g_backBuffer, tVBuffer)
-// extern tVBuffer stdDisplay_g_backBuffer;
+extern tVBuffer stdDisplay_g_frontBuffer;
+extern tVBuffer stdDisplay_g_backBuffer;
 
 int stdDisplay_Startup(void);
 void stdDisplay_Shutdown(void);
@@ -19,17 +20,28 @@ int J3DAPI stdDisplay_Open(size_t deviceNum);
 bool stdDisplay_IsOpen(void); // Added
 void stdDisplay_Close(void);
 
-LPDIRECTDRAW4 stdDisplay_GetDirectDraw(void); // Can be retrieved after display system is opened
-int J3DAPI stdDisplay_CreateZBuffer(LPDDPIXELFORMAT pPixelFormat, int bSystemMemory);
+#ifdef J3D_DIRECTX9
+LPDIRECT3D9 stdDisplay_GetDirect3D(void);
+#endif
+
+tSysDisplayDevice* stdDisplay_GetSystemDevice(void); // Can be retrieved after display system is opened
+
+int J3DAPI stdDisplay_CreateZBuffer(const tSysPixelFormat* pPixelFormat, int bSystemMemory);
 
 void stdDisplay_DisableVSync(bool bDisable); // Added
 
 int stdDisplay_Update(void); // Flips back & front buffers
+
 void J3DAPI stdDisplay_Refresh(int bReload); // If called with bReload = true it will re-set the current video mode
+
+void stdDisplay_RegisterDevicePreResetCallback(tDisplayDevicePreResetCallback pCallback);   // Added, Register callback which is called when display device is about to reset
+void stdDisplay_RegisterDevicePostResetCallback(tDisplayDevicePostResetCallback pCallback); // Added, Register callback which is called after display device has been reset
+void stdDisplay_RegisterDeviceReleaseCallback(tDisplayDeviceReleaseCallback pCallback);     // Added, Register callback which is called when display device is about to be released
 
 size_t stdDisplay_GetNumDevices(void);
 int J3DAPI stdDisplay_GetDevice(size_t deviceNum, StdDisplayDevice* pDest); // Copies display  device at deviceNum to pDest
 int J3DAPI stdDisplay_GetCurrentDevice(StdDisplayDevice* pDevice); // Copies current display device to pDest
+const StdDisplayDevice* stdDisplay_GetAllDevices(void); // Added
 
 int J3DAPI stdDisplay_SetMode(size_t modeNum, int bFullscreen, size_t numBackBuffers); // Sets current video mode
 void stdDisplay_ClearMode(void); // Clears current video mode
@@ -38,7 +50,7 @@ size_t stdDisplay_GetNumVideoModes(void);
 int J3DAPI stdDisplay_GetVideoMode(size_t modeNum, StdVideoMode* pDestMode); // Copies video mode at modeNum to pDestMode
 int J3DAPI stdDisplay_GetCurrentVideoMode(StdVideoMode* pDisplayMode);  // Copies current video mode to pDestMode
 
-tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseVSurface, int bUseVideoMemory);
+tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseVSurface, int bUseVideoMemory); //bUseVSurface - creates surface in system surface, otherwise in app memory is allocated
 void J3DAPI stdDisplay_VBufferFree(tVBuffer* pVBuffer);
 int J3DAPI stdDisplay_VBufferLock(tVBuffer* pVBuffer);
 int J3DAPI stdDisplay_VBufferUnlock(tVBuffer* pVBuffer);
@@ -56,15 +68,17 @@ void J3DAPI stdDisplay_SetDefaultResolution(uint32_t width, uint32_t height);
 
 HDC stdDisplay_GetFrontBufferDC(void);
 void J3DAPI stdDisplay_ReleaseFrontBufferDC(HDC hdc);
+
 HDC stdDisplay_GetBackBufferDC(void);
 void J3DAPI stdDisplay_ReleaseBackBufferDC(HDC hdc);
+
 int stdDisplay_FlipToGDISurface(void);
 
 int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer);
 HRESULT J3DAPI stdDisplay_RemoveBufferClipper(int bFrontBuffer);
 
-int J3DAPI stdDisplay_CanRenderWindowed();
-int J3DAPI stdDisplay_IsFullscreen();
+int stdDisplay_CanRenderWindowed(void);
+int stdDisplay_IsFullscreen(void);
 
 int J3DAPI stdDisplay_LockBackBuffer(void** ppSurface, uint32_t* pWidth, uint32_t* pHeight, int32_t* pPitch);
 void stdDisplay_UnlockBackBuffer(void);

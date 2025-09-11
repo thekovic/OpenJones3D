@@ -4,14 +4,16 @@
 #include <rdroid/types.h>
 #include <rdroid/RTI/addresses.h>
 #include <std/types.h>
+#include <std/Win95/std3D.h>    
 
 J3D_EXTERN_C_START
 
-#define RDCACHE_MAXFACEVERTICES 64 // Max vertices per face
-                                   // Note, some clipping functions, such as rdClip_FaceToPlane can handle at max 144 vertices. 
-                                   // So be conservative when raising this number
+// Changed: For compatibility reasons was changed to use macros from std3D.h
+#define RDCACHE_MAXFACEVERTICES STD3D_MAXFACEVERTICES // Max vertices per face
+                                                      // Note, some clipping functions, such as rdClip_FaceToPlane can handle at max 144 vertices. 
+                                                      // So be conservative when raising this number
 
-#define RDCACHE_MAXVERTICES 32768 // Changed: Was 2048
+#define RDCACHE_MAXVERTICES STD3D_MAXVERTICES // Changed: Was 2048, and for compatibility reasons was changed to use macros from std3D.h
 
     void rdCache_Startup(void);
 void rdCache_AdvanceFrame(void);

@@ -61,6 +61,9 @@ Libs/j3dcore/j3d.h
 Libs/external/DirectX61c/include/*
 Libs/external/DirectX61c/libs/*
 
+# Compiled shaders
+Libs/std/Win95/DX9/Shaders/*.h
+
 # vs & vscode
 .vscode/
 .vs/
