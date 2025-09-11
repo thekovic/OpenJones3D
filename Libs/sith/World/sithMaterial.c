@@ -447,6 +447,15 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
             LPDDCOLORKEY pColorKey;
             std3D_GetTextureFormat(pMat->formatType, &desiredColorFormat, &bHasColorKey, &pColorKey);
 
+            // Fixed: Use correct color format type, since it might be different than stored texture format (e.g. RGBA5551 -> RGBA8888; STDCOLOR_FORMAT_RGBA_1BITALPHA -> STDCOLOR_FORMAT_RGBA).
+            //        This fixes rendering issue where converted 1-bit alpha texture will still be interpreted as 1-bit alpha texture and
+            //        when alpha reaches certain threshold (0xA0 - 0.627 or lower) the polygon becomes invisible (not rendered). See std3D_SetRenderState.
+            // 
+            //        Note: Due to this change all 1-bit alpha textures of 3DO models that were changed to 32bit format will be pushed to alpha buffer of rdCache (see rdModel3_DrawFace).
+            //              Since there might be now more alpha polygons to render than in the OG version the rdCahce alpha buffer had to be increased or risking some polygons not being rendered, i.e.: transparent adjoin surfaces.
+            //              Example of this issue is intro cutscene of 9 - Olmec Valley level, where river is briefly not rendered due too small alpha buffer size.
+            pMat->formatType = std3D_GetColorFormat(&desiredColorFormat);
+
             pMat->width     = pCurInfo->width;
             pMat->height    = pCurInfo->height;
             pMat->aTextures = NULL;
