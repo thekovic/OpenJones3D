@@ -101,19 +101,11 @@ rdParticle* J3DAPI rdParticle_Duplicate(const rdParticle* pOriginal)
 {
     RD_ASSERTREL(pOriginal);
 
-    rdParticle* pParticle = (rdParticle*)STDMALLOC(sizeof(rdParticle));
+    // Altered: Use rdParticle_New instead of boilerplate code from rdParticle_NewEntry
+    rdParticle* pParticle = rdParticle_New(pOriginal->numVertices, pOriginal->size, pOriginal->pMaterial, pOriginal->lightningMode);
     if ( !pParticle )
     {
-        RDLOG_ERROR("Error allocating memory for particle.\n");
-        return 0;
-    }
-
-    memset(pParticle, 0, sizeof(rdParticle));
-
-    if ( rdParticle_NewEntry(pParticle, pOriginal->numVertices, pOriginal->size, pOriginal->pMaterial, pOriginal->lightningMode) )
-    {
-        stdMemory_Free(pParticle);
-        return 0;
+        return NULL;
     }
 
     memcpy(pParticle->aVerticies, pOriginal->aVerticies, sizeof(rdVector3) * pOriginal->numVertices);
@@ -250,7 +242,8 @@ int J3DAPI rdParticle_LoadEntry(const char* pFilename, rdParticle* pParticle)
     int nRead = 0;
     if ( nRead = stdConffile_ScanLine(" vertices %d", &pParticle->numVertices), nRead != 1 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -282,7 +275,8 @@ int J3DAPI rdParticle_LoadEntry(const char* pFilename, rdParticle* pParticle)
         float x, y, z;
         if ( nRead = stdConffile_ScanLine(" %d: %f %f %f %d", &num, &x, &y, &z, pCurCelNums), nRead != 5 || *pCurCelNums >= pParticle->pMaterial->numCels )
         {
-            if ( nRead < 0 ) {
+            if ( nRead < 0 )
+            {
                 goto eof_error;
             }
             goto syntax_error;
@@ -452,7 +446,8 @@ int J3DAPI rdParticle_Draw(const rdThing* pParticle, const rdMatrix34* pOrient)
             pPoly->flags |= RD_FF_ZWRITE_DISABLED;
             rdCache_AddAlphaProcFace(STD_ARRAYLEN(rdParticle_aFaceVerts));
         }
-        else {
+        else
+        {
             rdCache_AddProcFace(STD_ARRAYLEN(rdParticle_aFaceVerts));
         }
     }
