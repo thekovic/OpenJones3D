@@ -1076,6 +1076,12 @@ void J3DAPI std3D_ClearSystemTexture(tSystemTexture* pTex)
         stdDisplay_VBufferFree(pTex->apMipmaps[--pTex->numMipLevels]);
     }
 
+    if ( pTex->apMipmaps )
+    {
+        stdMemory_Free(pTex->apMipmaps);
+        pTex->apMipmaps = NULL;
+    }
+
     if ( pTex->pCachedTexture )
     {
         std3D_RemoveTextureFromCacheList(pTex);

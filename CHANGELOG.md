@@ -32,6 +32,8 @@
   - Set trilinear texture filtering and triple buffer option as default options in display settings (77df36d)
   - Fixed releasing of front buffer DC object (84a53aa)
   - Renamed `rdCamera` field `orient` to `viewMatrix` (5382bba)
+  - Fixed `rdFace_New` function name (ccc602c)
+  - Fixed `pLine->face.aTexVertices` allocation size in `rdPolyline_NewEntry` (ccc602c)
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)

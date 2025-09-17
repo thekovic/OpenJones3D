@@ -151,7 +151,8 @@ void stdShader_Shutdown(void)
     }
 
     stdShader_ResetAllShaders();
-    stdMemory_Free(stdShader_pTable);
+    stdHashtbl_Free(stdShader_pTable);
+    stdShader_pTable = NULL;
 
     stdShader_bStartup = false;
 }
@@ -578,7 +579,8 @@ bool J3DAPI stdShader_ApplyShaderParams(StdShaderHandle sh)
             {
                 StdShaderParam* pParam = &pTypeParams->aParams[i];
                 HRESULT hr = D3D_OK;
-                switch ( pParam->value.type ) {
+                switch ( pParam->value.type )
+                {
                     case STDSHADER_PARAM_FLOAT:
                         hr = STDSHADER_SETSHADERCONSTANTF(stdShader_pDevice, type, pParam->registerIndex, &pParam->value.value.floatValue, 1);
                         break;
