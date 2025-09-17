@@ -541,7 +541,8 @@ void J3DAPI SoundDriver_SetVolume(tSysSoundBuffer* pDSBuf, float volume)
 
 float J3DAPI SoundDriver_GetVolume(tSysSoundBuffer* pDSBuf)
 {
-    if ( !pDSBuf ) {
+    if ( !pDSBuf )
+    {
         return 1.0f;
     }
 
@@ -567,7 +568,8 @@ void J3DAPI SoundDriver_SetPan(tSysSoundBuffer* pDSoundBuf, float pan)
 
 float J3DAPI SoundDriver_GetPan(tSysSoundBuffer* pDSBuf)
 {
-    if ( !pDSBuf ) {
+    if ( !pDSBuf )
+    {
         return 0.0f;
     }
 
@@ -1042,7 +1044,7 @@ tSysSoundBuffer* J3DAPI SoundDriver_GetPrimaryDSBuffer(tDirectSound* pDSound)
 {
     if ( !pDSound )
     {
-        return 0;
+        return NULL;
     }
 
     if ( SoundDriver_pDSBuffer )
