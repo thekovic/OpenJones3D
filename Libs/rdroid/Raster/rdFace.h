@@ -7,7 +7,7 @@
 
 J3D_EXTERN_C_START
 
-rdFace* J3DAPI J3DAPIrdFace_New(void); // Added
+rdFace* J3DAPI rdFace_New(void); // Added
 int J3DAPI rdFace_NewEntry(rdFace* pFace);
 
 void J3DAPI rdFace_Free(rdFace* pFace); // Added

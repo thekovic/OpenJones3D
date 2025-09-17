@@ -12,11 +12,9 @@ void rdFace_InstallHooks(void)
 }
 
 void rdFace_ResetGlobals(void)
-{
+{}
 
-}
-
-rdFace* J3DAPI J3DAPIrdFace_New(void)
+rdFace* J3DAPI rdFace_New(void)
 {
     rdFace* pFace;
 
@@ -71,11 +69,13 @@ void J3DAPI rdFace_Free(rdFace* pFace)
 
 void J3DAPI rdFace_FreeEntry(rdFace* pFace)
 {
-    if ( pFace->aVertices ) {
+    if ( pFace->aVertices )
+    {
         stdMemory_Free(pFace->aVertices);
     }
 
-    if ( pFace->aTexVertices ) {
+    if ( pFace->aTexVertices )
+    {
         stdMemory_Free(pFace->aTexVertices);
     }
 }

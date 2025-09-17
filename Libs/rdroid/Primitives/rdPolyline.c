@@ -61,8 +61,7 @@ int J3DAPI rdPolyline_NewEntry(rdPolyline* pLine, const char* pName, const char*
     pLine->face.lightingMode = lightMode;
     pLine->geoMode           = geoMode;
     pLine->lightMode         = lightMode;
-
-    rdVector_Copy4(&pLine->face.extraLight, pColor);
+    pLine->face.extraLight   = *pColor;
 
     pLine->face.pMaterial = rdMaterial_Load(pMatFilename);
     if ( !pLine->face.pMaterial )
@@ -71,7 +70,7 @@ int J3DAPI rdPolyline_NewEntry(rdPolyline* pLine, const char* pName, const char*
     }
 
     pLine->face.numVertices = 4;
-    pLine->face.aVertices = (int*)STDMALLOC(sizeof(*pLine->face.aVertices) * pLine->face.numVertices);
+    pLine->face.aVertices   = (int*)STDMALLOC(sizeof(*pLine->face.aVertices) * pLine->face.numVertices);
     if ( !pLine->face.aVertices )
     {
         goto alloc_error;
@@ -84,7 +83,7 @@ int J3DAPI rdPolyline_NewEntry(rdPolyline* pLine, const char* pName, const char*
 
     if ( pLine->face.geometryMode == RD_GEOMETRY_FULL )
     {
-        pLine->face.aTexVertices = (int*)STDMALLOC(4 * pLine->face.numVertices);
+        pLine->face.aTexVertices = (int*)STDMALLOC(sizeof(*pLine->face.aTexVertices) * pLine->face.numVertices);
         if ( !pLine->face.aTexVertices )
         {
             goto alloc_error;
@@ -101,8 +100,8 @@ int J3DAPI rdPolyline_NewEntry(rdPolyline* pLine, const char* pName, const char*
             goto alloc_error;
         }
 
-        pLine->apUVs->x = 1.0f;
-        pLine->apUVs->y = 0.0f;
+        pLine->apUVs[0].x = 1.0f;
+        pLine->apUVs[0].y = 0.0f;
 
         pLine->apUVs[1].x = 1.0f;
         pLine->apUVs[1].y = 1.0f;
