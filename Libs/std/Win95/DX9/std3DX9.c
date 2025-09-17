@@ -186,7 +186,7 @@ void std3D_ResetGlobals(void)
 
 int std3D_Startup(void)
 {
-    STD_ASSERTREL(bStartup == 0);
+    STD_ASSERTREL(bStartup == false);
     memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
     memset(std3D_aDevices, 0, sizeof(std3D_aDevices));
 
@@ -220,6 +220,12 @@ int std3D_Startup(void)
 
 void std3D_Shutdown(void)
 {
+    if ( !bStartup )
+    {
+        STDLOG_WARNING("Warning: System already shutdown!\n");
+        return;
+    }
+
     if ( std3D_bOpen )
     {
         std3D_Close();
@@ -372,7 +378,7 @@ static void std3D_OnDisplayDeviceRelease(tSysDevice3D* pDevice)
 
 int J3DAPI std3D_Open(size_t deviceNum)
 {
-    STD_ASSERTREL(bStartup == 1);
+    STD_ASSERTREL(bStartup == true);
     if ( std3D_bOpen )
     {
         STDLOG_ERROR("Warning: System already open!\n");
@@ -386,7 +392,8 @@ int J3DAPI std3D_Open(size_t deviceNum)
         return 0;
     }
 
-    if ( deviceNum >= std3D_numDevices ) {
+    if ( deviceNum >= std3D_numDevices )
+    {
         return 0;
     }
 
@@ -429,6 +436,12 @@ int J3DAPI std3D_Open(size_t deviceNum)
 
 void std3D_Close(void)
 {
+    if ( !std3D_bOpen )
+    {
+        STDLOG_WARNING("Warning: System already closed!\n");
+        return;
+    }
+
     stdDisplay_RegisterDevicePreResetCallback(NULL);
     stdDisplay_RegisterDevicePostResetCallback(NULL);
     stdDisplay_RegisterDeviceReleaseCallback(NULL);
@@ -519,7 +532,8 @@ int std3D_StartScene(void)
 void std3D_EndScene(void)
 {
     HRESULT d3dres = IDirect3DDevice9_EndScene(std3D_pD3Device);
-    if ( d3dres != D3D_OK ) {
+    if ( d3dres != D3D_OK )
+    {
         STDLOG_ERROR("Error %s ending scene.\n", std3D_D3DGetStatus(d3dres));
     }
     std3D_pD3DTex = NULL;
@@ -823,7 +837,8 @@ void J3DAPI std3D_DrawPointList(LPD3DTLVERTEX aVerts, size_t numVerts)
             sizeof(D3DTLVERTEX)
         );
 
-        if ( d3dres != D3D_OK ) {
+        if ( d3dres != D3D_OK )
+        {
             STDLOG_ERROR("Error %s DrawPrimitiveUP.\n", std3D_D3DGetStatus(d3dres));
         }
     }
@@ -835,30 +850,36 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
     {
         if ( (std3D_renderState & STD3D_RS_ZWRITE_DISABLED) != (rdflags & STD3D_RS_ZWRITE_DISABLED) )
         {
-            if ( (rdflags & STD3D_RS_ZWRITE_DISABLED) != 0 ) {
+            if ( (rdflags & STD3D_RS_ZWRITE_DISABLED) != 0 )
+            {
                 IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ZWRITEENABLE, FALSE);
             }
-            else {
+            else
+            {
                 IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ZWRITEENABLE, TRUE);
             }
         }
 
         if ( (std3D_renderState & STD3D_RS_TEX_CPAMP_U) != (rdflags & STD3D_RS_TEX_CPAMP_U) )
         {
-            if ( (rdflags & STD3D_RS_TEX_CPAMP_U) != 0 ) {
+            if ( (rdflags & STD3D_RS_TEX_CPAMP_U) != 0 )
+            {
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
             }
-            else {
+            else
+            {
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);
             }
         }
 
         if ( (std3D_renderState & STD3D_RS_TEX_CPAMP_V) != (rdflags & STD3D_RS_TEX_CPAMP_V) )
         {
-            if ( (rdflags & STD3D_RS_TEX_CPAMP_V) != 0 ) {
+            if ( (rdflags & STD3D_RS_TEX_CPAMP_V) != 0 )
+            {
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
             }
-            else {
+            else
+            {
                 IDirect3DDevice9_SetSamplerState(std3D_pD3Device, 0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
             }
         }
@@ -956,7 +977,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
 {
     memset(pTexture, 0, sizeof(tSystemTexture));
 
-    if ( !std3D_numTextureFormats ) {
+    if ( !std3D_numTextureFormats )
+    {
         return;
     }
 
@@ -978,13 +1000,16 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     }
 
     D3DFORMAT d3dFormat = D3DFMT_UNKNOWN;
-    if ( formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA ) {
+    if ( formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA )
+    {
         d3dFormat = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ddPixelFmt;
     }
-    else if ( formatType == STDCOLOR_FORMAT_RGBA ) {
+    else if ( formatType == STDCOLOR_FORMAT_RGBA )
+    {
         d3dFormat = std3D_aTextureFormats[std3D_RGBATextureFormat].ddPixelFmt;
     }
-    else {
+    else
+    {
         d3dFormat = std3D_aTextureFormats[std3D_RGBTextureFormat].ddPixelFmt;
     }
 
@@ -1105,7 +1130,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
         goto error;
     }
 
-    if ( pCacheTexture->textureSize > std3D_pCurDevice->availableMemory ) {
+    if ( pCacheTexture->textureSize > std3D_pCurDevice->availableMemory )
+    {
         std3D_PurgeTextureCache(pCacheTexture->textureSize);
     }
 
@@ -1224,7 +1250,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
     return;
 
 error:
-    if ( pD3DTex ) {
+    if ( pD3DTex )
+    {
         IDirect3DTexture9_Release(pD3DTex);
     }
 
@@ -1235,7 +1262,8 @@ error:
 
 size_t J3DAPI std3D_GetMipMapCount(const tSystemTexture* pTexture)
 {
-    if ( !pTexture ) {
+    if ( !pTexture )
+    {
         return 0;
     }
 
@@ -1248,7 +1276,8 @@ void std3D_ResetTextureCache(void)
     if ( std3D_pD3Device )
     {
         HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, NULL);
-        if ( d3dres != D3D_OK ) {
+        if ( d3dres != D3D_OK )
+        {
             STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
         }
     }
@@ -1274,7 +1303,8 @@ void std3D_ResetTextureCache(void)
     std3D_pLastTexCache     = NULL;
     std3D_numCachedTextures = 0;
 
-    if ( std3D_pCurDevice ) {
+    if ( std3D_pCurDevice )
+    {
         std3D_pCurDevice->availableMemory = std3D_pCurDevice->totalMemory;
     }
 
@@ -1293,7 +1323,8 @@ void J3DAPI std3D_UpdateFrameCount(tSystemTexture* pTexture)
 
 size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
 {
-    if ( !std3D_numTextureFormats ) {
+    if ( !std3D_numTextureFormats )
+    {
         return 0;
     }
 
@@ -1360,7 +1391,8 @@ int std3D_InitRenderState(void)
    // Set vertex format for pre-transformed vertices
     if ( !std3D_bShadersActive )
     {
-        if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1) != D3D_OK ) {
+        if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1) != D3D_OK )
+        {
             return 0;
         }
     }
@@ -1646,7 +1678,8 @@ int J3DAPI std3D_SetProjection(float fov, float nearPlane, float farPlane)
 
     float hfov = fov / 2.0f;
     float sinhfov = sinf(hfov);
-    if ( fabs(sinhfov) < 0.009999999776482582f ) {
+    if ( fabs(sinhfov) < 0.009999999776482582f )
+    {
         return E_INVALIDARG;
     }
 
@@ -1904,7 +1937,8 @@ static int std3D_BuildDeviceList(void)
             && (displayDevice.caps.DestBlendCaps & D3DPBLENDCAPS_INVSRCALPHA) != 0;
 
         pD3DDriver->maxVertexCount = displayDevice.caps.MaxVertexIndex;
-        if ( pD3DDriver->maxVertexCount == 0 ) {
+        if ( pD3DDriver->maxVertexCount == 0 )
+        {
             pD3DDriver->maxVertexCount = 65535; // Reasonable default
         }
 
@@ -2035,11 +2069,13 @@ void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture)
         if ( std3D_pFirstTexCache )
         {
             std3D_pFirstTexCache->pPrevCachedTexture = NULL;
-            if ( !std3D_pFirstTexCache->pNextCachedTexture ) {
+            if ( !std3D_pFirstTexCache->pNextCachedTexture )
+            {
                 std3D_pLastTexCache = std3D_pFirstTexCache;
             }
         }
-        else {
+        else
+        {
             std3D_pLastTexCache = NULL;
         }
     }
@@ -2082,7 +2118,8 @@ int J3DAPI std3D_PurgeTextureCache(size_t size)
         pNextCachedTexture = pCacheTexture->pNextCachedTexture;
         if ( pCacheTexture->frameNum != std3D_frameCount )
         {
-            if ( pCacheTexture->pCachedTexture ) {
+            if ( pCacheTexture->pCachedTexture )
+            {
                 IDirect3DTexture9_Release(pCacheTexture->pCachedTexture);
             }
             pCacheTexture->pCachedTexture = NULL;
