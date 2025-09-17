@@ -134,7 +134,7 @@ int stdMemory_Open(void)
 
 void stdMemory_Close(void)
 {
-    if ( bOpen )
+    if ( !bOpen )
     {
         STDLOG_ERROR("Warning: System already closed!\n");
         return;
