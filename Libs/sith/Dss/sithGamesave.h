@@ -15,6 +15,8 @@ J3D_EXTERN_C_START
 #define SITHSAVEGAME_THUMB_WIDTH  128
 #define SITHSAVEGAME_THUMB_HEIGHT 96
 
+#define SITHSAVEGAME_CFG_GAMEPLAY_LASTSAVEGAME "gameplay.lastSaveGame"
+
 void sithGamesave_Startup(void);
 void sithGamesave_Shutdown(void);
 

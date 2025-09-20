@@ -28,8 +28,6 @@
 #include <std/Win95/stdDisplay.h>
 #include <std/Win95/stdWin95.h>
 
-#include <w32util/wuRegistry.h>
-
 #define JONESCONSOLE_COMMANDLINEID 103
 
 static bool JonesConsole_bOpened = false;
@@ -69,7 +67,6 @@ int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pA
 int J3DAPI JonesConsole_Money(const SithConsoleCommand* pFunc, const char* pArg); // Added
 int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* pArg); // Added
 int J3DAPI JonesConsole_Indicator(const SithConsoleCommand* pFunc, const char* pArg); // Added
-
 
 void JonesConsole_InstallHooks(void)
 {
@@ -165,7 +162,8 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_Indicator, "hud", SITHCONSOLE_DEVMODE);     // Added
 
     // Added
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 ) {
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    {
         JonesConsole_EnableDevMode(true);
     }
 
@@ -288,7 +286,8 @@ void J3DAPI JonesConsole_PrintTextWithID(int ID, const char* pText)
         if ( JonesConsole_aBuffers[i].ID == ID )
         {
             // Replace existing text
-            if ( !streq(JonesConsole_aBuffers[i].aLine, pText) ) {
+            if ( !streq(JonesConsole_aBuffers[i].aLine, pText) )
+            {
                 STD_STRCPY(JonesConsole_aBuffers[i].aLine, pText);
             }
 
@@ -331,12 +330,14 @@ int J3DAPI JonesConsole_ExeCommand(const char* pLine)
     // Extract command from input string line
     char* pntok = NULL;
     const char* pCommand = strtok_r(aLine, ", \t\n\r", &pntok);
-    if ( !pCommand ) {
+    if ( !pCommand )
+    {
         return 0;
     }
 
     SithConsoleCommand* pFunc = (SithConsoleCommand*)stdHashtbl_Find(pFuncHashtbl, pCommand);
-    if ( !pFunc ) {
+    if ( !pFunc )
+    {
         return 0;
     }
 
@@ -364,7 +365,8 @@ void J3DAPI JonesConsole_HandelChar(char chr)
 {
     if ( chr == '\r' ) // if enter key pressed
     {
-        if ( (unsigned int)JonesConsole_cursorPos > 2 && !JonesConsole_ExeCommand(&JonesConsole_aCmdLine[2]) ) {
+        if ( (unsigned int)JonesConsole_cursorPos > 2 && !JonesConsole_ExeCommand(&JonesConsole_aCmdLine[2]) )
+        {
             sithConsole_ExeCommand(&JonesConsole_aCmdLine[2]);
         }
         JonesConsole_HideConsole();
@@ -373,7 +375,8 @@ void J3DAPI JonesConsole_HandelChar(char chr)
     {
         if ( chr == '\b' ) // if backspace key pressed
         {
-            if ( (unsigned int)JonesConsole_cursorPos > 2 ) {
+            if ( (unsigned int)JonesConsole_cursorPos > 2 )
+            {
                 JonesConsole_aCmdLine[--JonesConsole_cursorPos] = 0;
             }
         }
@@ -529,7 +532,8 @@ void J3DAPI JonesConsole_EnableDevMode(bool bEnable)
 
     // Following required due to SITHDEBUG_INEDITOR
     sithControl_EnableDevControls(bEnable);
-    if ( stdControl_IsMouseEnabled() ) {
+    if ( stdControl_IsMouseEnabled() )
+    {
         sithControl_RebindMouse();
     }
 }

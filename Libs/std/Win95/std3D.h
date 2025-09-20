@@ -10,11 +10,11 @@
 #define STD3D_MAXFACEVERTICES 64 
 #define STD3D_MAXVERTICES     32768
 
-#define STD3D_CFG_MIPMAPAUTOGEN     "Mipmap AutoGen"
-#define STD3D_CFG_ANISOTROPICFILTER "Anisotropic Filter"
+#define STD3D_CFG_MIPMAPAUTOGEN     "graphics.mipmapAutoGen"
+#define STD3D_CFG_ANISOTROPICFILTER "graphics.anisotropicFilter"
 
-#define STD3D_CFG_MSAAENABLED "MSAA"
-#define STD3D_CFG_MSAASAMPLES "MSAA Samples"
+#define STD3D_CFG_MSAAENABLED "graphics.msaa.enabled"
+#define STD3D_CFG_MSAASAMPLES "graphics.msaa.samples"
 
 J3D_EXTERN_C_START
 

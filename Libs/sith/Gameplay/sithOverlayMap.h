@@ -9,6 +9,9 @@
 
 J3D_EXTERN_C_START
 
+#define SITHOVERLAYMAP_CFG_GAMEPLAY_SHOWHINTS   "gameplay.showHints"
+#define SITHOVERLAYMAP_CFG_GAMEPLAY_MAPROTATION "gameplay.mapRotation"
+
 int J3DAPI sithOverlayMap_Open(SithOverlayMapConfig* pConfig);
 void sithOverlayMap_Close(void);
 

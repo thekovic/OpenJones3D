@@ -29,11 +29,10 @@
 
 #include <std/General/stdColor.h>
 #include <std/General/stdConffile.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdDisplay.h>
-
-#include <w32util/wuRegistry.h>
 
 #define SITHSAVEGAME_THUMBCOLORFORMAT stdColor_cfRGB888 // Note, changed encoding format due to little-endian fix in stdColor_ColorConvertOneRow
 #define SITHSAVEGAME_THUMBSIZE       (SITHSAVEGAME_THUMB_WIDTH * SITHSAVEGAME_THUMB_HEIGHT * SITHSAVEGAME_THUMBCOLORFORMAT.bpp) / 8
@@ -445,7 +444,7 @@ int sithGamesave_Process(void)
         bError = sithGamesave_SaveFile(sithGamesave_aCurFilename);
         if ( !bError )
         {
-            wuRegistry_SaveStr("Last Save Game", sithGamesave_aCurFilename);
+            stdConfig_SetString(SITHSAVEGAME_CFG_GAMEPLAY_LASTSAVEGAME, sithGamesave_aCurFilename);
         }
 
         // If savegame is autosave i.e.: savegame at the start of a level (start_xxx.nds), notify master cog

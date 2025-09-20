@@ -1,6 +1,7 @@
 #include "jonesConfig.h"
 #include <j3dcore/j3dhook.h>
 
+#include <Jones3D/Display/JonesDisplay.h>
 #include <Jones3D/Display/JonesHud.h>
 #include <Jones3D/Display/JonesHudConstants.h>
 #include <Jones3D/Gui/JonesDialog.h>
@@ -28,6 +29,7 @@
 
 #include <std/General/std.h>
 #include <std/General/stdBmp.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
@@ -37,8 +39,6 @@
 #include <std/Win95/stdWin95.h>
 
 #include <sound/Sound.h>
-
-#include <w32util/wuRegistry.h>
 
 #include <math.h>
 #include <windowsx.h>
@@ -1216,7 +1216,7 @@ int jonesConfig_Startup(void)
 
     jonesConfig_bTextMetricInited = 0;
 
-    jonesConfig_gamePlayOptions_bDefaultRun = wuRegistry_GetIntEx("Default Run", 0);
+    jonesConfig_gamePlayOptions_bDefaultRun = stdConfig_GetBool(JONESCONFIG_CFG_GAMEPLAY_DEFAULTRUN, false);
 
     if ( jonesConfig_gamePlayOptions_bDefaultRun )
     {
@@ -1252,7 +1252,7 @@ int jonesConfig_InitKeySetsPath(void)
     char* pKeySets = stdUtil_ToAString(pwKeySets);
 
     char aInstallPath[128] = { 0 };
-    wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
+    stdConfig_GetString(SITH_CFG_INSTALLPATH, aInstallPath, STD_ARRAYLEN(aInstallPath), "");
 
     if ( pKeySets )
     {
@@ -2179,7 +2179,7 @@ JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void)
 
     // Find active control scheme in system
     char aFilename[128] = { 0 };
-    wuRegistry_GetStr("Configuration", aFilename, STD_ARRAYLEN(aFilename), "");
+    stdConfig_GetString(JONESCONFIG_CFG_CONTROLS_CONFIGFILE, aFilename, STD_ARRAYLEN(aFilename), "");
     if ( strlen(aFilename) )
     {
         // Load config scheme to new scheme
@@ -2219,7 +2219,7 @@ JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void)
         }
 
         // Clear keyset config 
-        wuRegistry_SaveStr("Configuration", "");
+        stdConfig_SetString(JONESCONFIG_CFG_CONTROLS_CONFIGFILE, "");
         goto error;
     }
 
@@ -2247,7 +2247,7 @@ JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void)
         STD_STRCPY(pScheme->aName, pDfltKeyset);
         if ( jonesConfig_SetDefaultControlScheme(pScheme, schemeIdx) )
         {
-            wuRegistry_SaveStr("Configuration", pDfltKeyset);
+            stdConfig_SetString(JONESCONFIG_CFG_CONTROLS_CONFIGFILE, pDfltKeyset);
             return pScheme;
         }
     }
@@ -2695,8 +2695,8 @@ void J3DAPI jonesConfig_BindControls(JonesControlsScheme* pConfig)
 {
     JonesControlActions actionId;
 
-    int bMouse    = wuRegistry_GetIntEx("Mouse Control", 0);
-    int bJoystick = wuRegistry_GetIntEx("Joystick Control", 0);
+    int bMouse    = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_MOUSE, false);
+    int bJoystick = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_CONTROLLER, false);
 
     if ( pConfig )
     {
@@ -3161,7 +3161,8 @@ HFONT J3DAPI jonesConfig_CreateDialogFont(HWND hWnd, int bWindowMode, int dlgID,
     }
 
     double scale = 1.0f; // Added: Init to 1.0f
-    if ( dialogRefHeight > 0 ) {
+    if ( dialogRefHeight > 0 )
+    {
         scale = (dialogRefHeight / (double)rect.bottom) * dpiScale; // Added: scale by dpi
     }
 
@@ -3308,11 +3309,13 @@ BOOL CALLBACK jonesConfig_SetPositionAndTextCallback(HWND hCtrl, LPARAM lparam)
     // Fixed: Check if hCtrl parent is top dialog, otherwise skip control.
     //        This fixes positioning and scaling of controls with children
     //        as they also get enumerated. So we skip here any child window of the control.
-    if ( GetDlgCtrlID(GetParent(hCtrl)) != 0 ) {
+    if ( GetDlgCtrlID(GetParent(hCtrl)) != 0 )
+    {
         return TRUE;
     }
 
-    if ( !lparam ) { // Added: Added check for null
+    if ( !lparam )
+    { // Added: Added check for null
         return TRUE;
     }
     JonesDialogFontInfo* pFontInfo = (JonesDialogFontInfo*)lparam;
@@ -3633,17 +3636,20 @@ int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
 {
     char aFileterStr[512] = { 0 };
     const char* pFilterStr = jonesString_GetString("JONES_STR_FILTER");
-    if ( pFilterStr ) {
+    if ( pFilterStr )
+    {
         STD_STRCPY(aFileterStr, pFilterStr);
     }
 
     char aSaveGameStr[512] = { 0 };
     const char* pSaveGMStr = jonesString_GetString("JONES_STR_SAVEGM");
-    if ( pSaveGMStr ) {
+    if ( pSaveGMStr )
+    {
         STD_STRCPY(aSaveGameStr, pSaveGMStr);
     }
 
-    if ( !aFileterStr[0] || !aSaveGameStr[0] ) {
+    if ( !aFileterStr[0] || !aSaveGameStr[0] )
+    {
         return 2;
     }
 
@@ -3696,14 +3702,16 @@ int J3DAPI jonesConfig_GetSaveGameFilePath(HWND hWnd, char* pOutFilePath)
         height = rect.bottom - rect.top;
         width  = rect.right - rect.left;
     }
-    else {
+    else
+    {
         stdDisplay_GetBackBufferSize(&width, &height);
     }
 
     BOOL res = JonesDialog_ShowFileSelectDialog(&ofn,/*bOpen=*/0);
     SetCurrentDirectory(aCurDir);
 
-    if ( !res || !pOutFilePath ) {
+    if ( !res || !pOutFilePath )
+    {
         return 2;
     }
 
@@ -3970,7 +3978,8 @@ LRESULT CALLBACK jonesConfig_SaveGameThumbnailPaintProc(HWND hWnd, UINT uMsg, WP
     SaveGameDialogData* pData = (SaveGameDialogData*)GetWindowLongPtr(hwndParent, DWL_USER);
     if ( uMsg != WM_PAINT || !pData || !pData->hThumbnail )
     {
-        if ( !pData ) {
+        if ( !pData )
+        {
             return 1;
         }
         return CallWindowProc((WNDPROC)pData->pfThumbnailProc, hWnd, uMsg, wParam, lParam);
@@ -4129,13 +4138,15 @@ int J3DAPI jonesConfig_GetLoadGameFilePath(HWND hWnd, char* pDestNdsPath)
 
     char aLastFile[JONESCONFIG_GAMESAVE_FILEPATHSIZE] = { 0 };
     const char* pLastFile = sithGamesave_GetLastFilename();
-    if ( pLastFile ) {
+    if ( pLastFile )
+    {
         STD_STRCPY(aLastFile, pLastFile);
     }
 
     ofn.nMaxFile  = STD_ARRAYLEN(aLastFile);
     ofn.lpstrFile = aLastFile;
-    if ( strlen(aLastFile) == 0 ) {
+    if ( strlen(aLastFile) == 0 )
+    {
         aLastFile[0] = 0;
     }
 
@@ -4784,7 +4795,7 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
         sithVoice_ShowText(bShowText);
 
         bShowText = sithVoice_GetShowText();
-        wuRegistry_SaveIntEx("Show Text", bShowText);
+        stdConfig_SetBool(SITHVOICE_CFG_GAMEPLAY_SHOWTEXT, bShowText);
 
         // Get & save map rotation option
         HWND hCBMapRotate = GetDlgItem(hDlg, 1204);
@@ -4792,7 +4803,7 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
         sithOverlayMap_EnableMapRotation(bRotateMap);
 
         bRotateMap = sithOverlayMap_GetMapRotation();
-        wuRegistry_SaveIntEx("Map Rotation", bRotateMap);
+        stdConfig_SetBool(SITHOVERLAYMAP_CFG_GAMEPLAY_MAPROTATION, bRotateMap);
 
         // Get & save show hint option
         HWND hCBShowHints = GetDlgItem(hDlg, 1051);
@@ -4800,19 +4811,19 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
         sithOverlayMap_SetShowHints(bShowHints);
 
         bShowHints = sithOverlayMap_GetShowHints();
-        wuRegistry_SaveIntEx("Show Hints", bShowHints);
+        stdConfig_SetBool(SITHOVERLAYMAP_CFG_GAMEPLAY_SHOWHINTS, bShowHints);
         // Get & save difficulty
         HWND hDifSlideer = GetDlgItem(hDlg, 1050);
         int difficulty = SendMessage(hDifSlideer, TBM_GETPOS, 0, 0);
         sithSetGameDifficulty(difficulty);
 
         difficulty = sithGetGameDifficulty();
-        wuRegistry_SaveInt("Difficulty", difficulty);
+        stdConfig_SetInt(SITH_CFG_GAMEPLAY_DIFFICULTY, difficulty);
 
         // Get & save default to run option
         HWND hCBRun = GetDlgItem(hDlg, 1202);
         jonesConfig_gamePlayOptions_bDefaultRun = Button_GetCheck(hCBRun);
-        wuRegistry_SaveIntEx("Default Run", jonesConfig_gamePlayOptions_bDefaultRun);
+        stdConfig_SetBool(JONESCONFIG_CFG_GAMEPLAY_DEFAULTRUN, jonesConfig_gamePlayOptions_bDefaultRun);
 
         if ( jonesConfig_gamePlayOptions_bDefaultRun )
         {
@@ -4991,7 +5002,7 @@ int J3DAPI jonesConfig_ShowControlOptions(HWND hWnd)
         }
 
         // Set and bind selected scheme as active game control set
-        wuRegistry_SaveStr("Configuration", config.aSchemes[config.selectedShemeIdx].aName);
+        stdConfig_SetString(JONESCONFIG_CFG_CONTROLS_CONFIGFILE, config.aSchemes[config.selectedShemeIdx].aName);
         jonesConfig_BindControls(&config.aSchemes[config.selectedShemeIdx]);
 
         jonesConfig_FreeControlConfigEntry(&config);
@@ -4999,7 +5010,7 @@ int J3DAPI jonesConfig_ShowControlOptions(HWND hWnd)
         jonesConfig_controlOptions_curControlConfig.numSchemes = 0;
 
         // Enable disable mouse
-        int bMouseEnabled = wuRegistry_GetIntEx("Mouse Control", 0);
+        int bMouseEnabled = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_MOUSE, false);
         jonesConfig_EnableMouseControl(bMouseEnabled);
     }
     else
@@ -5138,7 +5149,7 @@ int J3DAPI jonesConfig_InitControlOptionsDialog(HWND hDlg, int a2, JonesControls
     char aSelectedCfgName[128] = { 0 };
     if ( pConfig->selectedShemeIdx == -1 )
     {
-        wuRegistry_GetStr("Configuration", aSelectedCfgName, STD_ARRAYLEN(aSelectedCfgName), "");
+        stdConfig_GetString(JONESCONFIG_CFG_CONTROLS_CONFIGFILE, aSelectedCfgName, STD_ARRAYLEN(aSelectedCfgName), "");
         if ( strlen(aSelectedCfgName) == 0 )
         {
             // Load default config
@@ -5210,14 +5221,14 @@ int J3DAPI jonesConfig_InitControlOptionsDialog(HWND hDlg, int a2, JonesControls
 
     // Mouse checkbox
     hDlgItem = GetDlgItem(hDlg, 1053);
-    int bMouseEnabled = wuRegistry_GetIntEx("Mouse Control", 0);
+    int bMouseEnabled = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_MOUSE, false);
     Button_SetCheck(hDlgItem, bMouseEnabled);
 
     // Joystick checkbox
     hDlgItem = GetDlgItem(hDlg, 1054);
     if ( stdControl_GetNumJoysticks() )
     {
-        int bJoystickEnabled = wuRegistry_GetIntEx("Joystick Control", 0);
+        int bJoystickEnabled = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_CONTROLLER, false);
         Button_SetCheck(hDlgItem, bJoystickEnabled);
     }
     else
@@ -5322,8 +5333,8 @@ void J3DAPI jonesConfig_ControlOptions_HandleWM_COMMAND(HWND hWnd, int ctrlID, L
                 }
 
                 // Save mouse/joystick settings
-                wuRegistry_SaveIntEx("Mouse Control", bMouseEnabled);
-                wuRegistry_SaveIntEx("Joystick Control", bJoyEnabled);
+                stdConfig_SetBool(JONESCONTROL_CFG_CONTROLS_MOUSE, bMouseEnabled);
+                stdConfig_SetBool(JONESCONTROL_CFG_CONTROLS_CONTROLLER, bJoyEnabled);
 
                 if ( bJoyEnabled )
                 {
@@ -6748,7 +6759,7 @@ void J3DAPI jonesConfig_AssignControlKey_ReadKey(HWND hWnd)
 
     JonesAssignKeyDialogData* pData = (JonesAssignKeyDialogData*)GetWindowLongPtr(hWnd, DWL_USER);
 
-    int bJoyEnabled = wuRegistry_GetIntEx("Joystick Control", 0);
+    int bJoyEnabled = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_CONTROLLER, false);
     int bGotKy = 0;
 
     // Read controls
@@ -7149,7 +7160,7 @@ int J3DAPI jonesConfig_ShowDisplaySettingsDialog(HWND hWnd, StdDisplayEnvironmen
 
     // Save current settings, to restore in case of canceling 
     float curFogDensity = sithRender_g_fogDensity;
-    int curPerLevel     = wuRegistry_GetInt("Performance Level", 4);
+    int curPerLevel     = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, 4);
 
     JonesDisplaySettings curSettings = *pDSettings; // Changed: Copy fogDensity field
 
@@ -7166,14 +7177,14 @@ int J3DAPI jonesConfig_ShowDisplaySettingsDialog(HWND hWnd, StdDisplayEnvironmen
 
     if ( res == 1 ) // OK btn clicked
     {
-        int bMouseEnabled = wuRegistry_GetIntEx("Mouse Control", 0);
+        int bMouseEnabled = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_MOUSE, false);
         jonesConfig_EnableMouseControl(bMouseEnabled);
     }
     else // Cancel clicked
     {
         //  Restore to previous settings
         sithRender_g_fogDensity = curFogDensity;
-        wuRegistry_SaveInt("Performance Level", curPerLevel);
+        stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, curPerLevel);
 
         *pDSettings = curSettings; // Changed: Copy fogDensity field
     }
@@ -7495,19 +7506,19 @@ void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, 
                 pSettings->width = pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.width;
                 pSettings->height = pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.height;
 
-                wuRegistry_SaveStr("Display", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].displayDevice.aDriverName);
-                wuRegistry_SaveStr("3D Device", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aDevices[pSettings->device3DNum].deviceDescription);
-                wuRegistry_SaveInt("Width", pSettings->width);
-                wuRegistry_SaveInt("Height", pSettings->height);
-                wuRegistry_SaveInt("BPP", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.colorInfo.bpp);
-                wuRegistry_SaveInt("Refresh Rate", pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].refreshRate); // Added
+                stdConfig_SetString(JONESDISPLAY_CFG_GRAPHICS_DISPLAY, pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].displayDevice.aDriverName);
+                stdConfig_SetString(JONESDISPLAY_CFG_GRAPHICS_DEVICE, pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aDevices[pSettings->device3DNum].deviceDescription);
+                stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_WIDTH, pSettings->width);
+                stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_HEIGHT, pSettings->height);
+                stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_BPP, pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].rasterInfo.colorInfo.bpp);
+                stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE, pDisplayEnv->aDisplayInfos[pSettings->displayDeviceNum].aModes[pSettings->videoModeNum].refreshRate); // Added
 
                 // Set new fog config
 
                 float fogDensity = sithRender_g_fogDensity / 100.0f;
-                wuRegistry_SaveFloat("Fog Density", fogDensity);
+                stdConfig_SetFloat(JONESDISPLAY_CFG_GRAPHICS_FOGDENSITY, fogDensity);
 
-                wuRegistry_SaveIntEx("Fog", pSettings->bFog);
+                stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_FOG, pSettings->bFog);
                 std3D_EnableFog(pSettings->bFog, sithRender_g_fogDensity);
 
                 if ( sithWorld_g_pCurrentWorld )
@@ -7516,8 +7527,8 @@ void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, 
                 }
 
                 // Save buffering and tex filtering mode
-                wuRegistry_SaveIntEx("Buffering", pSettings->bBuffering);
-                wuRegistry_SaveInt("Filter", pSettings->filter);
+                stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_BUFFERING, pSettings->bBuffering);
+                stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, pSettings->filter);
 
                 EndDialog(hWnd, ctrlID);
                 return;
@@ -7789,7 +7800,7 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
             break;
     }
 
-    int perfLevel = wuRegistry_GetInt("Performance Level", 4);
+    int perfLevel = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, 4);
     switch ( perfLevel )
     {
         case 0:
@@ -7843,7 +7854,7 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
         );
         J3D_UNUSED(hCbMSAA);
 
-        CheckDlgButton(hDlg, 1053, wuRegistry_GetInt(STD3D_CFG_MSAAENABLED, 1));
+        CheckDlgButton(hDlg, 1053, stdConfig_GetBool(STD3D_CFG_MSAAENABLED, true));
     }
 
     // Added: Adds check box for Anti-Aliasing (MSAA) option
@@ -7868,7 +7879,7 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
         );
         J3D_UNUSED(hCbMSAA);
 
-        CheckDlgButton(hDlg, 1054, wuRegistry_GetInt(STD3D_CFG_MIPMAPAUTOGEN, 1));
+        CheckDlgButton(hDlg, 1054, stdConfig_GetBool(STD3D_CFG_MIPMAPAUTOGEN, true));
     }
 
      // Added: Adds check box for anisotropic filtering option
@@ -7893,7 +7904,7 @@ int J3DAPI jonesConfig_InitAdvanceDisplaySettingsDialog(HWND hDlg, int a2, Jones
         );
         J3D_UNUSED(hCbMSAA);
 
-        CheckDlgButton(hDlg, 1055, wuRegistry_GetInt(STD3D_CFG_ANISOTROPICFILTER, 1));
+        CheckDlgButton(hDlg, 1055, stdConfig_GetBool(STD3D_CFG_ANISOTROPICFILTER, true));
     }
 
     // Added: Enable and init HiPoly check button
@@ -8031,10 +8042,10 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             sithRender_g_fogDensity = (float)SendMessage(hFogSliderCtrl, TBM_GETPOS, 0, 0);
             pSettings->fogDensity = sithRender_g_fogDensity / 100.0f;
 
-            wuRegistry_SaveInt("Performance Level", jonesConfig_advanceDisplaySettings_perfLevel);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, jonesConfig_advanceDisplaySettings_perfLevel);
             jonesConfig_advanceDisplaySettings_perfLevel = 4;
 
-            if ( JonesMain_HasStarted() && jonesConfig_advanceDisplaySettings_perfLevel != wuRegistry_GetInt("Performance Level", 4) )
+            if ( JonesMain_HasStarted() && jonesConfig_advanceDisplaySettings_perfLevel != stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, 4) )
             {
                 // Performance changed, show msg box informing that change will take into affect after game restart
                 const char* pMsgText = jonesString_GetString("JONES_STR_PERFORMANCE");
@@ -8055,7 +8066,7 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
 
             int bHiPoly = IsDlgButtonChecked(hDlg, 1052);
             sithModel_EnableHiPoly(bHiPoly);
-            wuRegistry_SaveIntEx("HiPoly", bHiPoly);
+            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_HIPOLY, bHiPoly);
 
             if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
             {
@@ -8071,21 +8082,21 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
             if ( std3D_IsMSAASupported() )
             {
                 int bMSAA= IsDlgButtonChecked(hDlg, 1053);
-                wuRegistry_SaveIntEx(STD3D_CFG_MSAAENABLED, bMSAA ? 1 : 0);
+                stdConfig_SetBool(STD3D_CFG_MSAAENABLED, !!bMSAA);
             }
 
             // Added: Grab mipmap auto gen option
             if ( std3D_IsMSAASupported() )
             {
                 int bAutoGen = IsDlgButtonChecked(hDlg, 1054);
-                wuRegistry_SaveIntEx(STD3D_CFG_MIPMAPAUTOGEN, bAutoGen ? 1 : 0);
+                stdConfig_SetBool(STD3D_CFG_MIPMAPAUTOGEN, !!bAutoGen);
             }
 
             // Added: Grab Mipmap auto gen option
             if ( std3D_IsAnisotropicFilteringSupported() )
             {
                 int bAniso = IsDlgButtonChecked(hDlg, 1055);
-                wuRegistry_SaveIntEx(STD3D_CFG_ANISOTROPICFILTER, bAniso ? 1 : 0);
+                stdConfig_SetBool(STD3D_CFG_ANISOTROPICFILTER, !!bAniso);
             }
 
             // Close dialog
@@ -8099,7 +8110,6 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
         default:
             return;
     }
-
 }
 
 int J3DAPI jonesConfig_ShowSoundSettingsDialog(HWND hWnd, JonesSoundSettings* pData)
@@ -8223,15 +8233,15 @@ void J3DAPI jonesConfig_SoundSettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, in
         HWND hVolSliderCtrl = GetDlgItem(hWnd, 1050);
         int sliderPos = SendMessage(hVolSliderCtrl, TBM_GETPOS, 0, 0);
         pSettings->maxSoundVolume = (float)sliderPos / 100.0f;
-        wuRegistry_SaveFloat("Sound Volume", pSettings->maxSoundVolume);
+        stdConfig_SetFloat(JONESCONFIG_CFG_SOUND_VOLUME, pSettings->maxSoundVolume);
 
         HWND hBtn3DSound = GetDlgItem(hWnd, 1118);
         pSettings->b3DHWSupport = Button_GetState(hBtn3DSound);
-        wuRegistry_SaveIntEx("Sound 3D", pSettings->b3DHWSupport);
+        stdConfig_SetBool(JONESCONFIG_CFG_SOUND_HW, pSettings->b3DHWSupport);
 
         HWND hBtnReverseSound = GetDlgItem(hWnd, 1051);
         pSettings->bReverseSound  = Button_GetState(hBtnReverseSound);
-        wuRegistry_SaveIntEx("ReverseSound", pSettings->bReverseSound);
+        stdConfig_SetBool(JONESCONFIG_CFG_SOUND_REVERSE, pSettings->bReverseSound);
 
         EndDialog(hWnd, ctrlID);
     }
@@ -8796,7 +8806,8 @@ void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageI
     SelectObject(pImageInfo->hdcFront, (HGDIOBJ)jonesConfig_apDialogIcons[1]);
     BitBlt(pImageInfo->hdcFront, 39, 207, 127, 46, NULL, 0, 0, WHITENESS);
 
-    if ( iqpoints < 0 ) {
+    if ( iqpoints < 0 )
+    {
         iqpoints = 0;
     }
 
@@ -8833,7 +8844,8 @@ void J3DAPI jonesConfig_DrawStatisticDialogIQPoints(HWND hwnd, JonesDialogImageI
     HBITMAP hBmp = CreateDIBSection(pImageInfo->hdcBack, &bmi, DIB_RGB_COLORS, &ppvBits, NULL, 0);
     pImageInfo->hBmp = hBmp;
 
-    if ( pImageInfo->hBmp ) { // Fixed: Added no null check
+    if ( pImageInfo->hBmp )
+    { // Fixed: Added no null check
         SelectObject(pImageInfo->hdcBack, pImageInfo->hBmp);
     }
     SelectObject(pImageInfo->hdcFront, jonesConfig_apDialogIcons[3]); // 3 - numbers bmp
@@ -9581,13 +9593,16 @@ void J3DAPI jonesConfig_AddStoreCartItem(HWND hDlg, tStoreCartState* pCart)
         else
         {
             const char* pDlgText = NULL;
-            if ( bonusMapItemIdx > -1 && JonesHud_aStoreItems[bonusMapItemIdx].menuID == JONESHUD_MENU_INVITEM_BONUSMAP ) { // Fixed: Added check for bonusMapItemIdx > -1 
+            if ( bonusMapItemIdx > -1 && JonesHud_aStoreItems[bonusMapItemIdx].menuID == JONESHUD_MENU_INVITEM_BONUSMAP )
+            { // Fixed: Added check for bonusMapItemIdx > -1 
                 pDlgText = jonesString_GetString("JONES_STR_NOPERU");
             }
-            else if ( selectedCount == 1 ) {
+            else if ( selectedCount == 1 )
+            {
                 pDlgText = jonesString_GetString("JONES_STR_CANTBUY1");
             }
-            else {
+            else
+            {
                 pDlgText = jonesString_GetString("JONES_STR_CANTBUY");
             }
 
@@ -9646,7 +9661,8 @@ void J3DAPI jonesConfig_StoreDialog_HandleWM_COMMAND(HWND hWnd, WPARAM wParam)
         case 1:
         case 2:
         {
-            if ( pCart->balance <= 0 ) {
+            if ( pCart->balance <= 0 )
+            {
                 EndDialog(hWnd, wParam);
             }
             else if ( jonesConfig_ShowPurchaseMessageBox(hWnd, pCart) == 1 )

@@ -49,7 +49,8 @@ void stdHashtbl_ResetGlobals(void)
 unsigned int J3DAPI CalculateHash(const char* pData, signed int hashSize)
 {
     signed int hashValue = 0;
-    while ( *pData ) {
+    while ( *pData )
+    {
         hashValue = *pData++ + 65599 * hashValue;
     }
 
@@ -70,7 +71,8 @@ size_t J3DAPI GetNextPrime(size_t nextPrime)
         }
     }
 
-    if ( nextPrime > 1999u ) {
+    if ( nextPrime > 1999u )
+    {
         nextPrime = stdHashtbl_nextPrime(nextPrime);
     }
 
@@ -80,13 +82,15 @@ size_t J3DAPI GetNextPrime(size_t nextPrime)
 
 int J3DAPI isPrime(size_t val)
 {
-    if ( val < 2 ) {
+    if ( val < 2 )
+    {
         return 0;
     }
 
     for ( size_t i = 2; i < (val - 1); ++i )
     {
-        if ( !(val % i) ) {
+        if ( !(val % i) )
+        {
             return 0;
         }
     }
@@ -97,7 +101,8 @@ int J3DAPI isPrime(size_t val)
 tHashTable* J3DAPI stdHashtbl_New(size_t size)
 {
     tHashTable* pTable = (tHashTable*)STDMALLOC(sizeof(tHashTable));
-    if ( !pTable ) {
+    if ( !pTable )
+    {
         return NULL;
     }
 
@@ -105,7 +110,8 @@ tHashTable* J3DAPI stdHashtbl_New(size_t size)
 
     pTable->numNodes = GetNextPrime(size);
     pTable->paNodes = (tLinkListNode*)STDMALLOC(sizeof(tLinkListNode) * pTable->numNodes);
-    if ( !pTable->paNodes ) {
+    if ( !pTable->paNodes )
+    {
         return NULL;
     }
 
@@ -116,7 +122,8 @@ tHashTable* J3DAPI stdHashtbl_New(size_t size)
 
 size_t J3DAPI stdHashtbl_nextPrime(size_t candidate)
 {
-    while ( !isPrime(candidate) ) {
+    while ( !isPrime(candidate) )
+    {
         ++candidate;
     }
 
@@ -128,7 +135,8 @@ void J3DAPI stdHashtbl_Free(tHashTable* pTable)
 {
 
     STD_ASSERTREL(pTable != NULL);
-    for ( size_t i = 0; i < pTable->numNodes; ++i ) {
+    for ( size_t i = 0; i < pTable->numNodes; ++i )
+    {
         stdHashtbl_FreeListNodes(&pTable->paNodes[i]);
     }
 
@@ -151,7 +159,8 @@ int J3DAPI stdHashtbl_Add(tHashTable* pTable, const char* pName, void* pData)
     STD_ASSERTREL(pTable != NULL);
     STD_ASSERTREL(pData != NULL);
 
-    if ( stdHashtbl_Find(pTable, pName) ) {
+    if ( stdHashtbl_Find(pTable, pName) )
+    {
         return 0;
     }
 
@@ -160,7 +169,8 @@ int J3DAPI stdHashtbl_Add(tHashTable* pTable, const char* pName, void* pData)
     if ( pCur->name )
     {
         tLinkListNode* pNode = (tLinkListNode*)STDMALLOC(sizeof(tLinkListNode));
-        if ( !pNode ) {
+        if ( !pNode )
+        {
             return 0;
         }
 
@@ -182,7 +192,8 @@ int J3DAPI stdHashtbl_Add(tHashTable* pTable, const char* pName, void* pData)
 tLinkListNode* J3DAPI stdHashtbl_GetTailNode(const tLinkListNode* pCur)
 {
     STD_ASSERTREL(pCur != NULL);
-    while ( pCur->next ) {
+    while ( pCur->next )
+    {
         pCur = pCur->next;
     }
 
@@ -193,7 +204,8 @@ void* J3DAPI stdHashtbl_Find(const tHashTable* pTable, const char* pName)
 {
     int nodeIdx;
     tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &nodeIdx);
-    if ( pNode ) {
+    if ( pNode )
+    {
         return pNode->data;
     }
     return NULL;
@@ -201,14 +213,16 @@ void* J3DAPI stdHashtbl_Find(const tHashTable* pTable, const char* pName)
 
 tLinkListNode* J3DAPI stdHashtbl_FindNode(const tHashTable* pTable, const char* pName, int* pNodeIdx)
 {
-    if ( !pTable ) {
+    if ( !pTable )
+    {
         return NULL;
     }
 
     *pNodeIdx = pTable->pfHashFunc(pName, pTable->numNodes);
     for ( tLinkListNode* pCurNode = &pTable->paNodes[*pNodeIdx]; pCurNode && pCurNode->name; pCurNode = pCurNode->next )
     {
-        if ( streq(pCurNode->name, pName) ) {
+        if ( streq(pCurNode->name, pName) )
+        {
             return pCurNode;
         }
     }
@@ -222,7 +236,8 @@ int J3DAPI stdHashtbl_Remove(tHashTable* pTable, const char* pName)
 
     int nodeIdx = -1;
     tLinkListNode* pNode = stdHashtbl_FindNode(pTable, pName, &nodeIdx);
-    if ( !pNode ) {
+    if ( !pNode )
+    {
         return 0;
     }
 
@@ -235,16 +250,19 @@ int J3DAPI stdHashtbl_Remove(tHashTable* pTable, const char* pName)
         {
             memcpy(&pTable->paNodes[nodeIdx], pNodeNext, sizeof(pTable->paNodes[nodeIdx]));
             tLinkListNode* pNext = pTable->paNodes[nodeIdx].next;
-            if ( pNext ) {
+            if ( pNext )
+            {
                 pNext->prev = &pTable->paNodes[nodeIdx];
             }
             stdMemory_Free(pNodeNext);
         }
-        else {
+        else
+        {
             memset(&pTable->paNodes[nodeIdx], 0, sizeof(pTable->paNodes[nodeIdx]));
         }
     }
-    else {
+    else
+    {
         stdMemory_Free(pNode);
     }
 

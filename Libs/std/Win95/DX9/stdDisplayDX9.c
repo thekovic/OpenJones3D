@@ -5,12 +5,12 @@
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
 #include <std/General/stdBmp.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdColor.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
 
-#include <w32util/wuRegistry.h>
 
 #define STDDISPLAY_MINFRAMERATE 30
 #define STDDISPLAY_MAXFRAMERATE 256
@@ -125,7 +125,8 @@ static void J3DAPI stdDisplay_SetPixels16(uint16_t* pPixels16, uint16_t pixel, s
 {
     if ( (size & 1) != 0 )
     {
-        for ( size_t i = 0; i < size; ++i ) {
+        for ( size_t i = 0; i < size; ++i )
+        {
             pPixels16[i] = pixel;
         }
     }
@@ -133,7 +134,8 @@ static void J3DAPI stdDisplay_SetPixels16(uint16_t* pPixels16, uint16_t pixel, s
     {
         uint32_t dword_pixel = ((uint32_t)pixel << 16) | pixel;
         uint32_t* pPixels32 = (uint32_t*)pPixels16;
-        for ( size_t i = 0; i < size / 2; ++i ) {
+        for ( size_t i = 0; i < size / 2; ++i )
+        {
             pPixels32[i] = dword_pixel;
         }
     }
@@ -141,7 +143,8 @@ static void J3DAPI stdDisplay_SetPixels16(uint16_t* pPixels16, uint16_t pixel, s
 
 static void J3DAPI stdDisplay_SetPixels32(uint32_t* pPixels32, uint32_t pixel, size_t size)
 {
-    for ( size_t i = 0; i < size; ++i ) {
+    for ( size_t i = 0; i < size; ++i )
+    {
         pPixels32[i] = pixel;
     }
 }
@@ -226,8 +229,8 @@ static bool J3DAPI stdDisplay_CheckMSAASupport(UINT adapter, D3DFORMAT format, B
 static void stdDisplay_InitMSAASettings(void)
 {
     // Read MSAA settings from registry/config
-    stdDisplay_bMSAAEnabled    = wuRegistry_GetInt(STD3D_CFG_MSAAENABLED, 1) != 0;
-    stdDisplay_msaaSampleCount = wuRegistry_GetInt(STD3D_CFG_MSAASAMPLES, 16);
+    stdDisplay_bMSAAEnabled    = stdConfig_GetBool(STD3D_CFG_MSAAENABLED, true);
+    stdDisplay_msaaSampleCount = stdConfig_GetInt(STD3D_CFG_MSAASAMPLES, 16);
 
     // Clamp sample count to valid values
     if ( stdDisplay_msaaSampleCount < 2 )
@@ -298,7 +301,7 @@ static void stdDisplay_ValidateMSAASettings(UINT adapter, D3DFORMAT format, BOOL
                 stdDisplay_msaaSampleQuality = qualityLevels > 0 ? qualityLevels - 1 : 0;
                 found = true;
                 STDLOG_STATUS("MSAA fallback: Using %dx with %d quality levels\n", stdDisplay_msaaSampleCount, qualityLevels);
-                wuRegistry_SaveInt("MSAA Samples", stdDisplay_msaaSampleCount);
+                stdConfig_SetInt(STD3D_CFG_MSAASAMPLES, stdDisplay_msaaSampleCount);
                 break;
             }
         }
@@ -306,8 +309,8 @@ static void stdDisplay_ValidateMSAASettings(UINT adapter, D3DFORMAT format, BOOL
         if ( !found )
         {
             STDLOG_WARNING("MSAA not supported, disabling\n");
-            stdDisplay_bMSAAEnabled = false;
-            stdDisplay_msaaSampleType = D3DMULTISAMPLE_NONE;
+            stdDisplay_bMSAAEnabled      = false;
+            stdDisplay_msaaSampleType    = D3DMULTISAMPLE_NONE;
             stdDisplay_msaaSampleQuality = 0;
         }
     }
@@ -450,7 +453,8 @@ void stdDisplay_Close(void)
 
 int J3DAPI stdDisplay_SetMode(size_t modeNum, int bFullscreen, size_t numBackBuffers)
 {
-    if ( bFullscreen && modeNum >= stdDisplay_numVideoModes ) {
+    if ( bFullscreen && modeNum >= stdDisplay_numVideoModes )
+    {
         return 1;
     }
 
@@ -523,7 +527,8 @@ size_t stdDisplay_GetNumDevices(void)
 
 int J3DAPI stdDisplay_GetDevice(size_t deviceNum, StdDisplayDevice* pDest)
 {
-    if ( deviceNum >= stdDisplay_numDevices ) {
+    if ( deviceNum >= stdDisplay_numDevices )
+    {
         return 1;
     }
 
@@ -533,7 +538,8 @@ int J3DAPI stdDisplay_GetDevice(size_t deviceNum, StdDisplayDevice* pDest)
 
 int J3DAPI stdDisplay_GetCurrentDevice(StdDisplayDevice* pDevice)
 {
-    if ( stdDisplay_numDevices == 0 ) {
+    if ( stdDisplay_numDevices == 0 )
+    {
         return 1;
     }
 
@@ -575,7 +581,8 @@ void stdDisplay_RegisterDeviceReleaseCallback(tDisplayDeviceReleaseCallback pCal
 // Device state checking and reset functions
 static int J3DAPI stdDisplay_CheckDeviceState()
 {
-    if ( !stdDisplay_pD3DDevice ) {
+    if ( !stdDisplay_pD3DDevice )
+    {
         return -1;
     }
 
@@ -869,7 +876,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
                     pPixels8 += pVBuffer->rasterInfo.rowSize;
                 }
             }
-            else {
+            else
+            {
                 memset(pVBuffer->pPixels, (uint8_t)color, pVBuffer->rasterInfo.size);
             }
             break;
@@ -884,7 +892,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
                     pPixels16 = (uint16_t*)((char*)pPixels16 + pVBuffer->rasterInfo.rowSize);
                 }
             }
-            else {
+            else
+            {
                 stdDisplay_SetPixels16((uint16_t*)pVBuffer->pPixels, (uint16_t)color, pVBuffer->rasterInfo.size / 2);
             }
             break;
@@ -903,7 +912,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
                     pPixels32 = (uint32_t*)((char*)pPixels32 + pVBuffer->rasterInfo.rowSize);
                 }
             }
-            else {
+            else
+            {
                 stdDisplay_SetPixels32((uint32_t*)pVBuffer->pPixels, color, pVBuffer->rasterInfo.size / 4);
             }
             break;
@@ -916,13 +926,15 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
 {
     STD_ASSERTREL(pSrc != NULL);
 
-    if ( memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) == 0 ) {
+    if ( memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) == 0 )
+    {
         return pSrc;
     }
 
     if ( pSrc->rasterInfo.colorInfo.colorMode == STDCOLOR_PAL )
     {
-        if ( pDesiredColorFormat->colorMode == STDCOLOR_PAL ) {
+        if ( pDesiredColorFormat->colorMode == STDCOLOR_PAL )
+        {
             return pSrc;
         }
         STD_ASSERTREL(pSrc->rasterInfo.colorInfo.colorMode != STDCOLOR_PAL);
@@ -991,7 +1003,8 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
     // Copy color format
     memcpy(&pDest->rasterInfo.colorInfo, pDesiredColorFormat, sizeof(pDest->rasterInfo.colorInfo));
 
-    if ( pDest != pSrc ) {
+    if ( pDest != pSrc )
+    {
         stdDisplay_VBufferFree(pSrc);
     }
 
@@ -1002,13 +1015,15 @@ int J3DAPI stdDisplay_VideoModeCompare(const StdVideoMode* pMode1, const StdVide
 {
     unsigned int bpp1 = pMode1->rasterInfo.colorInfo.bpp;
     unsigned int bpp2 = pMode2->rasterInfo.colorInfo.bpp;
-    if ( bpp1 != bpp2 ) {
+    if ( bpp1 != bpp2 )
+    {
         return bpp1 - bpp2;
     }
 
     unsigned int width1 = pMode1->rasterInfo.width;
     unsigned int width2 = pMode2->rasterInfo.width;
-    if ( width1 != width2 ) {
+    if ( width1 != width2 )
+    {
         return width1 - width2;
     }
 
@@ -1019,7 +1034,8 @@ int J3DAPI stdDisplay_VideoModeCompare(const StdVideoMode* pMode1, const StdVide
 
 int J3DAPI stdDisplay_GetTextureMemory(size_t* pTotal, size_t* pFree)
 {
-    if ( !stdDisplay_pD3DDevice ) {
+    if ( !stdDisplay_pD3DDevice )
+    {
         return 1;
     }
 
@@ -1032,7 +1048,8 @@ int J3DAPI stdDisplay_GetTextureMemory(size_t* pTotal, size_t* pFree)
 
 int J3DAPI stdDisplay_GetTotalMemory(size_t* pTotal, size_t* pFree)
 {
-    if ( !stdDisplay_pD3D9 ) {
+    if ( !stdDisplay_pD3D9 )
+    {
         return 1;
     }
 
@@ -1047,7 +1064,8 @@ const char* J3DAPI stdDisplay_D3DGetStatus(HRESULT status)
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(stdDisplay_aD3DStatusTbl); ++i )
     {
-        if ( stdDisplay_aD3DStatusTbl[i].code == status ) {
+        if ( stdDisplay_aD3DStatusTbl[i].code == status )
+        {
             return stdDisplay_aD3DStatusTbl[i].text;
         }
     }
@@ -1130,7 +1148,8 @@ static int J3DAPI stdDisplay_InitDirect3D9(HWND hwnd)
 {
     J3D_UNUSED(hwnd);
 
-    if ( !stdDisplay_pD3D9 ) {
+    if ( !stdDisplay_pD3D9 )
+    {
         return 0;
     }
 
@@ -1148,7 +1167,8 @@ static int J3DAPI stdDisplay_InitDirect3D9(HWND hwnd)
 
 static int J3DAPI stdDisplay_EnumerateDevices(void)
 {
-    if ( !stdDisplay_pD3D9 ) {
+    if ( !stdDisplay_pD3D9 )
+    {
         return 0;
     }
 
@@ -1159,7 +1179,8 @@ static int J3DAPI stdDisplay_EnumerateDevices(void)
     {
         D3DADAPTER_IDENTIFIER9 identifier;
         HRESULT hr = IDirect3D9_GetAdapterIdentifier(stdDisplay_pD3D9, i, 0, &identifier);
-        if ( FAILED(hr) ) {
+        if ( FAILED(hr) )
+        {
             continue;
         }
 
@@ -1173,7 +1194,8 @@ static int J3DAPI stdDisplay_EnumerateDevices(void)
         // Try to get monitor friendly name
         DISPLAY_DEVICE displayDevice;
         displayDevice.cb = sizeof(displayDevice);
-        if ( EnumDisplayDevices(identifier.DeviceName, 0, &displayDevice, 0) ) {
+        if ( EnumDisplayDevices(identifier.DeviceName, 0, &displayDevice, 0) )
+        {
             STD_STRCPY(pDevice->aDriverName, displayDevice.DeviceString);
         }
 
@@ -1212,7 +1234,8 @@ static int J3DAPI stdDisplay_EnumerateDevices(void)
 
 static int J3DAPI stdDisplay_EnumerateVideoModes(UINT adapter)
 {
-    if ( !stdDisplay_pD3D9 ) {
+    if ( !stdDisplay_pD3D9 )
+    {
         return 0;
     }
 
@@ -1247,13 +1270,15 @@ static int J3DAPI stdDisplay_EnumerateVideoModes(UINT adapter)
     {
         D3DDISPLAYMODE mode;
         hr = IDirect3D9_EnumAdapterModes(stdDisplay_pD3D9, adapter, curDesktopMode.Format, i, &mode);
-        if ( FAILED(hr) ) {
+        if ( FAILED(hr) )
+        {
             continue;
         }
 
         // Filter out modes below 24-bit color and 30 Hz
         int bpp = stdDisplay_BppFromD3DFormat(mode.Format);
-        if ( bpp < 24 || mode.RefreshRate < STDDISPLAY_MINFRAMERATE || mode.RefreshRate > STDDISPLAY_MAXFRAMERATE ) {
+        if ( bpp < 24 || mode.RefreshRate < STDDISPLAY_MINFRAMERATE || mode.RefreshRate > STDDISPLAY_MAXFRAMERATE )
+        {
             continue;
         }
 
@@ -1348,16 +1373,20 @@ bool stdDisplay_GetVideoColorFormat(D3DFORMAT format, ColorInfo* pFormat)
 
 void J3DAPI stdDisplay_SetAspectRatio(StdVideoMode* pMode)
 {
-    if ( pMode->rasterInfo.width == 320 && pMode->rasterInfo.height == 200 ) {
+    if ( pMode->rasterInfo.width == 320 && pMode->rasterInfo.height == 200 )
+    {
         pMode->aspectRatio = 0.75f;
     }
-    else if ( pMode->rasterInfo.width == 320 && pMode->rasterInfo.height == 400 ) {
+    else if ( pMode->rasterInfo.width == 320 && pMode->rasterInfo.height == 400 )
+    {
         pMode->aspectRatio = 0.75f;
     }
-    else if ( pMode->rasterInfo.width == 640 && pMode->rasterInfo.height == 400 ) {
+    else if ( pMode->rasterInfo.width == 640 && pMode->rasterInfo.height == 400 )
+    {
         pMode->aspectRatio = 0.75f;
     }
-    else {
+    else
+    {
         pMode->aspectRatio = 1.0f;
     }
 }
@@ -1374,7 +1403,8 @@ tSysDisplayDevice* stdDisplay_GetSystemDevice(void)
 
 static int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
 {
-    if ( !SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE) ) {
+    if ( !SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE) )
+    {
         return 0;
     }
 
@@ -1865,7 +1895,8 @@ void stdDisplay_DisableVSync(bool bDisable)
 
 int stdDisplay_Update(void)
 {
-    if ( !stdDisplay_pD3DDevice ) {
+    if ( !stdDisplay_pD3DDevice )
+    {
         return 1;
     }
 
@@ -1897,7 +1928,8 @@ int stdDisplay_Update(void)
 
     if ( FAILED(hr) )
     {
-        if ( hr == D3DERR_DEVICELOST ) {
+        if ( hr == D3DERR_DEVICELOST )
+        {
             return 0; // This is expected, just skip this frame
         }
 
@@ -1910,17 +1942,20 @@ int stdDisplay_Update(void)
 
 int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, const StdRect* pRect)
 {
-    if ( !stdDisplay_pD3DDevice || !pSurf->pSysSurface ) {
+    if ( !stdDisplay_pD3DDevice || !pSurf->pSysSurface )
+    {
         return 1;
     }
 
     RECT rect;
     if ( pRect )
     {
-        if ( pRect->right == 0 ) {
+        if ( pRect->right == 0 )
+        {
             return 1;
         }
-        if ( pRect->bottom == 0 ) {
+        if ( pRect->bottom == 0 )
+        {
             return 1;
         }
 
@@ -1939,7 +1974,8 @@ int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, c
 
     HRESULT hr = IDirect3DDevice9_ColorFill(stdDisplay_pD3DDevice, pSurf->pSysSurface, &rect, dwFillColor);
 
-    if ( SUCCEEDED(hr) ) {
+    if ( SUCCEEDED(hr) )
+    {
         return 0;
     }
 
@@ -1951,7 +1987,8 @@ int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, c
         {
             // Retry after reset
             hr = IDirect3DDevice9_ColorFill(stdDisplay_pD3DDevice, pSurf->pSysSurface, &rect, dwFillColor);
-            if ( SUCCEEDED(hr) ) {
+            if ( SUCCEEDED(hr) )
+            {
                 return 0;
             }
         }
@@ -1995,7 +2032,8 @@ size_t stdDisplay_GetNumVideoModes(void)
 
 int J3DAPI stdDisplay_GetVideoMode(size_t modeNum, StdVideoMode* pDestMode)
 {
-    if ( modeNum >= stdDisplay_numVideoModes ) {
+    if ( modeNum >= stdDisplay_numVideoModes )
+    {
         return 1;
     }
 
@@ -2186,7 +2224,8 @@ int J3DAPI stdDisplay_CanRenderWindowed(void)
     // Check if device supports windowed mode
     D3DDISPLAYMODE displayMode;
     HRESULT hr = IDirect3D9_GetAdapterDisplayMode(stdDisplay_pD3D9, adapter, &displayMode);
-    if ( FAILED(hr) ) {
+    if ( FAILED(hr) )
+    {
         return -1;
     }
 
@@ -2335,7 +2374,8 @@ uint32_t J3DAPI stdDisplay_EncodeFromRGB565(uint16_t pixel)
     }
 
     uint8_t blue = 8 * pixel;
-    if ( (blue & 8) != 0 ) {
+    if ( (blue & 8) != 0 )
+    {
         blue = blue | 7;
     }
 

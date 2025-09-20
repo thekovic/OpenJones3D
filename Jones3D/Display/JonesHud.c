@@ -41,6 +41,7 @@
 #include <sound/Sound.h>
 
 #include <std/General/std.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdMath.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdPlatform.h>
@@ -48,8 +49,6 @@
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
 #include <std/Win95/stdWin95.h>
-
-#include <w32util/wuRegistry.h>
 
 #include <math.h>
 #include <stdbool.h>
@@ -348,11 +347,13 @@ void JonesHud_Shutdown(void)
     JonesHud_heightAspectRatioScale   = 0.0f;
     JonesHud_hCurSndChannel       = 0;
 
-    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_apMenuItems); ++i ) {
+    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_apMenuItems); ++i )
+    {
         JonesHud_apMenuItems[i] = NULL;
     }
 
-    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aSoundFxHandles); ++i ) {
+    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aSoundFxHandles); ++i )
+    {
         JonesHud_aSoundFxHandles[i] = 0;
     }
 
@@ -1094,15 +1095,18 @@ void JonesHud_MenuClose(void)
 void J3DAPI JonesHud_StartItemTranslation(JonesHudMenuItem* pItem, uint32_t msecDuration, float moveRate, int bMoveUp)
 {
     // Fixed: Fixed division by 0
-    if ( moveRate == 0 ) {
+    if ( moveRate == 0 )
+    {
         moveRate = 0.001f;
     }
 
     float delta;
-    if ( bMoveUp ) {
+    if ( bMoveUp )
+    {
         delta = fabsf(pItem->endMovePos.z - pItem->startMovePos.z) / moveRate;
     }
-    else {
+    else
+    {
         delta = fabsf(pItem->endMovePos.x - pItem->startMovePos.x) / moveRate;
     }
 
@@ -1627,14 +1631,17 @@ void J3DAPI JonesHud_DrawIndicatorBar(const rdVector4* pPos, float scale, const 
                 break;
             }
 
-            if ( curAngle != startAngle || deltaAngle == 0.0 ) {
+            if ( curAngle != startAngle || deltaAngle == 0.0 )
+            {
                 curAngle = curAngle - 15.0;
             }
-            else {
+            else
+            {
                 curAngle = curAngle - deltaAngle;
             }
 
-            if ( curAngle < maxAngle ) {
+            if ( curAngle < maxAngle )
+            {
                 curAngle = maxAngle;
             }
         }
@@ -1708,10 +1715,12 @@ void J3DAPI JonesHud_Draw(const rdMaterial* pMaterial, const JonesHudRect* rect,
         pCurOutVert->tu  = 0.0f;
         pCurOutVert->tv  = 1.0f;
 
-        if ( bAlpha ) {
+        if ( bAlpha )
+        {
             rdCache_AddAlphaProcFace(4);
         }
-        else {
+        else
+        {
             rdCache_AddProcFace(4);
         }
     }
@@ -2240,7 +2249,8 @@ void JonesHud_InitializeMenuSounds(void)
 JonesHudMenuItem* J3DAPI JonesHud_NewMenuItem(rdModel3* pItemIcon3)
 {
     JonesHudMenuItem* pMenuItem = (JonesHudMenuItem*)STDMALLOC(sizeof(JonesHudMenuItem));
-    if ( !pMenuItem ) {
+    if ( !pMenuItem )
+    {
         return NULL;
     }
 
@@ -2422,7 +2432,8 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                                 a1->endMovePos.x = -0.15800001f;
                                 moveRate = a1->endMovePos.x - a1->startMovePos.x;
                             }
-                            else {
+                            else
+                            {
                                 a1->endMovePos.x = a1->endMovePos.x - 0.064999998f;
                             }
 
@@ -2984,7 +2995,7 @@ void JonesHud_MenuActivateItem(void)
             JonesSoundSettings sndSettings;
             sndSettings.maxSoundVolume = Sound_GetMaxVolume();
             sndSettings.b3DHWSupport   = Sound_Get3DHWState();
-            sndSettings.bReverseSound  = wuRegistry_GetIntEx("ReverseSound", 0);
+            sndSettings.bReverseSound  = stdConfig_GetBool(JONESCONFIG_CFG_SOUND_REVERSE, false);
 
             HWND hwnd = stdWin95_GetWindow();
             dlgResult = jonesConfig_ShowSoundSettingsDialog(hwnd, &sndSettings);
@@ -3218,7 +3229,8 @@ void JonesHud_ResetMenuItems(void)
         for ( size_t i = 0; i < 8; ++i ) // 8 = 9 sys items - 1 
         {
             // Added: Skip help menu option, i.e. remove it
-            if ( curItemId == JONESHUD_MENU_HELP ) {
+            if ( curItemId == JONESHUD_MENU_HELP )
+            {
                 ++curItemId;
             }
 
@@ -3376,7 +3388,8 @@ void J3DAPI JonesHud_sub_419B50(JonesHudMenuItem* pItem)
                     JonesHud_pCloseMenuItem->endMovePos.x = -0.15800001f;
                     moveRate = JonesHud_pCloseMenuItem->endMovePos.x - JonesHud_pCloseMenuItem->startMovePos.x;
                 }
-                else {
+                else
+                {
                     JonesHud_pCloseMenuItem->endMovePos.x = JonesHud_pCloseMenuItem->endMovePos.x - 0.064999998f;
                 }
 
@@ -3663,7 +3676,8 @@ void J3DAPI JonesHud_RenderChangedItem(const JonesHudMenuItem* pItem, float scal
     float v6;
     float v7;
 
-    if ( !pItem ) {
+    if ( !pItem )
+    {
         return;
     }
 
@@ -3835,39 +3849,33 @@ int JonesHud_ShowLevelCompleted(void)
 HANDLE J3DAPI JonesHud_OpenHelp(HANDLE process)
 {
     J3D_UNUSED(process);
-    struct _SHELLEXECUTEINFOA execInfo;
-    const char* pFilename;
-    char aPath[128];
-    wchar_t* pwString;
-    HANDLE hProcess;
 
-    pwString = sithString_GetString("SITHSTRING_HELPFILE");
-    hProcess = 0;
+    wchar_t* pwString = sithString_GetString("SITHSTRING_HELPFILE");
+    HANDLE hProcess = NULL;
     if ( !pwString )
     {
         return hProcess;
     }
 
-    pFilename = stdUtil_ToAString(pwString);
-    memset(aPath, 0, sizeof(aPath));
-    wuRegistry_GetStr("Install Path", aPath, sizeof(aPath), std_g_aEmptyString);
+    const char* pFilename = stdUtil_ToAString(pwString);
+    char aPath[128] = { 0 };
+    stdConfig_GetString(SITH_CFG_INSTALLPATH, aPath, sizeof(aPath), "");
     if ( pFilename && strlen(aPath) )
     {
-        memset(&execInfo, 0, sizeof(execInfo));
-        execInfo.cbSize = 60;
-        execInfo.fMask  = 80;
-        execInfo.lpVerb = "open";
-        execInfo.lpFile = pFilename;
+        SHELLEXECUTEINFOA execInfo = { 0 };
+        execInfo.cbSize      = 60;
+        execInfo.fMask       = 80;
+        execInfo.lpVerb      = "open";
+        execInfo.lpFile      = pFilename;
         execInfo.lpDirectory = aPath;
-        execInfo.nShow = 1;
+        execInfo.nShow       = 1;
         ShellExecuteExA(&execInfo);
         hProcess = execInfo.hProcess;
     }
 
-
     if ( pFilename )
     {
-        stdMemory_Free((void*)pFilename);
+        STDFREE(pFilename);
     }
 
     return hProcess;

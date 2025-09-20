@@ -40,13 +40,12 @@
 #include <rdroid/Primitives/rdPrimit3.h>
 
 #include <std/General/stdColor.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdFileUtil.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdComm.h>
-
-#include <w32util/wuRegistry.h>
 
 #define SITH_PATHSIZE 128
 #define SITH_DEFAULTGAMEDIFFICULTY 5
@@ -215,7 +214,7 @@ int sithStartup(void)
 
     memset(&sithMain_g_sith_mode, 0, sizeof(sithMain_g_sith_mode));
 
-    int difficulty = wuRegistry_GetInt("Difficulty", SITH_DEFAULTGAMEDIFFICULTY);
+    int difficulty = stdConfig_GetInt(SITH_CFG_GAMEPLAY_DIFFICULTY, SITH_DEFAULTGAMEDIFFICULTY);
     sithSetGameDifficulty(difficulty);
 
     memset(sith_aTmpAutoSaveFilePrefix, 0, sizeof(sith_aTmpAutoSaveFilePrefix));
@@ -795,7 +794,7 @@ const char* J3DAPI sithGetPath(char* aOutPath, const char* pSithStrName, int bPr
     char* pName = stdUtil_ToAString(pwName);
 
     char aInstallPath[128] = { 0 };
-    wuRegistry_GetStr("Install Path", aInstallPath, STD_ARRAYLEN(aInstallPath), "");
+    stdConfig_GetString(SITH_CFG_INSTALLPATH, aInstallPath, STD_ARRAYLEN(aInstallPath), "");
 
     if ( strlen(pName) )
     {

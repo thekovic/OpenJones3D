@@ -16,6 +16,23 @@ J3D_EXTERN_C_START
 // The length of passed string argument should be the same as this macro
 #define  JONESCONFIG_GAMESAVE_FILEPATHSIZE 128
 
+// Configuration keys
+#define JONESCONFIG_CFG_SOURCEPATH          "sourcePath"
+#define JONESCONFIG_CFG_DEVMODE             "devMode"
+#define JONESCONFIG_CFG_STARTMODE           "startMode"
+
+#define JONESCONFIG_CFG_CONTROLS_CONFIGFILE "controls.configFile"
+
+#define JONESCONFIG_CFG_GAMEPLAY_DEFAULTRUN  "gameplay.defaultRun"
+#define JONESCONFIG_CFG_GAMEPLAY_STARTLEVEL "gameplay.startLevel"
+
+#define JONESCONFIG_CFG_LOG_MODE            "log.mode"
+#define JONESCONFIG_CFG_LOG_LEVEL           "log.level"
+
+#define JONESCONFIG_CFG_SOUND_HW            "sound.hw"
+#define JONESCONFIG_CFG_SOUND_REVERSE       "sound.reverse"
+#define JONESCONFIG_CFG_SOUND_VOLUME        "sound.volume"
+
 int jonesConfig_Startup(void);
 void jonesConfig_Shutdown(void);
 

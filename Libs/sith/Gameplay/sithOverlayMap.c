@@ -17,11 +17,11 @@
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdColor.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdPlatform.h>
 #include <std/General/stdUtil.h>
 
-#include <w32util/wuRegistry.h>
 
 #define SITHOVERLAYMAP_NUMZLEVELS 9u
 
@@ -134,8 +134,8 @@ int J3DAPI sithOverlayMap_Open(SithOverlayMapConfig* pConfig)
         return 0;
     }
 
-    sithOverlayMap_bShowHints          = wuRegistry_GetIntEx("Show Hints", 0) != 0;
-    sithOverlayMap_config.bMapRotation = wuRegistry_GetIntEx("Map Rotation", 0);
+    sithOverlayMap_bShowHints          = stdConfig_GetBool(SITHOVERLAYMAP_CFG_GAMEPLAY_SHOWHINTS, false);
+    sithOverlayMap_config.bMapRotation = stdConfig_GetBool(SITHOVERLAYMAP_CFG_GAMEPLAY_MAPROTATION, false);
 
     sithOverlayMap_vertexScale = ((sithOverlayMap_curScale - 10.0f) / 290.0f) * 200.0f + 110.0f;
 

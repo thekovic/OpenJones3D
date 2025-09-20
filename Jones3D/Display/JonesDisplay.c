@@ -18,13 +18,13 @@
 #include <sound/Sound.h>
 
 #include <std/General/std.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdPlatform.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/std3D.h>
 #include <std/Win95/stdControl.h>
 #include <std/Win95/stdDisplay.h>
 
-#include <w32util/wuRegistry.h>
 #include <wkernel/wkernel.h>
 
 static size_t JonesDisplay_primaryDisplayNum  = 1;
@@ -181,7 +181,8 @@ int J3DAPI JonesDisplay_Restart(JonesDisplaySettings* pSettings)
 {
     JonesDisplay_Close();
     JonesDisplay_Shutdown();
-    if ( JonesDisplay_Startup(pSettings) ) {
+    if ( JonesDisplay_Startup(pSettings) )
+    {
         return 1;
     }
 
@@ -238,17 +239,17 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
             pDisplaySettings->height = videoMode.rasterInfo.height;
             pDisplaySettings->bClearBackBuffer = 0;
 
-            wuRegistry_SaveStr("Display", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].displayDevice.aDriverName);
-            wuRegistry_SaveStr("3D Device", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aDevices[pDisplaySettings->device3DNum].deviceDescription);
-            wuRegistry_SaveInt("Width", pDisplaySettings->width);
-            wuRegistry_SaveInt("Height", pDisplaySettings->height);
-            wuRegistry_SaveInt("BPP", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].rasterInfo.colorInfo.bpp);
-            wuRegistry_SaveInt("Refresh Rate", pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].refreshRate);
-            wuRegistry_SaveInt("Filter", pDisplaySettings->filter);
-            wuRegistry_SaveIntEx("InWindow", pDisplaySettings->bWindowMode);
-            wuRegistry_SaveIntEx("Dual Monitor", pDisplaySettings->bDualMonitor);
-            wuRegistry_SaveInt("Geometry Mode", pDisplaySettings->geoMode);
-            wuRegistry_SaveInt("Lighting Mode", pDisplaySettings->lightMode);
+            stdConfig_SetString(JONESDISPLAY_CFG_GRAPHICS_DISPLAY, pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].displayDevice.aDriverName);
+            stdConfig_SetString(JONESDISPLAY_CFG_GRAPHICS_DEVICE, pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aDevices[pDisplaySettings->device3DNum].deviceDescription);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_WIDTH, pDisplaySettings->width);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_HEIGHT, pDisplaySettings->height);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_BPP, pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].rasterInfo.colorInfo.bpp);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE, pEnv->aDisplayInfos[pDisplaySettings->displayDeviceNum].aModes[pDisplaySettings->videoModeNum].refreshRate);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, pDisplaySettings->filter);
+            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_WINDOW, pDisplaySettings->bWindowMode);
+            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_DUALMONITOR, pDisplaySettings->bDualMonitor);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE, pDisplaySettings->geoMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE, pDisplaySettings->lightMode);
         }
         else
         {
@@ -343,12 +344,14 @@ void J3DAPI JonesDisplay_OpenLoadScreen(const char* pMatFilePath, float wlStartX
 
 void JonesDisplay_CloseLoadScreen(void)
 {
-    if ( JonesDisplay_pWallpaper ) {
+    if ( JonesDisplay_pWallpaper )
+    {
         rdWallpaper_Free(JonesDisplay_pWallpaper);
     }
     JonesDisplay_pWallpaper = NULL;
 
-    if ( JonesDisplay_pWallLine ) {
+    if ( JonesDisplay_pWallLine )
+    {
         rdWallpaper_FreeWallLine(JonesDisplay_pWallLine);
     }
     JonesDisplay_pWallLine = NULL;

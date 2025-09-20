@@ -9,6 +9,8 @@
 
 J3D_EXTERN_C_START
 
+#define SITHVOICE_CFG_GAMEPLAY_SHOWTEXT "gameplay.showText"
+
 int sithVoice_Startup(void);
 void sithVoice_Shutdown(void);
 

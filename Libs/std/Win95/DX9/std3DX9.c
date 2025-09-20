@@ -5,12 +5,11 @@
 #include <j3dcore/j3dhook.h>
 #include <std/General/std.h>
 #include <std/General/stdColor.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdMath.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 #include <std/RTI/symbols.h>
-
-#include <w32util/wuRegistry.h>
 
 #include <math.h>
 
@@ -274,14 +273,14 @@ static bool std3D_InitSystem(void)
     }
 
     // Get autogen support
-    std3D_bAutoGenMipmap = wuRegistry_GetInt(STD3D_CFG_MIPMAPAUTOGEN, 1);
+    std3D_bAutoGenMipmap = stdConfig_GetBool(STD3D_CFG_MIPMAPAUTOGEN, true);
     if ( std3D_bAutoGenMipmap && !std3D_pCurDevice->bMipmapAutoGenSupported )
     {
         STDLOG_WARNING("Warning: Automatic mipmap generation disabled, no device support!\n");
         std3D_bAutoGenMipmap = false;
     }
 
-    std3D_bAnisotropicFilter = wuRegistry_GetInt(STD3D_CFG_ANISOTROPICFILTER, 1);
+    std3D_bAnisotropicFilter = stdConfig_GetBool(STD3D_CFG_ANISOTROPICFILTER, true);
     if ( std3D_bAnisotropicFilter && !std3D_pCurDevice->bAnisotropicFilteringSupported )
     {
         STDLOG_WARNING("Warning: Anisotropic filtering disabled, no device support!\n");

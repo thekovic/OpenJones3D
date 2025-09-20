@@ -18,12 +18,11 @@
 
 #include <sound/Sound.h>
 
+#include <std/General/stdConfig.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdPlatform.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdDisplay.h>
-
-#include <w32util/wuRegistry.h>
 
 #define SITHVOICE_MSEC_EXTRA_SUBTITLE_SHOW_DURATION  1000
 #define SITHVOICE_MAX_LINES_PER_DRAW                 3    // number of lines to draw
@@ -106,7 +105,7 @@ int sithVoice_Startup(void)
     }
 
     sithVoice_pTextFont = NULL;
-    sithVoice_bShowText = wuRegistry_GetIntEx("Show Text", 0) == 1;
+    sithVoice_bShowText = stdConfig_GetBool(SITHVOICE_CFG_GAMEPLAY_SHOWTEXT, false);
     sithVoice_bStartup  = true;
     return 1;
 }
@@ -538,7 +537,8 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
 
                     // Fixed: Fixed infinitive loop bay adding check for case where text contain word which is too long to fit onto the screen.
                     //        In this case pInText is returned which leads to infinitive loop.
-                    if ( pText == pInText ) {
+                    if ( pText == pInText )
+                    {
                         pText = NULL;
                     }
                 }
@@ -551,7 +551,8 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
             ++numProcessedLines;
 
             const char* pLineEnd  = rdFont_GetWrapLine(pCurLine, sithVoice_pTextFont, textWidthScalar);
-            if ( pLineEnd == pCurLine ) { // Fixed: If line contains long word at the end and cannot fit onto the screen the function returns pCurLine, in this case pLineEnd should be NULL.
+            if ( pLineEnd == pCurLine )
+            { // Fixed: If line contains long word at the end and cannot fit onto the screen the function returns pCurLine, in this case pLineEnd should be NULL.
                 pLineEnd = NULL;
             }
 

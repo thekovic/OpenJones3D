@@ -10,8 +10,8 @@
 #include <sith/Gameplay/sithPlayerControls.h>
 #include <sith/World/sithWeapon.h>
 
+#include <std/General/stdConfig.h>
 #include <std/Win95/stdControl.h>
-#include <w32util/wuRegistry.h>
 
 static bool JonesControl_bStartup = false; // Added: Init to false
 
@@ -28,7 +28,7 @@ void JonesControl_ResetGlobals(void)
 
 int JonesControl_Startup(void)
 {
-    int bMouseControl = wuRegistry_GetIntEx("Mouse Control", 0);
+    int bMouseControl = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_MOUSE, false);
     JonesDisplaySettings* pSettings = JonesMain_GetDisplaySettings();
 
     if ( JonesControl_bStartup )
@@ -63,14 +63,14 @@ int JonesControl_Startup(void)
         sithControl_RegisterAxisFunction((SithControlFunction)functionId, SITHCONTROLFUNCTION_KEY);
     }
 
-    int bJoystickControl = wuRegistry_GetIntEx("Joystick Control", 0);
+    int bJoystickControl = stdConfig_GetBool(JONESCONTROL_CFG_CONTROLS_CONTROLLER, false);
     if ( bJoystickControl == 1 && stdControl_GetNumJoysticks() )
     {
         JonesControl_EnableJoystickAxes();
         sithControl_UnbindJoystickAxes();
     }
 
-    wuRegistry_SaveIntEx("Joystick Control", bJoystickControl);
+    stdConfig_SetBool(JONESCONTROL_CFG_CONTROLS_CONTROLLER, bJoystickControl);
 
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 && (!pSettings->bWindowMode || bMouseControl) )
     {

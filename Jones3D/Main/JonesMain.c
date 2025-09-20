@@ -42,6 +42,7 @@
 #include <std/General/std.h>
 #include <std/General/stdCircBuf.h>
 #include <std/General/stdColor.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdEffect.h>
 #include <std/General/stdFileUtil.h>
 #include <std/General/stdFnames.h>
@@ -283,10 +284,18 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
         return 1;
     }
 
-    wuRegistry_GetStr("Install Path", JonesMain_state.aInstallPath, STD_ARRAYLEN(JonesMain_state.aInstallPath), "");
-    wuRegistry_GetStr("Source Dir", JonesMain_state.aCDPath, STD_ARRAYLEN(JonesMain_state.aCDPath), "");
+    // Added: Initialize new config module
+    if ( !stdConfig_Startup("Jones.cfg") )
+    {
+        JonesMain_LogErrorToFile("Couldn't open the config file.");
+        JonesMain_CloseWindow();
+        return 1;
+    }
 
-    std3D_SetFindAllDevices(wuRegistry_GetIntEx("AllDevices", 0));
+    stdConfig_GetString(SITH_CFG_INSTALLPATH, JonesMain_state.aInstallPath, STD_ARRAYLEN(JonesMain_state.aInstallPath), "");
+    stdConfig_GetString(JONESCONFIG_CFG_SOURCEPATH, JonesMain_state.aCDPath, STD_ARRAYLEN(JonesMain_state.aCDPath), "");
+
+    std3D_SetFindAllDevices(stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_ALLDEVICES, false));
 
     JonesFile_Open(&JonesMain_hs, JonesMain_state.aInstallPath, JonesMain_state.aCDPath);
 
@@ -337,9 +346,9 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
         }
     }
 
-    float defultVol = Sound_GetMaxVolume();
-    JonesMain_state.soundSettings.maxSoundVolume = wuRegistry_GetFloat("Sound Volume", defultVol);
-    wuRegistry_SaveFloat("Sound Volume", JonesMain_state.soundSettings.maxSoundVolume);
+    float defaultVol = Sound_GetMaxVolume();
+    JonesMain_state.soundSettings.maxSoundVolume = stdConfig_GetFloat(JONESCONFIG_CFG_SOUND_VOLUME, defaultVol);
+    stdConfig_SetFloat(JONESCONFIG_CFG_SOUND_VOLUME, JonesMain_state.soundSettings.maxSoundVolume);
 
     Sound_SetMaxVolume(JonesMain_state.soundSettings.maxSoundVolume);
     SmushPlay_SetGlobalVolume((size_t)(JonesMain_state.soundSettings.maxSoundVolume * 127.0f)); // TODO: Can be removed as it's being set in PlayIntroMovie
@@ -388,7 +397,8 @@ int J3DAPI JonesMain_Startup(const char* lpCmdLine)
 
         default: // Developer dialog
         {
-            if ( JonesMain_ShowDevDialog(stdWin95_GetWindow(), &JonesMain_state) != 1 ) {
+            if ( JonesMain_ShowDevDialog(stdWin95_GetWindow(), &JonesMain_state) != 1 )
+            {
                 return 1; // exit
             }
         } break;
@@ -1126,7 +1136,8 @@ void JonesMain_Shutdown(void)
 
     else if ( JonesMain_state.outputMode == JONES_OUTPUTMODE_LOGFILE )
     {
-        if ( JonesMain_pLogFile ) { // Fixed: Add null check
+        if ( JonesMain_pLogFile )
+        { // Fixed: Add null check
             fclose(JonesMain_pLogFile);
         }
     }
@@ -1135,6 +1146,7 @@ void JonesMain_Shutdown(void)
     sithSound_ShutdownSound();
 
     JonesFile_Close();
+    stdConfig_Shutdown(); // Added
     wuRegistry_Shutdown();
     JonesFile_Shutdown();
 
@@ -1503,10 +1515,12 @@ int J3DAPI JonesMain_EnsureLevelFileEx(const char* pFilename, bool bFindAll, cha
     if ( bFindAll && pFoundFilename )
     {
         const char* pCurExt = stdFnames_FindExt(aPath);
-        if ( streqi(pCurExt, "cnd") ) {
+        if ( streqi(pCurExt, "cnd") )
+        {
             stdFnames_ChangeExt(aPath, "ndy");
         }
-        else {
+        else
+        {
             stdFnames_ChangeExt(aPath, "cnd");
         }
 
@@ -2040,7 +2054,7 @@ int JonesMain_PlayIntroMovie(void)
         {
             // Fallback to CD
             char aResDir[128];
-            wuRegistry_GetStr("Source Dir", aPath, STD_ARRAYLEN(aPath), "");
+            stdConfig_GetString(JONESCONFIG_CFG_SOURCEPATH, aPath, STD_ARRAYLEN(aPath), "");
             STD_FORMAT(aResDir, "%sresource", aPath);
             STD_MAKEPATH(aPath, aResDir, aFilename);
 
@@ -2461,7 +2475,8 @@ J3DNORETURN void J3DAPI JonesMain_Assert(const char* pErrorText, const char* pSr
         }
     }
 
-    if ( bFoundFilename ) {
+    if ( bFoundFilename )
+    {
         ++filenamePos;
     }
 
@@ -2606,7 +2621,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     }
 
     // Removed: rdModel3K module not supported 
-    //if ( wuRegistry_GetIntEx("Katmai", 1) && rdModel3K_sub_4E2ED0() )
+    //if ( stdConfig_GetIntEx("graphics.katmai", 1) && rdModel3K_sub_4E2ED0() )
     //{
     //    rdModel3K_sub_4E2F00(1);
     //    rdModel3K_sub_4E1DA0();
@@ -2616,36 +2631,36 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     // Make sure sith has all required dirs set
     sithMakeDirs();
 
-    wuRegistry_GetStr("StartLevel", pConfig->aCurLevelFilename, STD_ARRAYLEN(pConfig->aCurLevelFilename), "");
+    stdConfig_GetString(JONESCONFIG_CFG_GAMEPLAY_STARTLEVEL, pConfig->aCurLevelFilename, STD_ARRAYLEN(pConfig->aCurLevelFilename), "");
 
-    pConfig->displaySettings.bWindowMode  = wuRegistry_GetIntEx("InWindow", 0);
-    pConfig->displaySettings.bDualMonitor = wuRegistry_GetIntEx("Dual Monitor", 0);
-    pConfig->displaySettings.bBuffering   = wuRegistry_GetIntEx("Buffering", 0);
-    pConfig->displaySettings.filter       = wuRegistry_GetInt("Filter", STD3D_MIPMAPFILTER_TRILINEAR); // Altered: Set trilinear as default (OG bilinear)
+    pConfig->displaySettings.bWindowMode  = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_WINDOW, false);
+    pConfig->displaySettings.bDualMonitor = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_DUALMONITOR, false);
+    pConfig->displaySettings.bBuffering   = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_BUFFERING, false);
+    pConfig->displaySettings.filter       = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, STD3D_MIPMAPFILTER_TRILINEAR); // Altered: Set trilinear as default (OG bilinear)
 
-    pConfig->displaySettings.bFog       = wuRegistry_GetIntEx("Fog", 1);
-    pConfig->displaySettings.fogDensity = wuRegistry_GetFloat("Fog Density", 1.0f);
+    pConfig->displaySettings.bFog       = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_FOG, true);
+    pConfig->displaySettings.fogDensity = stdConfig_GetFloat(JONESDISPLAY_CFG_GRAPHICS_FOGDENSITY, 1.0f);
     std3D_EnableFog(pConfig->displaySettings.bFog, pConfig->displaySettings.fogDensity);
 
     sithRender_g_fogDensity = pConfig->displaySettings.fogDensity * 100.0f;
 
-    pConfig->bDevMode  = wuRegistry_GetIntEx("DevMode", 0);
-    pConfig->startMode = wuRegistry_GetInt("Start Mode", JONES_STARTMODE_DEVELOPERDIALOG);
+    pConfig->bDevMode  = stdConfig_GetBool(JONESCONFIG_CFG_DEVMODE, false);
+    pConfig->startMode = stdConfig_GetInt(JONESCONFIG_CFG_STARTMODE, JONES_STARTMODE_DEVELOPERDIALOG);
     pConfig->startMode = STDMATH_CLAMP(pConfig->startMode, JONES_STARTMODE_STARTGAME, JONES_STARTMODE_DISPLAYSETTINGS);
 
-    pConfig->outputMode = wuRegistry_GetInt("Debug Mode", JONES_OUTPUTMODE_NONE);
-    pConfig->logLevel   = wuRegistry_GetInt("Verbosity", JONES_LOGLEVEL_NORMAL);
-    pConfig->performanceLevel = wuRegistry_GetInt("Performance Level", 4);
+    pConfig->outputMode = stdConfig_GetInt(JONESCONFIG_CFG_LOG_MODE, JONES_OUTPUTMODE_NONE);
+    pConfig->logLevel   = stdConfig_GetInt(JONESCONFIG_CFG_LOG_LEVEL, JONES_LOGLEVEL_NORMAL);
+    pConfig->performanceLevel = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, 4);
 
-    pConfig->displaySettings.geoMode   = wuRegistry_GetInt("Geometry Mode", RD_GEOMETRY_FULL);
-    pConfig->displaySettings.lightMode = wuRegistry_GetInt("Lighting Mode", RD_LIGHTING_GOURAUD);
+    pConfig->displaySettings.geoMode   = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE, RD_GEOMETRY_FULL);
+    pConfig->displaySettings.lightMode = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE, RD_LIGHTING_GOURAUD);
 
-    int bHiPoly = wuRegistry_GetIntEx("HiPoly", 1); // Changed: Enable by default, was disabled
+    int bHiPoly = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_HIPOLY, true); // Changed: Enable by default, was disabled
     sithModel_EnableHiPoly(bHiPoly); // Added
 
     JonesMain_pStartupDisplayEnv = pDisplayEnv;
 
-    wuRegistry_GetStr("Display", aText, STD_ARRAYLEN(aText), "");
+    stdConfig_GetString(JONESDISPLAY_CFG_GRAPHICS_DISPLAY, aText, STD_ARRAYLEN(aText), "");
 
     // Altered: Changed to use first found HAL display if no display is found
     int halDisplayIdx = -1;
@@ -2680,7 +2695,7 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
         }
     }
 
-    wuRegistry_GetStr("3D Device", aText, STD_ARRAYLEN(aText), "");
+    stdConfig_GetString(JONESDISPLAY_CFG_GRAPHICS_DEVICE, aText, STD_ARRAYLEN(aText), "");
     for ( size_t i = 0; i < pDisplay->numDevices; ++i )
     {
         if ( streq(pDisplay->aDevices[i].deviceDescription, aText) )
@@ -2691,10 +2706,10 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     }
 
     JonesMain_curVideoMode.aspectRatio                    = 1.0f;
-    JonesMain_curVideoMode.rasterInfo.width               = wuRegistry_GetInt("Width", 640);
-    JonesMain_curVideoMode.rasterInfo.height              = wuRegistry_GetInt("Height", 480);
-    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = wuRegistry_GetInt("BPP", 32);          // Altered: Changed 16 bpp to 32
-    JonesMain_curVideoMode.refreshRate                    = wuRegistry_GetInt("Refresh Rate", 60); // Added
+    JonesMain_curVideoMode.rasterInfo.width               = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_WIDTH, 640);
+    JonesMain_curVideoMode.rasterInfo.height              = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_HEIGHT, 480);
+    JonesMain_curVideoMode.rasterInfo.colorInfo.bpp       = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_BPP, 32);          // Altered: Changed 16 bpp to 32
+    JonesMain_curVideoMode.refreshRate                    = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE, 60); // Added
     JonesMain_curVideoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
 
     pConfig->displaySettings.videoModeNum = JonesMain_FindClosestVideoMode(JonesMain_pStartupDisplayEnv, &JonesMain_curVideoMode, pConfig->displaySettings.displayDeviceNum);
@@ -2704,10 +2719,9 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.height = JonesMain_curVideoMode.rasterInfo.height;
     pConfig->displaySettings.bClearBackBuffer = 0;
 
-    pConfig->soundSettings.b3DHWSupport  = wuRegistry_GetIntEx("Sound 3D", 0);
-    pConfig->soundSettings.bReverseSound = wuRegistry_GetIntEx("ReverseSound", 0);
+    pConfig->soundSettings.b3DHWSupport  = stdConfig_GetBool(JONESCONFIG_CFG_SOUND_HW, false);
+    pConfig->soundSettings.bReverseSound = stdConfig_GetBool(JONESCONFIG_CFG_SOUND_REVERSE, false);
 }
-
 
 int J3DAPI JonesMain_ShowDevDialog(HWND hWnd, JonesState* pConfig)
 {
@@ -2863,7 +2877,8 @@ int J3DAPI JonesMain_InitDevDialog(HWND hDlg, WPARAM wParam, JonesState* pConfig
         STD_MAKEPATH(aNdyDir, JonesFile_GetWorkingDirPath(), "ndy");
 
         // Added
-        if ( !stdUtil_DirExists(aNdyDir) ) {
+        if ( !stdUtil_DirExists(aNdyDir) )
+        {
             STD_MAKEPATH(aNdyDir, JonesFile_GetResourcePath(), "ndy"); // Use absolute resource path to search for level files
         }
 
@@ -3078,32 +3093,32 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
         curSelIdx = ListBox_GetCurSel(hCBLevelList);
         if ( ListBox_GetText(hCBLevelList, curSelIdx, pState->aCurLevelFilename) != -1 )
         {
-            wuRegistry_SaveStr("Display", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].displayDevice.aDriverName);
-            wuRegistry_SaveStr("3D Device", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aDevices[pState->displaySettings.device3DNum].deviceDescription);
-            wuRegistry_SaveInt("Width", pState->displaySettings.width);
-            wuRegistry_SaveInt("Height", pState->displaySettings.height);
-            wuRegistry_SaveInt("BPP", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.colorInfo.bpp);
-            wuRegistry_SaveInt("Refresh Rate", JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].refreshRate);
-            wuRegistry_SaveInt("Filter", pState->displaySettings.filter);
+            stdConfig_SetString(JONESDISPLAY_CFG_GRAPHICS_DISPLAY, JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].displayDevice.aDriverName);
+            stdConfig_SetString(JONESDISPLAY_CFG_GRAPHICS_DEVICE, JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aDevices[pState->displaySettings.device3DNum].deviceDescription);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_WIDTH, pState->displaySettings.width);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_HEIGHT, pState->displaySettings.height);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_BPP, JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.colorInfo.bpp);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE, JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].refreshRate);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, pState->displaySettings.filter);
+            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_HIPOLY, sithModel_IsHiPolyEnabled()); // Added
 
-            wuRegistry_SaveStr("StartLevel", pState->aCurLevelFilename);
+            stdConfig_SetString(JONESCONFIG_CFG_GAMEPLAY_STARTLEVEL, pState->aCurLevelFilename);
 
-            wuRegistry_SaveIntEx("InWindow", pState->displaySettings.bWindowMode);
-            wuRegistry_SaveIntEx("Dual Monitor", pState->displaySettings.bDualMonitor);
+            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_WINDOW, pState->displaySettings.bWindowMode);
+            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_DUALMONITOR, pState->displaySettings.bDualMonitor);
 
-            wuRegistry_SaveIntEx("DevMode", pState->bDevMode);
+            stdConfig_SetBool(JONESCONFIG_CFG_DEVMODE, pState->bDevMode);
 
-            wuRegistry_SaveIntEx("Sound 3D", pState->soundSettings.b3DHWSupport);
+            stdConfig_SetBool(JONESCONFIG_CFG_SOUND_HW, pState->soundSettings.b3DHWSupport);
 
-            wuRegistry_SaveInt("Debug Mode", pState->outputMode);
-            wuRegistry_SaveInt("Verbosity", pState->logLevel);
+            stdConfig_SetInt(JONESCONFIG_CFG_LOG_MODE, pState->outputMode);
+            stdConfig_SetInt(JONESCONFIG_CFG_LOG_LEVEL, pState->logLevel);
 
-            wuRegistry_SaveStr("Install Path", pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path'
-            wuRegistry_SaveInt("Performance Level", pState->performanceLevel);
-            wuRegistry_SaveInt("HiPoly", sithModel_IsHiPolyEnabled()); // Added
+            stdConfig_SetString(SITH_CFG_INSTALLPATH, pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path'
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, pState->performanceLevel);
 
-            wuRegistry_SaveInt("Geometry Mode", pState->displaySettings.geoMode);
-            wuRegistry_SaveInt("Lighting Mode", pState->displaySettings.lightMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE, pState->displaySettings.geoMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE, pState->displaySettings.lightMode);
 
             EndDialog(hWnd, controlId); // Close dialog
         }
