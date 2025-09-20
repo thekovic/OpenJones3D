@@ -1556,16 +1556,6 @@ int std3D_InitRenderState(void)
             return 0;
         }
 
-        if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ALPHAFUNC, D3DCMP_GREATER) != D3D_OK )
-        {
-            return 0;
-        }
-
-        if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ALPHAREF, 0) != D3D_OK )
-        {
-            return 0;
-        }
-
         if ( (std3D_pCurDevice->d3dDesc.AlphaCmpCaps & D3DPCMPCAPS_GREATER) != 0 )
         {
             if ( IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ALPHAFUNC, D3DCMP_GREATER) != D3D_OK )
@@ -1801,7 +1791,7 @@ void std3D_ClearZBuffer(void)
             std3D_pD3Device,
             1,
             &std3D_activeRect,
-            D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL | D3DCLEAR_TARGET, // TODO: Add D3DCLEAR_TARGET when enabled
+            D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, // TODO: Add D3DCLEAR_TARGET when enabled
             0,    // Color (black)
             1.0f, // Z value
             0     // Stencil value
