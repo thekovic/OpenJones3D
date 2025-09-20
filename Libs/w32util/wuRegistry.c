@@ -16,8 +16,8 @@ void wuRegistry_InstallHooks(void)
     J3D_HOOKFUNC(wuRegistry_SaveFloat);
     J3D_HOOKFUNC(wuRegistry_GetInt);
     J3D_HOOKFUNC(wuRegistry_GetFloat);
-    J3D_HOOKFUNC(wuRegistry_SaveIntEx);
-    J3D_HOOKFUNC(wuRegistry_GetIntEx);
+    J3D_HOOKFUNC(wuRegistry_SaveBool);
+    J3D_HOOKFUNC(wuRegistry_GetBool);
     J3D_HOOKFUNC(wuRegistry_SaveStr);
     J3D_HOOKFUNC(wuRegistry_GetStr);
 }
@@ -36,12 +36,12 @@ int J3DAPI wuRegistry_Startup(HKEY rootKey, LPCSTR subKey)
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         rootKey == HKEY_CLASSES_ROOT
-     || rootKey == HKEY_CURRENT_USER
-     || rootKey == HKEY_LOCAL_MACHINE
-     || rootKey == HKEY_USERS
-     || rootKey == HKEY_PERFORMANCE_DATA
-     || rootKey == HKEY_CURRENT_CONFIG
-     || rootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || rootKey == HKEY_CURRENT_USER
+        || rootKey == HKEY_LOCAL_MACHINE
+        || rootKey == HKEY_USERS
+        || rootKey == HKEY_PERFORMANCE_DATA
+        || rootKey == HKEY_CURRENT_CONFIG
+        || rootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     wuRegistry_bStarted = true;
@@ -60,7 +60,7 @@ int J3DAPI wuRegistry_Startup(HKEY rootKey, LPCSTR subKey)
         NULL,
         &hkResult,
         &dwDisposition) == ERROR_SUCCESS
-      && RegCloseKey(hkResult) == ERROR_SUCCESS )
+        && RegCloseKey(hkResult) == ERROR_SUCCESS )
     {
         return 0;
     }
@@ -92,18 +92,18 @@ int J3DAPI wuRegistry_SaveInt(const char* pKey, int value)
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         appRootKey == HKEY_CLASSES_ROOT
-     || appRootKey == HKEY_CURRENT_USER
-     || appRootKey == HKEY_LOCAL_MACHINE
-     || appRootKey == HKEY_USERS
-     || appRootKey == HKEY_PERFORMANCE_DATA
-     || appRootKey == HKEY_CURRENT_CONFIG
-     || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     HKEY hkResult = 0;
     if ( RegOpenKeyEx(appRootKey, appSubKey, 0, KEY_ALL_ACCESS, &hkResult) == ERROR_SUCCESS
-      && RegSetValueEx(hkResult, pKey, 0, REG_DWORD, (const BYTE*)&value, sizeof(value)) == ERROR_SUCCESS
-      && RegCloseKey(hkResult) == ERROR_SUCCESS )
+        && RegSetValueEx(hkResult, pKey, 0, REG_DWORD, (const BYTE*)&value, sizeof(value)) == ERROR_SUCCESS
+        && RegCloseKey(hkResult) == ERROR_SUCCESS )
     {
         return 0;
     }
@@ -123,18 +123,18 @@ int J3DAPI wuRegistry_SaveFloat(const char* pKey, float value)
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         appRootKey == HKEY_CLASSES_ROOT
-     || appRootKey == HKEY_CURRENT_USER
-     || appRootKey == HKEY_LOCAL_MACHINE
-     || appRootKey == HKEY_USERS
-     || appRootKey == HKEY_PERFORMANCE_DATA
-     || appRootKey == HKEY_CURRENT_CONFIG
-     || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     HKEY hkResult = 0;
     if ( RegOpenKeyEx(appRootKey, appSubKey, 0, KEY_ALL_ACCESS, &hkResult) == ERROR_SUCCESS
-      && RegSetValueEx(hkResult, pKey, 0, REG_BINARY, (const BYTE*)&value, sizeof(value)) == ERROR_SUCCESS
-      && RegCloseKey(hkResult) == ERROR_SUCCESS )
+        && RegSetValueEx(hkResult, pKey, 0, REG_BINARY, (const BYTE*)&value, sizeof(value)) == ERROR_SUCCESS
+        && RegCloseKey(hkResult) == ERROR_SUCCESS )
     {
         return 0;
     }
@@ -154,12 +154,12 @@ int J3DAPI wuRegistry_GetInt(const char* pKey, int defaultValue)
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         appRootKey == HKEY_CLASSES_ROOT
-     || appRootKey == HKEY_CURRENT_USER
-     || appRootKey == HKEY_LOCAL_MACHINE
-     || appRootKey == HKEY_USERS
-     || appRootKey == HKEY_PERFORMANCE_DATA
-     || appRootKey == HKEY_CURRENT_CONFIG
-     || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     HKEY hkResult = 0;
@@ -188,12 +188,12 @@ float J3DAPI wuRegistry_GetFloat(const char* pKey, float defaultValue)
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         appRootKey == HKEY_CLASSES_ROOT
-     || appRootKey == HKEY_CURRENT_USER
-     || appRootKey == HKEY_LOCAL_MACHINE
-     || appRootKey == HKEY_USERS
-     || appRootKey == HKEY_PERFORMANCE_DATA
-     || appRootKey == HKEY_CURRENT_CONFIG
-     || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     HKEY hkResult = 0; // Added: Initialized to 0
@@ -205,7 +205,7 @@ float J3DAPI wuRegistry_GetFloat(const char* pKey, float defaultValue)
     BYTE data[sizeof(int)] = { 0 };
     DWORD sizeData = sizeof(data);
     DWORD type;
-    if ( RegQueryValueExA(hkResult, pKey, 0, &type, data, &sizeData) == ERROR_SUCCESS )// TODO: make new int type var for 4th param (pKey
+    if ( RegQueryValueEx(hkResult, pKey, NULL, &type, data, &sizeData) == ERROR_SUCCESS )// TODO: make new int type var for 4th param (pKey
     {
         RegCloseKey(hkResult);
         return *(float*)data;
@@ -215,16 +215,77 @@ float J3DAPI wuRegistry_GetFloat(const char* pKey, float defaultValue)
     return defaultValue;
 }
 
-int J3DAPI wuRegistry_SaveIntEx(const char* pKey, int defaultValue)
+int J3DAPI wuRegistry_SaveBool(const char* pKey, int defaultValue)
 {
     STD_ASSERTREL(wuRegistry_bStarted);
     return wuRegistry_SaveInt(pKey, defaultValue);
 }
 
-int J3DAPI wuRegistry_GetIntEx(const char* pKey, int defaultValue)
+int J3DAPI wuRegistry_GetBool(const char* pKey, int defaultValue)
 {
     STD_ASSERTREL(wuRegistry_bStarted);
     return wuRegistry_GetInt(pKey, defaultValue);
+}
+
+
+bool J3DAPI wuRegistry_SaveBinary(const char* pKey, const uint8_t* pData, size_t size)
+{
+    STD_ASSERTREL(wuRegistry_bStarted);
+
+    // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
+    STD_ASSERTREL(
+        appRootKey == HKEY_CLASSES_ROOT
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+    );
+
+    HKEY hkResult = 0;
+    if ( RegOpenKeyEx(appRootKey, appSubKey, 0, KEY_ALL_ACCESS, &hkResult) == ERROR_SUCCESS
+        && RegSetValueEx(hkResult, pKey, 0, REG_BINARY, pData, size) == ERROR_SUCCESS
+        && RegCloseKey(hkResult) == ERROR_SUCCESS )
+    {
+        return true;
+    }
+
+    if ( hkResult )
+    {
+        RegCloseKey(hkResult);
+    }
+
+    return false;
+}
+
+bool J3DAPI wuRegistry_GetBinary(const char* pKey, uint8_t* pData, size_t size)
+{
+    STD_ASSERTREL(
+        appRootKey == HKEY_CLASSES_ROOT
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+    );
+
+    HKEY hkResult = 0;
+    if ( RegOpenKeyEx(appRootKey, appSubKey, 0, KEY_ALL_ACCESS, &hkResult) != ERROR_SUCCESS )
+    {
+        return false;
+    }
+
+    DWORD type;
+    if ( RegQueryValueEx(hkResult, pKey, NULL, &type, pData, (LPDWORD)&size) == ERROR_SUCCESS )
+    {
+        RegCloseKey(hkResult);
+        return true;
+    }
+
+    RegCloseKey(hkResult);
+    return false;
 }
 
 int J3DAPI wuRegistry_SaveStr(const char* pKey, const char* pStr)
@@ -234,18 +295,18 @@ int J3DAPI wuRegistry_SaveStr(const char* pKey, const char* pStr)
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         appRootKey == HKEY_CLASSES_ROOT
-     || appRootKey == HKEY_CURRENT_USER
-     || appRootKey == HKEY_LOCAL_MACHINE
-     || appRootKey == HKEY_USERS
-     || appRootKey == HKEY_PERFORMANCE_DATA
-     || appRootKey == HKEY_CURRENT_CONFIG
-     || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     HKEY hkResult = 0;
     if ( RegOpenKeyEx(appRootKey, appSubKey, 0, KEY_ALL_ACCESS, &hkResult) == ERROR_SUCCESS
-      && RegSetValueEx(hkResult, pKey, 0, REG_SZ, (const uint8_t*)pStr, strlen(pStr)) == ERROR_SUCCESS
-      && RegCloseKey(hkResult) == ERROR_SUCCESS )
+        && RegSetValueEx(hkResult, pKey, 0, REG_SZ, (const uint8_t*)pStr, strlen(pStr)) == ERROR_SUCCESS
+        && RegCloseKey(hkResult) == ERROR_SUCCESS )
     {
         return 0;
     }
@@ -265,26 +326,28 @@ int J3DAPI wuRegistry_GetStr(const char* pKey, char* pDstStr, size_t size, const
     // Added: Added HKEY_CURRENT_USER_LOCAL_SETTINGS & Removed HKEY_DYN_DATA 
     STD_ASSERTREL(
         appRootKey == HKEY_CLASSES_ROOT
-     || appRootKey == HKEY_CURRENT_USER
-     || appRootKey == HKEY_LOCAL_MACHINE
-     || appRootKey == HKEY_USERS
-     || appRootKey == HKEY_PERFORMANCE_DATA
-     || appRootKey == HKEY_CURRENT_CONFIG
-     || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
+        || appRootKey == HKEY_CURRENT_USER
+        || appRootKey == HKEY_LOCAL_MACHINE
+        || appRootKey == HKEY_USERS
+        || appRootKey == HKEY_PERFORMANCE_DATA
+        || appRootKey == HKEY_CURRENT_CONFIG
+        || appRootKey == HKEY_CURRENT_USER_LOCAL_SETTINGS
     );
 
     HKEY hkResult = 0;
     if ( RegOpenKeyEx(appRootKey, appSubKey, 0, KEY_ALL_ACCESS, &hkResult) == ERROR_SUCCESS )
     {
-        // Added: Changed call RegQueryValueEx -> RegGetValue to handle null termination
+        // Altered: Changed call RegQueryValueEx -> RegGetValue to handle null termination
         DWORD dataSize = size;
-        if ( RegGetValue(hkResult, NULL, pKey, RRF_RT_REG_SZ, NULL, (LPBYTE)pDstStr, &dataSize) == ERROR_SUCCESS && RegCloseKey(hkResult) == ERROR_SUCCESS )
+        if ( RegGetValue(hkResult, NULL, pKey, RRF_RT_REG_SZ, NULL, (LPBYTE)pDstStr, &dataSize) == ERROR_SUCCESS
+            && RegCloseKey(hkResult) == ERROR_SUCCESS )
         {
             return 0;
         }
     }
 
-    if ( pDefaultValue ) {
+    if ( pDefaultValue )
+    {
         stdUtil_StringCopy(pDstStr, size, pDefaultValue);
     }
 

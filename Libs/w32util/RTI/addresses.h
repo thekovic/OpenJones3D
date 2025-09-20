@@ -10,8 +10,8 @@
 #define wuRegistry_SaveFloat_ADDR 0x004C3C70
 #define wuRegistry_GetInt_ADDR 0x004C3D60
 #define wuRegistry_GetFloat_ADDR 0x004C3E60
-#define wuRegistry_SaveIntEx_ADDR 0x004C3F50
-#define wuRegistry_GetIntEx_ADDR 0x004C3F90
+#define wuRegistry_SaveBool_ADDR 0x004C3F50
+#define wuRegistry_GetBool_ADDR 0x004C3F90
 #define wuRegistry_SaveStr_ADDR 0x004C3FD0
 #define wuRegistry_GetStr_ADDR 0x004C40D0
 

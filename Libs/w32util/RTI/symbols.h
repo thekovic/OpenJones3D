@@ -8,8 +8,8 @@
 #define wuRegistry_SaveFloat_TYPE int (J3DAPI*)(const char*, float)
 #define wuRegistry_GetInt_TYPE int (J3DAPI*)(const char*, int)
 #define wuRegistry_GetFloat_TYPE float (J3DAPI*)(const char*, float)
-#define wuRegistry_SaveIntEx_TYPE int (J3DAPI*)(const char*, int)
-#define wuRegistry_GetIntEx_TYPE int (J3DAPI*)(const char*, int)
+#define wuRegistry_SaveBool_TYPE int (J3DAPI*)(const char*, int)
+#define wuRegistry_GetBool_TYPE int (J3DAPI*)(const char*, int)
 #define wuRegistry_SaveStr_TYPE int (J3DAPI*)(const char*, const char*)
 #define wuRegistry_GetStr_TYPE int (J3DAPI*)(const char*, char*, size_t, const char*)
 
