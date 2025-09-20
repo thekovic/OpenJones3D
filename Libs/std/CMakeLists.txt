@@ -23,10 +23,9 @@ elseif(J3D_DIRECTX9)
     file(GLOB SHADER_INCLUDES
         "${SHADER_DIR}/*.hlsli"
     )
-
 endif()
 
-# Make project target for DirectX 9
+# Make project target
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HEADERS} ${SHADERS} ${SHADER_INCLUDES})
 
 # Add global includes
@@ -38,18 +37,24 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     Winmm # timeGetTime
 )
 
+set(EXTRA_LIBS
+    Jansson
+)
+
 if (J3D_DIRECTX6)
     target_link_libraries(${PROJECT_NAME} PUBLIC
         DirectX61c::ddraw
         DirectX61c::dxguid
         DirectX61c::dinput
         DirectX61c::dplayx
+        ${EXTRA_LIBS}
     )
 elseif(J3D_DIRECTX9) 
     target_link_libraries(${PROJECT_NAME} PUBLIC
         d3d9
         dxguid
         dinput8
+        ${EXTRA_LIBS}
     )
 
     # Define HLSL shaders to be compiled
@@ -80,9 +85,6 @@ elseif(J3D_DIRECTX9)
         # Add dependency so headers are built before your game compiles
         list(APPEND GENERATED_HEADERS ${HEADER_FILE})
     endforeach()
-
-    add_custom_target(CompileShaders DEPENDS ${GENERATED_HEADERS})
-    add_dependencies(${PROJECT_NAME} CompileShaders)
 endif()
 
 if (WIN32)

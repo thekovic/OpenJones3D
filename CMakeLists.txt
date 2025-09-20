@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Enable solution folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW) # option() honors normal variables (variables of same name set prior to calling the option()).
 
 option(JONES3D_BUILD_PROGRAMS "Build programs" ON)
 option(JONES3D_QOL_IMPROVEMENTS "Enable quality-of-life improvements" ON)

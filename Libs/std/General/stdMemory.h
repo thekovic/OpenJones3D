@@ -20,6 +20,9 @@ J3D_EXTERN_C_START
 #define STDMALLOC(size) \
     stdMemory_Malloc((size), J3D_FILE, __LINE__)
 
+#define STDFREE(pData)\
+    stdMemory_Free((pData))
+
 /**
  * @brief Macro for re-allocating memory using stdMemory_Realloc
  * @brief data for re-allocating memory using stdMemory_Realloc

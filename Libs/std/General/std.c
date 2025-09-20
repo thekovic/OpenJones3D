@@ -2,6 +2,7 @@
 
 #include "std.h"
 #include "stdMemory.h"
+#include "stdJSON.h"
 #include "stdUtil.h"
 
 #include <j3dcore/j3dhook.h>
@@ -63,6 +64,7 @@ void J3DAPI stdStartup(tHostServices* pHS)
         // TODO: Should probably do success check
         stdMemory_Startup();
         stdMemory_Open();
+        stdJSON_Startup(); // Added in 1.4
 
         // TODO: Remove when all round and rand float functions are replaced && updated
         // TODO: consider setting FE_DOWNWARD for round functions (lrintf); i.e.: fesetround(FE_DOWNWARD) to mimic same behavior as OG
@@ -84,6 +86,7 @@ void stdShutdown(void)
 {
     if ( bStdStartup )
     {
+        stdJSON_Shutdown();
         stdMemory_Close();
         stdMemory_Shutdown();
         bStdStartup = false;
@@ -164,7 +167,8 @@ int J3DAPI stdCalcBitPos(int bit)
 tFileHandle J3DAPI stdFileOpen(const char* pFilename, const char* mode)
 {
     FILE* fh;
-    if ( fopen_s(&fh, pFilename, mode) != 0 ) {
+    if ( fopen_s(&fh, pFilename, mode) != 0 )
+    {
         fh = NULL; // Make sure it's null
     }
     return (tFileHandle)fh;
@@ -214,7 +218,8 @@ int J3DAPI stdFileTell(tFileHandle fh)
 size_t J3DAPI stdFileSize(const char* pFilePath)
 {
     tFileHandle fh = stdFileOpen(pFilePath, "rb");
-    if ( !fh ) {
+    if ( !fh )
+    {
         return 0;
     }
 
