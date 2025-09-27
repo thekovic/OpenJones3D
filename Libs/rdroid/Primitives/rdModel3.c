@@ -110,7 +110,8 @@ void J3DAPI rdModel3_NewEntry(rdModel3* pModel3)
 
 rdModel3* J3DAPI rdModel3_Load(const char* pName)
 {
-    if ( pModel3Loader ) {
+    if ( pModel3Loader )
+    {
         return pModel3Loader(pName, /*bSkipLoadingDefaultModel=*/0);
     }
 
@@ -142,7 +143,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
         return 0;
     }
 
-    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 ) {
+    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 )
+    {
         goto syntax_error;
     }
 
@@ -150,7 +152,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
     int nRead = 0;
     if ( nRead = stdConffile_ScanLine(" 3do %d.%d", &vmaj, &vmin), nRead != 2 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             goto syntax_error;
         }
         RDLOG_ERROR("Warning: Invalid 3DO version %d.%d for file '%s'.\n", vmaj, vmin, pFilename);
@@ -160,21 +163,25 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
     // TODO: Add check for vmaj
 
     bool bRGB = false;
-    if ( vmin == RDMODEL3_3DO_MINVER_RGB || vmin == RDMODEL3_3DO_MINVER_RGBA ) {
+    if ( vmin == RDMODEL3_3DO_MINVER_RGB || vmin == RDMODEL3_3DO_MINVER_RGBA )
+    {
         bRGB = true;
     }
-    else if ( vmin != RDMODEL3_3DO_MINVER_I ) {
+    else if ( vmin != RDMODEL3_3DO_MINVER_I )
+    {
         RDLOG_ERROR("Warning: Invalid 3DO version %d.%d for file '%s'.\n", vmaj, vmin, pFilename);
     }
 
-    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 ) {
+    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 )
+    {
         goto syntax_error;
     }
 
     size_t numMats = 0;
     if ( nRead = stdConffile_ScanLine(" materials %d", &numMats), nRead != 1 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -183,7 +190,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
     if ( numMats )
     {
         pModel3->apMaterials = (rdMaterial**)STDMALLOC(sizeof(rdMaterial**) * numMats);
-        if ( !pModel3->apMaterials ) {
+        if ( !pModel3->apMaterials )
+        {
             goto alloc_error;
         }
 
@@ -192,14 +200,16 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             size_t entryNum;
             if ( nRead = stdConffile_ScanLine(" %d: %s", &entryNum, std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)), nRead != 2 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
             }
 
             pModel3->apMaterials[i] = rdMaterial_Load(std_g_genBuffer);
-            if ( !pModel3->apMaterials[i] ) {
+            if ( !pModel3->apMaterials[i] )
+            {
                 goto syntax_error;
             }
         }
@@ -209,19 +219,23 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                                      //             Since materials are cached in sithMaterial module all freed materials will be invalidated in cache.
                                      //             And any part of the code that is referencing cached materials will access freed pointer! 
 
-    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 ) {
+    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 )
+    {
         goto syntax_error;
     }
 
-    if ( stdConffile_ScanLine(" radius %f", &pModel3->radius) != 1 ) {
+    if ( stdConffile_ScanLine(" radius %f", &pModel3->radius) != 1 )
+    {
         goto syntax_error;
     }
 
-    if ( stdConffile_ScanLine(" insert offset %f %f %f", &pModel3->insertOffset.x, &pModel3->insertOffset.y, &pModel3->insertOffset.z) != 3 ) {
+    if ( stdConffile_ScanLine(" insert offset %f %f %f", &pModel3->insertOffset.x, &pModel3->insertOffset.y, &pModel3->insertOffset.z) != 3 )
+    {
         goto syntax_error;
     }
 
-    if ( stdConffile_ScanLine(" geosets %d", &pModel3->numGeos) != 1 ) {
+    if ( stdConffile_ScanLine(" geosets %d", &pModel3->numGeos) != 1 )
+    {
         goto syntax_error;
     }
 
@@ -229,13 +243,15 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
     {
         rdModel3GeoSet* pGeo = &pModel3->aGeos[geoNum];
         int entryNum = 0;
-        if ( stdConffile_ScanLine(" geoset %d", &entryNum) != 1 ) {
+        if ( stdConffile_ScanLine(" geoset %d", &entryNum) != 1 )
+        {
             goto syntax_error;
         }
 
         if ( nRead = stdConffile_ScanLine(" meshes %d", &pGeo->numMeshes), nRead != 1 )
         {
-            if ( nRead < 0 ) {
+            if ( nRead < 0 )
+            {
                 goto eof_error;
             }
             goto syntax_error;
@@ -244,7 +260,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
         // TODO: maybe check numMeshes range, if 0 should continue 
 
         pGeo->aMeshes = (rdModel3Mesh*)STDMALLOC(sizeof(rdModel3Mesh) * pGeo->numMeshes);
-        if ( !pGeo->aMeshes ) {
+        if ( !pGeo->aMeshes )
+        {
             goto alloc_error;
         }
 
@@ -257,7 +274,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
 
             if ( nRead = stdConffile_ScanLine(" mesh %d", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
@@ -265,7 +283,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
 
             if ( nRead = stdConffile_ScanLine(" name %s", pMesh->name, (rsize_t)STD_ARRAYLEN(pMesh->name)), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
@@ -279,7 +298,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
 
             if ( nRead = stdConffile_ScanLine(" geometrymode %d", &pMesh->geoMode), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
@@ -287,7 +307,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
 
             if ( nRead = stdConffile_ScanLine(" lightingmode %d", &pMesh->lightMode), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
@@ -296,7 +317,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             int texMode;
             if ( nRead = stdConffile_ScanLine(" texturemode %d", &texMode), nRead != 1 ) // texture mode not used
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
@@ -307,7 +329,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             size_t numVerts = 0;
             if ( nRead = stdConffile_ScanLine(" vertices %d", &numVerts), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
 
@@ -324,24 +347,28 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             pMesh->aLightIntensities = NULL;
 
             pMesh->someFaceFlags = 0;
-            if ( pMesh->lightMode != RD_LIGHTING_GOURAUD ) {
+            if ( pMesh->lightMode != RD_LIGHTING_GOURAUD )
+            {
                 pMesh->someFaceFlags = 1;
             }
 
             if ( numVerts )
             {
                 pMesh->apVertices = (rdVector3*)STDMALLOC(sizeof(rdVector3) * numVerts);
-                if ( !pMesh->apVertices ) {
+                if ( !pMesh->apVertices )
+                {
                     goto alloc_error;
                 }
 
                 pMesh->aVertColors = (rdVector4*)STDMALLOC(sizeof(rdVector4) * numVerts);
-                if ( !pMesh->aVertColors ) {
+                if ( !pMesh->aVertColors )
+                {
                     goto alloc_error;
                 }
 
                 pMesh->aLightIntensities = (rdVector4*)STDMALLOC(sizeof(rdVector4) * numVerts);
-                if ( !pMesh->aLightIntensities ) {
+                if ( !pMesh->aLightIntensities )
+                {
                     goto alloc_error;
                 }
 
@@ -389,13 +416,15 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             size_t numTexVerts = 0;
             if ( nRead = stdConffile_ScanLine(" texture vertices %d", &numTexVerts), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
             }
 
-            if ( numTexVerts > RDMODEL3_MAX_TEXVRTICES ) {
+            if ( numTexVerts > RDMODEL3_MAX_TEXVRTICES )
+            {
                 goto range_error;
             }
 
@@ -403,7 +432,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             if ( numTexVerts )
             {
                 pMesh->apTexVertices = (rdVector2*)STDMALLOC(sizeof(rdVector2) * numTexVerts);
-                if ( !pMesh->apTexVertices ) {
+                if ( !pMesh->apTexVertices )
+                {
                     goto alloc_error;
                 }
 
@@ -411,7 +441,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 {
                     if ( nRead = stdConffile_ScanLine(" %d: %f %f", &entryNum, &pMesh->apTexVertices[vertNum].x, &pMesh->apTexVertices[vertNum].y), nRead != 3 )
                     {
-                        if ( nRead < 0 ) {
+                        if ( nRead < 0 )
+                        {
                             goto eof_error;
                         }
                         goto syntax_error;
@@ -424,7 +455,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             // Read vert normals
 
             // Skip section line "VERTEX NORMALS"
-            if ( !stdConffile_ReadLine() ) {
+            if ( !stdConffile_ReadLine() )
+            {
                 goto eof_error;
             }
 
@@ -443,7 +475,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 rdVector3* pNormal = &pMesh->aVertNormals[vertNum];
                 if ( nRead = stdConffile_ScanLine(" %d: %f %f %f", &entryNum, &pNormal->x, &pNormal->y, &pNormal->z), nRead != 4 )
                 {
-                    if ( nRead < 0 ) {
+                    if ( nRead < 0 )
+                    {
                         goto eof_error;
                     }
                     goto syntax_error;
@@ -455,13 +488,15 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
             size_t numFaces = 0;
             if ( nRead = stdConffile_ScanLine(" faces %d", &numFaces), nRead != 1 )
             {
-                if ( nRead < 0 ) {
+                if ( nRead < 0 )
+                {
                     goto eof_error;
                 }
                 goto syntax_error;
             }
 
-            if ( numFaces > RDMODEL3_MAX_FACES ) {
+            if ( numFaces > RDMODEL3_MAX_FACES )
+            {
                 goto range_error;
             }
 
@@ -483,7 +518,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 rdFace_NewEntry(pFace);
 
                 // Read face line 
-                if ( !stdConffile_ReadLine() ) {
+                if ( !stdConffile_ReadLine() )
+                {
                     goto eof_error;
                 }
                 pFace->num = faceNum;
@@ -497,25 +533,30 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 pFace->pMaterial = (matIdx == -1) ? NULL : pModel3->apMaterials[matIdx]; // TODO: Add bounds check
 
                 // Parse faceflags
-                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%x", &pFace->flags) != 1 ) {
+                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%x", &pFace->flags) != 1 )
+                {
                     goto syntax_error;
                 }
 
                 // Parse geo mode
-                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%d", &pFace->geometryMode) != 1 ) {
+                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%d", &pFace->geometryMode) != 1 )
+                {
                     goto syntax_error;
                 }
 
                 // Parse light mode
-                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%d", &pFace->lightingMode) != 1 ) {
+                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%d", &pFace->lightingMode) != 1 )
+                {
                     goto syntax_error;
                 }
 
-                if ( pFace->lightingMode != RD_LIGHTING_GOURAUD ) {
+                if ( pFace->lightingMode != RD_LIGHTING_GOURAUD )
+                {
                     pMesh->someFaceFlags = 1;
                 }
 
-                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%d", &texMode) != 1 ) { // textMode not used
+                if ( sscanf_s(strtok_r(NULL, " \t", &pntok), "%d", &texMode) != 1 )
+                { // textMode not used
                     goto syntax_error;
                 }
 
@@ -525,7 +566,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                     float red, green, blue, alpha = 1.0f;
                     const char* aRGB = strtok_r(NULL, " \t", &pntok);
                     if ( sscanf_s(aRGB, "(%f/%f/%f/%f)", &red, &green, &blue, &alpha) != 4
-                        && sscanf_s(aRGB, "(%f/%f/%f)", &red, &green, &blue) != 3 ) {
+                        && sscanf_s(aRGB, "(%f/%f/%f)", &red, &green, &blue) != 3 )
+                    {
                         goto syntax_error;
                     }
 
@@ -542,17 +584,20 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 }
 
                 size_t faceVerts = atoi(strtok_r(NULL, " \t", &pntok));
-                if ( !faceVerts ) {
+                if ( !faceVerts )
+                {
                     goto syntax_error;
                 }
 
-                if ( faceVerts > RDMODEL3_MAX_FACE_VERTICES ) {
+                if ( faceVerts > RDMODEL3_MAX_FACE_VERTICES )
+                {
                     goto range_error;
                 }
 
                 pFace->numVertices = faceVerts;
                 pFace->aVertices = (int*)STDMALLOC(sizeof(int*) * faceVerts);
-                if ( !pFace->aVertices ) {
+                if ( !pFace->aVertices )
+                {
                     goto alloc_error;
                 }
 
@@ -618,7 +663,8 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
                 rdFace* pFace = &pMesh->aFaces[faceNum];
                 if ( nRead = stdConffile_ScanLine(" %d: %f %f %f", &entryNum, &pFace->normal.x, &pFace->normal.y, &pFace->normal.z), nRead != 4 )
                 {
-                    if ( nRead < 0 ) {
+                    if ( nRead < 0 )
+                    {
                         goto eof_error;
                     }
                     goto syntax_error;
@@ -629,14 +675,16 @@ int J3DAPI rdModel3_LoadEntry(const char* pFilename, rdModel3* pModel3)
 
 
     // Section HIERARCHYDEF
-    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 ) {
+    if ( stdConffile_ScanLine(" section: %s", std_g_genBuffer, (rsize_t)sizeof(std_g_genBuffer)) != 1 )
+    {
         goto syntax_error;
     }
 
     size_t numNodes = 0;
     if ( nRead = stdConffile_ScanLine(" hierarchy nodes %d", &numNodes), nRead != 1 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -1240,7 +1288,8 @@ void J3DAPI rdModel3_CalcFaceNormals(rdModel3* pModel3)
                 for ( ; vertNum < pFace->numVertices; ++vertNum )
                 {
                     prevVertNum = pFace->numVertices - 1;
-                    if ( vertNum > 0 ) {
+                    if ( vertNum > 0 )
+                    {
                         prevVertNum = vertNum - 1;
                     }
 
@@ -1776,11 +1825,19 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
         }
     }
 
-    pPoly->flags     = pFace->flags | extraFaceFlags;
+    pPoly->flags = pFace->flags | extraFaceFlags;
+
+    // Fixed: Add translucent flag when missing
+    if ( bTranslucent && (pPoly->flags & RD_FF_TEX_TRANSLUCENT) == 0 )
+    {
+        pPoly->flags |= RD_FF_TEX_TRANSLUCENT;
+    }
+
     pPoly->matCelNum = pFace->matCelNum;
     pPoly->pMaterial = pFace->pMaterial;
 
-    if ( pMeshColor->alpha != 1.0f ) {
+    if ( pMeshColor->alpha != 1.0f )
+    {
         pPoly->flags |= RD_FF_TEX_TRANSLUCENT;
     }
 
@@ -1799,7 +1856,8 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
 void J3DAPI rdModel3_EnableFogRendering(int bEnabled)
 {
     extraFaceFlags = 0;
-    if ( bEnabled ) {
+    if ( bEnabled )
+    {
         extraFaceFlags = RD_FF_FOG_ENABLED;
     }
 }
