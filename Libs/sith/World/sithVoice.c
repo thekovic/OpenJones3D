@@ -53,7 +53,7 @@ static float sithVoice_secHeadSwapInterval = 0.1f;
 static uint8_t sithVoice_aVoiceHeadHeights[4][4];
 static float sithVoice_secNextHeadSwapTime;
 
-static size_t sithVoice_curSubtitleInfoNum;
+static size_t sithVoice_curSubtitleDrawIndex;
 static size_t sithVoice_numSubtitleInfos;
 static SithVoiceSubtitleInfo sithVoice_aSubtitleInfos[25];
 
@@ -119,7 +119,7 @@ void sithVoice_Shutdown(void)
         return;
     }
 
-    sithVoice_Close(); // Added: Make sure the system was closed which will also release any allocated resources (prevent memory leak)
+    sithVoice_Close(); // Added: Make sure the system was closed which will also release any allocated resources (prevents memory leak)
     sithVoice_pTextFont = NULL;
     sithVoice_bStartup  = false;
 }
@@ -142,7 +142,7 @@ int sithVoice_Open(void)
     }
 
     memset(sithVoice_aSubtitleInfos, 0, sizeof(sithVoice_aSubtitleInfos));
-    sithVoice_curSubtitleInfoNum = 0;
+    sithVoice_curSubtitleDrawIndex = 0;
     sithVoice_numSubtitleInfos   = 0;
 
     sithVoice_bThingHasSwapHead = false; // Added: Init to false
@@ -166,7 +166,7 @@ void sithVoice_Close(void)
     }
 
     memset(sithVoice_aSubtitleInfos, 0, sizeof(sithVoice_aSubtitleInfos));
-    sithVoice_curSubtitleInfoNum = 0;
+    sithVoice_curSubtitleDrawIndex = 0;
     sithVoice_numSubtitleInfos   = 0;
     sithVoice_bOpen = false;
 }
@@ -465,7 +465,7 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
 
     if ( pSubtitleText && pSoundFilename && sithVoice_bShowText )
     {
-        if ( (int)sithVoice_numSubtitleInfos > 0 && streq(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName) )
+        if ( (int)sithVoice_numSubtitleInfos > 0 && streq(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFilename) )
         {
             size_t numSubtitles = sithVoice_numSubtitleInfos;
 
@@ -473,8 +473,8 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
             char aVoiceLines[256]   = { 0 };
 
             unsigned int curTime = stdPlatform_GetTimeMsec();
-            while ( streq(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFileName)
-                && (int)sithVoice_numSubtitleInfos > 0
+            while ( (int)sithVoice_numSubtitleInfos > 0
+                && streq(pSoundFilename, sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].aSoundFilename) // Fixed: swap numInfo check and sound filename check
                 && curTime < sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos - 1].msecEndTime )
             {
                 if ( strlen(aCurVoiceLine) == 0 )
@@ -493,12 +493,11 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
                 unsigned int msecStartTime = stdPlatform_GetTimeMsec();
                 while ( sithVoice_numSubtitleInfos < numSubtitles )
                 {
-                    unsigned int msecDuration  = sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecEndTime
-                        - sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecStartTime;
-
-                    sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecStartTime   = msecStartTime;
-                    sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecEndTime     = msecDuration + msecStartTime;
-                    sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecShowEndTime = sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecEndTime + SITHVOICE_MSEC_EXTRA_SUBTITLE_SHOW_DURATION;
+                    SithVoiceSubtitleInfo* pInfo = &sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos];
+                    unsigned int msecDuration  = pInfo->msecEndTime - pInfo->msecStartTime;
+                    pInfo->msecStartTime   = msecStartTime;
+                    pInfo->msecEndTime     = msecDuration + msecStartTime;
+                    pInfo->msecShowEndTime = pInfo->msecEndTime + SITHVOICE_MSEC_EXTRA_SUBTITLE_SHOW_DURATION;
                     ++sithVoice_numSubtitleInfos;
                 }
 
@@ -552,46 +551,56 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
 
             const char* pLineEnd  = rdFont_GetWrapLine(pCurLine, sithVoice_pTextFont, textWidthScalar);
             if ( pLineEnd == pCurLine )
-            { // Fixed: If line contains long word at the end and cannot fit onto the screen the function returns pCurLine, in this case pLineEnd should be NULL.
+            {
+                // Fixed: If line contains long word at the end and cannot fit onto the screen the function returns pCurLine, in this case pLineEnd should be NULL.
                 pLineEnd = NULL;
             }
 
             if ( sithVoice_numSubtitleInfos >= STD_ARRAYLEN(sithVoice_aSubtitleInfos) ) // Fixed: Make sure the sithVoice_numSubtitleInfos is not greater than STD_ARRAYLEN(sithVoice_aSubtitleInfos)
             {
-                sithVoice_PurgeDrawnSubtitles(); // resets to STD_ARRAYLEN(sithVoice_aSubtitleInfos) - sithVoice_curSubtitleInfoNum
+                sithVoice_PurgeDrawnSubtitles(); // resets to STD_ARRAYLEN(sithVoice_aSubtitleInfos) - sithVoice_curSubtitleDrawIndex
             }
+
+            // Fixed: Added OB check to prevent out of bounds write
+            if ( sithVoice_numSubtitleInfos >= STD_ARRAYLEN(sithVoice_aSubtitleInfos) )
+            {
+                SITHLOG_WARNING("sithVoice_AddSubtitle: Ran out of subtitle slots. Dropping subtitle for sound '%s'.\n", pSoundFilename);
+                return;
+            }
+
+            SithVoiceSubtitleInfo* pInfo = &sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos];
 
             if ( pLineEnd )
             {
-                STD_STRNCPY(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aSubtitleText, pCurLine, pLineEnd - pCurLine); // Fixed: By using STD_STNRCPY ensures null termination
+                STD_STRNCPY(pInfo->aSubtitleText, pCurLine, pLineEnd - pCurLine); // Fixed: By using STD_STNRCPY to ensure null termination
                 pCurLine = pLineEnd;
             }
             else
             {
                 rdFont_GetTextWidth(pCurLine, sithVoice_pTextFont); // TODO: ??
-
-                STD_STRCPY(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aSubtitleText, pCurLine); // Fixed: By using STD_STRCPY ensures null termination
+                STD_STRCPY(pInfo->aSubtitleText, pCurLine); // Fixed: By using STD_STNRCPY to ensure null termination
                 pCurLine = NULL;
             }
 
-            sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecStartTime   = msecStartTime;
-            sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecEndTime     = msecEndTime;
-            sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecShowEndTime = sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecEndTime + SITHVOICE_MSEC_EXTRA_SUBTITLE_SHOW_DURATION;
+            pInfo->msecStartTime   = msecStartTime;
+            pInfo->msecEndTime     = msecEndTime;
+            pInfo->msecShowEndTime = pInfo->msecEndTime + SITHVOICE_MSEC_EXTRA_SUBTITLE_SHOW_DURATION;
 
-            STD_STRCPY(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aSoundFileName, pSoundFilename); // Fixed: By using STD_STRCPY ensures null termination
+            STD_STRCPY(pInfo->aSoundFilename, pSoundFilename); // Fixed: By using STD_STRCPY ensures null termination
 
             if ( pSubtitleColor->top.red == -1.0f )
             {
-                rdVector_Set4(&sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aTextColors[0], 1.0f, 0.0f, 0.0f, 1.0f);
-                rdVector_Set4(&sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aTextColors[1], 1.0f, 0.0f, 0.0f, 1.0f);
-                rdVector_Set4(&sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aTextColors[2], 1.0f, 1.0f, 0.0f, 1.0f);
-                rdVector_Set4(&sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aTextColors[3], 1.0f, 1.0f, 0.0f, 1.0f);
+                rdVector_Set4(&pInfo->aTextColors[0], 1.0f, 0.0f, 0.0f, 1.0f);
+                rdVector_Set4(&pInfo->aTextColors[1], 1.0f, 0.0f, 0.0f, 1.0f);
+                rdVector_Set4(&pInfo->aTextColors[2], 1.0f, 1.0f, 0.0f, 1.0f);
+                rdVector_Set4(&pInfo->aTextColors[3], 1.0f, 1.0f, 0.0f, 1.0f);
             }
             else
             {
-                for ( size_t i = 0; i < 4; ++i )
+                for ( size_t i = 0; i < STD_ARRAYLEN(pInfo->aTextColors); ++i )
                 {
-                    rdVector_Copy4(&sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aTextColors[i], &pSubtitleColor->top + i);
+                    static_assert(STD_ARRAYLEN(pInfo->aTextColors) == 4, "STD_ARRAYLEN(pInfo->aTextColors) == 4");
+                    rdVector_Copy4(&pInfo->aTextColors[i], &pSubtitleColor->top + i);
                 }
             }
 
@@ -602,17 +611,27 @@ void J3DAPI sithVoice_AddSubtitle(unsigned int msecSoundLen, const char* pSoundF
 
 void sithVoice_PurgeDrawnSubtitles(void)
 {
-    memset(sithVoice_aSubtitleInfos, 0, sizeof(SithVoiceSubtitleInfo) * sithVoice_curSubtitleInfoNum);
+    unsigned int curTime = stdPlatform_GetTimeMsec();
+
+    memset(sithVoice_aSubtitleInfos, 0, sizeof(SithVoiceSubtitleInfo) * sithVoice_curSubtitleDrawIndex);
     sithVoice_numSubtitleInfos = 0;
 
-    for ( size_t i = sithVoice_curSubtitleInfoNum; i < STD_ARRAYLEN(sithVoice_aSubtitleInfos); ++i )
+    // Copy range from sithVoice_curSubtitleDrawIndex to end of array to the beginning of the array
+    for ( size_t i = sithVoice_curSubtitleDrawIndex; i < STD_ARRAYLEN(sithVoice_aSubtitleInfos); ++i )
     {
+        // Fixed: Added check to skip empty subtitle lines and lines which have expired
+        if ( strlen(sithVoice_aSubtitleInfos[i].aSubtitleText) == 0 ||
+            sithVoice_aSubtitleInfos[i].msecShowEndTime < curTime )
+        {
+            continue;
+        }
+
         sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecStartTime   = sithVoice_aSubtitleInfos[i].msecStartTime;
         sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecEndTime     = sithVoice_aSubtitleInfos[i].msecEndTime;
         sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].msecShowEndTime = sithVoice_aSubtitleInfos[i].msecShowEndTime;
 
         STD_STRCPY(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aSubtitleText, sithVoice_aSubtitleInfos[i].aSubtitleText); // Fixed: By using STD_STRCPY it ensures null termination
-        STD_STRCPY(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aSoundFileName, sithVoice_aSubtitleInfos[i].aSoundFileName); // Fixed: By using STD_STRCPY it ensures null termination
+        STD_STRCPY(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aSoundFilename, sithVoice_aSubtitleInfos[i].aSoundFilename); // Fixed: By using STD_STRCPY it ensures null termination
 
         for ( size_t j = 0; j < STD_ARRAYLEN(sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos].aTextColors); ++j )
         {
@@ -622,8 +641,16 @@ void sithVoice_PurgeDrawnSubtitles(void)
         ++sithVoice_numSubtitleInfos;
     }
 
-    memset(&sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum], 0, sizeof(SithVoiceSubtitleInfo) * (STD_ARRAYLEN(sithVoice_aSubtitleInfos) - sithVoice_curSubtitleInfoNum));
-    sithVoice_curSubtitleInfoNum = 0;
+    // Fixed: Fixed clearing of correct part of the array to prevent clearing of valid subtitle lines
+    //        Original code used sithVoice_curSubtitleDrawIndex as start index and range calculation which is wrong
+    //        as index could be smaller than sithVoice_numSubtitleInfos and could lead to clearing of valid subtitle lines.
+    //        In addition this introduced a bug where entry at index would be cleared and nothing would be then drawn to the screen (due to check in sithVoice_Draw)
+    if ( sithVoice_numSubtitleInfos < STD_ARRAYLEN(sithVoice_aSubtitleInfos) ) // Also added this check to prevent out of bounds access
+    {
+        memset(&sithVoice_aSubtitleInfos[sithVoice_numSubtitleInfos], 0, sizeof(SithVoiceSubtitleInfo) * (STD_ARRAYLEN(sithVoice_aSubtitleInfos) - sithVoice_numSubtitleInfos));
+    }
+
+    sithVoice_curSubtitleDrawIndex = 0;
 }
 
 void sithVoice_Draw(void)
@@ -638,21 +665,21 @@ void sithVoice_Draw(void)
     bool bDraw = true;
 
     // Skip lines that expired
-    while ( (strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].aSubtitleText) > 0)
-        && (curTime > sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecShowEndTime) )
+    while ( (strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleDrawIndex].aSubtitleText) > 0)
+        && (curTime > sithVoice_aSubtitleInfos[sithVoice_curSubtitleDrawIndex].msecShowEndTime) )
     {
-        ++sithVoice_curSubtitleInfoNum;
+        ++sithVoice_curSubtitleDrawIndex;
 
-        // Fixed: Added bounds check and loop break, which fixes potential out of bounds read/write
-        if ( sithVoice_curSubtitleInfoNum >= STD_ARRAYLEN(sithVoice_aSubtitleInfos) )
+        // Fixed: Added OB check and loop break, which fixes potential out of bounds read/write
+        if ( sithVoice_curSubtitleDrawIndex >= STD_ARRAYLEN(sithVoice_aSubtitleInfos) )
         {
-            sithVoice_curSubtitleInfoNum = STD_ARRAYLEN(sithVoice_aSubtitleInfos) - 1;
+            sithVoice_curSubtitleDrawIndex = STD_ARRAYLEN(sithVoice_aSubtitleInfos) - 1;
             bDraw = false;
             break;
         }
     }
 
-    if ( bDraw && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].aSubtitleText) > 0 )
+    if ( bDraw && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleDrawIndex].aSubtitleText) > 0 )
     {
         uint32_t width, height;
         stdDisplay_GetBackBufferSize(&width, &height);
@@ -661,23 +688,24 @@ void sithVoice_Draw(void)
         float y = (float)((double)height * SITHVOICE_TEXT_PADDING_Y / SITHVOICE_REF_HEIGHT);
         float lineHeight = (float)((double)sithVoice_pTextFont->lineSpacing / RD_REF_HEIGHT);
 
-        if ( curTime >= sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecEndTime
-            && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum + 1].aSubtitleText) > 0 )
+        if ( curTime >= sithVoice_aSubtitleInfos[sithVoice_curSubtitleDrawIndex].msecEndTime
+            && strlen(sithVoice_aSubtitleInfos[sithVoice_curSubtitleDrawIndex + 1].aSubtitleText) > 0 )
         {
-            y = y - (float)((double)(curTime - sithVoice_aSubtitleInfos[sithVoice_curSubtitleInfoNum].msecEndTime) * lineHeight) / 1000.0f;
+            y = y - (float)((double)(curTime - sithVoice_aSubtitleInfos[sithVoice_curSubtitleDrawIndex].msecEndTime) * lineHeight) / 1000.0f;
         }
 
-        // Print up
-        for ( size_t lineCount = 0; lineCount < SITHVOICE_MAX_LINES_PER_DRAW; lineCount++ )
+        // Print subtitle text to the screen
+        // Fixed: Add OB check for lineCount + sithVoice_curSubtitleDrawIndex
+        for ( size_t lineCount = 0; lineCount < SITHVOICE_MAX_LINES_PER_DRAW && (lineCount + sithVoice_curSubtitleDrawIndex) < STD_ARRAYLEN(sithVoice_aSubtitleInfos); lineCount++ )
         {
-            SithVoiceSubtitleInfo* pSubInfo = &sithVoice_aSubtitleInfos[lineCount + sithVoice_curSubtitleInfoNum];
-            if ( strlen(pSubInfo->aSubtitleText) == 0 || curTime <= sithVoice_aSubtitleInfos[lineCount + sithVoice_curSubtitleInfoNum].msecStartTime )
+            SithVoiceSubtitleInfo* pInfo = &sithVoice_aSubtitleInfos[lineCount + sithVoice_curSubtitleDrawIndex];
+            if ( strlen(pInfo->aSubtitleText) == 0 || curTime <= pInfo->msecStartTime )
             {
                 break;
             }
 
-            rdFont_SetFontColor(sithVoice_aSubtitleInfos[lineCount + sithVoice_curSubtitleInfoNum].aTextColors);
-            rdFont_DrawTextLine(pSubInfo->aSubtitleText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, sithVoice_pTextFont, RDFONT_ALIGNLEFT);
+            rdFont_SetFontColor(pInfo->aTextColors);
+            rdFont_DrawTextLine(pInfo->aSubtitleText, x, y, rdCamera_g_pCurCamera->pFrustum->nearPlane, sithVoice_pTextFont, RDFONT_ALIGNLEFT);
 
             y = y + lineHeight;
         }

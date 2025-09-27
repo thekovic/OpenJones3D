@@ -2820,7 +2820,7 @@ typedef struct sSithVoiceSubtitleInfo
 {
     char aSubtitleText[256];
     rdVector4 aTextColors[4];
-    char aSoundFileName[256];
+    char aSoundFilename[256];
     unsigned int msecStartTime;
     unsigned int msecEndTime;
     unsigned int msecShowEndTime;
