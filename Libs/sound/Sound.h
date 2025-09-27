@@ -88,6 +88,7 @@ void J3DAPI Sound_SetPitchThing(int thingId, tSoundHandleType handle, float pitc
 bool J3DAPI Sound_IsThingFadingPitch(int thingId, tSoundHandleType handle); // handle is either tSoundChannelHandle, tSoundHandle, or SOUND_ALLTHINGSOUNDHANDLE in which case will cause to check if any of thing sounds is fading pitch
 
 tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel);
+bool J3DAPI Sound_GetChannelPlayProgress(tSoundChannelHandle hChannel, float* pProgress); // Added: Get sound channel play progress in percentage. false is returned on when sound is not played or channel doesn't exist
 
 void J3DAPI Sound_Update(const rdVector3* pPos, const rdVector3* pVelocity, const rdVector3* pTopOrient, const rdVector3* pFrontOrient);
 int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPosX, uint8_t* pMouthPosY, int a4);

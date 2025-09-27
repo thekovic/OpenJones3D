@@ -237,7 +237,8 @@ void Sound_InstallHooks(void)
 
 static void Sound_Release(tSoundChannel* pChannel) // Added
 {
-    if ( !pChannel ) {
+    if ( !pChannel )
+    {
         return;
     }
 
@@ -779,7 +780,8 @@ int J3DAPI Sound_Restore(tFileHandle fh)
             {
                 // Fixed: Mark far sound as loop play sound so it's pushed to the sound channel list. Otherwise, it won't be played.
             #ifdef J3D_QOL_IMPROVEMENTS
-                if ( (chflags & SOUND_CHANNEL_FAR) != 0 ) {
+                if ( (chflags & SOUND_CHANNEL_FAR) != 0 )
+                {
                     chflags |= (SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING);
                 }
             #endif
@@ -2255,6 +2257,41 @@ tSoundChannelFlag J3DAPI Sound_GetChannelFlags(tSoundChannelHandle hChannel)
     return 0;
 }
 
+bool J3DAPI Sound_GetChannelPlayProgress(tSoundChannelHandle hChannel, float* pProgress)
+{
+    SOUND_ASSERT(pProgress);
+
+    tSoundChannel* pChannel = Sound_GetChannel(hChannel);
+    if ( !pChannel || !pChannel->pDSoundBuffer )
+    {
+        *pProgress = 0.0;
+        return false;
+    }
+
+    if ( (pChannel->flags & SOUND_CHANNEL_PLAYING) == 0 )
+    {
+        *pProgress = 0.0;
+        return false;
+    }
+
+    SoundInfo* pSndInfo = Sound_GetSoundInfo(pChannel->hSnd);
+    if ( !pSndInfo )
+    {
+        *pProgress = 0.0;
+        return false;
+    }
+
+    size_t dataSize = pSndInfo->dataSize;
+    if ( pSndInfo->bCompressed )
+    {
+        dataSize = ((tAudioCompressedData*)&soundbank_apSoundCache[pSndInfo->bankNum][pSndInfo->dataOffset])->uncompressedSize;
+    }
+
+    size_t curPos = SoundDriver_GetCurrentPosition(pChannel->pDSoundBuffer);
+    *pProgress = (float)curPos / (float)dataSize * 100.0f;
+    return true;
+}
+
 static void Sound_UpdateFades(void) // Added
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(Sound_aFades); i++ )
@@ -2576,7 +2613,7 @@ int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPo
     }
 
     size_t curPos = SoundDriver_GetCurrentPosition(pChannel->pDSoundBuffer);
-    size_t endPos = pSndInfo->sampleRate * (pSndInfo->sempleBitSize >> 3) * 25 * pSndInfo->numChannels / 1000;
+    size_t ampSize = pSndInfo->sampleRate * (pSndInfo->sempleBitSize >> 3) * 25 * pSndInfo->numChannels / 1000; // Note: constant 25 is from AudioLib_GenerateLipSynchBlock
 
     size_t  dataSize = pSndInfo->dataSize;
     if ( pSndInfo->bCompressed )
@@ -2585,7 +2622,7 @@ int J3DAPI Sound_GenerateLipSync(tSoundChannelHandle hChannel, uint8_t* pMouthPo
     }
 
     int a2 = -1;
-    if ( (endPos + curPos) < dataSize )
+    if ( (ampSize + curPos) < dataSize )
     {
         a2 = a4 + 1000 * curPos / (pSndInfo->sampleRate * (pSndInfo->sempleBitSize >> 3) * pSndInfo->numChannels);
     }
