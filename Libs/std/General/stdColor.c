@@ -285,10 +285,12 @@ void J3DAPI stdColor_ColorConvertOneRow(uint8_t* pDestRow, const ColorInfo* pDes
         {
             J3D_UNUSED(bColorKey);
             J3D_UNUSED(pColorKey);
+
         #ifdef J3D_COLORKEYSUPPORTED
             if ( bColorKey )
             {
-                if ( a < maxAlphaValue ) {
+                if ( a < maxAlphaValue )
+                {
                     pixel = pColorKey->dwColorSpaceLowValue;
                 }
             }
@@ -351,36 +353,45 @@ uint32_t stdColor_EncodeRGB(const ColorInfo* ci, uint8_t r, uint8_t g, uint8_t b
     uint32_t blueScaled  = b;
 
     // Adjust for component bit depth if needed
-    if ( ci->redBPP < 8 ) {
+    if ( ci->redBPP < 8 )
+    {
         redScaled = redScaled >> (8 - ci->redBPP);
     }
-    if ( ci->greenBPP < 8 ) {
+    if ( ci->greenBPP < 8 )
+    {
         greenScaled = greenScaled >> (8 - ci->greenBPP);
     }
-    if ( ci->blueBPP < 8 ) {
+    if ( ci->blueBPP < 8 )
+    {
         blueScaled = blueScaled >> (8 - ci->blueBPP);
     }
 
     // Shift components to their positions and combine
     uint32_t encoded = 0;
-    if ( ci->redPosShift >= 0 ) {
+    if ( ci->redPosShift >= 0 )
+    {
         encoded |= (redScaled << ci->redPosShift);
     }
-    else {
+    else
+    {
         encoded |= (redScaled >> ci->redPosShiftRight);
     }
 
-    if ( ci->greenPosShift >= 0 ) {
+    if ( ci->greenPosShift >= 0 )
+    {
         encoded |= (greenScaled << ci->greenPosShift);
     }
-    else {
+    else
+    {
         encoded |= (greenScaled >> ci->greenPosShiftRight);
     }
 
-    if ( ci->bluePosShift >= 0 ) {
+    if ( ci->bluePosShift >= 0 )
+    {
         encoded |= (blueScaled << ci->bluePosShift);
     }
-    else {
+    else
+    {
         encoded |= (blueScaled >> ci->bluePosShiftRight);
     }
 
@@ -400,15 +411,18 @@ uint32_t stdColor_EncodeRGBA(const ColorInfo* ci, uint8_t r, uint8_t g, uint8_t 
         uint32_t alphaScaled = a;
 
         // Adjust for alpha bit depth if needed
-        if ( ci->alphaBPP < 8 ) {
+        if ( ci->alphaBPP < 8 )
+        {
             alphaScaled = alphaScaled >> (8 - ci->alphaBPP);
         }
 
         // Shift alpha to its position and combine
-        if ( ci->alphaPosShift >= 0 ) {
+        if ( ci->alphaPosShift >= 0 )
+        {
             encoded |= (alphaScaled << ci->alphaPosShift);
         }
-        else {
+        else
+        {
             encoded |= (alphaScaled >> ci->alphaPosShiftRight);
         }
     }
@@ -427,40 +441,49 @@ void stdColor_DecodeRGB(uint32_t encoded, const ColorInfo* ci, uint8_t* r, uint8
 
     // Extract components using shifts and masks
     uint32_t redVal;
-    if ( ci->redPosShift >= 0 ) {
+    if ( ci->redPosShift >= 0 )
+    {
         redVal = (encoded >> ci->redPosShift) & redMask;
     }
-    else {
+    else
+    {
         redVal = (encoded << ci->redPosShiftRight) & redMask;
     }
 
     uint32_t greenVal;
-    if ( ci->greenPosShift >= 0 ) {
+    if ( ci->greenPosShift >= 0 )
+    {
         greenVal = (encoded >> ci->greenPosShift) & greenMask;
     }
-    else {
+    else
+    {
         greenVal = (encoded << ci->greenPosShiftRight) & greenMask;
     }
 
     uint32_t blueVal;
-    if ( ci->bluePosShift >= 0 ) {
+    if ( ci->bluePosShift >= 0 )
+    {
         blueVal = (encoded >> ci->bluePosShift) & blueMask;
     }
-    else {
+    else
+    {
         blueVal = (encoded << ci->bluePosShiftRight) & blueMask;
     }
 
     // Scale back to 8-bit range if needed
-    if ( ci->redBPP < 8 ) {
-        // Scale up to fill 8 bits by replicating the MSBs
+    if ( ci->redBPP < 8 )
+    {
+// Scale up to fill 8 bits by replicating the MSBs
         redVal = (redVal << (8 - ci->redBPP)) | (redVal >> (2 * ci->redBPP - 8));
     }
 
-    if ( ci->greenBPP < 8 ) {
+    if ( ci->greenBPP < 8 )
+    {
         greenVal = (greenVal << (8 - ci->greenBPP)) | (greenVal >> (2 * ci->greenBPP - 8));
     }
 
-    if ( ci->blueBPP < 8 ) {
+    if ( ci->blueBPP < 8 )
+    {
         blueVal = (blueVal << (8 - ci->blueBPP)) | (blueVal >> (2 * ci->blueBPP - 8));
     }
 
@@ -478,27 +501,32 @@ void stdColor_DecodeRGBA(uint32_t encoded, const ColorInfo* ci, uint8_t* r, uint
     stdColor_DecodeRGB(encoded, ci, r, g, b);
 
     // Then handle alpha if the format supports it
-    if ( ci->alphaBPP > 0 ) {
+    if ( ci->alphaBPP > 0 )
+    {
         uint32_t alphaMask = ((1 << ci->alphaBPP) - 1);
         uint32_t alphaVal;
 
         // Extract alpha component
-        if ( ci->alphaPosShift >= 0 ) {
+        if ( ci->alphaPosShift >= 0 )
+        {
             alphaVal = (encoded >> ci->alphaPosShift) & alphaMask;
         }
-        else {
+        else
+        {
             alphaVal = (encoded << ci->alphaPosShiftRight) & alphaMask;
         }
 
         // Scale back to 8-bit range if needed
-        if ( ci->alphaBPP < 8 ) {
+        if ( ci->alphaBPP < 8 )
+        {
             alphaVal = (alphaVal << (8 - ci->alphaBPP)) | (alphaVal >> (2 * ci->alphaBPP - 8));
         }
 
         *a = (uint8_t)alphaVal;
     }
-    else {
-     // If format doesn't support alpha, set to fully opaque
+    else
+    {
+// If format doesn't support alpha, set to fully opaque
         *a = 255;
     }
 }
