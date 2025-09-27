@@ -99,7 +99,8 @@ rdCacheProcEntry* rdCache_GetProcEntry(void)
 
      // Added: Check if the vertex buffer is large enough to hold all face vertices.
     //        Note, taken from grimengine / OpenJKDF2
-    if ( RDCACHE_VERTBUFFERSIZE - rdCache_numUsedVertices < RDCACHE_MAXFACEVERTICES ) {
+    if ( RDCACHE_VERTBUFFERSIZE - rdCache_numUsedVertices < RDCACHE_MAXFACEVERTICES )
+    {
         return NULL;
     }
 
@@ -125,7 +126,8 @@ rdCacheProcEntry* rdCache_GetAlphaProcEntry(void)
 
     // Added: Check if the vertex buffer is large enough to hold all face vertices.
     //        Note, taken from grimengine / OpenJKDF2
-    if ( RDCACHE_VERTBUFFERSIZE - rdCache_numUsedAlphaVertices < RDCACHE_MAXFACEVERTICES ) {
+    if ( RDCACHE_VERTBUFFERSIZE - rdCache_numUsedAlphaVertices < RDCACHE_MAXFACEVERTICES )
+    {
         return NULL;
     }
 
@@ -198,10 +200,11 @@ void J3DAPI rdCache_AddAlphaProcFace(size_t numVertices)
     rdCacheProcEntry* pEntry = &rdCache_aAlphaProcFaces[rdCache_numAlphaProcFaces];
     pEntry->numVertices = numVertices;
 
-    float sz = 3.4028235e38f;
+    float sz = FLT_MAX; // 3.4028235e38f;
     for ( size_t i = 0; i < numVertices; ++i )
     {
-        if ( pEntry->aVertices[i].sz < (double)sz ) {
+        if ( pEntry->aVertices[i].sz < sz )
+        {
             sz = pEntry->aVertices[i].sz;
         }
     }
@@ -349,10 +352,12 @@ LABEL_4:
                     red   += pCurPoly->aVertIntensities[i].red;
                     green += pCurPoly->aVertIntensities[i].green;
                     blue  += pCurPoly->aVertIntensities[i].blue;
-                    if ( pCurPoly->extraLight.alpha >= 1.0f ) {
+                    if ( pCurPoly->extraLight.alpha >= 1.0f )
+                    {
                         alpha = pCurPoly->aVertIntensities[i].alpha;
                     }
-                    else {
+                    else
+                    {
                         alpha = pCurPoly->aVertIntensities[i].alpha + pCurPoly->extraLight.alpha;
                     }
                 }
@@ -369,10 +374,12 @@ LABEL_4:
                 blue  = STDMATH_CLAMP(blue, 0.0f, 1.0f);
                 alpha = STDMATH_CLAMP(alpha, 0.0f, 1.0f);
 
-                if ( (fflags & RD_FF_TEX_TRANSLUCENT) != 0 ) {
+                if ( (fflags & RD_FF_TEX_TRANSLUCENT) != 0 )
+                {
                     rdCache_pCurCacheVertex->color = D3DRGBA(red, green, blue, alpha); // (int32_t)(blue * 255.0f) | ((unsigned int)(int32_t)(green * 255.0f) << 8) | ((unsigned int)(int32_t)(red * 255.0f) << 16) | ((unsigned int)(int32_t)(alpha * 255.0f) << 24);
                 }
-                else {
+                else
+                {
                     rdCache_pCurCacheVertex->color = D3DRGB(red, green, blue); //(int32_t)(blue * 255.0f) | ((unsigned int)(int32_t)(green * 255.0f) << 8) | ((unsigned int)(int32_t)(red * 255.0f) << 16) | 0xFF000000;
                 }
 
@@ -459,17 +466,19 @@ void J3DAPI rdCache_SendWireframeFaceListToHardware(size_t numPolys, rdCacheProc
 
 void J3DAPI rdCache_AddToTextureCache(tSystemTexture* pTexture, StdColorFormatType format)
 {
-    if ( pTexture->pCachedTexture ) {
+    if ( pTexture->pCachedTexture )
+    {
         std3D_UpdateFrameCount(pTexture);
     }
-    else {
+    else
+    {
         std3D_AddToTextureCache(pTexture, format);
     }
 }
 
 int J3DAPI rdCache_ProcFaceDistanceCompare(const rdCacheProcEntry* pEntry1, const rdCacheProcEntry* pEntry2)
 {
-    if ( pEntry2->distance <= (double)pEntry1->distance )
+    if ( (double)pEntry2->distance <= (double)pEntry1->distance )
     {
         return -1;
     }
@@ -480,7 +489,8 @@ int J3DAPI rdCache_ProcFaceCompare(const rdCacheProcEntry* pEntry1, const rdCach
 {
     rdMaterial* pMat1 = pEntry1->pMaterial;
     rdMaterial* pMat2 = pEntry2->pMaterial;
-    if ( pMat1 == pMat2 ) {
+    if ( pMat1 == pMat2 )
+    {
         return pEntry2->matCelNum - pEntry1->matCelNum;
     }
 
