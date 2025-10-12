@@ -32,6 +32,10 @@ bool J3DAPI rdVector_IsZero2(const rdVector2* v); // Added
 bool J3DAPI rdVector_IsZero3(const rdVector3* v); // Added
 bool J3DAPI rdVector_IsZero4(const rdVector4* v); // Added
 
+void J3DAPI rdVector_Zero2(rdVector2* dest); // Added
+void J3DAPI rdVector_Zero3(rdVector3* dest); // Added
+void J3DAPI rdVector_Zero4(rdVector4* dest); // Added
+
 void J3DAPI rdVector_Set2(rdVector2* dest, float x, float y); // Added
 void J3DAPI rdVector_Set3(rdVector3* dest, float x, float y, float z);
 void J3DAPI rdVector_Set4(rdVector4* dest, float x, float y, float z, float w);
@@ -187,6 +191,21 @@ inline bool J3DAPI rdVector_IsZero3(const rdVector3* v)
 inline bool J3DAPI rdVector_IsZero4(const rdVector4* v)
 {
     return (v->x == 0.0f && v->y == 0.0f && v->z == 0.0f && v->w == 0.0f);
+}
+
+inline void J3DAPI rdVector_Zero2(rdVector2* dest)
+{
+    memset(dest, 0, sizeof(rdVector2));
+}
+
+inline void J3DAPI rdVector_Zero3(rdVector3* dest)
+{
+    memset(dest, 0, sizeof(rdVector3));
+}
+
+inline void J3DAPI rdVector_Zero4(rdVector4* dest)
+{
+    memset(dest, 0, sizeof(rdVector4));
 }
 
 inline void J3DAPI rdVector_Set2(rdVector2* dest, float x, float y)
