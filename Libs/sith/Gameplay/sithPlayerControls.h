@@ -12,6 +12,9 @@ J3D_EXTERN_C_START
 #define sithPlayerControls_g_bCutsceneMode J3D_DECL_FAR_VAR(sithPlayerControls_g_bCutsceneMode, int)
 // extern int sithPlayerControls_g_bCutsceneMode;
 
+#define sithPlayerControls_bActionActivated J3D_DECL_FAR_VAR(sithPlayerControls_bActionActivated, int)
+// extern int sithPlayerControls_bActionActivated;
+
 void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKeyMarkerType markerType);
 int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTime);
 int J3DAPI sithPlayerControls_ProcessPlayerDebugControls(SithThing* pThing);

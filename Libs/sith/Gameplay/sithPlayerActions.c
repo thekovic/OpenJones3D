@@ -439,7 +439,7 @@ int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
                         // Enable raft repair kit 
                         sithInventory_SetInventoryDisabled(pRaftPlayerThing, 56u, 0);
 
-                        sithVehicleControls_SendMessageBoardingStarted(pRaftPlayerThing); // User0 - startCutscene
+                        sithVehicleControls_StartBoardCutscene(pRaftPlayerThing); // User0 - startCutscene
                         if ( pRaftPlayerThing->pCog )
                         {
                             sithCog_SendMessage(pRaftPlayerThing->pCog, SITHCOG_MSG_BOARDED, SITHCOG_SYM_REF_THING, pRaftPlayerThing->idx, SITHCOG_SYM_REF_THING, pThing->idx, 0);

@@ -1308,6 +1308,31 @@ typedef enum eSithMultiJoinStatus J3D_ENUM_TYPE(int32_t)
         SITHMULTI_JOIN_WRONGLEVEL    = 6,
 } SithMultiJoinStatus;
 
+typedef enum sSithMinecarControlsUnboardState
+{
+    SITHMINECARCONTROLS_UNBOARD_NONE      = 0,  // No unboard interaction (key held down)
+    SITHMINECARCONTROLS_UNBOARD_READY     = 1,  // Ready to unboard (key released, waiting for press)
+    SITHMINECARCONTROLS_UNBOARD_UNUSED    = 2,  // Unused state
+    SITHMINECARCONTROLS_UNBOARD_ACTIVATED = 3,  // Unboarding activated (checking directions)
+    SITHMINECARCONTROLS_UNBOARD_BLOCKED   = 4   // Unboarding blocked (no valid exit)
+} SithMinecarControlsUnboardState;
+
+typedef enum sSithMinecarControlsLeanState
+{
+    SITHMINECARCONTROLS_LEAN_NONE  = 0,     // Not leaning
+    SITHMINECARCONTROLS_LEAN_RIGHT = 1,     // Leaning right
+    SITHMINECARCONTROLS_LEAN_LEFT  = 2      // Leaning left  
+} SithMinecarControlsLeanState;
+
+typedef enum sSithMinecarControlsMoveState
+{
+    SITHMINECARCONTROLS_MOVE_IDLE         = 0, // Not moving, no thrust
+    SITHMINECARCONTROLS_MOVE_STOPPING     = 1, // Coming to complete stop
+    SITHMINECARCONTROLS_MOVE_DECELERATING = 2, // Slowing down (braking)
+    SITHMINECARCONTROLS_MOVE_ACCELERATING = 3, // Speeding up (within normal range)
+    SITHMINECARCONTROLS_MOVE_CRUISING     = 4  // Moving at constant speed
+} SithMinecarControlsMoveState;
+
 typedef struct sSithAIControlBlock SithAIControlBlock;
 typedef struct sSithAIInstinct SithAIInstinct;
 typedef struct sSithAIInstinctState SithAIInstinctState;
@@ -3080,33 +3105,36 @@ typedef struct sNdsHeader
 } NdsHeader;
 static_assert(sizeof(NdsHeader) == 1188, "sizeof(NdsHeader) == 1188");
 
-typedef struct sSithMineCarControlState
+typedef struct sSithMineCarControlsState
 {
-    float secStoppingElapsedTime;
-    int accelerationState;
+    float secElapsedStoppingTime;
+    SithMinecarControlsMoveState moveState;
     float secDuckTime;
     int curDuckPuppetTrackNum;
-    int bNotDucked;
-    int indyLeanState;
+    int bCanDuck;
+    SithMinecarControlsLeanState leanState;
     int curPuppetTrack;
-    tSoundChannelHandle hBreakSnd;
-    float secBreakingElapsedTime;
+    int hBrakeSnd;
+    float secElapsedBrakingTime;
     float secUnboardingElapsedTime;
-    int unbaordState;
-} SithMineCarControlState;
+    SithMinecarControlsUnboardState unboardState;
+} SithMineCarControlsState;
+static_assert(sizeof(SithMineCarControlsState) == 44, "sizeof(SithMineCarControlsState) == 44");
 
-typedef struct sSithRaftControlState
+typedef struct sSithRaftControlsState
 {
-    SithThingMoveStatus moveStatus;
-    SithPuppetSubMode puppetSubmode;
-    rdVector3 exitSurfPos;
-    rdVector3 exitSurfPYR;
+    SithThingMoveStatus nextMoveStatus;
+    SithPuppetSubMode nextPuppetMode;
+    rdVector3 unboardPos;
+    rdVector3 unboardNorm;
     float moveSize;
-    float velocity;
+    float wakeTimer;
     int bRowing;
     float secRowStartTime;
     float secUnboardTime;
-} SithRaftControlState;
+} SithRaftControlsState;
+static_assert(sizeof(SithRaftControlsState) == 52, "sizeof(SithRaftControlsState) == 52");
+
 
 typedef struct sSithMode
 {

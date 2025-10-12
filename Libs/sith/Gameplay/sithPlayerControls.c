@@ -4,7 +4,7 @@
 
 #define sithPlayerControls_vecDebugCamDir J3D_DECL_FAR_VAR(sithPlayerControls_vecDebugCamDir, rdVector3)
 #define sithPlayerControls_cameraDistance J3D_DECL_FAR_VAR(sithPlayerControls_cameraDistance, float)
-#define sithPlayerControls_bActionActivated J3D_DECL_FAR_VAR(sithPlayerControls_bActionActivated, int)
+
 #define sithPlayerControls_pCollidedThing J3D_DECL_FAR_VAR(sithPlayerControls_pCollidedThing, SithThing*)
 #define sithPlayerControls_curJumpDirection J3D_DECL_FAR_VAR(sithPlayerControls_curJumpDirection, int)
 #define sithPlayerControls_pCurActivatedThing J3D_DECL_FAR_VAR(sithPlayerControls_pCurActivatedThing, SithThing*)
@@ -58,10 +58,10 @@ void sithPlayerControls_ResetGlobals(void)
 {
     rdVector3 sithPlayerControls_vecDebugCamDir_tmp = { { 0.0f }, { -1.0f }, { 0.0f } };
     memcpy(&sithPlayerControls_vecDebugCamDir, &sithPlayerControls_vecDebugCamDir_tmp, sizeof(sithPlayerControls_vecDebugCamDir));
-    
+
     float sithPlayerControls_cameraDistance_tmp = 0.2f;
     memcpy(&sithPlayerControls_cameraDistance, &sithPlayerControls_cameraDistance_tmp, sizeof(sithPlayerControls_cameraDistance));
-    
+
     memset(&sithPlayerControls_bActionActivated, 0, sizeof(sithPlayerControls_bActionActivated));
     memset(&sithPlayerControls_g_bCutsceneMode, 0, sizeof(sithPlayerControls_g_bCutsceneMode));
     memset(&sithPlayerControls_pCollidedThing, 0, sizeof(sithPlayerControls_pCollidedThing));
