@@ -612,7 +612,8 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
         return;
     }
 
-    if ( sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_NONE ) // TODO: Add check for sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_BLOCKED
+    if ( sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_NONE 
+        || sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_BLOCKED ) // Altered: Add check for SITHMINECARCONTROLS_UNBOARD_BLOCKED
     {
         if ( !sithControl_GetKey(SITHCONTROL_ACT2, NULL) )
         {
@@ -905,7 +906,7 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
             }
             else
             {
-                sithVehicleControls_curMineCarState.unboardState = SITHMINECARCONTROLS_UNBOARD_NONE; // TODO: should be blocked?
+                sithVehicleControls_curMineCarState.unboardState = SITHMINECARCONTROLS_UNBOARD_BLOCKED; // Fixed: Replaced SITHMINECARCONTROLS_UNBOARD_NONE with SITHMINECARCONTROLS_UNBOARD_BLOCKED 
                 sithSoundClass_PlayPlayerVoiceModeRandom(pThing, SITHSOUNDCLASS_LRUNSNOW); // nope...
             }
         }
@@ -1881,11 +1882,11 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
                 sithVehicleControls_EndBoardCutscene(pThing);
             }
             else if ( pThing->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARD_START )
-            {
-                float unboardDot = rdVector_Dot3(&pThing->orient.rvec, &sithVehicleControls_curRaftState.unboardNorm); // TODO: move inside if scope
+            {             
                 if ( rdVector_Dist3(&sithVehicleControls_curRaftState.unboardPos, &pThing->pos) <= sithVehicleControls_raftUnboardThresholdDist )
                 {
                     // If aligned with docking surface then jump out of raft
+                    float unboardDot = rdVector_Dot3(&pThing->orient.rvec, &sithVehicleControls_curRaftState.unboardNorm); // Altered: Moved inside if statement
                     if ( fabsf(unboardDot) > 0.98000002f )
                     {
                         pThing->collide.movesize = sithVehicleControls_curRaftState.moveSize;
