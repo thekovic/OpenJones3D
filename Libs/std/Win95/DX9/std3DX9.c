@@ -126,10 +126,10 @@ static void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture);
 static void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture);
 static int J3DAPI std3D_PurgeTextureCache(size_t size);
 
-int std3D_InitVertexBuffers(void);
+bool std3D_InitVertexBuffers(void);
 void std3D_ReleaseVertexBuffers(void);
 
-int std3D_InitShaderSystem(void);
+bool std3D_InitShaderSystem(void);
 void std3D_ShutdownShaderSystem(void);
 
 static void std3D_UpdateShaderState(StdShaderHandle activeShader);
@@ -960,7 +960,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         {
             if ( (rdflags & STD3D_RS_ALPHAREF_SET) != 0 )
             {
-                IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ALPHAREF, 0xA0);
+                IDirect3DDevice9_SetRenderState(std3D_pD3Device, D3DRS_ALPHAREF, 160);
                 std3D_renderState = rdflags;
                 return;
             }
@@ -1390,7 +1390,7 @@ int std3D_InitRenderState(void)
    // Set vertex format for pre-transformed vertices
     if ( !std3D_bShadersActive )
     {
-        if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1) != D3D_OK )
+        if ( IDirect3DDevice9_SetFVF(std3D_pD3Device, D3DTLVERTEX_FVF) != D3D_OK )
         {
             return 0;
         }
@@ -2255,7 +2255,7 @@ void J3DAPI std3D_SetFindAllDevices(int bFindAll)
     std3D_bFindAllD3Devices = bFindAll;
 }
 
-int std3D_InitVertexBuffers(void)
+bool std3D_InitVertexBuffers(void)
 {
     std3D_vbOffset = 0;
     std3D_ibOffset = 0;
@@ -2273,7 +2273,7 @@ int std3D_InitVertexBuffers(void)
     if ( FAILED(hr) )
     {
         STDLOG_ERROR("Failed to create vertex buffer: %s\n", std3D_D3DGetStatus(hr));
-        return 0;
+        return false;
     }
 
     // Create index buffer
@@ -2289,7 +2289,7 @@ int std3D_InitVertexBuffers(void)
     if ( FAILED(hr) )
     {
         STDLOG_ERROR("Failed to create index buffer: %s\n", std3D_D3DGetStatus(hr));
-        return 0;
+        return false;
     }
 
     // Set vertex/index buffers
@@ -2297,17 +2297,17 @@ int std3D_InitVertexBuffers(void)
     if ( FAILED(hr) )
     {
         STDLOG_ERROR("Failed to set vertex buffer: %s\n", std3D_D3DGetStatus(hr));
-        return 0;
+        return false;
     }
 
     hr = IDirect3DDevice9_SetIndices(std3D_pD3Device, std3D_pIndexBuffer);
     if ( FAILED(hr) )
     {
         STDLOG_ERROR("Failed to set index buffer: %s\n", std3D_D3DGetStatus(hr));
-        return 0;
+        return false;
     }
 
-    return 1;
+    return true;
 }
 
 void std3D_ReleaseVertexBuffers(void)
@@ -2325,9 +2325,10 @@ void std3D_ReleaseVertexBuffers(void)
     }
 }
 
-int std3D_InitShaderSystem(void)
+bool std3D_InitShaderSystem(void)
 {
     std3D_bShadersActive = false;
+
     if ( std3D_pCurDevice->d3dDesc.PixelShaderVersion < D3DPS_VERSION(3, 0) ||
         std3D_pCurDevice->d3dDesc.VertexShaderVersion < D3DVS_VERSION(3, 0) )
     {
@@ -2338,12 +2339,12 @@ int std3D_InitShaderSystem(void)
             D3DSHADER_VERSION_MAJOR(std3D_pCurDevice->d3dDesc.VertexShaderVersion),
             D3DSHADER_VERSION_MINOR(std3D_pCurDevice->d3dDesc.VertexShaderVersion)
         );
-        return 1;
+        return true;
     }
 
     if ( !stdShader_Open() )
     {
-        return 0;
+        return false;
     }
 
     // Create default shader
@@ -2351,19 +2352,19 @@ int std3D_InitShaderSystem(void)
     if ( !std3D_defaultShader )
     {
         STDLOG_ERROR("Failed to create default shader\n");
-        return 0;
+        return false;
     }
 
     std3D_defaultShaderWf = stdShader_Create("std_default", std_default_vs, std_default_wf_ps);
     if ( !std3D_defaultShader )
     {
         STDLOG_ERROR("Failed to create default wf shader\n");
-        return 0;
+        return false;
     }
 
     if ( !stdShader_RegisterShaderParam(std3D_defaultShaderWf, "g_wireframeColor", STDSHADER_TYPE_PIXEL, STDSHADER_PARAM_VECTOR4, /*registerIndex=*/0) )
     {
-        return 0;
+        return false;
     }
 
     StdShaderParamValue val;
@@ -2374,11 +2375,11 @@ int std3D_InitShaderSystem(void)
     val.value.vector[3] = 1.0f; // Alpha
     if ( !stdShader_SetShaderParam(std3D_defaultShaderWf, "g_wireframeColor", STDSHADER_TYPE_PIXEL, &val) )
     {
-        return 0;
+        return false;
     }
 
     std3D_bShadersActive = true;
-    return 1;
+    return true;
 }
 
 void std3D_ShutdownShaderSystem(void)

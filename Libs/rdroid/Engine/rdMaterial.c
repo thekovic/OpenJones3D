@@ -252,7 +252,8 @@ void J3DAPI rdMaterial_FreeEntry(rdMaterial* pMaterial)
 
     if ( pMaterial->aTextures )
     {
-        for ( size_t i = 0; i < pMaterial->numCels; ++i ) {
+        for ( size_t i = 0; i < pMaterial->numCels; ++i )
+        {
             std3D_ClearSystemTexture(&pMaterial->aTextures[i]);
         }
         stdMemory_Free(pMaterial->aTextures);
@@ -281,7 +282,8 @@ int J3DAPI rdMaterial_Write(const char* pFilename, const rdMaterial* pMaterial, 
     if ( rdroid_g_pHS->pFileWrite(fh, &header, sizeof(rdMatHeader)) != sizeof(rdMatHeader) )
     {
     error:
-        if ( fh ) {
+        if ( fh )
+        {
             rdroid_g_pHS->pFileClose(fh);
         }
 

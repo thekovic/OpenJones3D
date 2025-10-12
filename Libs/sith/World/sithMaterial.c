@@ -148,10 +148,12 @@ int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
     size_t  numMaterials;
     if ( nRead = stdConffile_ScanLine(" world materials %d", &numMaterials), nRead != 1 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             SITHLOG_ERROR("Read error in materials section, line %d.\n", stdConffile_GetLineNumber());
         }
-        else {
+        else
+        {
             SITHLOG_ERROR("Syntax error - expected world materials XX on line %d.\n", stdConffile_GetLineNumber());
         }
 

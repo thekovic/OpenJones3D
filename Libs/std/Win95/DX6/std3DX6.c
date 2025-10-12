@@ -341,7 +341,8 @@ int std3D_Startup(void)
         return 0;
     }
 
-    if ( std3D_numDevices == 0 ) {
+    if ( std3D_numDevices == 0 )
+    {
         return 0;
     }
 
@@ -351,11 +352,13 @@ int std3D_Startup(void)
 
 void std3D_Shutdown(void)
 {
-    if ( std3D_bOpen ) {
+    if ( std3D_bOpen )
+    {
         std3D_Close();
     }
 
-    if ( std3D_pDirect3D ) {
+    if ( std3D_pDirect3D )
+    {
         IDirect3D3_Release(std3D_pDirect3D);
     }
     std3D_pD3Device = NULL;
@@ -399,13 +402,15 @@ int J3DAPI std3D_Open(size_t deviceNum)
         return 0;
     }
 
-    if ( deviceNum >= std3D_numDevices ) {
+    if ( deviceNum >= std3D_numDevices )
+    {
         return 0;
     }
 
     std3D_curDevice  = deviceNum;
     std3D_pCurDevice = &std3D_aDevices[deviceNum];
-    if ( !std3D_pCurDevice->hasZBuffer ) {
+    if ( !std3D_pCurDevice->hasZBuffer )
+    {
         return 0;
     }
 
@@ -477,7 +482,8 @@ int J3DAPI std3D_Open(size_t deviceNum)
     }
 
     std3D_g_maxVertices = std3D_pCurDevice->maxVertexCount;
-    if ( std3D_g_maxVertices == 0 ) {
+    if ( std3D_g_maxVertices == 0 )
+    {
         std3D_g_maxVertices = STD3D_DEFAULT_MAX_VERTICES;
     }
     STDLOG_STATUS("Max vertices: %d.\n", std3D_g_maxVertices);
@@ -607,7 +613,8 @@ int std3D_StartScene(void)
     ++std3D_frameCount;
 
     HRESULT d3dres = IDirect3DDevice3_BeginScene(std3D_pD3Device);
-    if ( d3dres != D3D_OK ) {
+    if ( d3dres != D3D_OK )
+    {
         STDLOG_ERROR("Error %s beginning scene.\n", std3D_D3DGetStatus(d3dres));
     }
 
@@ -618,7 +625,8 @@ int std3D_StartScene(void)
 void std3D_EndScene(void)
 {
     HRESULT d3dres = IDirect3DDevice3_EndScene(std3D_pD3Device);
-    if ( d3dres != D3D_OK ) {
+    if ( d3dres != D3D_OK )
+    {
         STDLOG_ERROR("Error %s ending scene.\n", std3D_D3DGetStatus(d3dres));
     }
     std3D_pD3DTex = NULL;
@@ -639,10 +647,12 @@ void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LP
     if ( pTex != std3D_pD3DTex )
     {
         d3dres = IDirect3DDevice3_SetTexture(std3D_pD3Device, 0, pTex);
-        if ( d3dres != D3D_OK ) {
+        if ( d3dres != D3D_OK )
+        {
             STDLOG_ERROR("Error %s SetRenderState.\n", std3D_D3DGetStatus(d3dres));
         }
-        else {
+        else
+        {
             std3D_pD3DTex = pTex;
         }
     }
@@ -657,10 +667,12 @@ void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LP
                 float depth = (std3D_fogEndDepth - pCurVert->rhw * std3D_zDepth) * std3D_fogDepthFactor;
                 if ( depth < 1.0 )
                 {
-                    if ( depth >= 0.0 ) {
+                    if ( depth >= 0.0 )
+                    {
                         pCurVert->specular = (int)((1.0 - depth) * 255.0) << 24;
                     }
-                    else {
+                    else
+                    {
                         pCurVert->specular = 0xFF000000;
                     }
                 }
@@ -727,7 +739,8 @@ void J3DAPI std3D_DrawLineStrip(LPD3DTLVERTEX aVerts, size_t numVerts)
         D3DDP_DONOTLIGHT | D3DDP_DONOTUPDATEEXTENTS
     );
 
-    if ( d3dres != D3D_OK ) {
+    if ( d3dres != D3D_OK )
+    {
         STDLOG_ERROR("Error %s DrawPrim.\n", std3D_D3DGetStatus(d3dres));
     }
 }
@@ -749,7 +762,8 @@ void J3DAPI std3D_DrawPointList(LPD3DTLVERTEX aVerts, size_t numVerts)
         D3DDP_DONOTLIGHT | D3DDP_DONOTUPDATEEXTENTS
     );
 
-    if ( ddres != D3D_OK ) {
+    if ( ddres != D3D_OK )
+    {
         STDLOG_ERROR("Error %s DrawPrim.\n", std3D_D3DGetStatus(ddres));
     }
 }
@@ -760,40 +774,48 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
     {
         if ( (std3D_renderState & STD3D_RS_ZWRITE_DISABLED) != (rdflags & STD3D_RS_ZWRITE_DISABLED) )
         {
-            if ( (rdflags & STD3D_RS_ZWRITE_DISABLED) != 0 ) {
+            if ( (rdflags & STD3D_RS_ZWRITE_DISABLED) != 0 )
+            {
                 IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ZWRITEENABLE, FALSE);
             }
-            else {
+            else
+            {
                 IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ZWRITEENABLE, TRUE);
             }
         }
 
         if ( (std3D_renderState & STD3D_RS_TEX_CPAMP_U) != (rdflags & STD3D_RS_TEX_CPAMP_U) )
         {
-            if ( (rdflags & STD3D_RS_TEX_CPAMP_U) != 0 ) {
+            if ( (rdflags & STD3D_RS_TEX_CPAMP_U) != 0 )
+            {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
             }
-            else {
+            else
+            {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
             }
         }
 
         if ( (std3D_renderState & STD3D_RS_TEX_CPAMP_V) != (rdflags & STD3D_RS_TEX_CPAMP_V) )
         {
-            if ( (rdflags & STD3D_RS_TEX_CPAMP_V) != 0 ) {
+            if ( (rdflags & STD3D_RS_TEX_CPAMP_V) != 0 )
+            {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
             }
-            else {
+            else
+            {
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
             }
         }
 
         if ( (std3D_renderState & STD3D_RS_FOG_ENABLED) != (rdflags & STD3D_RS_FOG_ENABLED) )
         {
-            if ( (rdflags & STD3D_RS_FOG_ENABLED) != 0 && std3D_bRenderFog ) {
+            if ( (rdflags & STD3D_RS_FOG_ENABLED) != 0 && std3D_bRenderFog )
+            {
                 IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGENABLE, TRUE);
             }
-            else {
+            else
+            {
                 IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGENABLE, FALSE);
             }
         }
@@ -850,7 +872,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         {
             if ( (rdflags & STD3D_RS_ALPHAREF_SET) != 0 )
             {
-                IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ALPHAREF, 0xA0);
+                IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ALPHAREF, 160);
                 std3D_renderState = rdflags;
                 return;
             }
@@ -868,7 +890,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     LPDIRECTDRAWSURFACE4 pSrcSurfTmp = NULL;
     memset(pTexture, 0, sizeof(tSystemTexture));
 
-    if ( !std3D_numTextureFormats ) {
+    if ( !std3D_numTextureFormats )
+    {
         return;
     }
 
@@ -890,13 +913,16 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     }
 
     DDPIXELFORMAT ddpixfmt = { 0 };
-    if ( formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA ) {
+    if ( formatType == STDCOLOR_FORMAT_RGBA_1BITALPHA )
+    {
         ddpixfmt = std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ddPixelFmt;
     }
-    else if ( formatType == STDCOLOR_FORMAT_RGBA ) {
+    else if ( formatType == STDCOLOR_FORMAT_RGBA )
+    {
         ddpixfmt = std3D_aTextureFormats[std3D_RGBATextureFormat].ddPixelFmt;
     }
-    else {
+    else
+    {
         ddpixfmt = std3D_aTextureFormats[std3D_RGBTextureFormat].ddPixelFmt;
     }
 
@@ -962,7 +988,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
                 stdDisplay_VBufferUnlock(apVBuffers[mmNum]);
             }
         }
-        else {
+        else
+        {
             STDLOG_ERROR("Can't use paletized textures.\n");
         }
 
@@ -1029,7 +1056,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
             }
         }
 
-        if ( pSrcSurfTmp ) {
+        if ( pSrcSurfTmp )
+        {
             IDirectDrawSurface4_Release(pSrcSurfTmp);
         }
 
@@ -1038,7 +1066,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
         pTex    = pTmpTex;
     }
 
-    if ( pSrcSurf ) {
+    if ( pSrcSurf )
+    {
         IDirectDrawSurface4_Release(pSrcSurf);
     }
 
@@ -1048,7 +1077,8 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     return;
 
 error:
-    if ( pSrcSurf ) {
+    if ( pSrcSurf )
+    {
         IDirectDrawSurface4_Release(pSrcSurf);
     }
 
@@ -1080,7 +1110,8 @@ void J3DAPI std3D_GetValidDimensions(uint32_t width, uint32_t height, uint32_t* 
 
 void J3DAPI std3D_ClearSystemTexture(tSystemTexture* pTex)
 {
-    if ( pTex->pTexture ) {
+    if ( pTex->pTexture )
+    {
         IDirect3DTexture2_Release(pTex->pTexture);
     }
 
@@ -1107,7 +1138,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
     }
 
 
-    if ( pCacheTexture->textureSize > std3D_pCurDevice->availableMemory ) {
+    if ( pCacheTexture->textureSize > std3D_pCurDevice->availableMemory )
+    {
         std3D_PurgeTextureCache(pCacheTexture->textureSize);
     }
 
@@ -1136,7 +1168,8 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
     if ( std3D_aTextureFormats[format].bColorKey )
     {
         ddres = IDirectDrawSurface4_SetColorKey(pDestSurf, DDCKEY_SRCBLT, std3D_aTextureFormats[format].pColorKey);
-        if ( ddres != DD_OK ) {
+        if ( ddres != DD_OK )
+        {
             STDLOG_ERROR("Error %s setting ColorKey dest texture.\n", std3D_D3DGetStatus(ddres));
         }
     }
@@ -1173,11 +1206,13 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
     STDLOG_ERROR("Error %s Loading texture.\n", std3D_D3DGetStatus(ddres));
 
 error:
-    if ( pDestSurf ) {
+    if ( pDestSurf )
+    {
         IDirectDrawSurface4_Release(pDestSurf);
     }
 
-    if ( pD3DTex ) {
+    if ( pD3DTex )
+    {
         IDirect3DTexture2_Release(pD3DTex);
     }
 
@@ -1188,12 +1223,14 @@ error:
 
 size_t J3DAPI std3D_GetMipMapCount(const tSystemTexture* pTexture)
 {
-    if ( !pTexture ) {
+    if ( !pTexture )
+    {
         return 0;
     }
 
     LPDIRECTDRAWSURFACE4 pSysSurface = NULL;
-    if ( !pTexture->pTexture || IDirect3DTexture2_QueryInterface(pTexture->pTexture, &IID_IDirectDrawSurface4, &pSysSurface) != S_OK ) {
+    if ( !pTexture->pTexture || IDirect3DTexture2_QueryInterface(pTexture->pTexture, &IID_IDirectDrawSurface4, &pSysSurface) != S_OK )
+    {
         return 0;
     }
 
@@ -1229,14 +1266,16 @@ void J3DAPI std3D_ResetTextureCache()
     std3D_pLastTexCache     = NULL;
     std3D_numCachedTextures = 0;
 
-    if ( std3D_pCurDevice ) {
+    if ( std3D_pCurDevice )
+    {
         std3D_pCurDevice->availableMemory = std3D_pCurDevice->totalMemory;
     }
 
     if ( std3D_pD3Device )
     {
         HRESULT derr = IDirect3DDevice3_SetTexture(std3D_pD3Device, 0, NULL);
-        if ( derr != D3D_OK ) {
+        if ( derr != D3D_OK )
+        {
             STDLOG_ERROR("Error %s SetRenderState.\n", std3D_D3DGetStatus(derr)); // TODO: error text says SetRenderState, why is that??? Shall SetRenderState be called instead?
         }
     }
@@ -1255,7 +1294,8 @@ void J3DAPI std3D_UpdateFrameCount(tSystemTexture* pTexture)
 
 size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
 {
-    if ( !std3D_numTextureFormats ) {
+    if ( !std3D_numTextureFormats )
+    {
         return 0;
     }
 
@@ -1274,7 +1314,8 @@ size_t J3DAPI std3D_FindClosestFormat(const ColorInfo* pMatch)
                 matchLevel = 2;
                 if ( pMatch->colorMode == STDCOLOR_RGB )
                 {
-                    if ( pFormat->ci.redBPP == pMatch->redBPP && pFormat->ci.greenBPP == pMatch->greenBPP && pFormat->ci.blueBPP == pMatch->blueBPP ) {
+                    if ( pFormat->ci.redBPP == pMatch->redBPP && pFormat->ci.greenBPP == pMatch->greenBPP && pFormat->ci.blueBPP == pMatch->blueBPP )
+                    {
                         return i;
                     }
                 }
@@ -1608,7 +1649,8 @@ int J3DAPI std3D_SetProjection(float fov, float nearPlane, float farPlane)
 
     float hfov = fov / 2.0f;
     float sinhfov = sinf(hfov);
-    if ( fabs(sinhfov) < 0.009999999776482582f ) {
+    if ( fabs(sinhfov) < 0.009999999776482582f )
+    {
         return DDERR_INVALIDPARAMS;
     }
 
@@ -1638,7 +1680,8 @@ void J3DAPI std3D_EnableFog(int bEnabled, float density)
     std3D_g_fogDensity = density;
 
     DWORD dwRasterCaps = std3D_pCurDevice->d3dDesc.dpcTriCaps.dwRasterCaps;
-    if ( (dwRasterCaps & D3DPRASTERCAPS_FOGTABLE) == 0 && (dwRasterCaps & D3DPRASTERCAPS_FOGVERTEX) == 0 ) {
+    if ( (dwRasterCaps & D3DPRASTERCAPS_FOGTABLE) == 0 && (dwRasterCaps & D3DPRASTERCAPS_FOGVERTEX) == 0 )
+    {
         std3D_bRenderFog = 0;
     }
 
@@ -1650,7 +1693,8 @@ void J3DAPI std3D_SetFog(float red, float green, float blue, float startDepth, f
     std3D_EnableFog(std3D_bRenderFog, std3D_g_fogDensity);
     if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGCOLOR, D3DRGB(red, green, blue)) == D3D_OK )
     {
-        if ( std3D_g_fogDensity == 0.0f ) {
+        if ( std3D_g_fogDensity == 0.0f )
+        {
             IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLEMODE, D3DFOG_NONE);
         }
         else if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_FOGTABLEMODE, D3DFOG_LINEAR) == DD_OK )
@@ -1851,10 +1895,12 @@ HRESULT CALLBACK std3D_D3DEnumDevicesCallback(GUID* lpGuid, LPSTR lpDeviceDescri
     STD_STRCPY(pD3DDriver->deviceName, lpDeviceName);
 
     pD3DDriver->bHAL = lpD3DHalDDesc->dwFlags != 0;
-    if ( pD3DDriver->bHAL ) {
+    if ( pD3DDriver->bHAL )
+    {
         memcpy(&pD3DDriver->d3dDesc, lpD3DHalDDesc, sizeof(pD3DDriver->d3dDesc));
     }
-    else {
+    else
+    {
         memcpy(&pD3DDriver->d3dDesc, lpD3DHelDDesc, sizeof(pD3DDriver->d3dDesc));
     }
 
@@ -2030,11 +2076,13 @@ void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture)
         if ( std3D_pFirstTexCache )
         {
             std3D_pFirstTexCache->pPrevCachedTexture = NULL;
-            if ( !std3D_pFirstTexCache->pNextCachedTexture ) {
+            if ( !std3D_pFirstTexCache->pNextCachedTexture )
+            {
                 std3D_pLastTexCache = std3D_pFirstTexCache;
             }
         }
-        else {
+        else
+        {
             std3D_pLastTexCache = NULL;
         }
     }
@@ -2077,7 +2125,9 @@ int J3DAPI std3D_PurgeTextureCache(size_t size)
         pNextCachedTexture = pCacheTexture->pNextCachedTexture;
         if ( pCacheTexture->frameNum != std3D_frameCount )
         {
-            if ( pCacheTexture->pCachedTexture ) { // Added: Added check for null pointer
+            // Added: Added check for null pointer
+            if ( pCacheTexture->pCachedTexture )
+            {
                 IDirect3DTexture2_Release(pCacheTexture->pCachedTexture);
             }
             pCacheTexture->pCachedTexture = NULL;
@@ -2093,7 +2143,8 @@ const char* J3DAPI std3D_D3DGetStatus(HRESULT res)
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(std3D_aD3DStatusTbl); ++i )
     {
-        if ( std3D_aD3DStatusTbl[i].code == res ) {
+        if ( std3D_aD3DStatusTbl[i].code == res )
+        {
             return std3D_aD3DStatusTbl[i].text;
         }
     }
