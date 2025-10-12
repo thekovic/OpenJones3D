@@ -607,14 +607,6 @@ typedef enum eSithCogSymbolRefType
     SITHCOG_SYM_REF_AICLASS  = 13,
 } SithCogSymbolRefType;
 
-typedef enum eSithPlayerMove J3D_ENUM_TYPE(int32_t)
-{
-    SITHPLAYERMOVE_CLIMBING_STILL = 0x9,
-        SITHPLAYERMOVE_DUCKSTATUS1    = 0x33,
-        SITHPLAYERMOVE_DUCKSTATUS2    = 0x34,
-        SITHPLAYERMOVE_ENTERING_RAFT  = 0x46,
-} SithPlayerMove;
-
 typedef enum eSithSoundClassMode
 {
     SITHSOUNDCLASS_CREATE         = 1,
@@ -818,7 +810,7 @@ typedef enum eSithThingMoveStatus
     SITHPLAYERMOVE_STILL                               = 0,
     SITHPLAYERMOVE_WALKING                             = 1,
     SITHPLAYERMOVE_RUNNING                             = 2,
-    SITHPLAYERMOVE_CRAWL_STILL                         = 3,
+    SITHPLAYERMOVE_CRAWLIDLE                           = 3,
     SITHPLAYERMOVE_UNKNOWN_4                           = 4,
     SITHPLAYERMOVE_UNKNOWN_5                           = 5,
     SITHPLAYERMOVE_HANGING                             = 6,
@@ -843,11 +835,11 @@ typedef enum eSithThingMoveStatus
     SITHPLAYERMOVE_CLIMBING_RIGHT                      = 25,
     SITHPLAYERMOVE_PULLINGUP                           = 26,
     SITHPLAYERMOVE_PULLINGUP_1M                        = 27,
-    SITHPLAYERMOVE_WHIP_CLIMB_START                    = 28,
+    SITHPLAYERMOVE_WHIPCLIMB_START                     = 28,
     SITHPLAYERMOVE_WHIP_UNK2                           = 29,
     SITHPLAYERMOVE_MINECAR_IDLE                        = 30,
-    SITHPLAYERMOVE_JEEP_STILL                          = 31,
-    SITHPLAYERMOVE_RAFT_STILL                          = 32,
+    SITHPLAYERMOVE_JEEP_IDLE                           = 31,
+    SITHPLAYERMOVE_RAFT_IDLE                           = 32,
     SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_LEFT            = 33,
     SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_RIGHT           = 34,
     SITHPLAYERMOVE_RAFT_TURN_LEFT                      = 35,
@@ -859,8 +851,8 @@ typedef enum eSithThingMoveStatus
     SITHPLAYERMOVE_RAFT_ENDPADDLE_RIGHT                = 41,
     SITHPLAYERMOVE_RAFT_STARTPADDLE_RIGHT              = 42,
     SITHPLAYERMOVE_RAFT_PADDLERIGHT_STARTPADDLE_LEFT   = 43,
-    SITHPLAYERMOVE_RAFT_PADDLEL_LEFT_STARTPADDLE_RIGHT = 44,
-    SITHPLAYERMOVE_UNKNOWN_45                          = 45,
+    SITHPLAYERMOVE_RAFT_PADDLELEFT_STARTPADDLE_RIGHT   = 44,
+    SITHPLAYERMOVE_RAFT_DOCKING                        = 45,
     SITHPLAYERMOVE_UNKNOWN_46                          = 46,
     SITHPLAYERMOVE_SLIDING                             = 47,
     SITHPLAYERMOVE_MINECAR_BOARDING                    = 48,

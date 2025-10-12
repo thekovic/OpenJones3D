@@ -996,9 +996,9 @@ LABEL_61:
                 case SITHPLAYERMOVE_CLIMBING_LEFT:
                 case SITHPLAYERMOVE_CLIMBING_RIGHT:
                 case SITHPLAYERMOVE_PULLINGUP:
-                case SITHPLAYERMOVE_WHIP_CLIMB_START:
-                case SITHPLAYERMOVE_JEEP_STILL:
-                case SITHPLAYERMOVE_RAFT_STILL:
+                case SITHPLAYERMOVE_WHIPCLIMB_START:
+                case SITHPLAYERMOVE_JEEP_IDLE:
+                case SITHPLAYERMOVE_RAFT_IDLE:
                 case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_LEFT:
                 case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_RIGHT:
                 case SITHPLAYERMOVE_RAFT_TURN_LEFT:
@@ -1010,7 +1010,7 @@ LABEL_61:
                 case SITHPLAYERMOVE_RAFT_ENDPADDLE_RIGHT:
                 case SITHPLAYERMOVE_RAFT_STARTPADDLE_RIGHT:
                 case SITHPLAYERMOVE_RAFT_PADDLERIGHT_STARTPADDLE_LEFT:
-                case SITHPLAYERMOVE_RAFT_PADDLEL_LEFT_STARTPADDLE_RIGHT:
+                case SITHPLAYERMOVE_RAFT_PADDLELEFT_STARTPADDLE_RIGHT:
                 case SITHPLAYERMOVE_JEEP_BOARDING:
                 case SITHPLAYERMOVE_STAND_TO_CRAWL:
                 case SITHPLAYERMOVE_CRAWL_TO_STAND:
@@ -1334,7 +1334,7 @@ int J3DAPI sithCollision_HandleThingHitSurface(SithThing* pThing, SithSurface* p
                 if ( pThing->moveStatus == SITHPLAYERMOVE_UNKNOWN_82 )
                 {
                     sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LAND, 0);
-                    pThing->moveStatus = SITHPLAYERMOVE_JEEP_STILL;
+                    pThing->moveStatus = SITHPLAYERMOVE_JEEP_IDLE;
                     sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_LANDHARD);
                 }
             }

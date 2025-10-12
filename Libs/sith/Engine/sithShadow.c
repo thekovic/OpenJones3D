@@ -45,7 +45,7 @@ void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing)
         float scale = 1.0f; // Added init to 1.0f
         float distance;
 
-        if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWL_STILL )
+        if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWLIDLE )
         {
             if ( sithShadow_SearchForAttachDistance(pThing, &distance, &radius) )
             {
@@ -120,7 +120,7 @@ void J3DAPI sithShadow_RenderThingShadow(SithThing* pThing)
             rdVector3 rshoePos = meshOrient.dvec;
             rshoePos.z = pos.z;
 
-            if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWL_STILL )
+            if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWLIDLE )
             {
                 sithShadow_DrawShadow(&orient, size, scale, 0);
             }

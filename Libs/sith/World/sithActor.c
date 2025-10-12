@@ -530,7 +530,7 @@ void J3DAPI sithActor_KillActor(SithThing* pThing, SithThing* pSrcThing, SithDam
     {
         switch ( pThing->moveStatus )
         {
-            case SITHPLAYERMOVE_CRAWL_STILL:
+            case SITHPLAYERMOVE_CRAWLIDLE:
             case SITHPLAYERMOVE_UNKNOWN_4:
             case SITHPLAYERMOVE_UNKNOWN_5:
                 sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);

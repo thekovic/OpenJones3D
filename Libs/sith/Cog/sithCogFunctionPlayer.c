@@ -88,7 +88,7 @@ void J3DAPI sithCogFunctionPlayer_MakeMeStop(SithCog* pCog)
             sithPlayer_g_pLocalPlayerThing->moveStatus = SITHPLAYERMOVE_STILL;
             break;
 
-        case SITHPLAYERMOVE_CRAWL_STILL:
+        case SITHPLAYERMOVE_CRAWLIDLE:
         case SITHPLAYERMOVE_UNKNOWN_4:
         case SITHPLAYERMOVE_UNKNOWN_5:
             sithPlayerActions_Crawl2Stand(sithPlayer_g_pLocalPlayerThing);

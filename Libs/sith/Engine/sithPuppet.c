@@ -459,7 +459,7 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
                 switch ( pThing->moveStatus )
                 {
                     case SITHPLAYERMOVE_STILL:
-                    case SITHPLAYERMOVE_CRAWL_STILL:
+                    case SITHPLAYERMOVE_CRAWLIDLE:
                     case SITHPLAYERMOVE_UNKNOWN_4:
                     case SITHPLAYERMOVE_UNKNOWN_5:
                     case SITHPLAYERMOVE_HANGING:
@@ -472,7 +472,7 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
                     case SITHPLAYERMOVE_CLIMBING_RIGHT:
                     case SITHPLAYERMOVE_PULLINGUP:
                     case SITHPLAYERMOVE_PULLINGUP_1M:
-                    case SITHPLAYERMOVE_WHIP_CLIMB_START:
+                    case SITHPLAYERMOVE_WHIPCLIMB_START:
                     case SITHPLAYERMOVE_STAND_TO_CRAWL:
                     case SITHPLAYERMOVE_CRAWL_TO_STAND:
                     case SITHPLAYERMOVE_CLIMB_DOWN_TO_MOUNT:
@@ -887,7 +887,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
             sithPuppet_SetSubMode(pThing, submode, pCallback);
             return moveSpeed;
         }
-        case SITHPLAYERMOVE_CRAWL_STILL:
+        case SITHPLAYERMOVE_CRAWLIDLE:
         {
             if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
             {
@@ -980,7 +980,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
             return moveSpeed;
         }
         case SITHPLAYERMOVE_WHIPCLIMBIDLE:
-        case SITHPLAYERMOVE_WHIP_CLIMB_START:
+        case SITHPLAYERMOVE_WHIPCLIMB_START:
         {
             submode = SITHPUPPETSUBMODE_WHIPCLIMBIDLE;
             sithPuppet_SetSubMode(pThing, submode, pCallback);
@@ -989,7 +989,8 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
         case SITHPLAYERMOVE_SWIMIDLE:
         {
             bool bFloating = false;
-            if ( (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 || (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 ) {
+            if ( (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 || (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) == 0 )
+            {
                 bFloating = true;
             }
 
@@ -1113,7 +1114,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
             sithPuppet_SetSubMode(pThing, submode, pCallback);
             return moveSpeed;
         }
-        case SITHPLAYERMOVE_JEEP_STILL:
+        case SITHPLAYERMOVE_JEEP_IDLE:
         {
             float yawSpeed = pThing->moveInfo.physics.angularVelocity.y * 0.00019999999f;
             if ( moveSpeed <= 0.001f && (moveSpeed >= -0.001f || sithControl_GetKey(SITHCONTROL_BACK, 0)) )
@@ -1198,7 +1199,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
             sithPuppet_SetSubMode(pThing, submode, pCallback);
             return moveSpeed;
         }
-        case SITHPLAYERMOVE_RAFT_STILL:
+        case SITHPLAYERMOVE_RAFT_IDLE:
         case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_LEFT:
         case SITHPLAYERMOVE_RAFT_PADDLE_FORWARD_RIGHT:
         case SITHPLAYERMOVE_RAFT_TURN_LEFT:
@@ -1210,8 +1211,8 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
         case SITHPLAYERMOVE_RAFT_ENDPADDLE_RIGHT:
         case SITHPLAYERMOVE_RAFT_STARTPADDLE_RIGHT:
         case SITHPLAYERMOVE_RAFT_PADDLERIGHT_STARTPADDLE_LEFT:
-        case SITHPLAYERMOVE_RAFT_PADDLEL_LEFT_STARTPADDLE_RIGHT:
-        case SITHPLAYERMOVE_UNKNOWN_45:
+        case SITHPLAYERMOVE_RAFT_PADDLELEFT_STARTPADDLE_RIGHT:
+        case SITHPLAYERMOVE_RAFT_DOCKING:
         case SITHPLAYERMOVE_UNKNOWN_46:
         case SITHPLAYERMOVE_SLIDING:
         case SITHPLAYERMOVE_RAFT_BOARDING:
@@ -1329,7 +1330,7 @@ int J3DAPI sithPuppet_SetSubMode(SithThing* pThing, SithPuppetSubMode newSubMode
             }
             else
             {
-                if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWL_STILL )
+                if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWLIDLE )
                 {
                     sithPuppet_StopKey(pThing->renderData.pPuppet, pCurTrack->trackNum, 0.0f);
                     continue;
@@ -1677,7 +1678,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
 
     switch ( pThing->moveStatus )
     {
-        case SITHPLAYERMOVE_CRAWL_STILL:
+        case SITHPLAYERMOVE_CRAWLIDLE:
             return;
 
         case SITHPLAYERMOVE_HANGING:
@@ -1768,7 +1769,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
             sithInventory_SetSwimmingInventory(pThing, 1);
             break;
         }
-        case SITHPLAYERMOVE_WHIP_CLIMB_START:
+        case SITHPLAYERMOVE_WHIPCLIMB_START:
         {
             sithWhip_SetActorWhipClimbIdle(pThing);
             break;
@@ -1791,7 +1792,7 @@ void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
         }
         case SITHPLAYERMOVE_STAND_TO_CRAWL:
         {
-            pThing->moveStatus = SITHPLAYERMOVE_CRAWL_STILL;
+            pThing->moveStatus = SITHPLAYERMOVE_CRAWLIDLE;
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
             break;
         }
@@ -1993,7 +1994,8 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                     // Movement must not be reset if the player is falling
                     // as it will cause the falling velocity to be reset 
                     // making it possible to fall from high places without taking damage
-                    if ( pThing->moveStatus != SITHPLAYERMOVE_FALLING ) {
+                    if ( pThing->moveStatus != SITHPLAYERMOVE_FALLING )
+                    {
                         sithPhysics_ResetThingMovement(pThing);
                     }
                 #endif
@@ -2428,7 +2430,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         {
             if ( pThing->moveType == SITH_MT_PHYSICS )
             {
-                if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWL_STILL )
+                if ( pThing->moveStatus == SITHPLAYERMOVE_CRAWLIDLE )
                 {
                     pThing->forceMoveStartPos.z = pThing->forceMoveStartPos.z + 0.04f;
                 }

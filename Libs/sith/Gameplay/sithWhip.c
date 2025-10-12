@@ -177,7 +177,7 @@ int J3DAPI sithWhip_StartWhipClimb(SithThing* pThing, SithThing* pWhippedThing)
     sithInventory_SetSwimmingInventory(pThing, 0);
     sithWeapon_SetLastWeapon(SITHWEAPON_PISTOL);
 
-    pThing->moveStatus = SITHPLAYERMOVE_WHIP_CLIMB_START;
+    pThing->moveStatus = SITHPLAYERMOVE_WHIPCLIMB_START;
     pThing->thingInfo.actorInfo.bControlsDisabled = 1;
 
     sithThing_DetachThing(pThing);

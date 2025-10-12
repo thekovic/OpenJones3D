@@ -2865,7 +2865,7 @@ void sithPlayerActions_DisableJewelFlying(void)
     {
         switch ( sithPlayer_g_pLocalPlayerThing->moveStatus )
         {
-            case SITHPLAYERMOVE_CRAWL_STILL:
+            case SITHPLAYERMOVE_CRAWLIDLE:
             case SITHPLAYERMOVE_UNKNOWN_4:
             case SITHPLAYERMOVE_UNKNOWN_5:
             case SITHPLAYERMOVE_PUSHING:

@@ -2412,7 +2412,7 @@ update_attachment:
                 sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_LANDWATER);
                 if ( sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LAND, sithVehicleControls_PuppetCallback) < 0 )
                 {
-                    pThing->moveStatus = SITHPLAYERMOVE_RAFT_STILL;
+                    pThing->moveStatus = SITHPLAYERMOVE_RAFT_IDLE;
                 }
                 else
                 {
@@ -2426,7 +2426,7 @@ update_attachment:
             }
             else
             {
-                pThing->moveStatus = SITHPLAYERMOVE_RAFT_STILL;
+                pThing->moveStatus = SITHPLAYERMOVE_RAFT_IDLE;
             }
         }
         else if ( (pThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0 )
@@ -2452,7 +2452,7 @@ update_attachment:
             else if ( pThing->moveStatus == SITHPLAYERMOVE_UNKNOWN_82 ) // SITHPLAYERMOVE_UNKNOWN_82 probably land hard
             {
                 sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LAND, 0);
-                pThing->moveStatus = SITHPLAYERMOVE_JEEP_STILL;
+                pThing->moveStatus = SITHPLAYERMOVE_JEEP_IDLE;
                 sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_LANDHARD);
             }
         }
@@ -2540,7 +2540,7 @@ update_attachment:
                 && (pThing->flags & SITH_TF_DESTROYED) == 0
                 && pThing->pPuppetClass
                 && pThing->moveType == SITH_MT_PHYSICS
-                && pThing->moveStatus != SITHPLAYERMOVE_CRAWL_STILL )
+                && pThing->moveStatus != SITHPLAYERMOVE_CRAWLIDLE )
             {
                 if ( pThing->moveStatus == SITHPLAYERMOVE_FALLING || pThing->moveInfo.physics.deltaVelocity.z < -0.15000001f )
                 {
@@ -2815,7 +2815,7 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
             }
         }
 
-        if ( pThing->pPuppetClass && pThing->moveType == SITH_MT_PHYSICS && pThing->moveStatus != SITHPLAYERMOVE_CRAWL_STILL )
+        if ( pThing->pPuppetClass && pThing->moveType == SITH_MT_PHYSICS && pThing->moveStatus != SITHPLAYERMOVE_CRAWLIDLE )
         {
             if ( pThing->moveStatus == SITHPLAYERMOVE_FALLING || pThing->moveInfo.physics.deltaVelocity.z < -0.15000001f )
             {
