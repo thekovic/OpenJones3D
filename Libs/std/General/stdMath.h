@@ -9,6 +9,8 @@
 
 J3D_EXTERN_C_START
 
+#define STDMATH_ZERO_EPSILON 0.00001f
+
 // Clamp value between min and max
 #define STDMATH_CLAMP(val, minv, maxv) (((val) < (minv)) ? (minv) : ((val) > (maxv)) ? (maxv) : (val))
 
@@ -19,6 +21,10 @@ J3D_EXTERN_C_START
 // Convert degrees to radians
 #define STDMATH_RADIANS(deg)  ((deg) * (M_PI / 180.0))
 #define STDMATH_RADIANSF(deg) (float)STDMATH_RADIANS(deg)
+
+// Macro calculates circle circumference of circle with given radius
+// TODO: PI constant 3.1415901f was taken from engine, replace with (float)M_PI if possible
+#define STDMATH_CIRCLE_CIRCUMF(radius) (3.1415901f * (radius) * 2.0f)
 
 float J3DAPI stdMath_FlexPower(float base, int exponent);
 inline float stdMath_ClipNearZero(float val); // Added
@@ -40,7 +46,7 @@ float J3DAPI stdMath_Dist3D1(float x, float y, float z);
 
 inline float stdMath_ClipNearZero(float val)
 {
-    if ( fabsf(val) <= 0.00001f )
+    if ( fabsf(val) <= STDMATH_ZERO_EPSILON )
     {
         return 0.0f;
     }

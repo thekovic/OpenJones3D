@@ -41,7 +41,8 @@ void stdMath_ResetGlobals(void)
 float J3DAPI stdMath_FlexPower(float base, int exponent)
 {
     float ret = base;
-    for ( int i = 0; i < exponent - 1; ++i ) {
+    for ( int i = 0; i < exponent - 1; ++i )
+    {
         ret = ret * base;
     }
     return ret;
@@ -50,7 +51,8 @@ float J3DAPI stdMath_FlexPower(float base, int exponent)
 float stdMath_NormalizeAngle(float angle)
 {
     // Added: Added nan check
-    if ( isnan(angle) ) {
+    if ( isnan(angle) )
+    {
         return angle;
     }
 
@@ -59,22 +61,26 @@ float stdMath_NormalizeAngle(float angle)
     double normAngle;
     if ( angle >= 0.0f )
     {
-        if ( angle < 360.0f ) {
+        if ( angle < 360.0f )
+        {
             return angle;
         }
         normAngle = (double)angle - floor((double)angle / 360.0) * 360.0;
     }
     else
     {
-        if ( -angle >= 360.0f ) {
+        if ( -angle >= 360.0f )
+        {
             normAngle = 360.0 - (-(double)angle - floor(-(double)angle / 360.0) * 360.0);
         }
-        else {
+        else
+        {
             normAngle = 360.0f + angle;
         }
     }
 
-    if ( normAngle == 360.0 ) {
+    if ( normAngle == 360.0 )
+    {
         normAngle = 0.0;
     }
 
@@ -309,7 +315,8 @@ void stdMath_SinCos(float angle, float* pSinOut, float* pCosOut)
 #ifdef J3D_DEBUG
     float sn, css;
     stdMath_SinCos2(angle, &sn, &css); // TODO: remove 
-    if ( sn != *pSinOut || css != *pCosOut ) {
+    if ( sn != *pSinOut || css != *pCosOut )
+    {
         STDLOG_ERROR("SinCos result differ from original for angle: %.f. sin=%.f osin=%.f cos=%.f ocos=%.f", angle, pSinOut, sn, pCosOut, css);
     }
     STD_ASSERT(sn == *pSinOut && css == *pCosOut);
@@ -467,7 +474,8 @@ float J3DAPI stdMath_Tan(float angle)
 #ifdef J3D_DEBUG
     float tan = ((tanValue - baseLookup) * fracPart + baseLookup);
     float otan = stdMath_Tan2(angle);
-    if ( tan != otan ) {
+    if ( tan != otan )
+    {
         STDLOG_ERROR("stdMath_Tan2 result differ from original for angle: %.f. tan=%.f otan=%.f", angle, tan, otan);
     }
     STD_ASSERT(tan == otan);
@@ -480,7 +488,8 @@ float J3DAPI stdMath_ArcSin1(float num)
 {
     double asinval;
     double absNum = fabs(num);
-    if ( absNum <= 0.70710677 ) {
+    if ( absNum <= M_SQRT1_2 )
+    {
         asinval = STDMATH_TODEGREES(pow(absNum, 3) * 0.212749 + absNum);
     }
     else
@@ -496,7 +505,7 @@ float J3DAPI stdMath_ArcSin2(float num)
 {
     double asinval;
     double absnum = fabs(num);
-    if ( absnum <= 0.70710677 )
+    if ( absnum <= M_SQRT1_2 )
     {
         double term1 = pow(absnum, 3) / 6.0 + absnum;
         asinval = STDMATH_TODEGREES(pow(absnum, 5) * 0.105502 + term1);
@@ -514,7 +523,7 @@ float J3DAPI stdMath_ArcSin2(float num)
 float J3DAPI stdMath_ArcSin3(float num)
 {
     double asinval = fabs(num);
-    if ( asinval <= 0.70710677 )
+    if ( asinval <= M_SQRT1_2 )
     {
         double term1 = pow(asinval, 3) / 6.0 + asinval;
         double term2 = pow(asinval, 5) * 0.075000003 + term1;
@@ -540,10 +549,12 @@ float stdMath_ArcTan4(float x, float y)
     double absY = fabs(y);
     double ratio = 0.0;
 
-    if ( absY <= absX ) {
+    if ( absY <= absX )
+    {
         ratio = absY / absX;
     }
-    else {
+    else
+    {
         ratio = absX / absY;
     }
     ratio = fabs(ratio);
@@ -553,16 +564,19 @@ float stdMath_ArcTan4(float x, float y)
     angle = angle - pow(ratio, 7) / 7.0;
     angle = STDMATH_TODEGREES(pow(ratio, 9) * 0.063235f + angle);
 
-    if ( absX >= absY ) {
+    if ( absX >= absY )
+    {
         angle = 90.0 - angle;
     }
 
     angle = 90.0 - angle;
-    if ( x < 0.0f ) {
+    if ( x < 0.0f )
+    {
         angle = 180.0 - angle;
     }
 
-    if ( y >= 0.0f ) {
+    if ( y >= 0.0f )
+    {
         angle = -angle;
     }
 
