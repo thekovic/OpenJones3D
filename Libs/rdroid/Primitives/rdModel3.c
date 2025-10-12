@@ -1825,14 +1825,7 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
         }
     }
 
-    pPoly->flags = pFace->flags | extraFaceFlags;
-
-    // Fixed: Add translucent flag when missing
-    if ( bTranslucent && (pPoly->flags & RD_FF_TEX_TRANSLUCENT) == 0 )
-    {
-        pPoly->flags |= RD_FF_TEX_TRANSLUCENT;
-    }
-
+    pPoly->flags     = pFace->flags | extraFaceFlags;
     pPoly->matCelNum = pFace->matCelNum;
     pPoly->pMaterial = pFace->pMaterial;
 
