@@ -1053,13 +1053,13 @@ typedef enum eSithCogStatus
 
 typedef enum eSithMineCarType
 {
-    SITHMINECAR_BOULDER      = 0x0,
-    SITHMINECAR_PLAYER       = 0x1,
-    SITHMINECAR_DEFAULT      = 0x2,
-    SITHMINECAR_KILLTRUCK_AI = 0x3,
-    SITHMINECAR_JEEP_AI      = 0x4,
-    SITHMINECAR_MINECAR_AI   = 0x5,
-    SITHMINECAR_TRUCK_AI     = 0x6,
+    SITHMINECAR_DEFAULT      = 0,
+    SITHMINECAR_PLAYER       = 1,
+    SITHMINECAR_MINECAR_AI   = 2,
+    SITHMINECAR_KILLTRUCK_AI = 3,
+    SITHMINECAR_JEEP_AI      = 4,
+    SITHMINECAR_BOULDER      = 5,
+    SITHMINECAR_TRUCK_AI     = 6
 } SithMineCarType;
 
 typedef enum eSithCameraType J3D_ENUM_TYPE(int32_t)
@@ -1845,19 +1845,20 @@ static_assert(sizeof(SithAnimationSlot) == 168, "sizeof(SithAnimationSlot) == 16
 
 typedef struct sSithMineCarState
 {
-    int maybeMoveSate;
+    int maybeMoveSate; // most likely car turn state
     int unknown1;
     float surfDrag;
     SithAnimationSlot* pEngineAnim;
-    int unknown4;
-    int bUpdateLeftSparks;
-    int bUpdateRightSparks;
-    float secTimeLeftSparks;
-    float secTimeRightSparks;
+    int bEngineAnim;
+    int bUpdateSparksRight;
+    int bUpdateSparksLeft;
+    float secTimeSparksRight;
+    float secTimeSparksLeft;
     float unknown9;
     float unknown10;
     int bUpdateSparks;
 } SithMineCarState;
+static_assert(sizeof(SithMineCarState) == 48, "sizeof(SithMineCarState) == 48");
 
 typedef struct sSithMineCarFxState
 {

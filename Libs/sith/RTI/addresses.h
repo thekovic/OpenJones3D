@@ -656,7 +656,7 @@
 #define sithPhysics_CreateMineCarUserBlock_ADDR 0x004824B0
 #define sithPhysics_InitMineCarFxState_ADDR 0x004827D0
 #define sithPhysics_InitVehicleFxState_ADDR 0x004827F0
-#define sithPhysics_InitDefaultMineCarInfo_ADDR 0x00482810
+#define sithPhysics_InitMineCarChassisDefault_ADDR 0x00482810
 #define sithPhysics_InitMineCarChassis_ADDR 0x00482820
 #define sithPhysics_InitTrackTruckChassis_ADDR 0x00482890
 #define sithPhysics_InitTrackJeepChassis_ADDR 0x00482900
@@ -2269,8 +2269,8 @@
 #define sithPhysics_bMineCarSparksFx_ADDR 0x00538BF0
 #define sithPhysics_bMineCarClatterFx_ADDR 0x00538BF4
 #define sithPhysics_bMineCarRailClackFx_ADDR 0x00538BF8
-#define sithPhysics_vecMinecarSparkPosLeft_ADDR 0x00538C3C
-#define sithPhysics_vecMinecarSparkPosRight_ADDR 0x00538C4C
+#define sithPhysics_vecMinecarSparkPosRight_ADDR 0x00538C3C
+#define sithPhysics_vecMinecarSparkPosLeft_ADDR 0x00538C4C
 #define sithPhysics_bUpdateTrackJeepEngineFx_ADDR 0x00538C7C
 #define sithPhysics_truckMinSndPitch_ADDR 0x00538C80
 #define sithPhysics_truckMaxSndPitch_ADDR 0x00538C84

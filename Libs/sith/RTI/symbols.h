@@ -655,7 +655,7 @@
 #define sithPhysics_CreateMineCarUserBlock_TYPE int (J3DAPI*)(SithThing*)
 #define sithPhysics_InitMineCarFxState_TYPE void (J3DAPI*)(SithThing*, SithMineCarFxState*)
 #define sithPhysics_InitVehicleFxState_TYPE void (J3DAPI*)(SithThing*, SithVehicleEngineFxState*)
-#define sithPhysics_InitDefaultMineCarInfo_TYPE void (J3DAPI*)(SithThing*, void*)
+#define sithPhysics_InitMineCarChassisDefault_TYPE void (J3DAPI*)(SithThing*, SithVehicleChassisInfo*)
 #define sithPhysics_InitMineCarChassis_TYPE void (J3DAPI*)(SithThing*, SithVehicleChassisInfo*)
 #define sithPhysics_InitTrackTruckChassis_TYPE void (J3DAPI*)(SithThing*, SithVehicleChassisInfo*)
 #define sithPhysics_InitTrackJeepChassis_TYPE void (J3DAPI*)(SithThing*, SithVehicleChassisInfo*)

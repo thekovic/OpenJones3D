@@ -1,14 +1,19 @@
 #include "sithPhysics.h"
 #include <j3dcore/j3dhook.h>
+
+#include <sith/World/sithThing.h>
 #include <sith/RTI/symbols.h>
+
+#include <std/General/stdMemory.h>
+#include <std/General/stdUtil.h>
 
 #define sithPhysics_bMineCarEngineRunFx J3D_DECL_FAR_VAR(sithPhysics_bMineCarEngineRunFx, int)
 #define sithPhysics_bMineCarEngineRumbleFx J3D_DECL_FAR_VAR(sithPhysics_bMineCarEngineRumbleFx, int)
 #define sithPhysics_bMineCarSparksFx J3D_DECL_FAR_VAR(sithPhysics_bMineCarSparksFx, int)
 #define sithPhysics_bMineCarClatterFx J3D_DECL_FAR_VAR(sithPhysics_bMineCarClatterFx, int)
 #define sithPhysics_bMineCarRailClackFx J3D_DECL_FAR_VAR(sithPhysics_bMineCarRailClackFx, int)
-#define sithPhysics_vecMinecarSparkPosLeft J3D_DECL_FAR_VAR(sithPhysics_vecMinecarSparkPosLeft, rdVector3)
 #define sithPhysics_vecMinecarSparkPosRight J3D_DECL_FAR_VAR(sithPhysics_vecMinecarSparkPosRight, rdVector3)
+#define sithPhysics_vecMinecarSparkPosLeft J3D_DECL_FAR_VAR(sithPhysics_vecMinecarSparkPosLeft, rdVector3)
 #define sithPhysics_bUpdateTrackJeepEngineFx J3D_DECL_FAR_VAR(sithPhysics_bUpdateTrackJeepEngineFx, int)
 #define sithPhysics_truckMinSndPitch J3D_DECL_FAR_VAR(sithPhysics_truckMinSndPitch, float)
 #define sithPhysics_truckMaxSndPitch J3D_DECL_FAR_VAR(sithPhysics_truckMaxSndPitch, float)
@@ -21,6 +26,21 @@
 #define sithPhysics_dword_538D38 J3D_DECL_FAR_VAR(sithPhysics_dword_538D38, int)
 #define sithPhysics_dword_58540C J3D_DECL_FAR_VAR(sithPhysics_dword_58540C, int)
 #define sithPhysics_flt_585410 J3D_DECL_FAR_VAR(sithPhysics_flt_585410, float)
+
+
+void J3DAPI sithPhysics_InitMineCarFxState(SithThing* pThing, SithMineCarFxState* pFxState);
+void J3DAPI sithPhysics_InitVehicleFxState(SithThing* pThing, SithVehicleEngineFxState* pFxState);
+void J3DAPI sithPhysics_InitMineCarChassisDefault(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
+void J3DAPI sithPhysics_InitMineCarChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
+void J3DAPI sithPhysics_InitTrackTruckChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
+void J3DAPI sithPhysics_InitTrackJeepChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
+void J3DAPI sithPhysics_InitMineCarExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
+void J3DAPI sithPhysics_InitJeepExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
+void J3DAPI sithPhysics_InitTrackTruckExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
+void J3DAPI sithPhysics_InitMineCarExhaustDefault(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
+void J3DAPI sithPhysics_InitMineCarState(SithThing* pThing, SithMineCarState* pState);
+void J3DAPI sithPhysics_InitTrackTruckState(SithThing* pThing, SithMineCarState* pState);
+
 
 void sithPhysics_InstallHooks(void)
 {
@@ -40,39 +60,39 @@ void sithPhysics_InstallHooks(void)
     // J3D_HOOKFUNC(sithPhysics_UpdateUnderwaterThingPhysics);
     // J3D_HOOKFUNC(sithPhysics_UpdateClimbingThingPhysics);
     // J3D_HOOKFUNC(sithPhysics_UpdateAttachedThingPhysics);
-    // J3D_HOOKFUNC(sithPhysics_CreateMineCarUserBlock);
-    // J3D_HOOKFUNC(sithPhysics_InitMineCarFxState);
-    // J3D_HOOKFUNC(sithPhysics_InitVehicleFxState);
-    // J3D_HOOKFUNC(sithPhysics_InitDefaultMineCarInfo);
-    // J3D_HOOKFUNC(sithPhysics_InitMineCarChassis);
-    // J3D_HOOKFUNC(sithPhysics_InitTrackTruckChassis);
-    // J3D_HOOKFUNC(sithPhysics_InitTrackJeepChassis);
-    // J3D_HOOKFUNC(sithPhysics_InitMineCarExhaust);
-    // J3D_HOOKFUNC(sithPhysics_InitJeepExhaust);
-    // J3D_HOOKFUNC(sithPhysics_InitTrackTruckExhaust);
-    // J3D_HOOKFUNC(sithPhysics_InitMineCarState);
-    // J3D_HOOKFUNC(sithPhysics_InitTrackTruckState);
-    // J3D_HOOKFUNC(sithPhysics_UpdateMineCarPhysics);
-    // J3D_HOOKFUNC(sithPhysics_UpdateTrackVehicleFx);
-    // J3D_HOOKFUNC(sithPhysics_UpdateMineCarFx);
-    // J3D_HOOKFUNC(sithPhysics_UpdateTrackJeepFx);
-    // J3D_HOOKFUNC(sithPhysics_UpdateTrackTruckFx);
-    // J3D_HOOKFUNC(sithPhysics_UpdateVehicleChassis);
-    // J3D_HOOKFUNC(sithPhysics_UpdateExhaustFx);
-    // J3D_HOOKFUNC(sithPhysics_UpdateRaftPhysics);
-    // J3D_HOOKFUNC(sithPhysics_GetWaterNormalAtPos);
-    // J3D_HOOKFUNC(sithPhysics_GetWaterThrust);
-    // J3D_HOOKFUNC(sithPhysics_ProcessMineCarTrackMove);
-    // J3D_HOOKFUNC(sithPhysics_ProcessTrackFace);
-    // J3D_HOOKFUNC(sithPhysics_CheckForPointOnTrack);
-    // J3D_HOOKFUNC(sithPhysics_sub_487EC0);
-    // J3D_HOOKFUNC(sithPhysics_UpdateJeepPhysics);
-    // J3D_HOOKFUNC(sithPhysics_Jeep_sub_4892E0);
-    // J3D_HOOKFUNC(sithPhysics_sub_48A970);
-    // J3D_HOOKFUNC(sithPhysics_sub_48AD20);
-    // J3D_HOOKFUNC(sithPhysics_CreateJeepUserBlock);
-    // J3D_HOOKFUNC(sithPhysics_Jeep_sub_48B4D0);
-    // J3D_HOOKFUNC(sithPhysics_UpdateJeepFx);
+    J3D_HOOKFUNC(sithPhysics_CreateMineCarUserBlock);
+    J3D_HOOKFUNC(sithPhysics_InitMineCarFxState);
+    J3D_HOOKFUNC(sithPhysics_InitVehicleFxState);
+    J3D_HOOKFUNC(sithPhysics_InitMineCarChassisDefault);
+    J3D_HOOKFUNC(sithPhysics_InitMineCarChassis);
+    J3D_HOOKFUNC(sithPhysics_InitTrackTruckChassis);
+    J3D_HOOKFUNC(sithPhysics_InitTrackJeepChassis);
+    J3D_HOOKFUNC(sithPhysics_InitMineCarExhaust);
+    J3D_HOOKFUNC(sithPhysics_InitJeepExhaust);
+    J3D_HOOKFUNC(sithPhysics_InitTrackTruckExhaust);
+    J3D_HOOKFUNC(sithPhysics_InitMineCarState);
+    J3D_HOOKFUNC(sithPhysics_InitTrackTruckState);
+   // J3D_HOOKFUNC(sithPhysics_UpdateMineCarPhysics);
+   // J3D_HOOKFUNC(sithPhysics_UpdateTrackVehicleFx);
+   // J3D_HOOKFUNC(sithPhysics_UpdateMineCarFx);
+   // J3D_HOOKFUNC(sithPhysics_UpdateTrackJeepFx);
+   // J3D_HOOKFUNC(sithPhysics_UpdateTrackTruckFx);
+   // J3D_HOOKFUNC(sithPhysics_UpdateVehicleChassis);
+   // J3D_HOOKFUNC(sithPhysics_UpdateExhaustFx);
+   // J3D_HOOKFUNC(sithPhysics_UpdateRaftPhysics);
+   // J3D_HOOKFUNC(sithPhysics_GetWaterNormalAtPos);
+   // J3D_HOOKFUNC(sithPhysics_GetWaterThrust);
+   // J3D_HOOKFUNC(sithPhysics_ProcessMineCarTrackMove);
+   // J3D_HOOKFUNC(sithPhysics_ProcessTrackFace);
+   // J3D_HOOKFUNC(sithPhysics_CheckForPointOnTrack);
+   // J3D_HOOKFUNC(sithPhysics_sub_487EC0);
+   // J3D_HOOKFUNC(sithPhysics_UpdateJeepPhysics);
+   // J3D_HOOKFUNC(sithPhysics_Jeep_sub_4892E0);
+   // J3D_HOOKFUNC(sithPhysics_sub_48A970);
+   // J3D_HOOKFUNC(sithPhysics_sub_48AD20);
+   // J3D_HOOKFUNC(sithPhysics_CreateJeepUserBlock);
+   // J3D_HOOKFUNC(sithPhysics_Jeep_sub_48B4D0);
+   // J3D_HOOKFUNC(sithPhysics_UpdateJeepFx);
 }
 
 void sithPhysics_ResetGlobals(void)
@@ -92,11 +112,11 @@ void sithPhysics_ResetGlobals(void)
     int sithPhysics_bMineCarRailClackFx_tmp = 1;
     memcpy(&sithPhysics_bMineCarRailClackFx, &sithPhysics_bMineCarRailClackFx_tmp, sizeof(sithPhysics_bMineCarRailClackFx));
 
-    rdVector3 sithPhysics_vecMinecarSparkPosLeft_tmp = { { 0.050000001f }, { -0.039999999f }, { -0.090000004f } };
-    memcpy(&sithPhysics_vecMinecarSparkPosLeft, &sithPhysics_vecMinecarSparkPosLeft_tmp, sizeof(sithPhysics_vecMinecarSparkPosLeft));
-
-    rdVector3 sithPhysics_vecMinecarSparkPosRight_tmp = { { -0.050000001f }, { -0.039999999f }, { -0.090000004f } };
+    rdVector3 sithPhysics_vecMinecarSparkPosRight_tmp = { { 0.050000001f }, { -0.039999999f }, { -0.090000004f } };
     memcpy(&sithPhysics_vecMinecarSparkPosRight, &sithPhysics_vecMinecarSparkPosRight_tmp, sizeof(sithPhysics_vecMinecarSparkPosRight));
+
+    rdVector3 sithPhysics_vecMinecarSparkPosLeft_tmp = { { -0.050000001f }, { -0.039999999f }, { -0.090000004f } };
+    memcpy(&sithPhysics_vecMinecarSparkPosLeft, &sithPhysics_vecMinecarSparkPosLeft_tmp, sizeof(sithPhysics_vecMinecarSparkPosLeft));
 
     int sithPhysics_bUpdateTrackJeepEngineFx_tmp = 1;
     memcpy(&sithPhysics_bUpdateTrackJeepEngineFx, &sithPhysics_bUpdateTrackJeepEngineFx_tmp, sizeof(sithPhysics_bUpdateTrackJeepEngineFx));
@@ -205,64 +225,288 @@ void J3DAPI sithPhysics_UpdateAttachedThingPhysics(SithThing* pThing, float secD
     J3D_TRAMPOLINE_CALL(sithPhysics_UpdateAttachedThingPhysics, pThing, secDeltaTime);
 }
 
-int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pMineCar)
+int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
 {
-    return J3D_TRAMPOLINE_CALL(sithPhysics_CreateMineCarUserBlock, pMineCar);
+    if ( pThing->userblock.pMinecar )
+    {
+        return 1;
+    }
+
+    pThing->userblock.pMinecar = (SithMineCarUserBlock*)STDMALLOC(sizeof(SithMineCarUserBlock));
+    if ( !pThing->userblock.pMinecar )
+    {
+        SITHLOG_ERROR("_CreateMineCarUserBlock failed to allocate.\n");
+        return 0;
+    }
+
+    SithMineCarUserBlock* pMinecar = pThing->userblock.pMinecar;
+    memset(pMinecar, 0, sizeof(SithMineCarUserBlock));
+
+    if ( !stdUtil_StrCmp(pThing->aName, "mineplayer") )
+    {
+        pMinecar->type = SITHMINECAR_PLAYER;
+        sithPhysics_InitMineCarExhaust(pThing, &pThing->userblock.pMinecar->exhaustInfo);
+        sithPhysics_InitMineCarChassis(pThing, &pThing->userblock.pMinecar->chassisInfo);
+        sithPhysics_InitMineCarFxState(pThing, &pThing->userblock.pMinecar->fxstate);
+        sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
+        pThing->userblock.pMinecar->state.bEngineAnim = 1;
+    }
+
+    else if ( !stdUtil_StrCmp(pThing->aName, "killtruk") )
+    {
+        pMinecar->type = SITHMINECAR_KILLTRUCK_AI;
+        sithPhysics_InitTrackTruckExhaust(pThing, &pThing->userblock.pMinecar->exhaustInfo);
+        sithPhysics_InitTrackTruckChassis(pThing, &pThing->userblock.pMinecar->chassisInfo);
+        sithPhysics_InitTrackTruckState(pThing, &pThing->userblock.pMinecar->state);
+        sithPhysics_InitVehicleFxState(pThing, &pThing->userblock.pMinecar->fxstate.engine);
+    }
+
+    else if ( !stdUtil_StrCmp(pThing->aName, "commietruck") )
+    {
+        pMinecar->type = SITHMINECAR_TRUCK_AI;
+        sithPhysics_InitTrackTruckExhaust(pThing, &pThing->userblock.pMinecar->exhaustInfo);
+        sithPhysics_InitTrackTruckChassis(pThing, &pThing->userblock.pMinecar->chassisInfo);
+        sithPhysics_InitTrackTruckState(pThing, &pThing->userblock.pMinecar->state);
+        sithPhysics_InitVehicleFxState(pThing, &pThing->userblock.pMinecar->fxstate.engine);
+    }
+
+    else if ( !stdUtil_StrCmp(pThing->aName, "jeep_cs") || !stdUtil_StrCmp(pThing->aName, "jeep_cs_pyr") )
+    {
+        pMinecar->type = SITHMINECAR_JEEP_AI;
+        sithPhysics_InitJeepExhaust(pThing, &pThing->userblock.pMinecar->exhaustInfo);
+        sithPhysics_InitTrackJeepChassis(pThing, &pThing->userblock.pMinecar->chassisInfo);
+        sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
+        sithPhysics_InitVehicleFxState(pThing, &pThing->userblock.pMinecar->fxstate.engine);
+    }
+
+    else if ( !stdUtil_StrCmp(pThing->aName, "mine_2commcar") )
+    {
+        pMinecar->type = SITHMINECAR_MINECAR_AI;
+        sithPhysics_InitMineCarExhaust(pThing, &pThing->userblock.pMinecar->exhaustInfo);
+        sithPhysics_InitMineCarChassis(pThing, &pThing->userblock.pMinecar->chassisInfo);
+        sithPhysics_InitMineCarFxState(pThing, &pThing->userblock.pMinecar->fxstate);
+        sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
+    }
+    else
+    {
+        if ( !stdUtil_StrCmp(pThing->aName, "boulder_mc") )
+        {
+            pMinecar->type = SITHMINECAR_BOULDER;
+        }
+        else
+        {
+            pMinecar->type = SITHMINECAR_DEFAULT;
+        }
+
+        sithPhysics_InitMineCarExhaustDefault(pThing, &pThing->userblock.pMinecar->exhaustInfo);
+        sithPhysics_InitMineCarChassisDefault(pThing, &pThing->userblock.pMinecar->chassisInfo);
+        sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
+    }
+
+    return 1;
 }
 
 void J3DAPI sithPhysics_InitMineCarFxState(SithThing* pThing, SithMineCarFxState* pFxState)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitMineCarFxState, pThing, pFxState);
+    J3D_UNUSED(pThing);
+    pFxState->engine.secUpdateInterval = 0.2f;
+    pFxState->engine.secUpdateTimer    = 0.0f;
+    pFxState->railClackDistance        = 2.0f;
+    pFxState->railClackState           = 2.0f;
 }
 
 void J3DAPI sithPhysics_InitVehicleFxState(SithThing* pThing, SithVehicleEngineFxState* pFxState)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitVehicleFxState, pThing, pFxState);
+    J3D_UNUSED(pThing);
+    pFxState->secUpdateInterval = 0.050000001f;
+    pFxState->secUpdateTimer    = 0.0f;
 }
 
-void J3DAPI sithPhysics_InitDefaultMineCarInfo(SithThing* pThing, void* pInfo)
+void J3DAPI sithPhysics_InitMineCarChassisDefault(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitDefaultMineCarInfo, pThing, pInfo);
+    J3D_UNUSED(pThing);
+    pChassisInfo->numNodes = 0;
 }
 
 void J3DAPI sithPhysics_InitMineCarChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitMineCarChassis, pThing, pChassisInfo);
+    J3D_UNUSED(pThing);
+    pChassisInfo->numNodes = 2;
+
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[0], "bkwheel");
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[1], "frwheel");
+
+    pChassisInfo->aWheelNodeNums[0] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[0]);
+    pChassisInfo->aWheelNodeNums[1] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[1]);
+    pChassisInfo->wheelRadius = 0.015f;
 }
 
 void J3DAPI sithPhysics_InitTrackTruckChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitTrackTruckChassis, pThing, pChassisInfo);
+    J3D_UNUSED(pThing);
+    pChassisInfo->numNodes = 2;
+
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[0], "bkwheel");
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[1], "frwheel");
+
+    pChassisInfo->aWheelNodeNums[0] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[0]);
+    pChassisInfo->aWheelNodeNums[1] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[1]);
+    pChassisInfo->wheelRadius       = 0.037500001f;
 }
 
 void J3DAPI sithPhysics_InitTrackJeepChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitTrackJeepChassis, pThing, pChassisInfo);
+    J3D_UNUSED(pThing);
+    pChassisInfo->numNodes = 4;
+
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[0], "brwheel");
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[1], "flwheel");
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[2], "blwheel");
+    STD_STRCPY(pChassisInfo->aWheelMeshNames[3], "frwheel");
+
+    pChassisInfo->aWheelNodeNums[0] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[0]);
+    pChassisInfo->aWheelNodeNums[1] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[1]);
+    pChassisInfo->aWheelNodeNums[2] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[2]);
+    pChassisInfo->aWheelNodeNums[3] = sithThing_GetThingJointIndex(pThing, pChassisInfo->aWheelMeshNames[3]);
+
+    pChassisInfo->wheelRadius = 0.037500001f;
 }
 
 void J3DAPI sithPhysics_InitMineCarExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitMineCarExhaust, pThing, pExhaustInfo);
+    J3D_UNUSED(pThing);
+
+    pExhaustInfo->bEnabled       = 1;
+    pExhaustInfo->moveLength     = 0.0080000004f;
+    pExhaustInfo->offsetY        = -0.090000004f;
+    pExhaustInfo->offsetZ        = -0.034000002f;
+    pExhaustInfo->offsetX        = -0.02f;
+
+    pExhaustInfo->velScale       = 0.2f;
+    pExhaustInfo->smokeLifeScale = 0.2f;
+    pExhaustInfo->velocity       = 0.15000001f;
+
+    pExhaustInfo->startMinSize   = 0.01f;
+    pExhaustInfo->startMaxSize   = 0.1f;
+    pExhaustInfo->startSizeScale = 0.01f;
+
+    pExhaustInfo->endMinSize     = 0.15000001f;
+    pExhaustInfo->endMaxSize     = 0.0f;
+    pExhaustInfo->endSizeScale   = 0.01f;
+
+    pExhaustInfo->scatterX       = 0.1f;
+    pExhaustInfo->dirX           = -0.1f;
+
+    pExhaustInfo->scatterZ       = 0.1f;
+    pExhaustInfo->dirZ           = 0.0f;
+
+    STD_STRCPY(pExhaustInfo->aExhaustTemplate, "+exhaust");
 }
 
 void J3DAPI sithPhysics_InitJeepExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitJeepExhaust, pThing, pExhaustInfo);
+    J3D_UNUSED(pThing);
+
+    pExhaustInfo->bEnabled       = 0;
+    pExhaustInfo->moveLength     = 0.0080000004f;
+
+    pExhaustInfo->offsetY        = -0.16f;
+    pExhaustInfo->offsetZ        = -0.034000002f;
+    pExhaustInfo->offsetX        = 0.02f;
+
+    pExhaustInfo->velocity       = 0.050000001f;
+    pExhaustInfo->velScale       = 0.02f;
+    pExhaustInfo->smokeLifeScale = 0.2f;
+
+    pExhaustInfo->startMinSize   = 0.01f;
+    pExhaustInfo->startMaxSize   = 0.1f;
+    pExhaustInfo->startSizeScale = 0.01f;
+
+    pExhaustInfo->endMinSize     = 0.15000001f;
+    pExhaustInfo->endMaxSize     = 0.0f;
+    pExhaustInfo->endSizeScale   = 0.01f;
+
+    pExhaustInfo->scatterX       = 0.1f;
+    pExhaustInfo->dirX           = 0.0f;
+
+    pExhaustInfo->scatterZ       = 0.1f;
+    pExhaustInfo->dirZ           = 0.0f;
+
+    STD_STRCPY(pExhaustInfo->aExhaustTemplate, "+exhaust");
 }
 
 void J3DAPI sithPhysics_InitTrackTruckExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitTrackTruckExhaust, pThing, pExhaustInfo);
+    J3D_UNUSED(pThing);
+
+    pExhaustInfo->bEnabled       = 1;
+    pExhaustInfo->moveLength     = 0.0080000004f;
+
+    pExhaustInfo->offsetY        = -0.30000001f;
+    pExhaustInfo->offsetZ        = -0.1f;
+    pExhaustInfo->offsetX        = 0.06f;
+
+    pExhaustInfo->velScale       = 0.2f;
+    pExhaustInfo->smokeLifeScale = 0.2f;
+    pExhaustInfo->velocity       = 0.1f;
+
+    pExhaustInfo->startMinSize   = 0.01f;
+    pExhaustInfo->startMaxSize   = 0.1f;
+    pExhaustInfo->startSizeScale = 0.01f;
+
+    pExhaustInfo->endMinSize     = 0.15000001f;
+    pExhaustInfo->endMaxSize     = 0.0f;
+    pExhaustInfo->endSizeScale   = 0.01f;
+
+    pExhaustInfo->scatterX       = 0.1f;
+    pExhaustInfo->dirX           = 0.0f;
+
+    pExhaustInfo->scatterZ       = 0.1f;
+    pExhaustInfo->dirZ           = 0.0f;
+
+    STD_STRCPY(pExhaustInfo->aExhaustTemplate, "+exhaust");
+}
+
+void J3DAPI sithPhysics_InitMineCarExhaustDefault(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo)
+{
+    J3D_UNUSED(pThing);
+    pExhaustInfo->bEnabled = 0; // disable
 }
 
 void J3DAPI sithPhysics_InitMineCarState(SithThing* pThing, SithMineCarState* pState)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitMineCarState, pThing, pState);
+    J3D_UNUSED(pThing);
+
+    pState->maybeMoveSate      = 0;
+    pState->unknown1           = 0;
+    pState->pEngineAnim        = NULL;
+    pState->bEngineAnim        = 0;
+    pState->bUpdateSparksRight = 0;
+    pState->bUpdateSparksLeft  = 0;
+    pState->secTimeSparksRight = 0.0f;
+    pState->secTimeSparksLeft  = 0.0f;
+    pState->surfDrag           = pThing->moveInfo.physics.surfDrag + 1.0f;
+    pState->unknown10          = 0.2f;
+    pState->unknown9           = 0.30000001f;
+    pState->bUpdateSparks      = 0;
 }
 
 void J3DAPI sithPhysics_InitTrackTruckState(SithThing* pThing, SithMineCarState* pState)
 {
-    J3D_TRAMPOLINE_CALL(sithPhysics_InitTrackTruckState, pThing, pState);
+    J3D_UNUSED(pThing);
+
+    pState->maybeMoveSate      = 0;
+    pState->unknown1           = 0;
+    pState->pEngineAnim        = NULL;
+    pState->bEngineAnim        = 0;
+    pState->bUpdateSparksRight = 0;
+    pState->bUpdateSparksLeft  = 0;
+    pState->secTimeSparksRight = 0.0f;
+    pState->secTimeSparksLeft  = 0.0f;
+    pState->surfDrag           = pThing->moveInfo.physics.surfDrag + 1.0f;
+    pState->unknown10          = 0.60000002f;
+    pState->unknown9           = 0.80000001f;
+    pState->bUpdateSparks      = 0;
 }
 
 void J3DAPI sithPhysics_UpdateMineCarPhysics(SithThing* pThing, float secDeltaTime)
@@ -300,7 +544,6 @@ void J3DAPI sithPhysics_UpdateExhaustFx(SithThing* pThing, SithVehicleExhaustInf
     J3D_TRAMPOLINE_CALL(sithPhysics_UpdateExhaustFx, pThing, pExhaustInfo, secDeltaTime);
 }
 
-// update physics
 void J3DAPI sithPhysics_UpdateRaftPhysics(SithThing* pThing, float secDeltaTime)
 {
     J3D_TRAMPOLINE_CALL(sithPhysics_UpdateRaftPhysics, pThing, secDeltaTime);
