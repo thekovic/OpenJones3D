@@ -52,7 +52,7 @@ int J3DAPI sithCollision_CanThingCollide(const SithThing* pThing, int searchFlag
 int J3DAPI sithCollision_CanThingCollideWithThing(const SithThing* pThing1, const SithThing* pThing2, int collflags);
 int J3DAPI sithCollision_CanThingCollideWithThing(const SithThing* pThing1, const SithThing* pThing2, int collflags);
 int J3DAPI sithCollision_sub_4DB3CA(SithThing* pThing1, SithThing* pThing2);
-int J3DAPI sithCollision_CanAdjoinCollide(SithSurfaceAdjoinFlag adjflags, int colflags);
+int J3DAPI sithCollision_CanCrossAdjoin(SithSurfaceAdjoinFlag adjflags, int colflags);
 
 void sithCollision_InstallHooks(void)
 {
@@ -86,9 +86,7 @@ void sithCollision_InstallHooks(void)
 }
 
 void sithCollision_ResetGlobals(void)
-{
-
-}
+{}
 
 void sithCollision_Startup(void)
 {
@@ -504,17 +502,14 @@ void J3DAPI sithCollision_RotateThing(SithThing* pThing, const rdMatrix34* pOrie
 
     for ( pAttachedThing = pThing->pAttachedThing; pAttachedThing; pAttachedThing = pAttachedThing->pNextAttachedThing )
     {
-        dir.x = pAttachedThing->pos.x - pThing->pos.x;
-        dir.y = pAttachedThing->pos.y - pThing->pos.y;
-        dir.z = pAttachedThing->pos.z - pThing->pos.z;
-        memcpy(&pAttachedThing->orient.dvec, &dir, sizeof(pAttachedThing->orient.dvec));
+        rdVector_Sub3(&dir, &pAttachedThing->pos, &pThing->pos);
+
+        pAttachedThing->orient.dvec = dir;
         sithCollision_RotateThing(pAttachedThing, pOrient);
 
         if ( (pAttachedThing->attach.flags & SITH_ATTACH_NOMOVE) == 0 )
         {
-            moveNorm.x = pAttachedThing->orient.dvec.x - dir.x;
-            moveNorm.y = pAttachedThing->orient.dvec.y - dir.y;
-            moveNorm.z = pAttachedThing->orient.dvec.z - dir.z;
+            rdVector_Sub3(&moveNorm, &pAttachedThing->orient.dvec, &dir);
             if ( moveNorm.x != 0.0f || moveNorm.y != 0.0f || moveNorm.z != 0.0f )
             {
                 moveDist = rdVector_Normalize3Acc(&moveNorm);
@@ -522,7 +517,7 @@ void J3DAPI sithCollision_RotateThing(SithThing* pThing, const rdMatrix34* pOrie
             }
         }
 
-        memset(&pAttachedThing->orient.dvec, 0, sizeof(pAttachedThing->orient.dvec));
+        rdVector_Zero3(&pAttachedThing->orient.dvec);
     }
 }
 
@@ -575,7 +570,7 @@ void J3DAPI sithCollision_sub_4A6EE0(SithThing* pThing, rdMatrix34* pOrient)
         rdMatrix_Normalize34(pOrient);
     }
 
-    memset(&pOrient->dvec, 0, sizeof(pOrient->dvec));
+    rdVector_Zero3(&pOrient->dvec);
     rdMatrix_Copy34(&pThing->orient, pOrient);
 }
 
@@ -747,7 +742,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                 {
                     // Stop player movement to not run into ascending surface
                     // TODO: Setting pThing->moveStatus = SITHPLAYERMOVE_STILL will stop player running animation
-                    memset(&pMoveInfo->physics.deltaVelocity, 0, sizeof(pMoveInfo->physics.deltaVelocity));
+                    rdVector_Zero3(&pMoveInfo->physics.deltaVelocity);
                     sithPuppet_g_bPlayerLeapForward = 0;
                     return 0.0f;
                 }
@@ -774,7 +769,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                 }
 
                 // Stop player
-                memset(&pMoveInfo->physics.deltaVelocity, 0, sizeof(pMoveInfo->physics.deltaVelocity));
+                rdVector_Zero3(&pMoveInfo->physics.deltaVelocity);
                 sithPuppet_g_bPlayerLeapForward = 0;
                 sithPhysics_ResetThingMovement(pThing);
                 return 0.0f;
@@ -815,7 +810,7 @@ LABEL_61:
 
             if ( distance >= moveDist )
             {
-                memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
+                rdVector_Zero3(&pThing->moveDir);
             }
             else
             {
@@ -1225,7 +1220,7 @@ void J3DAPI sithCollision_SearchForSurfaceCollisions(const SithSector* pSector, 
             pAdjoin = pCurSurf->pAdjoin;
             if ( (pCurSurf->flags & SITH_SURFACE_COLLISION) != 0 || pAdjoin )
             {
-                if ( pAdjoin && sithCollision_CanAdjoinCollide(pAdjoin->flags, colflags) )
+                if ( pAdjoin && sithCollision_CanCrossAdjoin(pAdjoin->flags, colflags) )
                 {
                     hitType = sithIntersect_CheckSphereFaceIntersection(
                         startPos,
@@ -1425,9 +1420,9 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
     float impactSpeed;
     SithThing* pHitThing;
     rdVector3 hitNorm;
-    rdVector3 pImpactForce;
+    rdVector3 impactForce;
     float totalImpactSpeed;
-    rdVector3 pForce;
+    rdVector3 force;
     SithThing* pThing;
 
     if ( pSrcThing->type == SITH_THING_COG
@@ -1514,22 +1509,18 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                     totalImpactSpeed = totalImpactSpeed * 0.5f;
                 }
 
-                pForce.x = hitNorm.x * totalImpactSpeed;
-                pForce.y = hitNorm.y * totalImpactSpeed;
-                pForce.z = hitNorm.z * totalImpactSpeed;
+                rdVector_Scale3(&force, &hitNorm, totalImpactSpeed);
 
-                pForce.x = mass * hitMass * 2.0f / (mass + hitMass) * pForce.x;
-                pForce.y = mass * hitMass * 2.0f / (mass + hitMass) * pForce.y;
-                pForce.z = mass * hitMass * 2.0f / (mass + hitMass) * pForce.z;
+                force.x = mass * hitMass * 2.0f / (mass + hitMass) * force.x;
+                force.y = mass * hitMass * 2.0f / (mass + hitMass) * force.y;
+                force.z = mass * hitMass * 2.0f / (mass + hitMass) * force.z;
 
-                pImpactForce.x = -pForce.x;
-                pImpactForce.y = -pForce.y;
-                pImpactForce.z = -pForce.z;
+                impactForce = RDVECTOR_NEG3(force);
 
                 if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0
                     || pHitThing->moveType == SITH_MT_PHYSICS && (pHitThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0 )
                 {
-                    sithCollision_VehicleCollisionHandler(pThing, pHitThing, &pForce, &pImpactForce, &a5, &hitNorm, impactSpeed, hitImpactSpeed);
+                    sithCollision_VehicleCollisionHandler(pThing, pHitThing, &force, &impactForce, &a5, &hitNorm, impactSpeed, hitImpactSpeed);
                 }
 
                 else if ( pThing->pAttachedThing && (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0
@@ -1541,14 +1532,12 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
 
                     totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
 
-                    pImpactForce.x = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.x;
-                    pImpactForce.y = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.y;
-                    pImpactForce.z = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.z;
+                    impactForce.x = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.x;
+                    impactForce.y = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.y;
+                    impactForce.z = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.z;
 
-                    pImpactForce.x = pImpactForce.x * 1.2f;
-                    pImpactForce.y = pImpactForce.y * 1.2f;
-                    pImpactForce.z = pImpactForce.z * 1.2f;
-                    memset(&pForce, 0, sizeof(pForce));
+                    rdVector_Scale3Acc(&impactForce, 1.2f);
+                    rdVector_Zero3(&force);
 
                     a5 = 0;
                 }
@@ -1562,18 +1551,18 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
 
                     totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
 
-                    pForce.x = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.x;
-                    pForce.y = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.y;
-                    pForce.z = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.z;
+                    force.x = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.x;
+                    force.y = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.y;
+                    force.z = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.z;
 
-                    pForce.x = pForce.x * 1.2f;
-                    pForce.y = pForce.y * 1.2f;
-                    pForce.z = pForce.z * 1.2f;
-                    memset(&pImpactForce, 0, sizeof(pImpactForce));
+                    force.x = force.x * 1.2f;
+                    force.y = force.y * 1.2f;
+                    force.z = force.z * 1.2f;
+                    rdVector_Zero3(&impactForce);
                 }
 
-                sithPhysics_ApplyForce(pThing, &pForce);
-                sithPhysics_ApplyForce(pHitThing, &pImpactForce);
+                sithPhysics_ApplyForce(pThing, &force);
+                sithPhysics_ApplyForce(pHitThing, &impactForce);
 
                 if ( a5 )
                 {
@@ -1717,7 +1706,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                 sithThing_DamageThing(pHitThing, pThing, crushDamge, SITH_DAMAGE_IMPACT);
             }
 
-            memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
+            rdVector_Zero3(&pThing->moveDir);
             return 1;
         }
     }
@@ -1730,7 +1719,7 @@ void J3DAPI sithCollision_VehicleCollisionHandler(SithThing* pThing, SithThing* 
         && pThing->moveType == SITH_MT_PHYSICS
         && (pThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0 )
     {
-        memset(pForce, 0, sizeof(rdVector3));
+        rdVector_Zero3(pForce);
 
         *a5 = 0;
         if ( pHitThing->moveType == SITH_MT_PHYSICS && (pHitThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0 )
@@ -1815,7 +1804,7 @@ void J3DAPI sithCollision_VehicleCollisionHandler(SithThing* pThing, SithThing* 
         }
         else if ( pHitThing->moveStatus == SITHPLAYERMOVE_RUNOVER )
         {
-            memset(pImpactForce, 0, sizeof(rdVector3));
+            rdVector_Zero3(pImpactForce);
         }
         else if ( pHitThing->type == SITH_THING_ACTOR )
         {
@@ -1869,7 +1858,7 @@ void J3DAPI sithCollision_VehicleCollisionHandler(SithThing* pThing, SithThing* 
     }
     else
     {
-        memset(pImpactForce, 0, sizeof(rdVector3));
+        rdVector_Zero3(pImpactForce);
         if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & SITH_PF_JEEP) != 0 )
         {
             rdVector3 impactDir;
@@ -1958,7 +1947,7 @@ void J3DAPI sithCollision_VehicleCollisionHandler(SithThing* pThing, SithThing* 
         }
         else if ( pThing->moveStatus == SITHPLAYERMOVE_RUNOVER )
         {
-            memset(pForce, 0, sizeof(rdVector3));
+            rdVector_Zero3(pForce);
         }
         else if ( pThing->type == SITH_THING_ACTOR )
         {
@@ -2424,9 +2413,7 @@ int J3DAPI sithCollision_AddSearchedSector(SithSector* pSector)
 
 int J3DAPI sithCollision_CheckSectorSearched(const SithSector* pSector)
 {
-    unsigned int i;
-
-    for ( i = 0; i < sithCollision_aNumSearchedSectors[stackLevel]; ++i )
+    for ( size_t i = 0; i < sithCollision_aNumSearchedSectors[stackLevel]; ++i )
     {
         if ( sithCollision_apSearchedSectors[stackLevel][i] == pSector )
         {
@@ -2535,7 +2522,7 @@ int J3DAPI sithCollision_sub_4DB3CA(SithThing* pThing1, SithThing* pThing2)
     return 1;
 }
 
-int J3DAPI sithCollision_CanAdjoinCollide(SithSurfaceAdjoinFlag adjflags, int colflags)
+int J3DAPI sithCollision_CanCrossAdjoin(SithSurfaceAdjoinFlag adjflags, int colflags)
 {
     if ( (colflags & 0x04) != 0 )
     {
