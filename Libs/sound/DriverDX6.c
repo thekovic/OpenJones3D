@@ -91,7 +91,7 @@ double J3DAPI SoundDriver_CalcDistToListener(float x1, float y1, float z1, float
 
 void J3DAPI SoundDriver_RestoreSoundBufferData(tSysSoundBuffer* pDSBuf);
 
-void Driver_InstallHooks(void)
+void SoundDriver_InstallHooks(void)
 {
     J3D_HOOKFUNC(SoundDriver_Open);
     J3D_HOOKFUNC(SoundDriver_Close);
@@ -132,7 +132,7 @@ void Driver_InstallHooks(void)
     J3D_HOOKFUNC(SoundDriver_Sleep);
 }
 
-void Driver_ResetGlobals(void)
+void SoundDriver_ResetGlobals(void)
 {}
 
 static void SoundDriver_LogError(const char* pFormat, ...)
