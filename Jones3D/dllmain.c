@@ -244,7 +244,7 @@ bool InstallHooks(void)
     J3D_HOOKFUNC(Indy3D_WinMain);
 
     AudioLib_InstallHooks();
-    Driver_InstallHooks();
+    SoundDriver_InstallHooks();
 
     JonesConsole_InstallHooks();
     JonesControl_InstallHooks();
@@ -389,7 +389,7 @@ bool ResetGlobals(void)
     }
 
     AudioLib_ResetGlobals();
-    Driver_ResetGlobals();
+    SoundDriver_ResetGlobals();
     JonesConsole_ResetGlobals();
     JonesControl_ResetGlobals();
     JonesDialog_ResetGlobals();

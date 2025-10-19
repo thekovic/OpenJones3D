@@ -23,7 +23,7 @@ J3D_EXTERN_C_START
 
 #define JONESCONFIG_CFG_CONTROLS_CONFIGFILE "controls.configFile"
 
-#define JONESCONFIG_CFG_GAMEPLAY_DEFAULTRUN  "gameplay.defaultRun"
+#define JONESCONFIG_CFG_GAMEPLAY_DEFAULTRUN "gameplay.defaultRun"
 #define JONESCONFIG_CFG_GAMEPLAY_STARTLEVEL "gameplay.startLevel"
 
 #define JONESCONFIG_CFG_LOG_MODE            "log.mode"
