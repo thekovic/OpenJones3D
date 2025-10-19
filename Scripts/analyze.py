@@ -51,6 +51,12 @@ def scan_file(filepath: str) -> Optional[FileProgress]:
     # Extract the base name of the file without extension
     base_name: str = os.path.basename(filepath).split('.')[0]
 
+    base_name = base_name.replace('DX6', '') # Remove DX6 suffix if present (only DX6 to not double count)
+
+    # Special case for std3DX6.c
+    if base_name == 'std3':
+        base_name = 'std3D'
+
     # Regex to find the InstallHooks function
     install_hooks_pattern: re.Pattern = re.compile(rf'{base_name}_InstallHooks\s*\(\s*void\s*\)\s*\{{.*?^\}}', re.DOTALL | re.MULTILINE)
     install_hooks_functions: list[str] = install_hooks_pattern.findall(content)
