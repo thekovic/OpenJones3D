@@ -1008,9 +1008,6 @@ void J3DAPI sithThing_Update(float secDeltaTime, uint32_t msecDeltaTime)
 void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
 {
     // Function update thing movement
-    // Note, this reimplemented function somehow fixes the bug in 2nd cutscene in canyonlands,
-    // where Indy pickups the shard (bug was Indy head moved to the right after he picked up the shard).
-
 
     int moveFlags = 0;
     if ( (pThing->attach.flags & SITH_ATTACH_NOMOVE) != 0 )
@@ -1944,7 +1941,13 @@ void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash)
     pThing->flags |= SITH_TF_SUBMERGED;
     if ( pThing->pPuppetClass )
     {
-        sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_SWIM);
+    #ifdef J3D_QOL_IMPROVEMENTS
+        // Change mode only if not dead thing
+        if ( (pThing->flags & SITH_TF_DYING) == 0 )
+        #endif 
+        {
+            sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_SWIM);
+        }
 
         if ( pThing == sithPlayer_g_pLocalPlayerThing && pThing->moveStatus != SITHPLAYERMOVE_PULLINGUP )
         {
@@ -2081,7 +2084,8 @@ SithThing* J3DAPI sithThing_Create(SithThingType type)
     pThing->guid      = sithThing_guidEntropy++ | ((sithPlayer_g_playerNum + 1) << 16);
     pThing->signature = sithThing_curSignature++;
 
-    if ( !sithThing_curSignature ) {
+    if ( !sithThing_curSignature )
+    {
         sithThing_curSignature = 1;
     }
 
@@ -2101,7 +2105,8 @@ int J3DAPI sithThing_SetThingModel(SithThing* pThing, rdModel3* pModel)
 {
     SITH_ASSERTREL(pThing && pModel);
 
-    if ( pThing->renderData.type == RD_THING_MODEL3 && pThing->renderData.data.pModel3 == pModel ) {
+    if ( pThing->renderData.type == RD_THING_MODEL3 && pThing->renderData.data.pModel3 == pModel )
+    {
         return 0;
     }
 
@@ -3746,7 +3751,8 @@ int J3DAPI sithThing_ParseThingPlacement(SithWorld* pWorld)
     SITH_ASSERTREL(pNewThing->type == SITH_THING_FREE);
 
     SithThing* pTemplate = sithTemplate_GetTemplate(stdConffile_g_entry.aArgs[1].argValue);
-    if ( !pTemplate && !streq(stdConffile_g_entry.aArgs[1].argValue, "none") ) {
+    if ( !pTemplate && !streq(stdConffile_g_entry.aArgs[1].argValue, "none") )
+    {
         SITHLOG_ERROR("Template %s not found, line %d.\n", stdConffile_g_entry.aArgs[1].argValue, stdConffile_GetLineNumber());
     }
 
