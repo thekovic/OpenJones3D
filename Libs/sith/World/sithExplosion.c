@@ -323,21 +323,16 @@ void J3DAPI sithExplosion_MakeBlast(SithThing* pThing)
     SithExplosionInfo* pExplode = &pThing->thingInfo.explosionInfo;
     const float exprange  = pExplode->range;
     const float expforce  = pExplode->force;
-    float expdamage = pExplode->damage;
+    float expdamage       = pExplode->damage;
 
     if ( exprange > 0.0f && (expdamage > 0.0f || expforce > 0.0f) )
     {
         sithAIAwareness_CreateTransmittingEvent(pThing->pInSector, &pThing->pos, 1, 3.0f, pThing);
         sithCollision_SearchForCollisions(pThing->pInSector, NULL, &pThing->pos, &rdroid_g_zeroVector3, 0.0f, exprange, 0x482);
 
-        while ( 1 )
+        SithCollision* pCollision;
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
         {
-            SithCollision* pCollision = sithCollision_PopStack();
-            if ( !pCollision )
-            {
-                break;
-            }
-
             float scale = 1.0f - powf(pCollision->distance / exprange, 2);
             scale = STDMATH_CLAMP(scale, 0.25f, 1.0f);
 
@@ -430,7 +425,7 @@ void J3DAPI sithExplosion_MakeBlast(SithThing* pThing)
     }
 }
 
-int J3DAPI sithExplosion_ParseArg(const StdConffileArg* pArg, SithThing* pThing, signed int adjNum)
+int J3DAPI sithExplosion_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum)
 {
     SITH_ASSERTREL(pThing && pArg && (adjNum < SITHTHING_NUMADJECTIVES));
 
