@@ -25,6 +25,9 @@ J3D_EXTERN_C_START
 
 #define SITHPUPPET_PLAYERROR_ALREADYPLAYING -99
 
+#define SITH_PUPPET_GETMOVEMAJORMODE(thing, moveMode)   thing->pPuppetState->armedMode + SITH_PUPPET_NUMARMEDMODES * moveMode;
+#define SITH_PUPPET_GETARMEDMAJORMODE(thing, armedMode) armedMode + SITH_PUPPET_NUMARMEDMODES * thing->pPuppetState->moveMode;
+
 
 #define sithPuppet_g_bPlayerLeapForward J3D_DECL_FAR_VAR(sithPuppet_g_bPlayerLeapForward, int)
 // extern int sithPuppet_g_bPlayerLeapForward;

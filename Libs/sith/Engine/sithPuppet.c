@@ -523,12 +523,9 @@ void J3DAPI sithPuppet_PlayFidgetMode(SithThing* pThing)
                 sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_FIDGET, NULL);
                 pThing->pPuppetState->msecLastFidgetStillMoveTime = sithTime_g_msecGameTime;
             }
-            else
+            else if ( rnd < 0.60000002f )
             {
-                if ( rnd < 0.60000002f )
-                {
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_FIDGET2, NULL);
-                }
+                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_FIDGET2, NULL);
             }
         }
     }
@@ -1370,7 +1367,7 @@ void J3DAPI sithPuppet_SetMoveMode(SithThing* pThing, SithPuppetMoveMode newMode
 
     if ( pThing->pPuppetClass && pThing->pPuppetState )
     {
-        pThing->pPuppetState->majorMode = pThing->pPuppetState->armedMode + SITH_PUPPET_NUMARMEDMODES * newMode;
+        pThing->pPuppetState->majorMode = SITH_PUPPET_GETMOVEMAJORMODE(pThing, newMode);
         pThing->pPuppetState->moveMode  = newMode;
 
         SithPuppetTrack* pNextTrack;
@@ -1391,7 +1388,7 @@ void J3DAPI sithPuppet_SetArmedMode(SithThing* pThing, unsigned int newMode)
     if ( pThing->pPuppetClass )
     {
         pThing->pPuppetState->armedMode = newMode;
-        pThing->pPuppetState->majorMode = newMode + SITH_PUPPET_NUMARMEDMODES * pThing->pPuppetState->moveMode;
+        pThing->pPuppetState->majorMode = SITH_PUPPET_GETARMEDMAJORMODE(pThing, newMode);
     }
 }
 
@@ -2646,12 +2643,12 @@ int J3DAPI sithPuppet_LoadPuppetClassEntry(SithPuppetClass* pClass, const char* 
         else if ( streq(stdConffile_g_entry.aArgs[0].argName, "mode") )
         {
             modeNum = atoi(stdConffile_g_entry.aArgs[0].argValue);
-            SITH_ASSERTREL((modeNum >= 0) && (modeNum < (SITH_PUPPET_NUMARMEDMODES * SITH_PUPPET_NUMMOVEMODES)));
+            SITH_ASSERTREL((modeNum >= 0) && (modeNum < (SITH_PUPPET_MAXMODES)));
 
             if ( stdConffile_g_entry.numArgs > 1u && !strcmp(stdConffile_g_entry.aArgs[1].argName, "basedon") )
             {
                 int basedOn = atoi(stdConffile_g_entry.aArgs[1].argValue);
-                SITH_ASSERTREL((basedOn >= 0) && (basedOn < (SITH_PUPPET_NUMARMEDMODES * SITH_PUPPET_NUMMOVEMODES)));
+                SITH_ASSERTREL((basedOn >= 0) && (basedOn < (SITH_PUPPET_MAXMODES)));
 
                 memcpy(pClass->aModes[modeNum], pClass->aModes[basedOn], sizeof(pClass->aModes[modeNum]));
             }

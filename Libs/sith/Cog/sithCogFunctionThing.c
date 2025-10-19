@@ -5110,7 +5110,7 @@ void J3DAPI sithCogFunctionThing_SetPuppetModeFPS(SithCog* pCog)
         return;
     }
 
-    if ( majorMode >= SITH_PUPPET_NUMARMEDMODES * SITH_PUPPET_NUMMOVEMODES )
+    if ( majorMode >= SITH_PUPPET_MAXMODES )
     {
         STDLOG_ERROR("Cog %s: Bad major mode number in SetPuppetModeFPS().\n", pCog->aName);
         sithCogExec_PushFlex(pCog, -1.0f);

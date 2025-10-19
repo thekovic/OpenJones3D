@@ -12,6 +12,7 @@ J3D_EXTERN_C_START
 
 #define SITH_PUPPET_NUMMOVEMODES  3u
 #define SITH_PUPPET_NUMARMEDMODES 8u
+#define SITH_PUPPET_MAXMODES      (SITH_PUPPET_NUMARMEDMODES * SITH_PUPPET_NUMMOVEMODES)
 #define SITH_PUPPET_NUMSUBMODES   84u
 
 #define SITHMESSAGE_NUMTYPES             65u
@@ -2279,7 +2280,7 @@ typedef struct sSithPuppetClassSubmode
 typedef struct sSithPuppetClass
 {
     char aName[64];
-    SithPuppetClassSubmode aModes[SITH_PUPPET_NUMMOVEMODES * SITH_PUPPET_NUMARMEDMODES][SITH_PUPPET_NUMSUBMODES];
+    SithPuppetClassSubmode aModes[SITH_PUPPET_MAXMODES][SITH_PUPPET_NUMSUBMODES];
     int aJoints[10];
 } SithPuppetClass;
 static_assert(sizeof(SithPuppetClass) == 32360, "sizeof(SithPuppetClass) == 32360");

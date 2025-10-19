@@ -171,7 +171,7 @@ void J3DAPI sithAI_Create(SithThing* pThing)
             if ( pThing->pPuppetState )
             {
                 pThing->pPuppetState->armedMode = pClass->armedMode;
-                pThing->pPuppetState->majorMode = pClass->armedMode + SITH_PUPPET_NUMARMEDMODES * pThing->pPuppetState->moveMode;
+                pThing->pPuppetState->majorMode = SITH_PUPPET_GETARMEDMAJORMODE(pThing, pClass->armedMode);
             }
         }
 

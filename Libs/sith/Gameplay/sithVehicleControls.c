@@ -2,7 +2,6 @@
 #include <j3dcore/j3dhook.h>
 
 #include <rdroid/Math/rdMath.h>
-#include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
 
 #include <sith/Cog/sithCog.h>

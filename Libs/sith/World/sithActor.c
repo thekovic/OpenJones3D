@@ -588,17 +588,17 @@ void J3DAPI sithActor_KillActor(SithThing* pThing, SithThing* pSrcThing, SithDam
         {
             if ( damageType == SITH_DAMAGE_COLD_WATER )
             {
-                pThing->pPuppetState->majorMode = pThing->pPuppetState->armedMode + 8; // Unarmed swimming
+                pThing->pPuppetState->majorMode = SITH_PUPPET_GETMOVEMAJORMODE(pThing, SITHPUPPET_MOVEMODE_SWIM); // TODO: why not use sithPuppet_SetMoveMode?
                 curHealth = -31.0f;
             }
 
             if ( curHealth < -30.0f && pThing->pPuppetClass->aModes[pThing->pPuppetState->majorMode][SITHPUPPETSUBMODE_DEATH2].pKeyframe )
             {
-                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_DEATH2, pfCallback);
+                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_DEATH2, pfCallback); // water drown
             }
             else
             {
-                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_DEATH, pfCallback);
+                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_DEATH, pfCallback); // underwater drown
             }
         }
     }
