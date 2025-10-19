@@ -34,9 +34,6 @@ void stdComm_InstallHooks(void)
     J3D_HOOKFUNC(stdComm_GetNumPlayers);
     J3D_HOOKFUNC(stdComm_VerifyPlayer);
     J3D_HOOKFUNC(stdComm_GetPlayerID);
-    //J3D_HOOKFUNC(stdComm_EnumPlayersCallback);
-    //J3D_HOOKFUNC(stdComm_ProcessSystemMessage);
-    //J3D_HOOKFUNC(stdComm_SessionToSettings);
     J3D_HOOKFUNC(stdComm_DPGetStatus);
 }
 
