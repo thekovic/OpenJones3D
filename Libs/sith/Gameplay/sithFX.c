@@ -473,13 +473,13 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
 
         // Sprite sizes
         rdVector3 start;
-        start.x = 3.5f;
-        start.y = 1.5f;
+        start.x = 0.35f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 3.5f
+        start.y = 0.15f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 1.5f
         start.z = 1.0f;
 
         rdVector3 end;
-        end.x = 3.5f;
-        end.y = 1.5f;
+        end.x = 0.35f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 3.5f
+        end.y = 0.15f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 1.5f
         end.z = 1.0f;
 
         // Create splash thing
@@ -498,7 +498,7 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         pyr.y = 90.0f;
         pyr.z = 0.0f;
         rdMatrix_PreRotate34(&orient, &pyr);
-        rdVector_Copy3(&orient.uvec, &pThing->attach.pFace->normal);
+        orient.uvec = pThing->attach.pFace->normal;
 
         SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &orient, pThing->pInSector, NULL);
         if ( pSprite )
@@ -523,7 +523,7 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         pyr.y = -90.0f;
         pyr.z = 0.0f;
         rdMatrix_PreRotate34(&orient, &pyr);
-        rdVector_Copy3(&orient.uvec, &pThing->attach.pFace->normal);
+        orient.uvec = pThing->attach.pFace->normal;
 
         pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &orient, pThing->pInSector, NULL);
         if ( pSprite )
@@ -569,9 +569,7 @@ void J3DAPI sithFX_CreateRaftWake(SithThing* pThing)
             return;
         }
 
-        pSprite->orient.lvec.x = 0.0f;
-        pSprite->orient.lvec.y = 0.0f;
-        pSprite->orient.lvec.z = 1.0f;
+        pSprite->orient.lvec = rdroid_g_zVector3;
 
         rdVector3 dirFwd;
         rdVector_Normalize3(&dirFwd, &pThing->moveInfo.physics.velocity);

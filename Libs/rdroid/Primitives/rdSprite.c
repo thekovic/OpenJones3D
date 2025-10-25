@@ -50,13 +50,12 @@ int J3DAPI rdSprite_NewEntry(rdSprite3* pSprite, const char* pName, int type, co
 
     pSprite->type              = type;
     pSprite->width             = width;
-    pSprite->height            =  height;
+    pSprite->height            = height;
     pSprite->face.flags        = RD_FF_FOG_ENABLED | RD_FF_DOUBLE_SIDED;
     pSprite->face.geometryMode = geomode;
     pSprite->face.lightingMode = lightmode;
-
-    rdVector_Copy3(&pSprite->offset, pOffset);
-    rdVector_Copy4(&pSprite->face.extraLight, pExtraLight);
+    pSprite->offset            = *pOffset;
+    pSprite->face.extraLight   = *pExtraLight;
 
     pSprite->face.pMaterial = rdMaterial_Load(pMatName);
     if ( !pSprite->face.pMaterial )
@@ -161,20 +160,17 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
     rdSprite3* pSprite3 = prdThing->data.pSprite3;
 
     rdVector3 tpos = { 0 };
-    rdVector3 lvec = { 0 };
+    rdVector3 yVec = { 0 };
 
-    if ( pSprite3->type )
-    {
-        if ( pSprite3->type == 2 )
-        {
-            rdVector_Copy3(&tpos, &orient->dvec);
-            rdVector_Copy3(&lvec, &orient->lvec);
-        }
-    }
-    else
+    if ( pSprite3->type == 0 )
     {
         // Transform position to view space
         rdMatrix_TransformPoint34(&tpos, &orient->dvec, &rdCamera_g_pCurCamera->viewMatrix);
+    }
+    else if ( pSprite3->type == 2 )
+    {
+        tpos = orient->dvec;
+        yVec = orient->lvec;
     }
 
     RdFrustumCull frustumCull = prdThing->frustumCull;
@@ -222,50 +218,55 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
     }
     else if ( pSprite3->type == 2 )
     {
-        rdVector3 v9;
-        rdVector3 v10;
-        rdVector3 v11;
-        rdVector3 prod;
-        rdVector3 v13;
+        // TODO: Due to fixed normalization some sprites might have too large sizes (width/height) here. 
+        //       One such case was raft splash created by sithFX_CreateRaftRipple(, 1) which is fixed now.
+        //       Do more testing!
 
-        if ( fabsf(lvec.z) < 1.0f ) // Fixed, was: if ( fabsf((double)(lvec.z >= 0.99989998f)) == 0.0f )
+        rdVector3 xVec;
+        if ( fabsf(yVec.z) < 0.99989998f ) // Fixed: OG -> if ( fabsf((double)(lvec.z >= 0.99989998f)) == 0.0f )
         {
-            rdVector_Cross3(&prod, &rdroid_g_zVector3, &lvec);
+            rdVector_Cross3(&xVec, &rdroid_g_zVector3, &yVec);
+            rdVector_Normalize3Acc(&xVec); // Fixed: OG forgot to do normalization. Note this fixes the proper size of sprites, e.g. row ripple sprites
         }
         else
         {
-            rdVector_Cross3(&prod, &rdroid_g_xVector3, &lvec);
+            rdVector_Cross3(&xVec, &rdroid_g_xVector3, &yVec);
+            rdVector_Normalize3Acc(&xVec); // Fixed: OG forgot to do normalization
         }
 
-        // vec cross lvec
-        rdVector_Cross3(&v13, &prod, &lvec);
+        rdVector3 zVec;
+        rdVector_Cross3(&zVec, &xVec, &yVec);
+        rdVector_Normalize3Acc(&zVec); // Fixed: OG forgot to do normalization
 
-        rdVector_Scale3(&v11, &prod, pSprite3->widthHalf);
+        rdVector3 right;
+        rdVector_Scale3(&right, &xVec, pSprite3->widthHalf);
 
-        rdVector_Scale3(&v10, &v13, pSprite3->heightHalf);
+        rdVector3 up;
+        rdVector_Scale3(&up, &zVec, pSprite3->heightHalf);
 
-        rdVector_Neg3(&v9, &v11);
+        rdVector3 left;
+        rdVector_Neg3(&left, &right);
 
-        rdSprite_aView.rvec.x = v9.x - v10.x;
-        rdSprite_aView.rvec.y = v9.y - v10.y;
-        rdSprite_aView.rvec.z = v9.z - v10.z;
+        rdSprite_aView.rvec.x = left.x - up.x;
+        rdSprite_aView.rvec.y = left.y - up.y;
+        rdSprite_aView.rvec.z = left.z - up.z;
 
-        rdSprite_aView.lvec.x = v11.x - v10.x;
-        rdSprite_aView.lvec.y = v11.y - v10.y;
-        rdSprite_aView.lvec.z = v11.z - v10.z;
+        rdSprite_aView.lvec.x = right.x - up.x;
+        rdSprite_aView.lvec.y = right.y - up.y;
+        rdSprite_aView.lvec.z = right.z - up.z;
 
-        rdSprite_aView.uvec.x = v11.x + v10.x;
-        rdSprite_aView.uvec.y = v11.y + v10.y;
-        rdSprite_aView.uvec.z = v11.z + v10.z;
+        rdSprite_aView.uvec.x = right.x + up.x;
+        rdSprite_aView.uvec.y = right.y + up.y;
+        rdSprite_aView.uvec.z = right.z + up.z;
 
-        rdSprite_aView.dvec.x = v9.x + v10.x;
-        rdSprite_aView.dvec.y = v9.y + v10.y;
-        rdSprite_aView.dvec.z = v9.z + v10.z;
+        rdSprite_aView.dvec.x = left.x + up.x;
+        rdSprite_aView.dvec.y = left.y + up.y;
+        rdSprite_aView.dvec.z = left.z + up.z;
 
         if ( pSprite3->rollAngle != 0.0f )
         {
             rdMatrix34 tmat;
-            rdMatrix_BuildFromVectorAngle34(&tmat, &lvec, pSprite3->rollAngle);
+            rdMatrix_BuildFromVectorAngle34(&tmat, &yVec, pSprite3->rollAngle);
             rdMatrix_PostMultiply34(&rdSprite_aView, &tmat);
             pSprite3->rollAngle = 0.0f;
         }
