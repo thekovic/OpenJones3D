@@ -67,3 +67,6 @@ Libs/std/Win95/DX9/Shaders/*.h
 # vs & vscode
 .vscode/
 .vs/
+
+# jetbrain folder
+.idea/
