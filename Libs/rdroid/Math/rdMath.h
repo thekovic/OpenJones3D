@@ -76,11 +76,27 @@ inline float J3DAPI rdMath_DistancePointToPlane(const rdVector3* pPoint, const r
 inline float J3DAPI rdMath_DeltaAngleNormalizedAbs(const rdVector3* pVectorX, const rdVector3* pVectorY)
 {
     float dot  = rdVector_Dot3(pVectorX, pVectorY);
-    if ( dot == 1.0 ) {
+    if ( dot == 1.0 )
+    {
         return 0.0f;
     }
 
     return 90.0f - stdMath_ArcSin1(dot);
+}
+
+// Added: not found in original rdMath.c
+inline void J3DAPI rdMath_ProjectPointOntoPlane(rdVector3* dest, const rdVector3* pPoint, const rdVector3* pPlaneNormal, const rdVector3* pPointOnPlane)
+{
+    // Project point onto plane: result = point - normal * ((point - origin) dot normal ) => point - vector projection
+    float dist = rdMath_DistancePointToPlane(pPoint, pPlaneNormal, pPointOnPlane);
+    rdVector_ScaleAdd3(dest, pPlaneNormal, -dist, pPoint);
+}
+
+// Added: not found in original rdMath.c, but there must be some similar either macro or function that was inlined
+inline void J3DAPI rdMath_ProjectPointOntoPlaneNormalized(rdVector3* dest, const rdVector3* pPoint, const rdVector3* pPlaneNormal, const rdVector3* pPointOnPlane)
+{
+    rdMath_ProjectPointOntoPlane(dest, pPoint, pPlaneNormal, pPointOnPlane);
+    rdVector_Normalize3Acc(dest);
 }
 
 // Helper hooking functions
