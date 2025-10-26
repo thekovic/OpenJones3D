@@ -57,8 +57,10 @@ configure_file(
 set(CMAKE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Release>:MultiThreaded>$<$<CONFIG:MinSizeRel>:MultiThreaded>")
 
 if (MSVC)
-    if(DEFINED __FILE_NAME__)
-        add_compile_definitions(__FILE_NAME__=${__FILE_NAME__})
+    # Clion IDE can't read the preprocessor macro below and needs special treatment
+    if($ENV{CLION_IDE})
+        message(STATUS "Generating in Clion environment")
+        add_compile_definitions(__FILE_NAME__=__FILE__)
     else()
         add_compile_definitions("__FILE_NAME__=\"%(Filename)%(Extension)\"")
     endif()
