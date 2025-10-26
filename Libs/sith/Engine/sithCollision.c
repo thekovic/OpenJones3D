@@ -2051,6 +2051,7 @@ int J3DAPI sithCollision_sub_4AA1A0(SithThing* pThing, const rdVector3* pHitNorm
 
         if ( (pMoveInfo->physics.flags & SITH_PF_RAFT) != 0 && pHitSurf && (pHitSurf->flags & SITH_SURFACE_WATER) != 0 )
         {
+            // Remove UP component from speed... Note  OG this must be the same function as found in suthPhysics_UpdateRaftPhysics
             float impact = rdMath_DistancePointToPlane(&pMoveInfo->physics.velocity, pHitNorm, &rdroid_g_zeroVector3);
             /*    impact = (pMoveInfo->physics.velocity.x - 0.0f) * pHitNorm->x
                 + (pMoveInfo->physics.velocity.y - 0.0f) * pHitNorm->y
@@ -2112,6 +2113,7 @@ int J3DAPI sithCollision_sub_4AA1A0(SithThing* pThing, const rdVector3* pHitNorm
     {
         if ( (pMoveInfo->physics.flags & SITH_PF_RAFT) != 0 && pHitSurf && (pHitSurf->flags & SITH_SURFACE_WATER) != 0 )
         {
+            // Remove UP component from speed... Note  OG this must be the same function as found in suthPhysics_UpdateRaftPhysics
             float impact = rdMath_DistancePointToPlane(&pMoveInfo->physics.velocity, pHitNorm, &rdroid_g_zeroVector3);
             /*   v28 = (pMoveInfo->physics.velocity.x - 0.0f) * pHitNorm->x
                    + (pMoveInfo->physics.velocity.y - 0.0f) * pHitNorm->y

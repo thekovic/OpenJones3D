@@ -243,7 +243,7 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
             case RDKEYMARKER_ROW:
                 if ( (pThing->flags & SITH_TF_DYING) != 0 )
                 {
-                    if ( (int32_t)pThing->userval == 3 )  // If row paddle not in underwater sector (set by sithPhysics_GetWaterNormalAtPos). Note 4 is water surface
+                    if ( (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN )  // If raft is on underwater sector (set by sithPhysics_CheckWaterSurfaceAtPos).
                     {
                         sithFX_CreateRaftRipple(pThing, /*bCreateSplash*/0);
                     }
@@ -352,7 +352,7 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
                             rdVector_Scale3(&pPhysics->velocity, &pThing->orient.rvec, -sithVehicleControls_raftBoardingMomentum);
                             pPhysics->angularVelocity.yaw = sithVehicleControls_raftBoardingRotation;
 
-                            if ( (int32_t)pThing->userval == 3 )  // If not underwater sector, set by sithPhysics_GetWaterNormalAtPos. Note 4 is water surface
+                            if ( (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN )  // If raft is on underwater sector, (set by sithPhysics_CheckWaterSurfaceAtPos)
                             {
                                 sithFX_CreateRaftRipple(pThing, /*bCreateSplash*/0);
                             }
@@ -611,7 +611,7 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
         return;
     }
 
-    if ( sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_NONE 
+    if ( sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_NONE
         || sithVehicleControls_curMineCarState.unboardState == SITHMINECARCONTROLS_UNBOARD_BLOCKED ) // Altered: Add check for SITHMINECARCONTROLS_UNBOARD_BLOCKED
     {
         if ( !sithControl_GetKey(SITHCONTROL_ACT2, NULL) )
@@ -794,7 +794,7 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
                 if ( sithVehicleControls_curMineCarState.secElapsedBrakingTime > 0.2f && !sithVehicleControls_curMineCarState.hBrakeSnd )
                 {
                     sithVehicleControls_curMineCarState.hBrakeSnd = sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_RRUNMETAL);// *screech_brake.wav
-                    pCarState->bUpdateSparks = 1;
+                    pCarState->bBraking = 1;
                 }
 
                 if ( fabsf(pPhysics->thrust.y) >= fabsf(thrustDelta) )
@@ -835,12 +835,12 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
         sithSoundClass_FadeModeVolume(pThing, SITHSOUNDCLASS_RRUNMETAL, 0.0f, sithVehicleControls_sndVolumeBrake); // screech_brake.wav
         sithVehicleControls_curMineCarState.hBrakeSnd = 0;
 
-        if ( !pCarState->bUpdateSparks )
+        if ( !pCarState->bBraking )
         {
             return;
         }
 
-        pCarState->bUpdateSparks      = 0;
+        pCarState->bBraking           = 0;
         pCarState->bUpdateSparksRight = 0;
         pCarState->bUpdateSparksLeft  = 0;
         return;
@@ -928,7 +928,7 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STRAFERIGHT, sithVehicleControls_PuppetCallback);
         }
 
-        sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_STOPMOVE);// engine stop
+        sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_STOPMOVE);// engine stop; sol_minecar_motor_stop.wav
 
         pThing->thingInfo.actorInfo.bControlsDisabled    = 1;
         sithVehicleControls_curMineCarState.unboardState = SITHMINECARCONTROLS_UNBOARD_NONE;
@@ -1329,7 +1329,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
     // Create wake effect
     if ( sithVehicleControls_curRaftState.wakeTimer <= 0.0f
         && (rdVector_Len3(&pPhysics->velocity) >= (double)sithVehicleControls_raftWakeThreshold)
-        && (int32_t)pThing->userval == 3 )
+        && (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN ) // If raft is on underwater sector (set by sithPhysics_CheckWaterSurfaceAtPos).
     {
         sithFX_CreateRaftWake(pThing);
         sithVehicleControls_curRaftState.wakeTimer = sithVehicleControls_raftWakeInterval;
@@ -1881,7 +1881,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
                 sithVehicleControls_EndBoardCutscene(pThing);
             }
             else if ( pThing->moveStatus == SITHPLAYERMOVE_RAFT_UNBOARD_START )
-            {             
+            {
                 if ( rdVector_Dist3(&sithVehicleControls_curRaftState.unboardPos, &pThing->pos) <= sithVehicleControls_raftUnboardThresholdDist )
                 {
                     // If aligned with docking surface then jump out of raft

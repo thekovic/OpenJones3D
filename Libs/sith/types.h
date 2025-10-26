@@ -357,7 +357,7 @@ typedef enum eSithPhysicsFlags
     SITH_PF_USEANGULARTHRUST    = 0x1000,
     SITH_PF_FLY                 = 0x2000,
     SITH_PF_USEBLASTFORCE       = 0x4000,
-    SITH_PF_UNKNOWN_8000        = 0x8000,
+    SITH_PF_FORCEAPPLIED        = 0x8000,
     SITH_PF_CROUCHING           = 0x10000,
     SITH_PF_STARTORIENTMOVE     = 0x20000,
     SITH_PF_PARTIALGRAVITY      = 0x40000,
@@ -1595,25 +1595,43 @@ typedef struct sSithVehicleEngineFxState
 typedef struct sSithVehicleExhaustInfo
 {
     int bEnabled;
-    float moveLength;
-    float offsetY;
-    float offsetZ;
-    float offsetX;
-    float velocity;
-    float velScale;
-    float smokeLifeScale;
-    float startMinSize;
-    float startMaxSize;
-    float startSizeScale;
-    float endMinSize;
-    float endMaxSize;
-    float endSizeScale;
+
+    // Spacing between spawned smoke puffs
+    float spacing;
+
+    // Smoke model local position
+    // in forward, up, right order
+    float posY;
+    float posZ;
+    float posX;
+
+    float life;
+    float lifeFactor;
+    float lifeRandFactor;
+
+    // Smoke size
+    float sizeStart;
+    float sizeEnd;
+    float sizeRandFactor;
+
+    // Smoke alpha
+    float alphaStart;
+    float alphaEnd;
+    float alphaRandFactor;
+
+    // Smoke scatter in right direction
     float dirX;
     float scatterX;
+
+    // Smoke scatter in up direction
     float dirZ;
     float scatterZ;
-    char aExhaustTemplate[64];
+
+    // Smoke template name
+    char aTemplate[64];
 } SithVehicleExhaustInfo;
+static_assert(sizeof(SithVehicleExhaustInfo) == 136, "sizeof(SithVehicleExhaustInfo) == 136");
+
 
 typedef struct sSithJeepUserBlock
 {
@@ -1766,11 +1784,12 @@ typedef struct sSithJeepUserBlock
 
 typedef struct sSithVehicleChassisInfo
 {
-    int numNodes;
+    size_t numNodes;
     char aWheelMeshNames[4][64];
     int aWheelNodeNums[4];
     float wheelRadius;
 } SithVehicleChassisInfo;
+static_assert(sizeof(SithVehicleChassisInfo) == 280, "sizeof(SithVehicleChassisInfo) == 280");
 
 struct sSithSurfaceAdjoin
 {
@@ -1864,7 +1883,7 @@ static_assert(sizeof(SithAnimationSlot) == 168, "sizeof(SithAnimationSlot) == 16
 typedef struct sSithMineCarState
 {
     int maybeMoveSate; // most likely car turn state
-    int unknown1;
+    int bOnAdjoinTrack;
     float surfDrag;
     SithAnimationSlot* pEngineAnim;
     int bEngineAnim;
@@ -1874,7 +1893,7 @@ typedef struct sSithMineCarState
     float secTimeSparksLeft;
     float unknown9;
     float unknown10;
-    int bUpdateSparks;
+    int bBraking;
 } SithMineCarState;
 static_assert(sizeof(SithMineCarState) == 48, "sizeof(SithMineCarState) == 48");
 
@@ -2232,7 +2251,7 @@ typedef struct sSithAttach
     SithAttachFlag flags;
     rdVector3 attachedFaceFirstVert;
     rdFace* pFace;
-    float someAttachDistance;
+    float distToWaterSurface;
     rdVector3 vecUnknownMaybeLocalPositionOnTheAttachedThing;
     SithAttachStructure attachedToStructure;
 } SithAttach;

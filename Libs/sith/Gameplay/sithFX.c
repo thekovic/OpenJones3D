@@ -395,7 +395,7 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             end.z = 0.0f;
 
             rdVector_Copy3(&pos, &pThing->pos);
-            pos.z += pThing->attach.someAttachDistance + 0.001f;
+            pos.z += pThing->attach.distToWaterSurface + 0.001f;
         }
         else
         {
@@ -660,7 +660,7 @@ void J3DAPI sithFX_CreateRowWaterFx(SithThing* pThing, float secTime)
         goto skip;
     }
 
-    if ( (int32_t)pThing->userval != 3 ) // If not underwater sector, set by sithPhysics_GetWaterNormalAtPos. Note 4 is water surface
+    if ( (SithPhysicsWaterSurfaceType)pThing->userval != SITHPHYSICS_WATERSURFACE_ADJOIN ) // If not on underwater adjoin surface, (set by sithPhysics_CheckWaterSurfaceAtPos)
     {
         goto skip;
     }
@@ -746,7 +746,6 @@ void J3DAPI sithFX_CreateRipple(SithThing* pThing, float size)
 
 void J3DAPI sithFx_CreateTireFx(SithThing* pThing, const rdVector3* pPosLeft, rdMaterial* pMatLeft, const rdVector3* pPosRigth, rdMaterial* pMatRight)
 {
-
     float a;
     float aa;
     SithThing* pTemplate;

@@ -877,131 +877,136 @@ void J3DAPI sithThing_Update(float secDeltaTime, uint32_t msecDeltaTime)
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
     SITH_ASSERTREL(pWorld != NULL);
 
-    int curIndex      = 0;
-    int lastThingIdx  = pWorld->lastThingIdx; // Fixed: Moved after assert
-    SithThing* pThing = pWorld->aThings;
-
-    while ( curIndex <= lastThingIdx )
+    const int lastThingIdx = pWorld->lastThingIdx; // Fixed: Moved after assert
+    for ( int i = 0; i <= lastThingIdx; i++ )
     {
-        if ( pThing->type )
+        SithThing* pThing = &pWorld->aThings[i];
+        if ( pThing->type == SITH_THING_FREE )
         {
-            if ( (pThing->flags & SITH_TF_DESTROYED) != 0 )
+            continue;
+        }
+
+        if ( (pThing->flags & SITH_TF_DESTROYED) != 0 )
+        {
+            sithThing_RemoveThing(pWorld, pThing);
+            continue;
+        }
+
+        if ( pThing->msecLifeLeft )
+        {
+            if ( pThing->msecLifeLeft > msecDeltaTime )
             {
-                sithThing_RemoveThing(pWorld, pThing);
+                pThing->msecLifeLeft -= msecDeltaTime;
             }
             else
             {
-                if ( pThing->msecLifeLeft )
-                {
-                    if ( pThing->msecLifeLeft > msecDeltaTime )
-                    {
-                        pThing->msecLifeLeft -= msecDeltaTime;
-                    }
-                    else
-                    {
-                        sithThing_DestroyDyingThing(pThing);
-                    }
-                }
-
-                if ( (pThing->flags & SITH_TF_DISABLED) == 0 )
-                {
-                    if ( (pThing->flags & (SITH_TF_TIMERSET | SITH_TF_PULSESET)) != 0 )
-                    {
-                        sithCog_UpdateThingTimer(pThing);
-                    }
-
-                    switch ( pThing->controlType )
-                    {
-                        case SITH_CT_AI:
-                            sithAIMove_Update(pThing, secDeltaTime);
-                            break;
-
-                        case SITH_CT_EXPLOSION:
-                            sithExplosion_Update(pThing, secDeltaTime);
-                            break;
-
-                        case SITH_CT_PARTICLE:
-                            sithParticle_Update(pThing, secDeltaTime);
-                            break;
-                    }
-
-                    switch ( pThing->type )
-                    {
-                        case SITH_THING_WEAPON:
-                            sithWeapon_Update(pThing, secDeltaTime);
-                            break;
-
-                        case SITH_THING_PLAYER:
-                            sithPlayer_Update(pThing->thingInfo.actorInfo.pPlayer, secDeltaTime);
-                            // Fall through to actor handling
-
-                        case SITH_THING_ACTOR:
-                        {
-                            if ( pThing->thingInfo.actorInfo.pThingMeshAttached )
-                            {
-                                SithThing* pThingAttached = pThing->thingInfo.actorInfo.pThingMeshAttached;
-                                if ( pThingAttached->type == SITH_THING_PLAYER )
-                                {
-                                    pThing->alpha = pThingAttached->alpha;
-                                }
-                            }
-
-                            sithActor_Update(pThing, msecDeltaTime);
-                        } break;
-
-                        case SITH_THING_SPRITE:
-                        {
-                            if ( pThing->thingInfo.spriteInfo.pThingMeshAttached )
-                            {
-                                SithThing* pThingAttached = pThing->thingInfo.spriteInfo.pThingMeshAttached;
-                                if ( pThingAttached->type == SITH_THING_PLAYER )
-                                {
-                                    pThing->thingInfo.spriteInfo.alpha = pThing->pTemplate->thingInfo.spriteInfo.alpha * pThingAttached->alpha; // TODO: why template alpha is multiplied by attached alpha?
-                                }
-                            }
-
-                            sithSprite_Update(pThing, msecDeltaTime);
-                        } break;
-
-                        default:
-                            break;
-                    }
-
-                    if ( sithThing_pfUnknownFunc && pThing->unknownFlags )
-                    {
-                        sithThing_pfUnknownFunc(pThing);
-                    }
-
-                    if ( pThing->moveType == SITH_MT_PHYSICS )
-                    {
-                        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                        {
-                            if ( pThing->type == SITH_THING_PLAYER && pThing != sithPlayer_g_pLocalPlayerThing )
-                            {
-                                pThing->moveInfo.physics.flags |= SITH_PF_UNKNOWN_8000;
-                            }
-
-                            sithPhysics_UpdateThing(pThing, secDeltaTime);
-                        }
-                    }
-                    else if ( pThing->moveType == SITH_MT_PATH )
-                    {
-                        sithPathMove_Update(pThing, secDeltaTime);
-                    }
-
-                    // TODO: why is it assumed that pThing is actor here???
-                    if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                    {
-                        sithThing_UpdateMove(pThing, secDeltaTime);
-                    }
-
-                    sithPuppet_UpdatePuppet(pThing, secDeltaTime);
-                }
+                sithThing_DestroyDyingThing(pThing);
             }
         }
 
-        ++curIndex;
-        ++pThing;
+        if ( (pThing->flags & SITH_TF_DISABLED) != 0 )
+        {
+            continue;
+        }
+
+        // Update time
+        if ( (pThing->flags & (SITH_TF_TIMERSET | SITH_TF_PULSESET)) != 0 )
+        {
+            sithCog_UpdateThingTimer(pThing);
+        }
+
+        // Update control type
+        switch ( pThing->controlType )
+        {
+            case SITH_CT_AI:
+                sithAIMove_Update(pThing, secDeltaTime);
+                break;
+
+            case SITH_CT_EXPLOSION:
+                sithExplosion_Update(pThing, secDeltaTime);
+                break;
+
+            case SITH_CT_PARTICLE:
+                sithParticle_Update(pThing, secDeltaTime);
+                break;
+        }
+
+        switch ( pThing->type )
+        {
+            case SITH_THING_WEAPON:
+                sithWeapon_Update(pThing, secDeltaTime);
+                break;
+
+            case SITH_THING_PLAYER:
+                sithPlayer_Update(pThing->thingInfo.actorInfo.pPlayer, secDeltaTime);
+                // Fall through to actor handling
+
+            case SITH_THING_ACTOR:
+            {
+                if ( pThing->thingInfo.actorInfo.pThingMeshAttached )
+                {
+                    SithThing* pThingAttached = pThing->thingInfo.actorInfo.pThingMeshAttached;
+                    if ( pThingAttached->type == SITH_THING_PLAYER )
+                    {
+                        pThing->alpha = pThingAttached->alpha;
+                    }
+                }
+
+                sithActor_Update(pThing, msecDeltaTime);
+            } break;
+
+            case SITH_THING_SPRITE:
+            {
+                if ( pThing->thingInfo.spriteInfo.pThingMeshAttached )
+                {
+                    SithThing* pThingAttached = pThing->thingInfo.spriteInfo.pThingMeshAttached;
+                    if ( pThingAttached->type == SITH_THING_PLAYER )
+                    {
+                        pThing->thingInfo.spriteInfo.alpha = pThing->pTemplate->thingInfo.spriteInfo.alpha * pThingAttached->alpha; // TODO: why template alpha is multiplied by attached alpha?
+                    }
+                }
+
+                sithSprite_Update(pThing, msecDeltaTime);
+            } break;
+
+            default:
+                break;
+        }
+
+        if ( sithThing_pfUnknownFunc && pThing->unknownFlags )
+        {
+            sithThing_pfUnknownFunc(pThing);
+        }
+
+        // Update movement
+        switch ( pThing->moveType )
+        {
+            case SITH_MT_NONE:
+                break;
+            case SITH_MT_PHYSICS:
+                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+                {
+                    if ( pThing->type == SITH_THING_PLAYER && pThing != sithPlayer_g_pLocalPlayerThing )
+                    {
+                        pThing->moveInfo.physics.flags |= SITH_PF_FORCEAPPLIED; // Multiplayer non-local players always have force applied, and won't have surface drag applied
+                    }
+                    sithPhysics_UpdateThing(pThing, secDeltaTime);
+                }
+                break;
+            case SITH_MT_PATH:
+                sithPathMove_Update(pThing, secDeltaTime);
+                break;
+        }
+
+        // Move thing based on physics/path updated velocity and rotation
+        // TODO: why is it assumed that pThing is actor here???
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            sithThing_UpdateMove(pThing, secDeltaTime);
+        }
+
+        // Update puppet animation
+        sithPuppet_UpdatePuppet(pThing, secDeltaTime);
     }
 }
 
@@ -2425,7 +2430,7 @@ update_attachment:
                     pThing->moveStatus = SITHPLAYERMOVE_LAND;
                 }
 
-                sithFX_CreateRaftRipple(pThing, 1);
+                sithFX_CreateRaftRipple(pThing, /*bCreateSplash=*/1);
                 sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_FALL);
                 sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_FALLFORWARD);
             }
