@@ -5,10 +5,12 @@
     * Added DirectInput8 port for `stdControl` module (a465622)
     * Added DirectSound8 port for `sound` module (9fde6dc)
     * Abstracted `stdComm` (a465622)
-  - Refactored & added new rdVector functions: (5239a55)
+  - Refactored & added new rdVector functions: (5239a55, 68dc8b7, f1ed7a9)
     * `rdVector_IsZero2`, `rdVector_IsZero3`, `rdVector_IsZero4`
     * `rdVector_ScaleAdd2Acc`, `rdVector_ScaleAdd3Acc`, `rdVector_ScaleAdd4Acc`
     * `rdVector_MultAcc2`, `rdVector_MultAcc3`, `rdVector_MultAcc4` 
+    * `rdVector_Zero2`, `rdVector_Zero3`, `rdVector_Zero4 `
+    * `rdMath_ProjectPointOntoPlane`, `rdMath_ProjectPointOntoPlaneNormalized`
   - Added dead code found in debug version (b042bea)
   - Added new macro `RDVECTOR_NEG3` (e78e93b)
   - Fixed names of thing move animation functions in `sithAnimate` module (db77fe8)
@@ -26,6 +28,7 @@
   - Implemented missing block allocation functions of `stdMemory` module (b99b92a)
   - Implemented modules:
     * `sithPlayerActions` (67f2eab)
+    * `sithVehicleControls` (63685d3)
   - Moved high poly option to advance display settings (7b58bff)
   - Fixed selecting stored MipMap filter mode in developer dialog (ad1633c)
   - Added new graphic options for MSAA, anisotropic texture filtering and mipmap auto gen to display settings (77df36d)
@@ -34,6 +37,26 @@
   - Renamed `rdCamera` field `orient` to `viewMatrix` (5382bba)
   - Fixed `rdFace_New` function name (ccc602c)
   - Fixed `pLine->face.aTexVertices` allocation size in `rdPolyline_NewEntry` (ccc602c)
+  - Fixed logic error in `stdMemory_Close` where incorrect check for module being open was performed (26430c4)  
+    This error prevented check for memory leaks when module was open. 
+  - Added new module `stdJSON` for parsing and writing JSON files (575cf36)
+    This new feature adds new dependency: `Jansson`
+  - Added ne module `stdConfig` for storing engine configurations (68d6e6b)
+  - Refactored engine settings to use `stdConfig` module instead of `wuRegistry` (68d6e6b)
+  - Refactored boolean functions and add new functions to store / retrieve binary data in `wuRegistry` module (970dab5)
+  - Fixed out of bounds write when ran out of free subtitle slots in `sithVoice_AddSubtitle` (693cbcf)
+    It resolves crashes when too many subtitles are added in a short time.
+  - Fixed out of bounds read in `sithVoice_Draw` (693cbcf)
+  - Fixed skipping expired/empty slots and clearing correct part of pending subtitle array in `sithVoice_PurgeDrawnSubtitles` (693cbcf)  
+    This resolves issues with drawing pending subtitles when `sithVoice_curSubtitleDrawIndex` < `sithVoice_numSubtitleInfos`
+  - Added new function `Sound_GetChannelPlayProgress` for retrieving current play progress of a sound channel (81efaf9)
+  - Fixed removing subtitle when stopping currently played thing voice sound in `sithVoice_PlayVoice` (4d5f54a)
+  - Added implementation for creating MineCar user block (e1beaca)
+  - Added new macros for max puppet modes and calculating puppet major mode from armed & move modes (7d3cc1b)
+  - Refactored enum `SithThingMoveStatus` (14236fa)
+  - Added implementation for updating physics of attached/detached, underwater, climbing, raft thing (3a6fffa)
+  - Added partial implementation for updating physics of MineCar thing (3a6fffa)
+  - Added implementation of `sithPhysics_FindFloor` function (3a6fffa)
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)
@@ -51,6 +74,9 @@
   - Added support for anisotropic texture filtering (737d83c)
   - Added support for MSAA anti-aliasing (9a1bc12)
   - Added auto generation of mipmap texture chain (b7e7273)
+  - Fixed normalizing calculated right & up dir vectors for type 2 sprite in `rdSprite_Draw` (120a6f2)
+    This corrects the size of rendered type sprites, especially when sprite is on uneven surface.
+    e.g.: raft row sprite on uneven water surface.
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
@@ -61,6 +87,10 @@
     Fixes issue [#20](https://github.com/smlu/OpenJones3D/issues/20)
   - [DX9] Implemented XInput API for game pad controllers (f4a6e61)
   - Added `speedrun` build option to enable vanilla engine quirks and bugs that can be leveraged in speedrun gameplay [PR #23](https://github.com/smlu/OpenJones3D/pull/23)
+  - Fixed minor MineCar bug when player is trying to unborad left or right side of car and unboarding is blocked (307691c)
+  - [QOL] Fixed dying thing to not change it's puppet mode to swim when entering water (85abbe6)  
+    This prevents dead things from playing swim idle animation when dead thing falls into water.
+  - [QOL] Changed physics fixed timestep to 150 fps and added option to configure timestep (0eaa4eb)
 
 ## v0.3.1
 ### General:
@@ -293,7 +323,6 @@
   - Added bounds check for number of animating joints when loading keyframe from *.key file
   - Fixed a bug in sound compression where clipping of the audio waveform occurred
   - Fixed infinitive loop bug when voice subtitle contains too long word (`sithVoice_AddSubtitle`)
-
   - Fixed accessing null pointer in `sithWhip_Reset` when `sithCamera` is already closed.  
     Fixed checking for null `sithWeapon_SendMessageAim` before calling  
     function`sithWeapon_IsLocalPlayerUnableToUseWeapon` in `sithWeapon_SendMessageAim` functions.  
