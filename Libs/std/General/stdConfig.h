@@ -13,6 +13,13 @@ bool stdConfig_HasStarted(void);
 void J3DAPI stdConfig_Shutdown(void);
 
 /**
+ * @brief Checks if key is stored in config
+ * @param pKey - key to check
+ * @return true if key is in config otherwise false
+ */
+bool stdConfig_Contains(const char* pKey);
+
+/**
  * Adds a mapping between a config key and a registry key.
  * This allows falling back to the registry if the config key does not exist in the JSON config.
  * The key supports nested keys using dot notation (e.g. "graphics.fullscreen").

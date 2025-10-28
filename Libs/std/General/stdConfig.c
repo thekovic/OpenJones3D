@@ -192,6 +192,16 @@ bool J3DAPI stdConfig_AddRegKeyMapping(const char* pConfigKey, const char* pRegi
     return true;
 }
 
+
+bool stdConfig_Contains(const char* pKey)
+{
+    STD_ASSERT(stdConfig_bStarted);
+    STD_ASSERT(stdConfig_hJson);
+    STD_ASSERT(pKey);
+
+    return stdJSON_HasKey(stdConfig_hJson, pKey);
+}
+
 bool J3DAPI stdConfig_SetBool(const char* pKey, bool value)
 {
     STD_ASSERT(stdConfig_bStarted);
