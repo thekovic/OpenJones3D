@@ -13,7 +13,7 @@
 #define J3D_VERSION_STRING "v@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@@JONES3D_BUILD_SUFFIX@"
 #define J3D_VERSION_FULL   "@PROJECT_NAME@ " J3D_VERSION_STRING
 
-#if defined(_MSC_VER) && defined(__INTELLISENSE__) || defined(__JETBRAINS_IDE__)
+#if defined(_MSC_VER) && (defined(__INTELLISENSE__) || defined(__JETBRAINS_IDE__))
     #define J3D_FILE "dummy.c"
 #else
 	#define J3D_FILE __FILE_NAME__
