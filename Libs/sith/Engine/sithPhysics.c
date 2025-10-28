@@ -30,14 +30,16 @@
 #include <sith/World/sithWorld.h>
 #include <sith/RTI/symbols.h>
 
+#include <std/General/stdConfig.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
 //
 // Physics constants
 //
-#define SITHPHYSICS_FIXED_FRAMERATE 50.0f
-#define SITHPHYSICS_FIXED_TIMESTEP  (1.0f/SITHPHYSICS_FIXED_FRAMERATE)
+#define SITHPHYSICS_FIXED_FRAMERATE_UNCAP 150.0f
+#define SITHPHYSICS_FIXED_FRAMERATE_DFLT  50.0f
+#define SITHPHYSICS_FIXED_TIMESTEP_DFLT   (1.0f/SITHPHYSICS_FIXED_FRAMERATE_DFLT)
 
 // Slope thresholds (cosine of angle)
 #define SITHPHYSICS_SLIDE_SLOPE_MIN    0.69f       // ~46 deg - minimum slope for sliding
@@ -52,6 +54,10 @@
 #define sithPhysics_dword_538D38 J3D_DECL_FAR_VAR(sithPhysics_dword_538D38, int)
 #define sithPhysics_dword_58540C J3D_DECL_FAR_VAR(sithPhysics_dword_58540C, int)
 #define sithPhysics_flt_585410 J3D_DECL_FAR_VAR(sithPhysics_flt_585410, float)
+
+// Added
+static float sithPhysics_fixedFramerate = SITHPHYSICS_FIXED_FRAMERATE_DFLT;
+static float sithPhysics_fixedTimestep  = SITHPHYSICS_FIXED_TIMESTEP_DFLT;
 
 //
 // MineCar fx vars
@@ -245,6 +251,19 @@ void sithPhysics_ResetGlobals(void)
 
     memset(&sithPhysics_dword_58540C, 0, sizeof(sithPhysics_dword_58540C));
     memset(&sithPhysics_flt_585410, 0, sizeof(sithPhysics_flt_585410));
+}
+
+void J3DAPI sithPhysics_Startup(void)
+{
+#ifdef J3D_QOL_IMPROVEMENTS
+    sithPhysics_fixedFramerate = stdConfig_GetFloat(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
+    sithPhysics_fixedTimestep  = 1.0f / sithPhysics_fixedFramerate;
+
+    if ( !stdConfig_Contains(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP) )
+    {
+        stdConfig_SetFloat(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
+    }
+#endif 
 }
 
 void J3DAPI sithPhysics_FindFloor(SithThing* pThing, int bNoSurfaceImpactUpdate)
@@ -1054,8 +1073,8 @@ void J3DAPI sithPhysics_UpdateDetachedPlayerPhysics(SithThing* pThing, float sec
 
     // Player physics runs at 50 FPS - accumulate time and process in fixed timesteps
     float totalTime = secDeltaTime + pPhysics->physicsRolloverFrames;
-    size_t nFrames  = (size_t)truncf(totalTime * SITHPHYSICS_FIXED_FRAMERATE);
-    pPhysics->physicsRolloverFrames = totalTime - (float)nFrames * SITHPHYSICS_FIXED_TIMESTEP;
+    size_t nFrames  = (size_t)truncf(totalTime * sithPhysics_fixedFramerate);
+    pPhysics->physicsRolloverFrames = totalTime - (float)nFrames * sithPhysics_fixedTimestep;
 
     for ( size_t i = 0; i < nFrames; ++i )
     {
@@ -1064,13 +1083,13 @@ void J3DAPI sithPhysics_UpdateDetachedPlayerPhysics(SithThing* pThing, float sec
         // Apply air drag to velocity
         if ( pPhysics->airDrag != 0.0f )
         {
-            sithPhysics_ApplyDrag(&pPhysics->velocity, pPhysics->airDrag, 0.0f, SITHPHYSICS_FIXED_TIMESTEP);
+            sithPhysics_ApplyDrag(&pPhysics->velocity, pPhysics->airDrag, 0.0f, sithPhysics_fixedTimestep);
         }
 
         // Apply thrust forces in local space, then transform to world space
         if ( (physFlags & SITH_PF_USETHRUST) != 0 )
         {
-            rdVector_Scale3(&thrustDelta, &pPhysics->thrust, SITHPHYSICS_FIXED_TIMESTEP);
+            rdVector_Scale3(&thrustDelta, &pPhysics->thrust, sithPhysics_fixedTimestep);
             rdMatrix_TransformVector34Acc(&thrustDelta, &pThing->orient); // Transform thrust from local to world space
         }
 
@@ -1079,7 +1098,7 @@ void J3DAPI sithPhysics_UpdateDetachedPlayerPhysics(SithThing* pThing, float sec
             && (pThing->pInSector->flags & SITH_SECTOR_USETHRUST) != 0
             && (physFlags & SITH_PF_NOTHRUST) == 0 )
         {
-            rdVector_MultAcc3(&thrustDelta, &pThing->pInSector->thrust, SITHPHYSICS_FIXED_TIMESTEP);
+            rdVector_MultAcc3(&thrustDelta, &pThing->pInSector->thrust, sithPhysics_fixedTimestep);
         }
 
         // Apply gravity
@@ -1087,7 +1106,7 @@ void J3DAPI sithPhysics_UpdateDetachedPlayerPhysics(SithThing* pThing, float sec
             && (physFlags & SITH_PF_USEGRAVITY) != 0
             && (pThing->pInSector->flags & SITH_SECTOR_NOGRAVITY) == 0 )
         {
-            float gravityDelta = sithWorld_g_pCurrentWorld->gravity * SITHPHYSICS_FIXED_TIMESTEP;
+            float gravityDelta = sithWorld_g_pCurrentWorld->gravity * sithPhysics_fixedTimestep;
 
             // Partial gravity for things in special states
             if ( (pPhysics->flags & SITH_PF_PARTIALGRAVITY) != 0 )
@@ -1105,7 +1124,7 @@ void J3DAPI sithPhysics_UpdateDetachedPlayerPhysics(SithThing* pThing, float sec
         // TODO: Clip near-zero velocity components like in sithPhysics_UpdateDetachedThingPhysics?
 
         // Accumulate position delta for this frame
-        rdVector_MultAcc3(&pPhysics->deltaVelocity, &pPhysics->velocity, SITHPHYSICS_FIXED_TIMESTEP);
+        rdVector_MultAcc3(&pPhysics->deltaVelocity, &pPhysics->velocity, sithPhysics_fixedTimestep);
     }
 }
 

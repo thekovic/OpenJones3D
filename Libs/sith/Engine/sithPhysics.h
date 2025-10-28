@@ -11,6 +11,8 @@
 
 J3D_EXTERN_C_START
 
+#define JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP "physics.fixedTimestep" // fps
+
 typedef enum eSithPhysicsWaterSurfaceType
 {
     SITHPHYSICS_WATERSURFACE_NONE    = 0,
@@ -18,6 +20,8 @@ typedef enum eSithPhysicsWaterSurfaceType
     SITHPHYSICS_WATERSURFACE_ADJOIN  = 3,
     SITHPHYSICS_WATERSURFACE_WATER   = 4,
 } SithPhysicsWaterSurfaceType;
+
+void J3DAPI sithPhysics_Startup(void); // Added / New
 
 void J3DAPI sithPhysics_FindFloor(SithThing* pThing, int bNoThingStateUpdate);
 void J3DAPI sithPhysics_FindWaterSurface(SithThing* pThing);

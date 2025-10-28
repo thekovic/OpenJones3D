@@ -16,6 +16,7 @@
 #include <sith/Engine/sithCamera.h>
 #include <sith/Engine/sithCollision.h>
 #include <sith/Engine/sithParticle.h>
+#include <sith/Engine/sithPhysics.h>
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Engine/sithRender.h>
 #include <sith/Gameplay/sithEvent.h>
@@ -159,6 +160,7 @@ int sithStartup(void)
     bSuccess &= sithWorld_Startup();
     bSuccess &= sithRender_Startup();
     sithCollision_Startup();
+    sithPhysics_Startup(); // Added
     bSuccess &= sithThing_Startup();
     sithMessage_Startup();
 
