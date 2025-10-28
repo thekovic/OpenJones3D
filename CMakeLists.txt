@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.5)
 
 project(OpenJones3D VERSION 0.4.0)
 
@@ -65,7 +65,14 @@ configure_file(
 set(CMAKE_MSVC_RUNTIME_LIBRARY "$<$<CONFIG:Release>:MultiThreaded>$<$<CONFIG:MinSizeRel>:MultiThreaded>")
 
 if (MSVC)
-    add_compile_definitions("__FILE_NAME__=\"%(Filename)%(Extension)\"")
+    # Clion IDE can't read the preprocessor macro below and needs special treatment
+    if($ENV{CLION_IDE})
+        message(STATUS "Generating in Clion environment")
+        add_compile_definitions(__FILE_NAME__=__FILE__)
+    else()
+        add_compile_definitions("__FILE_NAME__=\"%(Filename)%(Extension)\"")
+    endif()
+
     add_compile_options(
         /utf-8
         /Zc:__STDC__
