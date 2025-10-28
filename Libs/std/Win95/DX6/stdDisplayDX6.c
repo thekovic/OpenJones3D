@@ -10,7 +10,8 @@
 #include <std/RTI/symbols.h>
 
 // Public globals
-tVBuffer stdDisplay_g_backBuffer = { 0 };
+tVBuffer stdDisplay_g_frontBuffer = { 0 };
+tVBuffer stdDisplay_g_backBuffer  = { 0 };
 
 // Private globals
 static bool stdDisplay_bStartup    = false;
