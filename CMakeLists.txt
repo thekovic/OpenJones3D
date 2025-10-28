@@ -22,7 +22,7 @@ option(JONES3D_SPEEDRUN_BUILD "Enable vanilla bugs and glitches used in speedrun
 option(JONES3D_USE_DIRECTX9 "Build with DirectX 9 support" ON)
 #---------------------
 
-if(JONES3D_QOL_IMPROVEMENTS)
+if (JONES3D_QOL_IMPROVEMENTS)
     message(STATUS "QOL improvements enabled")
     set(J3D_QOL_IMPROVEMENTS ON)
 else()
@@ -41,10 +41,18 @@ endif()
 if(JONES3D_USE_DIRECTX9)
     message(STATUS "Configuring for DirectX 9")
     set(J3D_DIRECTX9 ON) # Set the variable for the header template
+    if (NOT JONES3D_QOL_IMPROVEMENTS)
+      set(JONES3D_BUILD_SUFFIX "-dx9-lgc") # Add '-dx9-lgc' version suffix when not legacy build
+    endif()
 else()
     message(STATUS "Configuring for vanilla DirectX 6 (default)")
     set(J3D_DIRECTX6 ON) # Set the variable for the header template
     set(J3D_COLORKEYSUPPORTED ON)
+    if (JONES3D_QOL_IMPROVEMENTS)
+      set(JONES3D_BUILD_SUFFIX "-dx6") # Add '-sr' version suffix when not legacy build
+    else()
+      set(JONES3D_BUILD_SUFFIX "-lgc") # Add '-lgc' version suffix for legacy build
+    endif()
 endif()
 
 # Configure the version header file
