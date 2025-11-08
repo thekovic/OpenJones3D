@@ -115,11 +115,11 @@ static float sithPhysics_trackJeepMaxSpeed       = 1.0f;
 
 // Track truck fx vars
 static bool sithPhysics_bUpdateTrackTruckEngineFx = true;
-static float sithPhysics_trackTruckMinSndPitch  = 0.52f;
-static float sithPhysics_trackTruckMaxSndPitch  = 1.0f;
-static float sithPhysics_trackTruckMinSndVolume = 0.5f;
-static float sithPhysics_trackTruckMaxSndVolume = 1.0f;
-static float sithPhysics_trackTruckMaxSpeed     = 1.0f;
+static float sithPhysics_trackTruckMinSndPitch    = 0.52f;
+static float sithPhysics_trackTruckMaxSndPitch    = 1.0f;
+static float sithPhysics_trackTruckMinSndVolume   = 0.5f;
+static float sithPhysics_trackTruckMaxSndVolume   = 1.0f;
+static float sithPhysics_trackTruckMaxSpeed       = 1.0f;
 
 //
 // MineCar physics vars
@@ -136,6 +136,11 @@ static float sithPhysics_waterSurfaceSearchOffset   = 0.018999999f;
 static float sithPhysics_raftHeightAdjustSpeed      = 0.050000001f;
 static float sithPhysics_raftSteepSlopeFactor       = 0.30000001f;
 static float sithPhysics_raftSolidSurfaceDragFactor = 1.1f;
+
+//
+// Jeep physics vars
+//
+static bool sithPhysics_bJeepExhaust; // Added: new var
 
 // MineCar fx init functions
 void J3DAPI sithPhysics_InitMineCarFxState(SithThing* pThing, SithMineCarFxState* pFxState);
@@ -256,6 +261,7 @@ void sithPhysics_ResetGlobals(void)
 void J3DAPI sithPhysics_Startup(void)
 {
 #ifdef J3D_QOL_IMPROVEMENTS
+    // Fixed timestap
     sithPhysics_fixedFramerate = stdConfig_GetFloat(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
     sithPhysics_fixedTimestep  = 1.0f / sithPhysics_fixedFramerate;
 
@@ -263,6 +269,12 @@ void J3DAPI sithPhysics_Startup(void)
     {
         stdConfig_SetFloat(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
     }
+
+    // Jeep exhaust
+    sithPhysics_bJeepExhaust = true;
+
+#else
+    sithPhysics_bJeepExhaust = false;
 #endif 
 }
 
@@ -1797,7 +1809,7 @@ void J3DAPI sithPhysics_InitJeepExhaust(SithThing* pThing, SithVehicleExhaustInf
 {
     J3D_UNUSED(pThing);
 
-    pExhaustInfo->bEnabled = 0;
+    pExhaustInfo->bEnabled = sithPhysics_bJeepExhaust; // Altered: assign value via var
     pExhaustInfo->spacing  = 0.0080000004f;
 
     pExhaustInfo->posY = -0.16f;
@@ -1830,7 +1842,7 @@ void J3DAPI sithPhysics_InitTrackTruckExhaust(SithThing* pThing, SithVehicleExha
     J3D_UNUSED(pThing);
 
     pExhaustInfo->bEnabled = 1;
-    pExhaustInfo->spacing = 0.0080000004f;
+    pExhaustInfo->spacing  = 0.0080000004f;
 
     pExhaustInfo->posY = -0.30000001f;
     pExhaustInfo->posZ = -0.1f;
@@ -1868,7 +1880,7 @@ void J3DAPI sithPhysics_InitMineCarState(SithThing* pThing, SithMineCarState* pS
     J3D_UNUSED(pThing);
 
     pState->maybeMoveSate      = 0;
-    pState->bOnAdjoinTrack      = 0;
+    pState->bOnAdjoinTrack     = 0;
     pState->pEngineAnim        = NULL;
     pState->bEngineAnim        = 0;
     pState->bUpdateSparksRight = 0;

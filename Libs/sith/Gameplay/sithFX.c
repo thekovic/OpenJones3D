@@ -756,7 +756,6 @@ void J3DAPI sithFx_CreateTireFx(SithThing* pThing, const rdVector3* pPosLeft, rd
     float speed;
     rdVector3 dir;
     SithThing* pLeftParticles;
-    rdVector3 pos;
     float v18;
     float v19;
     int bRight;
@@ -803,7 +802,7 @@ void J3DAPI sithFx_CreateTireFx(SithThing* pThing, const rdVector3* pPosLeft, rd
     {
         if ( pMatLeft )
         {
-            memcpy(&pos, pPosLeft, sizeof(pos));
+            rdVector3 pos = *pPosLeft;
             pos.x = pThing->orient.lvec.x * -0.025f + pos.x;
             pos.y = pThing->orient.lvec.y * -0.025f + pos.y;
             pos.z = pThing->orient.lvec.z * -0.025f + pos.z;
@@ -828,7 +827,7 @@ void J3DAPI sithFx_CreateTireFx(SithThing* pThing, const rdVector3* pPosLeft, rd
 
         if ( pMatRight )
         {
-            memcpy(&pos, pPosRigth, sizeof(pos));
+            rdVector3 pos = *pPosRigth;
             pos.x = pThing->orient.lvec.x * -0.025f + pos.x;
             pos.y = pThing->orient.lvec.y * -0.025f + pos.y;
             pos.z = pThing->orient.lvec.z * -0.025f + pos.z;
