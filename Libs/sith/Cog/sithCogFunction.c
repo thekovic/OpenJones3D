@@ -136,7 +136,8 @@ void J3DAPI sithCogFunction_Print(SithCog* pCog)
     const char* pStr = sithCogExec_PopString(pCog);
 
     // Added: from debug version but modified to require explicit enable
-    if ( bPrintEnabled && pStr ) {
+    if ( bPrintEnabled && pStr )
+    {
         sithConsole_PrintString(pStr);
     }
 }
@@ -148,7 +149,8 @@ void J3DAPI sithCogFunction_PrintInt(SithCog* pCog)
     STD_FORMAT(aVecStr, "%d", val);
 
     // Added: from debug version but modified to require explicit enable
-    if ( bPrintEnabled ) {
+    if ( bPrintEnabled )
+    {
         sithConsole_PrintString(aVecStr);
     }
 }
@@ -167,7 +169,8 @@ void J3DAPI sithCogFunction_PrintVector(SithCog* pCog)
     }
 
     // Added: from debug version but modified to require explicit enable
-    if ( bPrintEnabled ) {
+    if ( bPrintEnabled )
+    {
         sithConsole_PrintString(aVecStr);
     }
 }
@@ -178,7 +181,8 @@ void J3DAPI sithCogFunction_PrintFlex(SithCog* pCog)
     STD_FORMAT(aFltStr, "%f", sithCogExec_PopFlex(pCog));
 
     // Added: from debug version but modified to require explicit enable
-    if ( bPrintEnabled ) {
+    if ( bPrintEnabled )
+    {
         sithConsole_PrintString(aFltStr);
     }
 }
@@ -189,7 +193,8 @@ void J3DAPI sithCogFunction_PrintHex(SithCog* pCog)
     STD_FORMAT(aHexStr, "0x%x", sithCogExec_PopInt(pCog));
 
     // Added: from debug version but modified to require explicit enable
-    if ( bPrintEnabled ) {
+    if ( bPrintEnabled )
+    {
         sithConsole_PrintString(aHexStr);
     }
 }
@@ -758,7 +763,8 @@ void J3DAPI sithCogFunction_GetThingTemplateCount(SithCog* pCog)
     for ( int i = 0; i < sithWorld_g_pCurrentWorld->lastThingIdx; ++i )
     {
         SithThing* pThing = &sithWorld_g_pCurrentWorld->aThings[i];
-        if ( pThing->type && pThing->type != SITH_THING_CORPSE && pThing->pTemplate == pTemplate ) {
+        if ( pThing->type && pThing->type != SITH_THING_CORPSE && pThing->pTemplate == pTemplate )
+        {
             count++;
         }
     }
@@ -1841,8 +1847,8 @@ void J3DAPI sithCogFunction_CopyPlayerHolsters(SithCog* pCog)
         if ( meshNum != -1 )
         {
             sithThing_AddSwapEntry(pDestThing, meshNum, pSwapList->pSrcModel, pSwapList->srcMeshNum);
-            pSwapList = pSwapList->pNextEntry;
         }
+        pSwapList = pSwapList->pNextEntry; // Fixed: Infinite loop when meshNum == -1 by moving outside the if statement’s scope
     }
 }
 
@@ -2018,7 +2024,8 @@ void J3DAPI sithCogFunction_DebugLocalSymbols(SithCog* pCog)
 void J3DAPI sithCogFunction_DebugPrint(SithCog* pCog)
 {
     const char* pStr = sithCogExec_PopString(pCog);
-    if ( pStr ) {
+    if ( pStr )
+    {
         SITHLOG_DEBUG("%s\n", pStr);
     }
 }
@@ -2027,7 +2034,8 @@ void J3DAPI sithCogFunction_DebugFlex(SithCog* pCog)
 {
     const float val  = sithCogExec_PopFlex(pCog);
     const char* pStr = sithCogExec_PopString(pCog);
-    if ( pStr ) {
+    if ( pStr )
+    {
         SITHLOG_DEBUG("%s (%f)\n", pStr, val);
     }
 
@@ -2038,7 +2046,8 @@ void J3DAPI sithCogFunction_DebugInt(SithCog* pCog)
 {
     const int val    = sithCogExec_PopInt(pCog);
     const char* pStr = sithCogExec_PopString(pCog);
-    if ( pStr ) {
+    if ( pStr )
+    {
         SITHLOG_DEBUG("%s (%d)\n", pStr, val);
     }
 
@@ -2059,7 +2068,8 @@ void J3DAPI sithCogFunction_DebugVector(SithCog* pCog)
     }
 
     const char* pStr = sithCogExec_PopString(pCog);
-    if ( pStr ) {
+    if ( pStr )
+    {
         SITHLOG_DEBUG("%s %s\n", pStr, aVecStr);
     }
     sithCogExec_PushVector(pCog, &vec);
@@ -2070,7 +2080,8 @@ void J3DAPI sithCogFunction_DebugWaitForKey(SithCog* pCog)
     J3D_UNUSED(pCog);
 
     // Added: This scope was not present in the original debug version
-    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 ) {
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
+    {
         return;
     }
 
