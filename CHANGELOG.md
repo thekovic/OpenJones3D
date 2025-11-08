@@ -91,6 +91,8 @@
   - [QOL] Fixed dying thing to not change it's puppet mode to swim when entering water (85abbe6)  
     This prevents dead things from playing swim idle animation when dead thing falls into water.
   - [QOL] Changed physics fixed timestep to 150 fps and added option to configure timestep (0eaa4eb)
+  - [QOL] Enabled jeep exhaust smoke fx (c889ecb)
+  - Fixed Infinite loop bug in `sithCogFunction_CopyPlayerHolsters` function (51180ef)
 
 ## v0.3.1
 ### General:
