@@ -90,7 +90,7 @@ void sithEvent_Reset(void)
 
 int J3DAPI sithEvent_CreateEvent(size_t taskId, SithEventParams* params, uint32_t when)
 {
-    SITH_ASSERTREL((taskId > 0) && (taskId < 5) && (when >= 0));
+    SITH_ASSERTREL((taskId > 0) && (taskId < STD_ARRAYLEN(aTasks)) && (when >= 0));
 
     SithEvent* pEvent = sithEvent_Create();
     if ( !pEvent )
@@ -159,7 +159,7 @@ void sithEvent_Process(void)
         }
 
         size_t taskNum = sithEvent_g_pFirstQueuedEvent->taskNum;
-        SITH_ASSERTREL(aTasks[taskNum].pfProcess);
+        SITH_ASSERTREL(aTasks[taskNum].pfProcess); // TODO: Would make much more sense to make this check when event is created
         aTasks[taskNum].pfProcess(0, &pEvent->params);
 
         sithEvent_g_pFirstQueuedEvent = pEvent->pNextEvent;

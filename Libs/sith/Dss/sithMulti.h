@@ -9,6 +9,8 @@
 
 J3D_EXTERN_C_START
 
+#define SITHMULTI_CHECKPLAYER_TASKID 2u
+
 #define sithMulti_g_serverId J3D_DECL_FAR_VAR(sithMulti_g_serverId, DPID)
 // extern DPID sithMulti_g_serverId;
 

@@ -127,10 +127,12 @@ int J3DAPI sithCommand_DebugMode(const SithConsoleCommand* pFunc, const char* pA
     STD_TOWSTR(awComName, pFunc->aName);
 
     const wchar_t* pwState;
-    if ( (newFlags & *pFlags) != 0 ) {
+    if ( (newFlags & *pFlags) != 0 )
+    {
         pwState = sithString_GetString("ON");
     }
-    else {
+    else
+    {
         pwState = sithString_GetString("OFF");
     }
 
@@ -147,12 +149,14 @@ int J3DAPI sithCommand_Wuss(const SithConsoleCommand* pFunc, const char* pArg)
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
 
-    if ( !sithPlayer_g_pLocalPlayerThing ) {
+    if ( !sithPlayer_g_pLocalPlayerThing )
+    {
         return 0;
     }
 
     SithCog* pCog = sithCog_GetCogByIndex(SITHWORLD_STATICINDEX(31)); //0x801F
-    if ( !pCog ) {
+    if ( !pCog )
+    {
         return 0;
     }
 
@@ -166,7 +170,8 @@ int J3DAPI sithCommand_Fixme(const SithConsoleCommand* pFunc, const char* pArg)
     J3D_UNUSED(pArg);
 
     SithThing* pThing = sithPlayer_g_pLocalPlayerThing;
-    if ( !sithPlayer_g_pLocalPlayerThing ) {
+    if ( !sithPlayer_g_pLocalPlayerThing )
+    {
         return 0;
     }
 
@@ -189,12 +194,14 @@ int J3DAPI sithCommand_Ouch(const SithConsoleCommand* pFunc, const char* pArg)
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
 
-    if ( !sithPlayer_g_pLocalPlayerThing ) {
+    if ( !sithPlayer_g_pLocalPlayerThing )
+    {
         return 0;
     }
 
     SithCog* pCog = sithCog_GetCogByIndex(SITHWORLD_STATICINDEX(32)); // 0x8020
-    if ( !pCog ) {
+    if ( !pCog )
+    {
         return 0;
     }
 
@@ -327,7 +334,8 @@ int J3DAPI sithCommand_Memory(const SithConsoleCommand* pFunc, const char* pArg)
     J3D_UNUSED(pFunc);
 
     const SithWorld* pWorld = sithWorld_g_pCurrentWorld;
-    if ( pArg ) {
+    if ( pArg )
+    {
         pWorld = sithWorld_g_pStaticWorld;
     }
 
@@ -397,7 +405,8 @@ int J3DAPI sithCommand_MemoryDump(const SithConsoleCommand* pFunc, const char* p
     J3D_UNUSED(pArg);
 
     tFileHandle fh = sith_g_pHS->pFileOpen("memdump.txt", "w+");
-    if ( !fh ) {
+    if ( !fh )
+    {
         return 0;
     }
 
@@ -507,7 +516,7 @@ int J3DAPI sithCommand_Tick(const SithConsoleCommand* pFunc, const char* pStrTic
         if ( newRate >= 50 && newRate <= 300 )
         {
             sithMulti_SetTickRate(newRate);
-            sithEvent_RegisterTask(2u, sithMulti_CheckPlayers, newRate, SITHEVENT_TASKINTERVAL);
+            sithEvent_RegisterTask(SITHMULTI_CHECKPLAYER_TASKID, sithMulti_CheckPlayers, newRate, SITHEVENT_TASKINTERVAL);
             return 1;
         }
 
@@ -951,7 +960,8 @@ int J3DAPI sithCommand_PauseAllCogs(const SithConsoleCommand* pFunc, const char*
     bool bDisable;
     if ( sithCommand_ParseBool(pArg, &bDisable) )
     {
-        if ( bDisable ) {
+        if ( bDisable )
+        {
             sithConsole_PrintString("Cogs disabled.");
             for ( size_t i = 0; i < sithWorld_g_pCurrentWorld->numCogs; ++i )
             {
@@ -1128,7 +1138,8 @@ const char* J3DAPI sithCommand_CipherText(const char* pText)
 
     size_t len = strlen(pText);
     size_t i = 0;
-    for ( ; i < len; ++i ) {
+    for ( ; i < len; ++i )
+    {
         aCipherTextBuf[i] = pText[i] ^ 34;
     }
     aCipherTextBuf[i] = 0;
