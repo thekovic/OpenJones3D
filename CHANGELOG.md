@@ -77,6 +77,9 @@
   - Fixed normalizing calculated right & up dir vectors for type 2 sprite in `rdSprite_Draw` (120a6f2)
     This corrects the size of rendered type sprites, especially when sprite is on uneven surface.
     e.g.: raft row sprite on uneven water surface.
+  - [QOL] Wrapped all improvements to DirectX 6 implementation of `std3D` & `stdDisplay` in QOL macro (ba404fe)  
+    This allows compiling these 2 modules to the original state when QOL is disabled.  
+    i.e.: 16 bpp textures, not VSync disable option, no anisotropic texture filtering and default bilinear filtering.
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
