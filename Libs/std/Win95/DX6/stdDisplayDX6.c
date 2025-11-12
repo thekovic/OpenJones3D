@@ -277,7 +277,8 @@ int stdDisplay_Startup(void)
 {
     STDLOG_STATUS("Starting stdDisplay system using DirectDraw 9 GAPI ...\n");
 
-    if ( stdDisplay_bStartup ) {
+    if ( stdDisplay_bStartup )
+    {
         return 1;
     }
 
@@ -305,7 +306,8 @@ int stdDisplay_Startup(void)
 
 void stdDisplay_Shutdown(void)
 {
-    if ( stdDisplay_bOpen ) {
+    if ( stdDisplay_bOpen )
+    {
         stdDisplay_Close();
     }
 
@@ -329,13 +331,15 @@ int J3DAPI stdDisplay_Open(size_t deviceNum)
         stdDisplay_Close();
     }
 
-    if ( deviceNum > stdDisplay_numDevices ) {
+    if ( deviceNum > stdDisplay_numDevices )
+    {
         return 0;
     }
 
     stdDisplay_curDevice  = deviceNum;
     stdDisplay_pCurDevice = &stdDisplay_aDisplayDevices[deviceNum];
-    if ( !stdDisplay_InitDirectDraw(stdWin95_GetWindow()) ) {
+    if ( !stdDisplay_InitDirectDraw(stdWin95_GetWindow()) )
+    {
         return 0;
     }
 
@@ -369,7 +373,8 @@ void stdDisplay_Close(void)
         return;
     }
 
-    if ( stdDisplay_bModeSet ) {
+    if ( stdDisplay_bModeSet )
+    {
         stdDisplay_ClearMode();
     }
 
@@ -386,11 +391,13 @@ void stdDisplay_Close(void)
 
 int J3DAPI stdDisplay_SetMode(size_t modeNum, int bFullscreen, size_t numBackBuffers)
 {
-    if ( bFullscreen && modeNum >= stdDisplay_numVideoModes ) {
+    if ( bFullscreen && modeNum >= stdDisplay_numVideoModes )
+    {
         return 1;
     }
 
-    if ( stdDisplay_bModeSet ) {
+    if ( stdDisplay_bModeSet )
+    {
         stdDisplay_ClearMode();
     }
 
@@ -398,7 +405,8 @@ int J3DAPI stdDisplay_SetMode(size_t modeNum, int bFullscreen, size_t numBackBuf
     {
         stdDisplay_pCurVideoMode = &stdDisplay_aVideoModes[modeNum];
         HWND hwnd = stdWin95_GetWindow();
-        if ( stdDisplay_SetFullscreenMode(hwnd, &stdDisplay_aVideoModes[modeNum], numBackBuffers) ) {
+        if ( stdDisplay_SetFullscreenMode(hwnd, &stdDisplay_aVideoModes[modeNum], numBackBuffers) )
+        {
             return 1;
         }
     }
@@ -437,7 +445,8 @@ int J3DAPI stdDisplay_SetMode(size_t modeNum, int bFullscreen, size_t numBackBuf
 
 void stdDisplay_ClearMode(void)
 {
-    if ( stdDisplay_bModeSet ) {
+    if ( stdDisplay_bModeSet )
+    {
         stdDisplay_ReleaseBuffers();
     }
 
@@ -468,7 +477,8 @@ int J3DAPI stdDisplay_GetDevice(size_t deviceNum, StdDisplayDevice* pDest)
 
 int J3DAPI stdDisplay_GetCurrentDevice(StdDisplayDevice* pDevice)
 {
-    if ( stdDisplay_numDevices == 0 ) {
+    if ( stdDisplay_numDevices == 0 )
+    {
         return 1;
     }
 
@@ -591,7 +601,8 @@ tVBuffer* J3DAPI stdDisplay_VBufferNew(const tRasterInfo* pRasterInfo, int bUseV
         vbuffer->surface.desc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
         vbuffer->surface.desc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 
-        if ( !bUseVideoMemory ) {
+        if ( !bUseVideoMemory )
+        {
             vbuffer->surface.desc.ddsCaps.dwCaps = DDSCAPS_SYSTEMMEMORY | DDSCAPS_OFFSCREENPLAIN;
         }
 
@@ -747,7 +758,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
                     pPixels8 += pVBuffer->rasterInfo.rowSize;
                 }
             }
-            else {
+            else
+            {
                 memset(pVBuffer->pPixels, (uint8_t)color, pVBuffer->rasterInfo.size);
             }
 
@@ -763,7 +775,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
                     pPixels16 = (uint16_t*)((char*)pPixels16 + pVBuffer->rasterInfo.rowSize);
                 }
             }
-            else {
+            else
+            {
                 stdDisplay_SetPixels16((uint16_t*)pVBuffer->pPixels, color, (size_t)(pVBuffer->rasterInfo.size / 2));
             }
 
@@ -783,7 +796,8 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
                     pPixels32 = (uint32_t*)((char*)pPixels32 + pVBuffer->rasterInfo.rowSize);
                 }
             }
-            else {
+            else
+            {
                 stdDisplay_SetPixels32((uint32_t*)pVBuffer->pPixels, color, (size_t)(pVBuffer->rasterInfo.size / 4));
             }
 
@@ -796,13 +810,15 @@ int J3DAPI stdDisplay_VBufferFill(tVBuffer* pVBuffer, uint32_t color, const StdR
 tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredColorFormat, tVBuffer* pSrc, int bColorKey, LPDDCOLORKEY pColorKey)
 {
     STD_ASSERTREL(pSrc != NULL);
-    if ( memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) == 0 ) {
+    if ( memcmp(pDesiredColorFormat, &pSrc->rasterInfo.colorInfo, sizeof(ColorInfo)) == 0 )
+    {
         return pSrc;
     }
 
     if ( pSrc->rasterInfo.colorInfo.colorMode == STDCOLOR_PAL )
     {
-        if ( pDesiredColorFormat->colorMode == STDCOLOR_PAL ) {
+        if ( pDesiredColorFormat->colorMode == STDCOLOR_PAL )
+        {
             return pSrc;
         }
 
@@ -874,7 +890,8 @@ tVBuffer* J3DAPI stdDisplay_VBufferConvertColorFormat(const ColorInfo* pDesiredC
     // Copy color format
     memcpy(&pDest->rasterInfo.colorInfo, pDesiredColorFormat, sizeof(pDest->rasterInfo.colorInfo));
 
-    if ( pDest != pSrc ) {
+    if ( pDest != pSrc )
+    {
         stdDisplay_VBufferFree(pSrc);
     }
 
@@ -910,7 +927,8 @@ int J3DAPI stdDisplay_GetTextureMemory(size_t* pTotal, size_t* pFree)
     DDSCAPS2 ddsc = { 0 };
     ddsc.dwCaps = DDSCAPS_TEXTURE;
     HRESULT ddres = IDirectDraw4_GetAvailableVidMem(stdDisplay_lpDD, &ddsc, (LPDWORD)pTotal, (LPDWORD)pFree);
-    if ( ddres == DD_OK ) {
+    if ( ddres == DD_OK )
+    {
         return 0;
     }
     STDLOG_ERROR("Error %s in stdDisplay_GetTextureMemory.\n", stdDisplay_DDGetStatus(ddres));
@@ -922,7 +940,8 @@ int J3DAPI stdDisplay_GetTotalMemory(size_t* pTotal, size_t* pFree)
     DDSCAPS2 ddscaps = { 0 };
     ddscaps.dwCaps = DDSCAPS_VIDEOMEMORY;
     HRESULT ddres = IDirectDraw4_GetAvailableVidMem(stdDisplay_lpDD, &ddscaps, (LPDWORD)pTotal, (LPDWORD)pFree);
-    if ( ddres == DD_OK ) {
+    if ( ddres == DD_OK )
+    {
         return 0;
     }
     STDLOG_ERROR("Error %s in stdDisplay_GetTotalMemory.\n", stdDisplay_DDGetStatus(ddres));
@@ -933,7 +952,8 @@ const char* J3DAPI stdDisplay_DDGetStatus(HRESULT status)
 {
     for ( size_t i = 0; i < STD_ARRAYLEN(stdDisplay_aDDStatusTbl); ++i )
     {
-        if ( stdDisplay_aDDStatusTbl[i].code == status ) {
+        if ( stdDisplay_aDDStatusTbl[i].code == status )
+        {
             return stdDisplay_aDDStatusTbl[i].text;
         }
     }
@@ -954,7 +974,7 @@ int J3DAPI stdDisplay_CreateZBuffer(const tSysPixelFormat* pPixelFormat, int bSy
     stdDisplay_zBuffer.desc.dwHeight = stdDisplay_g_backBuffer.rasterInfo.height;
     stdDisplay_zBuffer.desc.dwWidth  = stdDisplay_g_backBuffer.rasterInfo.width;
     stdDisplay_zBuffer.desc.dwSize   = sizeof(DDSURFACEDESC2);
-    stdDisplay_zBuffer.desc.dwFlags  = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;// DDSD_PIXELFORMAT  | DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH
+    stdDisplay_zBuffer.desc.dwFlags  = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
     stdDisplay_zBuffer.desc.ddsCaps.dwCaps = bSystemMemory != 0
         ? DDSCAPS_ZBUFFER | DDSCAPS_SYSTEMMEMORY
         : DDSCAPS_ZBUFFER | DDSCAPS_VIDEOMEMORY;
@@ -989,10 +1009,12 @@ int J3DAPI stdDisplay_InitDirectDraw(HWND hwnd)
     J3D_UNUSED(hwnd);
     HRESULT ddres;
     LPDIRECTDRAW lpDD = NULL;
-    if ( stdDisplay_pCurDevice->bGuidNotSet ) {
+    if ( stdDisplay_pCurDevice->bGuidNotSet )
+    {
         ddres = DirectDrawCreate(NULL, &lpDD, NULL);
     }
-    else {
+    else
+    {
         ddres = DirectDrawCreate(&stdDisplay_pCurDevice->guid, &lpDD, NULL);
     }
 
@@ -1033,12 +1055,14 @@ void J3DAPI stdDisplay_ReleaseDirectDraw()
     if ( stdDisplay_lpDD )
     {
         HRESULT ddres = IDirectDraw4_SetCooperativeLevel(stdDisplay_lpDD, 0, DDSCL_NORMAL);
-        if ( ddres != DD_OK ) {
+        if ( ddres != DD_OK )
+        {
             STDLOG_ERROR("Error %s when setting coop level.\n", stdDisplay_DDGetStatus(ddres));
         }
 
         ddres = IDirectDraw4_RestoreDisplayMode(stdDisplay_lpDD);
-        if ( ddres != DD_OK ) {
+        if ( ddres != DD_OK )
+        {
             STDLOG_ERROR("Error %s when restoring the video mode.\n", stdDisplay_DDGetStatus(ddres));
         }
 
@@ -1054,7 +1078,8 @@ BOOL PASCAL stdDisplay_DDEnumCallback(GUID* lpGUID, LPSTR szDriverName, LPSTR sz
 {
     J3D_UNUSED(lpContext);
 
-    if ( (unsigned int)stdDisplay_numDevices >= STD_ARRAYLEN(stdDisplay_aDisplayDevices) ) {
+    if ( (unsigned int)stdDisplay_numDevices >= STD_ARRAYLEN(stdDisplay_aDisplayDevices) )
+    {
         return 0;
     }
 
@@ -1108,14 +1133,18 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
 {
     J3D_UNUSED(lpContext);
 
-    if ( stdDisplay_numVideoModes >= STD_ARRAYLEN(stdDisplay_aVideoModes) ) {
+    if ( stdDisplay_numVideoModes >= STD_ARRAYLEN(stdDisplay_aVideoModes) )
+    {
         return 0;
     }
 
     // Added: Allow only true colors
-    if ( lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount < 24 ) {
+#ifdef J3D_QOL_IMPROVEMENTS
+    if ( lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount < 24 )
+    {
         return 1;
     }
+#endif
 
     StdVideoMode* pMode       = &stdDisplay_aVideoModes[stdDisplay_numVideoModes];
     pMode->rasterInfo.width   = lpDDSurfaceDesc->dwWidth;
@@ -1188,10 +1217,12 @@ HRESULT PASCAL stdDisplay_EnumVideoModesCallback(LPDDSURFACEDESC2 lpDDSurfaceDes
 
     if ( pMode->rasterInfo.width <= 640 && pMode->rasterInfo.height <= 480 && pMode->rasterInfo.colorInfo.bpp == 32 )
     {
-        if ( totalTexMem < 0x200000 ) {
+        if ( totalTexMem < 0x200000 )
+        {
             STDLOG_STATUS("Not enough video memory, allowing <= 640x480x32 anyway...\n");
         }
-        else {
+        else
+        {
             STDLOG_STATUS("Allowing <= 640x480x32 with 2MB texture mem.\n");
         }
 
@@ -1356,7 +1387,8 @@ int J3DAPI stdDisplay_SetWindowMode(HWND hWnd, StdVideoMode* pDisplayMode)
         stdDisplay_g_frontBuffer.rasterInfo.rowSize  = stdDisplay_g_frontBuffer.surface.desc.lPitch;
         stdDisplay_g_frontBuffer.rasterInfo.rowWidth = stdDisplay_g_frontBuffer.surface.desc.lPitch / (bpp / 8);
 
-        if ( (stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 )
+        {
             stdDisplay_g_frontBuffer.bVideoMemory = 1;
         }
     }
@@ -1475,7 +1507,8 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
         stdDisplay_g_frontBuffer.rasterInfo.rowSize  = stdDisplay_g_frontBuffer.surface.desc.lPitch;
         stdDisplay_g_frontBuffer.rasterInfo.rowWidth = stdDisplay_g_frontBuffer.surface.desc.lPitch / bbpp;
 
-        if ( (stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (stdDisplay_g_frontBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 )
+        {
             stdDisplay_g_frontBuffer.bVideoMemory = 1;
         }
     }
@@ -1514,7 +1547,8 @@ int J3DAPI stdDisplay_SetFullscreenMode(HWND hwnd, const StdVideoMode* pDisplayM
             return ddres;
         }
 
-        if ( (stdDisplay_g_backBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 ) {
+        if ( (stdDisplay_g_backBuffer.surface.desc.ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) != 0 )
+        {
             stdDisplay_g_backBuffer.bVideoMemory = 1;
         }
 
@@ -1535,7 +1569,8 @@ void J3DAPI stdDisplay_ReleaseBuffers()
         IDirectDrawSurface4_Release(stdDisplay_zBuffer.pSysSurface);
     }
 
-    if ( stdDisplay_g_frontBuffer.surface.pSysSurface ) {
+    if ( stdDisplay_g_frontBuffer.surface.pSysSurface )
+    {
         IDirectDrawSurface4_Release(stdDisplay_g_frontBuffer.surface.pSysSurface);
     }
 
@@ -1549,16 +1584,19 @@ uint8_t* J3DAPI stdDisplay_LockSurface(tVSurface* pVSurf)
     while ( 1 )
     {
         HRESULT ddres = IDirectDrawSurface4_Lock(pVSurf->pSysSurface, NULL, &pVSurf->desc, DDLOCK_WAIT, NULL);
-        if ( ddres == DD_OK ) {
+        if ( ddres == DD_OK )
+        {
             break;
         }
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            if ( (pVSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
+            if ( (pVSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 )
+            {
                 ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             }
-            else {
+            else
+            {
                 ddres = IDirectDrawSurface4_Restore(pVSurf->pSysSurface);
             }
         }
@@ -1578,16 +1616,19 @@ int J3DAPI stdDisplay_UnlockSurface(tVSurface* pSurf)
     while ( 1 )
     {
         HRESULT ddres = IDirectDrawSurface4_Unlock(pSurf->pSysSurface, 0);
-        if ( ddres == DD_OK ) {
+        if ( ddres == DD_OK )
+        {
             break;
         }
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            if ( (pSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
+            if ( (pSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 )
+            {
                 ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             }
-            else {
+            else
+            {
                 ddres = IDirectDrawSurface4_Restore(pSurf->pSysSurface);
             }
         }
@@ -1616,15 +1657,19 @@ int stdDisplay_Update(void)
     {
         if ( stdDisplay_bFullscreen )
         {
+        #ifdef J3D_QOL_IMPROVEMENTS
             // Added: VSync disable mode
             // TODO: Add display update flags and control flip/blt option via flags instead of blting by default when nosync is enabled
-            if ( stdDisplay_bNoSync ) {
+            if ( stdDisplay_bNoSync )
+            {
                 // Although the device driver might support DDFLIP_NOVSYNC option it is still too slow to run at max fps possible.
                 // To circumvent this and run at max fps wee use blt function instead.
                 // Note, useful for speeding up game load times
                 ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL, stdDisplay_g_backBuffer.surface.pSysSurface, NULL, DDBLT_WAIT, NULL);
             }
-            else {
+            else
+            #endif J3D_QOL_IMPROVEMENTS
+            {
                 ddres = IDirectDrawSurface4_Flip(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL, 0);
             }
 
@@ -1658,15 +1703,19 @@ int stdDisplay_Update(void)
                 .bottom = stdDisplay_g_backBuffer.rasterInfo.height
             };
 
+        #ifdef J3D_QOL_IMPROVEMENTS
             // Added: Simulate VSync to framecap to match the refresh rate of the display which caps framerate to screen refresh rate.
-            if ( !stdDisplay_bNoSync ) {
+            if ( !stdDisplay_bNoSync )
+            {
                 IDirectDraw4_WaitForVerticalBlank(stdDisplay_lpDD, DDWAITVB_BLOCKBEGIN, NULL);
             }
+        #endif
 
             ddres = IDirectDrawSurface4_Blt(stdDisplay_g_frontBuffer.surface.pSysSurface, &dstRect, stdDisplay_g_backBuffer.surface.pSysSurface, &srcRect, DDBLT_WAIT, NULL);
         }
 
-        if ( ddres == DD_OK ) {
+        if ( ddres == DD_OK )
+        {
             break;
         }
 
@@ -1705,10 +1754,12 @@ int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, c
     RECT rect;
     if ( pRect )
     {
-        if ( pRect->right == 0 ) {
+        if ( pRect->right == 0 )
+        {
             return 1;
         }
-        if ( pRect->bottom == 0 ) {
+        if ( pRect->bottom == 0 )
+        {
             return 1;
         }
 
@@ -1735,16 +1786,19 @@ int J3DAPI stdDisplay_ColorFillSurface(tVSurface* pSurf, uint32_t dwFillColor, c
     while ( 1 )
     {
         HRESULT ddres = IDirectDrawSurface4_Blt(pSurf->pSysSurface, &rect, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddbltfx);
-        if ( ddres == DD_OK ) {
+        if ( ddres == DD_OK )
+        {
             break;
         }
 
         if ( ddres == DDERR_SURFACELOST )
         {
-            if ( (pSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 ) {
+            if ( (pSurf->desc.ddsCaps.dwCaps & DDSCAPS_BACKBUFFER) != 0 )
+            {
                 ddres = IDirectDrawSurface4_Restore(stdDisplay_g_frontBuffer.surface.pSysSurface);
             }
-            else {
+            else
+            {
                 ddres = IDirectDrawSurface4_Restore(pSurf->pSysSurface);
             }
         }
@@ -1788,7 +1842,8 @@ size_t stdDisplay_GetNumVideoModes(void)
 
 int J3DAPI stdDisplay_GetVideoMode(size_t modeNum, StdVideoMode* pDestMode)
 {
-    if ( modeNum >= stdDisplay_numVideoModes ) {
+    if ( modeNum >= stdDisplay_numVideoModes )
+    {
         return 1;
     }
 
@@ -1798,7 +1853,8 @@ int J3DAPI stdDisplay_GetVideoMode(size_t modeNum, StdVideoMode* pDestMode)
 
 int J3DAPI stdDisplay_GetCurrentVideoMode(StdVideoMode* pDisplayMode)
 {
-    if ( !stdDisplay_pCurVideoMode ) {
+    if ( !stdDisplay_pCurVideoMode )
+    {
         return 1;
     }
 
@@ -1808,13 +1864,15 @@ int J3DAPI stdDisplay_GetCurrentVideoMode(StdVideoMode* pDisplayMode)
 
 HDC stdDisplay_GetFrontBufferDC(void)
 {
-    if ( !stdDisplay_bOpen || !stdDisplay_bModeSet ) {
+    if ( !stdDisplay_bOpen || !stdDisplay_bModeSet )
+    {
         return 0;
     }
 
     HDC hdc = 0;
     HRESULT ddres = IDirectDrawSurface4_GetDC(stdDisplay_g_frontBuffer.surface.pSysSurface, &hdc);
-    if ( ddres == DD_OK ) {
+    if ( ddres == DD_OK )
+    {
         return hdc;
     }
 
@@ -1827,7 +1885,8 @@ void J3DAPI stdDisplay_ReleaseFrontBufferDC(HDC hdc)
     if ( stdDisplay_bOpen && stdDisplay_bModeSet )
     {
         HRESULT ddres = IDirectDrawSurface4_ReleaseDC(stdDisplay_g_frontBuffer.surface.pSysSurface, hdc);
-        if ( ddres != DD_OK ) {
+        if ( ddres != DD_OK )
+        {
             STDLOG_ERROR("Error %s when releasing DC of front buffer.\n", stdDisplay_DDGetStatus(ddres));
         }
     }
@@ -1842,7 +1901,8 @@ HDC stdDisplay_GetBackBufferDC(void)
 
     HDC hdc = NULL;
     HRESULT ddres = IDirectDrawSurface4_GetDC(stdDisplay_g_backBuffer.surface.pSysSurface, &hdc);
-    if ( ddres != DD_OK ) { // TODO: BUG should be ddres == DD_OK
+    if ( ddres != DD_OK )
+    { // TODO: BUG should be ddres == DD_OK
         return hdc;
     }
 
@@ -1855,7 +1915,8 @@ void J3DAPI stdDisplay_ReleaseBackBufferDC(HDC hdc)
     if ( stdDisplay_bOpen && stdDisplay_bModeSet )
     {
         HRESULT ddres = IDirectDrawSurface4_ReleaseDC(stdDisplay_g_backBuffer.surface.pSysSurface, hdc);
-        if ( ddres != DD_OK ) {
+        if ( ddres != DD_OK )
+        {
             STDLOG_ERROR("Error %s when releasing DC of back buffer.\n", stdDisplay_DDGetStatus(ddres));
         }
     }
@@ -1864,7 +1925,8 @@ void J3DAPI stdDisplay_ReleaseBackBufferDC(HDC hdc)
 int stdDisplay_FlipToGDISurface(void)
 {
     HRESULT dderr = IDirectDraw4_FlipToGDISurface(stdDisplay_lpDD);
-    if ( dderr != DD_OK ) {
+    if ( dderr != DD_OK )
+    {
         STDLOG_ERROR("Error %s when flipping to GDI surface.\n", stdDisplay_DDGetStatus(dderr));
     }
     return dderr;
@@ -1872,14 +1934,16 @@ int stdDisplay_FlipToGDISurface(void)
 
 int stdDisplay_CanRenderWindowed(void)
 {
-    if ( !stdDisplay_lpDD ) {
+    if ( !stdDisplay_lpDD )
+    {
         return -1;
     }
 
     DDCAPS caps;
     memset(&caps, 0, sizeof(caps));
     caps.dwSize = sizeof(DDCAPS);
-    if ( IDirectDraw4_GetCaps(stdDisplay_lpDD, &caps, 0) != DD_OK ) {
+    if ( IDirectDraw4_GetCaps(stdDisplay_lpDD, &caps, 0) != DD_OK )
+    {
         return -1;
     }
 
@@ -1891,21 +1955,24 @@ int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer)
 {
     IDirectDrawClipper* pClipper;
 
-    if ( !stdDisplay_bFullscreen ) {
+    if ( !stdDisplay_bFullscreen )
+    {
         return 0;
     }
 
     if ( bFrontBuffer )
     {
         IDirectDrawSurface4_GetClipper(stdDisplay_g_frontBuffer.surface.pSysSurface, &pClipper);
-        if ( pClipper ) {
+        if ( pClipper )
+        {
             return 1; // Clipper already set for buffer
         }
     }
     else
     {
         IDirectDrawSurface4_GetClipper(stdDisplay_g_backBuffer.surface.pSysSurface, &pClipper);
-        if ( pClipper ) {
+        if ( pClipper )
+        {
             return 1; // Clipper already set for buffer
         }
     }
@@ -1926,7 +1993,8 @@ int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer)
     }
 
     LPDIRECTDRAWSURFACE4 pSysSurface = stdDisplay_g_frontBuffer.surface.pSysSurface;
-    if ( !bFrontBuffer ) {
+    if ( !bFrontBuffer )
+    {
         pSysSurface = stdDisplay_g_backBuffer.surface.pSysSurface;
     }
 
@@ -1943,11 +2011,13 @@ int J3DAPI stdDisplay_SetBufferClipper(int bFrontBuffer)
 
 HRESULT J3DAPI stdDisplay_RemoveBufferClipper(int bFrontBuffer)
 {
-    if ( !stdDisplay_bFullscreen ) {
+    if ( !stdDisplay_bFullscreen )
+    {
         return 0;
     }
 
-    if ( bFrontBuffer ) {
+    if ( bFrontBuffer )
+    {
         return IDirectDrawSurface4_SetClipper(stdDisplay_g_frontBuffer.surface.pSysSurface, NULL);
     }
 
@@ -1961,7 +2031,8 @@ int stdDisplay_IsFullscreen(void)
 
 int J3DAPI stdDisplay_LockBackBuffer(void** pSurface, uint32_t* pWidth, uint32_t* pHeight, int32_t* pPitch)
 {
-    if ( !stdDisplay_bOpen || !stdDisplay_bModeSet ) {
+    if ( !stdDisplay_bOpen || !stdDisplay_bModeSet )
+    {
         return 1;
     }
 
@@ -2016,7 +2087,8 @@ void stdDisplay_UnlockBackBuffer(void)
     if ( stdDisplay_bOpen && stdDisplay_bModeSet )
     {
         HRESULT ddres = IDirectDrawSurface4_Unlock(stdDisplay_g_backBuffer.surface.pSysSurface, 0);
-        if ( ddres != DD_OK ) {
+        if ( ddres != DD_OK )
+        {
             STDLOG_ERROR("Error %s when unlocking back buffer.\n", stdDisplay_DDGetStatus(ddres));
         }
     }
@@ -2040,7 +2112,8 @@ uint32_t J3DAPI stdDisplay_EncodeFromRGB565(uint16_t pixel)
     }
 
     uint8_t blue = 8 * pixel;
-    if ( (blue & 8) != 0 ) {
+    if ( (blue & 8) != 0 )
+    {
         blue = blue | 7;
     }
 

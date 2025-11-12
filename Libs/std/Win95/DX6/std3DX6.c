@@ -494,10 +494,16 @@ int J3DAPI std3D_Open(size_t deviceNum)
     std3D_pLastTexCache     = NULL;
 
     // Get color formats for RGB, RGBA and RGBA key formats
-    // Changed: Use 32 bit formats; was using 16 bit
+#ifdef J3D_QOL_IMPROVEMENTS
+    // Altered: Use 32 bit formats; was using 16 bit
     std3D_RGBTextureFormat     = std3D_FindClosestFormat(&stdColor_cfBGR8888);
     std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
     std3D_RGBATextureFormat    = std3D_FindClosestFormat(&stdColor_cfRGBA8888);
+#else
+    std3D_RGBTextureFormat     = std3D_FindClosestFormat(&std3D_cfRGB565);
+    std3D_RGBAKeyTextureFormat = std3D_FindClosestFormat(&std3D_cfRGB5551);
+    std3D_RGBATextureFormat    = std3D_FindClosestFormat(&std3D_cfRGB4444);
+#endif
 
     if ( std3D_aTextureFormats[std3D_RGBAKeyTextureFormat].ci.alphaBPP == 0
         && std3D_pCurDevice->bColorkeyTextureSupported )
@@ -821,6 +827,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
         }
 
         // Update texture filtering
+    #ifdef J3D_QOL_IMPROVEMENTS 
         // Added: Added handling anisotropic filtering
         if ( (std3D_renderState & STD3D_RS_TEXFILTER_ANISOTROPIC) != (rdflags & STD3D_RS_TEXFILTER_ANISOTROPIC) )
         {
@@ -853,20 +860,23 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
                 IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_POINT);
             }
         }
-        else if ( (std3D_renderState & STD3D_RS_TEXFILTER_BILINEAR) != (rdflags & STD3D_RS_TEXFILTER_BILINEAR) )
-        {
-            if ( (rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0
-                && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
+        else
+        #endif // J3D_QOL_IMPROVEMENTS
+
+            if ( (std3D_renderState & STD3D_RS_TEXFILTER_BILINEAR) != (rdflags & STD3D_RS_TEXFILTER_BILINEAR) )
             {
-                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
-                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR);
+                if ( (rdflags & STD3D_RS_TEXFILTER_BILINEAR) != 0
+                    && (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
+                {
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR);
+                }
+                else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
+                {
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_POINT);
+                    IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_POINT);
+                }
             }
-            else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
-            {
-                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_POINT);
-                IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_POINT);
-            }
-        }
 
         if ( (std3D_renderState & STD3D_RS_ALPHAREF_SET) != (rdflags & STD3D_RS_ALPHAREF_SET) )
         {
@@ -1381,14 +1391,23 @@ int std3D_InitRenderState(void)
 
     std3D_renderState |= STD3D_RS_UNKNOWN_1;
 
-    if ( std3D_SetMipmapFilter(STD3D_MIPMAPFILTER_TRILINEAR) ) // Altered: Changed from STD3D_MIPMAPFILTER_BILINEAR to STD3D_MIPMAPFILTER_TRILINEAR
+#ifdef J3D_QOL_IMPROVEMENTS
+     // Altered: Changed from STD3D_MIPMAPFILTER_BILINEAR to STD3D_MIPMAPFILTER_TRILINEAR
+    if ( std3D_SetMipmapFilter(STD3D_MIPMAPFILTER_TRILINEAR) )
     {
         return 0;
     }
+#else
+    if ( std3D_SetMipmapFilter(STD3D_MIPMAPFILTER_BILINEAR) )
+    {
+        return 0;
+    }
+#endif
 
      // Set texture filtering
 
-    // Added: Set anisotropy to max
+#ifdef J3D_QOL_IMPROVEMENTS
+// Added: Set anisotropy to max
     if ( std3D_pCurDevice->bAnisotropicFilteringSupported )
     {
         if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_ANISOTROPY, std3D_pCurDevice->d3dDesc.dwMaxAnisotropy) != D3D_OK )
@@ -1396,7 +1415,9 @@ int std3D_InitRenderState(void)
             return 0;
         }
     }
+#endif
 
+#ifdef J3D_QOL_IMPROVEMENTS
     // Added: Add anisotropic tex filtering
     if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MINFANISOTROPIC) != 0 )
     {
@@ -1422,32 +1443,34 @@ int std3D_InitRenderState(void)
 
         std3D_renderState |= STD3D_RS_TEXFILTER_ANISOTROPIC;
     }
-    else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
-    {
-        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR) != D3D_OK )
+    else
+    #endif // J3D_QOL_IMPROVEMENTS
+        if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR) != 0 )
         {
-            return 0;
-        }
+            if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_LINEAR) != D3D_OK )
+            {
+                return 0;
+            }
 
-        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR) != D3D_OK )
-        {
-            return 0;
-        }
+            if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_LINEAR) != D3D_OK )
+            {
+                return 0;
+            }
 
-        std3D_renderState |= STD3D_RS_TEXFILTER_BILINEAR;
-    }
-    else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
-    {
-        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_POINT) != D3D_OK )
-        {
-            return 0;
+            std3D_renderState |= STD3D_RS_TEXFILTER_BILINEAR;
         }
+        else if ( (std3D_pCurDevice->d3dDesc.dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_MAGFPOINT) != 0 )
+        {
+            if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MAGFILTER, D3DTFG_POINT) != D3D_OK )
+            {
+                return 0;
+            }
 
-        if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_POINT) != D3D_OK )
-        {
-            return 0;
+            if ( IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MINFILTER, D3DTFN_POINT) != D3D_OK )
+            {
+                return 0;
+            }
         }
-    }
 
     if ( IDirect3DDevice3_SetRenderState(std3D_pD3Device, D3DRENDERSTATE_SUBPIXEL, TRUE) != D3D_OK )
     {
@@ -1747,7 +1770,7 @@ int std3D_CreateViewport(void)
         return 0;
     }
 
-    D3DVIEWPORT2 d3dviewport = { 0 }; // Added
+    D3DVIEWPORT2 d3dviewport = { 0 }; // Altered: Zero init
     d3dviewport.dwSize       = sizeof(D3DVIEWPORT2);
     d3dviewport.dwWidth      = stdDisplay_g_backBuffer.rasterInfo.width;
     d3dviewport.dwHeight     = stdDisplay_g_backBuffer.rasterInfo.height;
@@ -1806,10 +1829,12 @@ int std3D_CreateViewport(void)
     );
 
     // Added
+#ifdef J3D_QOL_IMPROVEMENTS
     if ( d3dres != D3D_OK )
     {
         STDLOG_ERROR("Error %s when Clearing the stencil buffer.\n", std3D_D3DGetStatus(d3dres));
     }
+#endif
 
     return 1;
 }
@@ -2125,7 +2150,7 @@ int J3DAPI std3D_PurgeTextureCache(size_t size)
         pNextCachedTexture = pCacheTexture->pNextCachedTexture;
         if ( pCacheTexture->frameNum != std3D_frameCount )
         {
-            // Added: Added check for null pointer
+            // Fixed: Added check for null pointer
             if ( pCacheTexture->pCachedTexture )
             {
                 IDirect3DTexture2_Release(pCacheTexture->pCachedTexture);
