@@ -820,7 +820,7 @@
 #define sithCollision_ThingCollisionHandler_TYPE int (J3DAPI*)(SithThing*, SithThing*, SithCollision*, int)
 #define sithCollision_VehicleCollisionHandler_TYPE void (J3DAPI*)(SithThing*, SithThing*, rdVector3*, rdVector3*, int*, const rdVector3*, float, float)
 #define sithCollision_sub_4AA1A0_TYPE int (J3DAPI*)(SithThing*, const rdVector3*, float, int, const SithSurface*)
-#define sithCollision_FindActivatedThing_TYPE SithThing* (J3DAPI*)(SithThing*, int*)
+#define sithCollision_FindItemThing_TYPE SithThing* (J3DAPI*)(SithThing*, int*)
 #define sithCollision_PushThingCollision_TYPE void (J3DAPI*)(SithThing*, float, SithCollisionType, rdModel3Mesh*, rdFace*, rdVector3*)
 #define sithCollision_PushSurfaceCollision_TYPE void (J3DAPI*)(SithSurface*, float, SithCollisionType, rdVector3*)
 #define sithCollision_ParticleAndActorCollisionHandler_TYPE int (J3DAPI*)(SithThing*, SithThing*, SithCollision*, int)

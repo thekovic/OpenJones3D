@@ -821,7 +821,7 @@
 #define sithCollision_ThingCollisionHandler_ADDR 0x004A8D90
 #define sithCollision_VehicleCollisionHandler_ADDR 0x004A95D0
 #define sithCollision_sub_4AA1A0_ADDR 0x004AA1A0
-#define sithCollision_FindActivatedThing_ADDR 0x004AA840
+#define sithCollision_FindItemThing_ADDR 0x004AA840
 #define sithCollision_PushThingCollision_ADDR 0x004AAAE0
 #define sithCollision_PushSurfaceCollision_ADDR 0x004AABD0
 #define sithCollision_ParticleAndActorCollisionHandler_ADDR 0x004AAC90

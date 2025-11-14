@@ -77,7 +77,7 @@ void sithCollision_InstallHooks(void)
     J3D_HOOKFUNC(sithCollision_ThingCollisionHandler);
     J3D_HOOKFUNC(sithCollision_VehicleCollisionHandler);
     J3D_HOOKFUNC(sithCollision_sub_4AA1A0);
-    J3D_HOOKFUNC(sithCollision_FindActivatedThing);
+    J3D_HOOKFUNC(sithCollision_FindItemThing);
     J3D_HOOKFUNC(sithCollision_PushThingCollision);
     J3D_HOOKFUNC(sithCollision_PushSurfaceCollision);
     J3D_HOOKFUNC(sithCollision_ParticleAndActorCollisionHandler);
@@ -2162,7 +2162,7 @@ void J3DAPI sithCollision_sub_4DA7DB(SithThing* pThing, float a2)
     }
 }
 
-SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFoundFloorItem)
+SithThing* J3DAPI sithCollision_FindItemThing(SithThing* pThing, int* pbFoundFloorItem)
 {
     rdVector3 moveNorm;
     SithThing* pThingCollided;
@@ -2179,14 +2179,14 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
     moveDist = 0.079999998f;
     if ( curWeaponID && curWeaponID != SITHWEAPON_ZIPPO )
     {
-        return 0;
+        return NULL;
     }
 
     SITH_ASSERTREL(pThing);
     radius = 0.025f;
     if ( !pThing->pInSector )
     {
-        return 0;
+        return NULL;
     }
 
     rdVector_Copy3(&moveNorm, &pThing->orient.lvec);
@@ -2196,7 +2196,7 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
     pSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
     if ( !pSector )
     {
-        return 0;
+        return NULL;
     }
 
     sithCollision_SearchForCollisions(pSector, NULL, &startPos, &moveNorm, moveDist, radius, searchFlags);
@@ -2233,7 +2233,7 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
     pSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
     if ( !pSector )
     {
-        return 0;
+        return NULL;
     }
 
     sithCollision_SearchForCollisions(pSector, NULL, &startPos, &moveNorm, moveDist, radius, searchFlags);
@@ -2260,7 +2260,7 @@ SithThing* J3DAPI sithCollision_FindActivatedThing(SithThing* pThing, int* pbFou
     }
 
     sithCollision_DecreaseStackLevel();
-    return 0;
+    return NULL;
 }
 
 float J3DAPI sithCollision_BuildCollisionList(SithSector* pSector, SithThing* pThing, const rdVector3* startPos, const rdVector3* moveNorm, float moveDist, float radius, int searchFlags)
