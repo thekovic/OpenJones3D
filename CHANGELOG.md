@@ -57,6 +57,8 @@
   - Added implementation for updating physics of attached/detached, underwater, climbing, raft thing (3a6fffa)
   - Added partial implementation for updating physics of MineCar thing (3a6fffa)
   - Added implementation of `sithPhysics_FindFloor` function (3a6fffa)
+  - Added github actions CI for building DirectX 9/6 (82d5ba3)
+  - Renamed collision system function `sithCollision_FindActivatedThing` to `sithCollision_FindItemThing` (0fe8351)
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)
