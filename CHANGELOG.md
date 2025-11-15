@@ -59,6 +59,8 @@
   - Added implementation of `sithPhysics_FindFloor` function (3a6fffa)
   - Added github actions CI for building DirectX 9/6 (82d5ba3)
   - Renamed collision system function `sithCollision_FindActivatedThing` to `sithCollision_FindItemThing` (0fe8351)
+  - Fixed incorrect handling of default control set (4b3ea73)
+  - Fixed assigning default control set when loading control set from `kfg` file fails (d6c774c)
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)

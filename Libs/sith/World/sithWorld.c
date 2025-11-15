@@ -1104,7 +1104,7 @@ int J3DAPI sithWorld_InitPlayers(SithWorld* pWorld)
         sithPlayer_HidePlayer(i);
     }
 
-    sithPlayer_SetLocalPlayer(0);
+    sithPlayer_SetLocalPlayer(SITHPLAYER_DEFAULTLOCALPLAYERNUM);
     return 1;
 }
 
@@ -1205,7 +1205,8 @@ int J3DAPI sithWorld_ReadGeoresourceText(SithWorld* pWorld, int bSkip)
     int nRead =  stdConffile_ScanLine(" world vertices %d", &numVerts);
     if ( nRead != 1 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -1223,7 +1224,8 @@ int J3DAPI sithWorld_ReadGeoresourceText(SithWorld* pWorld, int bSkip)
         int entryNum;
         if ( nRead = stdConffile_ScanLine(" %d: %f %f %f", &entryNum, &pVert->x, &pVert->y, &pVert->z), nRead != 4 )
         {
-            if ( nRead < 0 ) {
+            if ( nRead < 0 )
+            {
                 goto eof_error;
             }
             goto syntax_error;
@@ -1235,7 +1237,8 @@ int J3DAPI sithWorld_ReadGeoresourceText(SithWorld* pWorld, int bSkip)
     size_t numTexVerts;
     if ( nRead = stdConffile_ScanLine(" world texture vertices %d", &numTexVerts), nRead != 1 )
     {
-        if ( nRead < 0 ) {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -1254,7 +1257,8 @@ int J3DAPI sithWorld_ReadGeoresourceText(SithWorld* pWorld, int bSkip)
         int entryNum;
         if ( nRead = stdConffile_ScanLine(" %d: %f %f", &entryNum, &pTexVert->x, &pTexVert->y), nRead != 3 )
         {
-            if ( nRead < 0 ) {
+            if ( nRead < 0 )
+            {
                 goto eof_error;
             }
             goto syntax_error;

@@ -2566,7 +2566,7 @@ void J3DAPI sithVehicleControls_ExitRaft(SithThing* pRaftPlayer)
     }
 
     // Adjust newPos Z
-    SithThing* pPlayerThing = sithPlayer_g_aPlayers[0].pThing;
+    SithThing* pPlayerThing = sithPlayer_g_aPlayers[SITHPLAYER_DEFAULTLOCALPLAYERNUM].pThing;
 
     float playerHeight = sithPhysics_GetThingHeight(pPlayerThing);
     float raftHeight   = sithPhysics_GetThingHeight(pRaftPlayer);
@@ -2590,9 +2590,9 @@ void J3DAPI sithVehicleControls_ExitRaft(SithThing* pRaftPlayer)
     // Hide raft player
     sithPlayer_HidePlayer(raftPlayerNum);
 
-    memcpy(pPlayerThing->thingInfo.actorInfo.pPlayer, pRaftPlayer->thingInfo.actorInfo.pPlayer, sizeof(SithPlayer));
+    *pPlayerThing->thingInfo.actorInfo.pPlayer        = *pRaftPlayer->thingInfo.actorInfo.pPlayer;
     pPlayerThing->thingInfo.actorInfo.pPlayer->pThing = pPlayerThing;
-    pPlayerThing->thingInfo.actorInfo.health  = pRaftPlayer->thingInfo.actorInfo.health;
+    pPlayerThing->thingInfo.actorInfo.health          = pRaftPlayer->thingInfo.actorInfo.health;
 
     pPlayerThing->thingInfo.actorInfo.flags  &= ~SITH_AF_INVULNERABLE;
     if ( (pRaftPlayer->thingInfo.actorInfo.flags & SITH_AF_INVULNERABLE) != 0 )
@@ -2608,8 +2608,8 @@ void J3DAPI sithVehicleControls_ExitRaft(SithThing* pRaftPlayer)
 
     // Set new position, sector, and make player 0 visible
     sithThing_ExitSector(pPlayerThing);
-    sithPlayer_SetLocalPlayer(/*playerNum=*/0);
-    sithPlayer_ShowPlayer(/*playerNum=*/0, 0);
+    sithPlayer_SetLocalPlayer(SITHPLAYER_DEFAULTLOCALPLAYERNUM);
+    sithPlayer_ShowPlayer(SITHPLAYER_DEFAULTLOCALPLAYERNUM, 0);
 
     sithThing_SetPositionAndOrient(pPlayerThing, &newPos, &newOrient);
     sithThing_EnterSector(pPlayerThing, pNewSector, /*bNoWaterSplash=*/1, /*bNoNotify=*/!bSameSector);
