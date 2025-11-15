@@ -2163,7 +2163,9 @@ void J3DAPI sithPhysics_UpdateMineCarFx(SithThing* pThing, SithMineCarFxState* p
                 rdMaterial* pEngineMat = sithMaterial_Load("minecar_a_ngenfrnt.mat");
                 if ( pEngineMat )
                 {
-                    pCarState->pEngineAnim = sithAnimate_StartMaterialAnim(pEngineMat, sithPhysics_mineCarEngineAnimFPS, SITHANIMATE_LOOP);
+                    // Fixed: Added flag SITHANIMATE_NOSYNC to prevent engine animation from being written to savegame or over network.
+                    //        This prevents dangling engine mat animation on load since minecar state is not synced to savegame file.
+                    pCarState->pEngineAnim = sithAnimate_StartMaterialAnim(pEngineMat, sithPhysics_mineCarEngineAnimFPS, SITHANIMATE_LOOP | SITHANIMATE_NOSYNC);
                 }
             }
 

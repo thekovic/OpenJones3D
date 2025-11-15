@@ -274,6 +274,7 @@ typedef enum eSithAnimateFlags
     SITHANIMATE_FINISH_FIRST_FRAME   = 0x08,
     SITHANIMATE_PUSHITEM             = 0x10,
     SITHANIMATE_PULLITEM             = 0x20,
+    SITHANIMATE_NOSYNC               = 0x40, // Added: new flag, makes animation not sync over network/savegame
     SITHANIMATE_MATERIAL             = 0x10000,
     SITHANIMATE_SURFACE              = 0x20000,
     SITHANIMATE_THING                = 0x40000,
@@ -289,7 +290,7 @@ typedef enum eSithAnimateFlags
     SITHANIMATE_SPRITE_SIZE          = 0x10000000,
     SITHANIMATE_THING_MOVE           = 0x20000000,
     SITHANIMATE_THING_MOVEPOS        = 0x40000000,
-    SITHANIMATE_THING_QUICKTURN      = 0x80000000,
+    SITHANIMATE_THING_QUICKTURN      = 0x80000000
 } SithAnimateFlags;
 
 typedef enum eSithControlType

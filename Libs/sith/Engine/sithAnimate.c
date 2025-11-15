@@ -1120,9 +1120,10 @@ int J3DAPI sithAnimate_Save(unsigned int outstream)
     for ( int i = 0; i <= lastUsedAnimNum; ++i )
     {
         if ( aAnims[i].flags != 0
+            && (aAnims[i].flags & SITHANIMATE_NOSYNC) == 0 // Added: Don't save NOSYNC anims
             && ((aAnims[i].flags & (SITHANIMATE_SPRITE | SITHANIMATE_THING)) == 0
                 || !aAnims[i].pThing
-                || sithThing_CanSync(aAnims[i].pThing)) )// Hmm pThing cal also be SithCamera type
+                || sithThing_CanSync(aAnims[i].pThing)) )// Hmm pThing could also be SithCamera type
         {
             bError = sithDSS_AnimStatus(&aAnims[i], 0, outstream);
             if ( bError )
