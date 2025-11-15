@@ -486,7 +486,8 @@ int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pbPressed, float lowValu
         if ( axisFlag == STDCONTROL_AID_POSITIVE_AXIS && pos > (double)lowValue )
         {
             // Fixed: Increment num key pressed by 1
-            if ( pbPressed ) {
+            if ( pbPressed )
+            {
                 *pbPressed = 1;
             }
             return 1;
@@ -495,7 +496,8 @@ int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pbPressed, float lowValu
         if ( axisFlag == STDCONTROL_AID_NEGATIVE_AXIS && -lowValue > pos )
         {
             // Fixed: Increment num key pressed by 1
-            if ( pbPressed ) {
+            if ( pbPressed )
+            {
                 *pbPressed = 1;
             }
             return 1;
@@ -506,7 +508,8 @@ int J3DAPI stdControl_ReadAxisAsKeyEx(size_t axis, int* pbPressed, float lowValu
         if ( fabsf(pos) > lowValue )
         {
             // Fixed: Increment num key pressed by 1
-            if ( pbPressed ) {
+            if ( pbPressed )
+            {
                 *pbPressed = 1;
             }
             return 1;
@@ -523,7 +526,7 @@ int J3DAPI stdControl_ReadKey(size_t keyNum, int* pbPressed)
     {
         if ( pbPressed )
         {
-            *pbPressed = stdControl_aKeyPressed[keyNum];
+            *pbPressed += stdControl_aKeyPressed[keyNum];
         }
 
         if ( stdControl_bControlsIdle && stdControl_aKeyInfo[keyNum] )
@@ -1112,7 +1115,8 @@ void stdControl_ReadMouse(void)
     HRESULT hr = IDirectInputDevice_GetDeviceState(stdControl_mouse.pDIDevice, sizeof(DIMOUSESTATE), &mouseState);
     if ( hr != DI_OK )
     {
-        if ( hr != DIERR_NOTACQUIRED && hr != DIERR_INPUTLOST ) {
+        if ( hr != DIERR_NOTACQUIRED && hr != DIERR_INPUTLOST )
+        {
             STDLOG_ERROR("GetDeviceState(mouse) returned %s.\n", stdControl_DIGetStatus(hr));
         }
 
