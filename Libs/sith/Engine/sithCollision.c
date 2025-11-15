@@ -64,8 +64,8 @@ void sithCollision_InstallHooks(void)
     J3D_HOOKFUNC(sithCollision_FindSectorInRadius);
     J3D_HOOKFUNC(sithCollision_FindSectorAtThing);
     J3D_HOOKFUNC(sithCollision_FindWaterSector);
-    J3D_HOOKFUNC(sithCollision_CanMoveToPos);
-    J3D_HOOKFUNC(sithCollision_HasLOS);
+    J3D_HOOKFUNC(sithCollision_CheckLOS);
+    J3D_HOOKFUNC(sithCollision_CheckThingLOS);
     J3D_HOOKFUNC(sithCollision_RotateThing);
     J3D_HOOKFUNC(sithCollision_sub_4A6EE0);
     J3D_HOOKFUNC(sithCollision_MoveThing);
@@ -398,7 +398,7 @@ int J3DAPI sithCollision_sub_4D5EB3(SithSector* pStartSector, const rdVector3* s
     }
 }
 
-int J3DAPI sithCollision_CanMoveToPos(SithSector* pStartSector, const rdVector3* startPos, const rdVector3* endPos, float radius)
+int J3DAPI sithCollision_CheckLOS(SithSector* pStartSector, const rdVector3* startPos, const rdVector3* endPos, float radius)
 {
     SithCollision* pCollision;
     int bCanMove;
@@ -419,8 +419,8 @@ int J3DAPI sithCollision_CanMoveToPos(SithSector* pStartSector, const rdVector3*
         {
             break;
         }
-
-        if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 )
+        // TODO: Should it also check for thing collision, like in case of sithCollision_CheckThingLOS?
+        if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 ) // TODO: SITH_ADJOIN_MOVE might be wrong flag here, maybe it should be SITH_ADJOIN_VISIBLE?
         {
             bCanMove = 0;
             break;
@@ -431,7 +431,7 @@ int J3DAPI sithCollision_CanMoveToPos(SithSector* pStartSector, const rdVector3*
     return bCanMove;
 }
 
-int J3DAPI sithCollision_HasLOS(const SithThing* pViewer, const SithThing* pTarget, int a3)
+int J3DAPI sithCollision_CheckThingLOS(const SithThing* pViewer, const SithThing* pTarget, int a3)
 {
     int v3;
     SithCollision* pCollision;
@@ -479,7 +479,7 @@ int J3DAPI sithCollision_HasLOS(const SithThing* pViewer, const SithThing* pTarg
             }
         }
 
-        else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 )
+        else if ( (pCollision->type & SITHCOLLISION_ADJOINTOUCH) == 0 || (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 ) // TODO: SITH_ADJOIN_MOVE might be wrong flag here, maybe it should be SITH_ADJOIN_VISIBLE?
         {
             bLos = 0;
             break;

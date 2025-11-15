@@ -40,7 +40,7 @@ int J3DAPI sithItem_PlayerCollisionHandler(SithThing* pItem, SithThing* pPlayer,
         return 0;
     }
 
-    if ( !sithCollision_HasLOS(pPlayer, pItem, 0) )
+    if ( !sithCollision_CheckThingLOS(pPlayer, pItem, 0) )
     {
         return 0;
     }

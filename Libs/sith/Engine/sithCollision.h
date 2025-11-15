@@ -17,8 +17,8 @@ SithCollision* sithCollision_PopStack(void);
 SithSector* J3DAPI sithCollision_FindSectorInRadius(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius);
 SithSector* J3DAPI sithCollision_FindSectorAtThing(SithThing* pThing, SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius);
 SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVector3* startPos, rdVector3* endPos, float radius);
-int J3DAPI sithCollision_CanMoveToPos(SithSector* pStartSector, const rdVector3* startPos, const rdVector3* endPos, float radius);
-int J3DAPI sithCollision_HasLOS(const SithThing* pViewer, const SithThing* pTarget, int a3);
+int J3DAPI sithCollision_CheckLOS(SithSector* pStartSector, const rdVector3* startPos, const rdVector3* endPos, float radius);
+int J3DAPI sithCollision_CheckThingLOS(const SithThing* pViewer, const SithThing* pTarget, int a3);
 void J3DAPI sithCollision_RotateThing(SithThing* pThing, const rdMatrix34* pOrient);
 void J3DAPI sithCollision_sub_4A6EE0(SithThing* pThing, rdMatrix34* pOrient);
 // Function returns distance the thing has travelled

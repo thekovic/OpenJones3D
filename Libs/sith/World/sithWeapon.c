@@ -297,7 +297,8 @@ void J3DAPI sithWeapon_Update(SithThing* pThing, float secDeltaTime)
     if ( (pThing->thingInfo.weaponInfo.flags & SITH_WF_DAMAGEDECAY) != 0 && pThing->thingInfo.weaponInfo.damage > pThing->thingInfo.weaponInfo.minDamage )
     {
         pThing->thingInfo.weaponInfo.damage -= pThing->thingInfo.weaponInfo.rate * secDeltaTime;
-        if ( pThing->thingInfo.weaponInfo.damage < pThing->thingInfo.weaponInfo.minDamage ) {
+        if ( pThing->thingInfo.weaponInfo.damage < pThing->thingInfo.weaponInfo.minDamage )
+        {
             pThing->thingInfo.weaponInfo.damage = pThing->thingInfo.weaponInfo.minDamage;
         }
     }
@@ -375,7 +376,8 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
         if ( (pWeaponInfo->flags & SITH_WF_DAMAGEDECAY) != 0 )
         {
             damage -= pWeaponInfo->rate * pCollision->distance;
-            if ( damage < pWeaponInfo->minDamage ) {
+            if ( damage < pWeaponInfo->minDamage )
+            {
                 damage = pWeaponInfo->minDamage;
             }
         }
@@ -405,11 +407,13 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
                     sithWeapon_GenBloodsplort(pVictim);
                     sithThing_DestroyThing(pWeapon);
                 }
-                else {
+                else
+                {
                     sithWeapon_CreateWeaponExplosion(pWeapon, pWeaponInfo->pExplosionTemplate, NULL, /*bRotate=*/0);
                 }
             }
-            else {
+            else
+            {
                 sithWeapon_CreateWeaponExplosion(pWeapon, pWeaponInfo->pExplosionTemplate, NULL, /*bRotate=*/0);
             }
 
@@ -450,7 +454,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
     {
         case SITHTHING_ARG_TYPEFLAGS:
         {
-            if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.weaponInfo.flags) != 1 ) {
+            if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.weaponInfo.flags) != 1 )
+            {
                 goto syntax_error;
             }
             return 1;
@@ -458,7 +463,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
         case SITHTHING_ARG_DAMAGE:
         {
             float damage = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
-            if ( errno == ERANGE ) { // Added
+            if ( errno == ERANGE )
+            { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.damage = damage;
@@ -467,7 +473,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
         case SITHTHING_ARG_MINDAMAGE:
         {
             float minDamage = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
-            if ( errno == ERANGE ) { // Added
+            if ( errno == ERANGE )
+            { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.minDamage = minDamage;
@@ -475,7 +482,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
         }
         case SITHTHING_ARG_DAMAGECLASS:
         {
-            if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.weaponInfo.damageType) != 1 ) {
+            if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.weaponInfo.damageType) != 1 )
+            {
                 goto syntax_error;
             }
             return 1;
@@ -488,7 +496,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
         case SITHTHING_ARG_FORCE:
         {
             float force = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
-            if ( errno == ERANGE ) { // Added
+            if ( errno == ERANGE )
+            { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.force = force;
@@ -497,7 +506,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
         case SITHTHING_ARG_RANGE:
         {
             float range = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
-            if ( errno == ERANGE ) { // Added
+            if ( errno == ERANGE )
+            { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.range = range;
@@ -506,7 +516,8 @@ int J3DAPI sithWeapon_ParseArg(const StdConffileArg* pArg, SithThing* pThing, in
         case SITHTHING_ARG_RATE:
         {
             float rate = strtof(pArg->argValue, NULL); // Changed: Use strtof instead atof
-            if ( errno == ERANGE ) { // Added
+            if ( errno == ERANGE )
+            { // Added
                 goto syntax_error;
             }
             pThing->thingInfo.weaponInfo.rate = rate;
@@ -1196,15 +1207,18 @@ SithThing* J3DAPI sithWeapon_CreateWeaponExplosion(SithThing* pWeapon, SithThing
     }
 
     SithInventoryType* pItem = sithInventory_GetType(pParent->thingInfo.actorInfo.curWeaponID);
-    if ( pItem->pCog ) {
+    if ( pItem->pCog )
+    {
         sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_CREATED, SITHCOG_SYM_REF_THING, pExplosion->idx, SITHCOG_SYM_REF_NONE, 0, 0);
     }
 
-    if ( pParent == sithPlayer_g_pLocalPlayerThing ) {
+    if ( pParent == sithPlayer_g_pLocalPlayerThing )
+    {
         sithAIAwareness_CreateTransmittingEvent(pExplosion->pInSector, &pExplosion->pos, 0, 1.0f, pParent);
     }
 
-    if ( (pWeapon->flags & SITH_TF_REMOTE) != 0 ) {
+    if ( (pWeapon->flags & SITH_TF_REMOTE) != 0 )
+    {
         pExplosion->flags |= SITH_TF_REMOTE;
     }
 
@@ -1631,7 +1645,7 @@ int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, 
         {
             if ( aTarget[i] && aTarget[i] != pShooter && (aTarget[i]->thingInfo.actorInfo.flags & SITH_AF_NOTARGET) == 0 ) // Fixed: Added check for aTarget[i] != NULL 
             {
-                if ( sithCollision_HasLOS(pShooter, aTarget[i], 0) )
+                if ( sithCollision_CheckThingLOS(pShooter, aTarget[i], 0) )
                 {
                     rdVector3 toDargetDir;
                     /*toDargetDir.x = aTarget[i]->pos.x - pShooter->pos.x;
@@ -1833,7 +1847,8 @@ void J3DAPI sithWeapon_DeactivateCurrentWeapon(SithThing* pThing)
     else // Actor
     {
         SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID);
-        if ( pItem->pCog ) {
+        if ( pItem->pCog )
+        {
             sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_DEACTIVATED, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);
         }
     }

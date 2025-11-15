@@ -808,8 +808,8 @@
 #define sithCollision_FindSectorInRadius_ADDR 0x004A67E0
 #define sithCollision_FindSectorAtThing_ADDR 0x004A6920
 #define sithCollision_FindWaterSector_ADDR 0x004A6A70
-#define sithCollision_CanMoveToPos_ADDR 0x004A6BD0
-#define sithCollision_HasLOS_ADDR 0x004A6C80
+#define sithCollision_CheckLOS_ADDR 0x004A6BD0
+#define sithCollision_CheckThingLOS_ADDR 0x004A6C80
 #define sithCollision_RotateThing_ADDR 0x004A6DB0
 #define sithCollision_sub_4A6EE0_ADDR 0x004A6EE0
 #define sithCollision_MoveThing_ADDR 0x004A7090

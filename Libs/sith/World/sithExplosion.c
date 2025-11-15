@@ -346,7 +346,7 @@ void J3DAPI sithExplosion_MakeBlast(SithThing* pThing)
                 SITH_ASSERTREL(((pCollision->type) & (SITHCOLLISION_THING)));
 
                 SithThing* pVictim = pCollision->pThingCollided;
-                if ( ((pExplode->flags & SITH_EF_NOSHOOTERDAMAGE) == 0 || pVictim != pThing->pParent) && sithCollision_HasLOS(pThing, pVictim, 1) )
+                if ( ((pExplode->flags & SITH_EF_NOSHOOTERDAMAGE) == 0 || pVictim != pThing->pParent) && sithCollision_CheckThingLOS(pThing, pVictim, 1) )
                 {
                     if ( expforce != 0.0f && pVictim->moveType == SITH_MT_PHYSICS && (pVictim->moveInfo.physics.flags & SITH_PF_USEBLASTFORCE) != 0 )
                     {

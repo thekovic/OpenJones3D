@@ -4148,7 +4148,7 @@ void J3DAPI sithCogFunctionThing_HasLOS(SithCog* pCog)
         return;
     }
 
-    if ( sithCollision_HasLOS(pViewer, pTarget, 0) )
+    if ( sithCollision_CheckThingLOS(pViewer, pTarget, 0) )
     {
         sithCogExec_PushInt(pCog, 1);
     }
@@ -5427,7 +5427,7 @@ void J3DAPI sithCogFunctionThing_BoardVehicle(SithCog* pCog)
         return;
     }
 
-    const int bBoarded = sithPlayerControls_TryBoardVehicle(pThing, /*bBoard=*/1);
+    const int bBoarded = sithPlayerControls_BoardVehicle(pThing, /*bBoard=*/1);
     sithCogExec_PushInt(pCog, bBoarded);
 }
 
