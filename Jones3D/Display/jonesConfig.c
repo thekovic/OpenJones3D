@@ -2214,8 +2214,12 @@ JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void)
         }
 
         // Clear keyset config 
+        // TODO: Should load the default scheme, right?
+        STDLOG_WARNING("Failed to load control scheme '%s', reverting to default.\n", aFilePath); // Added: Added log
         stdConfig_SetString(JONESCONFIG_CFG_CONTROLS_CONFIGFILE, "");
-        goto error;
+        // Removed: goto error; 
+        //         Fall through to load default scheme.
+        //         This fixes bug when custom scheme fails to load and default scheme is not loaded either.
     }
 
     // TODO: Hmm why is this check here? Should be already handled in above scope.
