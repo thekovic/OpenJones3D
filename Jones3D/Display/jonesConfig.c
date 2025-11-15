@@ -2206,14 +2206,9 @@ JonesControlsScheme* jonesConfig_LoadActiveControlScheme(void)
 
             if ( streq(aFilename, pDfltKeyset) )
             {
-                if ( strlen(aPath) != 0 && jonesConfig_SetDefaultControlScheme(pScheme, i) )
+                if ( strlen(aPath) == 0 && jonesConfig_SetDefaultControlScheme(pScheme, i) ) // TODO: why len of aPath has to be 0?
                 {
                     return pScheme;
-                }
-                else
-                {
-                    // Fixed: Fixed potential infinitive loop, when aPath len == 0 or jonesConfig_SetDefaultControlScheme fails
-                    break;
                 }
             }
         }
