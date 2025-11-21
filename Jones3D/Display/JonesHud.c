@@ -854,7 +854,7 @@ void J3DAPI JonesHud_Update(const SithWorld* pWorld)
     }
     else if ( curTime <= JonesHud_msecTime )
     {
-        JonesHud_msecDeltaTime = curTime + -1 - JonesHud_msecTime;
+        JonesHud_msecDeltaTime = (UINT32_MAX - JonesHud_msecTime + 1) + curTime;
     }
     else
     {
