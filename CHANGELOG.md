@@ -29,6 +29,7 @@
   - Implemented modules:
     * `sithPlayerActions` (67f2eab)
     * `sithVehicleControls` (63685d3)
+    * `sithPlayerControls` (d31ee9b)
   - Moved high poly option to advance display settings (7b58bff)
   - Fixed selecting stored MipMap filter mode in developer dialog (ad1633c)
   - Added new graphic options for MSAA, anisotropic texture filtering and mipmap auto gen to display settings (77df36d)
@@ -65,7 +66,7 @@
   - Fixed bug to correctly update key press state in `stdControl_ReadKey` function (c98937b)
   - Fixed not to sync MineCar engine animation to savegame file (a6c5978)  
     This fixes dangling MineCar engine material animations when loading savegames.
-  - [QOL] Replaced `timeGetTime` with high resolution timer `QueryPerformanceCounter` for better timing precision (2f3f3e1)  
+  - [QOL] Replaced `timeGetTime` with high resolution timer `QueryPerformanceCounter` for better timing precision (82c8a3d)  
     This should improve timing precision for time dependent systems, especially on high refresh rate monitors.
 
 ### Display & Render:
@@ -90,6 +91,8 @@
   - [QOL] Wrapped all improvements to DirectX 6 implementation of `std3D` & `stdDisplay` in QOL macro (ba404fe)  
     This allows compiling these 2 modules to the original state when QOL is disabled.  
     i.e.: 16 bpp textures, not VSync disable option, no anisotropic texture filtering and default bilinear filtering.
+  - Fixed selecting display device when setting default video mode (dcd8962)  
+    This was vanilla engine bug where no display device was selected resulting in game reporting no 3D cards found.
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
