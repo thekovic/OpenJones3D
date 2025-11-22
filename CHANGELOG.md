@@ -61,6 +61,12 @@
   - Renamed collision system function `sithCollision_FindActivatedThing` to `sithCollision_FindItemThing` (0fe8351)
   - Fixed incorrect handling of default control set (4b3ea73)
   - Fixed assigning default control set when loading control set from `kfg` file fails (d6c774c)
+  - Renamed collision functions for checking LOS (09434a9)
+  - Fixed bug to correctly update key press state in `stdControl_ReadKey` function (c98937b)
+  - Fixed not to sync MineCar engine animation to savegame file (a6c5978)  
+    This fixes dangling MineCar engine material animations when loading savegames.
+  - [QOL] Replaced `timeGetTime` with high resolution timer `QueryPerformanceCounter` for better timing precision (2f3f3e1)  
+    This should improve timing precision for time dependent systems, especially on high refresh rate monitors.
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)

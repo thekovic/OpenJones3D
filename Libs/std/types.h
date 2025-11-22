@@ -141,7 +141,11 @@ typedef enum eVBufferType
     VBUFFER_HARDWARE = 1,   // hardware surface
 } VBufferType;
 
+// File handle type
 typedef uintptr_t tFileHandle;
+
+// Time type
+typedef unsigned int tStdTime;
 
 typedef struct sLinkListNode tLinkListNode;
 typedef struct sMemoryHeader tMemoryHeader;

@@ -14,6 +14,11 @@
 
 static bool stdPlatform_bAssert = false;
 
+// Added: high-resolution timer support
+static bool stdPlatform_bHighResTimerInitialized = false;
+LARGE_INTEGER stdPlatform_perfCounterFreq        = { 0 };
+LARGE_INTEGER stdPlatform_perfCounterStart       = { 0 };
+
 void stdPlatform_InstallHooks(void)
 {
     J3D_HOOKFUNC(stdPlatform_InitServices);
@@ -29,9 +34,7 @@ void stdPlatform_InstallHooks(void)
 }
 
 void stdPlatform_ResetGlobals(void)
-{
-    //memset(&stdPlatform_bAssert, 0, sizeof(stdPlatform_bAssert));
-}
+{}
 
 // TODO: stdFile* functions should be moved here to stdPlatform
 
@@ -82,9 +85,32 @@ void J3DAPI stdPlatform_ClearServices(tHostServices* pHS)
     CoUninitialize();
 }
 
-unsigned int stdPlatform_GetTimeMsec(void)
+void stdPlatform_InitHighResTimer(void)
 {
-    return timeGetTime(); // TODO: Use more precise timer
+    QueryPerformanceFrequency(&stdPlatform_perfCounterFreq);
+    QueryPerformanceCounter(&stdPlatform_perfCounterStart);
+    stdPlatform_bHighResTimerInitialized = true;
+}
+
+tStdTime stdPlatform_GetTimeMsec(void)
+{
+#ifdef J3D_QOL_IMPROVEMENTS
+    if ( !stdPlatform_bHighResTimerInitialized )
+    {
+        stdPlatform_InitHighResTimer();
+    }
+
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    LONGLONG elapsed = now.QuadPart - stdPlatform_perfCounterStart.QuadPart;
+
+    // Calculate milliseconds, result will wrap around at ~49.7 days (same as timeGetTime)
+    LONGLONG msec = (elapsed * 1000) / stdPlatform_perfCounterFreq.QuadPart;
+
+    return (tStdTime)msec; // truncate to tStdTime
+#else
+    return timeGetTime();
+#endif
 }
 
 J3DNORETURN void J3DAPI stdPlatform_Assert(const char* pErrorStr, const char* pFilename, int linenum)
@@ -157,9 +183,7 @@ int J3DAPI stdPlatform_LockHandle(int a1)
 }
 
 void J3DAPI stdPlatform_UnlockHandle()
-{
-
-}
+{}
 
 bool J3DAPI stdPlatform_DirExists(const char* pPath)
 {

@@ -10,7 +10,7 @@ typedef void (J3DAPI* tStackTracePrintFunc)(const char*, ...);
 
 int J3DAPI stdPlatform_InitServices(tHostServices* pHS);
 void J3DAPI stdPlatform_ClearServices(tHostServices* pHS);
-unsigned int stdPlatform_GetTimeMsec(void);
+tStdTime stdPlatform_GetTimeMsec(void);
 
 J3DNORETURN void J3DAPI stdPlatform_Assert(const char* pErrorStr, const char* pFilename, int linenum);
 int stdPlatform_Printf(const char* format, ...);
