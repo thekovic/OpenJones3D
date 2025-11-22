@@ -51,7 +51,7 @@ void sithPlayer_ResetGlobals(void)
     int sithPlayer_g_bPlayerInPor_tmp = 1; // Must be set to 1
     memcpy(&sithPlayer_g_bPlayerInPor, &sithPlayer_g_bPlayerInPor_tmp, sizeof(sithPlayer_g_bPlayerInPor));
 
-    int sithPlayer_g_impFireType_tmp = -1;
+    int sithPlayer_g_impFireType_tmp = SITHPLAYER_IMPFIRE_OFF;
     memcpy(&sithPlayer_g_impFireType, &sithPlayer_g_impFireType_tmp, sizeof(sithPlayer_g_impFireType));
 
     memset(&sithPlayer_g_playerNum, 0, sizeof(sithPlayer_g_playerNum));
@@ -80,7 +80,7 @@ void sithPlayer_Close(void)
     // TODO: maybe track open/close state like in other modules
 
     // Fixed: Reset IMP state (in case IMP is active). This is required to avoid IMP being activated in the next level, as the state is not reset on open.
-    sithPlayer_g_impFireType = -1;
+    sithPlayer_g_impFireType = SITHPLAYER_IMPFIRE_OFF;
 
     // Fixed: Reset player state to visible as it is not reset on open, nor in sithPlayerActions module and it will be present in the next level.
     sithPlayerActions_g_bPlayerInvisible = 0;
@@ -270,7 +270,7 @@ void J3DAPI sithPlayer_Update(SithPlayer* pPlayer, float secDetaTime)
 
     // Update IMP fire state
     bool bImpStateUpdated = false;
-    if ( sithPlayer_g_impFireType != -1 )
+    if ( sithPlayer_g_impFireType != SITHPLAYER_IMPFIRE_OFF )
     {
         switch ( sithPlayer_g_impFireType )
         {
@@ -280,7 +280,7 @@ void J3DAPI sithPlayer_Update(SithPlayer* pPlayer, float secDetaTime)
                 sithPlayer_g_impState = sithGetIMPDamageScalar() * 160.0f + sithPlayer_g_impState;
                 bImpStateUpdated = true;
 
-                sithPlayer_g_impFireType = -1; // Note: fire type has to be reset for Urgon's part and Azerim's part as it's single shot 
+                sithPlayer_g_impFireType = SITHPLAYER_IMPFIRE_OFF; // Note: fire type has to be reset for Urgon's part and Azerim's part as it's single shot
                 if ( sithPlayer_g_impState > 180.0f )
                 {
                     float damage = sithGetIMPDamageScalar() * ((sithPlayer_g_impState - 180.0f) * 2.0f); // Don't move
@@ -623,6 +623,6 @@ void J3DAPI sithPlayer_IMPEndFiring(int fireType)
 {
     if ( fireType == sithPlayer_g_impFireType )
     {
-        sithPlayer_g_impFireType = -1;
+        sithPlayer_g_impFireType = SITHPLAYER_IMPFIRE_OFF;
     }
 }

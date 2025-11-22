@@ -13,6 +13,8 @@ J3D_EXTERN_C_START
 
 #define SITHPLAYER_DEFAULTLOCALPLAYERNUM 0
 
+#define SITHPLAYER_IMPFIRE_OFF -1
+
 #define sithPlayer_g_bPlayerInPor J3D_DECL_FAR_VAR(sithPlayer_g_bPlayerInPor, int)
 // extern int sithPlayer_g_bPlayerInPor ;
 
