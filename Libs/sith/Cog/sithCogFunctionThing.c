@@ -5427,7 +5427,7 @@ void J3DAPI sithCogFunctionThing_BoardVehicle(SithCog* pCog)
         return;
     }
 
-    const int bBoarded = sithPlayerControls_TryBoardVehicle(pThing, /*bBoard=*/1);
+    const int bBoarded = sithPlayerControls_BoardVehicle(pThing, /*bBoard=*/1);
     sithCogExec_PushInt(pCog, bBoarded);
 }
 
