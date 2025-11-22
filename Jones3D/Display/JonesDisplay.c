@@ -207,6 +207,7 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
         if ( pEnv->aDisplayInfos[i].displayDevice.bHAL )
         {
             pDisplaySettings->displayDeviceNum = i;
+            break; // Fixed: Added break 
         }
     }
 
@@ -221,7 +222,7 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
                 if ( strstr(pInfo->aDevices[i].deviceDescription, "HAL") )
                 {
                     pDisplaySettings->device3DNum = i;
-                    break;
+                    break; // Fixed: Added break out of loop
                 }
             }
 
@@ -233,9 +234,9 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
             videoMode.refreshRate                    = 60;  // Added
             videoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
             pDisplaySettings->videoModeNum = JonesMain_FindClosestVideoMode(pEnv, &videoMode, pDisplaySettings->displayDeviceNum);
-            memcpy(&videoMode, &pInfo->aModes[pDisplaySettings->videoModeNum], sizeof(videoMode));
 
-            pDisplaySettings->width = videoMode.rasterInfo.width;
+            videoMode = pInfo->aModes[pDisplaySettings->videoModeNum];
+            pDisplaySettings->width  = videoMode.rasterInfo.width;
             pDisplaySettings->height = videoMode.rasterInfo.height;
             pDisplaySettings->bClearBackBuffer = 0;
 
