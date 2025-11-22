@@ -45,7 +45,7 @@ def scan_file(filepath: str) -> Optional[FileProgress]:
         Optional[FileProgress]: A tuple containing the base file name, the number of implemented functions,
                                         and the total number of functions. Returns None if no InstallHooks function is found.
     """
-    with open(filepath, 'r', encoding='utf-8') as file:
+    with open(filepath, 'r') as file:
         content: str = file.read()
 
     # Extract the base name of the file without extension
