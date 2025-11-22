@@ -767,7 +767,7 @@ void J3DAPI sithPlayerActions_PullItem(SithThing* pThing, SithThing* pItem, cons
     else if ( trackNum >= 0 )
     {
         sithPlayerControls_g_bCutsceneMode = 1;
-        rdVector3 dir = { -pDirection->x, -pDirection->y, -pDirection->z };
+        rdVector3 dir = RDVECTOR_NEG3(*pDirection);
         sithAnimate_PullItem(pThing, pItem, &dir, trackNum);
     }
 }
@@ -2701,7 +2701,7 @@ int J3DAPI sithPlayerActions_CanPullUp(SithThing* pThing)
     }
 
     sithCollision_DecreaseStackLevel();
-    return bCanMoveUp;
+    return bCanMoveUp ? 1 : 0;
 }
 
 float J3DAPI sithPlayerActions_GetLedgeSurfaceGrabPosZ(const SithSurface* pLedgeSurf)
@@ -2832,7 +2832,7 @@ int sithPlayerActions_StartJewelFlying(void)
 
         pPlayerThing->collide.type = SITH_COLLIDE_NONE;
         pPlayerThing->thingInfo.actorInfo.bControlsDisabled = 1;
-        sithAnimate_StartThingMoveToPos(pPlayerThing, &newPos, 1.0f);
+        sithAnimate_StartThingMoveToPos(pPlayerThing, &newPos, 1.0f); // 1 sec move
     }
 
     sithInventory_SetSwimmingInventory(pPlayerThing, /*bItemsAvailable=*/0);
@@ -2843,7 +2843,7 @@ int sithPlayerActions_StartJewelFlying(void)
         return 1;
     }
 
-    sithPlayerActions_g_jewelFlyingPuppetTrackNum = sithPuppet_PlayKey(pPlayerThing->renderData.pPuppet, pKFTrack, 3, 4, (rdKeyframeFlags)0, 0);
+    sithPlayerActions_g_jewelFlyingPuppetTrackNum = sithPuppet_PlayKey(pPlayerThing->renderData.pPuppet, pKFTrack, 3, 4, (rdKeyframeFlags)0, NULL);
     sithPuppet_ClearMode(pPlayerThing, SITHPUPPETSUBMODE_STAND);
     return 1;
 }
@@ -3013,7 +3013,7 @@ void J3DAPI sithPlayerActions_MoveToCrawlPosition(SithThing* pThing)
     sithCollision_DecreaseStackLevel();
 
     // Set new player position & sector
-    distance -= 0.045000002f; // 0.045f is probably radius of crawl player model
+    distance -= 0.045000002f; // 0.045f is height of crawl player collider
     if ( distance > 0.0f )
     {
         rdVector3 newPos = {
