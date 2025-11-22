@@ -108,10 +108,12 @@ int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing)
         rdVector_Copy3(&newLVec, &sithWhip_pWhipSwingThing->orient.lvec);
 
         rdVector3 pyr;
-        if ( dot >= 0.0f ) {
+        if ( dot >= 0.0f )
+        {
             rdVector_Set3(&pyr, 0.0f, 90.0f, 0.0f);
         }
-        else {
+        else
+        {
             rdVector_Set3(&pyr, 0.0f, -90.0f, 0.0f);
         }
 
@@ -256,9 +258,9 @@ void J3DAPI sithWhip_WhipClimbDismount(SithThing* pThing)
     sithInventory_SetSwimmingInventory(pThing, 1);
 }
 
-void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing)
+void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
 {
-
+    J3D_UNUSED(secDeltaTime);
     SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
     if ( !pThing->thingInfo.actorInfo.bControlsDisabled && !pThing->thingInfo.actorInfo.bForceMovePlay )
     {
@@ -346,7 +348,8 @@ void J3DAPI sithWhip_WhipFirePuppetCallback(SithThing* pThing, int track, rdKeyM
     if ( markerType == RDKEYMARKER_ATTACK )
     {
         tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(3)); // gen_whip_fire.wav
-        if ( hSnd ) {
+        if ( hSnd )
+        {
             sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, (SoundPlayFlag)0);
         }
     }
@@ -370,7 +373,8 @@ void J3DAPI sithWhip_WhipClimbPuppetCallback(SithThing* pThing, int track, rdKey
             {
                 pos.z += sithWhip_pWhipThing->renderData.data.pModel3->radius;
                 sithWhip_pWhipThing = sithThing_CreateThingAtPos(sithWhip_pWhipThing, &pos, &rdroid_g_identMatrix34, pThing->pInSector, NULL);
-                if ( sithWhip_pWhipThing ) {
+                if ( sithWhip_pWhipThing )
+                {
                     sithPuppet_PlayMode(sithWhip_pWhipThing, SITHPUPPETSUBMODE_WHIPCLIMBIDLE, NULL);
                 }
             }
@@ -418,7 +422,8 @@ void sithWhip_Reset(void)
     sithWhip_pWhipSwingThing = NULL;
     sithWhip_pWhipClimbThing = NULL;
 
-    if ( sithCamera_IsOpen() ) { // Added Check for sithCamera system to be opened. Reason: JonesMain closes sithCamera before closing sith system resulting in sithCamera_g_pCurCamera = NULL here
+    if ( sithCamera_IsOpen() )
+    { // Added Check for sithCamera system to be opened. Reason: JonesMain closes sithCamera before closing sith system resulting in sithCamera_g_pCurCamera = NULL here
         sithCamera_RestoreExtCamera();
     }
 }

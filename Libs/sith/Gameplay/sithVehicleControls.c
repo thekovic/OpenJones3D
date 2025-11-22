@@ -632,7 +632,7 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
         {
             sithVehicleControls_curMineCarState.unboardState = SITHMINECARCONTROLS_UNBOARD_ACTIVATED;
             sithVehicleControls_curMineCarState.secUnboardingElapsedTime = 0.0f;
-            sithPlayerControls_bActionActivated = 1;
+            sithPlayerControls_bActionKeyActive = true;
         }
 
         goto LABEL_106;
@@ -1082,7 +1082,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
         //
         // Check if player init unboard
         //
-        if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !sithPlayerControls_bActionActivated )
+        if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !sithPlayerControls_bActionKeyActive )
         {
             // Stop jeep if velocity is very low
             if ( rdVector_Len3(&pPhysics->velocity) <= (double)sithVehicleControls_jeepMinSpeed )
@@ -1105,7 +1105,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
                 pPhysics->angularVelocity.roll = 0.0f;
             }
 
-            sithPlayerControls_bActionActivated = 1;
+            sithPlayerControls_bActionKeyActive = true;
 
             // rdVector_IsZero3
             const rdVector3 unboardDir = RDVECTOR_NEG3(pThing->orient.rvec);
@@ -1365,9 +1365,9 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
             break;
 
         default:
-            if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !sithPlayerControls_bActionActivated )
+            if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !sithPlayerControls_bActionKeyActive )
             {
-                sithPlayerControls_bActionActivated = 1;
+                sithPlayerControls_bActionKeyActive = true;
 
                 int posSearchResult = sithVehicleControls_FindRaftUnboardPosition(
                     pThing,

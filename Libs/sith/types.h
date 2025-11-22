@@ -1480,8 +1480,8 @@ typedef struct sSithAIClass
 typedef struct sSithCollide
 {
     SithCollideType type;
-    float movesize;
-    float size;
+    float movesize;   // the distance object moves on each physics tick when moving
+    float size;       // sphere collision radius
     float width;
     float height;
     float unkWidth;

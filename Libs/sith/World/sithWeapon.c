@@ -331,7 +331,7 @@ int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId)
     else
     {
         bHasWeapon = true;
-        sithPlayerControls_CenterActorOrientation(pThing);
+        sithPlayerControls_ResetAimJoints(pThing);
     }
 
     if ( !bHasWeapon )

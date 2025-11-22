@@ -20,7 +20,7 @@ void J3DAPI sithWhip_SetActorWhipClimbIdle(SithThing* pThing);
 
 void J3DAPI sithWhip_FinishWhipClimbDismount(SithThing* pThing);
 
-void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing);
+void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime);
 
 SithThing* sithWhip_GetWhipSwingThing(void);
 SithThing* sithWhip_GetWhipClimbThing(void);
