@@ -721,6 +721,13 @@ int J3DAPI JonesMain_GameWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         case WM_SYSCOMMAND:
         {
             JonesMain_HandleWMSysCommand(hWnd, wParam, LOWORD(lParam), HIWORD(lParam));
+            // Fixed: Return non-zero if message was SC_KEYMENU to avoid passing wParam
+            // to DefWindowProc which would attempt to open the (non-existent) window menu
+            // on F10 and ALT press and eat player's input.
+            if ( JonesMain_bWndMsgProcessed )
+            {
+                return wParam;
+            }
             return 0;
         }
         case WM_KEYDOWN:
@@ -1056,6 +1063,11 @@ void J3DAPI JonesMain_HandleWMSysCommand(HWND hWnd, WPARAM wParam, uint16_t curP
     J3D_UNUSED(curPosX);
     J3D_UNUSED(curPosY);
 
+    // In WM_SYSCOMMAND messages, the four low-order bits of the wParam parameter
+    // are used internally by the system. To obtain the correct result when testing
+    // the value of wParam, an application must combine its value with 0xFFF0
+    // by using the bitwise AND operator.
+    wParam &= 0xFFF0;
     if ( wParam == SC_KEYMENU || wParam == SC_SCREENSAVE )
     {
         JonesMain_bWndMsgProcessed = true;
