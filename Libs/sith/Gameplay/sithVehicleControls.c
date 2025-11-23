@@ -1022,7 +1022,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
             }
             else
             {
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = pThing->renderData.apTweakedAngles[jointIdx].pitch - wheelRotationAngle;
+                pThing->renderData.apTweakedAngles[jointIdx].pitch -= wheelRotDelta;
             }
 
             jointIdx = sithThing_GetThingJointIndex(pThing, "flwheel");
