@@ -511,10 +511,9 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
                     sithPlayerControls_bLookKeyActive    = true;
                     sithCamera_g_bExtCameraLookMode = 1;
 
-                    rdVector3 camLookOffset;
                     if ( pPlayerThing->moveStatus == SITHPLAYERMOVE_CRAWLIDLE )
                     {
-                        camLookOffset = (rdVector3){ 0.0f, 0.0f, 0.025f };
+                        rdVector3 camLookOffset = { 0.0f, 0.0f, 0.025f };
                         sithCamera_SetExtCameraOffset(&camLookOffset);
 
                         camLookOffset = (rdVector3){ 0.0f, 0.025f, 0.025f };
@@ -522,7 +521,7 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
                     }
                     else
                     {
-                        camLookOffset = (rdVector3){ 0.0f, 0.0f, 0.059999999f };
+                        rdVector3 camLookOffset = { 0.0f, 0.0f, 0.059999999f };
                         sithCamera_SetExtCameraOffset(&camLookOffset);
 
                         camLookOffset = (rdVector3){ 0.0f, 0.039999999f, 0.059999999f };
@@ -543,21 +542,33 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
         }
     }
 
+    //
     // Update weapon aim and look
+    //
     sithPlayerControls_ProcessWeaponAim(pPlayerThing, secDeltaTime);
 
+    //
+    // Return early if controls are disabled
+    //
     if ( pPlayerThing->type == SITH_THING_PLAYER
         && (pPlayerThing->thingInfo.actorInfo.flags & SITH_AF_CONTROLSDISABLED) != 0 )
     {
         return 0;
     }
 
+    //
+    // Process Look controls if Look key is active
+    //
     if ( sithPlayerControls_bLookKeyActive == true
         && (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
     {
         sithPlayerControls_ProcessLookControls(pPlayerThing, secDeltaTime);
         return 0;
     }
+
+    // 
+    // Process movement based on physics flags and move status
+    //
 
     if ( (pPhysicsInfo->flags & SITH_PF_FLY) != 0
         && pPlayerThing->moveStatus != SITHPLAYERMOVE_JEWELFLYING )
@@ -3120,8 +3131,8 @@ int J3DAPI sithPlayerControls_BoardVehicle(SithThing* pThing, int bNoBoardAnim)
         sithPhysics_FindFloor(pVehiclePlayerThing, /*bNoSurfaceImpactUpdate=*/1);
 
         // Set external camera to focus on mineplayer thing
-        sithCamera_SetCameraFocus(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], pVehiclePlayerThing, 0);
-        // TODO: make also other camera focus change to vehicle player thing?
+        sithCamera_SetCameraFocus(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], pVehiclePlayerThing, NULL);
+        // TODO: change also focus of other cameras to vehicle player thing?
 
         // Play board animation or skip
         pVehiclePlayerThing->moveStatus = SITHPLAYERMOVE_MINECAR_BOARDING;
@@ -3307,7 +3318,7 @@ void J3DAPI sithPlayerControls_ExitVehicle(SithThing* pVehiclePlayerThing)
 
     // Set external camera to focus on walkplayer thing
     sithCamera_SetCameraFocus(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM], pWalkPlayerThing, NULL);
-    // TODO: make also other camera focus change to walk player thing?
+    // TODO: Set also focus of other cameras to walk player thing?
 
     sithPhysics_FindFloor(pWalkPlayerThing, /*bNoSurfaceImpactUpdate=*/1);
     pWalkPlayerThing->alpha = 1.0f;
@@ -3456,15 +3467,15 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
         ? pThing->orient.rvec
         : RDVECTOR_NEG3(pThing->orient.rvec);
 
-    int bCanMove = 1;
-    sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &moveNorm, 0.1f, 0.089000002f, 0xA00); // TODO: hmm quite large search radius?
+    bool bCanMove = true;
+    sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &moveNorm, 0.1f, pThing->collide.movesize, 0xA00); // Altered: Change radius to movesize from 0.089000002f
 
     SithCollision* pCollision;
     while ( (pCollision = sithCollision_PopStack()) != NULL )
     {
         if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
-            bCanMove = 0;
+            bCanMove = false;
             break;
         }
 
@@ -3473,13 +3484,13 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
             if ( (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_NOPLAYERMOVE) != 0 ||
                 (pCollision->pSurfaceCollided->pAdjoin->flags & SITH_ADJOIN_MOVE) == 0 )
             {
-                bCanMove = 0;
+                bCanMove = false;
                 break;
             }
         }
         else if ( (pCollision->type & SITHCOLLISION_THING) != 0 )
         {
-            bCanMove = 0;
+            bCanMove = false;
             break;
         }
     }
@@ -3495,10 +3506,10 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
     // Find floor at strafe end position
     //
 
-    rdVector3 startPos;
-    rdVector_ScaleAdd3(&startPos, &pThing->orient.lvec, 0.1f, &pThing->pos); // TODO: Hmm this must be wrong, shouldn't it be position at the end of direction of strafe move?
+    rdVector3 strafeEndPos;
+    rdVector_ScaleAdd3(&strafeEndPos, &moveNorm, 0.1f, &pThing->pos); // Fixed: Replaced thing.orient.lvect with strafe moveNorm
 
-    SithSector* pStartSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
+    SithSector* pStartSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &strafeEndPos, 0.0f);
     if ( !pStartSector )
     {
         return 0;
@@ -3508,7 +3519,7 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
     moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3); // Down direction
     bCanMove = 0;
 
-    sithCollision_SearchForCollisions(pStartSector, NULL, &startPos, &moveNorm, 0.11f, 0.0099999998f, 0xA00);
+    sithCollision_SearchForCollisions(pStartSector, NULL, &strafeEndPos, &moveNorm, 0.11f, 0.0099999998f, 0xA00);
 
     while ( (pCollision = sithCollision_PopStack()) != NULL )
     {
@@ -3517,19 +3528,22 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
             rdFace* pFace = &pCollision->pSurfaceCollided->face;
 
             // Calculate distance from start pos to floor plane
-            float dist = rdMath_DistancePointToPlane(&startPos, &pFace->normal, &sithWorld_g_pCurrentWorld->aVertices[*pFace->aVertices]);
+            float dist = rdMath_DistancePointToPlane(&strafeEndPos, &pFace->normal, &sithWorld_g_pCurrentWorld->aVertices[*pFace->aVertices]);
             if ( dist < 0.088f || dist > 0.092f )
             {
+                bCanMove = false;
                 break;
             }
 
+            // Check found surf is solid floor
             float floorDot = rdVector_Dot3(&pFace->normal, &rdroid_g_zVector3);
             if ( floorDot < 0.97899997f )
             {
+                bCanMove = false;
                 break;
             }
 
-            bCanMove = 1;
+            bCanMove = true;
         }
         else if ( (pCollision->type & SITHCOLLISION_THING) != 0 && pCollision->pFaceCollided )
         {
@@ -3539,10 +3553,11 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
             rdVector3 worldNormal;
             rdMatrix_TransformVector34(&worldNormal, &pFaceCollided->normal, &pCollision->pThingCollided->orient);
 
+            // Check found surf is flat floor
             float faceDot = rdVector_Dot3(&worldNormal, &rdroid_g_zVector3);
             if ( faceDot <= 0.97899997f )
             {
-                bCanMove = 0;
+                bCanMove = false;
                 break;
             }
 
@@ -3555,13 +3570,14 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
             rdVector_Add3Acc(&worldVert, &pCollision->pThingCollided->pos);
 
             // Calculate distance from start pos to face plane
-            float dist = rdMath_DistancePointToPlane(&startPos, &worldNormal, &worldVert);
+            float dist = rdMath_DistancePointToPlane(&strafeEndPos, &worldNormal, &worldVert);
             if ( dist < 0.088f || dist > 0.092f )
             {
+                bCanMove = false;
                 break;
             }
 
-            bCanMove = 1;
+            bCanMove = true;
         }
     }
 
