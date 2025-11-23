@@ -322,16 +322,16 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
                 sithWhip_WhipClimbDismount(pThing);
             }
         }
-        else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, 0) )
+        else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
         {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
-            pThing->moveInfo.pathMovement.vecDeltaPos.y = sithTime_g_fps + pThing->thingInfo.actorInfo.maxRotVelocity;
+            pThing->moveInfo.physics.angularVelocity.yaw = sithPlayerControls_CalculateYawVelocity(&pThing->thingInfo.actorInfo, 1.0f, 1.0f);
         }
 
-        else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, 0) )
+        else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
         {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
-            pThing->moveInfo.pathMovement.vecDeltaPos.y = -1.0f * sithTime_g_fps + pThing->thingInfo.actorInfo.maxRotVelocity * -1.0f;
+            pThing->moveInfo.physics.angularVelocity.yaw = sithPlayerControls_CalculateYawVelocity(&pThing->thingInfo.actorInfo, -1.0f, 1.0f);
         }
         else
         {
