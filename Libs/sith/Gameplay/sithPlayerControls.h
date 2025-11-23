@@ -3,6 +3,7 @@
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
 #include <sith/types.h>
+#include <sith/Gameplay/sithTime.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
 #include <std/types.h>
@@ -27,6 +28,18 @@ SithThing* sithPlayerControls_GetTargetThing(void);
 
 SithThing* J3DAPI sithPlayerControls_GetVehicleBoardedThing();
 void J3DAPI sithPlayerControls_SetVehicleBoardedThing(SithThing* pThing);
+
+/*
+* Calculates yaw angular velocity based on actor max rotation velocity
+* @param pActor      - Actor info
+* @param direction   - Direction factor. Should be negative for right turn
+* @param speedFactor - Extra speed factor. Should be <= 1.0f
+*/
+inline float sithPlayerControls_CalculateYawVelocity(SithActorInfo* pActor, float direction, float speedFactor)
+{
+    speedFactor = J3DMIN(speedFactor, 1.0f);
+    return (direction * sithTime_g_fps) + (pActor->maxRotVelocity * direction * speedFactor);
+}
 
 // Helper hooking functions
 void sithPlayerControls_InstallHooks(void);

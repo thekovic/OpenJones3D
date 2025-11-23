@@ -1286,16 +1286,9 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
         // Mouse turn
         //
         if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0
-            && (pPhysics->velocity.x != 0.0f || pPhysics->velocity.y != 0.0f || pPhysics->velocity.z != 0.0f) )
+            && !rdVector_IsZero3(&pPhysics->velocity) )
         {
-            float turnDelta = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
-            if ( mouseSensitivity >= 1.0f ) // ??
-            {
-                mouseSensitivity = 1.0f;
-            }
-
-            turnDelta += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * mouseSensitivity;
-            pPhysics->angularVelocity.yaw += turnDelta;
+            pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(&pThing->thingInfo.actorInfo, sithControl_GetAxis(SITHCONTROL_MOUSETURN), mouseSensitivity);
         }
     }
 }
