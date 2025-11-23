@@ -4519,6 +4519,8 @@ void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float secDeltaT
 
 void J3DAPI sithPlayerControls_ProcessCrawlMove(SithThing* pThing, float secDeltaTime, float moveFactor)
 {
+    J3D_UNUSED(moveFactor);
+
     SithPhysicsInfo* pPhysics = &pThing->moveInfo.physics;
     SithActorInfo* pActor     = &pThing->thingInfo.actorInfo;
 

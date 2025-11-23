@@ -916,7 +916,6 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
         //
         // Start unboarding process
         //
-
         if ( bUnboardLeft )
         {
             pThing->moveStatus = SITHPLAYERMOVE_MINECAR_UNBOARDING_LEFT;
@@ -993,16 +992,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
         if ( !rdVector_IsZero3(&pPhysics->velocity) && !sithVehicleControls_bJeepStopping ) // TODO: Remove braking check
         {
             // TODO: sithVehicleControls_jeepWheelRadius constants should be part of jeep user block
-            float wheelCircumference = STDMATH_CIRCLE_CIRCUMF(sithVehicleControls_jeepWheelRadius); // Altered: moved this calculation inside if scope
-            float speed = rdVector_Len3(&pPhysics->velocity) / wheelCircumference;
-
-            float wheelRotationAngle = 360.0f * speed * secDeltaTime;
-            wheelRotationAngle = stdMath_NormalizeAngle(wheelRotationAngle);
-
-            if ( rdVector_Dot3(&pPhysics->velocity, &pThing->orient.lvec) < 0.0f )
-            {
-                wheelRotationAngle = wheelRotationAngle * -1.0f;
-            }
+            float wheelRotDelta = sithPhysics_CalcWheelRotationAngle(pThing, sithVehicleControls_jeepWheelRadius, secDeltaTime);
 
             int jointIdx = sithThing_GetThingJointIndex(pThing, "brwheel");
             if ( jointIdx == -1 )
@@ -1011,7 +1001,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
             }
             else
             {
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = pThing->renderData.apTweakedAngles[jointIdx].pitch - wheelRotationAngle;
+                pThing->renderData.apTweakedAngles[jointIdx].pitch -= wheelRotDelta;
             }
 
             jointIdx = sithThing_GetThingJointIndex(pThing, "blwheel");
@@ -1022,7 +1012,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
 
             else
             {
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = pThing->renderData.apTweakedAngles[jointIdx].pitch - wheelRotationAngle;
+                pThing->renderData.apTweakedAngles[jointIdx].pitch -= wheelRotDelta;
             }
 
             jointIdx = sithThing_GetThingJointIndex(pThing, "frwheel");
@@ -1042,7 +1032,7 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
             }
             else
             {
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = pThing->renderData.apTweakedAngles[jointIdx].pitch - wheelRotationAngle;
+                pThing->renderData.apTweakedAngles[jointIdx].pitch -= wheelRotDelta;
             }
         }
 
@@ -1303,17 +1293,17 @@ void J3DAPI sithVehicleControls_PlayRaftPuppetMode(SithThing* pThing, SithPuppet
 void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float secDeltaTime)
 {
     SithPhysicsInfo* pPhysics = &pThing->moveInfo.physics;
-    SithActorInfo* pActorIndo = &pThing->thingInfo.actorInfo;
+    SithActorInfo* pActor     = &pThing->thingInfo.actorInfo;
 
     pPhysics->height     = sithVehicleControls_raftHeight;
     pPhysics->surfDrag   = sithVehicleControls_raftSurfDrag;
     pPhysics->staticDrag = sithVehicleControls_raftStaticDrag;
 
-    pActorIndo->maxThrust         = sithVehicleControls_raftMaxThrust;
+    pActor->maxThrust             = sithVehicleControls_raftMaxThrust;
     pPhysics->orientSpeed         = sithVehicleControls_raftRotSpeed;
     pPhysics->maxRotationVelocity = sithVehicleControls_raftMaxRotVelocity;
 
-    const float fwdThrust  = pActorIndo->maxThrust;
+    const float fwdThrust  = pActor->maxThrust;
     const float bkwdThrust = -(fwdThrust * 0.5f);
 
     const float fwdRotThrust  = sithVehicleControls_raftBaseYawThrust;
@@ -1422,7 +1412,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
     {
         case SITHPLAYERMOVE_FALLING:
             sithCog_ThingSendMessageEx(pThing, NULL, SITHCOG_MSG_CALLBACK, 0, RDKEYMARKER_PLACERIGHTARMREST, 0, 0);
-            pActorIndo->bControlsDisabled = 0;
+            pActor->bControlsDisabled = 0;
             sithVehicleControls_curRaftState.nextMoveStatus = pThing->moveStatus;
             break;
 
@@ -1917,7 +1907,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
             break;
 
         default:
-            pActorIndo->bControlsDisabled = 0;
+            pActor->bControlsDisabled = 0;
             sithVehicleControls_curRaftState.nextMoveStatus = pThing->moveStatus;
             break;
     }

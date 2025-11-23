@@ -2487,23 +2487,14 @@ void J3DAPI sithPhysics_UpdateMineCarChassis(SithThing* pThing, const SithVehicl
     }
 
     // Calculate wheel rotation based on speed
-    const float speed               = rdVector_Len3(&pThing->moveInfo.physics.velocity);
-    const float wheelCircumference  = STDMATH_CIRCLE_CIRCUMF(pChassisInfo->wheelRadius);
-    const float rotationsPerSec     = speed / wheelCircumference;
-
-    // Reverse rotation if moving backward
-    float angleDelta = stdMath_NormalizeAngle(360.0f * rotationsPerSec * secDeltaTime);
-    if ( rdVector_Dot3(&pThing->moveInfo.physics.velocity, &pThing->orient.lvec) < 0.0f )
-    {
-        angleDelta = -angleDelta;
-    }
+    float deltaAngle = sithPhysics_CalcWheelRotationAngle(pThing, pChassisInfo->wheelRadius, secDeltaTime);
 
     // Update all wheel joint angles
     for ( size_t i = 0; i < pChassisInfo->numNodes; i++ )
     {
         if ( pChassisInfo->aWheelNodeNums[i] != -1 )
         {
-            pThing->renderData.apTweakedAngles[pChassisInfo->aWheelNodeNums[i]].pitch -= angleDelta;
+            pThing->renderData.apTweakedAngles[pChassisInfo->aWheelNodeNums[i]].pitch -= deltaAngle;
         }
     }
 }

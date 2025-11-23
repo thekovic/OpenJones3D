@@ -6,8 +6,11 @@
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
 
+#include <rdroid/Math/rdVector.h>
+
 #include <std/types.h>
 #include <std/General/stdConffile.h>
+#include <std/General/stdMath.h>
 
 J3D_EXTERN_C_START
 
@@ -58,6 +61,28 @@ void J3DAPI sithPhysics_UpdateRaftPhysics(SithThing* pThing, float secDeltaTime)
 // Jeep physics
 signed int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing);
 void J3DAPI sithPhysics_UpdateJeepPhysics(SithThing* pThing, float secDeltaTime);
+
+/**
+ * Calculates the wheel rotation delta angle based on the thing's velocity and wheel radius.
+ * @param pThing       - The vehicle thing whose wheel rotation angle is to be calculated.
+ * @param wheelRadius  - The radius of the wheel.
+ * @param secDeltaTime - The time delta in seconds.
+ * @return The calculated wheel rotation angle in degrees at this frame.
+ */
+inline float sithPhysics_CalcWheelRotationAngle(const SithThing* pThing, float wheelRadius, float secDeltaTime) // new func
+{
+    const float speed               = rdVector_Len3(&pThing->moveInfo.physics.velocity);
+    const float wheelCircumference  = STDMATH_CIRCLE_CIRCUMF(wheelRadius);
+    const float rotationsPerSec     = speed / wheelCircumference;
+
+    // Reverse rotation if moving backward
+    float rotDelta = stdMath_NormalizeAngle(360.0f * rotationsPerSec * secDeltaTime);
+    if ( rdVector_Dot3(&pThing->moveInfo.physics.velocity, &pThing->orient.lvec) < 0.0f )
+    {
+        rotDelta = -rotDelta;
+    }
+    return rotDelta;
+}
 
 // Helper hooking functions
 void sithPhysics_InstallHooks(void);
