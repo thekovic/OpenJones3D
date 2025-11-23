@@ -289,7 +289,8 @@ int J3DAPI sithDSSThing_Attachment(const SithThing* pThing, DPID idTo, unsigned 
                 int16_t faceIdx = pThing->attach.pFace - pMesh->aFaces;
 
                 // Fixed: Added
-                if ( faceIdx >= 0 && faceIdx < pMesh->numFaces ) {
+                if ( faceIdx >= 0 && faceIdx < pMesh->numFaces )
+                {
                     SITHDSS_PUSHINT16(faceIdx);
                 }
                 else
@@ -312,16 +313,16 @@ int J3DAPI sithDSSThing_Attachment(const SithThing* pThing, DPID idTo, unsigned 
         }
         else
         {
-            SITHDSS_PUSHVEC3(&pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing);
-            /*memcpy(pCurOut, &pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, 12u);
+            SITHDSS_PUSHVEC3(&pThing->attach.posOffset);
+            /*memcpy(pCurOut, &pThing->attach.posOffset, 12u);
             pCurOut = &sithMulti_g_message.data[22];*/
         }
     }
 
     else if ( (pThing->attach.flags & SITH_ATTACH_THINGCLIMBWHIP) != 0 )
     {
-        SITHDSS_PUSHFLOAT(pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z);
-        /**(float*)pCurOut = pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z;
+        SITHDSS_PUSHFLOAT(pThing->attach.posOffset.z);
+        /**(float*)pCurOut = pThing->attach.posOffset.z;
         pCurOut = &sithMulti_g_message.data[10];*/
     }
 
@@ -398,22 +399,23 @@ int J3DAPI sithDSSThing_ProcessAttachment(const SithMessage* pMsg)
             else // Added
             {
                 pThing->attach.flags &= ~SITH_ATTACH_THINGFACE;
-                if ( pThing->attach.flags == 0 ) {
+                if ( pThing->attach.flags == 0 )
+                {
                     pThing->attach.flags |= SITH_ATTACH_THING;
                 }
             }
         }
         else
         {
-            SITHDSS_POPVEC3(&pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing);
-            //rdVector_Copy3(&pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, pCurIn, sizeof(pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing));
+            SITHDSS_POPVEC3(&pThing->attach.posOffset);
+            //rdVector_Copy3(&pThing->attach.posOffset, pCurIn, sizeof(pThing->attach.posOffset));
         }
     }
     else if ( (attachflags & SITH_ATTACH_THINGCLIMBWHIP) != 0 )
     {
         pThing->attach.flags = attachflags;
-        pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z = SITHDSS_POPFLOAT();
-        //pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z = *(float*)pCurIn;
+        pThing->attach.posOffset.z = SITHDSS_POPFLOAT();
+        //pThing->attach.posOffset.z = *(float*)pCurIn;
     }
     else if ( pThing->attach.flags )
     {

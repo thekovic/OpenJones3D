@@ -2253,7 +2253,7 @@ typedef struct sSithAttach
     rdVector3 attachedFaceFirstVert;
     rdFace* pFace;
     float distToWaterSurface;
-    rdVector3 vecUnknownMaybeLocalPositionOnTheAttachedThing;
+    rdVector3 posOffset;   // attach position offset
     SithAttachStructure attachedToStructure;
 } SithAttach;
 static_assert(sizeof(SithAttach) == 40, "sizeof(SithAttach) == 40");

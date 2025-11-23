@@ -953,7 +953,7 @@ LABEL_61:
     {
         if ( (pAttached->attach.flags & SITH_ATTACH_NOMOVE) != 0 && (pAttached->attach.flags & SITH_ATTACH_TAIL) == 0 )
         {
-            rdMatrix_TransformVector34(&pAttached->pos, &pAttached->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, &pThing->orient);
+            rdMatrix_TransformVector34(&pAttached->pos, &pAttached->attach.posOffset, &pThing->orient);
             rdVector_Add3Acc(&pAttached->pos, &pThing->pos);
             /*pAttached->pos.x = pAttached->pos.x + pThing->pos.x;
             pAttached->pos.y = pAttached->pos.y + pThing->pos.y;

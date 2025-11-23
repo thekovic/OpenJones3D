@@ -218,7 +218,7 @@ void J3DAPI sithWhip_SetActorWhipClimbIdle(SithThing* pThing)
     pThing->thingInfo.actorInfo.bControlsDisabled = 0;
 
     pThing->attach.flags = SITH_ATTACH_THINGCLIMBWHIP;
-    pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z = 0.0f;
+    pThing->attach.posOffset.z = 0.0f;
 
     sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_WHIPCLIMBIDLE, NULL);
     sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponSwapRefNum);
@@ -270,7 +270,7 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
 
         if ( bJumpOff )
         {
-            if ( pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z <= 3.0f )
+            if ( pThing->attach.posOffset.z <= 3.0f )
             {
                 sithWhip_WhipClimbDismount(pThing);
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBDOWNONTO);
@@ -293,7 +293,7 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
         if ( bUp && !bJumpOff )
         {
             // Move up
-            if ( pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z <= 3.0f )
+            if ( pThing->attach.posOffset.z <= 3.0f )
             {
                 rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
 
@@ -301,13 +301,13 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBHANDLEFT);
 
                 pThing->thingInfo.actorInfo.bForceMovePlay = 1;
-                pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z = pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z + 1.0f;
+                pThing->attach.posOffset.z = pThing->attach.posOffset.z + 1.0f;
             }
         }
         else if ( bDown && !bJumpOff ) // Fixed: Added check for !bJumpOff. This should fix bug where controls could become unresponsive.
         {
             // Move down
-            if ( pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z > 0.0f )
+            if ( pThing->attach.posOffset.z > 0.0f )
             {
                 rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
 
@@ -315,7 +315,7 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBHANDRIGHT);
 
                 pThing->thingInfo.actorInfo.bForceMovePlay = 1;
-                pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z = pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z - 1.0f;
+                pThing->attach.posOffset.z = pThing->attach.posOffset.z - 1.0f;
             }
             else
             {

@@ -1112,7 +1112,7 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
             {
                 if ( (pAttachedThing->attach.flags & SITH_ATTACH_NOMOVE) != 0 )
                 {
-                    rdMatrix_TransformVector34(&pAttachedThing->pos, &pAttachedThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, &pThing->orient);
+                    rdMatrix_TransformVector34(&pAttachedThing->pos, &pAttachedThing->attach.posOffset, &pThing->orient);
 
                     rdVector_Add3Acc(&pAttachedThing->pos, &pThing->pos);
                     /*pAttachedThing->pos.x = pAttachedThing->pos.x + pThing->pos.x;
@@ -2764,7 +2764,7 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     /*dpos.x = pThing->pos.x - pAttachThing->pos.x;
     dpos.y = pThing->pos.y - pAttachThing->pos.y;
     dpos.z = pThing->pos.z - pAttachThing->pos.z;*/
-    rdMatrix_TransformVectorOrtho34(&pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, &dpos, &pAttachThing->orient);
+    rdMatrix_TransformVectorOrtho34(&pThing->attach.posOffset, &dpos, &pAttachThing->orient);
 
     if ( (pAttachThing->flags & SITH_TF_COGLINKED) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
     {
@@ -2891,7 +2891,7 @@ void J3DAPI sithThing_AttachThingToThing(SithThing* pThing, SithThing* pAttachTh
     //dpos.x = pThing->pos.x - pAttachThing->pos.x;
     //dpos.y = pThing->pos.y - pAttachThing->pos.y;
     //dpos.z = pThing->pos.z - pAttachThing->pos.z;
-    rdMatrix_TransformVectorOrtho34(&pThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing, &dpos, &pAttachThing->orient);
+    rdMatrix_TransformVectorOrtho34(&pThing->attach.posOffset, &dpos, &pAttachThing->orient);
 
     if ( (pAttachThing->flags & SITH_TF_COGLINKED) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
     {
@@ -3855,25 +3855,25 @@ int J3DAPI sithThing_CreateQuetzUserBlock(SithThing* pThing)
             {
                 if ( attNum == 1 )
                 {
-                    pQuetz->aAttachInfos[1].unknown1 = pAttachedThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z - pPrevThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z;
+                    pQuetz->aAttachInfos[1].unknown1 = pAttachedThing->attach.posOffset.z - pPrevThing->attach.posOffset.z;
                     pQuetz->aAttachInfos[1].vecUnknown11.x = 25.0f;
                     pQuetz->aAttachInfos[1].unknown14      = 0.103f;
                 }
                 else if ( attNum == 2 )
                 {
-                    pQuetz->aAttachInfos[2].unknown1       = pAttachedThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z - pPrevThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z;
+                    pQuetz->aAttachInfos[2].unknown1       = pAttachedThing->attach.posOffset.z - pPrevThing->attach.posOffset.z;
                     pQuetz->aAttachInfos[2].vecUnknown11.x = 10.0f;
                     pQuetz->aAttachInfos[2].unknown14      = 0.118f;
                 }
                 else
                 {
-                    pQuetz->aAttachInfos[attNum].unknown1  = pAttachedThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z - pPrevThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z;
+                    pQuetz->aAttachInfos[attNum].unknown1  = pAttachedThing->attach.posOffset.z - pPrevThing->attach.posOffset.z;
                     pQuetz->aAttachInfos[attNum].unknown14 = 0.12f;
                 }
             }
             else
             {
-                pQuetz->aAttachInfos[0].unknown1           = pAttachedThing->attach.vecUnknownMaybeLocalPositionOnTheAttachedThing.z - 0.02f;
+                pQuetz->aAttachInfos[0].unknown1           = pAttachedThing->attach.posOffset.z - 0.02f;
                 pQuetz->aAttachInfos[0].unknown0           = 0.0f;
                 pQuetz->aAttachInfos[0].vecUnknown11.pitch = 40.0f;
                 pQuetz->aAttachInfos[0].unknown14          = 0.055f;
