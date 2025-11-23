@@ -47,7 +47,7 @@
 static tStdTime sithPlayerControls_msecUnknownTimer = 0; // Fixed: Init to 0
 static float sithPlayerControls_secCommentWaitTimer = 0.0f; // Fixed: Init to 0.0f
 
-static bool sithPlayerControls_bJumpActivated = false; // Fixed: Init to false
+static bool sithPlayerControls_bJumpKeyActive = false; // Fixed: Init to false
 static int sithPlayerControls_curJumpDirection;
 
 bool sithPlayerControls_bActionKeyActive           = false; // Fixed: Init to false
@@ -100,32 +100,44 @@ static rdVector3 sithPlayerControls_curOrbCamDir  = { 0.0f , -1.0f , 0.0f };
 static float sithPlayerControls_curOrbCamDist     = 0.2f;
 static float sithPlayerControls_maxOrbCamDist     = 3.0f;
 
-int J3DAPI sithPlayerControls_ProcessPlayerDebugControls(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessLookControls(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessGeneralMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessJewelFlyMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessFlyMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessHUDControls(SithThing* pThing, float secDeltaTime);
-int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, float secDeltaTime);
-int J3DAPI sithPlayerControls_ProcessDeadPlayer(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessHangMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDeltaTime);
+static int J3DAPI sithPlayerControls_ProcessPlayerDebugControls(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessLookControls(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessGeneralMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessJewelFlyMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessFlyMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessHUDControls(SithThing* pThing, float secDeltaTime);
+static int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, float secDeltaTime);
+static int J3DAPI sithPlayerControls_ProcessDeadPlayer(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessHangMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDeltaTime);
 
-int J3DAPI sithPlayerControls_CheckAimRange(SithThing* pThing, const rdVector3* pStartPos, const rdVector3* pTargetPos, float cosFarAimCone, float cosCloseAimCone, float cosVerticalLimit, float maxAimDist);
-int J3DAPI sithPlayerControls_GetPushPullMoveNorm(rdVector3* moveNorm, const rdVector3* pLVect, float angle);
+static int J3DAPI sithPlayerControls_CheckAimRange(SithThing* pThing, const rdVector3* pStartPos, const rdVector3* pTargetPos, float cosFarAimCone, float cosCloseAimCone, float cosVerticalLimit, float maxAimDist);
+static int J3DAPI sithPlayerControls_GetPushPullMoveNorm(rdVector3* moveNorm, const rdVector3* pLVect, float angle);
+
+// Helper function signatures for ProcessGeneralMove (new functions)
+static void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun);
+static void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun);
+static void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun);
+static void J3DAPI sithPlayerControls_ProcessCrawlMove(SithThing* pThing, float secDeltaTime, float moveFactor);
+static void J3DAPI sithPlayerControls_ProcessPushPullMove(SithThing* pThing, float secDeltaTime);
+static void J3DAPI sithPlayerControls_ProcessSlideDownMove(SithThing* pThing, float secDeltaTime);
+
 
 /**
- *
- * @param pThing
+ * Check for ledge when in water
+ * @param pThing - thing to search for ledge from
  * @return
+ *  0 - no ledge found
+ *  1 - solid water ledge found, the thing will be positioned to ledge
+ *  2 - adjoin water ledge found
  */
-int J3DAPI sithPlayerControls_CheckWaterLedge(SithThing* pThing);
-int J3DAPI sithPlayerControls_FindLedgeInDirection(SithThing* pThing, const rdVector3* moveNorm, SithSurface** ppHitSurf, SithThing** ppHitThing, rdModel3** ppHitModel, rdFace** ppHitFace, rdModel3Mesh** ppHitMesh, int someType);
-SithSurface* J3DAPI sithPlayerControls_FindClimbSurface(SithThing* pThing, const rdVector3* moveNorm, int climbDir, int* pbHitNonClimbSurface);
-int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight);
+static int J3DAPI sithPlayerControls_CheckWaterLedge(SithThing* pThing);
+static int J3DAPI sithPlayerControls_FindLedgeInDirection(SithThing* pThing, const rdVector3* moveNorm, SithSurface** ppHitSurf, SithThing** ppHitThing, rdModel3** ppHitModel, rdFace** ppHitFace, rdModel3Mesh** ppHitMesh, int someType);
+static SithSurface* J3DAPI sithPlayerControls_FindClimbSurface(SithThing* pThing, const rdVector3* moveNorm, int climbDir, int* pbHitNonClimbSurface);
+static int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight);
 
 void sithPlayerControls_InstallHooks(void)
 {
@@ -161,28 +173,7 @@ void sithPlayerControls_InstallHooks(void)
 
 void sithPlayerControls_ResetGlobals(void)
 {
-    //rdVector3 sithPlayerControls_vecDebugCamDir_tmp = { { 0.0f }, { -1.0f }, { 0.0f } };
-    //memcpy(&sithPlayerControls_vecDebugCamDir, &sithPlayerControls_vecDebugCamDir_tmp, sizeof(sithPlayerControls_vecDebugCamDir));
-
-    //float sithPlayerControls_cameraDistance_tmp = 0.2f;
-    //memcpy(&sithPlayerControls_cameraDistance, &sithPlayerControls_cameraDistance_tmp, sizeof(sithPlayerControls_cameraDistance));
-
-    //memset(&sithPlayerControls_bActionKeyActive, 0, sizeof(sithPlayerControls_bActionKeyActive));
     memset(&sithPlayerControls_g_bCutsceneMode, 0, sizeof(sithPlayerControls_g_bCutsceneMode));
-   // memset(&sithPlayerControls_pMovableThing, 0, sizeof(sithPlayerControls_pMovableThing));
-   // memset(&sithPlayerControls_curJumpDirection, 0, sizeof(sithPlayerControls_curJumpDirection));
-   // //memset(&sithPlayerControls_pCurActivatedItemThing, 0, sizeof(sithPlayerControls_pCurActivatedItemThing));
-   // memset(&sithPlayerControls_bJumpActivated, 0, sizeof(sithPlayerControls_bJumpActivated));
-   // memset(&sithPlayerControls_bLookKeyActive, 0, sizeof(sithPlayerControls_bLookKeyActive));
-   // memset(&sithPlayerControls_bHealthKeyActive, 0, sizeof(sithPlayerControls_bHealthKeyActive));
-   // memset(&sithPlayerControls_pBoardedVehicleThing, 0, sizeof(sithPlayerControls_pBoardedVehicleThing));
-   //// memset(&sithPlayerControls_pTargetThing, 0, sizeof(sithPlayerControls_pTargetThing));
-   // memset(&sithPlayerControls_msecUnknownTimer, 0, sizeof(sithPlayerControls_msecUnknownTimer));
-   // //memset(&sithPlayerControls_curMoveStatus, 0, sizeof(sithPlayerControls_curMoveStatus));
-   // memset(&sithPlayerControls_bTurnRightKeyActive, 0, sizeof(sithPlayerControls_bTurnRightKeyActive));
-   // memset(&sithPlayerControls_bTurnLeftKeyActive, 0, sizeof(sithPlayerControls_bTurnLeftKeyActive));
-   // memset(&sithPlayerControls_secSwimIdleTime, 0, sizeof(sithPlayerControls_secSwimIdleTime));
-   // memset(&sithPlayerControls_secCommentWaitTimer, 0, sizeof(sithPlayerControls_secCommentWaitTimer));
 }
 
 void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKeyMarkerType markerType)
@@ -490,9 +481,9 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
         sithPlayerControls_bTurnRightKeyActive = false;
     }
 
-    if ( sithPlayerControls_bJumpActivated && !sithControl_GetKey(SITHCONTROL_JUMP, NULL) )
+    if ( sithPlayerControls_bJumpKeyActive && !sithControl_GetKey(SITHCONTROL_JUMP, NULL) )
     {
-        sithPlayerControls_bJumpActivated = false;
+        sithPlayerControls_bJumpKeyActive = false;
     }
 
     if ( sithPlayerControls_bHealthKeyActive && !sithControl_GetKey(SITHCONTROL_HEALTH, NULL) )
@@ -753,7 +744,7 @@ int J3DAPI sithPlayerControls_ProcessPlayerDebugControls(SithThing* pThing, floa
 void J3DAPI sithPlayerControls_ProcessLookControls(SithThing* pThing, float secDeltaTime)
 {
     SithPhysicsInfo* pPhysics = &pThing->moveInfo.physics;
-    SithActorInfo* pActor = &pThing->thingInfo.actorInfo;
+    SithActorInfo* pActor     = &pThing->thingInfo.actorInfo;
 
     bool bInputReceived = false;
     float yawDelta      = 0.0f;
@@ -816,13 +807,6 @@ void J3DAPI sithPlayerControls_ProcessLookControls(SithThing* pThing, float secD
 
 void J3DAPI sithPlayerControls_ProcessGeneralMove(SithThing* pThing, float secDeltaTime)
 {
-    SithPhysicsInfo* pPhysicsInfo = &pThing->moveInfo.physics;
-    SithActorInfo* pActor         = &pThing->thingInfo.actorInfo;
-
-    float moveFactor = 1.0f;
-    bool bRun        = false;
-    bool bMoving     = false;
-
     sithPlayerActions_g_pCurLedgeThingModelFace = NULL;
     sithPlayerActions_g_pCurLedgeThingModel     = NULL;
     sithPlayerActions_g_pCurLedgeSurface        = NULL;
@@ -853,7 +837,12 @@ void J3DAPI sithPlayerControls_ProcessGeneralMove(SithThing* pThing, float secDe
         }
     }
 
+    //
     // Calculate movement speed modifier
+    //
+    float moveFactor = 1.0f;
+    bool bRun        = false;
+
     if ( (sithControl_g_controlOptions & 2) != 0
         || sithControl_GetKey(SITHCONTROL_RUNFWD, NULL)
         || sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
@@ -879,1569 +868,31 @@ void J3DAPI sithPlayerControls_ProcessGeneralMove(SithThing* pThing, float secDe
     switch ( pThing->moveStatus )
     {
         case SITHPLAYERMOVE_STILL:
-        {
-            if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) != 0 )
-            {
-                moveFactor = 0.1f;
-            }
-            else
-            {
-                // Reset physics height if not at normal standing height
-                if ( pThing->moveInfo.physics.height != 0.090000004f )
-                {
-                    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNSURFACE;
-                    pThing->moveInfo.physics.flags |= SITH_PF_ALIGNUP;
-                    pThing->moveInfo.physics.height = 0.090000004f;
-
-                    sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
-                    sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
-                }
-
-                // Debug climb jump
-                if ( sithControl_GetKey(SITHCONTROL_CAMERAZOOMOUT, NULL) )
-                {
-                    sithPlayerActions_Jump(pThing, 1.0f, 99);
-                    return;
-                }
-
-                //
-                // Handle climb-on, mount climb wall, and jumping
-                //
-                if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL) && !sithPlayerControls_bJumpActivated )
-                {
-                    // Try 2m climb
-                    if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
-                        && !sithPlayerActions_HasActiveWeapon(pThing) )
-                    {
-                        sithPlayerActions_ClimbOn2m(pThing);
-                        return;
-                    }
-
-                    // Try 1m climb
-                    if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
-                        && !sithPlayerActions_HasActiveWeapon(pThing) )
-                    {
-                        sithPlayerActions_ClimbOn1m(pThing);
-                        return;
-                    }
-
-                    // Try mounting wall for climbing
-                    // TODO: this could be new sithPlayerActions function FindAndMountClimbWall
-                    if ( sithInventory_GetCurrentWeapon(pThing) == SITHWEAPON_NO_WEAPON && !sithWeapon_IsMountingWeapon(pThing) ) //TODO: why not use sithPlayerActions_HasActiveWeapon
-                    {
-                        float moveDist = pThing->collide.movesize * 2.0f;
-                        sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &pThing->orient.lvec, moveDist, pThing->collide.movesize, 0xA00);
-
-                        bool bWallMounted = false;
-                        SithCollision* pCollision;
-                        while ( (pCollision = sithCollision_PopStack()) != NULL )
-                        {
-                            if ( ((pCollision->type & SITHCOLLISION_WORLD) != 0
-                                || (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0)
-                                && pCollision->pSurfaceCollided
-                                && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_CLIMBABLE) != 0 )
-                            {
-                                rdVector3 surfNormal = RDVECTOR_NEG3(pCollision->pSurfaceCollided->face.normal);
-                                surfNormal.z = 0.0f;
-                                rdVector_Normalize3Acc(&surfNormal);
-
-                                rdVector3 dir = pThing->orient.lvec;
-                                dir.z = 0.0f;
-                                rdVector_Normalize3Acc(&dir);
-
-                                if ( rdVector_Dot3(&dir, &surfNormal) > 0.80000001f )
-                                {
-                                    pThing->moveStatus = SITHPLAYERMOVE_MOUNTING_WALL;
-                                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-
-                                    sithPhysics_ResetThingMovement(pThing);
-                                    sithPlayerActions_CenterOnClimbSurface(pThing, pCollision->pSurfaceCollided);
-                                    sithThing_AttachThingToClimbSurface(pThing, pCollision->pSurfaceCollided);
-
-                                    sithPuppet_RemoveAllTracks(pThing);
-                                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_MOUNTWALL, sithPlayerControls_PuppetCallback);
-                                    sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
-
-                                    pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
-                                    bWallMounted = true;
-
-                                    sithPlayerControls_bJumpActivated = true;
-                                    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0);
-                                    break;
-                                }
-                            }
-                        }
-
-                        sithCollision_DecreaseStackLevel();
-                        if ( bWallMounted )
-                        {
-                            return;
-                        }
-                    }
-
-                    //
-                    // No climbing surfaces found, handle normal jump
-                    //
-                    if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                    {
-                        if ( pThing->attach.flags
-                            && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
-                        {
-                            float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
-                            if ( floorDot > 0.69999999f && floorDot < 0.75f )
-                            {
-                                pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                                pThing->thingInfo.actorInfo.bForceMovePlay = 0;
-                            }
-                            else
-                            {
-                                sithPlayerControls_curJumpDirection = 0;
-                                sithPlayerActions_JumpStart(pThing);
-                            }
-                        }
-                        else
-                        {
-                            sithPlayerControls_curJumpDirection = 0;
-                            sithPlayerActions_JumpStart(pThing);
-                        }
-                        return;
-                    }
-                } // End jump handling
-
-                //
-                // Handle crawling
-                //
-                if ( sithControl_GetKey(SITHCONTROL_CRAWLTOGGLE, NULL)
-                    && !pThing->thingInfo.actorInfo.bForceMovePlay
-                    && !sithPlayerActions_HasActiveWeapon(pThing) )
-                {
-                    bool bGoIntoCrawl = false;
-                    if ( pThing->attach.flags )
-                    {
-                        if ( (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0 )
-                        {
-                            // Check if attached thing is stationary
-                            if ( pThing->attach.attachedToStructure.pThingAttached )
-                            {
-                                SithThing* pThingAttached = pThing->attach.attachedToStructure.pThingAttached;
-                                SithThingMoveType moveType = pThingAttached->moveType;
-
-                                switch ( moveType )
-                                {
-                                    case SITH_MT_NONE:
-                                        bGoIntoCrawl = true;
-                                        break;
-
-                                    case SITH_MT_PHYSICS:
-                                        bGoIntoCrawl = rdVector_IsZero3(&pThingAttached->moveInfo.physics.velocity);
-                                        break;
-
-                                    case SITH_MT_PATH:
-                                        bGoIntoCrawl = (pThingAttached->moveInfo.pathMovement.mode & SITH_PATHMOVE_MOVE) == 0;
-                                        break;
-                                }
-
-                                if ( bGoIntoCrawl && pThing->attach.pFace )
-                                {
-                                    // Check attached face is flat floor
-                                    rdVector3 worldNormal;
-                                    rdMatrix_TransformVector34(&worldNormal, &pThing->attach.pFace->normal, &pThingAttached->orient);
-                                    float dotAbs = fabsf(rdVector_Dot3(&worldNormal, &rdroid_g_zVector3));
-                                    bGoIntoCrawl = dotAbs >= 0.98000002f;
-                                }
-                            }
-                        }
-                        else if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
-                            && pThing->attach.attachedToStructure.pSurfaceAttached )
-                        {
-                            // Check not on water and surface is flat floor
-                            if ( (pThing->attach.attachedToStructure.pSurfaceAttached->flags & (SITH_SURFACE_SHALLOWWATER | SITH_SURFACE_WATER)) != 0 )
-                            {
-                                bGoIntoCrawl = false;
-                            }
-                            else
-                            {
-                                // Check surface is flat floor
-                                float dotAbs = fabsf(rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3));
-                                bGoIntoCrawl = dotAbs >= 0.98000002f;
-                            }
-                        }
-                    }
-
-                    // Toggle crawl state
-                    if ( bGoIntoCrawl )
-                    {
-                        sithPlayerActions_Stand2Crawl(pThing);
-                        return;
-                    }
-
-                    // Couldn't go into crawl, Indy says "can't go into crawl"
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_SPLATTERED);
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-                }
-
-                //
-                // Handle move forward from still
-                //
-                if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
-                {
-                    if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                    {
-                        // Handle jump forward roll
-                        if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) )
-                        {
-                            if ( pThing->attach.flags )
-                            {
-                                pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLFWD;
-                                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLFWD, NULL);
-                                return;
-                            }
-                        }
-                        else if ( !pThing->thingInfo.actorInfo.bControlsDisabled )
-                        {
-                            rdVector3 moveToPos = pThing->pos;
-                            rdVector_MultAcc3(&moveToPos, &pThing->orient.lvec, pThing->collide.movesize);
-
-                            int bSurfaceChange;
-                            if ( !bRun && !sithPlayerActions_CheckFloorAtPos(pThing, &moveToPos, &bSurfaceChange) )
-                            {
-                                bMoving = false;
-                                return;
-                            }
-
-                            // Okay to move forward
-                            // Play stand to walk animation and change puppet move mode to walk/run
-                            rdKeyframe* pKframe = sithPuppet_GetKeyframe("in_stand_bd_walk.key");
-                            if ( pKframe )
-                            {
-                                // Disable controls during transition animation and
-                                // set move status to stand2walk/run
-                                pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-                                pThing->moveStatus = bRun ? SITHPLAYERMOVE_STAND2RUN : SITHPLAYERMOVE_STAND2WALK;
-
-                                sithPuppet_PlayKey(pThing->renderData.pPuppet, pKframe, 1, 2, RDKEYFRAME_FADEOUT_NOLOOP | RDKEYFRAME_NOLOOP, sithPlayerControls_PuppetCallback);
-                                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_STAND);
-
-                                // Set appropriate move mode
-                                if ( bRun )
-                                {
-                                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_RUN, NULL);
-                                }
-                                else
-                                {
-                                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_WALK, NULL);
-                                }
-                                return;
-                            }
-                        }
-                    }
-                }
-                //
-                // Handle move backward from still
-                //
-                else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
-                {
-                    // Check for climb down wall/ledge/object
-                    int climbDownType = sithPlayerActions_CheckClimbDownWall(pThing);
-                    switch ( climbDownType )
-                    {
-                        case 1:
-                            sithPlayerActions_ClimbDownToClimb(pThing, /*bAngled=*/0);
-                            return;
-
-                        case 2:
-                            sithPlayerActions_ClimbDownToHang(pThing);
-                            return;
-
-                        case 3:
-                            sithPlayerActions_ClimbDownToClimb(pThing, /*bAngled=*/1);
-                            return;
-
-                        default:
-                            // Handle jump back roll
-                            if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) ) // Jump back roll
-                            {
-                                if ( pThing->attach.flags )
-                                {
-                                    pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLBACK;
-                                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLBACK, NULL);
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                // Start moving backward
-                                pThing->moveStatus = SITHPLAYERMOVE_WALKING;
-                                pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * -1.0f * 0.5f;
-                                bMoving = true;
-                            }
-                            break;
-                    }
-                }
-                else
-                {
-                    // No forward/backward input, zero forward thrust
-                    pPhysicsInfo->thrust.y = 0.0f;
-                }
-
-                //
-                // Handle step left/right
-                //
-                if ( sithControl_GetKey(SITHCONTROL_STPLEFT, NULL) )
-                {
-                    if ( pThing->thingInfo.actorInfo.bForceMovePlay || !sithPlayerControls_CanStrafeMove(pThing, /*bMoveRight=*/0) )
-                    {
-                        return;
-                    }
-
-                    sithPlayerActions_StrafeLeft(pThing);
-                    sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
-                    return;
-                }
-
-                if ( sithControl_GetKey(SITHCONTROL_STPRIGHT, NULL) )
-                {
-                    if ( pThing->thingInfo.actorInfo.bForceMovePlay || !sithPlayerControls_CanStrafeMove(pThing, /*bMoveRight=*/1) )
-                    {
-                        return;
-                    }
-
-                    sithPlayerActions_StrafeRight(pThing);
-                    sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
-                    return;
-                }
-
-                pPhysicsInfo->thrust.x = 0.0f;
-                pPhysicsInfo->angularVelocity.yaw = 0.0f;
-            } // (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) == 0
-
-            //
-            // Handle turn right
-            //
-            if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    // Handle jump right roll
-                    if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL)
-                        && (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) == 0 )
-                    {
-                        if ( pThing->attach.flags )
-                        {
-                            pThing->moveStatus = SITHPLAYERMOVE_JUMPRIGHT;
-                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_HOPRIGHT, NULL);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        pPhysicsInfo->angularVelocity.yaw = -1.0f * sithTime_g_fps
-                            + pActor->maxRotVelocity * -1.0f * J3DMIN(moveFactor, 1.0f);
-
-                   // Turn faster if run key held
-                        if ( sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
-                        {
-                            pPhysicsInfo->angularVelocity.yaw *= 2.5f;
-                        }
-                        else
-                        {
-                            pPhysicsInfo->angularVelocity.yaw /= 1.4f;
-                        }
-
-                        bMoving = true;
-                    }
-                }
-            }
-            //
-            // Handle turn left
-            //
-            else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    // Handle jump left roll
-                    if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL)
-                        && (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) == 0 )
-                    {
-                        if ( pThing->attach.flags )
-                        {
-                            pThing->moveStatus = SITHPLAYERMOVE_JUMPLEFT;
-                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_HOPLEFT, NULL);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        pPhysicsInfo->angularVelocity.yaw = 1.0f * sithTime_g_fps
-                            + pActor->maxRotVelocity * 1.0f * J3DMIN(moveFactor, 1.0f);
-
-                   // Turn faster if run key held
-                        if ( sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
-                        {
-                            pPhysicsInfo->angularVelocity.yaw *= 2.5f;
-                        }
-                        else
-                        {
-                            pPhysicsInfo->angularVelocity.yaw /= 1.4f;
-                        }
-
-                        bMoving = true;
-                    }
-                }
-            }
-            else
-            {
-                // No turn input, zero angular velocity
-                pPhysicsInfo->angularVelocity.yaw = 0.0f;
-            }
-
-            // Skip further processing if immobile
-            if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) != 0 )
-            {
-                return;
-            }
-
-            //
-            // Handle mouse turn
-            //
-            if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-            {
-                float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
-                mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
-                pPhysicsInfo->angularVelocity.yaw += mouseTurn;
-            }
-
-            //
-            // Handle activation key
-            //
-            if ( !sithControl_GetKey(SITHCONTROL_ACT2, NULL) || sithPlayerControls_bActionKeyActive )
-            {
-                //  No activation key pressed or already activated this frame
-                return;
-            }
-
-            // TODO: Should also set sithPlayerControls_bActionKeyActive = true; here?
-
-            // Activation key pressed
-            // Try first to pickup/activate item
-            if ( !pThing->thingInfo.actorInfo.bForceMovePlay
-                && !pThing->thingInfo.actorInfo.bControlsDisabled
-                && !sithWeapon_IsMountingWeapon(pThing) )
-            {
-                // Try find item to activate/pickup
-                int bFoundGroundItem;
-                SithThing* pItemThing = sithCollision_FindItemThing(pThing, &bFoundGroundItem);
-                if ( pItemThing )
-                {
-                    pThing->thingInfo.actorInfo.flags |= SITH_AF_CONTROLSDISABLED;
-                    sithPlayerControls_pCurActivatedItemThing = pItemThing;
-
-                    sithCog_ThingSendMessage(pItemThing, pThing, SITHCOG_MSG_ACTIVATE);
-                    sithPhysics_ResetThingMovement(pThing);
-
-                    sithPlayerControls_curMoveStatus              = pThing->moveStatus;
-                    pThing->moveStatus                            = SITHPLAYERMOVE_ACTIVATING;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-
-                    rdKeyframeFlags kfflags = RDKEYFRAME_NOLOOP;
-                    rdKeyframe* pKframe     = NULL; // Altered: Init to NULL
-                    if ( bFoundGroundItem )
-                    {
-                        // in_pickup_low.key
-                        pKframe = sithPuppet_GetKeyframeByIndex(SITHWORLD_STATICINDEX(138)); static_assert(SITHWORLD_STATICINDEX(138) == 0x808A, "");
-                    }
-                    else if ( sithInventory_GetCurrentWeapon(pThing) == SITHWEAPON_ZIPPO )
-                    {
-                         // in_pickup_dark.key
-                        pKframe = sithPuppet_GetKeyframeByIndex(SITHWORLD_STATICINDEX(145)); static_assert(SITHWORLD_STATICINDEX(145) == 0x8091, "");
-                        kfflags = RDKEYFRAME_FADEOUT_NOLOOP;
-                    }
-                    else
-                    {
-                        // in_pickup_med.key
-                        pKframe = sithPuppet_GetKeyframeByIndex(SITHWORLD_STATICINDEX(139)); static_assert(SITHWORLD_STATICINDEX(139) == 0x808B, "");
-                    }
-
-                    if ( pKframe )
-                    {
-                        sithPuppet_PlayKey(pThing->renderData.pPuppet, pKframe, /*lowPriority=*/5, /*highPriority=*/8, kfflags, sithPlayerControls_PuppetCallback);
-                    }
-                    return;
-                }
-
-                //
-                // Try activate nearby thing
-                //
-                if ( sithPlayerActions_Activate(pThing) == 1 )
-                {
-                    return;
-                }
-
-                //
-                // Try find push/pull object
-                //
-                pItemThing = NULL;
-                rdVector3 pushpullMoveNorm;
-                bool bGotPushPullDir = sithPlayerControls_GetPushPullMoveNorm(&pushpullMoveNorm, &pThing->orient.lvec, 15.0f);
-                if ( bGotPushPullDir
-                    && pThing->attach.flags
-                    && !sithInventory_GetCurrentWeapon(pThing)
-                    && !sithWeapon_IsMountingWeapon(pThing) ) // TODO: why not use !sithPlayerActions_HasActiveWeapon
-                {
-                    sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &pushpullMoveNorm, pThing->collide.movesize, pThing->collide.movesize, 0xA00);
-
-                    SithCollision* pCollision;
-                    while ( (pCollision = sithCollision_PopStack()) != NULL )
-                    {
-                        if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                            && pCollision->pThingCollided != pThing
-                            && (pCollision->pThingCollided->flags & SITH_TF_MOVABLE) != 0
-                            && pCollision->distance < 0.0089999996f )
-                        {
-                            pItemThing = pCollision->pThingCollided;
-                            break;
-                        }
-                    }
-                    sithCollision_DecreaseStackLevel();
-
-                    if ( pItemThing )
-                    {
-                        // Check player facing movable object
-                        rdVector3 dirXY = pThing->orient.lvec;
-                        dirXY.z = 0.0f;
-                        rdVector_Normalize3Acc(&dirXY);
-
-                        rdVector3 playerToItem;
-                        rdVector_Sub3(&playerToItem, &pThing->pos, &pItemThing->pos);
-                        playerToItem.z = 0.0f;
-                        rdVector_Normalize3Acc(&playerToItem);
-
-                        if ( fabsf(rdVector_Dot3(&dirXY, &playerToItem)) > 0.94f )
-                        {
-                            sithPlayerControls_pMovableThing = pItemThing;
-                            sithPhysics_ResetThingMovement(pThing);
-
-                            pThing->orient.lvec = pushpullMoveNorm;
-                            rdVector_Cross3(&pThing->orient.rvec, &pThing->orient.lvec, &rdroid_g_zVector3);
-                            rdVector_Normalize3Acc(&pThing->orient.rvec);
-                            rdVector_Cross3(&pThing->orient.uvec, &pThing->orient.rvec, &pThing->orient.lvec);
-
-                            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY, sithPlayerControls_PuppetCallback);
-
-                            pThing->moveStatus = SITHPLAYERMOVE_PUSHPULL_READY;
-                            sithPlayerControls_bActionKeyActive = true;
-                            return;
-                        }
-
-                        pItemThing = NULL;
-                    }
-                }
-
-                //
-                // Try board vehicle
-                //
-                if ( !pItemThing
-                    && !sithPlayerControls_bActionKeyActive
-                    && sithPlayerControls_BoardVehicle(pThing, /*bNoBoardAnim=*/0) )
-                {
-                    sithPlayerControls_bActionKeyActive = true;
-                    return;
-                }
-            } // End activation key pressed handling
-
-            if ( !bMoving && !pThing->thingInfo.actorInfo.bControlsDisabled )
-            {
-                pThing->moveStatus = SITHPLAYERMOVE_STILL;
-            }
-            break;
-        } // End SITHPLAYERMOVE_STILL
+            sithPlayerControls_ProcessStillMove(pThing, secDeltaTime, moveFactor, bRun);
+            return;
 
         case SITHPLAYERMOVE_WALKING:
-        {
-            // Reset physics height if not standing height
-            if ( pThing->moveInfo.physics.height != 0.090000004f )
-            {
-                pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNSURFACE;
-                pThing->moveInfo.physics.flags |= SITH_PF_ALIGNUP;
-                pThing->moveInfo.physics.height = 0.090000004f;
-                sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
-                sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
-            }
-
-            //
-            // Handle walk jump
-            //
-            if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL)
-                && !sithPlayerControls_bJumpActivated
-                && !pThing->thingInfo.actorInfo.bForceMovePlay )
-            {
-                // Try 2m climb
-                if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
-                    && !sithPlayerActions_HasActiveWeapon(pThing) )
-                {
-                    sithPuppet_RemoveAllTracks(pThing);
-                    sithPhysics_ResetThingMovement(pThing);
-                    sithPlayerActions_ClimbOn2m(pThing);
-                    return;
-                }
-
-                // Try 1m climb
-                if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
-                    && !sithPlayerActions_HasActiveWeapon(pThing) )
-                {
-                    sithPuppet_RemoveAllTracks(pThing);
-                    sithPhysics_ResetThingMovement(pThing);
-                    sithPlayerActions_ClimbOn1m(pThing);
-                    return;
-                }
-
-                // Note: in still jump case, check for no force move play is performed first
-                if ( pThing->attach.flags && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
-                {
-                    float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
-                    if ( floorDot > 0.69999999f && floorDot < 0.75f )
-                    {
-                        pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                        pThing->thingInfo.actorInfo.bForceMovePlay = 0;
-                    }
-                    else
-                    {
-                        sithPlayerControls_curJumpDirection = 0;
-                        sithPlayerActions_JumpStart(pThing);
-                    }
-                }
-                else
-                {
-                    sithPlayerControls_curJumpDirection = 0;
-                    sithPlayerActions_JumpStart(pThing);
-                }
-
-                return;
-            } // Junp handling end
-
-            //
-            // Handle walk forward
-            //
-            if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    // Handle jump roll
-                    if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) && pThing->attach.flags )
-                    {
-                        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
-                        pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLFWD;
-                        sithPhysics_ResetThingMovement(pThing);
-                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLFWD, NULL);
-                        return;
-                    }
-
-                    // Move forward
-                    pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * 1.0f * 0.89999998f;
-
-                    if ( bRun )
-                    {
-                        // Switch to running mode if run key held
-                        pThing->moveStatus = SITHPLAYERMOVE_RUNNING;
-                        if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_WALK) )
-                        {
-                            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
-                        }
-                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_RUN, NULL);
-                    }
-                    else
-                    {
-                        pThing->moveStatus = SITHPLAYERMOVE_WALKING;
-                    }
-
-                    // Adjust speed by move factor
-                    if ( moveFactor != 1.0f )
-                    {
-                        pPhysicsInfo->thrust.y *= moveFactor;
-                    }
-
-                    bMoving = true;
-                }
-            }
-            //
-            // Handle walk back
-            //
-            else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    // Handle jump back roll
-                    if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) && pThing->attach.flags )
-                    {
-                        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALKBACK);
-                        pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLBACK;
-                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLBACK, NULL);
-                        return;
-                    }
-
-                    pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * -1.0f * 0.5f;
-                    bMoving = true;
-                }
-            }
-            else
-            {
-                // No forward/back input, zero forward thrust
-                pPhysicsInfo->thrust.y = 0.0f;
-            }
-
-            //
-            // Handle turn right key
-            //
-            if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    pPhysicsInfo->angularVelocity.yaw = -1.0f * sithTime_g_fps
-                        + pActor->maxRotVelocity * -1.0f * J3DMIN(moveFactor, 1.0f);
-                    bMoving = true;
-                }
-            }
-             //
-            // Handle turn left key
-            //
-            else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    pPhysicsInfo->angularVelocity.yaw = 1.0f * sithTime_g_fps
-                        + pActor->maxRotVelocity * 1.0f * J3DMIN(moveFactor, 1.0f);
-                    bMoving = true;
-                }
-            }
-            else
-            {
-                // No turn input, zero angular velocity
-                pPhysicsInfo->angularVelocity.yaw = 0.0f;
-            }
-
-            //
-            // Handle mouse turn
-            //
-            if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-            {
-                float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
-                mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
-                pPhysicsInfo->angularVelocity.yaw += mouseTurn;
-            }
-
-            //
-            // Transition to standing if not moving anymore
-            //
-            if ( !pThing->thingInfo.actorInfo.bForceMovePlay
-                && !bMoving
-                && !pThing->thingInfo.actorInfo.bControlsDisabled )
-            {
-                rdKeyframe* pKfTrack = sithPuppet_GetKeyframe("in_walk_bd_stand.key");
-                if ( pKfTrack )
-                {
-                    pThing->moveStatus = SITHPLAYERMOVE_WALK2STAND;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-
-                    if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_WALK) )
-                    {
-                        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
-                    }
-                    else if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_WALKBACK) )
-                    {
-                        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALKBACK);
-                    }
-
-                    sithPuppet_PlayKey(pThing->renderData.pPuppet, pKfTrack, /*lowPriority=*/1, /*heighPriority=*/2,
-                        RDKEYFRAME_FADEOUT_NOLOOP | RDKEYFRAME_DISABLE_FADEIN | RDKEYFRAME_NOLOOP, sithPlayerControls_PuppetCallback);
-
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
-                    sithPhysics_ResetThingMovement(pThing);
-                }
-            }
+            sithPlayerControls_ProcessWalkMove(pThing, secDeltaTime, moveFactor, bRun);
             return;
-        } // End SITHPLAYERMOVE_WALKING
 
         case SITHPLAYERMOVE_RUNNING:
-        {
-            if ( pThing->thingInfo.actorInfo.bForceMovePlay )
-            {
-                return;
-            }
-
-            //
-            // Handle run jump
-            //
-            if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL)
-                && !sithPlayerControls_bJumpActivated
-                && !pThing->thingInfo.actorInfo.bForceMovePlay )
-            {
-                // Try 2m climb
-                if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
-                    && !sithPlayerActions_HasActiveWeapon(pThing) )
-                {
-                    sithPuppet_RemoveAllTracks(pThing);
-                    sithPhysics_ResetThingMovement(pThing);
-                    sithPlayerActions_ClimbOn2m(pThing);
-                    return;
-                }
-
-                // Try 1m climb
-                if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
-                    && !sithPlayerActions_HasActiveWeapon(pThing) )
-                {
-                    sithPuppet_RemoveAllTracks(pThing);
-                    sithPhysics_ResetThingMovement(pThing);
-                    sithPlayerActions_ClimbOn1m(pThing);
-                    return;
-                }
-
-                // No climb, perform jump by moving to jump state
-                sithPuppet_g_bPlayerLeapForward = 1;
-                return;
-            } // Jump handling end
-
-            //
-            // Handle run forward
-            //
-            if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
-            {
-                // Handle jump roll
-                if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) && pThing->attach.flags )
-                {
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_RUN);
-                    sithPhysics_ResetThingMovement(pThing);
-
-                    pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLFWD;
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLFWD, NULL);
-                    return;
-                }
-
-                // Run forward
-                pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * 1.0f * 0.89999998f;
-
-                if ( bRun )
-                {
-                    pThing->moveStatus = SITHPLAYERMOVE_RUNNING;
-                }
-                else
-                {
-                    // Switch to walking mode if run key not held or toggled from always run to walk
-                    pThing->moveStatus = SITHPLAYERMOVE_WALKING;
-                    if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_RUN) )
-                    {
-                        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_RUN);
-                    }
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_WALK, NULL);
-                }
-
-                // Adjust speed by move factor
-                if ( moveFactor != 1.0f )
-                {
-                    pPhysicsInfo->thrust.y *= moveFactor;
-                }
-
-                bMoving = true;
-            }
-            //
-            // Handle run backward (becomes walk back)
-            //
-            else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
-            {
-                pThing->moveStatus = SITHPLAYERMOVE_WALKING;
-                pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * -1.0f * 0.5f;
-                bMoving = true;
-            }
-            else
-            {
-                // No forward/back input, zero forward thrust
-                pPhysicsInfo->thrust.y = 0.0f;
-            }
-
-            //
-            // Handle turn turn right key
-            //
-            if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
-            {
-                pPhysicsInfo->angularVelocity.yaw = -1.0f * sithTime_g_fps
-                    + pActor->maxRotVelocity * -1.0f * J3DMIN(moveFactor, 1.0f);
-                bMoving = true;
-            }
-            else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
-            {
-                pPhysicsInfo->angularVelocity.yaw = 1.0f * sithTime_g_fps
-                    + pActor->maxRotVelocity * 1.0f * J3DMIN(moveFactor, 1.0f);
-                bMoving = true;
-            }
-            else
-            {
-                // No turn input, zero angular velocity
-                pPhysicsInfo->angularVelocity.yaw = 0.0f;
-            }
-
-            //
-            // Handle mouse turn
-            //
-            if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-            {
-                float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
-                mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
-                pPhysicsInfo->angularVelocity.yaw += mouseTurn;
-            }
-
-            //
-            // Transition to standing if not running anymore
-            //
-            if ( !bMoving && !pThing->thingInfo.actorInfo.bControlsDisabled )
-            {
-                rdKeyframe* pKfTrack = sithPuppet_GetKeyframe("in_walk_bd_stand.key");
-                if ( pKfTrack )
-                {
-                    pThing->moveStatus = SITHPLAYERMOVE_WALK2STAND;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_RUN);
-
-                    sithPuppet_PlayKey(pThing->renderData.pPuppet, pKfTrack, /*lowPriority=*/1, /*heighPriority*/2,
-                        RDKEYFRAME_FADEOUT_NOLOOP | RDKEYFRAME_DISABLE_FADEIN | RDKEYFRAME_NOLOOP, sithPlayerControls_PuppetCallback);
-
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
-                    sithPhysics_ResetThingMovement(pThing);
-                }
-            }
-
+            sithPlayerControls_ProcessRunMove(pThing, secDeltaTime, moveFactor, bRun);
             return;
-        } // End SITHPLAYERMOVE_RUNNING
 
         case SITHPLAYERMOVE_CRAWLIDLE:
-        {
-            //
-            // Exit crawl if on water
-            //
-            if ( pThing->attach.flags
-                && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
-                && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & (SITH_SURFACE_SHALLOWWATER | SITH_SURFACE_WATER)) != 0 )
-            {
-                // Stand up from crawl
-                sithPlayerActions_Crawl2Stand(pThing);
-                return;
-            }
-
-            //
-            // Handle crawl to stand toggle
-            //
-            if ( sithControl_GetKey(SITHCONTROL_CRAWLTOGGLE, NULL) && !pThing->thingInfo.actorInfo.bForceMovePlay )
-            {
-                // Stand up from crawl
-                sithPlayerActions_Crawl2Stand(pThing);
-                return;
-            }
-
-            //
-            // Handle crawl forward
-            //
-            if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    pPhysicsInfo->thrust.y = pActor->maxThrust * 1.0f * 0.5f + 1.0f * secDeltaTime;
-                }
-            }
-            //
-            // Handle crawl back
-            //
-            else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
-            {
-                if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
-                {
-                    pPhysicsInfo->thrust.y = pActor->maxThrust * -1.0f * 0.5f + -1.0f * secDeltaTime;
-                }
-            }
-            else
-            {
-                // No movement input, zero forward thrust
-                pPhysicsInfo->thrust.y = 0.0f;
-            }
-
-            //
-            // Handle crawl turn right key
-            //
-            if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
-            {
-                pPhysicsInfo->angularVelocity.yaw = -0.5f * sithTime_g_fps
-                    + pActor->maxRotVelocity * -0.5f * J3DMIN(moveFactor, 1.0f);
-            }
-            //
-            // Handle crawl turn left key
-            //
-            else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
-            {
-                pPhysicsInfo->angularVelocity.yaw = 0.5f * sithTime_g_fps
-                    + pActor->maxRotVelocity * 0.5f * J3DMIN(moveFactor, 1.0f);
-            }
-            else
-            {
-                // No turn input, zero angular velocity
-                pPhysicsInfo->angularVelocity.yaw = 0.0f;
-            }
-
-            //
-            // Handle activation in crawl mode
-            //
-            if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !pThing->thingInfo.actorInfo.bForceMovePlay )
-            {
-                // Try activate object first (different order than standing)
-                if ( sithPlayerActions_Activate(pThing) == 1 )
-                {
-                    return;
-                }
-
-                // Try pickup item
-                int bFoundFloorItem;
-                SithThing* pItemThing = sithCollision_FindItemThing(pThing, &bFoundFloorItem);
-                if ( pItemThing )
-                {
-                    pThing->thingInfo.actorInfo.flags |= SITH_AF_CONTROLSDISABLED;
-                    sithPlayerControls_pCurActivatedItemThing = pItemThing;
-
-                    sithCog_ThingSendMessage(pItemThing, pThing, SITHCOG_MSG_ACTIVATE);
-                    sithPhysics_ResetThingMovement(pThing);
-
-                    sithPlayerControls_curMoveStatus = pThing->moveStatus;
-                    pThing->moveStatus = SITHPLAYERMOVE_ACTIVATING;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_ACTIVATE, sithPlayerControls_PuppetCallback);
-                    return;
-                }
-            }
-
-            //
-            // Handle mouse turn
-            //
-            if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
-            {
-                float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
-                mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
-                pPhysicsInfo->angularVelocity.yaw += mouseTurn;
-            }
+            sithPlayerControls_ProcessCrawlMove(pThing, secDeltaTime, moveFactor);
             return;
-        } // End SITHPLAYERMOVE_CRAWLIDLE
 
         case SITHPLAYERMOVE_PUSHPULL_READY:
-        {
-            // Indy is in push/pull ready state
-            // Handle push or pull controls and move the object accordingly
-
-            if ( pThing->thingInfo.actorInfo.bForceMovePlay )
-            {
-                return;
-            }
-
-            // Check that activation key is still being held, i.e., must be in push/pull grab state
-            if ( !sithControl_GetKey(SITHCONTROL_ACT2, NULL) )
-            {
-                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                sithPlayerControls_pMovableThing = NULL;
-                pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                return;
-            }
-
-            // No movement key pressed
-            if ( !sithControl_GetKey(SITHCONTROL_FORWARD, NULL)
-                && !sithControl_GetKey(SITHCONTROL_BACK, NULL) )
-            {
-                return;
-            }
-
-            if ( !sithPlayerControls_pMovableThing )
-            {
-                return;
-            }
-
-            rdVector3 pushPullMoveNorm;
-            if ( !sithPlayerControls_GetPushPullMoveNorm(&pushPullMoveNorm, &pThing->orient.lvec, 15.0f) )
-            {
-                return;
-            }
-
-            bool bCanMoveObject = true;
-            float searchRadius = (sithPlayerControls_pMovableThing->collide.movesize < 0.1f)
-                ? 0.050000001f
-                : 0.094999999f;
-
-            //
-            // Handle pull object move
-            //
-            if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
-            {
-                // Check height difference for pull - can't pull objects that are higher
-                if ( searchRadius > 0.05f && pThing->pos.z > sithPlayerControls_pMovableThing->pos.z )
-                {
-                    float heightDiff = pThing->pos.z - sithPlayerControls_pMovableThing->pos.z;
-                    if ( heightDiff > 0.02f ) // 20cm height difference
-                    {
-                        // If movable object is not pushgear, can't pull it
-                        if ( !strneq(sithPlayerControls_pMovableThing->aName, "pushgear", 8u) )
-                        {
-                            bCanMoveObject = false;
-                            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                            {
-                                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST);
-                                sithPlayerControls_secCommentWaitTimer = 3.0f;
-                            }
-
-                            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                            pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                            sithPlayerControls_pMovableThing = NULL;
-                            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                            return;
-                        }
-                    }
-                }
-
-                //
-                // Check if movable thing can move in pull direction
-                //
-                rdVector3 pullDir = RDVECTOR_NEG3(pushPullMoveNorm);
-                float pullMoveDist = pThing->collide.movesize + 0.19f;
-                sithCollision_SearchForCollisions(
-                    sithPlayerControls_pMovableThing->pInSector,
-                    sithPlayerControls_pMovableThing,
-                    &sithPlayerControls_pMovableThing->pos,
-                    &pullDir,
-                    pullMoveDist,
-                    searchRadius,
-                    0xA00
-                );
-
-                SithCollision* pCollision;
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                        && pCollision->pThingCollided != pThing )
-                    {
-                        bCanMoveObject = false;
-                        break; // Fixed: originally missing break here
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
-                    {
-                        bCanMoveObject = false;
-                        break; // Fixed: originally missing break here
-                    }
-                }
-                sithCollision_DecreaseStackLevel();
-
-                if ( !bCanMoveObject )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                //
-                // Check if player can move in pull direction
-                //
-                sithCollision_SearchForCollisions(
-                    pThing->pInSector,
-                    pThing,
-                    &pThing->pos,
-                    &pullDir,
-                    pullMoveDist,
-                    pThing->collide.movesize,
-                    0xA00
-                );
-
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                        && pCollision->pThingCollided != pThing )
-                    {
-                        bCanMoveObject = false;
-                        break;
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
-                    {
-                        bCanMoveObject = false;
-                        break;
-                    }
-                }
-                sithCollision_DecreaseStackLevel();
-
-                if ( !bCanMoveObject )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                //
-                // Check floor at movable thing's pull end position
-                //
-                rdVector3 negMoveNorm = RDVECTOR_NEG3(pushPullMoveNorm); // TODO: Reuse pullDir?
-                rdVector3 pullEndPos;
-                rdVector_ScaleAdd3(&pullEndPos, &negMoveNorm, 0.2f, &sithPlayerControls_pMovableThing->pos);
-
-                rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
-                SithSector* pPullEndPosSector = sithCollision_FindSectorInRadius(sithPlayerControls_pMovableThing->pInSector, &sithPlayerControls_pMovableThing->pos, &pullEndPos, 0.0f);
-                if ( !pPullEndPosSector )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                bCanMoveObject = false;
-                sithCollision_SearchForCollisions(pPullEndPosSector, NULL, &pullEndPos, &downDir, 0.17f, 0.039999999f, 0xA00); // 0.039999999f - player col size
-
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                        && pCollision->pThingCollided != pThing )
-                    {
-                        bCanMoveObject = true;
-                        break;
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 && pCollision->pSurfaceCollided )
-                    {
-                        float floorDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
-                        if ( floorDot > 0.99900001f )
-                        {
-                            bCanMoveObject = true;
-                            break;
-                        }
-                    }
-                }
-                sithCollision_DecreaseStackLevel();
-
-                if ( !bCanMoveObject )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                //
-                // Check floor at player's pull end position
-                //
-                rdVector_ScaleAdd3(&pullEndPos, &negMoveNorm, 0.2f, &pThing->pos);
-                pPullEndPosSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &pullEndPos, 0.0f);
-                if ( !pPullEndPosSector )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                bCanMoveObject = false;
-                sithCollision_SearchForCollisions(pPullEndPosSector, NULL, &pullEndPos, &downDir, 0.063000001f, 0.039999999f, 0xA00); // 0.039999999f - player col size
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                        && pCollision->pThingCollided != pThing )
-                    {
-                        // Check collision distance is valid (20-70cm)
-                        bCanMoveObject = pCollision->distance >= 0.02f && pCollision->distance <= 0.07f;
-                        break;
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 && pCollision->pSurfaceCollided )
-                    {
-                        // Check collision distance is valid (20-70cm) and surface is flat floor
-                        if ( pCollision->distance < 0.02f || pCollision->distance > 0.07f )
-                        {
-                            bCanMoveObject = false;
-                            break;
-                        }
-
-                        // Check if surface is straight floor
-                        float floorDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
-                        if ( floorDot > 0.99900001f )
-                        {
-                            // Check surface of movable thing and collided surfaces are at same height
-                            if ( (sithPlayerControls_pMovableThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
-                            {
-                                rdFace* pSurfFace    = &pCollision->pSurfaceCollided->face;
-                                rdFace* pMovableFace = sithPlayerControls_pMovableThing->attach.pFace;
-                                float surfZ          = sithWorld_g_pCurrentWorld->aVertices[*pSurfFace->aVertices].z;
-                                float movableZ       = sithWorld_g_pCurrentWorld->aVertices[*pMovableFace->aVertices].z;
-                                bCanMoveObject       = fabsf(surfZ - movableZ) < 0.0049999999f;
-                            }
-                            else
-                            {
-                                bCanMoveObject = true;
-                            }
-                            break;
-                        }
-                    }
-                }
-                sithCollision_DecreaseStackLevel();
-
-                if ( !bCanMoveObject )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                //
-                // Final check for pushgear alignment
-                //
-                if ( strneq(sithPlayerControls_pMovableThing->aName, "pushgear", 8u) )
-                {
-                    // Check the pull direction aligns with the pushgear direction
-                    // This makes sure gear can only be pulled in its current direction and not in other directions
-                    float alignDot = fabsf(rdVector_Dot3(&sithPlayerControls_pMovableThing->orient.lvec, &negMoveNorm));
-                    if ( alignDot < 0.98000002f )
-                    {
-                        if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                        {
-                            sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST);
-                            sithPlayerControls_secCommentWaitTimer = 3.0f;
-                        }
-
-                        // TODO: note that the push pull state is not cleared
-                        sithPlayerControls_pMovableThing = NULL;
-                        return;
-                    }
-                }
-
-                //
-                // Finally pull the movable object
-                //
-                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                sithPlayerActions_PullItem(pThing, sithPlayerControls_pMovableThing, &pushPullMoveNorm); // Note, don't negate pushPullMoveNorm as sithPlayerActions_PullItem will negate direction
-                return;
-            }
-            //
-            // Handle push object move
-            //
-            else
-            {
-                //
-                // Check if movable thing can be pushed to new position
-                //
-                sithCollision_SearchForCollisions(
-                    sithPlayerControls_pMovableThing->pInSector,
-                    sithPlayerControls_pMovableThing,
-                    &sithPlayerControls_pMovableThing->pos,
-                    &pushPullMoveNorm,
-                    0.19f, // move distance
-                    searchRadius,
-                    0xA00
-                );
-
-                SithCollision* pCollision;
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                        && pCollision->pThingCollided != pThing )
-                    {
-                        bCanMoveObject = false;
-                        break; // Fixed: originally missing break here
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
-                    {
-                        bCanMoveObject = false;
-                        break; // Fixed: originally missing break here
-                    }
-                }
-                sithCollision_DecreaseStackLevel();
-
-                if ( !bCanMoveObject )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_ALERT); // indy says : can't push this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                //
-                // Check floor at push end position
-                //
-                rdVector3 pushEndPos;
-                rdVector_ScaleAdd3(&pushEndPos, &pushPullMoveNorm, 0.2f, &sithPlayerControls_pMovableThing->pos);
-
-                rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
-                SithSector* pPushEndPosSector = sithCollision_FindSectorInRadius(
-                    sithPlayerControls_pMovableThing->pInSector,
-                    &sithPlayerControls_pMovableThing->pos,
-                    &pushEndPos,
-                    0.0f
-                );
-
-                if ( !pPushEndPosSector )
-                {
-                    return;
-                }
-
-                bCanMoveObject = false;
-                sithCollision_SearchForCollisions(pPushEndPosSector, NULL, &pushEndPos, &downDir, 0.16f, 0.0099999998f, 0xA00);
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( (pCollision->type & SITHCOLLISION_THING) != 0
-                        && pCollision->pThingCollided != sithPlayerControls_pMovableThing )
-                    {
-                        bCanMoveObject = true;
-                        break;
-                    }
-
-                    if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 && pCollision->pSurfaceCollided )
-                    {
-                        float floorDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
-                        if ( floorDot > 0.99900001f )
-                        {
-                            // Check player floor surface and push target floor heights match
-                            if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
-                            {
-                                rdFace* pSurfFace  = &pCollision->pSurfaceCollided->face;
-                                rdFace* pThingFace = pThing->attach.pFace;
-                                float surfZ        = sithWorld_g_pCurrentWorld->aVertices[*pSurfFace->aVertices].z;
-                                float thingZ       = sithWorld_g_pCurrentWorld->aVertices[*pThingFace->aVertices].z;
-                                bCanMoveObject     = fabsf(surfZ - thingZ) < 0.0049999999f;
-                            }
-                            else
-                            {
-                                bCanMoveObject = true;
-                            }
-                            break;
-                        }
-                    }
-                }
-                sithCollision_DecreaseStackLevel();
-
-                if ( !bCanMoveObject )
-                {
-                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                    {
-                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_ALERT); // indy says : can't push this object
-                        sithPlayerControls_secCommentWaitTimer = 3.0f;
-                    }
-
-                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
-                    sithPlayerControls_pMovableThing = NULL;
-                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    return;
-                }
-
-                //
-                // Final check for pushgear alignment
-                //
-                if ( strneq(sithPlayerControls_pMovableThing->aName, "pushgear", 8u) )
-                {
-                    // Check the push direction aligns with the pushgear direction
-                    // This makes sure gear can only be pushed in its current direction and not in other directions
-                    float alignDot = fabsf(rdVector_Dot3(&sithPlayerControls_pMovableThing->orient.lvec, &pushPullMoveNorm));
-                    if ( alignDot < 0.98000002f )
-                    {
-                        if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
-                        {
-                            sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_ALERT); // indy says : can't push this object
-                            sithPlayerControls_secCommentWaitTimer = 3.0f;
-                        }
-
-                        // TODO: Note that the push/pull state is not reset here
-                        sithPlayerControls_pMovableThing = NULL;
-                        return;
-                    }
-                }
-
-                //
-                // Finally push the movable object 2m forward
-                //
-                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
-                pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                sithPlayerActions_PushItem(pThing, sithPlayerControls_pMovableThing, &pushPullMoveNorm);
-                return;
-            }
+            sithPlayerControls_ProcessPushPullMove(pThing, secDeltaTime);
             return;
-        } // End of SITHPLAYERMOVE_PUSHPULL_READY
 
         case SITHPLAYERMOVE_SLIDEDOWNFORWARD:
-        {
-            // Handle slide jump
-            if ( !sithControl_GetKey(SITHCONTROL_JUMP, NULL) || sithPlayerControls_bJumpActivated )
-            {
-                return;
-            }
-
-            SithPuppetTrack* pModeTrack = sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_SLIDEDOWNFWD);
-            if ( pModeTrack )
-            {
-                sithPuppet_StopKey(pThing->renderData.pPuppet, pModeTrack->trackNum, 0.0f);
-                sithPuppet_RemoveTrack(pThing, pModeTrack);
-            }
-
-            sithPhysics_ResetThingMovement(pThing);
-            pThing->moveStatus = SITHPLAYERMOVE_LEAPFWD;
-            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LEAPLEFT, NULL);
-            sithPlayerControls_bJumpActivated = true;
+            sithPlayerControls_ProcessSlideDownMove(pThing, secDeltaTime);
             return;
-        } // End SITHPLAYERMOVE_SLIDEDOWNFORWARD
+
+        default:
+            return;
     }
 }
 
@@ -2482,11 +933,11 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
     }
     // Handle Jump-off key
     else if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL)
-        && !sithPlayerControls_bJumpActivated
+        && !sithPlayerControls_bJumpKeyActive
         && !pThing->thingInfo.actorInfo.bForceMovePlay )
     {
         sithPlayerActions_UnmountWall(pThing, sithPlayerControls_climbPupTrackNum);
-        sithPlayerControls_bJumpActivated   = true;
+        sithPlayerControls_bJumpKeyActive   = true;
         sithPlayerControls_climbPupTrackNum = -1;
     }
     // Handle Climb Up key
@@ -3161,7 +1612,7 @@ void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDe
         {
             if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL) )
             {
-                sithPlayerControls_bJumpActivated = true; // TODO: What's the purpose of this line here?
+                sithPlayerControls_bJumpKeyActive = true; // TODO: What's the purpose of this line here?
             }
 
             if ( pThing->thingInfo.actorInfo.bForceMovePlay == 1 )
@@ -3172,7 +1623,7 @@ void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDe
             // Grab the ledge
             sithPlayerActions_GrabLedge(pThing, ledgeDist, pLedgeSurf, pLedgeFace, pLedgeMesh, pLedgeThing);
 
-            sithPlayerControls_bJumpActivated = true;
+            sithPlayerControls_bJumpKeyActive = true;
             sithPhysics_ResetThingMovement(pThing);
 
             if ( pThing == sithPlayer_g_pLocalPlayerThing
@@ -3344,7 +1795,7 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
         if ( !sithInventory_GetCurrentWeapon(pThing)
             && !sithWeapon_IsMountingWeapon(pThing)
             && (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0
-            && !sithPlayerControls_bJumpActivated )
+            && !sithPlayerControls_bJumpKeyActive )
         {
             int ledgeType = sithPlayerControls_CheckWaterLedge(pThing);
             if ( ledgeType == 1 ) // player already positioned to ledge grab position
@@ -3390,7 +1841,7 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
                 sithPhysics_FindWaterSurface(pThing);
             }
 
-            sithPlayerControls_bJumpActivated = true;
+            sithPlayerControls_bJumpKeyActive = true;
         }
     }
     else
@@ -3544,7 +1995,7 @@ void J3DAPI sithPlayerControls_ProcessHangMove(SithThing* pThing, float secDelta
     }
 
     // Pull up move
-    if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) && !sithPlayerControls_bJumpActivated )
+    if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) && !sithPlayerControls_bJumpKeyActive )
     {
         if ( sithPlayerActions_CanPullUp(pThing) )
         {
@@ -3567,10 +2018,10 @@ void J3DAPI sithPlayerControls_ProcessHangMove(SithThing* pThing, float secDelta
     }
     //Jump off move
     else if ( (sithControl_GetKey(SITHCONTROL_BACK, NULL) || sithControl_GetKey(SITHCONTROL_JUMP, NULL))
-        && !sithPlayerControls_bJumpActivated )
+        && !sithPlayerControls_bJumpKeyActive )
     {
         sithPlayerActions_UnmountWall(pThing, -1);
-        sithPlayerControls_bJumpActivated = true;
+        sithPlayerControls_bJumpKeyActive = true;
     }
 
     // Right move
@@ -4345,7 +2796,7 @@ SithSurface* J3DAPI sithPlayerControls_FindClimbSurface(SithThing* pThing, const
             if ( climbDir == 2 && pCollision->pSurfaceCollided
                 && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_ISFLOOR) != 0 )
             {
-                sithPlayerControls_bJumpActivated = true;
+                sithPlayerControls_bJumpKeyActive = true;
                 sithPlayerActions_UnmountWall(pThing, -1);
                 sithCollision_DecreaseStackLevel();
                 *pbHitNoneClimbSurf = 0;
@@ -5116,4 +3567,1585 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
 
     sithCollision_DecreaseStackLevel();
     return bCanMove;
+}
+
+void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun)
+{
+    J3D_UNUSED(secDeltaTime);
+
+    bool bMoving = false;
+    SithPhysicsInfo* pPhysicsInfo = &pThing->moveInfo.physics;
+    SithActorInfo* pActor         = &pThing->thingInfo.actorInfo;
+
+    if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) != 0 )
+    {
+        moveFactor = 0.1f;
+    }
+    else
+    {
+        // Reset physics height if not at normal standing height
+        if ( pThing->moveInfo.physics.height != 0.090000004f )
+        {
+            pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNSURFACE;
+            pThing->moveInfo.physics.flags |= SITH_PF_ALIGNUP;
+            pThing->moveInfo.physics.height = 0.090000004f;
+
+            sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
+            sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
+        }
+
+        // Debug climb jump
+        if ( sithControl_GetKey(SITHCONTROL_CAMERAZOOMOUT, NULL) )
+        {
+            sithPlayerActions_Jump(pThing, 1.0f, 99);
+            return;
+        }
+
+        //
+        // Handle climb-on, mount climb wall, and jumping
+        //
+        if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL) && !sithPlayerControls_bJumpKeyActive )
+        {
+            // Try 2m climb
+            if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
+                && !sithPlayerActions_HasActiveWeapon(pThing) )
+            {
+                sithPlayerActions_ClimbOn2m(pThing);
+                return;
+            }
+
+            // Try 1m climb
+            if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
+                && !sithPlayerActions_HasActiveWeapon(pThing) )
+            {
+                sithPlayerActions_ClimbOn1m(pThing);
+                return;
+            }
+
+            // Try mounting wall for climbing
+            // TODO: this could be new sithPlayerActions function FindAndMountClimbWall
+            if ( sithInventory_GetCurrentWeapon(pThing) == SITHWEAPON_NO_WEAPON && !sithWeapon_IsMountingWeapon(pThing) ) //TODO: why not use sithPlayerActions_HasActiveWeapon
+            {
+                float moveDist = pThing->collide.movesize * 2.0f;
+                sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &pThing->orient.lvec, moveDist, pThing->collide.movesize, 0xA00);
+
+                bool bWallMounted = false;
+                SithCollision* pCollision;
+                while ( (pCollision = sithCollision_PopStack()) != NULL )
+                {
+                    if ( ((pCollision->type & SITHCOLLISION_WORLD) != 0
+                        || (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0)
+                        && pCollision->pSurfaceCollided
+                        && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_CLIMBABLE) != 0 )
+                    {
+                        rdVector3 surfNormal = RDVECTOR_NEG3(pCollision->pSurfaceCollided->face.normal);
+                        surfNormal.z = 0.0f;
+                        rdVector_Normalize3Acc(&surfNormal);
+
+                        rdVector3 dir = pThing->orient.lvec;
+                        dir.z = 0.0f;
+                        rdVector_Normalize3Acc(&dir);
+
+                        if ( rdVector_Dot3(&dir, &surfNormal) > 0.80000001f )
+                        {
+                            pThing->moveStatus = SITHPLAYERMOVE_MOUNTING_WALL;
+                            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+
+                            sithPhysics_ResetThingMovement(pThing);
+                            sithPlayerActions_CenterOnClimbSurface(pThing, pCollision->pSurfaceCollided);
+                            sithThing_AttachThingToClimbSurface(pThing, pCollision->pSurfaceCollided);
+
+                            sithPuppet_RemoveAllTracks(pThing);
+                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_MOUNTWALL, sithPlayerControls_PuppetCallback);
+                            sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
+
+                            pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
+                            bWallMounted = true;
+
+                            sithPlayerControls_bJumpKeyActive = true;
+                            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0);
+                            break;
+                        }
+                    }
+                }
+
+                sithCollision_DecreaseStackLevel();
+                if ( bWallMounted )
+                {
+                    return;
+                }
+            }
+
+            //
+            // No climbing surfaces found, handle normal jump
+            //
+            if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+            {
+                if ( pThing->attach.flags
+                    && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
+                {
+                    float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
+                    if ( floorDot > 0.69999999f && floorDot < 0.75f )
+                    {
+                        pThing->moveStatus = SITHPLAYERMOVE_STILL;
+                        pThing->thingInfo.actorInfo.bForceMovePlay = 0;
+                    }
+                    else
+                    {
+                        sithPlayerControls_curJumpDirection = 0;
+                        sithPlayerActions_JumpStart(pThing);
+                    }
+                }
+                else
+                {
+                    sithPlayerControls_curJumpDirection = 0;
+                    sithPlayerActions_JumpStart(pThing);
+                }
+                return;
+            }
+        } // End jump handling
+
+        //
+        // Handle crawling
+        //
+        if ( sithControl_GetKey(SITHCONTROL_CRAWLTOGGLE, NULL)
+            && !pThing->thingInfo.actorInfo.bForceMovePlay
+            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        {
+            bool bGoIntoCrawl = false;
+            if ( pThing->attach.flags )
+            {
+                if ( (pThing->attach.flags & (SITH_ATTACH_THING | SITH_ATTACH_THINGFACE)) != 0 )
+                {
+                    // Check if attached thing is stationary
+                    if ( pThing->attach.attachedToStructure.pThingAttached )
+                    {
+                        SithThing* pThingAttached = pThing->attach.attachedToStructure.pThingAttached;
+                        SithThingMoveType moveType = pThingAttached->moveType;
+
+                        switch ( moveType )
+                        {
+                            case SITH_MT_NONE:
+                                bGoIntoCrawl = true;
+                                break;
+
+                            case SITH_MT_PHYSICS:
+                                bGoIntoCrawl = rdVector_IsZero3(&pThingAttached->moveInfo.physics.velocity);
+                                break;
+
+                            case SITH_MT_PATH:
+                                bGoIntoCrawl = (pThingAttached->moveInfo.pathMovement.mode & SITH_PATHMOVE_MOVE) == 0;
+                                break;
+                        }
+
+                        if ( bGoIntoCrawl && pThing->attach.pFace )
+                        {
+                            // Check attached face is flat floor
+                            rdVector3 worldNormal;
+                            rdMatrix_TransformVector34(&worldNormal, &pThing->attach.pFace->normal, &pThingAttached->orient);
+                            float dotAbs = fabsf(rdVector_Dot3(&worldNormal, &rdroid_g_zVector3));
+                            bGoIntoCrawl = dotAbs >= 0.98000002f;
+                        }
+                    }
+                }
+                else if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
+                    && pThing->attach.attachedToStructure.pSurfaceAttached )
+                {
+                    // Check not on water and surface is flat floor
+                    if ( (pThing->attach.attachedToStructure.pSurfaceAttached->flags & (SITH_SURFACE_SHALLOWWATER | SITH_SURFACE_WATER)) != 0 )
+                    {
+                        bGoIntoCrawl = false;
+                    }
+                    else
+                    {
+                        // Check surface is flat floor
+                        float dotAbs = fabsf(rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3));
+                        bGoIntoCrawl = dotAbs >= 0.98000002f;
+                    }
+                }
+            }
+
+            // Toggle crawl state
+            if ( bGoIntoCrawl )
+            {
+                sithPlayerActions_Stand2Crawl(pThing);
+                return;
+            }
+
+            // Couldn't go into crawl, Indy says "can't go into crawl"
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_SPLATTERED);
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+        }
+
+        //
+        // Handle move forward from still
+        //
+        if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
+        {
+            if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+            {
+                // Handle jump forward roll
+                if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) )
+                {
+                    if ( pThing->attach.flags )
+                    {
+                        pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLFWD;
+                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLFWD, NULL);
+                        return;
+                    }
+                }
+                else if ( !pThing->thingInfo.actorInfo.bControlsDisabled )
+                {
+                    rdVector3 moveToPos = pThing->pos;
+                    rdVector_MultAcc3(&moveToPos, &pThing->orient.lvec, pThing->collide.movesize);
+
+                    int bSurfaceChange;
+                    if ( !bRun && !sithPlayerActions_CheckFloorAtPos(pThing, &moveToPos, &bSurfaceChange) )
+                    {
+                        bMoving = false;
+                        return;
+                    }
+
+                    // Okay to move forward
+                    // Play stand to walk animation and change puppet move mode to walk/run
+                    rdKeyframe* pKframe = sithPuppet_GetKeyframe("in_stand_bd_walk.key");
+                    if ( pKframe )
+                    {
+                        // Disable controls during transition animation and
+                        // set move status to stand2walk/run
+                        pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+                        pThing->moveStatus = bRun ? SITHPLAYERMOVE_STAND2RUN : SITHPLAYERMOVE_STAND2WALK;
+
+                        sithPuppet_PlayKey(pThing->renderData.pPuppet, pKframe, 1, 2, RDKEYFRAME_FADEOUT_NOLOOP | RDKEYFRAME_NOLOOP, sithPlayerControls_PuppetCallback);
+                        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_STAND);
+
+                        // Set appropriate move mode
+                        if ( bRun )
+                        {
+                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_RUN, NULL);
+                        }
+                        else
+                        {
+                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_WALK, NULL);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        //
+        // Handle move backward from still
+        //
+        else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
+        {
+            // Check for climb down wall/ledge/object
+            int climbDownType = sithPlayerActions_CheckClimbDownWall(pThing);
+            switch ( climbDownType )
+            {
+                case 1:
+                    sithPlayerActions_ClimbDownToClimb(pThing, /*bAngled=*/0);
+                    return;
+
+                case 2:
+                    sithPlayerActions_ClimbDownToHang(pThing);
+                    return;
+
+                case 3:
+                    sithPlayerActions_ClimbDownToClimb(pThing, /*bAngled=*/1);
+                    return;
+
+                default:
+                    // Handle jump back roll
+                    if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) ) // Jump back roll
+                    {
+                        if ( pThing->attach.flags )
+                        {
+                            pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLBACK;
+                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLBACK, NULL);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // Start moving backward
+                        pThing->moveStatus = SITHPLAYERMOVE_WALKING;
+                        pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * -1.0f * 0.5f;
+                        bMoving = true;
+                    }
+                    break;
+            }
+        }
+        else
+        {
+            // No forward/backward input, zero forward thrust
+            pPhysicsInfo->thrust.y = 0.0f;
+        }
+
+        //
+        // Handle step left/right
+        //
+        if ( sithControl_GetKey(SITHCONTROL_STPLEFT, NULL) )
+        {
+            if ( pThing->thingInfo.actorInfo.bForceMovePlay || !sithPlayerControls_CanStrafeMove(pThing, /*bMoveRight=*/0) )
+            {
+                return;
+            }
+
+            sithPlayerActions_StrafeLeft(pThing);
+            sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
+            return;
+        }
+
+        if ( sithControl_GetKey(SITHCONTROL_STPRIGHT, NULL) )
+        {
+            if ( pThing->thingInfo.actorInfo.bForceMovePlay || !sithPlayerControls_CanStrafeMove(pThing, /*bMoveRight=*/1) )
+            {
+                return;
+            }
+
+            sithPlayerActions_StrafeRight(pThing);
+            sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
+            return;
+        }
+
+        pPhysicsInfo->thrust.x = 0.0f;
+        pPhysicsInfo->angularVelocity.yaw = 0.0f;
+    } // (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) == 0
+
+    //
+    // Handle turn right
+    //
+    if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            // Handle jump right roll
+            if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL)
+                && (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) == 0 )
+            {
+                if ( pThing->attach.flags )
+                {
+                    pThing->moveStatus = SITHPLAYERMOVE_JUMPRIGHT;
+                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_HOPRIGHT, NULL);
+                    return;
+                }
+            }
+            else
+            {
+                pPhysicsInfo->angularVelocity.yaw = -1.0f * sithTime_g_fps
+                    + pActor->maxRotVelocity * -1.0f * J3DMIN(moveFactor, 1.0f);
+
+                // Turn faster if run key held
+                if ( sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
+                {
+                    pPhysicsInfo->angularVelocity.yaw *= 2.5f;
+                }
+                else
+                {
+                    pPhysicsInfo->angularVelocity.yaw /= 1.4f;
+                }
+
+                bMoving = true;
+            }
+        }
+    }
+    //
+    // Handle turn left
+    //
+    else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            // Handle jump left roll
+            if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL)
+                && (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) == 0 )
+            {
+                if ( pThing->attach.flags )
+                {
+                    pThing->moveStatus = SITHPLAYERMOVE_JUMPLEFT;
+                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_HOPLEFT, NULL);
+                    return;
+                }
+            }
+            else
+            {
+                pPhysicsInfo->angularVelocity.yaw = 1.0f * sithTime_g_fps
+                    + pActor->maxRotVelocity * 1.0f * J3DMIN(moveFactor, 1.0f);
+
+           // Turn faster if run key held
+                if ( sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
+                {
+                    pPhysicsInfo->angularVelocity.yaw *= 2.5f;
+                }
+                else
+                {
+                    pPhysicsInfo->angularVelocity.yaw /= 1.4f;
+                }
+
+                bMoving = true;
+            }
+        }
+    }
+    else
+    {
+        // No turn input, zero angular velocity
+        pPhysicsInfo->angularVelocity.yaw = 0.0f;
+    }
+
+    // Skip further processing if immobile
+    if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_IMMOBILE) != 0 )
+    {
+        return;
+    }
+
+    //
+    // Handle mouse turn
+    //
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    {
+        float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
+        mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
+        pPhysicsInfo->angularVelocity.yaw += mouseTurn;
+    }
+
+    //
+    // Handle activation key
+    //
+    if ( !sithControl_GetKey(SITHCONTROL_ACT2, NULL) || sithPlayerControls_bActionKeyActive )
+    {
+        //  No activation key pressed or already activated this frame
+        return;
+    }
+
+    // TODO: Should also set sithPlayerControls_bActionKeyActive = true; here?
+
+    // Activation key pressed
+    // Try first to pickup/activate item
+    if ( !pThing->thingInfo.actorInfo.bForceMovePlay
+        && !pThing->thingInfo.actorInfo.bControlsDisabled
+        && !sithWeapon_IsMountingWeapon(pThing) )
+    {
+        // Try find item to activate/pickup
+        int bFoundGroundItem;
+        SithThing* pItemThing = sithCollision_FindItemThing(pThing, &bFoundGroundItem);
+        if ( pItemThing )
+        {
+            pThing->thingInfo.actorInfo.flags |= SITH_AF_CONTROLSDISABLED;
+            sithPlayerControls_pCurActivatedItemThing = pItemThing;
+
+            sithCog_ThingSendMessage(pItemThing, pThing, SITHCOG_MSG_ACTIVATE);
+            sithPhysics_ResetThingMovement(pThing);
+
+            sithPlayerControls_curMoveStatus              = pThing->moveStatus;
+            pThing->moveStatus                            = SITHPLAYERMOVE_ACTIVATING;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+
+            rdKeyframeFlags kfflags = RDKEYFRAME_NOLOOP;
+            rdKeyframe* pKframe     = NULL; // Altered: Init to NULL
+            if ( bFoundGroundItem )
+            {
+                // in_pickup_low.key
+                pKframe = sithPuppet_GetKeyframeByIndex(SITHWORLD_STATICINDEX(138)); static_assert(SITHWORLD_STATICINDEX(138) == 0x808A, "");
+            }
+            else if ( sithInventory_GetCurrentWeapon(pThing) == SITHWEAPON_ZIPPO )
+            {
+                 // in_pickup_dark.key
+                pKframe = sithPuppet_GetKeyframeByIndex(SITHWORLD_STATICINDEX(145)); static_assert(SITHWORLD_STATICINDEX(145) == 0x8091, "");
+                kfflags = RDKEYFRAME_FADEOUT_NOLOOP;
+            }
+            else
+            {
+                // in_pickup_med.key
+                pKframe = sithPuppet_GetKeyframeByIndex(SITHWORLD_STATICINDEX(139)); static_assert(SITHWORLD_STATICINDEX(139) == 0x808B, "");
+            }
+
+            if ( pKframe )
+            {
+                sithPuppet_PlayKey(pThing->renderData.pPuppet, pKframe, /*lowPriority=*/5, /*highPriority=*/8, kfflags, sithPlayerControls_PuppetCallback);
+            }
+            return;
+        }
+
+        //
+        // Try activate nearby thing
+        //
+        if ( sithPlayerActions_Activate(pThing) == 1 )
+        {
+            return;
+        }
+
+        //
+        // Try find push/pull object
+        //
+        pItemThing = NULL;
+        rdVector3 pushpullMoveNorm;
+        bool bGotPushPullDir = sithPlayerControls_GetPushPullMoveNorm(&pushpullMoveNorm, &pThing->orient.lvec, 15.0f);
+        if ( bGotPushPullDir
+            && pThing->attach.flags
+            && !sithInventory_GetCurrentWeapon(pThing)
+            && !sithWeapon_IsMountingWeapon(pThing) ) // TODO: why not use !sithPlayerActions_HasActiveWeapon
+        {
+            sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &pushpullMoveNorm, pThing->collide.movesize, pThing->collide.movesize, 0xA00);
+
+            SithCollision* pCollision;
+            while ( (pCollision = sithCollision_PopStack()) != NULL )
+            {
+                if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                    && pCollision->pThingCollided != pThing
+                    && (pCollision->pThingCollided->flags & SITH_TF_MOVABLE) != 0
+                    && pCollision->distance < 0.0089999996f )
+                {
+                    pItemThing = pCollision->pThingCollided;
+                    break;
+                }
+            }
+            sithCollision_DecreaseStackLevel();
+
+            if ( pItemThing )
+            {
+                // Check player facing movable object
+                rdVector3 dirXY = pThing->orient.lvec;
+                dirXY.z = 0.0f;
+                rdVector_Normalize3Acc(&dirXY);
+
+                rdVector3 playerToItem;
+                rdVector_Sub3(&playerToItem, &pThing->pos, &pItemThing->pos);
+                playerToItem.z = 0.0f;
+                rdVector_Normalize3Acc(&playerToItem);
+
+                if ( fabsf(rdVector_Dot3(&dirXY, &playerToItem)) > 0.94f )
+                {
+                    sithPlayerControls_pMovableThing = pItemThing;
+                    sithPhysics_ResetThingMovement(pThing);
+
+                    pThing->orient.lvec = pushpullMoveNorm;
+                    rdVector_Cross3(&pThing->orient.rvec, &pThing->orient.lvec, &rdroid_g_zVector3);
+                    rdVector_Normalize3Acc(&pThing->orient.rvec);
+                    rdVector_Cross3(&pThing->orient.uvec, &pThing->orient.rvec, &pThing->orient.lvec);
+
+                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY, sithPlayerControls_PuppetCallback);
+
+                    pThing->moveStatus = SITHPLAYERMOVE_PUSHPULL_READY;
+                    sithPlayerControls_bActionKeyActive = true;
+                    return;
+                }
+
+                pItemThing = NULL;
+            }
+        }
+
+        //
+        // Try board vehicle
+        //
+        if ( !pItemThing
+            && !sithPlayerControls_bActionKeyActive
+            && sithPlayerControls_BoardVehicle(pThing, /*bNoBoardAnim=*/0) )
+        {
+            sithPlayerControls_bActionKeyActive = true;
+            return;
+        }
+    } // End activation key pressed handling
+
+    if ( !bMoving && !pThing->thingInfo.actorInfo.bControlsDisabled )
+    {
+        pThing->moveStatus = SITHPLAYERMOVE_STILL;
+    }
+}
+
+void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun)
+{
+    J3D_UNUSED(secDeltaTime);
+
+    bool bMoving = false;
+    SithPhysicsInfo* pPhysicsInfo = &pThing->moveInfo.physics;
+    SithActorInfo* pActor         = &pThing->thingInfo.actorInfo;
+
+    // Reset physics height if not standing height
+    if ( pThing->moveInfo.physics.height != 0.090000004f )
+    {
+        pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNSURFACE;
+        pThing->moveInfo.physics.flags |= SITH_PF_ALIGNUP;
+        pThing->moveInfo.physics.height = 0.090000004f;
+        sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
+        sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
+    }
+
+    //
+    // Handle walk jump
+    //
+    if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL)
+        && !sithPlayerControls_bJumpKeyActive
+        && !pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        // Try 2m climb
+        if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
+            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        {
+            sithPuppet_RemoveAllTracks(pThing);
+            sithPhysics_ResetThingMovement(pThing);
+            sithPlayerActions_ClimbOn2m(pThing);
+            return;
+        }
+
+        // Try 1m climb
+        if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
+            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        {
+            sithPuppet_RemoveAllTracks(pThing);
+            sithPhysics_ResetThingMovement(pThing);
+            sithPlayerActions_ClimbOn1m(pThing);
+            return;
+        }
+
+        // Note: in still jump case, check for no force move play is performed first
+        if ( pThing->attach.flags && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
+        {
+            float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
+            if ( floorDot > 0.69999999f && floorDot < 0.75f )
+            {
+                pThing->moveStatus = SITHPLAYERMOVE_STILL;
+                pThing->thingInfo.actorInfo.bForceMovePlay = 0;
+            }
+            else
+            {
+                sithPlayerControls_curJumpDirection = 0;
+                sithPlayerActions_JumpStart(pThing);
+            }
+        }
+        else
+        {
+            sithPlayerControls_curJumpDirection = 0;
+            sithPlayerActions_JumpStart(pThing);
+        }
+
+        return;
+    } // Junp handling end
+
+    //
+    // Handle walk forward
+    //
+    if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            // Handle jump roll
+            if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) && pThing->attach.flags )
+            {
+                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
+                pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLFWD;
+                sithPhysics_ResetThingMovement(pThing);
+                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLFWD, NULL);
+                return;
+            }
+
+            // Move forward
+            pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * 1.0f * 0.89999998f;
+
+            if ( bRun )
+            {
+                // Switch to running mode if run key held
+                pThing->moveStatus = SITHPLAYERMOVE_RUNNING;
+                if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_WALK) )
+                {
+                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
+                }
+                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_RUN, NULL);
+            }
+            else
+            {
+                pThing->moveStatus = SITHPLAYERMOVE_WALKING;
+            }
+
+            // Adjust speed by move factor
+            if ( moveFactor != 1.0f )
+            {
+                pPhysicsInfo->thrust.y *= moveFactor;
+            }
+
+            bMoving = true;
+        }
+    }
+    //
+    // Handle walk back
+    //
+    else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            // Handle jump back roll
+            if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) && pThing->attach.flags )
+            {
+                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALKBACK);
+                pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLBACK;
+                sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLBACK, NULL);
+                return;
+            }
+
+            pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * -1.0f * 0.5f;
+            bMoving = true;
+        }
+    }
+    else
+    {
+        // No forward/back input, zero forward thrust
+        pPhysicsInfo->thrust.y = 0.0f;
+    }
+
+    //
+    // Handle turn right key
+    //
+    if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            pPhysicsInfo->angularVelocity.yaw = -1.0f * sithTime_g_fps
+                + pActor->maxRotVelocity * -1.0f * J3DMIN(moveFactor, 1.0f);
+            bMoving = true;
+        }
+    }
+     //
+    // Handle turn left key
+    //
+    else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            pPhysicsInfo->angularVelocity.yaw = 1.0f * sithTime_g_fps
+                + pActor->maxRotVelocity * 1.0f * J3DMIN(moveFactor, 1.0f);
+            bMoving = true;
+        }
+    }
+    else
+    {
+        // No turn input, zero angular velocity
+        pPhysicsInfo->angularVelocity.yaw = 0.0f;
+    }
+
+    //
+    // Handle mouse turn
+    //
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    {
+        float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
+        mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
+        pPhysicsInfo->angularVelocity.yaw += mouseTurn;
+    }
+
+    //
+    // Transition to standing if not moving anymore
+    //
+    if ( !pThing->thingInfo.actorInfo.bForceMovePlay
+        && !bMoving
+        && !pThing->thingInfo.actorInfo.bControlsDisabled )
+    {
+        rdKeyframe* pKfTrack = sithPuppet_GetKeyframe("in_walk_bd_stand.key");
+        if ( pKfTrack )
+        {
+            pThing->moveStatus = SITHPLAYERMOVE_WALK2STAND;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+
+            if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_WALK) )
+            {
+                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
+            }
+            else if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_WALKBACK) )
+            {
+                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALKBACK);
+            }
+
+            sithPuppet_PlayKey(pThing->renderData.pPuppet, pKfTrack, /*lowPriority=*/1, /*heighPriority=*/2,
+                RDKEYFRAME_FADEOUT_NOLOOP | RDKEYFRAME_DISABLE_FADEIN | RDKEYFRAME_NOLOOP, sithPlayerControls_PuppetCallback);
+
+            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
+            sithPhysics_ResetThingMovement(pThing);
+        }
+    }
+}
+
+void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun)
+{
+    J3D_UNUSED(secDeltaTime);
+
+    if ( pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        return;
+    }
+
+    bool bMoving = false;
+    SithPhysicsInfo* pPhysicsInfo = &pThing->moveInfo.physics;
+    SithActorInfo* pActor         = &pThing->thingInfo.actorInfo;
+
+    //
+    // Handle run jump
+    //
+    if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL)
+        && !sithPlayerControls_bJumpKeyActive
+        && !pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        // Try 2m climb
+        if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
+            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        {
+            sithPuppet_RemoveAllTracks(pThing);
+            sithPhysics_ResetThingMovement(pThing);
+            sithPlayerActions_ClimbOn2m(pThing);
+            return;
+        }
+
+        // Try 1m climb
+        if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
+            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        {
+            sithPuppet_RemoveAllTracks(pThing);
+            sithPhysics_ResetThingMovement(pThing);
+            sithPlayerActions_ClimbOn1m(pThing);
+            return;
+        }
+
+        // No climb, perform jump by moving to jump state
+        sithPuppet_g_bPlayerLeapForward = 1;
+        return;
+    } // Jump handling end
+
+    //
+    // Handle run forward
+    //
+    if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
+    {
+        // Handle jump roll
+        if ( sithControl_GetKey(SITHCONTROL_ACT3, NULL) && pThing->attach.flags )
+        {
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_RUN);
+            sithPhysics_ResetThingMovement(pThing);
+
+            pThing->moveStatus = SITHPLAYERMOVE_JUMPROLLFWD;
+            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_JUMPROLLFWD, NULL);
+            return;
+        }
+
+        // Run forward
+        pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * 1.0f * 0.89999998f;
+
+        if ( bRun )
+        {
+            pThing->moveStatus = SITHPLAYERMOVE_RUNNING;
+        }
+        else
+        {
+            // Switch to walking mode if run key not held or toggled from always run to walk
+            pThing->moveStatus = SITHPLAYERMOVE_WALKING;
+            if ( sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_RUN) )
+            {
+                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_RUN);
+            }
+            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_WALK, NULL);
+        }
+
+        // Adjust speed by move factor
+        if ( moveFactor != 1.0f )
+        {
+            pPhysicsInfo->thrust.y *= moveFactor;
+        }
+
+        bMoving = true;
+    }
+    //
+    // Handle run backward (becomes walk back)
+    //
+    else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
+    {
+        pThing->moveStatus = SITHPLAYERMOVE_WALKING;
+        pPhysicsInfo->thrust.y = (pActor->maxThrust + pActor->extraSpeed) * -1.0f * 0.5f;
+        bMoving = true;
+    }
+    else
+    {
+        // No forward/back input, zero forward thrust
+        pPhysicsInfo->thrust.y = 0.0f;
+    }
+
+    //
+    // Handle turn turn right key
+    //
+    if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
+    {
+        pPhysicsInfo->angularVelocity.yaw = -1.0f * sithTime_g_fps
+            + pActor->maxRotVelocity * -1.0f * J3DMIN(moveFactor, 1.0f);
+        bMoving = true;
+    }
+    else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
+    {
+        pPhysicsInfo->angularVelocity.yaw = 1.0f * sithTime_g_fps
+            + pActor->maxRotVelocity * 1.0f * J3DMIN(moveFactor, 1.0f);
+        bMoving = true;
+    }
+    else
+    {
+        // No turn input, zero angular velocity
+        pPhysicsInfo->angularVelocity.yaw = 0.0f;
+    }
+
+    //
+    // Handle mouse turn
+    //
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    {
+        float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
+        mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
+        pPhysicsInfo->angularVelocity.yaw += mouseTurn;
+    }
+
+    //
+    // Transition to standing if not running anymore
+    //
+    if ( !bMoving && !pThing->thingInfo.actorInfo.bControlsDisabled )
+    {
+        rdKeyframe* pKfTrack = sithPuppet_GetKeyframe("in_walk_bd_stand.key");
+        if ( pKfTrack )
+        {
+            pThing->moveStatus = SITHPLAYERMOVE_WALK2STAND;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_RUN);
+
+            sithPuppet_PlayKey(pThing->renderData.pPuppet, pKfTrack, /*lowPriority=*/1, /*heighPriority*/2,
+                RDKEYFRAME_FADEOUT_NOLOOP | RDKEYFRAME_DISABLE_FADEIN | RDKEYFRAME_NOLOOP, sithPlayerControls_PuppetCallback);
+
+            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
+            sithPhysics_ResetThingMovement(pThing);
+        }
+    }
+}
+
+void J3DAPI sithPlayerControls_ProcessCrawlMove(SithThing* pThing, float secDeltaTime, float moveFactor)
+{
+    SithPhysicsInfo* pPhysicsInfo = &pThing->moveInfo.physics;
+    SithActorInfo* pActor         = &pThing->thingInfo.actorInfo;
+
+    //
+    // Exit crawl if in water
+    //
+    if ( pThing->attach.flags
+        && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
+        && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & (SITH_SURFACE_SHALLOWWATER | SITH_SURFACE_WATER)) != 0 )
+    {
+        // Stand up from crawl
+        sithPlayerActions_Crawl2Stand(pThing);
+        return;
+    }
+
+    //
+    // Handle crawl to stand toggle
+    //
+    if ( sithControl_GetKey(SITHCONTROL_CRAWLTOGGLE, NULL) && !pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        // Stand up from crawl
+        sithPlayerActions_Crawl2Stand(pThing);
+        return;
+    }
+
+    //
+    // Handle crawl forward
+    //
+    if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            pPhysicsInfo->thrust.y = pActor->maxThrust * 1.0f * 0.5f + 1.0f * secDeltaTime;
+        }
+    }
+    //
+    // Handle crawl back
+    //
+    else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
+    {
+        if ( !pThing->thingInfo.actorInfo.bForceMovePlay )
+        {
+            pPhysicsInfo->thrust.y = pActor->maxThrust * -1.0f * 0.5f + -1.0f * secDeltaTime;
+        }
+    }
+    else
+    {
+        // No movement input, zero forward thrust
+        pPhysicsInfo->thrust.y = 0.0f;
+    }
+
+    //
+    // Handle crawl turn right key
+    //
+    if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
+    {
+        pPhysicsInfo->angularVelocity.yaw = -0.5f * sithTime_g_fps
+            + pActor->maxRotVelocity * -0.5f * J3DMIN(moveFactor, 1.0f);
+    }
+    //
+    // Handle crawl turn left key
+    //
+    else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
+    {
+        pPhysicsInfo->angularVelocity.yaw = 0.5f * sithTime_g_fps
+            + pActor->maxRotVelocity * 0.5f * J3DMIN(moveFactor, 1.0f);
+    }
+    else
+    {
+        // No turn input, zero angular velocity
+        pPhysicsInfo->angularVelocity.yaw = 0.0f;
+    }
+
+    //
+    // Handle activation in crawl mode
+    //
+    if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        // Try activate object first (different order than standing)
+        if ( sithPlayerActions_Activate(pThing) == 1 )
+        {
+            return;
+        }
+
+        // Try pickup item
+        int bFoundFloorItem;
+        SithThing* pItemThing = sithCollision_FindItemThing(pThing, &bFoundFloorItem);
+        if ( pItemThing )
+        {
+            pThing->thingInfo.actorInfo.flags |= SITH_AF_CONTROLSDISABLED;
+            sithPlayerControls_pCurActivatedItemThing = pItemThing;
+
+            sithCog_ThingSendMessage(pItemThing, pThing, SITHCOG_MSG_ACTIVATE);
+            sithPhysics_ResetThingMovement(pThing);
+
+            sithPlayerControls_curMoveStatus = pThing->moveStatus;
+            pThing->moveStatus = SITHPLAYERMOVE_ACTIVATING;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+
+            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_ACTIVATE, sithPlayerControls_PuppetCallback);
+            return;
+        }
+    }
+
+    //
+    // Handle mouse turn
+    //
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
+    {
+        float mouseTurn = sithControl_GetAxis(SITHCONTROL_MOUSETURN) * sithTime_g_fps;
+        mouseTurn += sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN) * pActor->maxRotVelocity * J3DMIN(moveFactor, 1.0f);
+        pPhysicsInfo->angularVelocity.yaw += mouseTurn;
+    }
+}
+
+void J3DAPI sithPlayerControls_ProcessPushPullMove(SithThing* pThing, float secDeltaTime)
+{
+    J3D_UNUSED(secDeltaTime);
+
+    // Indy is in push/pull ready state
+    // Handle push or pull controls and move the object accordingly
+
+    if ( pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        return;
+    }
+
+    // Check that activation key is still being held, i.e., must be in push/pull grab state
+    if ( !sithControl_GetKey(SITHCONTROL_ACT2, NULL) )
+    {
+        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+        pThing->moveStatus = SITHPLAYERMOVE_STILL;
+        sithPlayerControls_pMovableThing = NULL;
+        pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+        return;
+    }
+
+    // No movement key pressed
+    if ( !sithControl_GetKey(SITHCONTROL_FORWARD, NULL)
+        && !sithControl_GetKey(SITHCONTROL_BACK, NULL) )
+    {
+        return;
+    }
+
+    if ( !sithPlayerControls_pMovableThing )
+    {
+        return;
+    }
+
+    rdVector3 pushPullMoveNorm;
+    if ( !sithPlayerControls_GetPushPullMoveNorm(&pushPullMoveNorm, &pThing->orient.lvec, 15.0f) )
+    {
+        return;
+    }
+
+    bool bCanMoveObject = true;
+    float searchRadius = (sithPlayerControls_pMovableThing->collide.movesize < 0.1f)
+        ? 0.050000001f
+        : 0.094999999f;
+
+    //
+    // Handle pull object move
+    //
+    if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
+    {
+        // Check height difference for pull - can't pull objects that are higher
+        if ( searchRadius > 0.05f && pThing->pos.z > sithPlayerControls_pMovableThing->pos.z )
+        {
+            float heightDiff = pThing->pos.z - sithPlayerControls_pMovableThing->pos.z;
+            if ( heightDiff > 0.02f ) // 20cm height difference
+            {
+                // If movable object is not pushgear, can't pull it
+                if ( !strneq(sithPlayerControls_pMovableThing->aName, "pushgear", 8u) )
+                {
+                    bCanMoveObject = false;
+                    if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+                    {
+                        sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST);
+                        sithPlayerControls_secCommentWaitTimer = 3.0f;
+                    }
+
+                    sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+                    pThing->moveStatus = SITHPLAYERMOVE_STILL;
+                    sithPlayerControls_pMovableThing = NULL;
+                    pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+                    return;
+                }
+            }
+        }
+
+        //
+        // Check if movable thing can move in pull direction
+        //
+        rdVector3 pullDir = RDVECTOR_NEG3(pushPullMoveNorm);
+        float pullMoveDist = pThing->collide.movesize + 0.19f;
+        sithCollision_SearchForCollisions(
+            sithPlayerControls_pMovableThing->pInSector,
+            sithPlayerControls_pMovableThing,
+            &sithPlayerControls_pMovableThing->pos,
+            &pullDir,
+            pullMoveDist,
+            searchRadius,
+            0xA00
+        );
+
+        SithCollision* pCollision;
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                && pCollision->pThingCollided != pThing )
+            {
+                bCanMoveObject = false;
+                break; // Fixed: originally missing break here
+            }
+
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
+            {
+                bCanMoveObject = false;
+                break; // Fixed: originally missing break here
+            }
+        }
+        sithCollision_DecreaseStackLevel();
+
+        if ( !bCanMoveObject )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        //
+        // Check if player can move in pull direction
+        //
+        sithCollision_SearchForCollisions(
+            pThing->pInSector,
+            pThing,
+            &pThing->pos,
+            &pullDir,
+            pullMoveDist,
+            pThing->collide.movesize,
+            0xA00
+        );
+
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                && pCollision->pThingCollided != pThing )
+            {
+                bCanMoveObject = false;
+                break;
+            }
+
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
+            {
+                bCanMoveObject = false;
+                break;
+            }
+        }
+        sithCollision_DecreaseStackLevel();
+
+        if ( !bCanMoveObject )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        //
+        // Check floor at movable thing's pull end position
+        //
+        rdVector3 negMoveNorm = RDVECTOR_NEG3(pushPullMoveNorm); // TODO: Reuse pullDir?
+        rdVector3 pullEndPos;
+        rdVector_ScaleAdd3(&pullEndPos, &negMoveNorm, 0.2f, &sithPlayerControls_pMovableThing->pos);
+
+        rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
+        SithSector* pPullEndPosSector = sithCollision_FindSectorInRadius(sithPlayerControls_pMovableThing->pInSector, &sithPlayerControls_pMovableThing->pos, &pullEndPos, 0.0f);
+        if ( !pPullEndPosSector )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        bCanMoveObject = false;
+        sithCollision_SearchForCollisions(pPullEndPosSector, NULL, &pullEndPos, &downDir, 0.17f, 0.039999999f, 0xA00); // 0.039999999f - player col size
+
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                && pCollision->pThingCollided != pThing )
+            {
+                bCanMoveObject = true;
+                break;
+            }
+
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 && pCollision->pSurfaceCollided )
+            {
+                float floorDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
+                if ( floorDot > 0.99900001f )
+                {
+                    bCanMoveObject = true;
+                    break;
+                }
+            }
+        }
+        sithCollision_DecreaseStackLevel();
+
+        if ( !bCanMoveObject )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        //
+        // Check floor at player's pull end position
+        //
+        rdVector_ScaleAdd3(&pullEndPos, &negMoveNorm, 0.2f, &pThing->pos);
+        pPullEndPosSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &pullEndPos, 0.0f);
+        if ( !pPullEndPosSector )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        bCanMoveObject = false;
+        sithCollision_SearchForCollisions(pPullEndPosSector, NULL, &pullEndPos, &downDir, 0.063000001f, 0.039999999f, 0xA00); // 0.039999999f - player col size
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                && pCollision->pThingCollided != pThing )
+            {
+                // Check collision distance is valid (20-70cm)
+                bCanMoveObject = pCollision->distance >= 0.02f && pCollision->distance <= 0.07f;
+                break;
+            }
+
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 && pCollision->pSurfaceCollided )
+            {
+                // Check collision distance is valid (20-70cm) and surface is flat floor
+                if ( pCollision->distance < 0.02f || pCollision->distance > 0.07f )
+                {
+                    bCanMoveObject = false;
+                    break;
+                }
+
+                // Check if surface is straight floor
+                float floorDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
+                if ( floorDot > 0.99900001f )
+                {
+                    // Check surface of movable thing and collided surfaces are at same height
+                    if ( (sithPlayerControls_pMovableThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
+                    {
+                        rdFace* pSurfFace    = &pCollision->pSurfaceCollided->face;
+                        rdFace* pMovableFace = sithPlayerControls_pMovableThing->attach.pFace;
+                        float surfZ          = sithWorld_g_pCurrentWorld->aVertices[*pSurfFace->aVertices].z;
+                        float movableZ       = sithWorld_g_pCurrentWorld->aVertices[*pMovableFace->aVertices].z;
+                        bCanMoveObject       = fabsf(surfZ - movableZ) < 0.0049999999f;
+                    }
+                    else
+                    {
+                        bCanMoveObject = true;
+                    }
+                    break;
+                }
+            }
+        }
+        sithCollision_DecreaseStackLevel();
+
+        if ( !bCanMoveObject )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST); // Indy say I can't pull this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        //
+        // Final check for pushgear alignment
+        //
+        if ( strneq(sithPlayerControls_pMovableThing->aName, "pushgear", 8u) )
+        {
+            // Check the pull direction aligns with the pushgear direction
+            // This makes sure gear can only be pulled in its current direction and not in other directions
+            float alignDot = fabsf(rdVector_Dot3(&sithPlayerControls_pMovableThing->orient.lvec, &negMoveNorm));
+            if ( alignDot < 0.98000002f )
+            {
+                if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+                {
+                    sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_BOAST);
+                    sithPlayerControls_secCommentWaitTimer = 3.0f;
+                }
+
+                // TODO: note that the push pull state is not cleared
+                sithPlayerControls_pMovableThing = NULL;
+                return;
+            }
+        }
+
+        //
+        // Finally pull the movable object
+        //
+        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+        pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+        sithPlayerActions_PullItem(pThing, sithPlayerControls_pMovableThing, &pushPullMoveNorm); // Note, don't negate pushPullMoveNorm as sithPlayerActions_PullItem will negate direction
+    }
+    //
+    // Handle push object move
+    //
+    else
+    {
+        //
+        // Check if movable thing can be pushed to new position
+        //
+        sithCollision_SearchForCollisions(
+            sithPlayerControls_pMovableThing->pInSector,
+            sithPlayerControls_pMovableThing,
+            &sithPlayerControls_pMovableThing->pos,
+            &pushPullMoveNorm,
+            0.19f, // move distance
+            searchRadius,
+            0xA00
+        );
+
+        SithCollision* pCollision;
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                && pCollision->pThingCollided != pThing )
+            {
+                bCanMoveObject = false;
+                break; // Fixed: originally missing break here
+            }
+
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
+            {
+                bCanMoveObject = false;
+                break; // Fixed: originally missing break here
+            }
+        }
+        sithCollision_DecreaseStackLevel();
+
+        if ( !bCanMoveObject )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_ALERT); // indy says : can't push this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        //
+        // Check floor at push end position
+        //
+        rdVector3 pushEndPos;
+        rdVector_ScaleAdd3(&pushEndPos, &pushPullMoveNorm, 0.2f, &sithPlayerControls_pMovableThing->pos);
+
+        rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
+        SithSector* pPushEndPosSector = sithCollision_FindSectorInRadius(
+            sithPlayerControls_pMovableThing->pInSector,
+            &sithPlayerControls_pMovableThing->pos,
+            &pushEndPos,
+            0.0f
+        );
+
+        if ( !pPushEndPosSector )
+        {
+            return;
+        }
+
+        bCanMoveObject = false;
+        sithCollision_SearchForCollisions(pPushEndPosSector, NULL, &pushEndPos, &downDir, 0.16f, 0.0099999998f, 0xA00);
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( (pCollision->type & SITHCOLLISION_THING) != 0
+                && pCollision->pThingCollided != sithPlayerControls_pMovableThing )
+            {
+                bCanMoveObject = true;
+                break;
+            }
+
+            if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 && pCollision->pSurfaceCollided )
+            {
+                float floorDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
+                if ( floorDot > 0.99900001f )
+                {
+                    // Check player floor surface and push target floor heights match
+                    if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
+                    {
+                        rdFace* pSurfFace  = &pCollision->pSurfaceCollided->face;
+                        rdFace* pThingFace = pThing->attach.pFace;
+                        float surfZ        = sithWorld_g_pCurrentWorld->aVertices[*pSurfFace->aVertices].z;
+                        float thingZ       = sithWorld_g_pCurrentWorld->aVertices[*pThingFace->aVertices].z;
+                        bCanMoveObject     = fabsf(surfZ - thingZ) < 0.0049999999f;
+                    }
+                    else
+                    {
+                        bCanMoveObject = true;
+                    }
+                    break;
+                }
+            }
+        }
+        sithCollision_DecreaseStackLevel();
+
+        if ( !bCanMoveObject )
+        {
+            if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+            {
+                sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_ALERT); // indy says : can't push this object
+                sithPlayerControls_secCommentWaitTimer = 3.0f;
+            }
+
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+            pThing->moveStatus = SITHPLAYERMOVE_STILL;
+            sithPlayerControls_pMovableThing = NULL;
+            pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+            return;
+        }
+
+        //
+        // Final check for pushgear alignment
+        //
+        if ( strneq(sithPlayerControls_pMovableThing->aName, "pushgear", 8u) )
+        {
+            // Check the push direction aligns with the pushgear direction
+            // This makes sure gear can only be pushed in its current direction and not in other directions
+            float alignDot = fabsf(rdVector_Dot3(&sithPlayerControls_pMovableThing->orient.lvec, &pushPullMoveNorm));
+            if ( alignDot < 0.98000002f )
+            {
+                if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
+                {
+                    sithSoundClass_PlayVoiceModeRandom(pThing, SITHSOUNDCLASS_ALERT); // indy says : can't push this object
+                    sithPlayerControls_secCommentWaitTimer = 3.0f;
+                }
+
+                // TODO: Note that the push/pull state is not reset here
+                sithPlayerControls_pMovableThing = NULL;
+                return;
+            }
+        }
+
+        //
+        // Finally push the movable object 2m forward
+        //
+        sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_PUSHPULLREADY);
+        pThing->thingInfo.actorInfo.bControlsDisabled = 0;
+        sithPlayerActions_PushItem(pThing, sithPlayerControls_pMovableThing, &pushPullMoveNorm);
+    }
+}
+
+void J3DAPI sithPlayerControls_ProcessSlideDownMove(SithThing* pThing, float secDeltaTime)
+{
+    J3D_UNUSED(secDeltaTime);
+
+    // Handle slide jump
+    if ( !sithControl_GetKey(SITHCONTROL_JUMP, NULL) || sithPlayerControls_bJumpKeyActive )
+    {
+        return;
+    }
+
+    SithPuppetTrack* pModeTrack = sithPuppet_GetModeTrack(pThing, SITHPUPPETSUBMODE_SLIDEDOWNFWD);
+    if ( pModeTrack )
+    {
+        sithPuppet_StopKey(pThing->renderData.pPuppet, pModeTrack->trackNum, 0.0f);
+        sithPuppet_RemoveTrack(pThing, pModeTrack);
+    }
+
+    sithPhysics_ResetThingMovement(pThing);
+    pThing->moveStatus = SITHPLAYERMOVE_LEAPFWD;
+    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LEAPLEFT, NULL);
+    sithPlayerControls_bJumpKeyActive = true;
 }
