@@ -137,7 +137,7 @@ static void J3DAPI sithPlayerControls_ProcessSlideDownMove(SithThing* pThing, fl
 static int J3DAPI sithPlayerControls_CheckWaterLedge(SithThing* pThing);
 static int J3DAPI sithPlayerControls_FindLedgeInDirection(SithThing* pThing, const rdVector3* moveNorm, SithSurface** ppHitSurf, SithThing** ppHitThing, rdModel3** ppHitModel, rdFace** ppHitFace, rdModel3Mesh** ppHitMesh, int someType);
 static SithSurface* J3DAPI sithPlayerControls_FindClimbSurface(SithThing* pThing, const rdVector3* moveNorm, int climbDir, int* pbHitNonClimbSurface);
-static int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight);
+static bool J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight);
 
 void sithPlayerControls_InstallHooks(void)
 {
@@ -3456,7 +3456,7 @@ void J3DAPI sithPlayerControls_SetVehicleBoardedThing(SithThing* pThing)
     sithPlayerControls_pBoardedVehicleThing = pThing;
 }
 
-int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
+bool J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
 {
     //
     // Search for any blocking collision left or right in distance 1m from thing's current pos
@@ -3517,7 +3517,7 @@ int J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
 
     // Search for collision in down direction at distance 1.1m from previous end pos
     moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3); // Down direction
-    bCanMove = 0;
+    bCanMove = false;
 
     sithCollision_SearchForCollisions(pStartSector, NULL, &strafeEndPos, &moveNorm, 0.11f, 0.0099999998f, 0xA00);
 
