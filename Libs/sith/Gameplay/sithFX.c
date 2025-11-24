@@ -65,8 +65,8 @@ const char* sithFX_aChalkMarkNames[35] =
 rdVector3 sithFX_rowRippleLastPos    = { 0 }; // Added: Init to 0
 float sithFX_secLastCreatedRowRipple = 0.0f;  // Added: Init to 0
 
-rdVector3 sithFx_leftTireStartPosOffset;
-rdVector3 sithFx_rightTireStartPosOffset;
+rdVector3 sithFx_rightTireStartPosOffset = { 0 }; // Added: Init to 0
+rdVector3 sithFx_leftTireStartPosOffset  = { 0 }; // Added: Init to 0
 
 size_t sithFX_fariyDustSizeFactor         = 0; // Added: Init to 0
 size_t sithFX_newFairyDustDeluxSizeFactor = 0; // Added: Init to 0
@@ -87,9 +87,9 @@ void sithFX_InstallHooks(void)
     J3D_HOOKFUNC(sithFX_CreateWaterRipple);
     J3D_HOOKFUNC(sithFX_CreateRaftRipple);
     J3D_HOOKFUNC(sithFX_CreateRaftWake);
-    J3D_HOOKFUNC(sithFX_CreatePaddleSplash);
-    J3D_HOOKFUNC(sithFX_CreateRowWaterFx);
-    J3D_HOOKFUNC(sithFX_CreateRipple);
+    J3D_HOOKFUNC(sithFX_CreatePaddleWaterSplash);
+    J3D_HOOKFUNC(sithFX_CreatePaddleWaterFX);
+    J3D_HOOKFUNC(sithFX_CreateRaftInflateWaterFX);
     J3D_HOOKFUNC(sithFX_CreateMineCarSparks);
     J3D_HOOKFUNC(sithFX_CreateChalkMark);
     J3D_HOOKFUNC(sithFX_CreateThingOnSurface);
@@ -120,9 +120,7 @@ void sithFX_Reset(void)
 
 void sithFX_ClearChalkMarks(void)
 {
-    int i;
-
-    for ( i = 0; i < STD_ARRAYLEN(sithFX_g_aChalkMarks); ++i )
+    for ( size_t i = 0; i < STD_ARRAYLEN(sithFX_g_aChalkMarks); ++i )
     {
         sithFX_g_aChalkMarks[i] = NULL;
     }
@@ -209,7 +207,7 @@ void J3DAPI sithFX_UpdateFairyDustUserBlock(SithThing* pThing)
         }
     }
 
-    if ( strcmp(pThing->thingInfo.particleInfo.pMaterial->aName, "aet_4sprite_glow_fairy_dust.mat") == 0 )
+    if ( streq(pThing->thingInfo.particleInfo.pMaterial->aName, "aet_4sprite_glow_fairy_dust.mat") )
     {
         pThing->pos.x = pThing->pParent->pos.x;
         pThing->pos.y = pThing->pParent->pos.y;
@@ -248,7 +246,7 @@ void J3DAPI sithFX_CreateFairyDustDelux(SithThing* pThing, const rdVector3* pPos
         pFairydust = (SithFairyDustUserBlock*)STDMALLOC(sizeof(SithFairyDustUserBlock));
         if ( pFairydust )
         {
-            memset(pFairydust, 0, sizeof(SithFairyDustUserBlock));
+            STD_ZEROMEM(pFairydust, sizeof(SithFairyDustUserBlock));
             if ( sithFX_CreateFairyDustDeluxDusts(pThing, pFairydust) )
             {
                 pFairydust->bCreateNormalFairyDust = 0;
@@ -271,11 +269,8 @@ int J3DAPI sithFX_CreateFairyDustDeluxDusts(SithThing* pThing, SithFairyDustUser
         return 0;
     }
 
-    rdVector3 pos;
-    rdVector_Copy3(&pos, &pThing->pos);
-
-    float size = sithPhysics_GetThingHeight(pThing);
-    pos.z = pos.z - size;
+    rdVector3 pos = pThing->pos;
+    pos.z = pos.z - sithPhysics_GetThingHeight(pThing);
     pos.z = (float)pFairydust->numUsedDusts * 0.045000002f + 0.022500001f + pos.z;
 
     for ( size_t i = 0; i < STD_ARRAYLEN(pFairydust->aDusts); ++i )
@@ -322,31 +317,31 @@ void J3DAPI sithFX_CreateBubble(SithThing* pThing)
             return;
         }
 
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pThing->pos, &pTemplate->orient, pThing->pInSector, NULL);
-        if ( !pSprite )
+        SithThing* pBubble = sithThing_CreateThingAtPos(pTemplate, &pThing->pos, &pTemplate->orient, pThing->pInSector, NULL);
+        if ( !pBubble )
         {
             SITHLOG_ERROR("Couldn't make a bubble thing!\n");
             return;
         }
 
-        pSprite->flags |= SITH_TF_AIRDESTROYED;
+        pBubble->flags |= SITH_TF_AIRDESTROYED;
 
         rdVector3 offset;
         rdVector_Scale3(&offset, &pThing->orient.lvec, 0.07f);
 
-        rdVector_Add3Acc(&pSprite->pos, &offset);
-        pSprite->pos.z = pSprite->pos.z + pThing->collide.movesize;
+        rdVector_Add3Acc(&pBubble->pos, &offset);
+        pBubble->pos.z = pBubble->pos.z + pThing->collide.movesize;
 
         float size = pThing->collide.movesize / 3.0f;
         rdVector_Scale3(&offset, &pThing->orient.rvec, size);
 
         if ( SITH_RANDF() > 0.5f )
         {
-            rdVector_Sub3Acc(&pSprite->pos, &offset);
+            rdVector_Sub3Acc(&pBubble->pos, &offset);
         }
         else
         {
-            rdVector_Add3Acc(&pSprite->pos, &offset);
+            rdVector_Add3Acc(&pBubble->pos, &offset);
         }
 
         rdVector3 start;
@@ -359,14 +354,15 @@ void J3DAPI sithFX_CreateBubble(SithThing* pThing)
         end.y = 0.02f;
         end.z = 0.0f;
         float time = (SITH_RANDF() - 0.5f) * 2.0f + 4.0f;
-        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
+        sithAnimate_StartAnimateSpriteSize(pBubble, &start, &end, time);
 
         rdVector3 vel;
         vel.x = SITH_RANDF() - 0.5f;
         vel.y = SITH_RANDF() - 0.5f;
         vel.z = SITH_RANDF() + 0.55000001f;
         rdVector_Scale3Acc(&vel, 0.02f);
-        rdVector_Copy3(&pSprite->moveInfo.physics.velocity, &vel);
+
+        pBubble->moveInfo.physics.velocity = vel;
     }
 }
 
@@ -394,7 +390,7 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             end.y = size;
             end.z = 0.0f;
 
-            rdVector_Copy3(&pos, &pThing->pos);
+            pos = pThing->pos;
             pos.z += pThing->attach.distToWaterSurface + 0.001f;
         }
         else
@@ -409,8 +405,8 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             end.y = size;
             end.z = 0.0f;
 
-            rdVector_Copy3(&pos, &pThing->pos);
-            pos.z = pos.z - pThing->collide.movesize * 2.0f;
+            pos = pThing->pos;
+            pos.z -= pThing->collide.movesize * 2.0f;
         }
 
         SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
@@ -420,9 +416,9 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             return;
         }
 
-        pSprite->orient.lvec.x = 0.0f;
-        pSprite->orient.lvec.y = 0.0f;
-        pSprite->orient.lvec.z = 1.0f;
+        // Orient the ripple to face upwards
+        pSprite->orient.lvec = rdroid_g_zVector3;
+
         float time = SITH_RANDF() + 1.0f;
         sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
     }
@@ -441,11 +437,10 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         size = pThing->collide.movesize * 4.0f;
         rdVector3 end = { .x=size, .y=size, .z=0.0f };
 
-        rdVector_Copy3(&ripplePos, &pThing->pos); // TODO: maybe this should be done outside of this scope
-
-        ripplePos.x  = (SITH_RANDF() - 0.5f) * 0.03f + ripplePos.x;
-        ripplePos.y  = (SITH_RANDF() - 0.5f) * 0.03f + ripplePos.y;
-        ripplePos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) + 0.0020000001f;
+        ripplePos    = pThing->pos; // TODO: maybe this should be done outside of this scope
+        ripplePos.x += (SITH_RANDF() - 0.5f) * 0.03f;
+        ripplePos.y += (SITH_RANDF() - 0.5f) * 0.03f;
+        ripplePos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) + 0.0020000001f; // TODO: Fix z fight by lifting up sprite fx instead of down, ie. -0.0020000001f
 
         SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &ripplePos, &pTemplate->orient, pThing->pInSector, NULL);
         if ( !pSprite )
@@ -454,9 +449,9 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
             return;
         }
 
-        pSprite->orient.lvec.x = 0.0f;
-        pSprite->orient.lvec.y = 0.0f;
-        pSprite->orient.lvec.z = 1.0f;
+        // Orient the ripple to face upwards
+        pSprite->orient.lvec = rdroid_g_zVector3;
+
         float time = SITH_RANDF() + 1.5f;
         sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
     }
@@ -558,9 +553,8 @@ void J3DAPI sithFX_CreateRaftWake(SithThing* pThing)
         end.y = 0.40000001f;
         end.z = 0.0f;
 
-        rdVector3 pos;
-        rdVector_Copy3(&pos, &pThing->pos);
-        pos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) + 0.0020000001f;
+        rdVector3 pos = pThing->pos;
+        pos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) + 0.0020000001f; // TODO: Fix z fight by lifting up sprite fx instead of down, ie. -0.0020000001f
 
         SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
         if ( !pSprite )
@@ -581,7 +575,7 @@ void J3DAPI sithFX_CreateRaftWake(SithThing* pThing)
     }
 }
 
-void J3DAPI sithFX_CreatePaddleSplash(SithThing* pThing, const rdVector3* pos)
+void J3DAPI sithFX_CreatePaddleWaterSplash(SithThing* pThing, const rdVector3* pos)
 {
     SithThing* pTemplate = sithTemplate_GetTemplate("paddlesplash");
     if ( pTemplate )
@@ -597,8 +591,7 @@ void J3DAPI sithFX_CreatePaddleSplash(SithThing* pThing, const rdVector3* pos)
     }
 }
 
-
-void J3DAPI sithFX_CreateRowWaterFx(SithThing* pThing, float secTime)
+void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
 {
     float secDeltaTime = sithTime_g_secGameTime - secTime;
     float secDelatLastCreated = sithTime_g_secGameTime - sithFX_secLastCreatedRowRipple;
@@ -638,7 +631,7 @@ void J3DAPI sithFX_CreateRowWaterFx(SithThing* pThing, float secTime)
 
     rdMatrix_TransformPoint34Acc(&ripplePos, &pThing->orient);
     rdVector_Add3Acc(&ripplePos, &pThing->pos);
-    ripplePos.z += 0.001f;
+    ripplePos.z += 0.001f; // TODO: move higher up for solid water, or checkout how wake fx does it
 
     bool bCreateSplashFx = false;
     if ( secDeltaTime == 0.0f || secDelatLastCreated >= 0.2f )
@@ -678,8 +671,12 @@ void J3DAPI sithFX_CreateRowWaterFx(SithThing* pThing, float secTime)
         return;
     }
 
+    //
     // Start sprite animation
-    rdVector_Copy3(&pSprite->orient.lvec, &pThing->orient.uvec);
+    //
+
+    // Orient the ripple to face upwards
+    pSprite->orient.lvec = pThing->orient.uvec;
 
     rdVector3 start;
     start.x = 0.0049999999f;
@@ -694,18 +691,18 @@ void J3DAPI sithFX_CreateRowWaterFx(SithThing* pThing, float secTime)
     float time = SITH_RANDF() + 1.0f;
     sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
 
-    rdVector_Copy3(&sithFX_rowRippleLastPos, &ripplePos);
+    sithFX_rowRippleLastPos        = ripplePos;
     sithFX_secLastCreatedRowRipple = sithTime_g_secGameTime;
 
 skip:
     if ( bCreateSplashFx )
     {
         ripplePos.z += 0.0080000004f;
-        sithFX_CreatePaddleSplash(pThing, &ripplePos);
+        sithFX_CreatePaddleWaterSplash(pThing, &ripplePos);
     }
 }
 
-void J3DAPI sithFX_CreateRipple(SithThing* pThing, float size)
+void J3DAPI sithFX_CreateRaftInflateWaterFX(SithThing* pThing, float size)
 {
     SithThing* pTemplate = sithTemplate_GetTemplate("+ripples");
     if ( pTemplate && pThing->attach.flags )
@@ -716,8 +713,8 @@ void J3DAPI sithFX_CreateRipple(SithThing* pThing, float size)
         start.y = size;
         start.z = 1.0f;
 
-        rdVector3 end;
         float endSize = size * 2.0f;
+        rdVector3 end;
         end.x = endSize;
         end.y = endSize;
         end.z = 0.0f;
@@ -737,136 +734,101 @@ void J3DAPI sithFX_CreateRipple(SithThing* pThing, float size)
             return;
         }
 
-        pSprite->orient.lvec.x = 0.0f;
-        pSprite->orient.lvec.y = 0.0f;
-        pSprite->orient.lvec.z = 1.0f;
+        // Orient ripple up
+        pSprite->orient.lvec = rdroid_g_zVector3;
         sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 2.5f);
     }
 }
 
-void J3DAPI sithFx_CreateTireFx(SithThing* pThing, const rdVector3* pPosLeft, rdMaterial* pMatLeft, const rdVector3* pPosRigth, rdMaterial* pMatRight)
+void J3DAPI sithFx_CreateTireFX(SithThing* pThing, const rdVector3* pPosRight, rdMaterial* pMatRight, const rdVector3* pPosLeft, rdMaterial* pMatLeft)
 {
-    float a;
-    float aa;
-    SithThing* pTemplate;
-    float v10;
-    float yawAngle;
-    int bLeft;
-    float dot;
-    float speed;
+    // Normalize velocity and get speed
     rdVector3 dir;
-    SithThing* pLeftParticles;
-    float v18;
-    float v19;
-    int bRight;
-    SithThing* pRightParticles;
+    float speed = rdVector_Normalize3(&dir, &pThing->moveInfo.physics.velocity);
 
-    pLeftParticles = 0;
-    pRightParticles = 0;
-    bLeft = 0;
-    bRight = 0;
+    // Calculate tire skid probability based on lateral velocity and angular velocity
+    float dot = rdVector_Dot3(&pThing->orient.rvec, &dir);
+    float lateralSpeed = speed * dot * 1.0f;
+    float yawAngle = pThing->moveInfo.physics.angularVelocity.y * 0.0099999998f + lateralSpeed;
 
-    speed = rdVector_Normalize3(&dir, &pThing->moveInfo.physics.velocity);
+    float skidProbability = 0.001f;
+    skidProbability += fabsf(dot) * 0.1f;
+    skidProbability += speed * 0.0049999999f;
 
-    dot = rdVector_Dot3(&pThing->orient.rvec, &dir);
-    v10 = speed * dot * 1.0f;
-    yawAngle = pThing->moveInfo.physics.angularVelocity.y * 0.0099999998f + v10;
-    v19 = 0.001f;
-    if ( dot < 0.0f )
+    // Check if right tire should emit particles
+    bool bRight = false;
+    float rightTireDist = rdVector_Dist3(pPosRight, &sithFx_rightTireStartPosOffset);
+    if ( rightTireDist >= 0.0049999999f && SITH_RANDF() < skidProbability )
     {
-        dot = -dot;
+        bRight = true;
     }
 
-    v19 = dot * 0.1f + v19;
-    v19 = speed * 0.0049999999f + v19;
-
-    a = (pPosLeft->x - sithFx_leftTireStartPosOffset.x) * (pPosLeft->x - sithFx_leftTireStartPosOffset.x)
-        + (pPosLeft->y - sithFx_leftTireStartPosOffset.y) * (pPosLeft->y - sithFx_leftTireStartPosOffset.y)
-        + (pPosLeft->z - sithFx_leftTireStartPosOffset.z) * (pPosLeft->z - sithFx_leftTireStartPosOffset.z);
-    v18 = sqrtf(a);
-    if ( v18 >= 0.0049999999f && SITH_RANDF() < v19 )
+    // Check if left tire should emit particles
+    bool bLeft = false;
+    float leftTireDist = rdVector_Dist3(pPosLeft, &sithFx_leftTireStartPosOffset);
+    if ( leftTireDist >= 0.0049999999f && SITH_RANDF() < skidProbability )
     {
-        bLeft = 1;
+        bLeft = true;
     }
 
-    aa = (pPosRigth->x - sithFx_rightTireStartPosOffset.x) * (pPosRigth->x - sithFx_rightTireStartPosOffset.x)
-        + (pPosRigth->y - sithFx_rightTireStartPosOffset.y) * (pPosRigth->y - sithFx_rightTireStartPosOffset.y)
-        + (pPosRigth->z - sithFx_rightTireStartPosOffset.z) * (pPosRigth->z - sithFx_rightTireStartPosOffset.z);
-    if ( sqrtf(aa) >= 0.0049999999f && SITH_RANDF() < v19 )
+    SithThing* pTemplate = sithTemplate_GetTemplate("paddlesplash");
+    if ( !pTemplate || (!bLeft && !bRight) )
     {
-        bRight = 1;
+        return;
     }
 
-    pTemplate = sithTemplate_GetTemplate("paddlesplash");
-    if ( pTemplate && (bRight || bLeft) )
+    // Create right tire particle effect
+    SithThing* pRightParticles = NULL;
+    if ( pMatRight )
     {
-        if ( pMatLeft )
+        rdVector3 pos = *pPosRight;
+        rdVector_MultAcc3(&pos, &pThing->orient.lvec, -0.025f);
+        rdVector_MultAcc3(&pos, &pThing->orient.rvec, 0.0070000002f);
+        rdVector_MultAcc3(&pos, &pThing->orient.uvec, 0.035f);
+
+        pRightParticles = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
+        if ( !pRightParticles )
         {
-            rdVector3 pos = *pPosLeft;
-            pos.x = pThing->orient.lvec.x * -0.025f + pos.x;
-            pos.y = pThing->orient.lvec.y * -0.025f + pos.y;
-            pos.z = pThing->orient.lvec.z * -0.025f + pos.z;
-
-            pos.x = pThing->orient.rvec.x * 0.0070000002f + pos.x;
-            pos.y = pThing->orient.rvec.y * 0.0070000002f + pos.y;
-            pos.z = pThing->orient.rvec.z * 0.0070000002f + pos.z;
-
-            pos.x = pThing->orient.uvec.x * 0.035f + pos.x;
-            pos.y = pThing->orient.uvec.y * 0.035f + pos.y;
-            pos.z = pThing->orient.uvec.z * 0.035f + pos.z;
-
-            pLeftParticles = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
-            if ( !pLeftParticles )
-            {
-                SITHLOG_ERROR("Can't make a tirefx, no thing space!\n");
-                return;
-            }
-
-            pLeftParticles->renderData.data.pParticle->pMaterial = pMatLeft;
+            SITHLOG_ERROR("Can't make a tirefx, no thing space!\n");
+            return;
         }
 
-        if ( pMatRight )
+        pRightParticles->renderData.data.pParticle->pMaterial = pMatRight;
+    }
+
+    // Create left tire particle effect
+    SithThing* pLeftParticles = NULL;
+    if ( pMatLeft )
+    {
+        rdVector3 pos = *pPosLeft;
+        rdVector_MultAcc3(&pos, &pThing->orient.lvec, -0.025f);
+        rdVector_MultAcc3(&pos, &pThing->orient.rvec, -0.0070000002f);
+        rdVector_MultAcc3(&pos, &pThing->orient.uvec, 0.035f);
+
+        pLeftParticles = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
+        if ( !pLeftParticles )
         {
-            rdVector3 pos = *pPosRigth;
-            pos.x = pThing->orient.lvec.x * -0.025f + pos.x;
-            pos.y = pThing->orient.lvec.y * -0.025f + pos.y;
-            pos.z = pThing->orient.lvec.z * -0.025f + pos.z;
-
-            pos.x = pThing->orient.rvec.x * -0.0070000002f + pos.x;
-            pos.y = pThing->orient.rvec.y * -0.0070000002f + pos.y;
-            pos.z = pThing->orient.rvec.z * -0.0070000002f + pos.z;
-
-            pos.x = pThing->orient.uvec.x * 0.035f + pos.x;
-            pos.y = pThing->orient.uvec.y * 0.035f + pos.y;
-            pos.z = pThing->orient.uvec.z * 0.035f + pos.z;
-
-            pRightParticles = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
-            if ( !pRightParticles )
-            {
-                SITHLOG_ERROR("Can't make a tirefx, no thing space!\n");
-                return;
-            }
-
-            pRightParticles->renderData.data.pParticle->pMaterial = pMatRight;
+            SITHLOG_ERROR("Can't make a tirefx, no thing space!\n");
+            return;
         }
 
-        if ( pLeftParticles )
-        {
-            pLeftParticles->moveInfo.physics.velocity.x = pThing->orient.rvec.x * yawAngle;
-            pLeftParticles->moveInfo.physics.velocity.y = pThing->orient.rvec.y * yawAngle;
-            pLeftParticles->moveInfo.physics.velocity.z = pThing->orient.rvec.z * yawAngle;
-            pLeftParticles->moveInfo.physics.velocity.z = speed * 0.40000001f + pLeftParticles->moveInfo.physics.velocity.z;
-            pLeftParticles->msecLifeLeft = 200;
-        }
+        pLeftParticles->renderData.data.pParticle->pMaterial = pMatLeft;
+    }
 
-        if ( pRightParticles )
-        {
-            pRightParticles->moveInfo.physics.velocity.x = pThing->orient.rvec.x * yawAngle;
-            pRightParticles->moveInfo.physics.velocity.y = pThing->orient.rvec.y * yawAngle;
-            pRightParticles->moveInfo.physics.velocity.z = pThing->orient.rvec.z * yawAngle;
-            pRightParticles->moveInfo.physics.velocity.z = speed * 0.40000001f + pRightParticles->moveInfo.physics.velocity.z;
-            pRightParticles->msecLifeLeft = 200;
-        }
+    // Set velocity for right tire particles
+    if ( pRightParticles )
+    {
+        rdVector_Scale3(&pRightParticles->moveInfo.physics.velocity, &pThing->orient.rvec, yawAngle);
+        pRightParticles->moveInfo.physics.velocity.z += speed * 0.40000001f;
+        pRightParticles->msecLifeLeft = 200;
+    }
+
+    // Set velocity for left tire particles
+    if ( pLeftParticles )
+    {
+        rdVector_Scale3(&pLeftParticles->moveInfo.physics.velocity, &pThing->orient.rvec, yawAngle);
+        pLeftParticles->moveInfo.physics.velocity.z += speed * 0.40000001f;
+        pLeftParticles->msecLifeLeft = 200;
     }
 }
 
@@ -1110,8 +1072,9 @@ SithThing* J3DAPI sithFX_CreateLightningThing(const SithThing* pSourceThing, con
     rdThing_NewEntry(&pThing->renderData, NULL);
     rdThing_SetPolyline(&pThing->renderData, pPolyline);
 
-    memset(&pThing->orient.dvec, 0, sizeof(pThing->orient.dvec)); // Reset orientation
-    rdVector_Copy3(&pThing->pos, &startPos);
+    rdVector_Zero3(&pThing->orient.dvec); // Remove position from orientation
+    pThing->pos = startPos;
+
     sithThing_EnterSector(pThing, pSourceThing->pInSector, 1, 1);
     return pThing;
 }
@@ -1184,8 +1147,9 @@ SithThing* J3DAPI sithFX_CreatePolylineThing(const SithThing* pSourceThing, Sith
     rdThing_NewEntry(&pThing->renderData, NULL);
     rdThing_SetPolyline(&pThing->renderData, pPolyline);
 
-    memset(&pThing->orient.dvec, 0, sizeof(pThing->orient.dvec)); // Reset orientation
-    rdVector_Copy3(&pThing->pos, &startPos);
+    rdVector_Zero3(&pThing->orient.dvec); // Remove position from orientation
+    pThing->pos = startPos;
+
     sithThing_EnterSector(pThing, pSourceThing->pInSector, 1, 1);
 
     pThing->alpha = 1.0f;

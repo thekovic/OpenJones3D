@@ -205,38 +205,38 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
     {
         switch ( markerType )
         {
-            case RDKEYMARKER_REACHRIGHTARMREST:
-                sithFX_CreateRipple(pThing, 0.02f);
+            case RDKEYMARKER_REACHRIGHTARMREST: // Start putout/picking-up folded raft 
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.02f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_REACHRIGHTARMREST);
                 return;
 
-            case RDKEYMARKER_PICKUP:
-                sithFX_CreateRipple(pThing, 0.039999999f);
+            case RDKEYMARKER_PICKUP: // Raft start/end folding
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.039999999f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_PICKUP);
                 return;
 
-            case RDKEYMARKER_DROP:
-                sithFX_CreateRipple(pThing, 0.059999999f);
+            case RDKEYMARKER_DROP: // Raft mid-folding
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.059999999f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_DROP);
                 return;
 
-            case RDKEYMARKER_MOVE:
-                sithFX_CreateRipple(pThing, 0.079999998f);
+            case RDKEYMARKER_MOVE: // Raft start unfolding/folding
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.079999998f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_MOVE);
                 return;
 
-            case RDKEYMARKER_INVENTORYPULL:
-                sithFX_CreateRipple(pThing, 0.1f);
+            case RDKEYMARKER_INVENTORYPULL: // Raft end unfolding or deflated
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.1f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_INVENTORYPULL);
                 return;
 
-            case RDKEYMARKER_INVENTORYPUT:
-                sithFX_CreateRipple(pThing, 0.12f);
+            case RDKEYMARKER_INVENTORYPUT: // Start inflating/deflating raft
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.12f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_INVENTORYPUT);
                 return;
 
             case RDKEYMARKER_ATTACKFINISH:
-                sithFX_CreateRipple(pThing, 0.14f);
+                sithFX_CreateRaftInflateWaterFX(pThing, 0.14f);
                 sithPuppet_DefaultCallback(pThing, track, RDKEYMARKER_ATTACKFINISH);
                 return;
 
@@ -252,8 +252,7 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
                 {
                     sithVehicleControls_curRaftState.bRowing         = 1;
                     sithVehicleControls_curRaftState.secRowStartTime = sithTime_g_secGameTime;
-
-                    sithFX_CreateRowWaterFx(pThing, sithTime_g_secGameTime);
+                    sithFX_CreatePaddleWaterFX(pThing, sithTime_g_secGameTime);
                     sithVehicleControls_UpdateRaftPaddleSoundFx(pThing);
                 }
 
@@ -1335,7 +1334,8 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
     // Create row water fx
     if ( sithVehicleControls_curRaftState.bRowing )
     {
-        sithFX_CreateRowWaterFx(pThing, sithVehicleControls_curRaftState.secRowStartTime);
+        sithFX_CreatePaddleWaterFX(pThing, sithVehicleControls_curRaftState.secRowStartTime);
+    }
     }
 
     //
