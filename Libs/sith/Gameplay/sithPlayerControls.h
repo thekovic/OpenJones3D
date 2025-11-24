@@ -29,6 +29,31 @@ SithThing* sithPlayerControls_GetTargetThing(void);
 SithThing* J3DAPI sithPlayerControls_GetVehicleBoardedThing();
 void J3DAPI sithPlayerControls_SetVehicleBoardedThing(SithThing* pThing);
 
+/**
+ * Calculates linear move thrust based on actor max thrust and extra speed
+ * @param pActor      - Pointer to actor info
+ * @param direction   - Direction factor. Should be negative for backward movement
+ * @param speedFactor - Extra speed factor.
+ * @return
+ */
+inline float sithPlayerControls_CalculateThrust(SithActorInfo* pActor, float direction, float speedFactor)
+{
+    return (pActor->maxThrust + pActor->extraSpeed) * direction * speedFactor;
+}
+
+/**
+* Calculates accelerated linear move thrust based on actor max thrust and time delta
+* @param pActor       - Pointer to actor info
+* @param direction    - Direction factor. Should be negative for backward movement
+* @param speedFactor  - Extra speed factor.
+* @param secDeltaTime - Frame time delta
+*/
+inline float sithPlayerControls_CalculateAcceleratedThrust(SithActorInfo* pActor, float direction, float speedFactor, float secDeltaTime)
+{
+    // TODO: Would make sens to refactor this formula and remove frame time dependency altogether
+    return (pActor->maxThrust * direction * speedFactor) + (direction * secDeltaTime);
+}
+
 /*
 * Calculates angular velocity based on actor max rotation velocity
 * @param pActor        - Actor info
