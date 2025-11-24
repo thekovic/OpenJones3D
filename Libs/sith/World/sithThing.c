@@ -3674,7 +3674,8 @@ int J3DAPI sithThing_CanSync(const SithThing* pThing)
 
 int J3DAPI sithThing_GetThingMeshIndex(const SithThing* pThing, const char* pMeshName)
 {
-    if ( !pThing->renderData.data.pModel3 || !pMeshName )
+    // Altered: Added check for renderData type
+    if ( pThing->renderData.type != RD_THING_MODEL3 || !pThing->renderData.data.pModel3 || !pMeshName )
     {
         return -1;
     }
