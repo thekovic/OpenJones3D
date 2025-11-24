@@ -1278,7 +1278,12 @@ void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float s
         if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0
             && !rdVector_IsZero3(&pPhysics->velocity) )
         {
-            pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(&pThing->thingInfo.actorInfo, sithControl_GetAxis(SITHCONTROL_MOUSETURN), mouseSensitivity);
+            pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+                &pThing->thingInfo.actorInfo,
+                sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+                sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+                mouseSensitivity
+            );
         }
     }
 }
@@ -2303,7 +2308,6 @@ int J3DAPI sithVehicleControls_FindRaftUnboardPosition(SithThing* pThing, float 
         //
 
         float upDist = sithVehicleControls_raftUnbaordPosSearchRadius - sithPhysics_GetThingHeight(pThing) + 0.059999999f; // height for raft player should be 0.03f; the height should be 0.08f (80cm)
-        //memcpy(&topStartPos, &pThing->pos, sizeof(topStartPos));
         rdVector3 topStartPos = pThing->pos;
         topStartPos.z = topStartPos.z + upDist;
 

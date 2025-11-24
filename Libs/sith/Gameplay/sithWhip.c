@@ -325,13 +325,13 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
         else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
         {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
-            pThing->moveInfo.physics.angularVelocity.yaw = sithPlayerControls_CalculateYawVelocity(&pThing->thingInfo.actorInfo, 1.0f, 1.0f);
+            pThing->moveInfo.physics.angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(&pThing->thingInfo.actorInfo, 1.0f, 1.0f, 1.0f);
         }
 
         else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
         {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_MOVEPOS);
-            pThing->moveInfo.physics.angularVelocity.yaw = sithPlayerControls_CalculateYawVelocity(&pThing->thingInfo.actorInfo, -1.0f, 1.0f);
+            pThing->moveInfo.physics.angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(&pThing->thingInfo.actorInfo, -1.0f, -1.0f, 1.0f);
         }
         else
         {

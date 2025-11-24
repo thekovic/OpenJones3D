@@ -810,7 +810,12 @@ void J3DAPI sithPlayerControls_ProcessLookControls(SithThing* pThing, float secD
     }
     else if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
-        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN), 1.0f);
+        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+            pActor,
+            sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+            sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+            1.0f
+        );
     }
 }
 
@@ -1342,7 +1347,12 @@ void J3DAPI sithPlayerControls_ProcessFlyMove(SithThing* pThing, float secDeltaT
             if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0
                 && pPhysics->angularVelocity.yaw == 0.0f )
             {
-                pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN), 1.0f);
+                pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(
+                    pActor,
+                    sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+                    sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+                    1.0f
+                );
             }
 
             if ( bFlying || bUnderwater )
@@ -1687,7 +1697,12 @@ void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDe
 
         if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
         {
-            pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetAxis(SITHCONTROL_MOUSETURN), 1.0f);
+            pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+                pActor,
+                sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+                sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+                1.0f
+            );
         }
         else if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL) )
         {
@@ -4013,7 +4028,12 @@ void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDelt
     //
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
-        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN), 1.0f);
+        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+            pActor,
+            sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+            sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+            moveFactor
+        );
     }
 
     //
@@ -4333,7 +4353,12 @@ void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDelta
     //
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
-        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN), 1.0f);
+        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+            pActor,
+            sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+            sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+            moveFactor
+        );
     }
 
     //
@@ -4493,7 +4518,12 @@ void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float secDeltaT
     //
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
-        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN), 1.0f);
+        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+            pActor,
+            sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+            sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+            moveFactor
+        );
     }
 
     //
@@ -4628,7 +4658,12 @@ void J3DAPI sithPlayerControls_ProcessCrawlMove(SithThing* pThing, float secDelt
     //
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
     {
-        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateYawVelocity(pActor, sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN), 1.0f); // Note in turn keys case the turn factor is 0.5
+        pPhysics->angularVelocity.yaw += sithPlayerControls_CalculateAngularVelocity(
+            pActor,
+            sithControl_GetAxis(SITHCONTROL_MOUSETURN),
+            sithControl_GetKeyAsAxis(SITHCONTROL_MOUSETURN),
+            moveFactor
+        );
     }
 }
 
