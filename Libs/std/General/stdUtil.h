@@ -151,6 +151,48 @@ J3D_EXTERN_C_START
         dest[STD_ARRAYLEN(dest) - 1] = 0; \
     } while ( 0 )
 
+
+/**
+* Zeros out a buffer.
+* @param dest - Destination data
+* @param size - Size of data to zero
+*/
+#define STD_ZEROMEM(dest, size) memset((dest), 0, (size))
+
+/**
+* Flls a buffer with a byte value.
+* @param dest - Destination data
+* @param size - Size of data to fill
+* @param value - Byte value to fill with
+*/
+#define STD_FILLMEM(dest, size, value) memset((dest), (value), (size))
+
+/**
+* Copies memory from source to destination.
+* @param dest - Destination data
+* @param src - Source data
+* @param size - Size of data to copy
+*/
+#define STD_COPYMEM(dest, src, size) memcpy((dest), (src), (size))
+
+/**
+* Moves memory from source to destination.
+* @param dest - Destination data
+* @param src - Source data
+* @param size - Size of data to move
+*/
+#define STD_MOVEMEM(dest, src, size) memmove((dest), (src), (size))
+
+/**
+* Compares two memory blocks.
+* @param dest - First data block
+* @param src - Second data block
+* @param size - Size of data to compare
+* @return true if equal, false otherwise
+*/
+#define STD_EQUALMEM(dest, src, size) (memcmp((dest), (src), (size)) == 0)
+
+
 char* J3DAPI stdUtil_StringDuplicate(const char* pSource, tHostServices* pHS); // Added: From debug version
 int stdUtil_Format(char* pStr, size_t size, const char* format, ...);
 int stdUtil_WFormat(wchar_t* pStr, size_t size, const wchar_t* format, ...); // Added
@@ -265,7 +307,8 @@ inline bool J3DAPI stdUtil_WStringNumCopy(wchar_t* pDest, size_t destSize, const
 inline bool J3DAPI stdUtil_StringCat(char* pDst, size_t destSize, const char* pSrc)
 {
     size_t dstLen = strnlen_s(pDst, destSize);
-    if ( dstLen >= destSize ) {
+    if ( dstLen >= destSize )
+    {
         return false;
     }
     return strncat_s(pDst, destSize, pSrc, destSize - dstLen - 1) == 0;
@@ -288,7 +331,8 @@ inline bool J3DAPI stdUtil_StringCat(char* pDst, size_t destSize, const char* pS
 inline bool J3DAPI stdUtil_StringNumCat(char* pDst, size_t destSize, const char* pSrc, size_t num)
 {
     size_t dstLen = strnlen_s(pDst, destSize);
-    if ( dstLen >= destSize ) {
+    if ( dstLen >= destSize )
+    {
         return false;
     }
     num = J3DMIN(num, destSize - dstLen - 1);
