@@ -1657,14 +1657,8 @@ void J3DAPI sithCogFunctionThing_IsThingMoving(SithCog* pCog)
     {
         if ( pThing->moveType == SITH_MT_PHYSICS )
         {
-            int moveState = pThing->moveInfo.physics.velocity.x != 0.0f
-                || pThing->moveInfo.physics.velocity.y != 0.0f
-                || pThing->moveInfo.physics.velocity.z != 0.0f;
-
-            int rotState = pThing->moveInfo.physics.angularVelocity.pitch != 0.0f
-                || pThing->moveInfo.physics.angularVelocity.yaw != 0.0f
-                || pThing->moveInfo.physics.angularVelocity.roll != 0.0f;
-
+            int moveState = !rdVector_IsZero3(&pThing->moveInfo.physics.velocity);
+            int rotState  = !rdVector_IsZero3(&pThing->moveInfo.physics.angularVelocity);
             sithCogExec_PushInt(pCog, moveState || rotState);
         }
         else if ( pThing->moveType == SITH_MT_PATH )
@@ -2800,7 +2794,8 @@ void J3DAPI sithCogFunctionThing_SetThingMesh(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -2828,7 +2823,8 @@ void J3DAPI sithCogFunctionThing_RestoreThingMesh(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -2871,7 +2867,8 @@ void J3DAPI sithCogFunctionThing_SetThingModel(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithDSSThing_SetModel(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS);
         }
     }
@@ -2926,7 +2923,8 @@ void J3DAPI sithCogFunctionThing_SetArmedMode(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithDSSThing_UpdateState(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL); // TODO: why not using sithThing_Sync function?
         }
     }
@@ -2961,7 +2959,8 @@ void J3DAPI sithCogFunctionThing_SetThingFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -2982,7 +2981,8 @@ void J3DAPI sithCogFunctionThing_ClearThingFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -2999,7 +2999,8 @@ void J3DAPI sithCogFunctionThing_TeleportThing(SithCog* pCog)
         return;
     }
 
-    if ( pDestThing->attach.flags != 0 ) {
+    if ( pDestThing->attach.flags != 0 )
+    {
         sithThing_DetachThing(pDestThing);
     }
 
@@ -3011,17 +3012,20 @@ void J3DAPI sithCogFunctionThing_TeleportThing(SithCog* pCog)
     sithThing_SetSector(pDestThing, pSrcThing->pInSector, /*bNotify=*/0);
 
     // Stick to floor
-    if ( pDestThing->moveType == SITH_MT_PHYSICS && (pDestThing->moveInfo.physics.flags & SITH_PF_FLOORSTICK) != 0 ) {
+    if ( pDestThing->moveType == SITH_MT_PHYSICS && (pDestThing->moveInfo.physics.flags & SITH_PF_FLOORSTICK) != 0 )
+    {
         sithPhysics_FindFloor(pDestThing, /*bNoThingStateUpdate=*/1);
     }
 
-    if ( pDestThing == sithPlayer_g_pLocalPlayerThing ) {
+    if ( pDestThing == sithPlayer_g_pLocalPlayerThing )
+    {
         sithCamera_Update(sithCamera_g_pCurCamera);
     }
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithDSSThing_Pos(pDestThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
     }
@@ -3080,7 +3084,8 @@ void J3DAPI sithCogFunctionThing_SetCollideType(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -3336,7 +3341,8 @@ void J3DAPI sithCogFunctionThing_SetLifeleft(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -3476,7 +3482,8 @@ void J3DAPI sithCogFunctionThing_SetPhysicsFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -3544,7 +3551,8 @@ void J3DAPI sithCogFunctionThing_SetThingRotVel(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_POS);
         }
     }
@@ -3586,7 +3594,8 @@ void J3DAPI sithCogFunctionThing_SetRotThrust(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_POS);
         }
     }
@@ -3623,7 +3632,8 @@ void J3DAPI sithCogFunctionThing_SetThingLook(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_POS);
         }
     }
@@ -3631,7 +3641,8 @@ void J3DAPI sithCogFunctionThing_SetThingLook(SithCog* pCog)
 
 int J3DAPI sithCogFunctionThing_SetThingHeadOrientation(SithThing* pThing, const rdVector3* pLook)
 {
-    if ( !pThing || !pLook ) {
+    if ( !pThing || !pLook )
+    {
         return 0;
     }
 
@@ -3641,7 +3652,8 @@ int J3DAPI sithCogFunctionThing_SetThingHeadOrientation(SithThing* pThing, const
         return 0;
     }
 
-    if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_CANROTATEHEAD) == 0 ) {
+    if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_CANROTATEHEAD) == 0 )
+    {
         return 0;
     }
 
@@ -3658,7 +3670,8 @@ int J3DAPI sithCogFunctionThing_SetThingHeadOrientation(SithThing* pThing, const
     float dot = rdVector_Dot3(&pThing->orient.lvec, &dir);
     float yaw = 90.0f - stdMath_ArcSin3(dot);
 
-    if ( rdVector_Dot3(&pThing->orient.rvec, &dir) > 0 ) {
+    if ( rdVector_Dot3(&pThing->orient.rvec, &dir) > 0 )
+    {
         yaw = -yaw;
     }
 
@@ -3700,7 +3713,8 @@ void J3DAPI sithCogFunctionThing_SetThingHeadLookPos(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_POS);
         }
     }
@@ -3723,13 +3737,15 @@ void J3DAPI sithCogFunctionThing_SetThingHeadLookThing(SithCog* pCog)
         return;
     }
 
-    if ( !sithCogFunctionThing_SetThingHeadOrientation(pThing, &pLookThing->pos) ) {
+    if ( !sithCogFunctionThing_SetThingHeadOrientation(pThing, &pLookThing->pos) )
+    {
         STDLOG_ERROR("Cog %s: illegal attempt to set thing %s head orientation SetThingHeadLookThing().\n", pCog->aName, pThing->aName); // Fixed: Fixed function name in error message
     }
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_POS);
         }
     }
@@ -3762,7 +3778,8 @@ void J3DAPI sithCogFunctionThing_GetThingClassCog(SithCog* pCog)
     if ( !pThing || !pThing->pCog )
     {
         // Added: Error message
-        if ( !pThing ) {
+        if ( !pThing )
+        {
             STDLOG_ERROR("Cog %s: Bad thing reference passed to GetThingClassCog().\n", pCog->aName);
         }
 
@@ -3800,7 +3817,8 @@ void J3DAPI sithCogFunctionThing_GetThingCaptureCog(SithCog* pCog)
     if ( !pThing || !pThing->pCaptureCog )
     {
          // Added: Error message
-        if ( !pThing ) {
+        if ( !pThing )
+        {
             STDLOG_ERROR("Cog %s: Bad thing reference passed to GetThingCaptureCog().\n", pCog->aName);
         }
         sithCogExec_PushInt(pCog, -1);
@@ -3873,7 +3891,8 @@ void J3DAPI sithCogFunctionThing_SetThingAttachFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
@@ -3894,7 +3913,8 @@ void J3DAPI sithCogFunctionThing_ClearThingAttachFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithDSSThing_Attachment(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL, DPSEND_GUARANTEED);
         }
     }
@@ -4081,7 +4101,8 @@ void J3DAPI sithCogFunctionThing_SetTypeFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -4116,7 +4137,8 @@ void J3DAPI sithCogFunctionThing_ClearTypeFlags(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -4319,7 +4341,8 @@ void J3DAPI sithCogFunctionThing_SetThingMass(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_STATE);
         }
     }
@@ -4407,7 +4430,8 @@ void J3DAPI sithCogFunctionThing_SetThingPosEx(SithCog* pCog)
     pThing->pos = newPos;
     sithThing_SetSector(pThing, pSector, /*bNotify=*/0);
 
-    if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & SITH_PF_FLOORSTICK) != 0 ) {
+    if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & SITH_PF_FLOORSTICK) != 0 )
+    {
 
         sithPhysics_FindFloor(pThing, /*bNoThingStateUpdate=*/1);
     }
@@ -4419,7 +4443,8 @@ void J3DAPI sithCogFunctionThing_SetThingPosEx(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithDSSThing_Pos(pThing, SITHMESSAGE_SENDTOJOINEDPLAYERS, DPSEND_GUARANTEED);
         }
     }
@@ -4582,7 +4607,8 @@ void J3DAPI sithCogFunctionThing_SetJointAngle(SithCog* pCog)
     }
 
     int nodeNum = pThing->pPuppetClass->aJoints[jointNum];
-    if ( nodeNum >= 0 && nodeNum < pThing->renderData.data.pModel3->numHNodes ) {
+    if ( nodeNum >= 0 && nodeNum < pThing->renderData.data.pModel3->numHNodes )
+    {
         pThing->renderData.apTweakedAngles[nodeNum].pitch = angle;
     }
 }
@@ -4820,7 +4846,8 @@ void J3DAPI sithCogFunctionThing_SetThingLVec(SithCog* pCog)
 
     if ( (pCog->flags & SITHCOG_NOSYNC) == 0 )
     {
-        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN ) {
+        if ( pCog->execMsgType != SITHCOG_MSG_STARTUP && pCog->execMsgType != SITHCOG_MSG_SHUTDOWN )
+        {
             sithThing_SyncThing(pThing, SITHTHING_SYNC_POS);
         }
     }
@@ -4994,7 +5021,8 @@ void J3DAPI sithCogFunctionThing_AttachThingToThingMesh(SithCog* pCog)
         return;
     }
 
-    if ( pThing->type == SITH_THING_EXPLOSION ) {
+    if ( pThing->type == SITH_THING_EXPLOSION )
+    {
         pThing->pParent = pAttachThing;
     }
 
@@ -5208,7 +5236,8 @@ void J3DAPI sithCogFunctionThing_GetThingEyeOffset(SithCog* pCog)
 {
     SithThing* pThing = sithCogExec_PopThing(pCog);
 
-    if ( !pThing ) {
+    if ( !pThing )
+    {
         STDLOG_ERROR("Cog %s: Invalid thing in GetThingEyeOffset().\n", pCog->aName);
         return;
     }
@@ -5393,7 +5422,8 @@ void J3DAPI sithCogFunctionThing_StartQuetzAnim(SithCog* pCog)
         return;
     }
 
-    switch ( mode ) {
+    switch ( mode )
+    {
         case 2:
             sithAIMove_sub_49AB80(pThing->controlInfo.aiControl.pLocal);
             break;
