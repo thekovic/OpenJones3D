@@ -2418,7 +2418,7 @@ update_attachment:
         {
             if ( pThing->moveStatus == SITHPLAYERMOVE_FALLING )
             {
-                pThing->moveInfo.pathMovement.mode = 0;
+                pThing->moveInfo.physics.velocity.z = 0;
                 sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_LANDWATER);
                 if ( sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LAND, sithVehicleControls_PuppetCallback) < 0 )
                 {
