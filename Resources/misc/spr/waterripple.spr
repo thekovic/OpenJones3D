@@ -1,0 +1,6 @@
+# OpenJones 3D Sprite File
+#
+# waterripple.spr
+#
+#Material                   Type    Width   Height    Geo    Light    Tex    Extralight(RGBA)    Xoff    Yoff    Zoff
+gen_4sfx_ripple_ring_b.mat  2       0.1     0.1       4      3         0     0.35 0.35 0.35 0.5  0.0     0.0     0.0

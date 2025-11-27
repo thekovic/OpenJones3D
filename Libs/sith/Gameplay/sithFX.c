@@ -62,8 +62,10 @@ const char* sithFX_aChalkMarkNames[35] =
     "+x_mark"
 };
 
-rdVector3 sithFX_rowRippleLastPos    = { 0 }; // Added: Init to 0
-float sithFX_secLastCreatedRowRipple = 0.0f;  // Added: Init to 0
+rdVector3 sithFX_curPaddleRipplePos     = { 0 }; // Added: Init to 0
+float sithFX_secLastCreatedPaddleRipple = 0.0f;  // Added: Init to 0
+rdVector4 sithFX_rippleExtraLight       = { 0.35f, 0.35f, 0.35f, 1.0f };
+float sithFX_surfaceOffsetZ             = 0.001f; // Altered: Was 0.002f
 
 rdVector3 sithFx_rightTireStartPosOffset = { 0 }; // Added: Init to 0
 rdVector3 sithFx_leftTireStartPosOffset  = { 0 }; // Added: Init to 0
@@ -72,6 +74,27 @@ size_t sithFX_fariyDustSizeFactor         = 0; // Added: Init to 0
 size_t sithFX_newFairyDustDeluxSizeFactor = 0; // Added: Init to 0
 size_t sithFX_fairyDustDeluxSizeFactor    = 0; // Added: Init to 0
 unsigned int sithFX_msecLastCreatedFairyDustDeluxTime = 0; // Added: Init to 0
+
+static SithThing* sithFX_CreateThingFacingUp(const SithThing* pRippleTpl, const rdVector3* pos, SithSector* pSector, const rdVector3* upDir)
+{
+    SithThing* pRipple = sithThing_CreateThingAtPos(pRippleTpl, pos, &pRippleTpl->orient, pSector, NULL);
+    if ( !pRipple )
+    {
+        return NULL;
+    }
+
+    // Orient the ripple to face upwards
+    pRipple->orient.lvec = *upDir; // Note: OG im most case used zVector3
+    return pRipple;
+}
+
+static void sithFX_TransformPointToAttachSurface(rdVector3* point, const SithThing* pThing)
+{
+    rdVector_Add3Acc(point, &pThing->pos);
+    point->z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) - sithFX_surfaceOffsetZ; // Fixed: Move sprite slightly above water surface; OG was below surface i.e.: +0.002f
+}
+
+void J3DAPI sithFX_CreatePaddleWaterSplash(SithThing* pThing, const rdVector3* pos);
 
 void sithFX_InstallHooks(void)
 {
@@ -85,10 +108,10 @@ void sithFX_InstallHooks(void)
     J3D_HOOKFUNC(sithFX_CreateFairyDustDeluxDusts);
     J3D_HOOKFUNC(sithFX_CreateBubble);
     J3D_HOOKFUNC(sithFX_CreateWaterRipple);
-    J3D_HOOKFUNC(sithFX_CreateRaftRipple);
-    J3D_HOOKFUNC(sithFX_CreateRaftWake);
+    J3D_HOOKFUNC(sithFX_CreateRaftSplatterFX);
+    J3D_HOOKFUNC(sithFX_CreateRaftWakeFX);
     J3D_HOOKFUNC(sithFX_CreatePaddleWaterSplash);
-    J3D_HOOKFUNC(sithFX_CreatePaddleWaterFX);
+    J3D_HOOKFUNC(sithFX_CreateRaftPaddleWaterFX);
     J3D_HOOKFUNC(sithFX_CreateRaftInflateWaterFX);
     J3D_HOOKFUNC(sithFX_CreateMineCarSparks);
     J3D_HOOKFUNC(sithFX_CreateChalkMark);
@@ -378,7 +401,8 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
         }
 
         rdVector3 pos, start, end;
-        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 || (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
+        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0
+            || (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
         {
             float size = pThing->collide.movesize;
             start.x = size;
@@ -391,7 +415,7 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             end.z = 0.0f;
 
             pos = pThing->pos;
-            pos.z += pThing->attach.distToWaterSurface + 0.001f;
+            pos.z += pThing->attach.distToWaterSurface + sithFX_surfaceOffsetZ; // Altered: Replaced 0.001 constant with sithFX_surfaceOffsetZ
         }
         else
         {
@@ -409,58 +433,64 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             pos.z -= pThing->collide.movesize * 2.0f;
         }
 
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
+        // Altered: Replaced OG code with sithFX_CreateThingFacingUp
+        SithThing* pSprite = sithFX_CreateThingFacingUp(pTemplate, &pos, pThing->pInSector, &rdroid_g_zVector3); // Note: don't change zVector to thing uvec as thing might not look up
         if ( !pSprite )
         {
             SITHLOG_ERROR("Can't make a ripple, no thing space!\n");
             return;
         }
-
-        // Orient the ripple to face upwards
-        pSprite->orient.lvec = rdroid_g_zVector3;
 
         float time = SITH_RANDF() + 1.0f;
         sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
     }
 }
 
-void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
+void J3DAPI sithFX_CreateRaftSplatterFX(SithThing* pThing, int bCreateSplash)
 {
     rdVector3 ripplePos = { 0 }; // Added: Init to 0
 
-    SithThing* pTemplate = sithTemplate_GetTemplate("+ripples");
-    if ( pTemplate && pThing->attach.flags )
+    SithThing* pSplashTpl = sithTemplate_GetTemplate("+ripples");
+    if ( pSplashTpl && pThing->attach.flags )
     {
         float size = pThing->collide.movesize;
-        rdVector3 start = { .x=size, .y=size, .z=1.0f };
+        rdVector3 start = { .x=size, .y=size, .z=0.25f }; // Altered: Changed alpha from 1.0f to 0.25f to make ripple better blend with water
 
         size = pThing->collide.movesize * 4.0f;
         rdVector3 end = { .x=size, .y=size, .z=0.0f };
 
-        ripplePos    = pThing->pos; // TODO: maybe this should be done outside of this scope
-        ripplePos.x += (SITH_RANDF() - 0.5f) * 0.03f;
-        ripplePos.y += (SITH_RANDF() - 0.5f) * 0.03f;
-        ripplePos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) + 0.0020000001f; // TODO: Fix z fight by lifting up sprite fx instead of down, ie. -0.0020000001f
+        // Randomize ripple position a bit
+        ripplePos.x = (SITH_RANDF() - 0.5f) * 0.03f;
+        ripplePos.y = (SITH_RANDF() - 0.5f) * 0.03f;
 
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &ripplePos, &pTemplate->orient, pThing->pInSector, NULL);
-        if ( !pSprite )
+        // Transform to water surface
+        // Altered: Replaced OG code with sithFX_TransformPointToAttachSurface
+        sithFX_TransformPointToAttachSurface(&ripplePos, pThing);
+
+        // Altered: Replaced OG code with sithFX_CreateThingFacingUp
+        SithThing* pRipple = sithFX_CreateThingFacingUp(pSplashTpl, &ripplePos, pThing->pInSector, &pThing->orient.uvec);
+        if ( !pRipple )
         {
             SITHLOG_ERROR("Can't make a ripple, no thing space!\n");
             return;
         }
 
-        // Orient the ripple to face upwards
-        pSprite->orient.lvec = rdroid_g_zVector3;
+        // Added: Roll the ripple according to raft movement direction
+        rdVector3 dirFwd;
+        rdVector_Normalize3(&dirFwd, &pThing->moveInfo.physics.velocity);
+        float rollAngle = rdMath_DeltaAngleNormalized(&rdroid_g_xVector3, &dirFwd, &pRipple->orient.lvec);
+        pRipple->thingInfo.spriteInfo.rollAngle = rollAngle;
+
 
         float time = SITH_RANDF() + 1.5f;
-        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
+        sithAnimate_StartAnimateSpriteSize(pRipple, &start, &end, time);
     }
 
     if ( bCreateSplash )
     {
-        pTemplate = sithTemplate_GetTemplate("+raft_splash");
+        pSplashTpl = sithTemplate_GetTemplate("+raft_splash");
         SithThing* pMistTpl = sithTemplate_GetTemplate("spritlemist");
-        if ( !pTemplate || !pMistTpl )
+        if ( !pSplashTpl || !pMistTpl )
         {
             // TODO: maybe log warning
             return;
@@ -485,34 +515,34 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         rdMatrix_TransformVector34Acc(&pos, &pThing->orient);
         rdVector_Add3Acc(&pos, &ripplePos);
 
-        rdMatrix34 orient;
-        rdMatrix_Copy34(&orient, &pThing->orient);
+        rdMatrix34 orient = pThing->orient;
 
         rdVector3 pyr;
         pyr.x = 90.0f;
         pyr.y = 90.0f;
         pyr.z = 0.0f;
         rdMatrix_PreRotate34(&orient, &pyr);
-        orient.uvec = pThing->attach.pFace->normal;
+        orient.uvec = pThing->attach.pFace->normal; //Rutate up
 
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &orient, pThing->pInSector, NULL);
-        if ( pSprite )
+        // Create splash
+        SithThing* pSplash = sithThing_CreateThingAtPos(pSplashTpl, &pos, &orient, pThing->pInSector, NULL);
+        if ( pSplash )
         {
-            sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
+            sithAnimate_StartAnimateSpriteSize(pSplash, &start, &end, 0.5f);
         }
 
         // Create mist thing
         pos.z += 0.050000001f;
         sithThing_CreateThingAtPos(pMistTpl, &pos, &pMistTpl->orient, pThing->pInSector, NULL);
 
-        // Create another splash thing
+        // Create another splash thing rotated for 90 degrees
         pos.x = -0.12f; // left
         pos.y = 0.090000004f;
         pos.z = 0.0099999998f;
         rdMatrix_TransformVector34Acc(&pos, &pThing->orient);
         rdVector_Add3Acc(&pos, &ripplePos);
 
-        rdMatrix_Copy34(&orient, &pThing->orient);
+        orient = pThing->orient;
 
         pyr.x = 90.0f;
         pyr.y = -90.0f;
@@ -520,16 +550,17 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
         rdMatrix_PreRotate34(&orient, &pyr);
         orient.uvec = pThing->attach.pFace->normal;
 
-        pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &orient, pThing->pInSector, NULL);
-        if ( pSprite )
+        pSplash = sithThing_CreateThingAtPos(pSplashTpl, &pos, &orient, pThing->pInSector, NULL);
+        if ( pSplash )
         {
-            sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
+            sithAnimate_StartAnimateSpriteSize(pSplash, &start, &end, 0.5f);
         }
 
         // Create another mist thing
         pos.z += 0.050000001f;
         sithThing_CreateThingAtPos(pMistTpl, &pos, &pMistTpl->orient, pThing->pInSector, NULL);
 
+        // Start mat animation
         rdMaterial* pMat = sithMaterial_Load("riv_a4sprite_rocksplash.mat");
         if ( pMat )
         {
@@ -538,10 +569,21 @@ void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash)
     }
 }
 
-void J3DAPI sithFX_CreateRaftWake(SithThing* pThing)
+void J3DAPI sithFX_CreateRaftWakeFX(SithThing* pThing)
 {
-    SithThing* pTemplate = sithTemplate_GetTemplate("+raft_wake");
-    if ( pTemplate && pThing->attach.flags )
+    // Added: Added check for water surface 
+    if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) == 0
+        || (pThing->attach.attachedToStructure.pSurfaceAttached->flags & (SITH_SURFACE_WATER | SITH_SURFACE_SHALLOWWATER)) == 0 )
+    {
+        return;
+    }
+
+    rdVector3 moveDir;
+    rdVector_Normalize3(&moveDir, &pThing->moveInfo.physics.velocity);
+    float rollAngle = rdMath_DeltaAngleNormalized(&rdroid_g_xVector3, &moveDir, &pThing->orient.uvec);  // Fixed: Replaced zVector3 with thing uvec
+
+    SithThing* pWakeTpl = sithTemplate_GetTemplate("+raft_wake");
+    if ( pWakeTpl )
     {
         rdVector3 start;
         start.x = 0.175f;
@@ -553,25 +595,26 @@ void J3DAPI sithFX_CreateRaftWake(SithThing* pThing)
         end.y = 0.40000001f;
         end.z = 0.0f;
 
-        rdVector3 pos = pThing->pos;
-        pos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) + 0.0020000001f; // TODO: Fix z fight by lifting up sprite fx instead of down, ie. -0.0020000001f
+        // Transform to water surface
+        // Altered: Replaced OG code with sithFX_TransformPointToAttachSurface
+        rdVector3 pos = { 0 };
+        sithFX_TransformPointToAttachSurface(&pos, pThing);
 
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
-        if ( !pSprite )
+        SithThing* pWake = sithFX_CreateThingFacingUp(pWakeTpl, &pos, pThing->pInSector, &pThing->orient.uvec);
+        if ( !pWake )
         {
             SITHLOG_ERROR("Can't make a wake, no thing space!\n");
             return;
         }
 
-        pSprite->orient.lvec = rdroid_g_zVector3;
+        // Added: Set light mode to gouraud so it looks better in dark areas, and added extra light
+        pWake->renderData.data.pSprite3->face.lightingMode = RD_LIGHTING_GOURAUD;
+        pWake->renderData.data.pSprite3->face.extraLight   = sithFX_rippleExtraLight;
 
-        rdVector3 dirFwd;
-        rdVector_Normalize3(&dirFwd, &pThing->moveInfo.physics.velocity);
-        const float rollAngle = rdMath_DeltaAngleNormalized(&rdroid_g_xVector3, &dirFwd, &rdroid_g_zVector3);
+        // Rotate to match movement direction
+        pWake->thingInfo.spriteInfo.rollAngle = rollAngle + 180.0f;
 
-        pSprite->thingInfo.spriteInfo.rollAngle = rollAngle + 180.0f;
-
-        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
+        sithAnimate_StartAnimateSpriteSize(pWake, &start, &end, 0.5f);
     }
 }
 
@@ -586,15 +629,14 @@ void J3DAPI sithFX_CreatePaddleWaterSplash(SithThing* pThing, const rdVector3* p
             SITHLOG_ERROR("Can't make a paddle splash, no thing space!\n");
             return;
         }
-
         pSplash->moveInfo.physics.velocity.z = 0.07f;
     }
 }
 
-void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
+void J3DAPI sithFX_CreateRaftPaddleWaterFX(SithThing* pThing, float secTime)
 {
     float secDeltaTime = sithTime_g_secGameTime - secTime;
-    float secDelatLastCreated = sithTime_g_secGameTime - sithFX_secLastCreatedRowRipple;
+    float secDelatLastCreated = sithTime_g_secGameTime - sithFX_secLastCreatedPaddleRipple;
 
     rdVector3 ripplePos;
     switch ( pThing->moveStatus )
@@ -631,7 +673,7 @@ void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
 
     rdMatrix_TransformPoint34Acc(&ripplePos, &pThing->orient);
     rdVector_Add3Acc(&ripplePos, &pThing->pos);
-    ripplePos.z += 0.001f; // TODO: move higher up for solid water, or checkout how wake fx does it
+    ripplePos.z += sithFX_surfaceOffsetZ; // Altered: Replaced constant 0.001 with sithFX_surfaceOffsetZ
 
     bool bCreateSplashFx = false;
     if ( secDeltaTime == 0.0f || secDelatLastCreated >= 0.2f )
@@ -640,9 +682,7 @@ void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
     }
     else
     {
-        rdVector3 deltaPos;
-        rdVector_Sub3(&deltaPos, &ripplePos, &sithFX_rowRippleLastPos);
-        if ( rdVector_Len3(&deltaPos) > 0.0049999999f )
+        if ( rdVector_Dist3(&ripplePos, &sithFX_curPaddleRipplePos) > 0.0049999999f )
         {
             bCreateSplashFx = true;
         }
@@ -653,19 +693,22 @@ void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
         goto skip;
     }
 
+#ifndef J3D_QOL_IMPROVEMENTS
     if ( (SithPhysicsWaterSurfaceType)pThing->userval != SITHPHYSICS_WATERSURFACE_ADJOIN ) // If not on underwater adjoin surface, (set by sithPhysics_CheckWaterSurfaceAtPos)
     {
         goto skip;
     }
+#endif // J3D_QOL_IMPROVEMENTS
 
-    SithThing* pTemplate = sithTemplate_GetTemplate("+ripples");
-    if ( !pTemplate )
+    SithThing* pRippleTbl = sithTemplate_GetTemplate("+ripples");
+    if ( !pRippleTbl )
     {
         goto skip;
     }
 
-    SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &ripplePos, &pTemplate->orient, pThing->pInSector, NULL);
-    if ( !pSprite )
+    // Altered: Replaced OG code with sithFX_CreateThingFacingUp
+    SithThing* pRipple = sithFX_CreateThingFacingUp(pRippleTbl, &ripplePos, pThing->pInSector, &pThing->orient.uvec);
+    if ( !pRipple )
     {
         SITHLOG_ERROR("Can't make a ripple, no thing space!\n", 0);
         return;
@@ -675,13 +718,10 @@ void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
     // Start sprite animation
     //
 
-    // Orient the ripple to face upwards
-    pSprite->orient.lvec = pThing->orient.uvec;
-
     rdVector3 start;
     start.x = 0.0049999999f;
     start.y = 0.0049999999f;
-    start.z = 1.0f;
+    start.z = 0.8f; // Altered: Changed to 0.8 from 1.0
 
     rdVector3 end;
     end.x = 0.029999999f;
@@ -689,10 +729,10 @@ void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime)
     end.z = 0.0f;
 
     float time = SITH_RANDF() + 1.0f;
-    sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, time);
+    sithAnimate_StartAnimateSpriteSize(pRipple, &start, &end, time);
 
-    sithFX_rowRippleLastPos        = ripplePos;
-    sithFX_secLastCreatedRowRipple = sithTime_g_secGameTime;
+    sithFX_curPaddleRipplePos         = ripplePos;
+    sithFX_secLastCreatedPaddleRipple = sithTime_g_secGameTime;
 
 skip:
     if ( bCreateSplashFx )
@@ -704,8 +744,8 @@ skip:
 
 void J3DAPI sithFX_CreateRaftInflateWaterFX(SithThing* pThing, float size)
 {
-    SithThing* pTemplate = sithTemplate_GetTemplate("+ripples");
-    if ( pTemplate && pThing->attach.flags )
+    SithThing* pRippleTpl = sithTemplate_GetTemplate("+ripples");
+    if ( pRippleTpl && pThing->attach.flags )
     {
 
         rdVector3 start;
@@ -719,24 +759,24 @@ void J3DAPI sithFX_CreateRaftInflateWaterFX(SithThing* pThing, float size)
         end.y = endSize;
         end.z = 0.0f;
 
+        // Randomize ripple position a bit
         rdVector3 pos;
         pos.x = (SITH_RANDF() - 0.5f) * (size * 0.5f);
         pos.y = (SITH_RANDF() - 0.5f) * (size * 0.5f);
-        pos.z = 0.0020000001f;
 
-        rdVector_Add3Acc(&pos, &pThing->pos);
-        pos.z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert);
+        // Transform to water surface
+        // Altered: Replaced OG code with sithFX_TransformPointToAttachSurface
+        sithFX_TransformPointToAttachSurface(&pos, pThing);
 
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pos, &pTemplate->orient, pThing->pInSector, NULL);
-        if ( !pSprite )
+        // Altered: Replaced OG code with sithFX_CreateThingFacingUp
+        SithThing* pRipple =  sithFX_CreateThingFacingUp(pRippleTpl, &pos, pThing->pInSector, &rdroid_g_zVector3);  // Note: don't replace zVector3 with thing uvec as thing is not raft and might not be oriented up
+        if ( !pRipple )
         {
             SITHLOG_ERROR("Can't make a ripple, no thing space!\n");
             return;
         }
 
-        // Orient ripple up
-        pSprite->orient.lvec = rdroid_g_zVector3;
-        sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 2.5f);
+        sithAnimate_StartAnimateSpriteSize(pRipple, &start, &end, 2.5f);
     }
 }
 
@@ -915,8 +955,8 @@ SithThing* J3DAPI sithFX_CreateThingOnSurface(const SithThing* pTemplate, const 
         return NULL;
     }
 
-    //rdVector_Copy3(&pThing->pos, &pos); // ??
-    rdVector_Copy3(&pThing->orient.lvec, &pAttSurf->face.normal);
+    //rdVector_Copy3(&pThing->pos, &pos); // ?? should be already set by sithThing_CreateThingAtPos
+    pThing->orient.lvec = pAttSurf->face.normal;
 
     // Calculate rvec = lvec X zVector3
     rdVector_Cross3(&pThing->orient.rvec, &pThing->orient.lvec, &rdroid_g_zVector3);
@@ -1105,7 +1145,7 @@ SithThing* J3DAPI sithFX_CreatePolylineThing(const SithThing* pSourceThing, Sith
         }
 
         sithThing_SetThingBasedOn(pThing, pTemplate);
-        rdVector_Copy3(&endPos, &pEndThing->pos);
+        endPos = pEndThing->pos;
         pThing->pParent = pEndThing;
     }
     else
@@ -1117,8 +1157,8 @@ SithThing* J3DAPI sithFX_CreatePolylineThing(const SithThing* pSourceThing, Sith
         }
 
         sithThing_SetThingBasedOn(pThing, pTemplate);
-        rdVector_Copy3(&endPos, pEndPos);
-        rdVector_Copy3(&pThing->forceMoveStartPos, &endPos);
+        endPos = *pEndPos;
+        pThing->forceMoveStartPos = endPos;
     }
 
     if ( duration > 0.0f )
@@ -1126,8 +1166,7 @@ SithThing* J3DAPI sithFX_CreatePolylineThing(const SithThing* pSourceThing, Sith
         pThing->msecLifeLeft = (int32_t)(duration * 1000.0f);
     }
 
-    rdVector3 startPos;
-    rdVector_Copy3(&startPos, &pSourceThing->pos);
+    rdVector3 startPos = pSourceThing->pos;
 
     rdVector3 look;
     rdVector_Sub3(&look, &endPos, &startPos);

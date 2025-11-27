@@ -1,0 +1,6 @@
+# OpenJones 3D Sprite File
+#
+# wake_ripple.spr
+#
+#Material                   Type    Width   Height    Geo    Light    Tex    Extralight(RGBA)    Xoff    Yoff    Zoff
+gen_4sfx_wake_ripple.mat    2       0.1     0.1       4      3         0     0.35 0.35 0.35 0.5  0.0     0.0     0.0

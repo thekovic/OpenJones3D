@@ -34,10 +34,9 @@ int J3DAPI sithFX_CreateFairyDustDeluxDusts(SithThing* pThing, SithFairyDustUser
 void J3DAPI sithFX_CreateBubble(SithThing* pThing);
 void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing);
 
-void J3DAPI sithFX_CreateRaftRipple(SithThing* pThing, int bCreateSplash);
-void J3DAPI sithFX_CreateRaftWake(SithThing* pThing);
-void J3DAPI sithFX_CreatePaddleWaterSplash(SithThing* pThing, const rdVector3* pos);
-void J3DAPI sithFX_CreatePaddleWaterFX(SithThing* pThing, float secTime);
+void J3DAPI sithFX_CreateRaftSplatterFX(SithThing* pThing, int bCreateSplash);
+void J3DAPI sithFX_CreateRaftWakeFX(SithThing* pThing);
+void J3DAPI sithFX_CreateRaftPaddleWaterFX(SithThing* pThing, float secTime);
 void J3DAPI sithFX_CreateRaftInflateWaterFX(SithThing* pThing, float size);
 
 void J3DAPI sithFx_CreateTireFX(SithThing* pThing, const rdVector3* pPosLeft, rdMaterial* pMatLeft, const rdVector3* pPosRigth, rdMaterial* pMatRight); // Added from debuf

@@ -219,7 +219,7 @@ int J3DAPI rdSprite_Draw(rdThing* prdThing, const rdMatrix34* orient)
     else if ( pSprite3->type == 2 )
     {
         // TODO: Due to fixed normalization some sprites might have too large sizes (width/height) here. 
-        //       One such case was raft splash created by sithFX_CreateRaftRipple(, 1) which is fixed now.
+        //       One such case was raft splash created by sithFX_CreateRaftSplatterFX(, 1) which is fixed now.
         //       Do more testing!
 
         rdVector3 xVec;

@@ -696,10 +696,10 @@
 #define sithFX_CreateFairyDustDeluxDusts_ADDR 0x0048D070
 #define sithFX_CreateBubble_ADDR 0x0048D1A0
 #define sithFX_CreateWaterRipple_ADDR 0x0048D470
-#define sithFX_CreateRaftRipple_ADDR 0x0048D650
-#define sithFX_CreateRaftWake_ADDR 0x0048DAC0
+#define sithFX_CreateRaftSplatterFX_ADDR 0x0048D650
+#define sithFX_CreateRaftWakeFX_ADDR 0x0048DAC0
 #define sithFX_CreatePaddleWaterSplash_ADDR 0x0048DC60
-#define sithFX_CreatePaddleWaterFX_ADDR 0x0048DCD0
+#define sithFX_CreateRaftPaddleWaterFX_ADDR 0x0048DCD0
 #define sithFX_CreateRaftInflateWaterFX_ADDR 0x0048DFF0
 #define sithFX_CreateMineCarSparks_ADDR 0x0048E1B0
 #define sithFX_CreateChalkMark_ADDR 0x0048E270

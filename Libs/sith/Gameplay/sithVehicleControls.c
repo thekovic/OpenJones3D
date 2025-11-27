@@ -245,14 +245,14 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
                 {
                     if ( (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN )  // If raft is on underwater sector (set by sithPhysics_CheckWaterSurfaceAtPos).
                     {
-                        sithFX_CreateRaftRipple(pThing, /*bCreateSplash*/0);
+                        sithFX_CreateRaftSplatterFX(pThing, /*bCreateSplash*/0);
                     }
                 }
                 else
                 {
                     sithVehicleControls_curRaftState.bRowing         = 1;
                     sithVehicleControls_curRaftState.secRowStartTime = sithTime_g_secGameTime;
-                    sithFX_CreatePaddleWaterFX(pThing, sithTime_g_secGameTime);
+                    sithFX_CreateRaftPaddleWaterFX(pThing, sithTime_g_secGameTime);
                     sithVehicleControls_UpdateRaftPaddleSoundFx(pThing);
                 }
 
@@ -353,7 +353,7 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
 
                             if ( (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN )  // If raft is on underwater sector, (set by sithPhysics_CheckWaterSurfaceAtPos)
                             {
-                                sithFX_CreateRaftRipple(pThing, /*bCreateSplash*/0);
+                                sithFX_CreateRaftSplatterFX(pThing, /*bCreateSplash*/0);
                             }
                         }
                     }
@@ -1318,7 +1318,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
         && (rdVector_Len3(&pPhysics->velocity) >= (double)sithVehicleControls_raftWakeThreshold)
         && (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN ) // If raft is on underwater sector (set by sithPhysics_CheckWaterSurfaceAtPos).
     {
-        sithFX_CreateRaftWake(pThing);
+        sithFX_CreateRaftWakeFX(pThing);
         sithVehicleControls_curRaftState.wakeTimer = sithVehicleControls_raftWakeInterval;
     }
     else if ( sithVehicleControls_curRaftState.wakeTimer > 0.0f )
@@ -1334,7 +1334,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
     // Create row water fx
     if ( sithVehicleControls_curRaftState.bRowing )
     {
-        sithFX_CreatePaddleWaterFX(pThing, sithVehicleControls_curRaftState.secRowStartTime);
+        sithFX_CreateRaftPaddleWaterFX(pThing, sithVehicleControls_curRaftState.secRowStartTime);
     }
     }
 

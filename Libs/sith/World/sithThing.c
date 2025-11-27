@@ -2430,7 +2430,7 @@ update_attachment:
                     pThing->moveStatus = SITHPLAYERMOVE_LAND;
                 }
 
-                sithFX_CreateRaftRipple(pThing, /*bCreateSplash=*/1);
+                sithFX_CreateRaftSplatterFX(pThing, /*bCreateSplash=*/1);
                 sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_FALL);
                 sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_FALLFORWARD);
             }
