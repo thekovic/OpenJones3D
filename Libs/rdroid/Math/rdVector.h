@@ -6,6 +6,8 @@
 #include <rdroid/types.h>
 #include <rdroid/Main/rdroid.h>
 #include <rdroid/RTI/addresses.h>
+
+#include <std/General/stdUtil.h>
 #include <std/types.h>
 
 #include <math.h>
@@ -31,6 +33,10 @@ extern const rdVector2 rdroid_yVector2;
 bool J3DAPI rdVector_IsZero2(const rdVector2* v); // Added
 bool J3DAPI rdVector_IsZero3(const rdVector3* v); // Added
 bool J3DAPI rdVector_IsZero4(const rdVector4* v); // Added
+
+bool J3DAPI rdVector_Equal2(const rdVector2* v1, const rdVector2* v2); // Added
+bool J3DAPI rdVector_Equal3(const rdVector3* v1, const rdVector3* v2); // Added
+bool J3DAPI rdVector_Equal4(const rdVector4* v1, const rdVector4* v2); // Added
 
 void J3DAPI rdVector_Zero2(rdVector2* dest); // Added
 void J3DAPI rdVector_Zero3(rdVector3* dest); // Added
@@ -193,19 +199,34 @@ inline bool J3DAPI rdVector_IsZero4(const rdVector4* v)
     return (v->x == 0.0f && v->y == 0.0f && v->z == 0.0f && v->w == 0.0f);
 }
 
+inline bool J3DAPI rdVector_Equal2(const rdVector2* v1, const rdVector2* v2)
+{
+    return STD_EQUALMEM(v1, v2, sizeof(rdVector2));
+}
+
+inline bool J3DAPI rdVector_Equal3(const rdVector3* v1, const rdVector3* v2)
+{
+    return STD_EQUALMEM(v1, v2, sizeof(rdVector3));
+}
+
+inline bool J3DAPI rdVector_Equal4(const rdVector4* v1, const rdVector4* v2)
+{
+    return STD_EQUALMEM(v1, v2, sizeof(rdVector4));
+}
+
 inline void J3DAPI rdVector_Zero2(rdVector2* dest)
 {
-    memset(dest, 0, sizeof(rdVector2));
+    STD_ZEROMEM(dest, sizeof(rdVector2));
 }
 
 inline void J3DAPI rdVector_Zero3(rdVector3* dest)
 {
-    memset(dest, 0, sizeof(rdVector3));
+    STD_ZEROMEM(dest, sizeof(rdVector3));
 }
 
 inline void J3DAPI rdVector_Zero4(rdVector4* dest)
 {
-    memset(dest, 0, sizeof(rdVector4));
+    STD_ZEROMEM(dest, sizeof(rdVector4));
 }
 
 inline void J3DAPI rdVector_Set2(rdVector2* dest, float x, float y)
@@ -231,32 +252,32 @@ inline void J3DAPI rdVector_Set4(rdVector4* dest, float x, float y, float z, flo
 
 inline void J3DAPI rdVector_Copy2(rdVector2* dest, const rdVector2* src)
 {
-    memcpy(dest, src, sizeof(rdVector2));
+    STD_COPYMEM(dest, src, sizeof(rdVector2));
 }
 
 inline void J3DAPI rdVector_Copy2List(rdVector2* dest, const rdVector2* src, size_t num)
 {
-    memcpy(dest, src, sizeof(rdVector2) * num);
+    STD_COPYMEM(dest, src, sizeof(rdVector2) * num);
 }
 
 inline void J3DAPI rdVector_Copy3(rdVector3* dest, const rdVector3* src)
 {
-    memcpy(dest, src, sizeof(rdVector3));
+    STD_COPYMEM(dest, src, sizeof(rdVector3));
 }
 
 inline void J3DAPI rdVector_Copy3List(rdVector3* dest, const rdVector3* src, size_t num)
 {
-    memcpy(dest, src, sizeof(rdVector3) * num);
+    STD_COPYMEM(dest, src, sizeof(rdVector3) * num);
 }
 
 inline void J3DAPI rdVector_Copy4(rdVector4* dest, const rdVector4* src)
 {
-    memcpy(dest, src, sizeof(rdVector4));
+    STD_COPYMEM(dest, src, sizeof(rdVector4));
 }
 
 inline void J3DAPI rdVector_Copy4List(rdVector4* dest, const rdVector4* src, size_t num)
 {
-    memcpy(dest, src, sizeof(rdVector4) * num);
+    STD_COPYMEM(dest, src, sizeof(rdVector4) * num);
 }
 
 inline void J3DAPI rdVector_Neg2(rdVector2* dest, const rdVector2* src)

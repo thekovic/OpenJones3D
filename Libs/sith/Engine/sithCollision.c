@@ -341,7 +341,7 @@ SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVec
     moveDist = rdVector_Normalize3Acc(&moveNorm);
 
     pSector = pStartSector;
-    sithCollision_SearchForCollisions(pStartSector, NULL, startPos, &moveNorm, moveDist, radius, 1);
+    sithCollision_SearchForCollisions(pStartSector, NULL, startPos, &moveNorm, moveDist, radius, 0x01);
     while ( 1 )
     {
         pCollision = sithCollision_PopStack();
@@ -862,7 +862,7 @@ LABEL_61:
                 }
 
                 sithThing_SetSector(pThing, pCollision->pSurfaceCollided->pAdjoin->pAdjoinSector, /*bNotify=*/0);
-                bCollided = memcmp(&curthPos, &pThing->pos, sizeof(curthPos)) != 0;
+                bCollided = !rdVector_Equal3(&curthPos, &pThing->pos);
             }
             else
             {
