@@ -243,11 +243,7 @@ LABEL_4:
 
         if ( (fflags & RD_FF_TEX_FILTER_NEAREST) == 0 )
         {
-        #ifdef J3D_QOL_IMPROVEMENTS
-            rdflags |= STD3D_RS_TEXFILTER_ANISOTROPIC; // Altered: Use STD3D_RS_TEXFILTER_ANISOTROPIC.
-        #else
-            rdflags |= STD3D_RS_TEXFILTER_BILINEAR;
-        #endif
+            rdflags |= J3D_QOL_VALUE(STD3D_RS_TEXFILTER_ANISOTROPIC, STD3D_RS_TEXFILTER_BILINEAR); // Altered: Use STD3D_RS_TEXFILTER_ANISOTROPIC.
         }
 
         if ( (fflags & RD_FF_ZWRITE_DISABLED) != 0 )

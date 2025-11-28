@@ -2697,12 +2697,9 @@ void J3DAPI Sound_SetReverseSound(int bReverse)
 
 void Sound_SoundDump(void)
 {
-     // TODO: make this array to the size of maxSoundChannels var
-#ifdef J3D_QOL_IMPROVEMENTS
-    SoundInstanceInfo aInfos[128 * 2];
-#else
-    SoundInstanceInfo aInfos[32 * 2];
-#endif
+    // TODO: make this array to the size of maxSoundChannels var
+    SoundInstanceInfo aInfos[J3D_QOL_VALUE(128, 32) * 2];
+
     size_t numSounds = Sound_GetAllInstanceInfo(aInfos, STD_ARRAYLEN(aInfos));
     SOUNDLOG_STATUS("Sound Dump of %d sounds\n", numSounds);
 

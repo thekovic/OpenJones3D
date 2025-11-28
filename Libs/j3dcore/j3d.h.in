@@ -26,6 +26,12 @@
 #endif
 
 #cmakedefine J3D_QOL_IMPROVEMENTS
+#ifdef J3D_QOL_IMPROVEMENTS
+  #define J3D_QOL_VALUE(valueQOL, valueNoQOL) (valueQOL)
+#else
+  #define J3D_QOL_VALUE(valueQOL, valueNoQOL) (valueNoQOL)
+#endif
+
 #cmakedefine J3D_SPEEDRUN_BUILD
 
 #cmakedefine J3D_DIRECTX6
