@@ -682,7 +682,7 @@
 #define sithPhysics_Jeep_sub_4892E0_TYPE int (J3DAPI*)(SithThing*, void*, float)
 #define sithPhysics_sub_48A970_TYPE void (J3DAPI*)(SithThing*, void*, const rdVector3*)
 #define sithPhysics_sub_48AD20_TYPE int (J3DAPI*)(SithThing*, void*, rdVector3*, float)
-#define sithPhysics_CreateJeepUserBlock_TYPE signed int (J3DAPI*)(SithThing*)
+#define sithPhysics_CreateJeepUserBlock_TYPE int (J3DAPI*)(SithThing*)
 #define sithPhysics_Jeep_sub_48B4D0_TYPE void (J3DAPI*)(SithThing*, float*)
 #define sithPhysics_UpdateJeepFx_TYPE void (J3DAPI*)(SithThing*, SithVehicleEngineFxState*, float)
 #define sithFX_Reset_TYPE void (*)(void)

@@ -3712,7 +3712,7 @@ void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDelt
                     && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
                 {
                     float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
-                    if ( floorDot > 0.69999999f && floorDot < 0.75f )
+                    if ( floorDot > 0.69999999f && floorDot < 0.75f ) // TODO: shouldn't this be a slope check, i.e. sithPhysics_CheckSlopeAngle, tho the cos angles are different
                     {
                         pThing->moveStatus = SITHPLAYERMOVE_STILL;
                         pThing->thingInfo.actorInfo.bForceMovePlay = 0;
@@ -4233,7 +4233,7 @@ void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDelta
         if ( pThing->attach.flags && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
         {
             float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
-            if ( floorDot > 0.69999999f && floorDot < 0.75f )
+            if ( floorDot > 0.69999999f && floorDot < 0.75f ) // TODO: shouldn't this be a slope check, i.e. sithPhysics_CheckSlopeAngle, tho the cos angles are different
             {
                 pThing->moveStatus = SITHPLAYERMOVE_STILL;
                 pThing->thingInfo.actorInfo.bForceMovePlay = 0;

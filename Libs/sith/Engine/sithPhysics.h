@@ -16,6 +16,10 @@ J3D_EXTERN_C_START
 
 #define SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP "physics.fixedTimestep" // fps
 
+// Slope thresholds (cosine of angle)
+#define SITHPHYSICS_SLIDE_SLOPE_MIN    0.69f       // ~46 deg - minimum slope for sliding
+#define SITHPHYSICS_SLIDE_SLOPE_MAX    0.80000001f // ~37 deg - maximum slope for sliding
+
 typedef enum eSithPhysicsWaterSurfaceType
 {
     SITHPHYSICS_WATERSURFACE_NONE    = 0,
@@ -59,8 +63,29 @@ void J3DAPI sithPhysics_UpdateMineCarPhysics(SithThing* pThing, float secDeltaTi
 void J3DAPI sithPhysics_UpdateRaftPhysics(SithThing* pThing, float secDeltaTime);
 
 // Jeep physics
-signed int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing);
+int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing);
 void J3DAPI sithPhysics_UpdateJeepPhysics(SithThing* pThing, float secDeltaTime);
+
+/**
+ * Checks whether a given cosine-of-angle value corresponds to a valid slope angle.
+ *
+ * Assumes the input cosAngle was computed from two normalized vectors, e.g.:
+ *   cosAngle = dot(normalizedVecA, normalizedVecB);
+ * Thus cosAngle == cos(theta) where theta is the angle between the vectors.
+ *
+ * @param cosAngle - Cosine of the angle between two vectors (must be in range [-1.0, +1.0]).
+ * @return true if theta (the angle itself) is within the configured slope angle limits; false otherwise.
+ *
+ * Example usage:
+ *   float cosAngle = dot(forwardDir, moveDir);
+ *   if (sithPhysics_CheckSlopeAngle(cosAngle)) {
+ *       // is valid slope / alignment
+ *   }
+ */
+inline bool sithPhysics_CheckSlopeAngle(float cosAngle)
+{
+    return  cosAngle < SITHPHYSICS_SLIDE_SLOPE_MAX && cosAngle > SITHPHYSICS_SLIDE_SLOPE_MIN;
+}
 
 /**
  * Calculates the wheel rotation delta angle based on the thing's velocity and wheel radius.

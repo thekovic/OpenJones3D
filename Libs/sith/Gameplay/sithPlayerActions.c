@@ -911,7 +911,7 @@ void J3DAPI sithPlayerActions_LeapForward(SithThing* pThing)
     if ( pThing->attach.flags != 0 )
     {
         double dot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
-        bSlope = (dot < 0.80000001f && dot > 0.69f);
+        bSlope     = sithPhysics_CheckSlopeAngle(dot);
     }
 
     // Set leap newVel (forward and upward)
@@ -1678,7 +1678,7 @@ int J3DAPI sithPlayerActions_CheckFloorAtPos(SithThing* pThing, rdVector3* pPos,
 
                 // Check if surface is not slope (slideable slope  36.87 - 46.49 degrees)
                 float surfaceDot = rdVector_Dot3(&pCollision->pSurfaceCollided->face.normal, &rdroid_g_zVector3);
-                if ( surfaceDot >= 0.80000001f || surfaceDot <= 0.69f ) // surf angle <= 36.87 or angle >= 46.49
+                if ( !sithPhysics_CheckSlopeAngle(surfaceDot) ) // surf angle <= 36.87 or angle >= 46.49
                 {
                     result = (surfaceDot >= 0.69f) ? 1 : 0; // if surf is not too angled floor (slope) return 1 else 0 - too steep
                 }

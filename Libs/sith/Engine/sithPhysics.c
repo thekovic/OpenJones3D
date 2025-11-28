@@ -41,10 +41,6 @@
 #define SITHPHYSICS_FIXED_FRAMERATE_DFLT  50.0f
 #define SITHPHYSICS_FIXED_TIMESTEP_DFLT   (1.0f/SITHPHYSICS_FIXED_FRAMERATE_DFLT)
 
-// Slope thresholds (cosine of angle)
-#define SITHPHYSICS_SLIDE_SLOPE_MIN    0.69f       // ~46 deg - minimum slope for sliding
-#define SITHPHYSICS_SLIDE_SLOPE_MAX    0.80000001f // ~37 deg - maximum slope for walking
-
 #define SITHPHYSICS_CROUCH_THRUST_SCALE 0.80000001f
 
 #define sithPhysics_flt_538D04 J3D_DECL_FAR_VAR(sithPhysics_flt_538D04, float)
@@ -1342,8 +1338,7 @@ void J3DAPI sithPhysics_UpdateAttachedThingPhysics(SithThing* pThing, float secD
     // Handle steep slope sliding (37-43 degree range)
     //
     if ( pThing->moveStatus != SITHPLAYERMOVE_LEAPFWD
-        && floorSlopeDot < SITHPHYSICS_SLIDE_SLOPE_MAX
-        && floorSlopeDot > SITHPHYSICS_SLIDE_SLOPE_MIN
+        && sithPhysics_CheckSlopeAngle(floorSlopeDot)
         && (pThing->type == SITH_THING_PLAYER || (pThing->thingInfo.actorInfo.flags & SITH_AF_NOSLOPEMOVE) != 0) )
     {
         // Project look direction onto horizontal 2D plane
@@ -3188,7 +3183,7 @@ int J3DAPI sithPhysics_sub_48AD20(SithThing* pThing, void* a2, rdVector3* a3, fl
     return J3D_TRAMPOLINE_CALL(sithPhysics_sub_48AD20, pThing, a2, a3, secDeltaTime);
 }
 
-signed int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing)
+int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing)
 {
     return J3D_TRAMPOLINE_CALL(sithPhysics_CreateJeepUserBlock, pThing);
 }
