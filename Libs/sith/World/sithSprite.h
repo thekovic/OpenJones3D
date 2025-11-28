@@ -9,7 +9,7 @@
 
 J3D_EXTERN_C_START
 
-#define SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY "world.static.sprites.extraCapacity"
+#define SITHSPRITE_CFG_WORLDSPRITES_EXTRACAPACITY "engine.world.static.sprites.extraCapacity"
 
 int sithSprite_Startup(void);
 void sithSprite_Shutdown(void);

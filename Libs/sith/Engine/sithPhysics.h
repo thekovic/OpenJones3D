@@ -14,7 +14,7 @@
 
 J3D_EXTERN_C_START
 
-#define SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP "physics.fixedTimestep" // fps
+#define SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP "engine.physics.fixedTimestep" // fps
 
 // Slope thresholds (cosine of angle)
 #define SITHPHYSICS_SLIDE_SLOPE_MIN    0.69f       // ~46 deg - minimum slope for sliding

@@ -58,11 +58,11 @@ int sithSprite_Startup(void)
     }
 
 #ifdef J3D_QOL_IMPROVEMENTS
-    sithSprite_staticBufferExtraCapacity = stdConfig_GetInt(SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY, SITHSPRITE_STATICBUFFER_EXTRACAPACITY_DFLT);
+    sithSprite_staticBufferExtraCapacity = stdConfig_GetInt(SITHSPRITE_CFG_WORLDSPRITES_EXTRACAPACITY, SITHSPRITE_STATICBUFFER_EXTRACAPACITY_DFLT);
 
-    if ( !stdConfig_Contains(SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY) )
+    if ( !stdConfig_Contains(SITHSPRITE_CFG_WORLDSPRITES_EXTRACAPACITY) )
     {
-        stdConfig_SetInt(SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY, sithSprite_staticBufferExtraCapacity);
+        stdConfig_SetInt(SITHSPRITE_CFG_WORLDSPRITES_EXTRACAPACITY, sithSprite_staticBufferExtraCapacity);
     }
 #endif 
 
