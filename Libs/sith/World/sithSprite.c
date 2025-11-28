@@ -173,7 +173,7 @@ int J3DAPI sithSprite_ReadStaticSpritesListText(SithWorld* pWorld, int bSkip)
     SITH_ASSERTREL(pWorld->numSprites == 0);
 
     stdConffile_ReadArgs();
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "world") || strcmp(stdConffile_g_entry.aArgs[1].argValue, "sprites") ) // TODO: Replace with strcmpi
+    if ( !streqi(stdConffile_g_entry.aArgs[0].argValue, "world") || !streqi(stdConffile_g_entry.aArgs[1].argValue, "sprites") ) // Fixed: Replaced with streqi. OG: was case sensitive
     {
         SITHLOG_ERROR("Parse error reading static sprites list line %d.\n", stdConffile_GetLineNumber());
         return 1;
@@ -195,7 +195,7 @@ int J3DAPI sithSprite_ReadStaticSpritesListText(SithWorld* pWorld, int bSkip)
     sithWorld_UpdateLoadProgress(progress);
 
     const float progressDelta = 10.0f / (float)numSprites;
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") ) // TODO: Replace with strcmpi
+    while ( stdConffile_ReadArgs() && !streqi(stdConffile_g_entry.aArgs[0].argValue, "end") ) // Fixed: Replaced with streqi. OG: was case sensitive
     {
         if ( !sithSprite_Load(pWorld, stdConffile_g_entry.aArgs[1].argValue) )
         {
@@ -290,26 +290,34 @@ rdSprite3* J3DAPI sithSprite_Load(SithWorld* pWorld, const char* pName)
         return NULL;
     }
 
+    // Fixed: Set last loaded world to pWorld.
+    //        Needed for the cases when material has to be load in
+    SithWorld* pLastLoadedWorld  = sithWorld_g_pLastLoadedWorld;
+    sithWorld_g_pLastLoadedWorld = pWorld;
+
+    // Grab sprite from world buffer
     pSprite3 = &pWorld->aSprites[pWorld->numSprites];
 
     char aPath[128];
     STD_FORMAT(aPath, "%s%c%s", "misc\\spr", '\\', pName);
     if ( !stdConffile_Open(aPath) )
     {
-        if ( !strcmp(pName, "default.spr") ) // TODO: Replace with strcmpi
+        if ( streqi(pName, "default.spr") ) // Fixed: Replaced with streqi OG: was case senisitive
         {
-            return NULL;
+            pSprite3 = NULL;
+            goto finish;
         }
 
         pSprite3 = sithSprite_Load(pWorld, "default.spr");
         if ( !pSprite3 )
         {
             SITHLOG_ERROR("Sprite %s not found, no default found.\n", pName);
-            return NULL;
+            pSprite3 = NULL;
+            goto finish;
         }
 
         SITHLOG_ERROR("Sprite %s not found, using default.\n", pName);
-        return pSprite3;
+        goto finish;
     }
 
     // Parse spr file
@@ -318,7 +326,8 @@ rdSprite3* J3DAPI sithSprite_Load(SithWorld* pWorld, const char* pName)
     {
         SITHLOG_ERROR("Bad data in sprite file %s.\n", pName);
         stdConffile_Close();
-        return NULL;
+        pSprite3 = NULL;
+        goto finish;
     }
 
     char aMatFilename[64];
@@ -349,17 +358,23 @@ rdSprite3* J3DAPI sithSprite_Load(SithWorld* pWorld, const char* pName)
     if ( type > 2 || width <= 0.0f || height <= 0.0f )
     {
         SITHLOG_ERROR("Bad sprite params.\n");
-        return NULL;
+        pSprite3 = NULL;
+        goto finish;
     }
 
     if ( !rdSprite_NewEntry(pSprite3, pName, type, aMatFilename, width, height, geo, light, &extraLight, &offset) )
     {
         SITHLOG_ERROR("Failed to load sprite '%s'.\n", pName);
-        return NULL;
+        pSprite3 = NULL;
+        goto finish;
     }
 
     sithSprite_CacheAdd(pSprite3);
     ++pWorld->numSprites;
+
+
+finish:
+    sithWorld_g_pLastLoadedWorld = pLastLoadedWorld;
     return pSprite3;
 }
 
