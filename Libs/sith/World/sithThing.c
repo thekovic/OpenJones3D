@@ -47,6 +47,7 @@
 
 #include <sound/Sound.h>
 
+#include <std/General/stdConfig.h>
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
@@ -107,31 +108,31 @@ static const char* sithThing_aStrThingTypes[SITH_THING_NUMTYPES] =
 
 static const float sithThing_aWeaponCoefficients[25] =
 {
-    0.0f,
-    0.0f,
-    0.0f,
-    0.025f, // Pistol
-    0.050000001f,
-    0.059999999f,
-    0.059999999f,
-    0.0f,
-    0.0099999998f,
-    0.0f, // Shotgun
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.050000001f,
-    0.079999998f,
-    0.079999998f,
-    0.029999999f,
-    0.0f
+    [SITHWEAPON_NO_WEAPON] =     0.0f,
+    [SITHWEAPON_FISTS]         = 0.0f,
+    [SITHWEAPON_WHIP]          = 0.0f,
+    [SITHWEAPON_PISTOL]        = 0.025f, // Pistol
+    [SITHWEAPON_TOKAREV]       = 0.050000001f,
+    [SITHWEAPON_MAUSER]        = 0.059999999f,
+    [SITHWEAPON_SIMONOV]       = 0.059999999f,
+    [SITHWEAPON_MACHETE]       = 0.0f,
+    [SITHWEAPON_SUBMACHINE]    = 0.0099999998f,
+    [SITHWEAPON_SHOTGUN]       = 0.0f, // Shotgun
+    [SITHWEAPON_BAZOOKA]       = 0.0f,
+    [SITHWEAPON_GRENADE]       = 0.0f,
+    [SITHWEAPON_SATCHEL]       = 0.0f,
+    [SITHWEAPON_ZIPPO]         = 0.0f,
+    [SITHWEAPON_IMP1]          = 0.0f,
+    [SITHWEAPON_IMP2]          = 0.0f,
+    [SITHWEAPON_IMP3]          = 0.0f,
+    [SITHWEAPON_IMP4]          = 0.0f,
+    [SITHWEAPON_IMP5]          = 0.0f,
+    [SITHWEAPON_COMFISTS]      = 0.0f,
+    [SITHWEAPON_COMTOKAREV]    = 0.050000001f,
+    [SITHWEAPON_COMMAUSER]     = 0.079999998f,
+    [SITHWEAPON_COMSIMONOV]    = 0.079999998f,
+    [SITHWEAPON_COMSUBMACHINE] = 0.029999999f,
+    [SITHWEAPON_COMSHOTGUN]    = 0.0f
 };
 
 static const char* sithThing_aStrThingArgs[77] =
@@ -310,255 +311,10 @@ void sithThing_InstallHooks(void)
 
 void sithThing_ResetGlobals(void)
 {
-    memset(&sithThing_prevQuetzAttachInfo, 0, sizeof(sithThing_prevQuetzAttachInfo));
-    memset(&sithThing_curQuetzAttachInfo, 0, sizeof(sithThing_curQuetzAttachInfo));
-    memset(&sithThing_dword_5612B8, 0, sizeof(sithThing_dword_5612B8));
+    STD_ZEROMEM(&sithThing_prevQuetzAttachInfo, sizeof(sithThing_prevQuetzAttachInfo));
+    STD_ZEROMEM(&sithThing_curQuetzAttachInfo, sizeof(sithThing_curQuetzAttachInfo));
+    STD_ZEROMEM(&sithThing_dword_5612B8, sizeof(sithThing_dword_5612B8));
 }
-
-//int J3DAPI sithThing_Startup()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_Startup);
-//}
-//
-//int J3DAPI sithThing_Shutdown()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_Shutdown);
-//}
-//
-//int J3DAPI sithThing_Draw(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_Draw, pThing);
-//}
-//
-//int J3DAPI sithThing_AddSwapEntry(SithThing* pThing, int meshNum, rdModel3* pSrcModel, int meshNumSrc)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_AddSwapEntry, pThing, meshNum, pSrcModel, meshNumSrc);
-//}
-//
-//int J3DAPI sithThing_RemoveSwapEntry(SithThing* pThing, int refnum)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_RemoveSwapEntry, pThing, refnum);
-//}
-//
-//void J3DAPI sithThing_ResetSwapList(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_ResetSwapList, pThing);
-//}
-//
-//void J3DAPI sithThing_Update(float secDeltaTime, int msecDeltaTime)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_Update, secDeltaTime, msecDeltaTime);
-//}
-//
-//void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_UpdateMove, pThing, secDeltaTime);
-//}
-//
-//void J3DAPI sithThing_DestroyDyingThing(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_DestroyDyingThing, pThing);
-//}
-//
-//SithThing* J3DAPI sithThing_GetThingParent(const SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetThingParent, pThing);
-//}
-//
-//SithThing* J3DAPI sithThing_GetThingByIndex(int idx)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetThingByIndex, idx);
-//}
-//
-//int J3DAPI sithThing_GetThingIndex(const SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetThingIndex, pThing);
-//}
-//
-//SithThing* J3DAPI sithThing_GetGuidThing(int guid)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetGuidThing, guid);
-//}
-//
-//void J3DAPI sithThing_DestroyThing(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_DestroyThing, pThing);
-//}
-//
-//float J3DAPI sithThing_DamageThing(SithThing* pThing, const SithThing* pDamageThing, float damage, SithDamageType hitType)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_DamageThing, pThing, pDamageThing, damage, hitType);
-//}
-//
-//float J3DAPI sithThing_ScaleCombatDamage(const SithThing* pThing, SithThing* pHitThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ScaleCombatDamage, pThing, pHitThing);
-//}
-//
-//void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitType)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_PlayCogDamageSound, pThing, hitType);
-//}
-//
-//int J3DAPI sithThing_AllocWorldThings(SithWorld* pWorld, int numThings)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_AllocWorldThings, pWorld, numThings);
-//}
-//
-//void J3DAPI sithThing_FreeWorldThings(SithWorld* pWorld)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_FreeWorldThings, pWorld);
-//}
-//
-//void J3DAPI sithThing_RemoveAllThings(SithWorld* pWorld)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_RemoveAllThings, pWorld);
-//}
-//
-//void J3DAPI sithThing_ResetAllThings(SithWorld* pWorld)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_ResetAllThings, pWorld);
-//}
-//
-//void J3DAPI sithThing_LoadPostProcess(SithWorld* pWorld)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_LoadPostProcess, pWorld);
-//}
-//
-//int J3DAPI sithThing_RemoveThing(SithWorld* pWorld, SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_RemoveThing, pWorld, pThing);
-//}
-//
-//void J3DAPI sithThing_FreeThing(SithWorld* pWorld, SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_FreeThing, pWorld, pThing);
-//}
-//
-//void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int bFindFloor)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_Initialize, pWorld, pThing, bFindFloor);
-//}
-//
-//void J3DAPI sithThing_Reset(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_Reset, pThing);
-//}
-//
-//void J3DAPI sithThing_SetSector(SithThing* pThing, SithSector* pSector, int bNotify)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_SetSector, pThing, pSector, bNotify);
-//}
-//
-//void J3DAPI sithThing_ExitSector(SithThing* pThing)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_ExitSector, pThing);
-//}
-//
-//void J3DAPI sithThing_EnterSector(SithThing* pThing, SithSector* pNewSector, int bNoWaterSplash, int bNoNotify)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_EnterSector, pThing, pNewSector, bNoWaterSplash, bNoNotify);
-//}
-//
-//void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_EnterWater, pThing, bNoSplash);
-//}
-//
-//void J3DAPI sithThing_ExitWater(SithThing* pThing, int bNoSplash)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_ExitWater, pThing, bNoSplash);
-//}
-
-/*SithThing* J3DAPI sithThing_Create(SithThingType type)
-{
-    return J3D_TRAMPOLINE_CALL(sithThing_Create, type);
-}
-
-void J3DAPI sithThing_SetPositionAndOrient(SithThing* pThing, const rdVector3* pos, const rdMatrix34* pOrient)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_SetPositionAndOrient, pThing, pos, pOrient);
-}
-
-int J3DAPI sithThing_SetThingModel(SithThing* pThing, rdModel3* pModel)
-{
-    return J3D_TRAMPOLINE_CALL(sithThing_SetThingModel, pThing, pModel);
-}
-
-void J3DAPI sithThing_SetThingBasedOn(SithThing* pThing, const SithThing* pTemplate)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_SetThingBasedOn, pThing, pTemplate);
-}
-
-SithThing* J3DAPI sithThing_CreateThingAtPos(const SithThing* pTemplate, const rdVector3* pos, const rdMatrix34* orient, SithSector* pSector, SithThing* pParent)
-{
-    return J3D_TRAMPOLINE_CALL(sithThing_CreateThingAtPos, pTemplate, pos, orient, pSector, pParent);
-}
-
-SithThing* J3DAPI sithThing_CreateThing(const SithThing* pTemplate, SithThing* pThing)
-{
-    return J3D_TRAMPOLINE_CALL(sithThing_CreateThing, pTemplate, pThing);
-}
-
-void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf, int bNoThingStateUpdate)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_AttachThingToSurface, pThing, pSurf, bNoThingStateUpdate);
-}
-
-void J3DAPI sithThing_AttachThingToClimbSurface(SithThing* pThing, SithSurface* pSurf)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_AttachThingToClimbSurface, pThing, pSurf);
-}
-
-void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAttachThing, rdFace* pFace, const rdVector3* aVertices, int bNoThingStateUpdate)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_AttachThingToThingFace, pThing, pAttachThing, pFace, aVertices, bNoThingStateUpdate);
-}
-
-void J3DAPI sithThing_AddThingToAttachedThings(SithThing* pThing, SithThing* pAttachThing)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_AddThingToAttachedThings, pThing, pAttachThing);
-}
-
-void J3DAPI sithThing_AttachThingToThing(SithThing* pThing, SithThing* pAttachThing)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_AttachThingToThing, pThing, pAttachThing);
-}
-
-void J3DAPI sithThing_AttachThingToThingMesh(SithThing* pThing, SithThing* pAttachThing, int meshNum)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_AttachThingToThingMesh, pThing, pAttachThing, meshNum);
-}
-
-void J3DAPI sithThing_DetachThing(SithThing* pThing)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_DetachThing, pThing);
-}
-
-void J3DAPI sithThing_DetachAttachedThings(SithThing* pThing)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_DetachAttachedThings, pThing);
-}
-
-void J3DAPI sithThing_PurgeGarbageThings(SithWorld* pWorld)
-{
-    J3D_TRAMPOLINE_CALL(sithThing_PurgeGarbageThings, pWorld);
-}*/
-
-//int J3DAPI sithThing_ReadStaticThingsListText(SithWorld* pWorld, int bSkip)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ReadStaticThingsListText, pWorld, bSkip);
-//}
-//
-//int J3DAPI sithThing_WriteStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_WriteStaticThingsListBinary, fh, pWorld);
-//}
-//
-//int J3DAPI sithThing_ReadStaticThingsListBinary(tFileHandle fh, SithWorld* pWorld)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ReadStaticThingsListBinary, fh, pWorld);
-//}
 
 int J3DAPI sithThing_WriteThingsListBinary(tFileHandle fh, const SithWorld* pWorld, size_t numThings, const SithThing* aThings)
 {
@@ -569,72 +325,7 @@ int J3DAPI sithThing_ReadThingsListBinary(tFileHandle fh, SithWorld* pWorld, siz
 {
     return J3D_TRAMPOLINE_CALL(sithThing_ReadThingsListBinary, fh, pWorld, numThings, aThings, pfInitThingFunc);
 }
-//
-//int J3DAPI sithThing_ParseArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ParseArg, pArg, pWorld, pThing);
-//}
-//
-//int J3DAPI sithThing_ParseThingArg(StdConffileArg* pArg, SithWorld* pWorld, SithThing* pThing, int adjNum)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ParseThingArg, pArg, pWorld, pThing, adjNum);
-//}
-//
-//int J3DAPI sithThing_ParseType(const char* pType)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ParseType, pType);
-//}
-//
-//int J3DAPI sithThing_ValidateThingPointer(const SithWorld* pWorld, const SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_ValidateThingPointer, pWorld, pThing);
-//}
-//
-//void J3DAPI sithThing_SyncThing(SithThing* pThing, int flags)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_SyncThing, pThing, flags);
-//}
-//
-//int J3DAPI sithThing_SyncThings()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_SyncThings);
-//}
-//
-//int J3DAPI sithThing_CanSync(const SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_CanSync, pThing);
-//}
-//
-//int J3DAPI sithThing_GetThingMeshIndex(const SithThing* pThing, const char* meshName)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetThingMeshIndex, pThing, meshName);
-//}
-//
-//int J3DAPI sithThing_GetThingJointIndex(const SithThing* pThing, const char* pJointName)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetThingJointIndex, pThing, pJointName);
-//}
-//
-//void J3DAPI sithThing_FreeThingIndex(SithWorld* pWorld, size_t thingNum)
-//{
-//    J3D_TRAMPOLINE_CALL(sithThing_FreeThingIndex, pWorld, thingNum);
-//}
-//
-//int J3DAPI sithThing_GetFreeThingIndex()
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_GetFreeThingIndex);
-//}
-//
-//int J3DAPI sithThing_LoadEntry(SithWorld* pWorld)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_LoadEntry, pWorld);
-//}
-//
-//int J3DAPI sithThing_CreateQuetzUserBlock(SithThing* pThing)
-//{
-//    return J3D_TRAMPOLINE_CALL(sithThing_CreateQuetzUserBlock, pThing);
-//}
-//
+
 void J3DAPI sithThing_UpdateQuetzUserBlock(SithThing* pThing)
 {
     J3D_TRAMPOLINE_CALL(sithThing_UpdateQuetzUserBlock, pThing);
@@ -722,8 +413,10 @@ int J3DAPI sithThing_Draw(SithThing* pThing)
             rdModel3_SwapMesh(pThing->renderData.data.pModel3, pEntry->meshNum, pEntry->pSrcModel, pEntry->srcMeshNum);
         }
 
+        // Draw thing
         drawRes = rdThing_Draw(&pThing->renderData, &pThing->orient);
-        memset(&color, 0, sizeof(rdVector3));
+
+        rdVector_Zero4(&color);
         color.alpha = 1.0f;
 
         for ( SithThingSwapEntry* pEntry = pThing->pSwapList; pEntry; pEntry = pEntry->pNextEntry )
@@ -779,7 +472,7 @@ int J3DAPI sithThing_AddSwapEntry(SithThing* pThing, int meshNum, rdModel3* pSrc
             if ( pCurEntry->meshNum == meshNum )
             {
                 pCurEntry->srcMeshNum = meshNumSrc;
-                pCurEntry->pSrcModel = pSrcModel;
+                pCurEntry->pSrcModel  = pSrcModel;
                 return pCurEntry->entryNum;
             }
         }
@@ -1022,12 +715,12 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
 
     if ( pThing->moveType == SITH_MT_PHYSICS )
     {
-        rdVector_Copy3(&pThing->moveDir, &pThing->moveInfo.physics.deltaVelocity);
+        pThing->moveDir = pThing->moveInfo.physics.deltaVelocity;
         pThing->distanceMoved = 0.0f;
     }
     else // path
     {
-        memset(&pThing->moveDir, 0, sizeof(pThing->moveDir));
+        rdVector_Zero3(&pThing->moveDir);
         moveFlags |= 0x04;
     }
 
@@ -1042,9 +735,6 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         sithAnimate_GetSurfaceScrollingDirection(pSurface, &scrollDir);
 
         rdVector_MultAcc3(&pThing->moveDir, &scrollDir, secDeltaTime);
-        /*    pThing->moveDir.x = scrollDir.x * secDeltaTime + pThing->moveDir.x;
-            pThing->moveDir.y = scrollDir.y * secDeltaTime + pThing->moveDir.y;
-            pThing->moveDir.z = scrollDir.z * secDeltaTime + pThing->moveDir.z;*/
     }
 
     if ( rdVector_IsZero3(&pThing->moveDir) )
@@ -1054,7 +744,7 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
             && pThing->attach.attachedToStructure.pThingAttached->moveType == SITH_MT_PATH
             && pThing->moveStatus != SITHPLAYERMOVE_HANGING )
         {
-            sithPhysics_FindFloor(pThing, 0);
+            sithPhysics_FindFloor(pThing, /*bNotThingStateUpdate*/0);
         }
     }
     else
@@ -1077,13 +767,11 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
 
             rdVector3 newPos;
             rdVector_ScaleAdd3(&newPos, &pThing->orient.uvec, 0.14f, &pThing->pos);
-            /* newPos.x = pThing->orient.uvec.x * 0.14f + pThing->pos.x;
-             newPos.y = pThing->orient.uvec.y * 0.14f + pThing->pos.y;
-             newPos.z = pThing->orient.uvec.z * 0.14f + pThing->pos.z;*/
 
             SithSector* pNewSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
 
-            rdVector_Copy3(&pThing->pos, &newPos);
+            pThing->pos = newPos;
+
             if ( pNewSector != pThing->pInSector )
             {
                 sithThing_SetSector(pThing, pNewSector, /*bNotify=*/0);
@@ -1093,13 +781,10 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
             distanceMoved = sithCollision_MoveThing(pThing, &moveNorm, moveDist, moveFlags);
 
             rdVector_ScaleAdd3(&newPos, &pThing->orient.uvec, -0.14f, &pThing->pos);
-            /* newPos.x = pThing->orient.uvec.x * -0.14f + pThing->pos.x;
-             newPos.y = pThing->orient.uvec.y * -0.14f + pThing->pos.y;
-             newPos.z = pThing->orient.uvec.z * -0.14f + pThing->pos.z;*/
-
             pNewSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
 
-            rdVector_Copy3(&pThing->pos, &newPos);
+            pThing->pos = newPos;
+
             if ( pNewSector != pThing->pInSector )
             {
                 sithThing_SetSector(pThing, pNewSector, /*bNotify=*/0);
@@ -1113,12 +798,7 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
                 if ( (pAttachedThing->attach.flags & SITH_ATTACH_NOMOVE) != 0 )
                 {
                     rdMatrix_TransformVector34(&pAttachedThing->pos, &pAttachedThing->attach.posOffset, &pThing->orient);
-
                     rdVector_Add3Acc(&pAttachedThing->pos, &pThing->pos);
-                    /*pAttachedThing->pos.x = pAttachedThing->pos.x + pThing->pos.x;
-                    pAttachedThing->pos.y = pAttachedThing->pos.y + pThing->pos.y;
-                    pAttachedThing->pos.z = pAttachedThing->pos.z + pThing->pos.z;*/
-
 
                     if ( pAttachedThing->pInSector != pThing->pInSector )
                     {
@@ -1131,25 +811,19 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
         {
             // Update raft move
 
-            rdVector3 normal;
+            rdVector3 upNorm = pThing->orient.uvec;
             if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
             {
-                rdVector_Copy3(&normal, &pThing->attach.attachedToStructure.pSurfaceAttached->face.normal);
-            }
-            else
-            {
-                rdVector_Copy3(&normal, &pThing->orient.uvec);
+                upNorm = pThing->attach.attachedToStructure.pSurfaceAttached->face.normal;
             }
 
             rdVector3 newPos;
-            rdVector_ScaleAdd3(&newPos, &normal, 0.08f, &pThing->pos);
-            /*newPos.x = normal.x * 0.079999998f + pThing->pos.x;
-            newPos.y = normal.y * 0.079999998f + pThing->pos.y;
-            newPos.z = normal.z * 0.079999998f + pThing->pos.z;*/
+            rdVector_ScaleAdd3(&newPos, &upNorm, 0.08f, &pThing->pos);
 
             SithSector* pNewSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
 
-            rdVector_Copy3(&pThing->pos, &newPos);
+            pThing->pos = newPos;
+
             if ( pNewSector != pThing->pInSector )
             {
                 sithThing_SetSector(pThing, pNewSector, /*bNotify=*/0);
@@ -1157,14 +831,12 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
 
             distanceMoved = sithCollision_MoveThing(pThing, &moveNorm, moveDist, moveFlags);
 
-            rdVector_ScaleAdd3(&newPos, &normal, -0.08f, &pThing->pos);
-            /*newPos.x = -0.079999998f * normal.x + pThing->pos.x;
-            newPos.y = -0.079999998f * normal.y + pThing->pos.y;
-            newPos.z = -0.079999998f * normal.z + pThing->pos.z;*/
+            rdVector_ScaleAdd3(&newPos, &upNorm, -0.08f, &pThing->pos);
 
             pNewSector = sithCollision_FindWaterSector(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
 
-            rdVector_Copy3(&pThing->pos, &newPos);
+            pThing->pos = newPos;
+
             if ( pNewSector != pThing->pInSector )
             {
                 sithThing_SetSector(pThing, pNewSector, /*bNotify=*/0);
@@ -1189,25 +861,18 @@ void J3DAPI sithThing_UpdateMove(SithThing* pThing, float secDeltaTime)
 
             rdVector3 newPos;
             rdVector_ScaleAdd3(&newPos, &pThing->orient.uvec, 0.18f, &pThing->pos);
-            /*newPos.x = pThing->orient.uvec.x * 0.18000001f + pThing->pos.x;
-            newPos.y = pThing->orient.uvec.y * 0.18000001f + pThing->pos.y;
-            newPos.z = pThing->orient.uvec.z * 0.18000001f + pThing->pos.z;*/
 
             SithSector* pNewSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
 
-            rdVector_Copy3(&pThing->pos, &newPos);
+            pThing->pos = newPos;
             sithThing_SetSector(pThing, pNewSector, /*bNotify=*/1);
 
             distanceMoved = sithCollision_MoveThing(pThing, &moveNorm, moveDist, moveFlags);
 
             rdVector_ScaleAdd3(&newPos, &pThing->orient.uvec, -0.18f, &pThing->pos);
-            /*  newPos.x = pThing->orient.uvec.x * -0.18000001f + pThing->pos.x;
-              newPos.y = pThing->orient.uvec.y * -0.18000001f + pThing->pos.y;
-              newPos.z = pThing->orient.uvec.z * -0.18000001f + pThing->pos.z;*/
 
-            pNewSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
-
-            rdVector_Copy3(&pThing->pos, &newPos);
+            pNewSector  = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &newPos, 0.0f);
+            pThing->pos = newPos;
             sithThing_SetSector(pThing, pNewSector, /*bNotify=*/1);
 
             pQuetzUserBlock->bPosFudged = 0;
@@ -1392,7 +1057,7 @@ float J3DAPI sithThing_ScaleCombatDamage(const SithThing* pThing, SithThing* pHi
     if ( pThing->type == SITH_THING_WEAPON )
     {
         damageType = pThing->thingInfo.weaponInfo.damageType;
-        damage = pThing->thingInfo.weaponInfo.damage;
+        damage     = pThing->thingInfo.weaponInfo.damage;
     }
     else if ( pThing->type == SITH_THING_EXPLOSION )
     {
@@ -1469,14 +1134,7 @@ float J3DAPI sithThing_ScaleCombatDamage(const SithThing* pThing, SithThing* pHi
     SITH_ASSERT(pThing->type == SITH_THING_WEAPON); // Added: make sure we have weapon here
 
     float maxAimDist = sithWeapon_GetWeaponMaxAimDistance((SithWeaponId)weaponId);
-    rdVector3 dpos;
-    rdVector_Sub3(&dpos, &pThing->pos, &pParent->pos);
-    //dpos.x = pThing->pos.x - pParent->pos.x;
-    //dpos.y = pThing->pos.y - pParent->pos.y;
-    //dpos.z = pThing->pos.z - pParent->pos.z;
-
-    float dist = rdVector_Len3(&dpos) - pParent->collide.size - pHitThing->collide.size;
-
+    float dist       = rdVector_Dist3(&pThing->pos, &pParent->pos) - pParent->collide.size - pHitThing->collide.size;
     if ( (maxAimDist * (sithGetCombatDamageScalar() * 0.25f)) <= dist )
     {
         if ( SITH_RAND() > sithThing_aWeaponCoefficients[weaponId] )
@@ -1575,7 +1233,7 @@ int J3DAPI sithThing_AllocWorldThings(SithWorld* pWorld, size_t numThings)
         return 1;
     }
 
-    memset(pWorld->aThings, 0, sizeof(SithThing) * numThings);
+    STD_ZEROMEM(pWorld->aThings, sizeof(SithThing) * numThings);
     pWorld->numThings = numThings;
 
     sithThing_InitializeWorldThings(pWorld);
@@ -1801,11 +1459,10 @@ void J3DAPI sithThing_Reset(SithThing* pThing)
     int idx      = pThing->idx;
     uint32_t sig = pThing->signature;
 
-    memset(pThing, 0, sizeof(SithThing));
+    STD_ZEROMEM(pThing, sizeof(SithThing));
     pThing->alpha = 1.0f;
 
     pThing->orient = rdroid_g_identMatrix34;
-    //rdMatrix_Copy34(&pThing->orient, &rdroid_g_identMatrix34);
     rdThing_NewEntry(&pThing->renderData, pThing);
 
     pThing->idx       = idx;
@@ -1838,47 +1495,46 @@ void J3DAPI sithThing_ExitSector(SithThing* pThing)
         SITH_ASSERTREL(sithSector_ValidateSectorPointer(sithWorld_g_pCurrentWorld, pThing->pInSector));
     }
 
-    if ( (pThing->pInSector->flags & SITH_SECTOR_COGLINKED) == 0 )
+    if ( (pThing->pInSector->flags & SITH_SECTOR_COGLINKED) != 0 )
     {
-        goto clear_thing_sector;
+        rdVector3 prevPos = pThing->pos;
+
+        if ( (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
+        {
+            sithCog_SectorSendMessage(pThing->pInSector, pThing, SITHCOG_MSG_EXITED);
+        }
+
+        if ( !rdVector_Equal3(&prevPos, &pThing->pos) ) // pos not equal
+        {
+            // The position changed, thing has to be in sector
+            SITH_ASSERTREL(pThing->pInSector);
+            return;
+        }
     }
 
-    rdVector3 prevPos;
-    rdVector_Copy3(&prevPos, &pThing->pos);
+    // Not COG linked or the position wasn't changed after sending exited message
+    // Remove thing from sector list 
 
-    if ( (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
+    if ( pThing->pPrevThingInSector )
     {
-        sithCog_SectorSendMessage(pThing->pInSector, pThing, SITHCOG_MSG_EXITED);
-    }
-
-    if ( memcmp(&prevPos, &pThing->pos, sizeof(rdVector3)) != 0 ) // pos not equal
-    {
-        SITH_ASSERTREL(pThing->pInSector);
+        pThing->pPrevThingInSector->pNextThingInSector = pThing->pNextThingInSector;
+        if ( pThing->pNextThingInSector )
+        {
+            pThing->pNextThingInSector->pPrevThingInSector = pThing->pPrevThingInSector;
+        }
     }
     else
     {
-    clear_thing_sector:
-        if ( pThing->pPrevThingInSector )
+        pThing->pInSector->pFirstThingInSector = pThing->pNextThingInSector;
+        if ( pThing->pNextThingInSector )
         {
-            pThing->pPrevThingInSector->pNextThingInSector = pThing->pNextThingInSector;
-            if ( pThing->pNextThingInSector )
-            {
-                pThing->pNextThingInSector->pPrevThingInSector = pThing->pPrevThingInSector;
-            }
+            pThing->pNextThingInSector->pPrevThingInSector = NULL;
         }
-        else
-        {
-            pThing->pInSector->pFirstThingInSector = pThing->pNextThingInSector;
-            if ( pThing->pNextThingInSector )
-            {
-                pThing->pNextThingInSector->pPrevThingInSector = NULL;
-            }
-        }
-
-        pThing->pInSector          = NULL;
-        pThing->pPrevThingInSector = NULL;
-        pThing->pNextThingInSector = NULL;
     }
+
+    pThing->pInSector          = NULL;
+    pThing->pPrevThingInSector = NULL;
+    pThing->pNextThingInSector = NULL;
 }
 
 void J3DAPI sithThing_EnterSector(SithThing* pThing, SithSector* pNewSector, int bNoWaterSplash, int bNoNotify)
@@ -2101,9 +1757,9 @@ void J3DAPI sithThing_SetPositionAndOrient(SithThing* pThing, const rdVector3* p
 {
     SITH_ASSERTREL(pThing->pInSector == NULL);
 
-    rdVector_Copy3(&pThing->pos, pos);
-    rdMatrix_Copy34(&pThing->orient, pOrient);
-    memset(&pThing->orient.dvec, 0, sizeof(pThing->orient.dvec));
+    pThing->pos    = *pos;
+    pThing->orient = *pOrient;
+    rdVector_Zero3(&pThing->orient.dvec);
 }
 
 int J3DAPI sithThing_SetThingModel(SithThing* pThing, rdModel3* pModel)
@@ -2142,7 +1798,9 @@ void J3DAPI sithThing_SetThingBasedOn(SithThing* pThing, const SithThing* pTempl
     }
     else
     {
-        memcpy(pThing, pTemplate, sizeof(SithThing));
+        // Deep copy assign template to thing
+        *pThing = *pTemplate;
+
         switch ( pThing->renderData.type )
         {
             case RD_THING_MODEL3:
@@ -2168,7 +1826,7 @@ void J3DAPI sithThing_SetThingBasedOn(SithThing* pThing, const SithThing* pTempl
         {
             SITH_ASSERTREL(pThing->moveInfo.pathMovement.sizeFrames > 0);
             pThing->moveInfo.pathMovement.aFrames = (SithPathFrame*)STDMALLOC(sizeof(SithPathFrame) * pThing->moveInfo.pathMovement.sizeFrames);
-            memcpy(pThing->moveInfo.pathMovement.aFrames, pTemplate->moveInfo.pathMovement.aFrames, sizeof(SithPathFrame) * pThing->moveInfo.pathMovement.sizeFrames);
+            STD_COPYMEM(pThing->moveInfo.pathMovement.aFrames, pTemplate->moveInfo.pathMovement.aFrames, sizeof(SithPathFrame) * pThing->moveInfo.pathMovement.sizeFrames);
         }
     }
 
@@ -2251,46 +1909,41 @@ SithThing* J3DAPI sithThing_CreateThingAtPos(const SithThing* pTemplate, const r
 
 SithThing* J3DAPI sithThing_CreateThing(const SithThing* pTemplate, SithThing* pMarker)
 {
-    rdVector3 offset;
+    rdVector3 offset = { 0 };
     switch ( pTemplate->renderData.type )
     {
         case RD_THING_MODEL3:
-            rdVector_Copy3(&offset, &pTemplate->renderData.data.pModel3->insertOffset);
+            offset = pTemplate->renderData.data.pModel3->insertOffset;
             break;
         case RD_THING_SPRITE3:
-            rdVector_Copy3(&offset, &pTemplate->renderData.data.pSprite3->offset);
+            offset = pTemplate->renderData.data.pSprite3->offset;
             break;
         default:
-            memset(&offset, 0, sizeof(offset));
+            //rdVector_Zero3(&offset);
             break;
     }
 
-    rdVector3 markerOffset;
+    rdVector3 markerOffset = { 0 };
     switch ( pMarker->renderData.type )
     {
         case RD_THING_MODEL3:
-            rdVector_Copy3(&markerOffset, &pMarker->renderData.data.pModel3->insertOffset);
+            markerOffset = pMarker->renderData.data.pModel3->insertOffset;
             break;
         case RD_THING_SPRITE3:
-            rdVector_Copy3(&markerOffset, &pMarker->renderData.data.pSprite3->offset);
+            markerOffset = pMarker->renderData.data.pSprite3->offset;
             break;
         default:
-            memset(&markerOffset, 0, sizeof(markerOffset));
+            //rdVector_Zero3(&markerOffset);
             break;
     }
 
     rdVector_Sub3Acc(&offset, &markerOffset);
-    /*offset.x = offset.x - markerOffset.x;
-    offset.y = offset.y - markerOffset.y;
-    offset.z = offset.z - markerOffset.z;*/
+
     rdVector3 toffset;
     rdMatrix_TransformVector34(&toffset, &offset, &pMarker->orient);
 
     rdVector3 pos;
     rdVector_Add3(&pos, &pMarker->pos, &toffset);
-    /*pos.x = pMarker->pos.x + toffset.x;
-     pos.y = pMarker->pos.y + toffset.y;
-     pos.z = pMarker->pos.z + toffset.z;*/
     SithSector* pSector = sithCollision_FindSectorInRadius(pMarker->pInSector, &pMarker->pos, &pos, 0.0f);
 
     SithThing* pNewThing = sithThing_CreateThingAtPos(pTemplate, &pos, &pMarker->orient, pSector, NULL);
@@ -2382,9 +2035,9 @@ void J3DAPI sithThing_AttachThingToSurface(SithThing* pThing, SithSurface* pSurf
 update_attachment:
     if ( (pThing->flags & (SITH_TF_DYING | SITH_TF_DESTROYED)) == 0 || (pSurface->flags & SITH_SURFACE_LAVA) == 0 ) // Added: Fixes not attaching dead player to lava surface
     {
-        pThing->attach.flags = SITH_ATTACH_SURFACE;
-        rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices]);
-        pThing->attach.pFace = &pSurface->face;
+        pThing->attach.flags                                = SITH_ATTACH_SURFACE;
+        pThing->attach.attachedFaceFirstVert                = sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices];
+        pThing->attach.pFace                                = &pSurface->face;
         pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
     }
 
@@ -2395,9 +2048,6 @@ update_attachment:
         rdVector3 scrollDir;
         sithAnimate_GetSurfaceScrollingDirection(pSurface, &scrollDir);
         rdVector_Sub3Acc(&pThing->moveInfo.physics.velocity, &scrollDir);
-        /*pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x - scrollDir.x;
-        pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.velocity.y - scrollDir.y;
-        pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.velocity.z - scrollDir.z;*/
     }
 
     if ( (pSurface->flags & SITH_SURFACE_COGLINKED) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
@@ -2558,18 +2208,16 @@ update_attachment:
                     {
                         // Calc surface slope
                         float slopeDot = rdVector_Dot3(&pSurface->face.normal, &rdroid_g_zVector3);
-                        if ( slopeDot > 0.69f && slopeDot < 0.80000001f )// 35 - 45 degrees
+                        if ( sithPhysics_CheckSlopeAngle(slopeDot) )// 35 - 45 degrees
                         {
                             // Slide down the slope
 
                             // Calculate LVec
-                            rdVector3 lvec;
-                            rdVector_Copy3(&lvec, &pThing->orient.lvec);
+                            rdVector3 lvec = pThing->orient.lvec;
                             lvec.z = 0.0f;
                             rdVector_Normalize3Acc(&lvec);
 
-                            rdVector3 newLVec;
-                            rdVector_Copy3(&newLVec, &pSurface->face.normal);
+                            rdVector3 newLVec = pSurface->face.normal;
                             newLVec.z = 0.0f;
                             rdVector_Normalize3Acc(&newLVec);
 
@@ -2579,24 +2227,19 @@ update_attachment:
                             }
                             else
                             {
-                                /* newLVec.x = -newLVec.x;
-                                 newLVec.y = -newLVec.y;
-                                 newLVec.z = -newLVec.z;*/
                                 rdVector_Neg3Acc(&newLVec);
                                 pThing->moveStatus = SITHPLAYERMOVE_SLIDEDOWNBACK;
                             }
 
-                            rdVector_Copy3(&pThing->orient.lvec, &newLVec);
+                            // Set lvec to newwly calculated vector
+                            pThing->orient.lvec = newLVec;
 
-                            // lvec cross rdroid_g_zVector3
-                            // Calculate RVec
+                            // Calculate RVec from new lvec and up vector
                             rdVector_Cross3(&pThing->orient.rvec, &pThing->orient.lvec, &rdroid_g_zVector3);
-                            /*    pThing->orient.rvec.x = pThing->orient.lvec.y * 1.0f - pThing->orient.lvec.z * 0.0f;
-                                pThing->orient.rvec.y = pThing->orient.lvec.z * 0.0f - pThing->orient.lvec.x * 1.0f;
-                                pThing->orient.rvec.z = pThing->orient.lvec.x * 0.0f - pThing->orient.lvec.y * 0.0f;*/
                             rdVector_Normalize3Acc(&pThing->orient.rvec);
 
-                            rdVector_Copy3(&pThing->orient.uvec, &rdroid_g_zVector3);
+                            // Set uvec to up vector
+                            pThing->orient.uvec = rdroid_g_zVector3;
                         }
                         else
                         {
@@ -2660,43 +2303,29 @@ void J3DAPI sithThing_AttachThingToClimbSurface(SithThing* pThing, SithSurface* 
         sithThing_DetachThing(pThing);
     }
 
-    pThing->attach.flags = SITH_ATTACH_CLIMBSURFACE;
-
-    rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices]);
-    pThing->attach.pFace = &pSurface->face;
+    // Assign attachment data
+    pThing->attach.flags                                = SITH_ATTACH_CLIMBSURFACE;
+    pThing->attach.attachedFaceFirstVert                = sithWorld_g_pCurrentWorld->aVertices[*pSurface->face.aVertices];
+    pThing->attach.pFace                                = &pSurface->face;
     pThing->attach.attachedToStructure.pSurfaceAttached = pSurface;
 
     // Calculate new LVec
     rdVector_Neg3(&pThing->orient.lvec, &pSurface->face.normal);
-    /* Src.x = -pSurface->face.normal.x;
-     Src.y = -pSurface->face.normal.y;
-     Src.z = -pSurface->face.normal.z;
-     memcpy(&pThing->orient.lvec, &Src, sizeof(pThing->orient.lvec));*/
-
 
      // Calculate new RVec
     rdVector_Cross3(&pThing->orient.rvec, &pThing->orient.lvec, &rdroid_g_zVector3);
-    //pThing->orient.rvec.x = pThing->orient.lvec.y * v5.z - pThing->orient.lvec.z * v5.y;
-    //pThing->orient.rvec.y = pThing->orient.lvec.z * v5.x - pThing->orient.lvec.x * v5.z;
-    //pThing->orient.rvec.z = pThing->orient.lvec.x * v5.y - pThing->orient.lvec.y * v5.x;
     rdVector_Normalize3Acc(&pThing->orient.rvec);
 
     // Calculate new UVec
     rdVector_Cross3(&pThing->orient.uvec, &pThing->orient.rvec, &pThing->orient.lvec);
-    /*pThing->orient.uvec.x = pThing->orient.rvec.y * pThing->orient.lvec.z - pThing->orient.rvec.z * pThing->orient.lvec.y;
-    pThing->orient.uvec.y = pThing->orient.rvec.z * pThing->orient.lvec.x - pThing->orient.rvec.x * pThing->orient.lvec.z;
-    pThing->orient.uvec.z = pThing->orient.rvec.x * pThing->orient.lvec.y - pThing->orient.rvec.y * pThing->orient.lvec.x;*/
 
-    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED; // 0x100 - SITH_PF_ALIGNED
+    pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED;
 
     if ( (pSurface->flags & SITH_SURFACE_SCROLLING) != 0 && pThing->moveType == SITH_MT_PHYSICS )
     {
         rdVector3 scrollDir;
         sithAnimate_GetSurfaceScrollingDirection(pSurface, &scrollDir);
         rdVector_Sub3Acc(&pThing->moveInfo.physics.velocity, &scrollDir);
-        /*pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x - scrollDir.x;
-        pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.velocity.y - scrollDir.y;
-        pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.velocity.z - scrollDir.z;*/
     }
 
     if ( (pSurface->flags & SITH_SURFACE_COGLINKED) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
@@ -2731,11 +2360,13 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     SITH_ASSERTREL(!pThing->attach.flags);
     SITH_ASSERTREL(!pThing->attach.attachedToStructure.pThingAttached);
 
-    pThing->attach.flags = SITH_ATTACH_THINGFACE;
-    rdVector_Copy3(&pThing->attach.attachedFaceFirstVert, &aVertices[*pFace->aVertices]);
-
-    pThing->attach.pFace = pFace;
+    // Assign attacment data
+    pThing->attach.flags                              = SITH_ATTACH_THINGFACE;
+    pThing->attach.attachedFaceFirstVert              = aVertices[*pFace->aVertices];
+    pThing->attach.pFace                              = pFace;
     pThing->attach.attachedToStructure.pThingAttached = pAttachThing;
+
+    // Add thing to attach list
     sithThing_AddThingToAttachedThings(pThing, pAttachThing);
 
     pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNED;
@@ -2743,27 +2374,14 @@ void J3DAPI sithThing_AttachThingToThingFace(SithThing* pThing, SithThing* pAtta
     if ( pAttachThing->moveType == SITH_MT_PHYSICS )
     {
         rdVector_Sub3Acc(&pThing->moveInfo.physics.velocity, &pAttachThing->moveInfo.physics.velocity);
-        /*pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x - pAttachThing->moveInfo.physics.velocity.x;
-        pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.velocity.y - pAttachThing->moveInfo.physics.velocity.y;
-        pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.velocity.z - pAttachThing->moveInfo.physics.velocity.z;*/
     }
     else if ( pAttachThing->moveType == SITH_MT_PATH )
     {
         rdVector_MultAcc3(&pThing->moveInfo.physics.velocity, &pAttachThing->moveInfo.pathMovement.vecDeltaPos, -pAttachThing->moveInfo.pathMovement.moveVel);
-
-        /*pThing->moveInfo.physics.velocity.x = pAttachThing->moveInfo.pathMovement.vecDeltaPos.x * -pAttachThing->moveInfo.pathMovement.moveVel
-            + pThing->moveInfo.physics.velocity.x;
-        pThing->moveInfo.physics.velocity.y = pAttachThing->moveInfo.pathMovement.vecDeltaPos.y * -pAttachThing->moveInfo.pathMovement.moveVel
-            + pThing->moveInfo.physics.velocity.y;
-        pThing->moveInfo.physics.velocity.z = pAttachThing->moveInfo.pathMovement.vecDeltaPos.z * -pAttachThing->moveInfo.pathMovement.moveVel
-            + pThing->moveInfo.physics.velocity.z;*/
     }
 
     rdVector3 dpos;
     rdVector_Sub3(&dpos, &pThing->pos, &pAttachThing->pos);
-    /*dpos.x = pThing->pos.x - pAttachThing->pos.x;
-    dpos.y = pThing->pos.y - pAttachThing->pos.y;
-    dpos.z = pThing->pos.z - pAttachThing->pos.z;*/
     rdMatrix_TransformVectorOrtho34(&pThing->attach.posOffset, &dpos, &pAttachThing->orient);
 
     if ( (pAttachThing->flags & SITH_TF_COGLINKED) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
@@ -3024,7 +2642,7 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
         }
     }
 
-    memset(&pThing->attach, 0, sizeof(pThing->attach));
+    STD_ZEROMEM(&pThing->attach, sizeof(pThing->attach));
 }
 
 void J3DAPI sithThing_DetachAttachedThings(SithThing* pThing)
@@ -3837,7 +3455,7 @@ int J3DAPI sithThing_CreateQuetzUserBlock(SithThing* pThing)
     }
 
     SithQuetzUserBlock* pQuetz = pThing->userblock.pQuetz;
-    memset(pQuetz, 0, sizeof(SithQuetzUserBlock));
+    STD_ZEROMEM(pQuetz, sizeof(SithQuetzUserBlock));
 
     pQuetz->strike.unknown0 = 0;
     pQuetz->strike.unknown3 = 0;
@@ -3850,7 +3468,7 @@ int J3DAPI sithThing_CreateQuetzUserBlock(SithThing* pThing)
         {
             pQuetz->aAttachInfos[attNum].unknown0 = -0.045000002f;
             pQuetz->aAttachInfos[attNum].unknown2 = -0.045000002f;
-            memset(&pQuetz->aAttachInfos[attNum].vecUnknown11, 0, sizeof(pQuetz->aAttachInfos[attNum].vecUnknown11));
+            STD_ZEROMEM(&pQuetz->aAttachInfos[attNum].vecUnknown11, sizeof(pQuetz->aAttachInfos[attNum].vecUnknown11));
 
             if ( attNum )
             {
@@ -3888,11 +3506,11 @@ int J3DAPI sithThing_CreateQuetzUserBlock(SithThing* pThing)
 
             pQuetz->aAttachInfos[attNum].unknown10 = pQuetz->aAttachInfos[attNum].unknown9;
 
-            rdVector_Copy3(&pQuetz->aAttachInfos[attNum].vecDirection, &pPrevThing->orient.lvec);
+            pQuetz->aAttachInfos[attNum].vecDirection   = pPrevThing->orient.lvec;
             pQuetz->aAttachInfos[attNum].vecDirection.z = 0.0f;
             rdVector_Normalize3Acc(&pQuetz->aAttachInfos[attNum].vecDirection);
 
-            rdVector_Copy3(&pQuetz->aAttachInfos[attNum].vecDirectionNextAttach, &pAttachedThing->orient.lvec);
+            pQuetz->aAttachInfos[attNum].vecDirectionNextAttach   = pAttachedThing->orient.lvec;
             pQuetz->aAttachInfos[attNum].vecDirectionNextAttach.z = 0.0f;
             rdVector_Normalize3Acc(&pQuetz->aAttachInfos[attNum].vecDirectionNextAttach);
 
