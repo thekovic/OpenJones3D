@@ -12,9 +12,13 @@
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdConffile.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
+
+#define SITHSPRITE_STATICBUFFER_EXTRACAPACITY_DFLT 128
+size_t sithSprite_staticBufferExtraCapacity = 0;
 
 static tHashTable* sithSprite_pHashtable;
 
@@ -52,6 +56,15 @@ int sithSprite_Startup(void)
         SITHLOG_ERROR("Failed to allocate memory for sprites.\n");
         return 1;
     }
+
+#ifdef J3D_QOL_IMPROVEMENTS
+    sithSprite_staticBufferExtraCapacity = stdConfig_GetInt(SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY, SITHSPRITE_STATICBUFFER_EXTRACAPACITY_DFLT);
+
+    if ( !stdConfig_Contains(SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY) )
+    {
+        stdConfig_SetInt(SITHWORLDSTATIC_CFG_SPRITES_EXTRACAPACITY, sithSprite_staticBufferExtraCapacity);
+    }
+#endif 
 
     return 0;
 }
@@ -354,6 +367,12 @@ int J3DAPI sithSprite_AllocWorldSprites(SithWorld* pWorld, size_t size)
 {
     SITH_ASSERTREL(pWorld->aSprites == NULL);
 
+    // Added: Increased buffer in case of static world
+    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
+    {
+        size += sithSprite_staticBufferExtraCapacity;
+    }
+
     pWorld->aSprites = (rdSprite3*)STDMALLOC(sizeof(rdSprite3) * size);
     if ( !pWorld->aSprites )
     {
@@ -363,7 +382,7 @@ int J3DAPI sithSprite_AllocWorldSprites(SithWorld* pWorld, size_t size)
 
     pWorld->sizeSprites = size;
     pWorld->numSprites  = 0;
-    memset(pWorld->aSprites, 0, sizeof(rdSprite3) * pWorld->sizeSprites);
+    STD_ZEROMEM(pWorld->aSprites, sizeof(rdSprite3) * pWorld->sizeSprites);
     return 0;
 }
 
