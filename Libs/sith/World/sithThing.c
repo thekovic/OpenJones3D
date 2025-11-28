@@ -81,6 +81,9 @@ uint16_t sithThing_guidEntropy  = 1u;
 size_t sithThing_numFreeThings;
 size_t sithThing_aFreeThingIdxs[2304];
 
+#define SITHTHING_BUFFEREXTRACAPACITY_DFLT 256
+size_t sithThing_bufferExtraCapacity      = 0;
+
 size_t sithThing_numUnsyncedThings;
 SithThing* sithThing_apUnsyncedThings[16];
 SithThingSyncFlags sithThing_aSyncFlags[STD_ARRAYLEN(sithThing_apUnsyncedThings)];
@@ -350,6 +353,15 @@ int sithThing_Startup(void)
     {
         stdHashtbl_Add(sithThing_pParseHashtbl, sithThing_aStrThingArgs[adjNum], (void*)adjNum);
     }
+
+#ifdef J3D_QOL_IMPROVEMENTS
+    sithThing_bufferExtraCapacity = stdConfig_GetInt(SITHTHING_CFG_WORLDTHINGS_EXTRACAPACITY, SITHTHING_BUFFEREXTRACAPACITY_DFLT);
+
+    if ( !stdConfig_Contains(SITHTHING_CFG_WORLDTHINGS_EXTRACAPACITY) )
+    {
+        stdConfig_SetInt(SITHTHING_CFG_WORLDTHINGS_EXTRACAPACITY, sithThing_bufferExtraCapacity);
+    }
+#endif 
 
     sithThing_curSignature  = 1;
     sithThing_bThingStartup = true;
@@ -1225,6 +1237,9 @@ int J3DAPI sithThing_AllocWorldThings(SithWorld* pWorld, size_t numThings)
     SITH_ASSERTREL((numThings <= STD_ARRAYLEN(sithThing_aFreeThingIdxs)));
     SITH_ASSERTREL(pWorld->aThings == NULL);
     SITH_ASSERTREL(sithThing_bThingStartup);
+
+    // Added: Resized requested buffer size for configured extra capacity
+    numThings = J3DMIN(numThings + sithThing_bufferExtraCapacity, STD_ARRAYLEN(sithThing_aFreeThingIdxs));
 
     pWorld->aThings = (SithThing*)STDMALLOC(sizeof(SithThing) * numThings);
     if ( !pWorld->aThings )

@@ -11,6 +11,8 @@
 
 J3D_EXTERN_C_START
 
+#define SITHTHING_CFG_WORLDTHINGS_EXTRACAPACITY "engine.world.normal.things.extraCapacity"
+
 // Macro generates bitmask from provided thing type
 #define SITHTHING_TYPE2MASK(type) (1 << (type)) 
 
@@ -42,7 +44,7 @@ J3D_EXTERN_C_START
 * Macro generates thing type bitmask form provided types (SithThingType)
 *
 * Usage:
-*    SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER)
+*    SITHTHING_TYPEMASK(SITH_THING_ACTOR, SITH_THING_PLAYER, ...)
 */
 #define SITHTHING_TYPEMASK(...) SITHTHING_TYPEMASK_BIT_OR_X(SITHTHING_TYPEMASK_BIT_OR_NARG(__VA_ARGS__), __VA_ARGS__)
 
