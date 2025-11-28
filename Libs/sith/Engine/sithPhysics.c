@@ -262,12 +262,12 @@ void J3DAPI sithPhysics_Startup(void)
 {
 #ifdef J3D_QOL_IMPROVEMENTS
     // Fixed timestap
-    sithPhysics_fixedFramerate = stdConfig_GetFloat(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
+    sithPhysics_fixedFramerate = stdConfig_GetFloat(SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
     sithPhysics_fixedTimestep  = 1.0f / sithPhysics_fixedFramerate;
 
-    if ( !stdConfig_Contains(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP) )
+    if ( !stdConfig_Contains(SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP) )
     {
-        stdConfig_SetFloat(JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
+        stdConfig_SetFloat(SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP, SITHPHYSICS_FIXED_FRAMERATE_UNCAP);
     }
 
     // Jeep exhaust

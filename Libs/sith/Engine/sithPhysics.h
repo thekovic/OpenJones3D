@@ -14,7 +14,7 @@
 
 J3D_EXTERN_C_START
 
-#define JONESCONFIG_CFG_PHYSICS_FIXEDTIMESTEP "physics.fixedTimestep" // fps
+#define SITHPHYSICS_CFG_PHYSICS_FIXEDTIMESTEP "physics.fixedTimestep" // fps
 
 typedef enum eSithPhysicsWaterSurfaceType
 {
