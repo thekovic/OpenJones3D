@@ -129,8 +129,9 @@ static float sithVehicleControls_raftDockingThrust        = 0.15000001f;
 static float sithVehicleControls_raftDockingAngularVel    = 120.0f;
 static float sithVehicleControls_raftMinDockingAngularVel = 5.0f;
 
-static float sithVehicleControls_raftWakeInterval  = 0.050000001f;
-static float sithVehicleControls_raftWakeThreshold = 0.050000001f;
+static float sithVehicleControls_raftWakeInterval  = J3D_QOL_VALUE(0.01f, 0.050000001f);
+static float sithVehicleControls_raftWakeThreshold = J3D_QOL_VALUE(0.1f, 0.050000001f);
+static float sithVehicleControls_raftWakeMinSpeed  = J3D_QOL_VALUE(0.008f, 0.0f); // Added
 
 static float sithVehicleControls_raftHeight         = 0.029999999f;
 static float sithVehicleControls_raftSurfDrag       = 0.40000001f;
@@ -243,8 +244,11 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
             case RDKEYMARKER_ROW:
                 if ( (pThing->flags & SITH_TF_DYING) != 0 )
                 {
+                #ifndef J3D_QOL_IMPROVEMENTS // Raft splatter fx was fixed, enabling old logic only for backward compatibility
                     if ( (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN )  // If raft is on underwater sector (set by sithPhysics_CheckWaterSurfaceAtPos).
+                    #endif
                     {
+
                         sithFX_CreateRaftSplatterFX(pThing, /*bCreateSplash*/0);
                     }
                 }
@@ -351,7 +355,9 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
                             rdVector_Scale3(&pPhysics->velocity, &pThing->orient.rvec, -sithVehicleControls_raftBoardingMomentum);
                             pPhysics->angularVelocity.yaw = sithVehicleControls_raftBoardingRotation;
 
+                        #ifndef J3D_QOL_IMPROVEMENTS // Raft splatter fx was fixed, enabling old logic only for backward compatibility
                             if ( (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN )  // If raft is on underwater sector, (set by sithPhysics_CheckWaterSurfaceAtPos)
+                            #endif
                             {
                                 sithFX_CreateRaftSplatterFX(pThing, /*bCreateSplash*/0);
                             }
@@ -1313,17 +1319,35 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
     const float fwdRotThrust  = sithVehicleControls_raftBaseYawThrust;
     const float bkwdRotThrust = sithVehicleControls_raftBaseYawThrust;
 
+    //
     // Create wake effect
+    // TODO: Move to physics module
     if ( sithVehicleControls_curRaftState.wakeTimer <= 0.0f
+    #ifndef J3D_QOL_IMPROVEMENTS
         && (rdVector_Len3(&pPhysics->velocity) >= (double)sithVehicleControls_raftWakeThreshold)
         && (SithPhysicsWaterSurfaceType)pThing->userval == SITHPHYSICS_WATERSURFACE_ADJOIN ) // If raft is on underwater sector (set by sithPhysics_CheckWaterSurfaceAtPos).
     {
         sithFX_CreateRaftWakeFX(pThing);
         sithVehicleControls_curRaftState.wakeTimer = sithVehicleControls_raftWakeInterval;
     }
+#else
+        )
+    {
+        if ( rdVector_Len3(&pPhysics->velocity) >= sithVehicleControls_raftWakeThreshold )
+        {
+            sithFX_CreateRaftWakeFX(pThing);
+        }
+        else
+        {
+            sithFX_CreateRaftSplatterFX(pThing, /*bCreateSplash=*/0);
+        }
+
+        sithVehicleControls_curRaftState.wakeTimer = sithVehicleControls_raftWakeInterval;
+    }
+#endif
     else if ( sithVehicleControls_curRaftState.wakeTimer > 0.0f )
     {
-        float speed  = rdVector_Len3(&pPhysics->velocity);
+        float speed  = J3DMAX(rdVector_Len3(&pPhysics->velocity), sithVehicleControls_raftWakeMinSpeed);
         sithVehicleControls_curRaftState.wakeTimer = sithVehicleControls_curRaftState.wakeTimer - speed * secDeltaTime; // Subtract frame time multiplied by raft speed. This makes it dependent on raft speed
     }
     else if ( sithVehicleControls_curRaftState.wakeTimer < 0.0f )
@@ -1335,7 +1359,6 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
     if ( sithVehicleControls_curRaftState.bRowing )
     {
         sithFX_CreateRaftPaddleWaterFX(pThing, sithVehicleControls_curRaftState.secRowStartTime);
-    }
     }
 
     //
@@ -1353,6 +1376,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
             break;
 
         default:
+        {
             if ( sithControl_GetKey(SITHCONTROL_ACT2, NULL) && !sithPlayerControls_bActionKeyActive )
             {
                 sithPlayerControls_bActionKeyActive = true;
@@ -1407,7 +1431,7 @@ void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float s
                 }
             }
 
-            break;
+        } break;
     }
 
     //

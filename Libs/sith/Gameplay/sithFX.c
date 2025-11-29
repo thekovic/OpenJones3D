@@ -8,6 +8,7 @@
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithMaterial.h>
+#include <sith/World/sithSprite.h>
 #include <sith/World/sithTemplate.h>
 #include <sith/World/sithThing.h>
 #include <sith/World/sithWorld.h>
@@ -64,8 +65,13 @@ const char* sithFX_aChalkMarkNames[35] =
 
 rdVector3 sithFX_curPaddleRipplePos     = { 0 }; // Added: Init to 0
 float sithFX_secLastCreatedPaddleRipple = 0.0f;  // Added: Init to 0
+
 rdVector4 sithFX_rippleExtraLight       = { 0.35f, 0.35f, 0.35f, 1.0f };
 float sithFX_surfaceOffsetZ             = 0.001f; // Altered: Was 0.002f
+
+bool sithFX_bWakeRippleLoaded           = false;
+rdSprite3* sithFX_pWakeRippleSprite     = NULL;
+float sithFX_raftRippleAlpha            = J3D_QOL_VALUE(0.35f, 1.0f);
 
 rdVector3 sithFx_rightTireStartPosOffset = { 0 }; // Added: Init to 0
 rdVector3 sithFx_leftTireStartPosOffset  = { 0 }; // Added: Init to 0
@@ -92,6 +98,14 @@ static void sithFX_TransformPointToAttachSurface(rdVector3* point, const SithThi
 {
     rdVector_Add3Acc(point, &pThing->pos);
     point->z -= rdMath_DistancePointToPlane(&pThing->pos, &pThing->attach.pFace->normal, &pThing->attach.attachedFaceFirstVert) - sithFX_surfaceOffsetZ; // Fixed: Move sprite slightly above water surface; OG was below surface i.e.: +0.002f
+}
+
+static void sithFX_RotateSpriteToMovement(SithThing* pSprite, const rdVector3* velocity)
+{
+    rdVector3 moveNorm;
+    rdVector_Normalize3(&moveNorm, velocity);
+    float rollAngle = rdMath_DeltaAngleNormalized(&rdroid_g_xVector3, &moveNorm, &rdroid_g_zVector3);
+    pSprite->thingInfo.spriteInfo.rollAngle = rollAngle;
 }
 
 void J3DAPI sithFX_CreatePaddleWaterSplash(SithThing* pThing, const rdVector3* pos);
@@ -476,11 +490,7 @@ void J3DAPI sithFX_CreateRaftSplatterFX(SithThing* pThing, int bCreateSplash)
         }
 
         // Added: Roll the ripple according to raft movement direction
-        rdVector3 dirFwd;
-        rdVector_Normalize3(&dirFwd, &pThing->moveInfo.physics.velocity);
-        float rollAngle = rdMath_DeltaAngleNormalized(&rdroid_g_xVector3, &dirFwd, &pRipple->orient.lvec);
-        pRipple->thingInfo.spriteInfo.rollAngle = rollAngle;
-
+        sithFX_RotateSpriteToMovement(pRipple, &pThing->moveInfo.physics.velocity);
 
         float time = SITH_RANDF() + 1.5f;
         sithAnimate_StartAnimateSpriteSize(pRipple, &start, &end, time);
@@ -500,7 +510,7 @@ void J3DAPI sithFX_CreateRaftSplatterFX(SithThing* pThing, int bCreateSplash)
         rdVector3 start;
         start.x = 0.35f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 3.5f
         start.y = 0.15f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 1.5f
-        start.z = 1.0f;
+        start.z = sithFX_raftRippleAlpha; // Altered: Use sithFX_raftRippleAlpha instead of hardcoded value 1.0f
 
         rdVector3 end;
         end.x = 0.35f; // Altered: due to normalization fix in rdSprite_Draw size had to be decreased x10. OG 3.5f
@@ -578,10 +588,60 @@ void J3DAPI sithFX_CreateRaftWakeFX(SithThing* pThing)
         return;
     }
 
-    rdVector3 moveDir;
-    rdVector_Normalize3(&moveDir, &pThing->moveInfo.physics.velocity);
-    float rollAngle = rdMath_DeltaAngleNormalized(&rdroid_g_xVector3, &moveDir, &pThing->orient.uvec);  // Fixed: Replaced zVector3 with thing uvec
+#ifdef J3D_QOL_IMPROVEMENTS
+    // Added: Use ripple effect instead of wake effect for better visuals
 
+    SithThing* pRippleTpl = sithTemplate_GetTemplate("+ripples");
+    if ( pRippleTpl )
+    {
+        // Randomize ripple position a bit
+        rdVector3 ripplePos = { 0 };
+        ripplePos.x = (SITH_RANDF() - 0.5f) * 0.03f;
+        ripplePos.y = (SITH_RANDF() - 0.5f) * 0.03f;
+
+        // Transform to water surface
+        sithFX_TransformPointToAttachSurface(&ripplePos, pThing);
+
+        SithThing* pRipple = sithFX_CreateThingFacingUp(pRippleTpl, &ripplePos, pThing->pInSector, &pThing->orient.uvec);
+        if ( !pRipple )
+        {
+            SITHLOG_ERROR("Can't make a ripple, no thing space!\n");
+            return;
+        }
+
+        // Rotate to match movement direction
+        sithFX_RotateSpriteToMovement(pRipple, &pThing->moveInfo.physics.velocity);
+
+
+        // Try replace sprite with wake ripple sprite
+        if ( !sithFX_bWakeRippleLoaded )
+        {
+            sithFX_pWakeRippleSprite = sithSprite_Load(sithWorld_g_pStaticWorld, "wake_ripple.spr");
+            sithFX_bWakeRippleLoaded = true;
+        }
+
+        float size = pThing->collide.movesize;
+        if ( sithFX_pWakeRippleSprite )
+        {
+            // Adjust size based on the raft orient and movement direction
+            // i.e.: side raft movement should make larger wakes
+            rdVector3 moveNorm;
+            rdVector_Normalize3(&moveNorm, &pThing->moveInfo.physics.velocity);
+            float moveDot = rdVector_Dot3(&pThing->orient.lvec, &moveNorm);
+            size = J3DMIN(size * 1.f / fabsf(moveDot), size * 1.4f);
+
+            pRipple->renderData.data.pSprite3 = sithFX_pWakeRippleSprite;
+        }
+
+        rdVector3 start = { .x=size, .y=size, .z=sithFX_raftRippleAlpha };
+
+        size *= 4.0f;
+        rdVector3 end = { .x=size, .y=size, .z=0.0f };
+
+        float time = SITH_RANDF() + 1.5f;
+        sithAnimate_StartAnimateSpriteSize(pRipple, &start, &end, time);
+    }
+#else
     SithThing* pWakeTpl = sithTemplate_GetTemplate("+raft_wake");
     if ( pWakeTpl )
     {
@@ -608,14 +668,16 @@ void J3DAPI sithFX_CreateRaftWakeFX(SithThing* pThing)
         }
 
         // Added: Set light mode to gouraud so it looks better in dark areas, and added extra light
-        pWake->renderData.data.pSprite3->face.lightingMode = RD_LIGHTING_GOURAUD;
-        pWake->renderData.data.pSprite3->face.extraLight   = sithFX_rippleExtraLight;
+       /* pWake->renderData.data.pSprite3->face.lightingMode = RD_LIGHTING_GOURAUD;
+        pWake->renderData.data.pSprite3->face.extraLight   = sithFX_rippleExtraLight;*/
 
-        // Rotate to match movement direction
-        pWake->thingInfo.spriteInfo.rollAngle = rollAngle + 180.0f;
+        // Rotate to match movement direction and flip 180 degrees
+        sithFX_RotateSpriteToMovement(pWake, &pThing->moveInfo.physics.velocity);
+        pWake->thingInfo.spriteInfo.rollAngle += 180.0f;
 
         sithAnimate_StartAnimateSpriteSize(pWake, &start, &end, 0.5f);
     }
+#endif
 }
 
 void J3DAPI sithFX_CreatePaddleWaterSplash(SithThing* pThing, const rdVector3* pos)
@@ -751,7 +813,7 @@ void J3DAPI sithFX_CreateRaftInflateWaterFX(SithThing* pThing, float size)
         rdVector3 start;
         start.x = size;
         start.y = size;
-        start.z = 1.0f;
+        start.z = sithFX_raftRippleAlpha; // Altered: Use sithFX_raftRippleAlpha instead of hardcoded value 1.0f
 
         float endSize = size * 2.0f;
         rdVector3 end;
@@ -760,7 +822,7 @@ void J3DAPI sithFX_CreateRaftInflateWaterFX(SithThing* pThing, float size)
         end.z = 0.0f;
 
         // Randomize ripple position a bit
-        rdVector3 pos;
+        rdVector3 pos = { 0 };
         pos.x = (SITH_RANDF() - 0.5f) * (size * 0.5f);
         pos.y = (SITH_RANDF() - 0.5f) * (size * 0.5f);
 
