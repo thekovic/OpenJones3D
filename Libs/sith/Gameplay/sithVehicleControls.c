@@ -160,10 +160,10 @@ void sithVehicleControls_InstallHooks(void)
     J3D_HOOKFUNC(sithVehicleControls_GetRaftState);
     J3D_HOOKFUNC(sithVehicleControls_SetRaftState);
     J3D_HOOKFUNC(sithVehicleControls_PuppetCallback);
-    J3D_HOOKFUNC(sithVehicleControls_ProcessMineCarPlayerMove);
-    J3D_HOOKFUNC(sithVehicleControls_ProcessJeepPlayerMove);
+    J3D_HOOKFUNC(sithVehicleControls_ProcessMineCarMove);
+    J3D_HOOKFUNC(sithVehicleControls_ProcessJeepMove);
     J3D_HOOKFUNC(sithVehicleControls_PlayRaftPuppetMode);
-    J3D_HOOKFUNC(sithVehicleControls_ProcessRaftPlayerMove);
+    J3D_HOOKFUNC(sithVehicleControls_ProcessRaftMove);
     J3D_HOOKFUNC(sithVehicleControls_FindRaftUnboardPosition);
     J3D_HOOKFUNC(sithVehicleControls_FindWallSurface);
     J3D_HOOKFUNC(sithVehicleControls_FadeJeepMoveSounds);
@@ -485,7 +485,7 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
     }
 }
 
-void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, float secDeltaTime)
+void J3DAPI sithVehicleControls_ProcessMineCarMove(SithThing* pThing, float secDeltaTime)
 {
     if ( !sithPhysics_CreateMineCarUserBlock(pThing) )
     {
@@ -944,7 +944,7 @@ void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, floa
     }
 }
 
-void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float secDeltaTime)
+void J3DAPI sithVehicleControls_ProcessJeepMove(SithThing* pThing, float secDeltaTime)
 {
     float mouseSensitivity       = 1.8f;
     SithPhysicsInfo* pPhysics    = &pThing->moveInfo.physics;
@@ -1300,7 +1300,7 @@ void J3DAPI sithVehicleControls_PlayRaftPuppetMode(SithThing* pThing, SithPuppet
     sithVehicleControls_curRaftState.bRowing = 0;
 }
 
-void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float secDeltaTime)
+void J3DAPI sithVehicleControls_ProcessRaftMove(SithThing* pThing, float secDeltaTime)
 {
     SithPhysicsInfo* pPhysics = &pThing->moveInfo.physics;
     SithActorInfo* pActor     = &pThing->thingInfo.actorInfo;

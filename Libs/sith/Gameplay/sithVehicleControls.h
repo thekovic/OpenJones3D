@@ -17,9 +17,9 @@ void J3DAPI sithVehicleControls_SetRaftState(const SithRaftControlsState* pState
 
 void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdKeyMarkerType markerType);
 
-void J3DAPI sithVehicleControls_ProcessMineCarPlayerMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithVehicleControls_ProcessJeepPlayerMove(SithThing* pThing, float secDeltaTime);
-void J3DAPI sithVehicleControls_ProcessRaftPlayerMove(SithThing* pThing, float secDeltaTime);
+void J3DAPI sithVehicleControls_ProcessMineCarMove(SithThing* pThing, float secDeltaTime);
+void J3DAPI sithVehicleControls_ProcessJeepMove(SithThing* pThing, float secDeltaTime);
+void J3DAPI sithVehicleControls_ProcessRaftMove(SithThing* pThing, float secDeltaTime);
 
 void J3DAPI sithVehicleControls_StartBoardCutscene(SithThing* pThing);
 void J3DAPI sithVehicleControls_EndBoardCutscene(SithThing* pThing);

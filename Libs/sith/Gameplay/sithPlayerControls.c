@@ -583,21 +583,21 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
 
     if ( (pPhysics->flags & SITH_PF_JEEP) != 0 )
     {
-        sithVehicleControls_ProcessJeepPlayerMove(pPlayerThing, secDeltaTime);
+        sithVehicleControls_ProcessJeepMove(pPlayerThing, secDeltaTime);
         sithPlayerControls_ProcessHUDControls(pPlayerThing, secDeltaTime);
         return 0;
     }
 
     if ( (pPhysics->flags & SITH_PF_RAFT) != 0 )
     {
-        sithVehicleControls_ProcessRaftPlayerMove(pPlayerThing, secDeltaTime);
+        sithVehicleControls_ProcessRaftMove(pPlayerThing, secDeltaTime);
         sithPlayerControls_ProcessHUDControls(pPlayerThing, secDeltaTime);
         return 0;
     }
 
     if ( (pPhysics->flags & SITH_PF_MINECAR) != 0 )
     {
-        sithVehicleControls_ProcessMineCarPlayerMove(pPlayerThing, secDeltaTime);
+        sithVehicleControls_ProcessMineCarMove(pPlayerThing, secDeltaTime);
         sithPlayerControls_ProcessHUDControls(pPlayerThing, secDeltaTime);
         return 0;
     }
@@ -684,15 +684,15 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
             break;
 
         case SITHPLAYERMOVE_MINECAR_IDLE:
-            sithVehicleControls_ProcessMineCarPlayerMove(pPlayerThing, secDeltaTime);
+            sithVehicleControls_ProcessMineCarMove(pPlayerThing, secDeltaTime);
             break;
 
         case SITHPLAYERMOVE_JEEP_IDLE:
-            sithVehicleControls_ProcessJeepPlayerMove(pPlayerThing, secDeltaTime);
+            sithVehicleControls_ProcessJeepMove(pPlayerThing, secDeltaTime);
             break;
 
         case SITHPLAYERMOVE_RAFT_IDLE:
-            sithVehicleControls_ProcessRaftPlayerMove(pPlayerThing, secDeltaTime);
+            sithVehicleControls_ProcessRaftMove(pPlayerThing, secDeltaTime);
             break;
 
         case SITHPLAYERMOVE_JEWELFLYING:
