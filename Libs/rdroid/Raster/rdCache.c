@@ -80,7 +80,7 @@ void rdCache_AdvanceFrame(void)
     rdCache_numUsedAlphaVertices = 0;
 }
 
-int J3DAPI rdCache_GetFrameNum()
+size_t rdCache_GetFrameNum(void)
 {
     return rdCache_frameNum;
 }

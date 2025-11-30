@@ -17,7 +17,7 @@ J3D_EXTERN_C_START
 
     void rdCache_Startup(void);
 void rdCache_AdvanceFrame(void);
-int  rdCache_GetFrameNum(void);
+size_t rdCache_GetFrameNum(void);
 
 rdCacheProcEntry* rdCache_GetProcEntry(void);
 rdCacheProcEntry* rdCache_GetAlphaProcEntry(void);
