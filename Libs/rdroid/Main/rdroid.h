@@ -28,6 +28,7 @@ J3D_EXTERN_C_START
 #define RD_FIXEDPOINT_RHW_SCALE_X3   RD_FIXEDPOINT_RHW_SCALE(3) // 0.000091554131
 #define RD_FIXEDPOINT_RHW_SCALE_X4   RD_FIXEDPOINT_RHW_SCALE(4) // 0.00012207218
 #define RD_FIXEDPOINT_RHW_SCALE_X5   RD_FIXEDPOINT_RHW_SCALE(5) // 0.00015259022
+#define RD_FIXEDPOINT_RHW_SCALE_X6   RD_FIXEDPOINT_RHW_SCALE(6) // 0.000183108264; Added
 
 // Macro to compute an RHW scale factor for an arbitrary multiplier.
 // Use this macro when you need a non-standard scale factor instead of the predefined ones.
