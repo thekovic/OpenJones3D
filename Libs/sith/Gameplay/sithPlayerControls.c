@@ -98,10 +98,10 @@ static float sithPlayerControls_mirrorAimMaxVerticalAngleAcquire   = 14.0f;
 static float sithPlayerControls_mirrorAimMaxVerticalAngleTrack     = 16.0f;
 static float sithPlayerControls_mirrorAimMaxHorizontalAngleNear    = 5.0f;
 
-// Devmode var
+// Devmode vars
 static rdVector3 sithPlayerControls_curOrbCamDir  = { 0.0f , -1.0f , 0.0f };
 static float sithPlayerControls_curOrbCamDist     = 0.2f;
-static float sithPlayerControls_maxOrbCamDist     = 3.0f;
+static float sithPlayerControls_maxOrbCamDist     = 10.0f; // Altered: Changed to 10.0f from 3.0f
 
 static int J3DAPI sithPlayerControls_ProcessPlayerDebugControls(SithThing* pThing, float secDeltaTime);
 static void J3DAPI sithPlayerControls_ProcessLookControls(SithThing* pThing, float secDeltaTime);
@@ -1536,17 +1536,22 @@ int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, floa
         rdVector3 pyr = { 0 };
         if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, &bPressed) )
         {
-            pyr.yaw = 1.0f;
+            pyr.yaw = -1.0f; // Altered: OG +1
         }
         else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, &bPressed) )
         {
-            pyr.yaw = -1.0f;
+            pyr.yaw = 1.0f; // Altered: OG -1
         }
 
-        float angleDelta = secDeltaTime * 90.0f;
-        pyr.pitch = sithControl_GetKeyAsAxis(SITHCONTROL_PITCH);
-        rdVector_Scale3Acc(&pyr, angleDelta);
+        pyr.pitch = sithControl_GetKeyAsAxis(SITHCONTROL_PITCH) * 0.45f; // Altered: multiply by 0.45
 
+        float angleDelta = secDeltaTime * 25.0f; // Altered: OG 90.0f
+        if ( sithControl_GetKey(SITHCONTROL_ACT1, &bPressed) ) // Added: speedup
+        {
+            angleDelta *= 4.5f;
+        }
+
+        rdVector_Scale3Acc(&pyr, angleDelta);
         if ( !rdVector_IsZero3(&pyr) )
         {
             rdMatrix34 mat;
@@ -1567,7 +1572,12 @@ int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, floa
             camDistChange = distDelta;
         }
 
-        // TODO: Add acceleration to camera distance change when run key is pressed
+        // Added: speedup
+        if ( sithControl_GetKey(SITHCONTROL_ACT1, &bPressed) )
+        {
+            camDistChange *= 4.5f;
+        }
+
         if ( camDistChange != 0.0f )
         {
             sithPlayerControls_curOrbCamDist += camDistChange;
