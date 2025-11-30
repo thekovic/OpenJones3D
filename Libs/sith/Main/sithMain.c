@@ -24,6 +24,7 @@
 #include <sith/Gameplay/sithInventory.h>
 #include <sith/Gameplay/sithOverlayMap.h>
 #include <sith/Gameplay/sithPlayer.h>
+#include <sith/Gameplay/sithPlayerControls.h>
 #include <sith/Gameplay/sithTime.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithActor.h>
@@ -470,6 +471,9 @@ int J3DAPI sithOpen(const wchar_t* pwPlayerName)
     }
 
     sithControl_Open();
+
+    // Added
+    sithPlayerControls_Reset();
 
     if ( sithAIAwareness_Open() )
     {

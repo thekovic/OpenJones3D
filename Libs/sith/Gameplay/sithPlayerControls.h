@@ -15,6 +15,12 @@ J3D_EXTERN_C_START
 
 extern bool sithPlayerControls_bActionKeyActive;
 
+/**
+ * Resets internal state
+ * @note new function
+ */
+void sithPlayerControls_Reset(void);
+
 void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKeyMarkerType markerType);
 int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTime);
 

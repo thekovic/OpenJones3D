@@ -176,7 +176,35 @@ void sithPlayerControls_InstallHooks(void)
 
 void sithPlayerControls_ResetGlobals(void)
 {
-    memset(&sithPlayerControls_g_bCutsceneMode, 0, sizeof(sithPlayerControls_g_bCutsceneMode));
+    sithPlayerControls_g_bCutsceneMode = 0;
+}
+
+void sithPlayerControls_Reset(void)
+{
+    sithPlayerControls_g_bCutsceneMode = 0;
+
+    sithPlayerControls_msecUnknownTimer       = 0;
+    sithPlayerControls_secCommentWaitTimer    = 0.0f;
+
+    sithPlayerControls_bJumpKeyActive         = false;
+    sithPlayerControls_curJumpDirection       = 0;
+    sithPlayerControls_bActionKeyActive       = false;
+    sithPlayerControls_bLookKeyActive         = false;
+    sithPlayerControls_bHealthKeyActive       = false;
+    sithPlayerControls_bTurnRightKeyActive    = false;
+    sithPlayerControls_bTurnLeftKeyActive     = false;
+
+    sithPlayerControls_curMoveStatus          = 0;
+    sithPlayerControls_pCurActivatedItemThing = NULL;
+    sithPlayerControls_pMovableThing          = NULL;
+
+    sithPlayerControls_climbPupTrackNum       = -1;
+
+    sithPlayerControls_pBoardedVehicleThing   = NULL;
+    sithPlayerControls_pTargetThing           = NULL;
+
+    sithPlayerControls_curOrbCamDir           = (rdVector3){ 0.0f, -1.0f, 0.0f };
+    sithPlayerControls_curOrbCamDist          = 0.2f;
 }
 
 void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKeyMarkerType markerType)
