@@ -567,7 +567,7 @@ void J3DAPI sithPathMove_UpdateMove(SithThing* pThing, float simTime)
             }
             else
             {
-                 timeDelta = 0.0f;
+                timeDelta = 0.0f;
             }
 
             ++pPath->numBlockedMoves;

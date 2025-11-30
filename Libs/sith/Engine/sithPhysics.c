@@ -682,7 +682,7 @@ void J3DAPI sithPhysics_SetThingLook(SithThing* pThing, const rdVector3* look, f
     }
     else
     {
-        rdVector_MultAcc3(&pThing->orient.uvec, look, secDeltaTime * 10.0f);
+        rdVector_MultAcc3(&pThing->orient.uvec, look, secDeltaTime * 10.0f); // TODO: Calc smooth damping interp
         rdVector_Normalize3Acc(&pThing->orient.uvec);
 
         rdVector_Cross3(&pThing->orient.lvec, &pThing->orient.uvec, &pThing->orient.rvec); // left = up x right
@@ -1313,7 +1313,7 @@ void J3DAPI sithPhysics_UpdateAttachedThingPhysics(SithThing* pThing, float secD
     }
 
     //
-    // Handle orientation alignment with szurface or up vector
+    // Handle orientation alignment with surface or up vector
     //
     if ( (pPhysics->flags & SITH_PF_ALIGNED) == 0 )
     {

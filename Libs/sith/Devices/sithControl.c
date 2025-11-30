@@ -158,12 +158,13 @@ void sithControl_Shutdown(void)
 int sithControl_Open(void)
 {
     SITH_ASSERTREL(bControlStartup);
-    if ( stdControl_Open() ) {
+    if ( stdControl_Open() )
+    {
         return 0;
     }
 
     msecPlayerIdleTime = 0;
-    bControlOpen = 1;
+    bControlOpen       = 1;
     return 1;
 }
 
@@ -406,7 +407,8 @@ void J3DAPI sithControl_Update(float secDeltaTime, uint32_t msecDeltaTime)
             sithControl_ReadControls();
             for ( size_t i = 0; i < numControlCallbacks; ++i )
             {
-                if ( aControlCallbacks[i] && aControlCallbacks[i](sithWorld_g_pCurrentWorld->pLocalPlayer, secDeltaTime) ) {
+                if ( aControlCallbacks[i] && aControlCallbacks[i](sithWorld_g_pCurrentWorld->pLocalPlayer, secDeltaTime) )
+                {
                     break;
                 }
             }
