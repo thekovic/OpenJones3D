@@ -709,6 +709,48 @@ void J3DAPI rdVector_Lerp4Acc(rdVector4* a, const rdVector4* b, float t)
     a->w = a->w + (b->w - a->w) * t;
 }
 
+void J3DAPI rdVector_SmoothDamp2(rdVector2* dest, const rdVector2* src, const rdVector2* target, float rate, float t)
+{
+    dest->x = stdMath_SmoothDamp(src->x, target->x, rate, t);
+    dest->y = stdMath_SmoothDamp(src->y, target->y, rate, t);
+}
+
+void J3DAPI rdVector_SmoothDamp3(rdVector3* dest, const rdVector3* src, const rdVector3* target, float rate, float t)
+{
+    dest->x = stdMath_SmoothDamp(src->x, target->x, rate, t);
+    dest->y = stdMath_SmoothDamp(src->y, target->y, rate, t);
+    dest->z = stdMath_SmoothDamp(src->z, target->z, rate, t);
+}
+
+void J3DAPI rdVector_SmoothDamp4(rdVector4* dest, const rdVector4* src, const rdVector4* target, float rate, float t)
+{
+    dest->x = stdMath_SmoothDamp(src->x, target->x, rate, t);
+    dest->y = stdMath_SmoothDamp(src->y, target->y, rate, t);
+    dest->z = stdMath_SmoothDamp(src->z, target->z, rate, t);
+    dest->w = stdMath_SmoothDamp(src->w, target->w, rate, t);
+}
+
+void J3DAPI rdVector_SmoothDamp2Acc(rdVector2* dest, const rdVector2* target, float rate, float t)
+{
+    dest->x = stdMath_SmoothDamp(dest->x, target->x, rate, t);
+    dest->y = stdMath_SmoothDamp(dest->y, target->y, rate, t);
+}
+
+void J3DAPI rdVector_SmoothDamp3Acc(rdVector3* dest, const rdVector3* target, float rate, float t)
+{
+    dest->x = stdMath_SmoothDamp(dest->x, target->x, rate, t);
+    dest->y = stdMath_SmoothDamp(dest->y, target->y, rate, t);
+    dest->z = stdMath_SmoothDamp(dest->z, target->z, rate, t);
+}
+
+void J3DAPI rdVector_SmoothDamp4Acc(rdVector4* dest, const rdVector4* target, float rate, float t)
+{
+    dest->x = stdMath_SmoothDamp(dest->x, target->x, rate, t);
+    dest->y = stdMath_SmoothDamp(dest->y, target->y, rate, t);
+    dest->z = stdMath_SmoothDamp(dest->z, target->z, rate, t);
+    dest->w = stdMath_SmoothDamp(dest->w, target->w, rate, t);
+}
+
 // Helper hooking functions
 void rdVector_InstallHooks(void);
 void rdVector_ResetGlobals(void);
