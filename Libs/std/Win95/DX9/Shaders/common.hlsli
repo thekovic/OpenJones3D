@@ -49,6 +49,9 @@
 #define PS_FOGPARAMS_REGISTER c0
 #define PS_FOGCOLOR_REGISTER  c1
 
+// boolean register
+#define PS_UNTEXTURED_REGISTER b0
+
 #define PS_CONSTANTS_START_REGISTER 8   // Start after common material/light constants
 
 #define PS_CONSTANT_REGISTER(RelativeIndex) MERGE_TOKENS(c, PS_CONSTANTS_START_##RelativeIndex)
@@ -86,6 +89,7 @@ float4 g_viewport : register(VS_VIEWPORT_REGISTER); // x1, y1, x2, y2
 // ===== VERTEX PIXEL CONSTANTS =====
 float4 g_fogParams : register(PS_FOGPARAMS_REGISTER); // start, end, factor, enabled
 float4 g_fogColor : register(PS_FOGCOLOR_REGISTER); // r, g, b, a
+bool g_bUntextured : register(PS_UNTEXTURED_REGISTER);
 
 // ===== HELPER FUNCTIONS =====
 

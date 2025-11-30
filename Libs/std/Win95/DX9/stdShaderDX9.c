@@ -247,7 +247,18 @@ bool stdShader_DisableFog(void)
     return true;
 }
 
+bool stdShader_EnableUntexturedMode(bool bEnable)
+{
+    BOOL bon = bEnable;
+    HRESULT hr = IDirect3DDevice9_SetPixelShaderConstantB(stdShader_pDevice, /*StartRegister=*/STDSHADERDX9_PS_UNTEXTURED_REGISTER, &bon, 1);
+    if ( FAILED(hr) )
+    {
+        STDLOG_ERROR("Error %s setting shater untextured mode!\n", std3D_D3DGetStatus(hr));
+        return false;
+    }
 
+    return true;
+}
 
 StdShaderHandle stdShader_GetShader(const char* pName)
 {

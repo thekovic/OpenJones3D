@@ -126,6 +126,8 @@ static void J3DAPI std3D_AddTextureToCacheList(tSystemTexture* pTexture);
 static void J3DAPI std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture);
 static int J3DAPI std3D_PurgeTextureCache(size_t size);
 
+static bool J3DAPI std3D_SetTexture(LPDIRECT3DTEXTURE9 pTex);
+
 bool std3D_InitVertexBuffers(void);
 void std3D_ReleaseVertexBuffers(void);
 
@@ -596,6 +598,23 @@ static int std3D_CopyVertexDataToBuffer(const LPD3DTLVERTEX aVerts, size_t numVe
     return 1;
 }
 
+static bool J3DAPI std3D_SetTexture(LPDIRECT3DTEXTURE9 pTex)
+{
+    HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, (IDirect3DBaseTexture9*)pTex);
+    if ( d3dres != D3D_OK )
+    {
+        STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
+        return false;
+    }
+
+    std3D_pD3DTex = pTex;
+    if ( std3D_bShadersActive )
+    {
+        stdShader_EnableUntexturedMode(pTex == NULL);
+    }
+    return true;
+}
+
 int std3D_DrawIndexedPrimitive(D3DPRIMITIVETYPE type, LPD3DTLVERTEX aVerts, size_t numVerts, LPWORD aIndices, size_t numIndices)
 {
      // Copy vertices to buffers
@@ -692,15 +711,7 @@ void J3DAPI std3D_DrawRenderList(tSysTexture* pTex, Std3DRenderState rdflags, LP
     // Set texture
     if ( pTex != std3D_pD3DTex )
     {
-        HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, (IDirect3DBaseTexture9*)pTex);
-        if ( d3dres != D3D_OK )
-        {
-            STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
-        }
-        else
-        {
-            std3D_pD3DTex = pTex;
-        }
+        std3D_SetTexture(pTex);
     }
 
     // Fog processing
@@ -758,15 +769,7 @@ void std3D_SetWireframeRenderState(void)
 {
     Std3DRenderState rdstate = std3D_renderState & ~(STD3D_RS_FOG_ENABLED | STD3D_RS_UNKNOWN_400 | STD3D_RS_UNKNOWN_200);
     std3D_SetRenderState(rdstate);
-
-    HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, NULL);
-    if ( d3dres != D3D_OK )
-    {
-        STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
-        return;
-    }
-
-    std3D_pD3DTex = NULL;
+    std3D_SetTexture(NULL);
 }
 
 void J3DAPI std3D_DrawLineStrip(LPD3DTLVERTEX aVerts, size_t numVerts)
@@ -1274,11 +1277,7 @@ void std3D_ResetTextureCache(void)
     STDLOG_DEBUG("Clearing texture cache....\n");
     if ( std3D_pD3Device )
     {
-        HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, NULL);
-        if ( d3dres != D3D_OK )
-        {
-            STDLOG_ERROR("Error %s SetTexture.\n", std3D_D3DGetStatus(d3dres));
-        }
+        std3D_SetTexture(NULL);
     }
 
     tSystemTexture* pCurTex = std3D_pFirstTexCache;
@@ -1308,7 +1307,6 @@ void std3D_ResetTextureCache(void)
     }
 
     std3D_frameCount = 1;
-    std3D_pD3DTex    = NULL;
 }
 
 void J3DAPI std3D_UpdateFrameCount(tSystemTexture* pTexture)
