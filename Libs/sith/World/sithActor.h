@@ -26,6 +26,7 @@ int J3DAPI sithActor_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pSu
 int J3DAPI sithActor_ActorCollisionHandler(SithThing* pSrcThing, SithThing* pThing, SithCollision* pCollision, int a4);
 
 void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles);
+void J3DAPI sithActor_RotateHead(SithThing* pThing, const rdVector3* headAngles, float secDeltaTime); // Added, new
 void J3DAPI sithActor_UpdateAimJoints(SithThing* pThing); // Added
 
 void J3DAPI sithActor_DestroyActor(SithThing* pActor);

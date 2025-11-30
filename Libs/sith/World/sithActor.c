@@ -34,6 +34,8 @@
 
 #include <stdlib.h>
 
+static float sithActor_headRotDampRate = 5.0f; // Added
+
 void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damageType);
 
 void sithActor_InstallHooks(void)
@@ -183,8 +185,8 @@ void J3DAPI sithActor_Update(SithThing* pThing, unsigned int msecDeltaTime)
             rdModel3_GetMeshMatrix(&pThingMeshAttached->renderData, &pThingMeshAttached->orient, nodeNum, &meshOrient);
             pThingMeshAttached->renderData.bSkipBuildingJoints = bSkipBuildingJoints;
 
-            rdVector_Copy3(&pThing->pos, &meshOrient.dvec);
-            rdMatrix_Copy34(&pThing->orient, &meshOrient);
+            pThing->pos    = meshOrient.dvec;
+            pThing->orient = meshOrient;
             sithThing_SetSector(pThing, pThingMeshAttached->pInSector, 1);
         }
 
@@ -687,11 +689,28 @@ int J3DAPI sithActor_ActorCollisionHandler(SithThing* pSrcThing, SithThing* pThi
 
 void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles)
 {
+    sithActor_RotateHead(pThing, headAngles, /*secDeltaTime=*/ 0.0f);
+}
+
+void J3DAPI sithActor_RotateHead(SithThing* pThing, const rdVector3* headAngles, float secDeltaTime)
+{
     SITH_ASSERTREL(pThing && headAngles && ((pThing->type == SITH_THING_ACTOR) || (pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_CORPSE)));
+
+#ifndef J3D_QOL_IMPROVEMENTS
+    // Restore original code that won't rotate interpolate joint
+    secDeltaTime = 0.0f;
+#endif
 
     pThing->thingInfo.actorInfo.flags &= ~SITH_AF_VIEWCENTRED;
 
-    rdVector_Copy3(&pThing->thingInfo.actorInfo.headPYR, headAngles);
+    if ( secDeltaTime <= 0.0f )
+    {
+        pThing->thingInfo.actorInfo.headPYR = *headAngles;
+    }
+    else
+    {
+        rdVector_SmoothDamp3Acc(&pThing->thingInfo.actorInfo.headPYR, headAngles, sithActor_headRotDampRate, secDeltaTime);
+    }
 
     if ( pThing->pPuppetClass && pThing->renderData.type == RD_THING_MODEL3 && pThing->renderData.apTweakedAngles )
     {
@@ -700,26 +719,35 @@ void J3DAPI sithActor_SetHeadPYR(SithThing* pThing, const rdVector3* headAngles)
         int neckNum = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_NECK];
         if ( neckNum >= 0 && neckNum <= lastNodeNum )
         {
-            pThing->renderData.apTweakedAngles[neckNum].pitch = headAngles->pitch * 0.5f;
-            pThing->renderData.apTweakedAngles[neckNum].yaw = headAngles->yaw;
+            // Altered: Added smooth interpolation
+            /*pThing->renderData.apTweakedAngles[neckNum].pitch = headAngles->pitch * 0.5f;
+            pThing->renderData.apTweakedAngles[neckNum].yaw = headAngles->yaw;*/
+            rdModel3_BendJointPitch(&pThing->renderData, neckNum, headAngles->pitch * 0.5f, sithActor_headRotDampRate, secDeltaTime);
+            rdModel3_BendJointYaw(&pThing->renderData, neckNum, headAngles->yaw, sithActor_headRotDampRate, secDeltaTime);
         }
 
         int hipNum  = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_HIP];
         if ( hipNum >= 0 && hipNum <= lastNodeNum )
         {
-            pThing->renderData.apTweakedAngles[hipNum].pitch = headAngles->pitch * 0.5f;
+            // Altered: Added smooth interpolation
+            // pThing->renderData.apTweakedAngles[hipNum].pitch = headAngles->pitch * 0.5f;
+            rdModel3_BendJointPitch(&pThing->renderData, hipNum, headAngles->pitch * 0.5f, sithActor_headRotDampRate, secDeltaTime);
         }
 
         int aim1Num = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIM1];
         if ( aim1Num >= 0 && aim1Num <= lastNodeNum )
         {
-            pThing->renderData.apTweakedAngles[aim1Num].pitch = headAngles->pitch * 0.30000001f;
+            // Altered: Added smooth interpolation
+            //pThing->renderData.apTweakedAngles[aim1Num].pitch = headAngles->pitch * 0.30000001f;
+            rdModel3_BendJointPitch(&pThing->renderData, aim1Num, headAngles->pitch * 0.30000001f, sithActor_headRotDampRate, secDeltaTime);
         }
 
         int aim2Num = pThing->pPuppetClass->aJoints[SITHPUPPET_JOINTINDEX_AIM2];
         if ( aim2Num >= 0 && aim2Num <= lastNodeNum )
         {
-            pThing->renderData.apTweakedAngles[aim2Num].pitch = headAngles->pitch * 0.30000001f;
+            // Altered: Added smooth interpolation
+            //pThing->renderData.apTweakedAngles[aim2Num].pitch = headAngles->pitch * 0.30000001f;
+            rdModel3_BendJointPitch(&pThing->renderData, aim2Num, headAngles->pitch * 0.30000001f, sithActor_headRotDampRate, secDeltaTime);
         }
     }
 }
@@ -941,7 +969,7 @@ int J3DAPI sithActor_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int
             }
 
             // TODO: Add additional format option with light range (see thing light param)
-            rdVector_Copy4(&pActorInfo->headLightIntensity, &headLight);
+            pActorInfo->headLightIntensity = headLight;
             pThing->flags |= SITH_TF_EMITLIGHT;
             return 1;
         }
