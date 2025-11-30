@@ -645,3 +645,35 @@ float stdMath_Dist3D1(float x, float y, float z)
 
     return midValue / 2.0f + maxValue + minValue / 2.0f;
 }
+
+float stdMath_SmoothDamp(float current, float target, float rate, float deltaTime)
+{
+    // Handle edge cases
+    if ( deltaTime <= 0.0f || rate <= 0.0f )
+    {
+        return current;
+    }
+
+    float exponent = -rate * deltaTime;
+
+    // if exponent is very negative, we've essentially reached target
+    if ( exponent < -20.0f )
+    {
+        return target;
+    }
+
+    // Use expm1 for better numerical accuracy
+    // We want: t = 1 - exp(exponent) = -(exp(exponent) - 1) = -expm1(exponent)
+    // ref: https://blog.pkh.me/p/41-fixing-the-iterative-damping-interpolation-in-video-games.html
+    //      https://www.johndcook.com/blog/cpp_expm1/
+    float t = -stdMath_Expm1f(exponent);
+
+    // if very close to target, snap to it
+    float diff = target - current;
+    if ( stdMath_ClipNearZero(diff) == 0.0f )
+    {
+        return target;
+    }
+
+    return current + diff * t;
+}
