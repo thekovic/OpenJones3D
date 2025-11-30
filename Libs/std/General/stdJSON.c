@@ -57,13 +57,13 @@ bool J3DAPI stdJSON_Startup(void)
 {
     if ( stdJSON_bStarted )
     {
-        STDLOG_WARNING("stdJSON_Startup: Module already started");
+        STDLOG_WARNING("stdJSON_Startup: Module already started.\n");
         return true;
     }
 
     if ( !std_g_pHS )
     {
-        STDLOG_ERROR("stdJSON_Startup: Host services not available");
+        STDLOG_ERROR("stdJSON_Startup: Host services not available.\n");
         return false;
     }
 
@@ -95,7 +95,7 @@ StdJSONHandle J3DAPI stdJSON_New(void)
 {
     if ( !stdJSON_bStarted )
     {
-        STDLOG_ERROR("stdJSON_New: Module not started");
+        STDLOG_ERROR("stdJSON_New: Module not started.\n");
         return NULL;
     }
 
@@ -103,7 +103,7 @@ StdJSONHandle J3DAPI stdJSON_New(void)
     StdJSONHandle hJson = (StdJSONHandle)STDMALLOC(sizeof(StdJSON));
     if ( !hJson )
     {
-        STDLOG_ERROR("stdJSON_New: Handle allocation failed");
+        STDLOG_ERROR("stdJSON_New: Handle allocation failed.\n");
         return NULL;
     }
 
@@ -181,7 +181,7 @@ bool J3DAPI stdJSON_Delete(StdJSONHandle hJson, const char* pKey)
 {
     if ( !hJson || !hJson->pRoot || !pKey )
     {
-        STDLOG_ERROR("stdJSON_Delete: Invalid parameters");
+        STDLOG_ERROR("stdJSON_Delete: Invalid parameters.\n");
         return false;
     }
 
@@ -244,7 +244,7 @@ bool J3DAPI stdJSON_Clear(StdJSONHandle hJson)
 {
     if ( !hJson || !hJson->pRoot )
     {
-        STDLOG_ERROR("stdJSON_Clear: Invalid handle");
+        STDLOG_ERROR("stdJSON_Clear: Invalid handle.\n");
         return false;
     }
 
@@ -263,13 +263,13 @@ bool J3DAPI stdJSON_Merge(StdJSONHandle hDst, StdJSONHandle hSrc, bool bOverwrit
 {
     if ( !hDst || !hDst->pRoot || !hSrc || !hSrc->pRoot )
     {
-        STDLOG_ERROR("stdJSON_Merge: Invalid handles");
+        STDLOG_ERROR("stdJSON_Merge: Invalid handles.\n");
         return false;
     }
 
     if ( !json_is_object(hDst->pRoot) || !json_is_object(hSrc->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_Merge: Both handles must contain JSON objects");
+        STDLOG_ERROR("stdJSON_Merge: Both handles must contain JSON objects.\n");
         return false;
     }
 
@@ -284,7 +284,7 @@ bool J3DAPI stdJSON_Merge(StdJSONHandle hDst, StdJSONHandle hSrc, bool bOverwrit
 
         if ( json_object_set_new(hDst->pRoot, key, json_deep_copy(value)) != 0 )
         {
-            STDLOG_ERROR("stdJSON_Merge: Failed to merge key '%s'", key);
+            STDLOG_ERROR("stdJSON_Merge: Failed to merge key '%s'\n", key);
             return false;
         }
     }
@@ -298,14 +298,14 @@ StdJSONHandle J3DAPI stdJSON_Duplicate(const StdJSONHandle hSrc)
 {
     if ( !hSrc || !hSrc->pRoot )
     {
-        STDLOG_ERROR("stdJSON_Duplicate: Invalid source handle");
+        STDLOG_ERROR("stdJSON_Duplicate: Invalid source handle.\n");
         return NULL;
     }
 
     json_t* pRootCopy = json_deep_copy(hSrc->pRoot);
     if ( !pRootCopy )
     {
-        STDLOG_ERROR("stdJSON_Duplicate: Failed to copy JSON object");
+        STDLOG_ERROR("stdJSON_Duplicate: Failed to copy JSON object.\n");
         return NULL;
     }
 
@@ -313,7 +313,7 @@ StdJSONHandle J3DAPI stdJSON_Duplicate(const StdJSONHandle hSrc)
     if ( !hDst )
     {
         json_decref(pRootCopy);
-        STDLOG_ERROR("stdJSON_Duplicate: Handle allocation failed");
+        STDLOG_ERROR("stdJSON_Duplicate: Handle allocation failed.\n");
         return NULL;
     }
 
@@ -380,7 +380,7 @@ bool J3DAPI stdJSON_SetRequiredKeys(StdJSONHandle hJson, const char** ppKeys, si
 {
     if ( !hJson || (!ppKeys && count > 0) )
     {
-        STDLOG_ERROR("stdJSON_SetRequiredKeys: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetRequiredKeys: Invalid parameters.\n");
         return false;
     }
 
@@ -396,7 +396,7 @@ bool J3DAPI stdJSON_SetRequiredKeys(StdJSONHandle hJson, const char** ppKeys, si
     hJson->ppRequiredKeys = (char**)STDMALLOC(arraySize);
     if ( !hJson->ppRequiredKeys )
     {
-        STDLOG_ERROR("stdJSON_SetRequiredKeys: Memory allocation failed");
+        STDLOG_ERROR("stdJSON_SetRequiredKeys: Memory allocation failed.\n");
         return false;
     }
 
@@ -420,7 +420,7 @@ bool J3DAPI stdJSON_SetRequiredKeys(StdJSONHandle hJson, const char** ppKeys, si
             hJson->numRequiredKeys = i;
             stdJSON_FreeRequiredKeys(hJson);
 
-            STDLOG_ERROR("stdJSON_SetRequiredKeys: Key allocation failed");
+            STDLOG_ERROR("stdJSON_SetRequiredKeys: Key allocation failed.\n");
             return false;
         }
 
@@ -447,7 +447,7 @@ bool J3DAPI stdJSON_ValidateRequired(StdJSONHandle hJson)
     {
         if ( !stdJSON_HasKey(hJson, hJson->ppRequiredKeys[i]) )
         {
-            STDLOG_WARNING("stdJSON_ValidateRequired: Missing required key '%s'", hJson->ppRequiredKeys[i]);
+            STDLOG_WARNING("stdJSON_ValidateRequired: Missing required key '%s'\n", hJson->ppRequiredKeys[i]);
             return false;
         }
     }
@@ -459,13 +459,13 @@ StdJSONHandle J3DAPI stdJSON_Load(const char* pFilePath)
 {
     if ( !stdJSON_bStarted )
     {
-        STDLOG_ERROR("stdJSON_Load: Module not started");
+        STDLOG_ERROR("stdJSON_Load: Module not started.\n");
         return NULL;
     }
 
     if ( !pFilePath )
     {
-        STDLOG_ERROR("stdJSON_Load: Invalid file path");
+        STDLOG_ERROR("stdJSON_Load: Invalid file path.\n");
         return NULL;
     }
 
@@ -491,13 +491,13 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
 
     if ( !stdJSON_bStarted )
     {
-        STDLOG_ERROR("stdJSON_LoadEntry: Module not started");
+        STDLOG_ERROR("stdJSON_LoadEntry: Module not started.\n");
         return false;
     }
 
     if ( !pFilePath )
     {
-        STDLOG_ERROR("stdJSON_LoadEntry: Invalid file path");
+        STDLOG_ERROR("stdJSON_LoadEntry: Invalid file path.\n");
         return false;
     }
 
@@ -508,7 +508,7 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
     size_t fileSize = std_g_pHS->pFileSize(pFilePath);
     if ( fileSize == 0 )
     {
-        STDLOG_WARNING("stdJSON_LoadEntry: File '%s' is empty", pFilePath);
+        STDLOG_WARNING("stdJSON_LoadEntry: File '%s' is empty.\n", pFilePath);
         return false;
     }
 
@@ -516,7 +516,7 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
     tFileHandle hFile = std_g_pHS->pFileOpen(pFilePath, "rb");
     if ( !hFile )
     {
-        STDLOG_WARNING("stdJSON_LoadEntry: Cannot open file '%s'", pFilePath);
+        STDLOG_WARNING("stdJSON_LoadEntry: Cannot open file '%s'\n", pFilePath);
         return false;
     }
 
@@ -525,7 +525,7 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
     if ( !pBuffer )
     {
         std_g_pHS->pFileClose(hFile);
-        STDLOG_ERROR("stdJSON_LoadEntry: Memory allocation failed");
+        STDLOG_ERROR("stdJSON_LoadEntry: Memory allocation failed.\n");
         return false;
     }
 
@@ -536,7 +536,7 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
     if ( bytesRead != fileSize )
     {
         STDFREE(pBuffer);
-        STDLOG_ERROR("stdJSON_LoadEntry: File read failed");
+        STDLOG_ERROR("stdJSON_LoadEntry: File read failed.\n");
         return false;
     }
 
@@ -547,14 +547,14 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
 
     if ( !pRoot )
     {
-        STDLOG_ERROR("stdJSON_LoadEntry: JSON parse error at line %d: %s", error.line, error.text);
+        STDLOG_ERROR("stdJSON_LoadEntry: JSON parse error at line %d: %s\n", error.line, error.text);
         return false;
     }
 
     if ( !json_is_object(pRoot) )
     {
         json_decref(pRoot);
-        STDLOG_ERROR("stdJSON_LoadEntry: Root JSON element is not an object");
+        STDLOG_ERROR("stdJSON_LoadEntry: Root JSON element is not an object.\n");
         return false;
     }
 
@@ -564,7 +564,7 @@ bool J3DAPI stdJSON_LoadEntry(const char* pFilePath, StdJSONHandle hJson)
     if ( !hJson->pFilePath )
     {
         json_decref(pRoot);
-        STDLOG_ERROR("stdJSON_LoadEntry: File path allocation failed");
+        STDLOG_ERROR("stdJSON_LoadEntry: File path allocation failed.\n");
         return false;
     }
 
@@ -583,20 +583,20 @@ StdJSONHandle J3DAPI stdJSON_LoadFromString(const char* pJsonString)
 {
     if ( !stdJSON_bStarted )
     {
-        STDLOG_ERROR("stdJSON_LoadFromString: Module not started");
+        STDLOG_ERROR("stdJSON_LoadFromString: Module not started.\n");
         return NULL;
     }
 
     if ( !pJsonString )
     {
-        STDLOG_ERROR("stdJSON_LoadFromString: Invalid JSON string");
+        STDLOG_ERROR("stdJSON_LoadFromString: Invalid JSON string.\n");
         return NULL;
     }
 
     StdJSONHandle hJson = stdJSON_New();
     if ( !hJson )
     {
-        STDLOG_ERROR("stdJSON_LoadFromString: Handle allocation failed");
+        STDLOG_ERROR("stdJSON_LoadFromString: Handle allocation failed.\n");
         return NULL;
     }
 
@@ -613,7 +613,7 @@ StdJSONHandle J3DAPI stdJSON_LoadEntryFromString(const char* pJsonString, StdJSO
 {
     if ( !stdJSON_bStarted )
     {
-        STDLOG_ERROR("stdJSON_LoadEntryFromString: Module not started");
+        STDLOG_ERROR("stdJSON_LoadEntryFromString: Module not started.\n");
         return NULL;
     }
 
@@ -627,14 +627,14 @@ StdJSONHandle J3DAPI stdJSON_LoadEntryFromString(const char* pJsonString, StdJSO
     json_t* pRoot = json_loads(pJsonString, 0, &error);
     if ( !pRoot )
     {
-        STDLOG_ERROR("stdJSON_LoadEntryFromString: JSON parse error at line %d: %s", error.line, error.text);
+        STDLOG_ERROR("stdJSON_LoadEntryFromString: JSON parse error at line %d: %s\n", error.line, error.text);
         return NULL;
     }
 
     if ( !json_is_object(pRoot) )
     {
         json_decref(pRoot);
-        STDLOG_ERROR("stdJSON_LoadEntryFromString: Root JSON element is not an object");
+        STDLOG_ERROR("stdJSON_LoadEntryFromString: Root JSON element is not an object.\n");
         return NULL;
     }
 
@@ -653,7 +653,7 @@ char* J3DAPI stdJSON_ToString(StdJSONHandle hJson, bool bPretty)
 {
     if ( !hJson || !hJson->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ToString: Invalid handle");
+        STDLOG_ERROR("stdJSON_ToString: Invalid handle.\n");
         return NULL;
     }
 
@@ -671,14 +671,14 @@ bool J3DAPI stdJSON_Save(StdJSONHandle hJson, const char* pFilePath)
     hJson = stdJSON_GetRoot(hJson);
     if ( !hJson || !hJson->pRoot )
     {
-        STDLOG_ERROR("stdJSON_Save: Invalid handle");
+        STDLOG_ERROR("stdJSON_Save: Invalid handle.\n");
         return false;
     }
 
     const char* pPath = pFilePath ? pFilePath : hJson->pFilePath;
     if ( !pPath )
     {
-        STDLOG_ERROR("stdJSON_Save: No file path specified");
+        STDLOG_ERROR("stdJSON_Save: No file path specified.\n");
         return false;
     }
 
@@ -686,7 +686,7 @@ bool J3DAPI stdJSON_Save(StdJSONHandle hJson, const char* pFilePath)
     char* pJsonString = json_dumps(hJson->pRoot, JSON_INDENT(2) | JSON_REAL_PRECISION(12));
     if ( !pJsonString )
     {
-        STDLOG_ERROR("stdJSON_Save: Failed to serialize JSON");
+        STDLOG_ERROR("stdJSON_Save: Failed to serialize JSON.\n");
         return false;
     }
 
@@ -695,7 +695,7 @@ bool J3DAPI stdJSON_Save(StdJSONHandle hJson, const char* pFilePath)
     if ( !hFile )
     {
         STDFREE(pJsonString);
-        STDLOG_ERROR("stdJSON_Save: Cannot open file '%s' for writing", pPath);
+        STDLOG_ERROR("stdJSON_Save: Cannot open file '%s' for writing.\n", pPath);
         return false;
     }
 
@@ -707,7 +707,7 @@ bool J3DAPI stdJSON_Save(StdJSONHandle hJson, const char* pFilePath)
 
     if ( written != len )
     {
-        STDLOG_ERROR("stdJSON_Save: File write failed");
+        STDLOG_ERROR("stdJSON_Save: File write failed.\n");
         return false;
     }
 
@@ -735,7 +735,7 @@ void J3DAPI stdJSON_SetAutoSave(StdJSONHandle hJson, bool bAutoSave)
 {
     if ( !hJson )
     {
-        STDLOG_ERROR("stdJSON_SetAutoSave: Invalid handle");
+        STDLOG_ERROR("stdJSON_SetAutoSave: Invalid handle.\n");
         return;
     }
 
@@ -762,14 +762,14 @@ bool J3DAPI stdJSON_SetBool(StdJSONHandle hJson, const char* pKey, bool value)
 {
     if ( !hJson || !pKey )
     {
-        STDLOG_ERROR("stdJSON_SetBool: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetBool: Invalid parameters.\n");
         return false;
     }
 
     json_t* pValue = value ? json_true() : json_false();
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_SetBool: Failed to create JSON boolean");
+        STDLOG_ERROR("stdJSON_SetBool: Failed to create JSON boolean.\n");
         return false;
     }
 
@@ -785,14 +785,14 @@ bool J3DAPI stdJSON_SetInt(StdJSONHandle hJson, const char* pKey, int value)
 {
     if ( !hJson || !pKey )
     {
-        STDLOG_ERROR("stdJSON_SetInt: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetInt: Invalid parameters.\n");
         return false;
     }
 
     json_t* pValue = json_integer(value);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_SetInt: Failed to create JSON integer");
+        STDLOG_ERROR("stdJSON_SetInt: Failed to create JSON integer.\n");
         return false;
     }
 
@@ -808,14 +808,14 @@ bool J3DAPI stdJSON_SetFloat(StdJSONHandle hJson, const char* pKey, float value)
 {
     if ( !hJson || !pKey )
     {
-        STDLOG_ERROR("stdJSON_SetFloat: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetFloat: Invalid parameters.\n");
         return false;
     }
 
     json_t* pValue = json_real((double)value);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_SetFloat: Failed to create JSON real");
+        STDLOG_ERROR("stdJSON_SetFloat: Failed to create JSON real.\n");
         return false;
     }
 
@@ -831,14 +831,14 @@ bool J3DAPI stdJSON_SetString(StdJSONHandle hJson, const char* pKey, const char*
 {
     if ( !hJson || !pKey || !pStr )
     {
-        STDLOG_ERROR("stdJSON_SetString: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetString: Invalid parameters.\n");
         return false;
     }
 
     json_t* pValue = json_string(pStr);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_SetString: Failed to create JSON string");
+        STDLOG_ERROR("stdJSON_SetString: Failed to create JSON string.\n");
         return false;
     }
 
@@ -884,7 +884,7 @@ bool J3DAPI stdJSON_GetString(StdJSONHandle hJson, const char* pKey, char* pDstS
 {
     if ( !pDstStr || size == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetString: Invalid output buffer");
+        STDLOG_ERROR("stdJSON_GetString: Invalid output buffer.\n");
         return false;
     }
 
@@ -913,7 +913,7 @@ StdJSONHandle J3DAPI stdJSON_GetObject(StdJSONHandle hJson, const char* pKey)
 {
     if ( !hJson || !pKey )
     {
-        STDLOG_ERROR("stdJSON_GetObject: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetObject: Invalid parameters.\n");
         return NULL;
     }
 
@@ -929,7 +929,7 @@ StdJSONHandle J3DAPI stdJSON_GetArray(StdJSONHandle hJson, const char* pKey)
 {
     if ( !hJson || !pKey )
     {
-        STDLOG_ERROR("stdJSON_GetArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetArray: Invalid parameters.\n");
         return NULL;
     }
 
@@ -945,14 +945,14 @@ bool J3DAPI stdJSON_SetIntArray(StdJSONHandle hJson, const char* pKey, const int
 {
     if ( !hJson || !pKey || (!pValues && count > 0) )
     {
-        STDLOG_ERROR("stdJSON_SetIntArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetIntArray: Invalid parameters.\n");
         return false;
     }
 
     json_t* pArray = json_array();
     if ( !pArray )
     {
-        STDLOG_ERROR("stdJSON_SetIntArray: Failed to create JSON array");
+        STDLOG_ERROR("stdJSON_SetIntArray: Failed to create JSON array.\n");
         return false;
     }
 
@@ -962,7 +962,7 @@ bool J3DAPI stdJSON_SetIntArray(StdJSONHandle hJson, const char* pKey, const int
         if ( !pElement || json_array_append_new(pArray, pElement) != 0 )
         {
             json_decref(pArray);
-            STDLOG_ERROR("stdJSON_SetIntArray: Failed to add array element");
+            STDLOG_ERROR("stdJSON_SetIntArray: Failed to add array element.\n");
             return false;
         }
     }
@@ -979,14 +979,14 @@ bool J3DAPI stdJSON_SetFloatArray(StdJSONHandle hJson, const char* pKey, const f
 {
     if ( !hJson || !pKey || (!pValues && count > 0) )
     {
-        STDLOG_ERROR("stdJSON_SetFloatArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetFloatArray: Invalid parameters.\n");
         return false;
     }
 
     json_t* pArray = json_array();
     if ( !pArray )
     {
-        STDLOG_ERROR("stdJSON_SetFloatArray: Failed to create JSON array");
+        STDLOG_ERROR("stdJSON_SetFloatArray: Failed to create JSON array.\n");
         return false;
     }
 
@@ -996,7 +996,7 @@ bool J3DAPI stdJSON_SetFloatArray(StdJSONHandle hJson, const char* pKey, const f
         if ( !pElement || json_array_append_new(pArray, pElement) != 0 )
         {
             json_decref(pArray);
-            STDLOG_ERROR("stdJSON_SetFloatArray: Failed to add array element");
+            STDLOG_ERROR("stdJSON_SetFloatArray: Failed to add array element.\n");
             return false;
         }
     }
@@ -1013,14 +1013,14 @@ bool J3DAPI stdJSON_SetBoolArray(StdJSONHandle hJson, const char* pKey, const bo
 {
     if ( !hJson || !pKey || (!pValues && count > 0) )
     {
-        STDLOG_ERROR("stdJSON_SetBoolArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetBoolArray: Invalid parameters.\n");
         return false;
     }
 
     json_t* pArray = json_array();
     if ( !pArray )
     {
-        STDLOG_ERROR("stdJSON_SetBoolArray: Failed to create JSON array");
+        STDLOG_ERROR("stdJSON_SetBoolArray: Failed to create JSON array.\n");
         return false;
     }
 
@@ -1030,7 +1030,7 @@ bool J3DAPI stdJSON_SetBoolArray(StdJSONHandle hJson, const char* pKey, const bo
         if ( !pElement || json_array_append_new(pArray, pElement) != 0 )
         {
             json_decref(pArray);
-            STDLOG_ERROR("stdJSON_SetBoolArray: Failed to add array element");
+            STDLOG_ERROR("stdJSON_SetBoolArray: Failed to add array element.\n");
             return false;
         }
     }
@@ -1047,14 +1047,14 @@ bool J3DAPI stdJSON_SetStringArray(StdJSONHandle hJson, const char* pKey, const 
 {
     if ( !hJson || !pKey || (!ppValues && count > 0) )
     {
-        STDLOG_ERROR("stdJSON_SetStringArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_SetStringArray: Invalid parameters.\n");
         return false;
     }
 
     json_t* pArray = json_array();
     if ( !pArray )
     {
-        STDLOG_ERROR("stdJSON_SetStringArray: Failed to create JSON array");
+        STDLOG_ERROR("stdJSON_SetStringArray: Failed to create JSON array.\n");
         return false;
     }
 
@@ -1065,7 +1065,7 @@ bool J3DAPI stdJSON_SetStringArray(StdJSONHandle hJson, const char* pKey, const 
         if ( !pElement || json_array_append_new(pArray, pElement) != 0 )
         {
             json_decref(pArray);
-            STDLOG_ERROR("stdJSON_SetStringArray: Failed to add array element");
+            STDLOG_ERROR("stdJSON_SetStringArray: Failed to add array element.\n");
             return false;
         }
     }
@@ -1082,7 +1082,7 @@ size_t J3DAPI stdJSON_GetIntArray(StdJSONHandle hJson, const char* pKey, int* pV
 {
     if ( !hJson || !pKey || !pValues || maxCount == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetIntArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetIntArray: Invalid parameters.\n");
         return 0;
     }
 
@@ -1115,7 +1115,7 @@ size_t J3DAPI stdJSON_GetFloatArray(StdJSONHandle hJson, const char* pKey, float
 {
     if ( !hJson || !pKey || !pValues || maxCount == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetFloatArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetFloatArray: Invalid parameters.\n");
         return 0;
     }
 
@@ -1148,7 +1148,7 @@ size_t J3DAPI stdJSON_GetBoolArray(StdJSONHandle hJson, const char* pKey, bool* 
 {
     if ( !hJson || !pKey || !pValues || maxCount == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetBoolArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetBoolArray: Invalid parameters.\n");
         return 0;
     }
 
@@ -1181,7 +1181,7 @@ size_t J3DAPI stdJSON_GetStringArray(StdJSONHandle hJson, const char* pKey, char
 {
     if ( !hJson || !pKey || !ppValues || maxCount == 0 || maxStrLen == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetStringArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetStringArray: Invalid parameters.\n");
         return 0;
     }
 
@@ -1241,27 +1241,27 @@ bool J3DAPI stdJSON_ArrayAppendInt(StdJSONHandle hArray, int value)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendInt: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArrayAppendInt: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendInt: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendInt: Destination is not a JSON array.\n");
         return false;
     }
 
     json_t* pValue = json_integer(value);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendInt: Failed to create JSON integer");
+        STDLOG_ERROR("stdJSON_ArrayAppendInt: Failed to create JSON integer.\n");
         return false;
     }
 
     int result = json_array_append_new(hArray->pRoot, pValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendInt: Failed to append array element");
+        STDLOG_ERROR("stdJSON_ArrayAppendInt: Failed to append array element.\n");
         return false;
     }
 
@@ -1272,33 +1272,33 @@ bool J3DAPI stdJSON_ArraySetInt(StdJSONHandle hArray, size_t index, int value)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArraySetInt: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArraySetInt: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetInt: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetInt: Destination is not a JSON array.\n");
         return false;
     }
 
     if ( index >= json_array_size(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetInt: Failed to set integer at index %zu: index out of bounds", index);
+        STDLOG_ERROR("stdJSON_ArraySetInt: Failed to set integer at index %zu: index out of bounds.\n", index);
         return false;
     }
 
     json_t* pValue = json_integer(value);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_ArraySetInt: Failed to create JSON integer");
+        STDLOG_ERROR("stdJSON_ArraySetInt: Failed to create JSON integer.\n");
         return false;
     }
 
     int result = json_array_set_new(hArray->pRoot, index, pValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArraySetInt: Failed to set array element");
+        STDLOG_ERROR("stdJSON_ArraySetInt: Failed to set array element.\n");
         return false;
     }
 
@@ -1325,27 +1325,27 @@ bool J3DAPI stdJSON_ArrayAppendFloat(StdJSONHandle hArray, float value)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Destination is not a JSON array.\n");
         return false;
     }
 
     json_t* pValue = json_real((double)value);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Failed to create JSON real");
+        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Failed to create JSON real.\n");
         return false;
     }
 
     int result = json_array_append_new(hArray->pRoot, pValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Failed to append array element");
+        STDLOG_ERROR("stdJSON_ArrayAppendFloat: Failed to append array element.\n");
         return false;
     }
 
@@ -1356,33 +1356,33 @@ bool J3DAPI stdJSON_ArraySetFloat(StdJSONHandle hArray, size_t index, float valu
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArraySetFloat: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArraySetFloat: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetFloat: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetFloat: Destination is not a JSON array.\n");
         return false;
     }
 
     if ( index >= json_array_size(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetFloat: Failed to set float at index %zu: index out of bounds", index);
+        STDLOG_ERROR("stdJSON_ArraySetFloat: Failed to set float at index %zu: index out of bounds.\n", index);
         return false;
     }
 
     json_t* pValue = json_real((double)value);
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_ArraySetFloat: Failed to create JSON real");
+        STDLOG_ERROR("stdJSON_ArraySetFloat: Failed to create JSON real.\n");
         return false;
     }
 
     int result = json_array_set_new(hArray->pRoot, index, pValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArraySetFloat: Failed to set array element");
+        STDLOG_ERROR("stdJSON_ArraySetFloat: Failed to set array element.\n");
         return false;
     }
 
@@ -1409,27 +1409,27 @@ bool J3DAPI stdJSON_ArrayAppendBool(StdJSONHandle hArray, bool value)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendBool: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArrayAppendBool: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendBool: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendBool: Destination is not a JSON array.\n");
         return false;
     }
 
     json_t* pValue = value ? json_true() : json_false();
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendBool: Failed to create JSON boolean");
+        STDLOG_ERROR("stdJSON_ArrayAppendBool: Failed to create JSON boolean.\n");
         return false;
     }
 
     int result = json_array_append_new(hArray->pRoot, pValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendBool: Failed to append array element");
+        STDLOG_ERROR("stdJSON_ArrayAppendBool: Failed to append array element.\n");
         return false;
     }
 
@@ -1440,33 +1440,33 @@ bool J3DAPI stdJSON_ArraySetBool(StdJSONHandle hArray, size_t index, bool value)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArraySetBool: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArraySetBool: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetBool: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetBool: Destination is not a JSON array.\n");
         return false;
     }
 
     if ( index >= json_array_size(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetBool: Failed to set boolean at index %zu: index out of bounds", index);
+        STDLOG_ERROR("stdJSON_ArraySetBool: Failed to set boolean at index %zu: index out of bounds.\n", index);
         return false;
     }
 
     json_t* pValue = value ? json_true() : json_false();
     if ( !pValue )
     {
-        STDLOG_ERROR("stdJSON_ArraySetBool: Failed to create JSON boolean");
+        STDLOG_ERROR("stdJSON_ArraySetBool: Failed to create JSON boolean.\n");
         return false;
     }
 
     int result = json_array_set_new(hArray->pRoot, index, pValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArraySetBool: Failed to set array element");
+        STDLOG_ERROR("stdJSON_ArraySetBool: Failed to set array element.\n");
         return false;
     }
 
@@ -1493,13 +1493,13 @@ bool J3DAPI stdJSON_ArrayAppendString(StdJSONHandle hArray, const char* pValue)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendString: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArrayAppendString: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendString: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendString: Destination is not a JSON array.\n");
         return false;
     }
 
@@ -1508,14 +1508,14 @@ bool J3DAPI stdJSON_ArrayAppendString(StdJSONHandle hArray, const char* pValue)
     json_t* pJsonValue = json_string(pValue);
     if ( !pJsonValue )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendString: Failed to create JSON string");
+        STDLOG_ERROR("stdJSON_ArrayAppendString: Failed to create JSON string.\n");
         return false;
     }
 
     int result = json_array_append_new(hArray->pRoot, pJsonValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendString: Failed to append array element");
+        STDLOG_ERROR("stdJSON_ArrayAppendString: Failed to append array element.\n");
         return false;
     }
 
@@ -1526,13 +1526,13 @@ bool J3DAPI stdJSON_ArraySetString(StdJSONHandle hArray, size_t index, const cha
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArraySetString: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArraySetString: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetString: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetString: Destination is not a JSON array.\n");
         return false;
     }
 
@@ -1540,21 +1540,21 @@ bool J3DAPI stdJSON_ArraySetString(StdJSONHandle hArray, size_t index, const cha
 
     if ( index >= json_array_size(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetString: Failed to set string at index %zu: index out of bounds", index);
+        STDLOG_ERROR("stdJSON_ArraySetString: Failed to set string at index %zu: index out of bounds.\n", index);
         return false;
     }
 
     json_t* pJsonValue = json_string(pValue);
     if ( !pJsonValue )
     {
-        STDLOG_ERROR("stdJSON_ArraySetString: Failed to create JSON string");
+        STDLOG_ERROR("stdJSON_ArraySetString: Failed to create JSON string.\n");
         return false;
     }
 
     int result = json_array_set_new(hArray->pRoot, index, pJsonValue);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArraySetString: Failed to set array element");
+        STDLOG_ERROR("stdJSON_ArraySetString: Failed to set array element.\n");
         return false;
     }
 
@@ -1565,7 +1565,7 @@ bool J3DAPI stdJSON_ArrayGetString(StdJSONHandle hArray, size_t index, char* pDs
 {
     if ( !pDstStr || size == 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayGetString: Invalid output buffer");
+        STDLOG_ERROR("stdJSON_ArrayGetString: Invalid output buffer.\n");
         return false;
     }
 
@@ -1608,19 +1608,19 @@ bool J3DAPI stdJSON_ArrayAppendObject(StdJSONHandle hArray, StdJSONHandle hObjec
 {
     if ( !hArray || !hArray->pRoot || !hObjectToAppend || !hObjectToAppend->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendObject: Invalid parameters");
+        STDLOG_ERROR("stdJSON_ArrayAppendObject: Invalid parameters.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendObject: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendObject: Destination is not a JSON array.\n");
         return false;
     }
 
     if ( !json_is_object(hObjectToAppend->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendObject: Source is not a JSON object");
+        STDLOG_ERROR("stdJSON_ArrayAppendObject: Source is not a JSON object.\n");
         return false;
     }
 
@@ -1628,14 +1628,14 @@ bool J3DAPI stdJSON_ArrayAppendObject(StdJSONHandle hArray, StdJSONHandle hObjec
     json_t* pObjectCopy = json_deep_copy(hObjectToAppend->pRoot);
     if ( !pObjectCopy )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendObject: Failed to copy JSON object");
+        STDLOG_ERROR("stdJSON_ArrayAppendObject: Failed to copy JSON object.\n");
         return false;
     }
 
     int result = json_array_append_new(hArray->pRoot, pObjectCopy);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendObject: Failed to append array element");
+        STDLOG_ERROR("stdJSON_ArrayAppendObject: Failed to append array element.\n");
         return false;
     }
 
@@ -1646,25 +1646,25 @@ bool J3DAPI stdJSON_ArraySetObject(StdJSONHandle hArray, size_t index, StdJSONHa
 {
     if ( !hArray || !hArray->pRoot || !hObjectToSet || !hObjectToSet->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArraySetObject: Invalid parameters");
+        STDLOG_ERROR("stdJSON_ArraySetObject: Invalid parameters.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetObject: Destination array is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetObject: Destination array is not a JSON array.\n");
         return false;
     }
 
     if ( !json_is_object(hObjectToSet->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetObject: Value is not a JSON object");
+        STDLOG_ERROR("stdJSON_ArraySetObject: Value is not a JSON object.\n");
         return false;
     }
 
     if ( index >= json_array_size(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetObject: Failed to set object at index %zu: index out of bounds", index);
+        STDLOG_ERROR("stdJSON_ArraySetObject: Failed to set object at index %zu: index out of bounds.\n", index);
         return false;
     }
 
@@ -1672,14 +1672,14 @@ bool J3DAPI stdJSON_ArraySetObject(StdJSONHandle hArray, size_t index, StdJSONHa
     json_t* pObjectCopy = json_deep_copy(hObjectToSet->pRoot);
     if ( !pObjectCopy )
     {
-        STDLOG_ERROR("stdJSON_ArraySetObject: Failed to copy JSON object");
+        STDLOG_ERROR("stdJSON_ArraySetObject: Failed to copy JSON object.\n");
         return false;
     }
 
     int result = json_array_set_new(hArray->pRoot, index, pObjectCopy);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArraySetObject: Failed to set array element");
+        STDLOG_ERROR("stdJSON_ArraySetObject: Failed to set array element.\n");
         return false;
     }
 
@@ -1706,13 +1706,13 @@ bool J3DAPI stdJSON_ArrayAppendArray(StdJSONHandle hArray, StdJSONHandle hArrayT
 {
     if ( !hArray || !hArray->pRoot || !hArrayToAppend || !hArrayToAppend->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_ArrayAppendArray: Invalid parameters.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendArray: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendArray: Destination is not a JSON array.\n");
         return false;
     }
 
@@ -1720,14 +1720,14 @@ bool J3DAPI stdJSON_ArrayAppendArray(StdJSONHandle hArray, StdJSONHandle hArrayT
     json_t* pArrayCopy = json_deep_copy(hArrayToAppend->pRoot);
     if ( !pArrayCopy )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendArray: Failed to copy JSON array");
+        STDLOG_ERROR("stdJSON_ArrayAppendArray: Failed to copy JSON array.\n");
         return false;
     }
 
     int result = json_array_append_new(hArray->pRoot, pArrayCopy);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayAppendArray: Failed to append array element");
+        STDLOG_ERROR("stdJSON_ArrayAppendArray: Failed to append array element.\n");
         return false;
     }
 
@@ -1738,25 +1738,25 @@ bool J3DAPI stdJSON_ArraySetArray(StdJSONHandle hArray, size_t index, StdJSONHan
 {
     if ( !hArray || !hArray->pRoot || !hArrayToSet || !hArrayToSet->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArraySetArray: Invalid parameters");
+        STDLOG_ERROR("stdJSON_ArraySetArray: Invalid parameters.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetArray: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetArray: Destination is not a JSON array.\n");
         return false;
     }
 
     if ( !json_is_array(hArrayToSet->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetArray: Value is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetArray: Value is not a JSON array.\n");
         return false;
     }
 
     if ( index >= json_array_size(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArraySetArray: Failed to set array object at index %zu: index out of bounds", index);
+        STDLOG_ERROR("stdJSON_ArraySetArray: Failed to set array object at index %zu: index out of bounds.\n", index);
         return false;
     }
 
@@ -1764,14 +1764,14 @@ bool J3DAPI stdJSON_ArraySetArray(StdJSONHandle hArray, size_t index, StdJSONHan
     json_t* pArrayCopy = json_deep_copy(hArrayToSet->pRoot);
     if ( !pArrayCopy )
     {
-        STDLOG_ERROR("stdJSON_ArraySetArray: Failed to copy JSON array");
+        STDLOG_ERROR("stdJSON_ArraySetArray: Failed to copy JSON array.\n");
         return false;
     }
 
     int result = json_array_set_new(hArray->pRoot, index, pArrayCopy);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArraySetArray: Failed to set array element");
+        STDLOG_ERROR("stdJSON_ArraySetArray: Failed to set array element.\n");
         return false;
     }
 
@@ -1809,27 +1809,27 @@ bool J3DAPI stdJSON_ArrayRemoveElement(StdJSONHandle hArray, size_t index)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayRemoveElement: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArrayRemoveElement: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayRemoveElement: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayRemoveElement: Destination is not a JSON array.\n");
         return false;
     }
 
     size_t arraySize = json_array_size(hArray->pRoot);
     if ( index >= arraySize )
     {
-        STDLOG_WARNING("stdJSON_ArrayRemoveElement: Index %zu out of bounds (size: %zu)", index, arraySize);
+        STDLOG_WARNING("stdJSON_ArrayRemoveElement: Index %zu out of bounds (size: %zu).\n", index, arraySize);
         return false;
     }
 
     int result = json_array_remove(hArray->pRoot, index);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayRemoveElement: Failed to remove array element");
+        STDLOG_ERROR("stdJSON_ArrayRemoveElement: Failed to remove array element.\n");
         return false;
     }
 
@@ -1840,20 +1840,20 @@ bool J3DAPI stdJSON_ArrayClear(StdJSONHandle hArray)
 {
     if ( !hArray || !hArray->pRoot )
     {
-        STDLOG_ERROR("stdJSON_ArrayClear: Invalid array handle");
+        STDLOG_ERROR("stdJSON_ArrayClear: Invalid array handle.\n");
         return false;
     }
 
     if ( !json_is_array(hArray->pRoot) )
     {
-        STDLOG_ERROR("stdJSON_ArrayClear: Destination is not a JSON array");
+        STDLOG_ERROR("stdJSON_ArrayClear: Destination is not a JSON array.\n");
         return false;
     }
 
     int result = json_array_clear(hArray->pRoot);
     if ( result != 0 )
     {
-        STDLOG_ERROR("stdJSON_ArrayClear: Failed to clear array");
+        STDLOG_ERROR("stdJSON_ArrayClear: Failed to clear array.\n");
         return false;
     }
 
@@ -1994,7 +1994,7 @@ bool J3DAPI stdJSON_GetStringArrayElement(StdJSONHandle hJson, const char* pKey,
 {
     if ( !pDstStr || size == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetStringArrayElement: Invalid output buffer");
+        STDLOG_ERROR("stdJSON_GetStringArrayElement: Invalid output buffer.\n");
         return false;
     }
 
@@ -2036,7 +2036,7 @@ size_t J3DAPI stdJSON_EnumerateKeys(StdJSONHandle hJson, const char* pPath, StdJ
 {
     if ( !hJson || !callback )
     {
-        STDLOG_ERROR("stdJSON_EnumerateKeys: Invalid parameters");
+        STDLOG_ERROR("stdJSON_EnumerateKeys: Invalid parameters.\n");
         return 0;
     }
 
@@ -2070,7 +2070,7 @@ size_t J3DAPI stdJSON_GetKeys(StdJSONHandle hJson, const char* pPath, char** ppK
 {
     if ( !hJson || !ppKeys || maxKeys == 0 )
     {
-        STDLOG_ERROR("stdJSON_GetKeys: Invalid parameters");
+        STDLOG_ERROR("stdJSON_GetKeys: Invalid parameters.\n");
         return 0;
     }
 
@@ -2145,7 +2145,7 @@ static bool stdJSON_SetValue(StdJSONHandle hJson, const char* pKey, json_t* pVal
 
     if ( !bSuccess )
     {
-        STDLOG_ERROR("stdJSON_SetValue: Failed to set key '%s'", pKey);
+        STDLOG_ERROR("stdJSON_SetValue: Failed to set key '%s'\n", pKey);
         return false;
     }
 
@@ -2350,13 +2350,13 @@ void J3DAPI stdJSON_SetParent(StdJSONHandle hJson, StdJSONHandle hParent)
 {
     if ( !hJson )
     {
-        STDLOG_ERROR("stdJSON_SetParent: Invalid child handle");
+        STDLOG_ERROR("stdJSON_SetParent: Invalid child handle.\n");
         return;
     }
 
     if ( !hParent || !hParent->pRoot )
     {
-        STDLOG_ERROR("stdJSON_SetParent: Invalid parent handle");
+        STDLOG_ERROR("stdJSON_SetParent: Invalid parent handle.\n");
         return;
     }
 
