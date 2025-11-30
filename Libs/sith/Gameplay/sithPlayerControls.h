@@ -28,7 +28,10 @@ int J3DAPI sithPlayerControls_BoardVehicle(SithThing* pThing, int bBoard);
 void J3DAPI sithPlayerControls_ExitVehicle(SithThing* pThing);
 
 void J3DAPI sithPlayerControls_RotateAimJoints(SithThing* pThing, float pitch, float yaw);
+void J3DAPI sithPlayerControls_RotateAimJointsEx(SithThing* pThing, float pitch, float yaw, float secDeltaTime); // New
+
 void J3DAPI sithPlayerControls_ResetAimJoints(SithThing* pThing);
+void J3DAPI sithPlayerControls_ResetAimJointsEx(SithThing* pThing, float secDeltaTime); //New
 
 SithThing* sithPlayerControls_GetTargetThing(void);
 

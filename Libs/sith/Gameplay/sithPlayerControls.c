@@ -5,6 +5,7 @@
 #include <rdroid/Math/rdMath.h>
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
+#include <rdroid/Primitives/rdModel3.h>
 
 #include <sith/Cog/sithCog.h>
 #include <sith/Devices/sithControl.h>
@@ -78,8 +79,9 @@ static float sithPlayerControls_vehicleUnboardDist        = 0.12f;
 static SithThing* sithPlayerControls_pBoardedVehicleThing = NULL; // Fixed: Init to NULL
 
 // Auto-aim joint rotation offsets
-static float sithPlayerControls_pistolYawOffset = 3.0f;
-static float sithPlayerControls_rifleYawOffset  = 1.0f;
+static float sithPlayerControls_aimRotSmoothRate = 5.0f; // Added
+static float sithPlayerControls_pistolYawOffset  = 3.0f;
+static float sithPlayerControls_rifleYawOffset   = 1.0f;
 
 // Auto-Aiming constants
 static SithThing* sithPlayerControls_pTargetThing = NULL; // Fixed: Init to NULL
@@ -127,7 +129,6 @@ static void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float se
 static void J3DAPI sithPlayerControls_ProcessCrawlMove(SithThing* pThing, float secDeltaTime, float moveFactor);
 static void J3DAPI sithPlayerControls_ProcessPushPullMove(SithThing* pThing, float secDeltaTime);
 static void J3DAPI sithPlayerControls_ProcessSlideDownMove(SithThing* pThing, float secDeltaTime);
-
 
 /**
  * Check for ledge when in water
@@ -2211,8 +2212,9 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
                 case SITHPLAYERMOVE_JUMPROLLFWD:
                 case SITHPLAYERMOVE_JUMPLEFT:
                 case SITHPLAYERMOVE_JUMPRIGHT:
+                case SITHPLAYERMOVE_FALLING: // Fixed: Added falling case
                     sithPlayerControls_pTargetThing = NULL;
-                    sithPlayerControls_RotateAimJoints(pThing, 0.0f, 0.0f);
+                    sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime); // Altered: Added smooth interpolation
                     sithWeapon_SendMessageAim(pThing, 0);
                     return;
 
@@ -2225,7 +2227,7 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
         else
         {
             sithPlayerControls_pTargetThing = NULL;
-            sithPlayerControls_RotateAimJoints(pThing, 0.0f, 0.0f);
+            sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime); // Altered: Added smooth interpolation
             sithWeapon_SendMessageAim(pThing, 0);
             return;
         }
@@ -2246,8 +2248,9 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
         {
             sithPlayerControls_pTargetThing = NULL;
         }
-        sithPlayerControls_RotateAimJoints(pThing, 0.0f, 0.0f);
-        sithWeapon_SendMessageAim(pThing, 0);
+
+        sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime); // Altered: Added smooth interpolation
+        sithWeapon_SendMessageAim(pThing, /*bAim=*/0);
         return;
     }
 
@@ -2259,7 +2262,8 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
         if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0
             && sithCamera_g_pCurCamera->type != SITHCAMERA_UNKNOWN_100 )
         {
-            sithPlayerControls_RotateAimJoints(pThing, 0.0f, 0.0f);
+            // Altered: Added smooth interpolation
+            sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime);
         }
 
         pTargetThing = NULL;
@@ -2452,7 +2456,8 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
         lookPYR.pitch = STDMATH_CLAMP(lookPYR.pitch, -80.0f, 80.0f);
         lookPYR.yaw   = STDMATH_CLAMP(lookPYR.yaw, -45.0f, 45.0f);
 
-        sithPlayerControls_RotateAimJoints(pThing, -lookPYR.pitch, -lookPYR.yaw);
+        // Altered: Added smooth interpolation
+        sithPlayerControls_RotateAimJointsEx(pThing, -lookPYR.pitch, -lookPYR.yaw, secDeltaTime);
         sithWeapon_SendMessageAim(pThing, 1);
         return;
     }
@@ -2465,7 +2470,8 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
         sithPlayerControls_pTargetThing = NULL;
     }
 
-    sithPlayerControls_RotateAimJoints(pThing, 0.0f, 0.0f);
+    // Altered: Added smooth interpolation
+    sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime);
     sithWeapon_SendMessageAim(pThing, 0);
 }
 
@@ -3384,13 +3390,49 @@ void J3DAPI sithPlayerControls_ExitVehicle(SithThing* pVehiclePlayerThing)
     sithPlayerControls_pBoardedVehicleThing = NULL;
 }
 
+static inline void J3DAPI sithPlayerControls_BendAimJoint(SithThing* pThing, size_t jointNum, const rdVector3* pyr, float secDeltaTime)
+{
+    rdModel3_BendJoint(&pThing->renderData, jointNum, pyr, sithPlayerControls_aimRotSmoothRate, secDeltaTime);
+}
+
+static inline void J3DAPI sithPlayerControls_BendAimJointAngle(SithThing* pThing, size_t jointNum, size_t axis, float angle, float secDeltaTime)
+{
+    rdModel3_BendJointAngle(&pThing->renderData, jointNum, axis, angle, sithPlayerControls_aimRotSmoothRate, secDeltaTime);
+}
+
+static inline void J3DAPI sithPlayerControls_BendAimJointPitch(SithThing* pThing, size_t jointNum, float angle, float secDeltaTime)
+{
+    sithPlayerControls_BendAimJointAngle(pThing, jointNum, 0, angle, secDeltaTime);
+}
+
+static inline void J3DAPI sithPlayerControls_BendAimJointYaw(SithThing* pThing, size_t jointNum, float angle, float secDeltaTime)
+{
+    sithPlayerControls_BendAimJointAngle(pThing, jointNum, 1, angle, secDeltaTime);
+}
+
+static inline void J3DAPI sithPlayerControls_BendAimJointRoll(SithThing* pThing, size_t jointNum, float angle, float secDeltaTime)
+{
+    sithPlayerControls_BendAimJointAngle(pThing, jointNum, 2, angle, secDeltaTime);
+}
+
 void J3DAPI sithPlayerControls_RotateAimJoints(SithThing* pThing, float pitch, float yaw)
 {
+    sithPlayerControls_RotateAimJointsEx(pThing, pitch, yaw, /*secDeltaTime=*/0.0f);
+}
+
+void J3DAPI sithPlayerControls_RotateAimJointsEx(SithThing* pThing, float pitch, float yaw, float secDeltaTime)
+{
+#ifndef J3D_QOL_IMPROVEMENTS
+    // Restore original code that won't rotate interpolate joint
+    secDeltaTime = 0.0f;
+#endif
+
     int curWeapon = sithInventory_GetCurrentWeapon(pThing);
 
     if ( pitch == 0.0f && yaw == 0.0f )
     {
-        sithPlayerControls_ResetAimJoints(pThing);
+        // Altered: Add smooth interpolation
+        sithPlayerControls_ResetAimJointsEx(pThing, secDeltaTime);
         return;
     }
 
@@ -3408,16 +3450,24 @@ void J3DAPI sithPlayerControls_RotateAimJoints(SithThing* pThing, float pitch, f
             if ( jointIdx >= 0 )
             {
                 pitch = STDMATH_CLAMP(pitch, -80.0f, 80.0f);
-                pThing->renderData.apTweakedAngles[jointIdx].yaw  = pitch;
-                pThing->renderData.apTweakedAngles[jointIdx].roll = pitch * -0.5f;
+                /*pThing->renderData.apTweakedAngles[jointIdx].yaw  = pitch;
+                pThing->renderData.apTweakedAngles[jointIdx].roll = pitch * -0.5f;*/
+
+                // Altered: Rotate joints with smooth interpolation
+                sithPlayerControls_BendAimJointYaw(pThing, jointIdx, pitch, secDeltaTime);
+                sithPlayerControls_BendAimJointRoll(pThing, jointIdx, pitch * -0.5f, secDeltaTime);
             }
 
             jointIdx = sithThing_GetThingJointIndex(pThing, "intorso");
             if ( jointIdx >= 0 )
             {
                 yaw = STDMATH_CLAMP(yaw, -45.0f, 45.0f);
-                pThing->renderData.apTweakedAngles[jointIdx].yaw   = yaw;
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = 0.0f;
+              /*pThing->renderData.apTweakedAngles[jointIdx].yaw   = yaw;
+                pThing->renderData.apTweakedAngles[jointIdx].pitch = 0.0;*/
+
+                // Altered: Rotate joints with smooth interpolation
+                sithPlayerControls_BendAimJointYaw(pThing, jointIdx, yaw, secDeltaTime);
+                sithPlayerControls_BendAimJointPitch(pThing, jointIdx, 0.0f, secDeltaTime);
             }
         } break;
 
@@ -3437,9 +3487,14 @@ void J3DAPI sithPlayerControls_RotateAimJoints(SithThing* pThing, float pitch, f
                 pitch = STDMATH_CLAMP(pitch, -45.0f, 45.0f);
                 yaw   = STDMATH_CLAMP(yaw, -45.0f, 45.0f);
 
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = pitch;
+                /*pThing->renderData.apTweakedAngles[jointIdx].pitch = pitch;
                 pThing->renderData.apTweakedAngles[jointIdx].yaw   = yaw;
-                pThing->renderData.apTweakedAngles[jointIdx].roll  = 0.0f;
+                pThing->renderData.apTweakedAngles[jointIdx].roll  = 0.0f;*/
+
+                // Altered: Rotate joints with smooth interpolation
+                sithPlayerControls_BendAimJointPitch(pThing, jointIdx, pitch, secDeltaTime);
+                sithPlayerControls_BendAimJointYaw(pThing, jointIdx, yaw, secDeltaTime);
+                sithPlayerControls_BendAimJointRoll(pThing, jointIdx, 0.0f, secDeltaTime);
             }
         } break;
 
@@ -3451,43 +3506,73 @@ void J3DAPI sithPlayerControls_RotateAimJoints(SithThing* pThing, float pitch, f
                 pitch = STDMATH_CLAMP(pitch, -45.0f, 45.0f);
                 yaw   = STDMATH_CLAMP(yaw, -45.0f, 45.0f);
 
-                pThing->renderData.apTweakedAngles[jointIdx].pitch = pitch;
+                /*pThing->renderData.apTweakedAngles[jointIdx].pitch = pitch;
                 pThing->renderData.apTweakedAngles[jointIdx].yaw   = yaw;
-                pThing->renderData.apTweakedAngles[jointIdx].roll  = 0.0f;
+                pThing->renderData.apTweakedAngles[jointIdx].roll  = 0.0f;*/
+
+                 // Altered: Rotate joints with smooth interpolation
+                sithPlayerControls_BendAimJointPitch(pThing, jointIdx, pitch, secDeltaTime);
+                sithPlayerControls_BendAimJointYaw(pThing, jointIdx, yaw, secDeltaTime);
+                sithPlayerControls_BendAimJointRoll(pThing, jointIdx, 0.0f, secDeltaTime);
             }
         } break;
 
         default:
-            sithPlayerControls_ResetAimJoints(pThing);
+            // Altered: Add smooth interpolation
+            sithPlayerControls_ResetAimJointsEx(pThing, secDeltaTime);
             break;
     }
 
     if ( pitch != 0.0f || yaw != 0.0f )
     {
+        // Altered: Add smooth interpolation
         rdVector3 newPYR = { pitch, 0.0f, 0.0f };
-        sithActor_SetHeadPYR(pThing, &newPYR);
+        //sithActor_SetHeadPYR(pThing, &newPYR);
+        sithActor_RotateHead(pThing, &newPYR, secDeltaTime);
     }
 }
 
 void J3DAPI sithPlayerControls_ResetAimJoints(SithThing* pThing)
 {
-    const rdVector3 zeroPYR = rdroid_g_zeroVector3;
+    sithPlayerControls_ResetAimJointsEx(pThing, /*secDeltaTime=*/0.0f);
+}
 
-    pThing->thingInfo.actorInfo.headPYR = zeroPYR;
+void J3DAPI sithPlayerControls_ResetAimJointsEx(SithThing* pThing, float secDeltaTime)
+{
+#ifndef J3D_QOL_IMPROVEMENTS
+    // Restore original code that won't rotate interpolate joint
+    secDeltaTime = 0.0f;
+#endif
+
+    // Altered: Added smooth interpolation
+    //pThing->thingInfo.actorInfo.headPYR = zeroPYR;
+    if ( secDeltaTime > 0.0f )
+    {
+        rdVector_SmoothDamp3Acc(&pThing->thingInfo.actorInfo.headPYR, &rdroid_g_zeroVector3, sithPlayerControls_aimRotSmoothRate, secDeltaTime);
+    }
+    else
+    {
+        pThing->thingInfo.actorInfo.headPYR = rdroid_g_zeroVector3;
+    }
 
     int jointIdx = sithThing_GetThingJointIndex(pThing, "inrarm");
     if ( jointIdx >= 0 ) // Fixed: Added check for joint index validity
     {
-        pThing->renderData.apTweakedAngles[jointIdx] = zeroPYR;
+        // Altered: Added smooth interpolation
+        //pThing->renderData.apTweakedAngles[jointIdx] = zeroPYR;
+        sithPlayerControls_BendAimJoint(pThing, jointIdx, &rdroid_g_zeroVector3, secDeltaTime);
+
     }
 
     jointIdx = sithThing_GetThingJointIndex(pThing, "intorso");
     if ( jointIdx >= 0 ) // Fixed: Added check for joint index validity
     {
-        pThing->renderData.apTweakedAngles[jointIdx] = zeroPYR;
+        // Altered: Added smooth interpolation
+        //pThing->renderData.apTweakedAngles[jointIdx] = zeroPYR;
+        sithPlayerControls_BendAimJoint(pThing, jointIdx, &rdroid_g_zeroVector3, secDeltaTime);
     }
 
-    sithActor_SetHeadPYR(pThing, &zeroPYR);
+    sithActor_RotateHead(pThing, &rdroid_g_zeroVector3, secDeltaTime);
 }
 
 SithThing* sithPlayerControls_GetTargetThing(void)
