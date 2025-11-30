@@ -14,12 +14,16 @@ J3D_EXTERN_C_START
 // Clamp value between min and max
 #define STDMATH_CLAMP(val, minv, maxv) (((val) < (minv)) ? (minv) : ((val) > (maxv)) ? (maxv) : (val))
 
+// PI
+#define STDMATH_PI M_PI
+#define STDMATH_PI_F ((float)M_PI)
+
 // Convert radians to degrees
-#define STDMATH_TODEGREES(rad)  ((rad) * (180.0 / M_PI))
+#define STDMATH_TODEGREES(rad)  ((rad) * (180.0 / STDMATH_PI))
 #define STDMATH_TODEGREESF(rad) (float)STDMATH_TODEGREES(rad)
 
 // Convert degrees to radians
-#define STDMATH_RADIANS(deg)  ((deg) * (M_PI / 180.0))
+#define STDMATH_RADIANS(deg)  ((deg) * (STDMATH_PI / 180.0))
 #define STDMATH_RADIANSF(deg) (float)STDMATH_RADIANS(deg)
 
 // Quick static test
