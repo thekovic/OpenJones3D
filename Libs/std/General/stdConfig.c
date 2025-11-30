@@ -367,3 +367,81 @@ static const char* stdConfig_GetRegistryKey(const char* pConfigKey)
 
     return (const char*)stdHashtbl_Find(stdConfig_pKeyMappingTable, pConfigKey);
 }
+
+bool J3DAPI stdConfig_SetColor(const char* pKey, tStdColor color)
+{
+    if ( !pKey )
+    {
+        return false;
+    }
+
+    // Format as #RRGGBBAA
+    char hexStr[10];
+    STD_FORMAT(hexStr, "#%02X%02X%02X%02X", STD_GETRED(color), STD_GETGREEN(color), STD_GETBLUE(color), STD_GETALPHA(color));
+    return stdConfig_SetString(pKey, hexStr);
+}
+
+bool J3DAPI stdConfig_SetColorRGB(const char* pKey, tStdColor color)
+{
+    if ( !pKey )
+    {
+        return false;
+    }
+
+    // Format as #RRGGBB 
+    char hexStr[8];
+    STD_FORMAT(hexStr, "#%02X%02X%02X", STD_GETRED(color), STD_GETGREEN(color), STD_GETBLUE(color));
+    return stdConfig_SetString(pKey, hexStr);
+}
+
+tStdColor J3DAPI stdConfig_GetColor(const char* pKey, tStdColor defaultColor)
+{
+    if ( !pKey )
+    {
+        return defaultColor;
+    }
+
+    char hexStr[16];
+    if ( !stdConfig_GetString(pKey, hexStr, sizeof(hexStr), NULL) )
+    {
+        return defaultColor;
+    }
+
+    // Skip '#' if present
+    const char* pHex = hexStr;
+    if ( pHex[0] == '#' )
+    {
+        pHex++;
+    }
+
+    // Skip hex base prefix
+    if ( hexStr[0] == '0' && (hexStr[1] == 'x' || hexStr[1] == 'X') )
+    {
+        pHex += 2;
+    }
+
+    // Parse hex string
+    size_t len = strlen(pHex);
+    uint32_t r = 0, g = 0, b = 0, a = 255;
+    if ( len == 6 ) // #RRGGBB format (no alpha)
+    {
+        if ( sscanf_s(pHex, "%2x%2x%2x", &r, &g, &b) != 3 )
+        {
+            return defaultColor;
+        }
+    }
+    else if ( len == 8 ) // #RRGGBBAA format
+    {
+        if ( sscanf_s(pHex, "%2x%2x%2x%2x", &r, &g, &b, &a) != 4 )
+        {
+            return defaultColor;
+        }
+    }
+    else
+    {
+        // Invalid format
+        return defaultColor;
+    }
+
+    return STD_RGBA(r, g, b, a);
+}

@@ -2,7 +2,10 @@
 #define STDCONFIG_H
 
 #include <j3dcore/j3d.h>
+
+#include <std/General/stdColor.h>
 #include <std/types.h>
+
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -106,6 +109,35 @@ bool J3DAPI stdConfig_SetString(const char* pKey, const char* pStr);
  *         If false is returned, pDstStr will contain an empty string if pDefaultValue is NULL, or the default value if provided.
  */
 bool J3DAPI stdConfig_GetString(const char* pKey, char* pDstStr, size_t size, const char* pDefaultValue);
+
+/**
+ * Sets color value for given key using stdColor format.
+ * Color is stored as hex string in format "#RRGGBBAA" for readability.
+ *
+ * @param pKey  - Key to set value for.
+ * @param color - Color value encoded using STD_RGBA(r, g, b, a).
+ * @return true if successful, false on error.
+ */
+bool J3DAPI stdConfig_SetColor(const char* pKey, tStdColor color);
+
+/**
+ * Sets RGB color value without alpha for given key using stdColor format.
+ * Color is stored as hex string in format "#RRGGBB" for readability.
+ *
+ * @param pKey  - Key to set value for.
+ * @param color - Color value encoded using STD_RGB(r, g, b) or STD_RGBA(r, g, b, a).
+ * @return true if successful, false on error.
+ */
+bool J3DAPI stdConfig_SetColorRGB(const char* pKey, tStdColor color);
+
+/**
+ * Gets color value for given key in stdColor format.
+ *
+ * @param pKey - Key to get value for.
+ * @param defaultColor - Default color (use STD_RGBA(r, g, b, a)).
+ * @return Color value that can be decoded with STD_GETALPHA, STD_GETRED, etc.
+ */
+tStdColor J3DAPI stdConfig_GetColor(const char* pKey, tStdColor defaultColor);
 
 J3D_EXTERN_C_END
 
