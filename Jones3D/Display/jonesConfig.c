@@ -4,6 +4,7 @@
 #include <Jones3D/Display/JonesDisplay.h>
 #include <Jones3D/Display/JonesHud.h>
 #include <Jones3D/Display/JonesHudConstants.h>
+#include <Jones3D/Display/JonesReticle.h>
 #include <Jones3D/Gui/JonesDialog.h>
 #include <Jones3D/Main/JonesFile.h>
 #include <Jones3D/Main/JonesLevel.h>
@@ -4732,6 +4733,37 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     // Default to Run option
     CheckDlgButton(hDlg, 1202, jonesConfig_gamePlayOptions_bDefaultRun);// CB default run
 
+    // Added: Check box "Show Aim Reticle"
+    // Get the position of the base checkbox
+    RECT rectCBShowText;
+    GetWindowRect(hCBShowText, &rectCBShowText);
+
+    // Convert screen coordinates to client coordinates
+    POINT pt = { rectCBShowText.left, rectCBShowText.top };
+    ScreenToClient(hDlg, &pt);
+
+    // Calculate the position for the new checkbox
+    int x = pt.x;
+    int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + 14;
+
+    // Create the reticle checkbox
+    HWND hCBReticle = CreateWindow(
+        "BUTTON",               // Class name for button/checkbox
+        "Show Aim Reticle",     // Text displayed on the checkbox
+        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+        x,
+        y,
+        150,                   // Width
+        20,                    // Height
+        hDlg,                  // Parent window handle (the dialog)
+        (HMENU)1053,           // Control ID
+        GetModuleHandle(NULL), // Instance handle
+        NULL                   // Additional creation config
+    );
+    J3D_UNUSED(hCBReticle);
+
+    CheckDlgButton(hDlg, 1053, JonesReticle_IsEnabled());
+
     // Difficulty slider and text
     HWND hDifSlider = GetDlgItem(hDlg, 1050); // Difficulty slider control
 
@@ -4780,6 +4812,26 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
         HWND  hDifText = GetDlgItem(hDlg, 1215); // Difficulty text control
         SetWindowText(hDifText, pDifficultyStr);
     }
+
+    // Added: Resize dialog to fit in new check box
+    RECT rectDlg;
+    GetWindowRect(hDlg, &rectDlg);
+    SetWindowPos(hDlg, NULL, 0, 0, rectDlg.right - rectDlg.left, (rectDlg.bottom - rectDlg.top) + 28, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+
+    // Added: Move OK & Cancel buttons down
+    HWND hBtnOk     = GetDlgItem(hDlg, 1);
+    RECT rectBtnOk;
+    GetWindowRect(hBtnOk, &rectBtnOk);
+    POINT ptBtnOk = { rectBtnOk.left, rectBtnOk.top + (rectBtnOk.bottom - rectBtnOk.top) / 2 + 14 };
+    ScreenToClient(hDlg, &ptBtnOk);
+    SetWindowPos(hBtnOk, NULL, ptBtnOk.x, ptBtnOk.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    HWND hBtnCancel = GetDlgItem(hDlg, 2);
+    RECT rectBtnCancel;
+    GetWindowRect(hBtnCancel, &rectBtnCancel);
+    POINT ptBtnCancel = { rectBtnCancel.left, rectBtnCancel.top + (rectBtnCancel.bottom - rectBtnCancel.top) / 2 + 14 };
+    ScreenToClient(hDlg, &ptBtnCancel);
+    SetWindowPos(hBtnCancel, NULL, ptBtnCancel.x, ptBtnCancel.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
     return 1;
 }
@@ -4832,6 +4884,11 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
         {
             sithControl_g_controlOptions &= ~0x02;
         }
+
+        // Added
+        // Enable/Disable aim reticle
+        int bReticleEnabled = IsDlgButtonChecked(hDlg, 1053);
+        JonesReticle_Enable(bReticleEnabled);
 
         // Close dialog
         EndDialog(hDlg, controlID);

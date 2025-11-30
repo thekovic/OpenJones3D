@@ -14,6 +14,7 @@ J3D_EXTERN_C_START
 
 int JonesControl_Startup(void);
 void JonesControl_Shutdown(void);
+
 int J3DAPI JonesControl_ProcessControls(SithThing* pPlayer, float secDeltaTime);
 void JonesControl_EnableJoystickAxes(void);
 

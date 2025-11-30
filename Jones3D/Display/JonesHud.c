@@ -4,6 +4,7 @@
 #include <j3dcore/j3dhook.h>
 
 #include <Jones3D/Display/jonesConfig.h>
+#include <Jones3D/Display/JonesReticle.h>
 #include <Jones3D/Main/jonesLevel.h>
 #include <Jones3D/Main/jonesMain.h>
 #include <Jones3D/Main/jonesString.h>
@@ -497,16 +498,20 @@ int JonesHud_Open(void)
     JonesHud_hudState        = 0;
 
     JonesHud_pMenuFont = rdFont_Load("mat\\jonesComic Sans MS14.gcf");
-    if ( JonesHud_pMenuFont )
+    if ( !JonesHud_pMenuFont )
     {
-        // Success
-        JonesHud_bOpen             = true;
-        JonesHud_bCutsceneStart    = 0;
-        JonesHud_bInterfaceEnabled = 0;
-        return 0;
+        STD_FORMAT(JonesMain_g_aErrorBuffer, "Unable to open Hud: Couldn't load %s\n", "mat\\jonesComic Sans MS14.gcf");
+        goto error;
     }
 
-    STD_FORMAT(JonesMain_g_aErrorBuffer, "Unable to open Hud: Couldn't load %s\n", "mat\\jonesComic Sans MS14.gcf");
+    // Added
+    JonesReticle_Open();
+
+    // Success
+    JonesHud_bOpen             = true;
+    JonesHud_bCutsceneStart    = 0;
+    JonesHud_bInterfaceEnabled = 0;
+    return 0;
 
 error:
     STDLOG_ERROR(JonesMain_g_aErrorBuffer);
@@ -518,6 +523,9 @@ error:
 
 void JonesHud_Close(void)
 {
+    // Added
+    JonesReticle_Close();
+
     JonesHud_pMenuItemLinkedList = 0;
     for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_apMenuItems); ++i )
     {
@@ -565,6 +573,7 @@ void JonesHud_Close(void)
     JonesHud_bHealthIndFadeSet      = 0;
     JonesHud_bCutsceneStart         = 0;
     JonesHud_bInterfaceEnabled      = 0;
+
     jonesInventory_Close();
 
     // TODO: Why is this check so far down here? Maybe should be moved to the start of function
@@ -715,6 +724,16 @@ void JonesHud_Process(void) // maybe this function should be called something el
             rdCache_FlushAlpha();
             rdCache_Flush();
 
+            // Render reticle before the any other HUD component
+            // Note, also has to be drawn before switching camera to HUD camera
+            // because game camera matrix is required for transforming target position to screen space.
+            //
+            // Added: v0.4
+            if ( (JonesHud_hudState & 0x10) == 0 && !sithPlayerControls_g_bCutsceneMode ) // if not game over and not in cutscene mode
+            {
+                JonesReticle_Render();
+            }
+
             // Change cur camera to HUD camera
             rdCamera* pCurCam = rdCamera_g_pCurCamera;
             rdCamera_SetCurrent(JonesHud_pHudCamera);
@@ -791,6 +810,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
 
                     stdControl_ResetMousePos();
                     JonesMain_PauseGame();
+                    JonesReticle_Pause();
                     JonesHud_MenuOpen();
                 }
                 else if ( JonesHud_bShowMenu )
@@ -872,6 +892,9 @@ void J3DAPI JonesHud_Update(const SithWorld* pWorld)
             JonesHud_SetCanvasSize(width, height);
         }
     }
+
+    // Update aiming reticle
+    JonesReticle_Update(JonesHud_msecDeltaTime / 1000.f);
 }
 
 int J3DAPI JonesHud_SetCanvasSize(int width, int height)
@@ -1194,8 +1217,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
 void J3DAPI JonesHud_DrawEnduranceIndicator(float state, float alpha)
 {
     JonesHudRect rect;
-    rect.x = JonesHud_enduranceRect.x;
-    rect.y = JonesHud_enduranceRect.y;
+    rect.x      = JonesHud_enduranceRect.x;
+    rect.y      = JonesHud_enduranceRect.y;
     rect.width  = JonesHud_enduranceRect.width;
     rect.height = JonesHud_enduranceRect.height;
 
@@ -2412,11 +2435,13 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
                             || !JonesHud_apMenuItems[pItem->nextLeftItemId]
                             || pItem->id == JonesHud_rootMenuItemId )
                         {
-                            JonesHud_hudState = 0;
+                            JonesHud_hudState       = 0;
                             jonesCog_g_bMenuVisible = 0;
-                            JonesHud_pCloseMenuItem = 0;
+                            JonesHud_pCloseMenuItem = NULL;
+
                             sithGamesave_CloseRestore();
                             JonesMain_ResumeGame();
+                            JonesReticle_Resume();
 
                             if ( !sithPlayerControls_g_bCutsceneMode && JonesHud_bMapOpen )
                             {
@@ -3929,10 +3954,12 @@ void J3DAPI JonesHud_ShowGameOverDialog(int bPlayDiedMusic)
 
             if ( !JonesMain_ProcessGamesaveState() )
             {
-                JonesHud_hudState = 0;
+                JonesHud_hudState       = 0;
                 jonesCog_g_bMenuVisible = 0;
+
                 sithGamesave_CloseRestore();
                 JonesMain_ResumeGame();
+                JonesReticle_Resume();
                 return;
             }
 
