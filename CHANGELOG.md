@@ -5,26 +5,22 @@
     * Added DirectInput8 port for `stdControl` module (a465622)
     * Added DirectSound8 port for `sound` module (9fde6dc)
     * Abstracted `stdComm` (a465622)
-  - Refactored & added new rdVector functions: (5239a55, 68dc8b7, f1ed7a9)
+  - Refactored & Added new rdVector functions: (5239a55, 68dc8b7, f1ed7a9, b23651f, a74d948, bff6f47)
     * `rdVector_IsZero2`, `rdVector_IsZero3`, `rdVector_IsZero4`
     * `rdVector_ScaleAdd2Acc`, `rdVector_ScaleAdd3Acc`, `rdVector_ScaleAdd4Acc`
     * `rdVector_MultAcc2`, `rdVector_MultAcc3`, `rdVector_MultAcc4` 
     * `rdVector_Zero2`, `rdVector_Zero3`, `rdVector_Zero4 `
     * `rdMath_ProjectPointOntoPlane`, `rdMath_ProjectPointOntoPlaneNormalized`
+    * `rdVector_Equal2`, `rdVector_Equal3`, `rdVector_Equal4`,
+    * `rdVector_SmoothDamp2`, `rdVector_SmoothDamp3`, `rdVector_SmoothDamp4`
+    * `rdVector_SmoothDamp2Acc`, `rdVector_SmoothDamp3Acc`, `rdVector_SmoothDamp4Acc`
   - Added dead code found in debug version (b042bea)
   - Added new macro `RDVECTOR_NEG3` (e78e93b)
   - Fixed names of thing move animation functions in `sithAnimate` module (db77fe8)
   - Renamed `sithCollision_CheckDistance` to `sithCollision_CheckFloorDistance` (b0b6116)
-  - Fixed returning correct variable in `stdControl_IsOpen` (ae3146d)
-  - Added check for zero size in lip sync data generation to prevent allocation errors (f79736b)
-  - Added functionality to write user-mode minidump information when an unhandled exception occurs (6fc4ad5)
-  - Added stack trace printing to the log when an assert error occurs (6fc4ad5)
   - Fixed debug assert macro in `rdroid` module (4ec9416)
   - Added functions for copying array of `rdVector*` (58ade59)
   - Added `rdQClip_Face3T` from debug version (7f9159a)
-  - Renamed developer console commands (357c287)  
-    * `interface` -> `menu`
-    * `indicator` -> `hud`
   - Implemented missing block allocation functions of `stdMemory` module (b99b92a)
   - Implemented modules:
     * `sithPlayerActions` (67f2eab)
@@ -42,16 +38,9 @@
     This error prevented check for memory leaks when module was open. 
   - Added new module `stdJSON` for parsing and writing JSON files (575cf36)
     This new feature adds new dependency: `Jansson`
-  - Added ne module `stdConfig` for storing engine configurations (68d6e6b)
-  - Refactored engine settings to use `stdConfig` module instead of `wuRegistry` (68d6e6b)
+  - Added new module `stdConfig` for storing engine configurations (68d6e6b)
   - Refactored boolean functions and add new functions to store / retrieve binary data in `wuRegistry` module (970dab5)
-  - Fixed out of bounds write when ran out of free subtitle slots in `sithVoice_AddSubtitle` (693cbcf)
-    It resolves crashes when too many subtitles are added in a short time.
-  - Fixed out of bounds read in `sithVoice_Draw` (693cbcf)
-  - Fixed skipping expired/empty slots and clearing correct part of pending subtitle array in `sithVoice_PurgeDrawnSubtitles` (693cbcf)  
-    This resolves issues with drawing pending subtitles when `sithVoice_curSubtitleDrawIndex` < `sithVoice_numSubtitleInfos`
   - Added new function `Sound_GetChannelPlayProgress` for retrieving current play progress of a sound channel (81efaf9)
-  - Fixed removing subtitle when stopping currently played thing voice sound in `sithVoice_PlayVoice` (4d5f54a)
   - Added implementation for creating MineCar user block (e1beaca)
   - Added new macros for max puppet modes and calculating puppet major mode from armed & move modes (7d3cc1b)
   - Refactored enum `SithThingMoveStatus` (14236fa)
@@ -60,14 +49,50 @@
   - Added implementation of `sithPhysics_FindFloor` function (3a6fffa)
   - Added github actions CI for building DirectX 9/6 (82d5ba3)
   - Renamed collision system function `sithCollision_FindActivatedThing` to `sithCollision_FindItemThing` (0fe8351)
-  - Fixed incorrect handling of default control set (4b3ea73)
-  - Fixed assigning default control set when loading control set from `kfg` file fails (d6c774c)
   - Renamed collision functions for checking LOS (09434a9)
   - Fixed bug to correctly update key press state in `stdControl_ReadKey` function (c98937b)
+  - Added check for model render type `sithThing_GetThingMeshIndex` function (431c683)
+  - Added `sithPhysics_CalcWheelRotationAngle` function (adacbeb)
+  - Added data buffer utility functions to `stdUtils` module (e50873b)
+  - Fixed code to use correct physics union member and fields (714cfbc, 4a828da)
+  - Refactored and cleaned the `sithFX` module (eecb68f, fa7dbf6)
+  - Added functions `sithPlayerControls_CalculateThrust`, `sithPlayerControls_CalculateYawVelocity` & `sithPlayerControls_CalculateAcceleratedThrust` (04b311b, e3de290)
+  - Added function checking if cos angle is in slope range; `sithPhysics_CheckSlopeAngle` (d650f3e)
+  - Added `J3D_QOL_VALUE` macro (0a0bba7)
+  - Added type alias `tStdColor` (9e8b848)
+  - Added additional RHW scale macro `RD_FIXEDPOINT_RHW_SCALE_X6` (857ae72)
+  - Added interpolation function `stdMath_SmoothDamp` & `stdMath_Expm1f` (e5ea49b)
+  - Added PI constant macros `STDMATH_PI` & `STDMATH_PI_F` (d8b0006)
+  - Fixed inline declaration for `rdVector` functions (a74d948)
+  - Changed definition of 3D vector constants to be defined in the code (a74d948)
+  - Added `rdModel3` functions for bending joints with smooth damp interpolation (7f762e3)
+  - Added `sithActor` head rotating function with optional delta smooth damp interpolation (6c43467)
+
+### Engine:
+  - Added check for zero size in lip sync data generation to prevent allocation errors (f79736b)
+  - Added functionality to write user-mode minidump information when an unhandled exception occurs (6fc4ad5)
+  - Added stack trace printing to the log when an assert error occurs (6fc4ad5)
+  - Renamed developer console commands (357c287)  
+    * `interface` -> `menu`
+    * `indicator` -> `hud`
+  - Fixed returning correct variable in `stdControl_IsOpen` (ae3146d)
+  - Refactored engine settings to use `stdConfig` module instead of `wuRegistry` (68d6e6b)
+  - Fixed out of bounds write when ran out of free subtitle slots in `sithVoice_AddSubtitle` (693cbcf)
+    It resolves crashes when too many subtitles are added in a short time.
+  - Fixed out of bounds read in `sithVoice_Draw` (693cbcf)
+  - Fixed skipping expired/empty slots and clearing correct part of pending subtitle array in `sithVoice_PurgeDrawnSubtitles` (693cbcf)  
+    This resolves issues with drawing pending subtitles when `sithVoice_curSubtitleDrawIndex` < `sithVoice_numSubtitleInfos`
+  - Fixed removing subtitle when stopping currently played thing voice sound in `sithVoice_PlayVoice` (4d5f54a)
+  - [QOL] Changed physics fixed timestep to 150 fps and added option to configure timestep (0eaa4eb)
+  - Fixed incorrect handling of default control set (4b3ea73)
+  - Fixed assigning default control set when loading control set from `kfg` file fails (d6c774c)
   - Fixed not to sync MineCar engine animation to savegame file (a6c5978)  
     This fixes dangling MineCar engine material animations when loading savegames.
   - [QOL] Replaced `timeGetTime` with high resolution timer `QueryPerformanceCounter` for better timing precision (82c8a3d)  
     This should improve timing precision for time dependent systems, especially on high refresh rate monitors.
+  - [QOL] Added config option to set extra capacity for static world sprites buffer (834cb1b)
+  - [QOL] Added config option to set extra capacity for world things buffer (1e4245d)
+  - Added reset of `sithPlayerControls` internal state upon open of game (4a1721e)
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)
@@ -93,6 +118,9 @@
     i.e.: 16 bpp textures, not VSync disable option, no anisotropic texture filtering and default bilinear filtering.
   - Fixed selecting display device when setting default video mode (dcd8962)  
     This was vanilla engine bug where no display device was selected resulting in game reporting no 3D cards found.
+  - Fixed water ripple position to be placed slightly above water surface in `sithFX` module (fa7dbf6)  
+    Originally there was a bug where water ripple was placed slightly below water surface causing ripple to be clipped.
+  - [QOL] Upgrade raft wake fx (929c21d)
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
@@ -106,9 +134,14 @@
   - Fixed minor MineCar bug when player is trying to unborad left or right side of car and unboarding is blocked (307691c)
   - [QOL] Fixed dying thing to not change it's puppet mode to swim when entering water (85abbe6)  
     This prevents dead things from playing swim idle animation when dead thing falls into water.
-  - [QOL] Changed physics fixed timestep to 150 fps and added option to configure timestep (0eaa4eb)
   - [QOL] Enabled jeep exhaust smoke fx (c889ecb)
   - Fixed Infinite loop bug in `sithCogFunction_CopyPlayerHolsters` function (51180ef)
+  - Fixed end position in strafe move collision check and reduced the collision search radius (20f2573)  
+    This fixes Indy to be able to strafe move when facing tilted surfaces, e.g., when standing at the start of the slope
+  - Added a customizable auto-aim reticle (485de86)  
+    The reticle design was inspired by the N64 port of the game and The Legend of Zelda: Ocarina.
+  - [QOL] Added smooth damp interpolation for twisting actors' aiming joints (301fe1f)  
+    This improves the fluidity and realism of animations during auto-aiming.
 
 ## v0.3.1
 ### General:
