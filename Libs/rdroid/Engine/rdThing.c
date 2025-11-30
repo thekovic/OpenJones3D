@@ -4,6 +4,7 @@
 #include <rdroid/Engine/rdPuppet.h>
 #include <rdroid/Main/rdroid.h>
 #include <rdroid/Math/rdMatrix.h>
+#include <rdroid/Math/rdVector.h>
 #include <rdroid/Primitives/rdModel3.h>
 #include <rdroid/Primitives/rdParticle.h>
 #include <rdroid/Primitives/rdPolyline.h>
@@ -11,6 +12,7 @@
 #include <rdroid/RTI/symbols.h>
 
 #include <std/General/stdMemory.h>
+#include <std/General/stdUtil.h>
 
 
 void rdThing_InstallHooks(void)
@@ -113,7 +115,7 @@ int J3DAPI rdThing_SetModel3(rdThing* pThing, rdModel3* pModel3)
     pThing->geosetNum       = -1;
     pThing->paJointMatrices = (rdMatrix34*)STDMALLOC(sizeof(rdMatrix34) * pModel3->numHNodes);
     pThing->apTweakedAngles = (rdVector3*)STDMALLOC(sizeof(rdVector3) * pModel3->numHNodes);
-    memset(pThing->apTweakedAngles, 0, sizeof(rdVector3) * pModel3->numHNodes);
+    STD_ZEROMEM(pThing->apTweakedAngles, sizeof(rdVector3) * pModel3->numHNodes);
 
     if ( !pThing->paJointMatrices || !pThing->apTweakedAngles )
     {
@@ -129,7 +131,7 @@ int J3DAPI rdThing_SetModel3(rdThing* pThing, rdModel3* pModel3)
         return 0;
     }
 
-    memset(pThing->paJointAmputationFlags, 0, sizeof(*pThing->paJointAmputationFlags) * pModel3->numHNodes);
+    STD_ZEROMEM(pThing->paJointAmputationFlags, sizeof(*pThing->paJointAmputationFlags) * pModel3->numHNodes);
 
     rdModel3HNode* pCurNode = pModel3->aHierarchyNodes;
     for ( size_t i = 0; i < pModel3->numHNodes; ++i )
@@ -242,10 +244,7 @@ void J3DAPI rdThing_AccumulateMatrices(rdThing* pThing, const rdModel3HNode* pNo
     rdMatrix_PostMultiply34(&mat, &pThing->paJointMatrices[pNode->num]);
     if ( pNode->pParent )
     {
-        rdVector3 tvec;
-        tvec.x = -pNode->pParent->pivot.x;
-        tvec.y = -pNode->pParent->pivot.y;
-        tvec.z = -pNode->pParent->pivot.z;
+        rdVector3 tvec = RDVECTOR_NEG3(pNode->pParent->pivot);
         rdMatrix_PostTranslate34(&mat, &tvec);
     }
 

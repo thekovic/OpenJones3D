@@ -56,6 +56,34 @@ void J3DAPI rdModel3_DrawFace(const rdFace* pFace, const rdVector3* aTransformed
 void J3DAPI rdModel3_EnableFogRendering(int bEnabled);
 rdModel3DrawFaceFunc J3DAPI rdModel3_RegisterFaceDraw(rdModel3DrawFaceFunc pFunc); // Added
 
+/**
+ * Interpolates angle of a model's joint towards a target angle using exponential damping (see stdMath_SmoothDamp).
+ * Creates smooth, natural motion that slows as it approaches the target.
+ *
+ * @param pThing       - The rdModle3 thing whos joint to bend joint.
+ * @param jointNum     - Index of the joint to bend.
+ * @param axis         - Axis to modify (0=pitch, 1=yaw, 2=roll).
+ * @param angle        - Target angle in degrees.
+ * @param rate         - Damping rate (higher = faster, typical: 5-15).
+ * @param secDeltaTime - Time delta in seconds. If <= 0.0 no interpolation is  made and joint angle is set to `targetAngle`
+ */
+void J3DAPI rdModel3_BendJointAngle(rdThing* pThing, size_t jointNum, size_t axis, float angle, float rate, float secDeltaTime); // New
+void J3DAPI rdModel3_BendJointPitch(rdThing* pThing, size_t jointNum, float angle, float rate, float secDeltaTime); // New
+void J3DAPI rdModel3_BendJointYaw(rdThing* pThing, size_t jointNum, float angle, float rate, float secDeltaTime); // New
+void J3DAPI rdModel3_BendJointRoll(rdThing* pThing, size_t jointNum, float angle, float rate, float secDeltaTime); // New
+
+/**
+ * Interpolates model's joint PYR orientation towards a target PYR orientation using exponential damping (see stdMath_SmoothDamp).
+ * Creates smooth, natural motion that slows as it approaches the target.
+ *
+ * @param pThing       - The rdModle3 thing whos joint to bend joint.
+ * @param jointNum     - Index of the joint to bend.
+ * @param targetPYR    - Target PYR vector.
+ * @param rate         - Damping rate (higher = faster, typical: 5-15).
+ * @param secDeltaTime - Time delta in seconds. If <= 0.0 no interpolation is  made and joint angle is set to `targetAngle`
+ */
+void J3DAPI rdModel3_BendJoint(rdThing* pThing, size_t jointNum, const rdVector3* targetPYR, float rate, float secDeltaTime); // New
+
 // Helper hooking functions
 void rdModel3_InstallHooks(void);
 void rdModel3_ResetGlobals(void);

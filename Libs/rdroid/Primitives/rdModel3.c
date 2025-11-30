@@ -1861,3 +1861,52 @@ rdModel3DrawFaceFunc J3DAPI rdModel3_RegisterFaceDraw(rdModel3DrawFaceFunc pFunc
     pfDrawFace = pFunc;
     return pPreFunc;
 }
+
+void J3DAPI rdModel3_BendJointAngle(rdThing* pThing, size_t jointNum, size_t axis, float angle, float rate, float secDeltaTime)
+{
+    RD_ASSERT(axis < 3);
+    RD_ASSERT(pThing->type == RD_THING_MODEL3);
+    RD_ASSERT(jointNum < pThing->data.pModel3->numHNodes);
+
+    float* axisAngle = &((float*)&pThing->apTweakedAngles[jointNum])[axis];
+
+    if ( secDeltaTime <= 0.0f )
+    {
+
+        *axisAngle = angle;
+        return;
+    }
+
+    *axisAngle = stdMath_SmoothDamp(*axisAngle, angle, rate, secDeltaTime);
+}
+
+void J3DAPI rdModel3_BendJointPitch(rdThing* pThing, size_t jointNum, float angle, float rate, float secDeltaTime)
+{
+    rdModel3_BendJointAngle(pThing, jointNum, 0, angle, rate, secDeltaTime);
+}
+
+void J3DAPI rdModel3_BendJointYaw(rdThing* pThing, size_t jointNum, float angle, float rate, float secDeltaTime)
+{
+    rdModel3_BendJointAngle(pThing, jointNum, 1, angle, rate, secDeltaTime);
+}
+
+void J3DAPI rdModel3_BendJointRoll(rdThing* pThing, size_t jointNum, float angle, float rate, float secDeltaTime)
+{
+    rdModel3_BendJointAngle(pThing, jointNum, 2, angle, rate, secDeltaTime);
+}
+
+void J3DAPI rdModel3_BendJoint(rdThing* pThing, size_t jointNum, const rdVector3* targetPYR, float rate, float secDeltaTime)
+{
+    RD_ASSERT(pThing->type == RD_THING_MODEL3);
+    RD_ASSERT(jointNum < pThing->data.pModel3->numHNodes);
+
+    rdVector3* curPYR = &pThing->apTweakedAngles[jointNum];
+
+    if ( secDeltaTime <= 0.0f )
+    {
+        *curPYR = *targetPYR;
+        return;
+    }
+
+    rdVector_SmoothDamp3Acc(curPYR, targetPYR, rate, secDeltaTime);
+}
