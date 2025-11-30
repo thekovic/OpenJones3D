@@ -5,9 +5,14 @@
 #include <rdroid/Main/rdroid.h>
 #include <rdroid/RTI/symbols.h>
 
-const rdVector2 rdroid_zeroVector2 = { { 0.0f }, { 0.0f } };
-const rdVector2 rdroid_xVector2    = { { 1.0f }, { 0.0f } };
-const rdVector2 rdroid_yVector2    = { { 0.0f }, { 1.0f } };
+const rdVector2 rdroid_zeroVector2 = { 0.0f,  0.0f };
+const rdVector2 rdroid_xVector2    = { 1.0f,  0.0f };
+const rdVector2 rdroid_yVector2    = { 0.0f,  1.0f };
+
+const rdVector3 rdroid_g_zeroVector3 = { 0.0f, 0.0f, 0.0f };
+const rdVector3 rdroid_g_xVector3    = { 1.0f, 0.0f, 0.0f };
+const rdVector3 rdroid_g_yVector3    = { 0.0f, 1.0f, 0.0f };
+const rdVector3 rdroid_g_zVector3    = { 0.0f, 0.0f, 1.0f };
 
 
 void rdVector_InstallHooks(void)
@@ -28,19 +33,7 @@ void rdVector_InstallHooks(void)
 }
 
 void rdVector_ResetGlobals(void)
-{
-    static const rdVector3 rdroid_g_zeroVector3_tmp = { { 0.0f }, { 0.0f }, { 0.0f } };
-    memcpy((rdVector3*)&rdroid_g_zeroVector3, &rdroid_g_zeroVector3_tmp, sizeof(rdroid_g_zeroVector3));
-
-    static const rdVector3 rdroid_g_xVector3_tmp = { { 1.0f }, { 0.0f }, { 0.0f } };
-    memcpy((rdVector3*)&rdroid_g_xVector3, &rdroid_g_xVector3_tmp, sizeof(rdroid_g_xVector3));
-
-    static const rdVector3 rdroid_g_yVector3_tmp = { { 0.0f }, { 1.0f }, { 0.0f } };
-    memcpy((rdVector3*)&rdroid_g_yVector3, &rdroid_g_yVector3_tmp, sizeof(rdroid_g_yVector3));
-
-    static const rdVector3 rdroid_g_zVector3_tmp = { { 0.0f }, { 0.0f }, { 1.0f } };
-    memcpy((rdVector3*)&rdroid_g_zVector3, &rdroid_g_zVector3_tmp, sizeof(rdroid_g_zVector3));
-}
+{}
 
 float J3DAPI rdVector_Normalize2(rdVector2* dest, const rdVector2* src)
 {
@@ -105,7 +98,8 @@ float J3DAPI rdVector_Normalize4(rdVector4* dest, const rdVector4* src)
 float J3DAPI rdVector_Normalize2Acc(rdVector2* vec)
 {
     double magnitude = sqrt(vec->y * vec->y + vec->x * vec->x);
-    if ( magnitude == 0.0 ) {
+    if ( magnitude == 0.0 )
+    {
         return 0.0f;
     }
 
@@ -117,7 +111,8 @@ float J3DAPI rdVector_Normalize2Acc(rdVector2* vec)
 float J3DAPI rdVector_Normalize3Acc(rdVector3* vec)
 {
     double len = sqrt(vec->y * vec->y + vec->z * vec->z + vec->x * vec->x);
-    if ( len == 0.0 ) {
+    if ( len == 0.0 )
+    {
         return 0.0f;
     }
 
@@ -204,7 +199,8 @@ float J3DAPI rdVector_Normalize3QuickAcc(rdVector3* src)
 float J3DAPI rdVector_Normalize4Acc(rdVector4* vec)
 {
     double len = sqrt(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z + vec->w * vec->w);
-    if ( len == 0.0 ) {
+    if ( len == 0.0 )
+    {
         return 0.0f;
     }
 
