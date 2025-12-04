@@ -926,7 +926,7 @@ LABEL_61:
         sithPhysics_ResetThingMovement(pThing);
     }
 
-    v46 = stdMath_ClipNearZero(fabsf(v46));
+    v46 = stdMath_ClipNearZero(v46);
 
     if ( pThing->collide.type
         && pThing->moveType == SITH_MT_PHYSICS
@@ -1489,7 +1489,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
             hitMass = pHitThing->moveInfo.physics.mass;
 
             hitImpactSpeed   = rdVector_Dot3(&pHitThing->moveInfo.physics.velocity, &hitNorm);
-            totalImpactSpeed = stdMath_ClipNearZero(fabsf(impactSpeed + hitImpactSpeed));
+            totalImpactSpeed = stdMath_ClipNearZero(impactSpeed + hitImpactSpeed);
 
             float totalMass = mass + hitMass;
             SITH_ASSERTREL(totalMass > 0.0f);
