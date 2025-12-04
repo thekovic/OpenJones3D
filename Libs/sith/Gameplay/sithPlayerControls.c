@@ -1659,10 +1659,10 @@ void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDe
     //
     if ( rdVector_Len3(&pPhysics->velocity) < 1.1f )
     {
-        SithSurface* pLedgeSurf;
-        rdFace* pLedgeFace;
-        rdModel3Mesh* pLedgeMesh;
-        SithThing* pLedgeThing;
+        SithSurface* pLedgeSurf  = NULL;
+        rdFace* pLedgeFace       = NULL;
+        rdModel3Mesh* pLedgeMesh = NULL;
+        SithThing* pLedgeThing   = NULL;
 
         // Look for ledge in front of player
         float ledgeDist = sithPlayerActions_FindLedge(pThing, &pThing->orient.lvec, &pLedgeSurf, &pLedgeFace, &pLedgeMesh, &pLedgeThing);
