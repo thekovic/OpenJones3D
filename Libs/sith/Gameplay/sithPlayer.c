@@ -89,7 +89,10 @@ void sithPlayer_Close(void)
     sithPlayerActions_DisableJewelFlying();
 
     // Fixed: Disable swimming inventory, which could be set by jewel flying system or by cog script.
-    sithInventory_SetSwimmingInventory(sithPlayer_g_pLocalPlayerThing, /*bItemsAvailable=*/1);
+    if ( sithPlayer_g_pLocalPlayerThing )
+    {
+        sithInventory_SetSwimmingInventory(sithPlayer_g_pLocalPlayerThing, /*bItemsAvailable=*/1);
+    }
 #endif // !J3D_SPEEDRUN_BUILD
 
     sithPlayer_g_pLocalPlayerThing = NULL;
