@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 
-static float sithActor_headRotDampRate = 5.0f; // Added
+static float sithActor_headRotDampRate = 10.0f; // Added
 
 void J3DAPI sithActor_PlayDamageSoundFx(SithThing* pThing, SithDamageType damageType);
 

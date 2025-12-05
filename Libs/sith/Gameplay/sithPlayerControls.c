@@ -79,7 +79,7 @@ static float sithPlayerControls_vehicleUnboardDist        = 0.12f;
 static SithThing* sithPlayerControls_pBoardedVehicleThing = NULL; // Fixed: Init to NULL
 
 // Auto-aim joint rotation offsets
-static float sithPlayerControls_aimRotSmoothRate = 5.0f; // Added
+static float sithPlayerControls_aimRotSmoothRate = 10.0f; // Added
 static float sithPlayerControls_pistolYawOffset  = 3.0f;
 static float sithPlayerControls_rifleYawOffset   = 1.0f;
 
