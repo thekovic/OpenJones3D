@@ -3288,7 +3288,7 @@ void J3DAPI sithPlayerControls_ExitVehicle(SithThing* pVehiclePlayerThing)
     {
         // Exit left side
         rdVector3 leftOffset;
-        rdVector_Scale3(&leftOffset, &pVehiclePlayerThing->orient.rvec, -sithPlayerControls_minecarUnboardDist);
+        rdVector_Scale3(&leftOffset, &pVehiclePlayerThing->orient.rvec, -sithPlayerControls_vehicleUnboardDist);
         rdVector_Add3Acc(&unboardPos, &leftOffset);
 
         walkPlayerOrient.uvec = rdroid_g_zVector3;
