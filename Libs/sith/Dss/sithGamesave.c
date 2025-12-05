@@ -618,12 +618,14 @@ int J3DAPI sithGamesave_RestoreFile(const char* pFilename, int bNotify)
     STD_STRCPY(sithGamesave_aLastFilename, pFilename);
 
     // Fix COG links to things
-    SITHLOG_ERROR("RESTORE: calling sithCog_FixupLinksToThings\n");
+    // Altered: Change log level to status from error
+    SITHLOG_STATUS("RESTORE: calling sithCog_FixupLinksToThings\n");
     sithCog_FixupLinksToThings();
 
     // Set game time from savegame file
+    // Altered: Change log level to status from error
     sithTime_SetGameTime(header.msecGameTime);
-    SITHLOG_ERROR("RESTORE: returning SUCCESS!\n");
+    SITHLOG_STATUS("RESTORE: returning SUCCESS!\n");
 
     if ( bNotify == 1 )
     {
