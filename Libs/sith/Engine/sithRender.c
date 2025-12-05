@@ -43,8 +43,9 @@
 #include <math.h>
 #include <stdint.h>
 
-#define SITHRENDER_MAXTHINGLIGHTS  RDCAMERA_MAX_LIGHTS / 2 // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS-1
-#define SITHRENDER_MAXSECTORLIGHTS (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
+#define SITHRENDER_MAXVISIBLEADJOINSDISTANCE 8.0f
+#define SITHRENDER_MAXTHINGLIGHTS            RDCAMERA_MAX_LIGHTS / 2 // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS-1
+#define SITHRENDER_MAXSECTORLIGHTS           (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
 
 // There are 2 types of thing light the dynamic light that affect emitting thing and surrounding area,
 // and there is flat light that lits only the emitting thing.
@@ -78,7 +79,7 @@ static size_t sithRender_numSectorPointLights;
 static rdLight sithRender_aSectorPointLights[SITHRENDER_MAXSECTORLIGHTS];
 
 static size_t sithRender_numAlphaAdjoins;
-static SithSurface* sithRender_aAlphaAdjoins[SITHRENDER_MAX_VISIBLE_SECTORS / 2];
+static SithSurface* sithRender_aAlphaAdjoins[SITHRENDER_MAX_VISIBLE_SECTORS / 2]; // Altered: Was fixed 64; I guess half of 128 visible sectors
 
 // Transformers & Clipping vars
 static rdPrimit3 sithRender_clipFaceView;
@@ -99,6 +100,25 @@ static size_t sithRender_numSpritesToDraw;
 
 static size_t sithRender_numThingLights;
 static rdLight sithRender_aThingLights[SITHRENDER_MAXTHINGLIGHTS];
+
+void sithRender_Draw(void);
+
+void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pFrustrum);
+void J3DAPI sithRender_BuildVisibleSurface(SithSurface* pSurface);
+void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, size_t numVertices, float orthLeft, float orthTop, float orthRight, float orthBottom);
+void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pClipFrustum);
+void J3DAPI sithRender_PVSBuildVisibleSector(SithSector* pSector);
+void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrustum* pFrustrum);
+
+void sithRender_RenderSectors(void);
+
+void sithRender_BuildVisibleSectorsThingList(void);
+void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistance, float startDistance);
+
+void sithRender_BuildDynamicLights(void);
+void sithRender_RenderThings(void);
+int J3DAPI sithRender_RenderThing(SithThing* pThing);
+void sithRender_RenderAlphaAdjoins(void);
 
 void sithRender_InstallHooks(void)
 {
@@ -131,14 +151,13 @@ void sithRender_ResetGlobals(void)
     float jonesConfig_g_fogDensity_tmp = 100.0f;
     memcpy(&sithRender_g_fogDensity, &jonesConfig_g_fogDensity_tmp, sizeof(sithRender_g_fogDensity));
 
-    memset(&sithRender_g_numDrawnThings, 0, sizeof(sithRender_g_numDrawnThings));
-    memset(&sithRender_g_numArchPolys, 0, sizeof(sithRender_g_numArchPolys));
-    memset(&sithRender_g_numAlphaArchPolys, 0, sizeof(sithRender_g_numAlphaArchPolys));
-    memset(&sithRender_g_numThingPolys, 0, sizeof(sithRender_g_numThingPolys));
-    memset(&sithRender_g_numAlphaThingPoly, 0, sizeof(sithRender_g_numAlphaThingPoly));
-    memset(&sithRender_g_numVisibleAdjoins, 0, sizeof(sithRender_g_numVisibleAdjoins));
-
-    memset(&sithRender_g_numVisibleSectors, 0, sizeof(sithRender_g_numVisibleSectors));
+    STD_ZEROMEM(&sithRender_g_numDrawnThings, sizeof(sithRender_g_numDrawnThings));
+    STD_ZEROMEM(&sithRender_g_numArchPolys, sizeof(sithRender_g_numArchPolys));
+    STD_ZEROMEM(&sithRender_g_numAlphaArchPolys, sizeof(sithRender_g_numAlphaArchPolys));
+    STD_ZEROMEM(&sithRender_g_numThingPolys, sizeof(sithRender_g_numThingPolys));
+    STD_ZEROMEM(&sithRender_g_numAlphaThingPoly, sizeof(sithRender_g_numAlphaThingPoly));
+    STD_ZEROMEM(&sithRender_g_numVisibleAdjoins, sizeof(sithRender_g_numVisibleAdjoins));
+    STD_ZEROMEM(&sithRender_g_numVisibleSectors, sizeof(sithRender_g_numVisibleSectors));
 }
 
 int sithRender_Startup(void)
@@ -157,7 +176,8 @@ int sithRender_Open(void)
 {
     sithRender_lightMode = RD_LIGHTING_GOURAUD;
 
-    for ( size_t i = 0; i < STD_ARRAYLEN(sithRender_aThingLights); ++i ) {
+    for ( size_t i = 0; i < STD_ARRAYLEN(sithRender_aThingLights); ++i )
+    {
         rdLight_NewEntry(&sithRender_aThingLights[i]);
     }
 
@@ -182,7 +202,8 @@ int sithRender_Open(void)
 
 void sithRender_Close(void)
 {
-    if ( sithRender_aAdjoinTable ) {
+    if ( sithRender_aAdjoinTable )
+    {
         stdMemory_Free(sithRender_aAdjoinTable);
     }
 
@@ -212,6 +233,11 @@ void J3DAPI sithRender_SetLightingMode(rdLightMode mode)
     sithRender_lightMode = mode;
 }
 
+rdLightMode sithRender_GetLightingMode(void)
+{
+    return sithRender_lightMode;
+}
+
 void sithRender_RenderScene(void)
 {
     SithWorld* pWorld = sithWorld_g_pCurrentWorld;
@@ -224,7 +250,8 @@ void sithRender_RenderScene(void)
         pWorld->state &= ~SITH_WORLD_STATE_UPDATE_FOG;
     }
 
-    if ( sithTime_IsPaused() ) {
+    if ( sithTime_IsPaused() )
+    {
         stdEffect_SetFadeFactor(1, 0.5f);
     }
 
@@ -454,7 +481,7 @@ void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, size_t numVer
 void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pClipFrustum)
 {
     sithPVS_SetTable(sithRender_aAdjoinTable, &sithWorld_g_pCurrentWorld->aPVS[pSector->pvsIdx], sithWorld_g_pCurrentWorld->numAdjoins);
-    memset(sithRender_aVisibleAdjoins, 0, sizeof(sithRender_aVisibleAdjoins));
+    STD_ZEROMEM(sithRender_aVisibleAdjoins, sizeof(sithRender_aVisibleAdjoins));
 
     sithRender_curPVSIndex     = 1;
     sithRender_faceView.aVertices = sithWorld_g_pCurrentWorld->aTransformedVertices;
@@ -611,13 +638,15 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
     if ( (pSector->flags & SITH_SECTOR_SEEN) == 0 )
     {
         pSector->flags |= SITH_SECTOR_SEEN;
-        if ( (pSector->flags & SITH_SECTOR_COGLINKED) != 0 ) { // Notify sector's cog
+        if ( (pSector->flags & SITH_SECTOR_COGLINKED) != 0 )
+        {
+            // Notify sector's cog
             sithCog_SectorSendMessage(pSector, NULL, SITHCOG_MSG_SIGHTED);
         }
     }
 
     // Assign sectors frustum
-    memcpy(&sithRender_aSectorFrustrums[sithRender_numSecorFrustrums], pFrustrum, sizeof(rdClipFrustum));
+    sithRender_aSectorFrustrums[sithRender_numSecorFrustrums] =  *pFrustrum;
     pSector->pClipFrustum = &sithRender_aSectorFrustrums[sithRender_numSecorFrustrums++];
 
     // Collect emitted thing lights (ambient spot light & actor head light)
@@ -626,11 +655,10 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
         if ( (pThing->flags & SITH_TF_EMITLIGHT) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_INVISIBLE | SITH_TF_DESTROYED)) == 0 )
         {
             // Collect Thing's light if light range is > 0.01f
-            if ( (pThing->light.color.red > 0.0f || pThing->light.color.green > 0.0f || pThing->light.color.blue > 0.0f)
+            if ( !rdVector_IsZero3((rdVector3*)&pThing->light.color)
                 && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
             {
-                rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->light.color);
-
+                sithRender_aThingLights[sithRender_numThingLights].color     = pThing->light.color;
                 sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius;
                 sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius;
 
@@ -642,12 +670,9 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
             if ( (pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER)
                 && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
                 && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
-                && (pThing->thingInfo.actorInfo.headLightIntensity.red > 0.0f
-                    || pThing->thingInfo.actorInfo.headLightIntensity.green > 0.0f
-                    || pThing->thingInfo.actorInfo.headLightIntensity.blue > 0.0f) )
+                && !rdVector_IsZero3((rdVector3*)&pThing->thingInfo.actorInfo.headLightIntensity) )
             {
-                rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->thingInfo.actorInfo.headLightIntensity);
-
+                sithRender_aThingLights[sithRender_numThingLights].color     = pThing->thingInfo.actorInfo.headLightIntensity;
                 sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha;
                 sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha;
 
@@ -668,7 +693,8 @@ void sithRender_RenderSectors(void)
     sithRender_g_numArchPolys = 0;
 
     rdFaceFlags extraFaceFlags = 0;
-    if ( sithWorld_g_pCurrentWorld->fog.bEnabled ) {
+    if ( sithWorld_g_pCurrentWorld->fog.bEnabled )
+    {
         extraFaceFlags = RD_FF_FOG_ENABLED;
     }
 
@@ -828,7 +854,7 @@ void sithRender_BuildVisibleSectorsThingList(void)
     }
 }
 
-void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistance, float extraDistance)
+void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistance, float startDistance)
 {
     if ( pSector->renderTick != sithMain_g_curRenderTick )
     {
@@ -848,12 +874,10 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
                     && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) == 0 )
                 {
                     // Collect thing light if range is > 0.01f
-                    if ( pThing->light.color.red > 0.0f
-                        || pThing->light.color.green > 0.0f
-                        || pThing->light.color.blue > 0.0f && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
+                    if ( !rdVector_IsZero3((rdVector3*)&pThing->light.color)
+                        && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
                     {
-                        rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->light.color);
-
+                        sithRender_aThingLights[sithRender_numThingLights].color     = pThing->light.color;
                         sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius;
                         sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius;
 
@@ -865,12 +889,9 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
                     if ( (pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER)
                         && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
                         && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
-                        && (pThing->thingInfo.actorInfo.headLightIntensity.x > 0.0f
-                            || pThing->thingInfo.actorInfo.headLightIntensity.y > 0.0f
-                            || pThing->thingInfo.actorInfo.headLightIntensity.z > 0.0f) )
+                        && !rdVector_IsZero3((rdVector3*)&pThing->thingInfo.actorInfo.headLightIntensity) )
                     {
-                        rdVector_Copy4(&sithRender_aThingLights[sithRender_numThingLights].color, &pThing->thingInfo.actorInfo.headLightIntensity);
-
+                        sithRender_aThingLights[sithRender_numThingLights].color     = pThing->thingInfo.actorInfo.headLightIntensity;
                         sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius;
                         sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius;
 
@@ -884,7 +905,7 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
                 }
             }
 
-            if ( curDistance < 8.0f )
+            if ( curDistance < SITHRENDER_MAXVISIBLEADJOINSDISTANCE )
             {
                 ++sithRender_numVisibleThingSectors;
                 if ( sithRender_numThingSectors < SITHRENDER_MAX_SECTORS_WITH_THINGS )
@@ -898,8 +919,8 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
         {
             if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 && pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick )
             {
-                float distance = extraDistance + curDistance + pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
-                if ( distance < 8.0f )
+                float distance = startDistance + curDistance + pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
+                if ( distance < SITHRENDER_MAXVISIBLEADJOINSDISTANCE )
                 {
                     pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
                     sithRender_BuildSectorThingList(pAdjoin->pAdjoinSector, distance, 0.0f);
@@ -1021,9 +1042,8 @@ void sithRender_RenderThings(void)
                         // Set sector point light
                         //
                         // TODO [bug]: sithRender_numSectorPointLights is never incremented, but changing this breaks thin illumination as the light will affect also things from other sectors
-                        //             Maybe just a temp var can be used for light can be used instead and we can then increase limitation of max thing light?
-                        rdVector_Copy4(&sithRender_aSectorPointLights[sithRender_numSectorPointLights].color, &pSector->light.color);
-
+                        //             Maybe just a temp var for light can be used instead and we can then increase limitation of max thing light?
+                        sithRender_aSectorPointLights[sithRender_numSectorPointLights].color     = pSector->light.color;
                         sithRender_aSectorPointLights[sithRender_numSectorPointLights].minRadius = pSector->light.minRadius;
                         sithRender_aSectorPointLights[sithRender_numSectorPointLights].maxRadius = pSector->light.maxRadius;
                         rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aSectorPointLights[sithRender_numSectorPointLights], &pSector->light.pos);
@@ -1067,7 +1087,7 @@ void sithRender_RenderThings(void)
                 {
                     // Collect thing flat light
                     if ( (pCurThing->flags & SITH_TF_EMITLIGHT) != 0
-                        && (pCurThing->light.color.red > 0.0f || pCurThing->light.color.green > 0.0f || pCurThing->light.color.blue > 0.0f)
+                        && !rdVector_IsZero3((rdVector3*)&pCurThing->light.color)
                         && SITHRENDER_ISFLATLIGHT(pCurThing->light.color.alpha) )// if light range is <= 0.01f
                     {
                         rdVector4 ambientLight;
@@ -1125,7 +1145,7 @@ int J3DAPI sithRender_RenderThing(SithThing* pThing)
     pThing->renderFrame = sithMain_g_frameNumber;
 
     // Now draw thing
-    rdVector_Copy3(&pThing->orient.dvec, &pThing->pos);
+    pThing->orient.dvec = pThing->pos;
     int drawResult = sithThing_Draw(pThing);
     if ( (pThing->flags & SITH_TF_SHADOW) != 0 ) // draw shadow
     {
@@ -1136,7 +1156,7 @@ int J3DAPI sithRender_RenderThing(SithThing* pThing)
     sithRender_g_numAlphaThingPoly += rdModel3_g_numDrawnAlphaFaces;
 
     // Clear cur dvec aka position
-    memset(&pThing->orient.dvec, 0, sizeof(pThing->orient.dvec));
+    pThing->orient.dvec = rdroid_g_zeroVector3;
 
     // Extra draw func
     if ( sithRender_pExtraThingRenderFunc && (pThing->flags & SITH_TF_UNKNOWN_200000) != 0 )
@@ -1173,8 +1193,7 @@ void sithRender_RenderAlphaAdjoins(void)
         SithSurface* pSurf  = sithRender_aAlphaAdjoins[surfNum];
         SithSector* pSector = pSurf->pSector;
 
-        rdVector4 ambientLight;
-        rdVector_Copy4(&ambientLight, &pSector->ambientLight); // TODO: Why the ambient light is applied? For normal surfs that is not the case
+        rdVector4 ambientLight = pSector->ambientLight; // TODO: Why the ambient light is applied? For normal surfs that is not the case
         rdVector_Add4Acc(&ambientLight, &pSector->extraLight);
         ambientLight.alpha = 0.0f;
         // TOCO: clamp vector to 0.0 - 1.0f?

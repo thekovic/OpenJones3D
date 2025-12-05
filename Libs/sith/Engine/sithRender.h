@@ -8,8 +8,8 @@
 #include <std/types.h>
 
 J3D_EXTERN_C_START
-#define SITHRENDER_MAX_VISIBLE_SECTORS     4096 // Changed: Was 128
-#define SITHRENDER_MAX_SECTORS_WITH_THINGS SITHRENDER_MAX_VISIBLE_SECTORS * 2 // Changed: Was 256
+#define SITHRENDER_MAX_VISIBLE_SECTORS     4096 // Altered: Was 128
+#define SITHRENDER_MAX_SECTORS_WITH_THINGS SITHRENDER_MAX_VISIBLE_SECTORS * 2 // Altered: Was 256
 
 #define sithRender_g_fogDensity J3D_DECL_FAR_VAR(sithRender_g_fogDensity, float)
 // extern float sithRender_g_fogDensity ;
@@ -36,30 +36,22 @@ J3D_EXTERN_C_START
 // extern int sithRender_g_numVisibleSectors;
 
 int sithRender_Startup(void);
-int J3DAPI sithRender_Open();
-void J3DAPI sithRender_Close();
 void sithRender_Shutdown(void);
+
+int sithRender_Open(void);
+void sithRender_Close(void);
+
 void J3DAPI sithRender_SetRenderFlags(int flags);
-int J3DAPI sithRender_GetRenderFlags();
+int sithRender_GetRenderFlags(void);
+
 void J3DAPI sithRender_SetLightingMode(rdLightMode mode);
+rdLightMode sithRender_GetLightingMode(void); // Added
 
-void sithRender_RenderScene(void); // Added
-void sithRender_Draw(void);
-void sithRender_TogglePVS(void);// Added
+//!< Renders sithWorld_g_pCurrentWorld from position of sithCamera_g_pCurCamera
+void sithRender_RenderScene(void); // Added from debug
 
-void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pFrustrum);
-void J3DAPI sithRender_BuildVisibleSurface(SithSurface* pSurface);
-void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, size_t numVertices, float orthLeft, float orthTop, float orthRight, float orthBottom);
-void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pClipFrustum);
-void J3DAPI sithRender_PVSBuildVisibleSector(SithSector* pSector);
-void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrustum* pFrustrum);
-void J3DAPI sithRender_RenderSectors();
-void sithRender_BuildVisibleSectorsThingList(void);
-void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistance, float extraDistance);
-void sithRender_BuildDynamicLights(void);
-void sithRender_RenderThings(void);
-int J3DAPI sithRender_RenderThing(SithThing* pThing);
-void sithRender_RenderAlphaAdjoins(void);
+void sithRender_TogglePVS(void); // Added from debug
+
 int sithRender_MakeScreenShot(void);
 
 // Helper hooking functions
