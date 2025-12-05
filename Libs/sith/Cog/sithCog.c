@@ -46,16 +46,20 @@
 #define SITHCOG_MAXSCRIPTS       256u
 #define SITHCOG_SYMVALUESTRLEN   64
 
-static size_t numSectorLinks = 0u; // Added: Init to 0
+
+static bool sithCog_bCogStartup = false; // Altered: Init to false
+static bool sithCog_bCogOpen    = false; // Altered: Init to false
+
+static tHashTable* sithCog_pHashtable = NULL;  // Altered: Init to NULL
+
+static size_t numSectorLinks = 0u; // Altered: Init to 0
 static SithCogSectorLink aCogLinkSectors[512] = { 0 }; // Added: Init to 0
 
-static size_t numSurfLinks= 0u; // Added: Init to 0
+static size_t numSurfLinks= 0u; // Altered: Init to 0
 static SithCogSurfaceLink aCogLinkSurfaces[512]= { 0 }; // Added: Init to 0
 
-static size_t numThingLinks = 0u; // Added: Init to 0
+static size_t numThingLinks = 0u; // Altered: Init to 0
 static SithCogThingLink aThingLinks[1024]= { 0 }; // Added: Init to 0
-
-static bool bCogOpen = false; // Added: Init to false
 
 int J3DAPI sithCog_LinkCog(const SithWorld* pWorld, SithCog* pCog, const SithCogSymbolRef* pRef, const SithCogSymbol* pSymbol);
 void J3DAPI sithCog_GetSymbolRefInitializer(const SithWorld* pWorld, const SithCog* pCog, int symIdx, char* pOutString);
@@ -121,15 +125,13 @@ void sithCog_InstallHooks(void)
 
 void sithCog_ResetGlobals(void)
 {
-    memset(&sithCog_g_bCogStartup, 0, sizeof(sithCog_g_bCogStartup));
-    memset(&sithCog_g_pHashtable, 0, sizeof(sithCog_g_pHashtable));
-    memset(&sithCog_g_pSymbolTable, 0, sizeof(sithCog_g_pSymbolTable));
-    memset(&sithCog_g_pMasterCog, 0, sizeof(sithCog_g_pMasterCog));
+    STD_ZEROMEM(&sithCog_g_pSymbolTable, sizeof(sithCog_g_pSymbolTable));
+    STD_ZEROMEM(&sithCog_g_pMasterCog, sizeof(sithCog_g_pMasterCog));
 }
 
 int sithCog_Startup(void)
 {
-    if ( sithCog_g_bCogStartup )
+    if ( sithCog_bCogStartup )
     {
         return 1;
     }
@@ -141,8 +143,8 @@ int sithCog_Startup(void)
         return 1;
     }
 
-    sithCog_g_pHashtable = stdHashtbl_New(SITHCOG_MAXSCRIPTS);
-    if ( !sithCog_g_pHashtable )
+    sithCog_pHashtable = stdHashtbl_New(SITHCOG_MAXSCRIPTS);
+    if ( !sithCog_pHashtable )
     {
         SITHLOG_ERROR("Could not allocate COG hashtable.\n");
         return 1;
@@ -152,7 +154,7 @@ int sithCog_Startup(void)
 
     sithCog_Initialize();
     sithEvent_RegisterTask(SITHCOG_TASKID, sithCog_TimerEventTask, 0, SITHEVENT_TASKONDEMAND);
-    sithCog_g_bCogStartup = 1;
+    sithCog_bCogStartup = 1;
     return 0;
 }
 
@@ -164,22 +166,22 @@ void sithCog_Shutdown(void)
         sithCog_g_pSymbolTable = NULL;
     }
 
-    if ( sithCog_g_pHashtable )
+    if ( sithCog_pHashtable )
     {
-        stdHashtbl_Free(sithCog_g_pHashtable);
-        sithCog_g_pHashtable = NULL;
+        stdHashtbl_Free(sithCog_pHashtable);
+        sithCog_pHashtable = NULL;
     }
 
     sithCogParse_FreeParseTree();
-    sithCog_g_bCogStartup = 0;
+    sithCog_bCogStartup = 0;
 }
 
 int J3DAPI sithCog_Open(SithWorld* pWorld)
 {
     SITH_ASSERTREL(pWorld);
-    SITH_ASSERTREL(sithCog_g_bCogStartup == 1);
+    SITH_ASSERTREL(sithCog_bCogStartup == 1);
 
-    if ( bCogOpen )
+    if ( sithCog_bCogOpen )
     {
         SITHLOG_ERROR("Warning: System already open!\n");
         return 1;
@@ -254,13 +256,13 @@ int J3DAPI sithCog_Open(SithWorld* pWorld)
         sithCog_SendMessage(pCog, SITHCOG_MSG_LOADING, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_NONE, 0, 0);
     }
 
-    bCogOpen = true;
+    sithCog_bCogOpen = true;
     return 0;
 }
 
 void sithCog_Close(void)
 {
-    if ( bCogOpen )
+    if ( sithCog_bCogOpen )
     {
         sithCog_BroadcastMessage(SITHCOG_MSG_SHUTDOWN, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_NONE, 0);
     }
@@ -268,9 +270,9 @@ void sithCog_Close(void)
     numSectorLinks = 0;
     numSurfLinks   = 0;
     numThingLinks  = 0;
-    sithCog_g_pMasterCog   = NULL;
+    sithCog_g_pMasterCog = NULL;
 
-    bCogOpen = false;
+    sithCog_bCogOpen = false;
 }
 
 void J3DAPI sithCog_FreeWorldCogs(SithWorld* pWorld)
@@ -592,7 +594,7 @@ int J3DAPI sithCog_AllocWorldCogScripts(SithWorld* pWorld, size_t numCogScripts)
         return 1;
     }
 
-    memset(pWorld->aCogScripts, 0, sizeof(SithCogScript) * numCogScripts);
+    STD_ZEROMEM(pWorld->aCogScripts, sizeof(SithCogScript) * numCogScripts);
     pWorld->sizeCogScripts = numCogScripts;
     pWorld->numCogScripts  = 0;
     return 0;
@@ -609,7 +611,7 @@ int J3DAPI sithCog_AllocWorldCogs(SithWorld* pWorld, size_t sizeCogs)
         return 1;
     }
 
-    memset(pWorld->aCogs, 0, sizeof(SithCog) * sizeCogs);
+    STD_ZEROMEM(pWorld->aCogs, sizeof(SithCog) * sizeCogs);
     pWorld->sizeCogs = sizeCogs;
     pWorld->numCogs  = 0;
     return 0;
@@ -1082,7 +1084,7 @@ int J3DAPI sithCog_ParseSymbolRef(SithWorld* pWorld, SithCogSymbol* pSymbol, con
             if ( sscanf_s(pString, "(%f/%f/%f)", &x, &y, &z) != 3 )
             {
                 SITHLOG_ERROR("Ref '%s' could not be read as a vector, line %d.\n", pString, stdConffile_GetLineNumber());
-                memset(&pSymbol->value.val, 0, sizeof(pSymbol->value.val));
+                STD_ZEROMEM(&pSymbol->value.val, sizeof(pSymbol->value.val));
                 return 1;
             }
 
@@ -2124,24 +2126,24 @@ int J3DAPI sithCog_TimerEventTask(int msecTime, SithEventParams* pParams)
 SithCogScript* J3DAPI sithCog_GetScript(const char* pName)
 {
     SITH_ASSERTREL(pName != NULL);
-    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
-    return (SithCogScript*)stdHashtbl_Find(sithCog_g_pHashtable, pName);
+    SITH_ASSERTREL(sithCog_pHashtable != NULL);
+    return (SithCogScript*)stdHashtbl_Find(sithCog_pHashtable, pName);
 }
 
 int J3DAPI sithCog_AddScript(SithCogScript* pScript)
 {
     SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(strlen(pScript->aName) > 0);
-    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
-    return stdHashtbl_Add(sithCog_g_pHashtable, pScript->aName, pScript);
+    SITH_ASSERTREL(sithCog_pHashtable != NULL);
+    return stdHashtbl_Add(sithCog_pHashtable, pScript->aName, pScript);
 }
 
 int J3DAPI sithCog_RemoveScript(SithCogScript* pScript)
 {
     SITH_ASSERTREL(pScript != NULL);
     SITH_ASSERTREL(strlen(pScript->aName) > 0);
-    SITH_ASSERTREL(sithCog_g_pHashtable != NULL);
-    return stdHashtbl_Remove(sithCog_g_pHashtable, pScript->aName);
+    SITH_ASSERTREL(sithCog_pHashtable != NULL);
+    return stdHashtbl_Remove(sithCog_pHashtable, pScript->aName);
 }
 
 void sithCog_Initialize(void)
