@@ -1826,10 +1826,12 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
     }
 
     float radius = 0.0049999999f;
+#ifdef J3D_DEBUG
     if ( pThing->moveStatus < (unsigned int)SITHPLAYERMOVE_CLIMB_TO_HANG ) // Leftover in debug
     {
         radius = 0.0049999999f;
     }
+#endif
 
     sithCollision_SearchForCollisions(pStartSector, pThing, &startPos, &pThing->orient.lvec, 0.090000004f, 0.0049999999f, 0xA00);
 
@@ -1921,19 +1923,22 @@ float J3DAPI sithPlayerActions_FindLedge(SithThing* pThing, const rdVector3* pPY
         startPos = pThing->pos;
         startPos.z = bSurfaceHit
             ? sithPlayerActions_GetLedgeSurfaceGrabPosZ(pHitLedgeSurf)
-            : sithPlayerActions_GetLedgeThingGrabPosZ(*ppLedgeThing, pHitThingFace, *ppLedgeThingMesh) + pThing->pos.z; // convert returned Z in world space to world coords
+            : (sithPlayerActions_GetLedgeThingGrabPosZ(*ppLedgeThing, pHitThingFace, *ppLedgeThingMesh)
+                + (*ppLedgeThing)->pos.z); // shift returned Z in world space to ledge pos
 
         // Added: Find sector of new startPos
         pStartSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
         if ( !pStartSector )
         {
+            pThing->collide.movesize = curMovesize;
             return -1.0f;
         }
 
         rdVector3 moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3); // Down direction
-        sithCollision_SearchForCollisions(pStartSector, pThing, &startPos, &moveNorm, 0.21f, pThing->collide.movesize, 0xA00); // Total move dist of sphere's center is 2.1m. 
+        sithCollision_SearchForCollisions(pStartSector, pThing, &startPos, &moveNorm, 0.21f, pThing->collide.movesize, 0xA00); // Total down move dist of sphere's center is 2.1m. 
                                                                                                                                // Combined with 0.2m radius, the total distance is 2.3m.
-                                                                                                                               // i.e.: indy should be at least 10 cm above when stretched out in hang position (2.2m).
+                                                                                                                               // i.e.: indy should be at least 10 cm (OG was 40 cm) higher from the ground 
+                                                                                                                               //       when stretched out in hang position (2.2m).
 
         bool bSolidSurfFound = false;
         while ( (pCollision = sithCollision_PopStack()) != NULL )
