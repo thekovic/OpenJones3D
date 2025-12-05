@@ -43,9 +43,9 @@
 #include <math.h>
 #include <stdint.h>
 
-#define SITHRENDER_MAXVISIBLEADJOINSDISTANCE 8.0f
-#define SITHRENDER_MAXTHINGLIGHTS            RDCAMERA_MAX_LIGHTS / 2 // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS-1
-#define SITHRENDER_MAXSECTORLIGHTS           (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
+#define SITHRENDER_MAXTHINGCOLLECTDISTANCE    16.0f                   // Max distance from each visible sector to collect things to be rendered. Altered: Changed to 16 (160m) form 8 (80m)
+#define SITHRENDER_MAXTHINGLIGHTS             RDCAMERA_MAX_LIGHTS / 2 // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS-1
+#define SITHRENDER_MAXSECTORLIGHTS            (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
 
 // There are 2 types of thing light the dynamic light that affect emitting thing and surrounding area,
 // and there is flat light that lits only the emitting thing.
@@ -905,7 +905,7 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
                 }
             }
 
-            if ( curDistance < SITHRENDER_MAXVISIBLEADJOINSDISTANCE )
+            if ( curDistance < SITHRENDER_MAXTHINGCOLLECTDISTANCE )
             {
                 ++sithRender_numVisibleThingSectors;
                 if ( sithRender_numThingSectors < SITHRENDER_MAX_SECTORS_WITH_THINGS )
@@ -920,7 +920,7 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
             if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 && pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick )
             {
                 float distance = startDistance + curDistance + pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
-                if ( distance < SITHRENDER_MAXVISIBLEADJOINSDISTANCE )
+                if ( distance < SITHRENDER_MAXTHINGCOLLECTDISTANCE )
                 {
                     pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
                     sithRender_BuildSectorThingList(pAdjoin->pAdjoinSector, distance, 0.0f);
