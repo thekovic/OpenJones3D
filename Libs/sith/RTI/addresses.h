@@ -2342,12 +2342,12 @@
 #define sithCog_aCogLinkSectors_ADDR 0x005557D8
 #define sithCog_aThingLinks_ADDR 0x005577D8
 #define sithCog_aCogLinkSurfaces_ADDR 0x0055C7D8
-#define sithCog_g_bCogStartup_ADDR 0x0055E7D8
+#define sithCog_bCogStartup_ADDR 0x0055E7D8
 #define sithCog_bCogOpen_ADDR 0x0055E7DC
 #define sithCog_numThingLinks_ADDR 0x0055E7E0
 #define sithCog_numSurfLinks_ADDR 0x0055E7E4
 #define sithCog_numSectorLinks_ADDR 0x0055E7E8
-#define sithCog_g_pHashtable_ADDR 0x0055E7EC
+#define sithCog_pHashtable_ADDR 0x0055E7EC
 #define sithCog_g_pSymbolTable_ADDR 0x01839624
 #define sithCog_g_pMasterCog_ADDR 0x01839628
 #define sithAI_pRegisteredInstinctHashtbl_ADDR 0x0055E9B8
