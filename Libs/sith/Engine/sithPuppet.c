@@ -661,7 +661,7 @@ void J3DAPI sithPuppet_UpdateThingMoveTracks(SithThing* pThing, float secDeltaTi
     float moveSpeed;
     if ( pThing->controlType == SITH_CT_AI
         && pThing->controlInfo.aiControl.pLocal
-        && (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0
+        && !sithPhysics_IsVehicleThing(pThing)
         && ((pThing->thingInfo.actorInfo.flags & SITH_AF_NOSLOPEMOVE) == 0 || (pThing->thingInfo.actorInfo.flags & SITH_AF_HUMAN) == 0) )
     {
         moveSpeed = sithAIMove_UpdateAIMove(pThing->controlInfo.aiControl.pLocal) * secDeltaTime;
@@ -1961,7 +1961,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                 case SITHPLAYERMOVE_SLIDEDOWNBACK:
                 {
                     if ( (pThing == sithPlayer_g_pLocalPlayerThing || (pThing->thingInfo.actorInfo.flags & SITH_AF_NOSLOPEMOVE) != 0)
-                        && (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0 )
+                        && !sithPhysics_IsVehicleThing(pThing) )
                     {
                         pThing->thingInfo.actorInfo.bControlsDisabled = 0;
 

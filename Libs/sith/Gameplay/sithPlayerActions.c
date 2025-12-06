@@ -291,7 +291,7 @@ int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
         if ( curItem == 57  // limpraft
             && !sithInventory_GetCurrentWeapon(pThing)
             && !sithWeapon_IsMountingWeapon(pThing)
-            && (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0 )
+            && !sithPhysics_IsVehicleThing(pThing))
         {
             if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
                 && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_ISFLOOR) != 0

@@ -1685,7 +1685,7 @@ void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDe
             sithPhysics_ResetThingMovement(pThing);
 
             if ( pThing == sithPlayer_g_pLocalPlayerThing
-                && (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0 )
+                && !sithPhysics_IsVehicleThing(pThing) )
             {
                 rdKeyframe* pTrack = sithPuppet_GetKeyframe("in_jump_up_grab.key");
                 if ( pTrack )

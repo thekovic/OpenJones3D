@@ -698,7 +698,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
         goto LABEL_61;
     }
 
-    if ( (pMoveInfo->physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
+    if ( sithPhysics_IsVehiclePhysics(&pMoveInfo->physics) )
     {
         goto LABEL_61;
     }

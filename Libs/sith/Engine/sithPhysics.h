@@ -66,6 +66,9 @@ void J3DAPI sithPhysics_UpdateRaftPhysics(SithThing* pThing, float secDeltaTime)
 int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing);
 void J3DAPI sithPhysics_UpdateJeepPhysics(SithThing* pThing, float secDeltaTime);
 
+static inline bool J3DAPI sithPhysics_IsVehiclePhysics(const SithPhysicsInfo* pPhysics);
+static inline bool J3DAPI sithPhysics_IsVehicleThing(const SithThing* pThing);
+
 /**
  * Checks whether a given cosine-of-angle value corresponds to a valid slope angle.
  *
@@ -82,10 +85,7 @@ void J3DAPI sithPhysics_UpdateJeepPhysics(SithThing* pThing, float secDeltaTime)
  *       // is valid slope / alignment
  *   }
  */
-inline bool sithPhysics_CheckSlopeAngle(float cosAngle)
-{
-    return  cosAngle < SITHPHYSICS_SLIDE_SLOPE_MAX && cosAngle > SITHPHYSICS_SLIDE_SLOPE_MIN;
-}
+static inline bool sithPhysics_CheckSlopeAngle(float cosAngle);  // new func
 
 /**
  * Calculates the wheel rotation delta angle based on the thing's velocity and wheel radius.
@@ -94,7 +94,33 @@ inline bool sithPhysics_CheckSlopeAngle(float cosAngle)
  * @param secDeltaTime - The time delta in seconds.
  * @return The calculated wheel rotation angle in degrees at this frame.
  */
-inline float sithPhysics_CalcWheelRotationAngle(const SithThing* pThing, float wheelRadius, float secDeltaTime) // new func
+static inline float sithPhysics_CalcWheelRotationAngle(const SithThing* pThing, float wheelRadius, float secDeltaTime); // new func
+
+// Helper hooking functions
+void sithPhysics_InstallHooks(void);
+void sithPhysics_ResetGlobals(void);
+
+
+bool J3DAPI sithPhysics_IsVehiclePhysics(const SithPhysicsInfo* pPhysics)
+{
+    return (pPhysics->flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0;
+}
+
+bool J3DAPI sithPhysics_IsVehicleThing(const SithThing* pThing)
+{
+    if ( pThing->moveType == SITH_MT_PHYSICS )
+    {
+        return sithPhysics_IsVehiclePhysics(&pThing->moveInfo.physics);
+    }
+    return false;
+}
+
+bool sithPhysics_CheckSlopeAngle(float cosAngle) // new func
+{
+    return  cosAngle < SITHPHYSICS_SLIDE_SLOPE_MAX && cosAngle > SITHPHYSICS_SLIDE_SLOPE_MIN;
+}
+
+float sithPhysics_CalcWheelRotationAngle(const SithThing* pThing, float wheelRadius, float secDeltaTime) // new func
 {
     const float speed               = rdVector_Len3(&pThing->moveInfo.physics.velocity);
     const float wheelCircumference  = STDMATH_CIRCLE_CIRCUMF(wheelRadius);
@@ -108,10 +134,6 @@ inline float sithPhysics_CalcWheelRotationAngle(const SithThing* pThing, float w
     }
     return rotDelta;
 }
-
-// Helper hooking functions
-void sithPhysics_InstallHooks(void);
-void sithPhysics_ResetGlobals(void);
 
 J3D_EXTERN_C_END
 #endif // SITH_SITHPHYSICS_H

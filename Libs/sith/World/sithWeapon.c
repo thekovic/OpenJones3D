@@ -1603,7 +1603,7 @@ int J3DAPI sithWeapon_HasWeaponSelected(const SithThing* pThing)
         return 0;
     }
 
-    if ( (pThing->moveInfo.physics.flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) != 0 )
+    if ( sithPhysics_IsVehicleThing(pThing) )
     {
         return 0;
     }

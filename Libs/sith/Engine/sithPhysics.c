@@ -1404,7 +1404,7 @@ void J3DAPI sithPhysics_UpdateAttachedThingPhysics(SithThing* pThing, float secD
 
         if ( (pThing == sithPlayer_g_pLocalPlayerThing
             || (pThing->thingInfo.actorInfo.flags & SITH_AF_NOSLOPEMOVE) != 0)
-            && (pPhysics->flags & (SITH_PF_UNKNOWN_8000000 | SITH_PF_JEEP | SITH_PF_RAFT | SITH_PF_MINECAR)) == 0 )
+            && !sithPhysics_IsVehiclePhysics(pPhysics) )
         {
             if ( pThing->pInSector
                 && ((pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0
