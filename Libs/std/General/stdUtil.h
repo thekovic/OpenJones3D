@@ -165,7 +165,7 @@ J3D_EXTERN_C_START
 * @param size - Size of data to fill
 * @param value - Byte value to fill with
 */
-#define STD_FILLMEM(dest, size, value) memset((dest), (value), (size))
+#define STD_FILLMEM(dest, value, size) memset((dest), (value), (size))
 
 /**
 * Copies memory from source to destination.
