@@ -259,8 +259,11 @@ void JonesReticle_Close(void)
 
 void JonesReticle_Enable(bool bEnable)
 {
-    JonesReticle_reticle.bEnabled = bEnable;
-    stdConfig_SetBool(JONESRETICLE_CFG_ENABLED, bEnable);
+    if ( JonesReticle_reticle.bEnabled != bEnable )
+    {
+        JonesReticle_reticle.bEnabled = bEnable;
+        stdConfig_SetBool(JONESRETICLE_CFG_ENABLED, bEnable);
+    }
 }
 
 bool JonesReticle_IsEnabled(void)
@@ -641,20 +644,7 @@ void J3DAPI JonesReticle_Update(float deltaTime)
     // Update target position
     if ( JonesReticle_reticle.pTarget )
     {
-        int curWeaponID = sithInventory_GetCurrentWeapon(sithWorld_g_pCurrentWorld->pLocalPlayer);
-        float zOffset = JonesReticle_reticle.pTarget->thingInfo.actorInfo.eyeOffset.z;
-        if ( (JonesReticle_reticle.pTarget->thingInfo.actorInfo.flags & SITH_AF_HUMAN) != 0 )
-        {
-            zOffset = zOffset * 0.25f; // don't aim head
-        }
-
-        else if ( curWeaponID == SITHWEAPON_SUBMACHINE || curWeaponID == SITHWEAPON_SHOTGUN )
-        {
-            zOffset = zOffset * 0.5f; // aim at torso
-        }
-
         JonesReticle_reticle.targetPos = JonesReticle_reticle.pTarget->pos;
-       // JonesReticle_reticle.targetPos.z += zOffset;
     }
 
     // Skip updating animation
