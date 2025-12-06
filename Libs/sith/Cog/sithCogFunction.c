@@ -918,7 +918,7 @@ void J3DAPI sithCogFunction_SetCameraFocus(SithCog* pCog)
     {
         if ( pCamera->pPrimaryFocusThing )
         {
-            rdVector_Copy3(&pCamera->pos, &pCamera->pPrimaryFocusThing->pos);
+            pCamera->pos = pCamera->pPrimaryFocusThing->pos;
             pCamera->posInterpState = 0;
         }
     }
@@ -1040,12 +1040,12 @@ void J3DAPI sithCogFunction_HeapNew(SithCog* pCog)
     {
         if ( pCog->aHeap )
         {
-            stdMemory_Free(pCog->aHeap);
+            STDFREE(pCog->aHeap);
             pCog->heapSize = 0;
         }
 
         pCog->aHeap = (SithCogSymbolValue*)STDMALLOC(sizeof(SithCogSymbolValue) * size);
-        memset(pCog->aHeap, 0, sizeof(SithCogSymbolValue) * size);
+        STD_ZEROMEM(pCog->aHeap, sizeof(SithCogSymbolValue) * size);
         pCog->heapSize = size;
     }
 }
@@ -1081,7 +1081,7 @@ void J3DAPI sithCogFunction_HeapFree(SithCog* pCog)
 {
     if ( pCog->aHeap )
     {
-        stdMemory_Free(pCog->aHeap);
+        STDFREE(pCog->aHeap);
         pCog->heapSize = 0;
     }
 }

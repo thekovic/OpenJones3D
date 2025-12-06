@@ -35,7 +35,7 @@ void sithAIClass_InstallHooks(void)
 
 void sithAIClass_ResetGlobals(void)
 {
-    memset(&sithAIClass_g_pHashtable, 0, sizeof(sithAIClass_g_pHashtable));
+    STD_ZEROMEM(&sithAIClass_g_pHashtable, sizeof(sithAIClass_g_pHashtable));
 }
 
 int sithAIClass_Startup(void)
@@ -164,7 +164,7 @@ int J3DAPI sithAIClass_AllocWorldAIClasses(SithWorld* pWorld, size_t numClasses)
         return 1;
     }
 
-    memset(pWorld->aAIClasses, 0, sizeof(SithAIClass) * numClasses);
+    STD_ZEROMEM(pWorld->aAIClasses, sizeof(SithAIClass) * numClasses);
     pWorld->numAIClasses  = 0;
     pWorld->sizeAIClasses = numClasses;
     return 0;
@@ -175,11 +175,12 @@ void J3DAPI sithAIClass_FreeWorldAIClasses(SithWorld* pWorld)
     SITH_ASSERTREL(pWorld);
     if ( pWorld->aAIClasses )
     {
-        for ( size_t i = 0; i < pWorld->numAIClasses; ++i ) {
+        for ( size_t i = 0; i < pWorld->numAIClasses; ++i )
+        {
             sithAIClass_CacheRemove(&pWorld->aAIClasses[i]);
         }
 
-        stdMemory_Free(pWorld->aAIClasses);
+        STDFREE(pWorld->aAIClasses);
         pWorld->aAIClasses = NULL;
     }
 
@@ -214,7 +215,7 @@ SithAIClass* J3DAPI sithAIClass_Load(SithWorld* pWorld, const char* pName)
     }
 
     pClass = &pWorld->aAIClasses[pWorld->numAIClasses];
-    memset(pClass, 0, sizeof(SithAIClass));
+    STD_ZEROMEM(pClass, sizeof(SithAIClass));
 
     STD_STRCPY(pClass->aName, pName);
 

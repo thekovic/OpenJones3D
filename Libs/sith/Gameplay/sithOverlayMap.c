@@ -144,7 +144,7 @@ int J3DAPI sithOverlayMap_Open(SithOverlayMapConfig* pConfig)
 
     if ( pConfig )
     {
-        memcpy(&sithOverlayMap_config, pConfig, sizeof(sithOverlayMap_config));
+        STD_COPYMEM(&sithOverlayMap_config, pConfig, sizeof(sithOverlayMap_config));
     }
     else
     {
@@ -197,8 +197,8 @@ int J3DAPI sithOverlayMap_Open(SithOverlayMapConfig* pConfig)
         sithOverlayMap_config.defaultBoundsColor   = STD_RGB(51, 51, 255);  // 0xFF3333FF
     }
 
-    memset(sithOverlayMap_aHintIcons, 0, sizeof(sithOverlayMap_aHintIcons));
-    memset(sithOverlayMap_aIndyIcons, 0, sizeof(sithOverlayMap_aIndyIcons));
+    STD_ZEROMEM(sithOverlayMap_aHintIcons, sizeof(sithOverlayMap_aHintIcons));
+    STD_ZEROMEM(sithOverlayMap_aIndyIcons, sizeof(sithOverlayMap_aIndyIcons));
 
     for ( size_t i = 0; i < STD_ARRAYLEN(sithOverlayMap_aHintIconNames); i++ )
     {
@@ -249,13 +249,13 @@ void sithOverlayMap_Close(void)
 
     if ( sithOverlayMap_config.aZLevelBounds )
     {
-        stdMemory_Free(sithOverlayMap_config.aZLevelBounds);
+        STDFREE(sithOverlayMap_config.aZLevelBounds);
     }
     sithOverlayMap_config.aZLevelBounds = NULL;
 
     if ( sithOverlayMap_config.aZLevelColors )
     {
-        stdMemory_Free(sithOverlayMap_config.aZLevelColors);
+        STDFREE(sithOverlayMap_config.aZLevelColors);
     }
     sithOverlayMap_config.aZLevelColors = NULL;
 

@@ -12,7 +12,6 @@
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdComm.h>
 
-
 void sithInventory_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithInventory_RegisterType);
@@ -52,13 +51,13 @@ void sithInventory_InstallHooks(void)
 void sithInventory_ResetGlobals(void)
 {
     int sithInventory_g_bResetInventory_tmp = 1;
-    memcpy(&sithInventory_g_bInitInventory, &sithInventory_g_bResetInventory_tmp, sizeof(sithInventory_g_bInitInventory));
+    STD_COPYMEM(&sithInventory_g_bInitInventory, &sithInventory_g_bResetInventory_tmp, sizeof(sithInventory_g_bInitInventory));
 
-    memset(&sithInventory_g_bSendDeactivateMessage, 0, sizeof(sithInventory_g_bSendDeactivateMessage));
-    memset(&sithInventory_g_dword_56B750, 0, sizeof(sithInventory_g_dword_56B750));
-    memset(&sithInventory_g_dword_56B754, 0, sizeof(sithInventory_g_dword_56B754));
-    memset(&sithInventory_g_aTypes, 0, sizeof(sithInventory_g_aTypes));
-    memset(&sithInventory_g_aUnknown, 0, sizeof(sithInventory_g_aUnknown));
+    STD_ZEROMEM(&sithInventory_g_bSendDeactivateMessage, sizeof(sithInventory_g_bSendDeactivateMessage));
+    STD_ZEROMEM(&sithInventory_g_dword_56B750, sizeof(sithInventory_g_dword_56B750));
+    STD_ZEROMEM(&sithInventory_g_dword_56B754, sizeof(sithInventory_g_dword_56B754));
+    STD_ZEROMEM(&sithInventory_g_aTypes, sizeof(sithInventory_g_aTypes));
+    STD_ZEROMEM(&sithInventory_g_aUnknown, sizeof(sithInventory_g_aUnknown));
 }
 
 void J3DAPI sithInventory_RegisterType(size_t typeId, const char* pName, float min, float max, SithInventoryTypeFlag flags, SithCog* pItemCog, rdModel3* pInvModel, rdModel3* pItemModel)
@@ -106,7 +105,6 @@ int J3DAPI sithInventory_FindNextTypeID(SithThing* pThing, int startSearchId, Si
 
     return -1;
 }
-
 
 int J3DAPI sithInventory_FindPreviousTypeID(SithThing* pThing, int startSearchId, SithInventoryTypeFlag flags)
 {
@@ -561,7 +559,6 @@ void J3DAPI sithInventory_ResetInventory(SithThing* pThing)
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
     SITH_ASSERTREL(pThing->thingInfo.actorInfo.pPlayer);
 
-
     if ( sithInventory_g_bInitInventory || stdComm_IsGameActive() )
     {
         sithInventory_InitInventory(pThing);
@@ -714,7 +711,7 @@ SithInventoryType* J3DAPI sithInventory_GetInventoryType(SithThing* pThing, size
     return NULL;
 }
 
-// Following 3 functions were found in dbg version
+// Following 3 functions were found in debug version
 
 int sithInventory_sub_45E072(void)
 {

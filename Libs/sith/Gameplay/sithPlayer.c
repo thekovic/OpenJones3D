@@ -49,22 +49,22 @@ void sithPlayer_InstallHooks(void)
 void sithPlayer_ResetGlobals(void)
 {
     int sithPlayer_g_bPlayerInPor_tmp = 1; // Must be set to 1
-    memcpy(&sithPlayer_g_bPlayerInPor, &sithPlayer_g_bPlayerInPor_tmp, sizeof(sithPlayer_g_bPlayerInPor));
+    STD_COPYMEM(&sithPlayer_g_bPlayerInPor, &sithPlayer_g_bPlayerInPor_tmp, sizeof(sithPlayer_g_bPlayerInPor));
 
     int sithPlayer_g_impFireType_tmp = SITHPLAYER_IMPFIRE_OFF;
-    memcpy(&sithPlayer_g_impFireType, &sithPlayer_g_impFireType_tmp, sizeof(sithPlayer_g_impFireType));
+    STD_COPYMEM(&sithPlayer_g_impFireType, &sithPlayer_g_impFireType_tmp, sizeof(sithPlayer_g_impFireType));
 
-    memset(&sithPlayer_g_playerNum, 0, sizeof(sithPlayer_g_playerNum));
-    memset(&sithPlayer_g_numPlayers, 0, sizeof(sithPlayer_g_numPlayers));
-    memset(&sithPlayer_g_pLocalPlayerThing, 0, sizeof(sithPlayer_g_pLocalPlayerThing));
-    memset(&sithPlayer_g_pLocalPlayer, 0, sizeof(sithPlayer_g_pLocalPlayer));
-    memset(&sithPlayer_g_bPlayerInvulnerable, 0, sizeof(sithPlayer_g_bPlayerInvulnerable));
-    memset(&sithPlayer_g_bInAetheriumSector, 0, sizeof(sithPlayer_g_bInAetheriumSector));
-    memset(&sithPlayer_g_bGuybrush, 0, sizeof(sithPlayer_g_bGuybrush));
-    memset(&sithPlayer_g_curLevelNum, 0, sizeof(sithPlayer_g_curLevelNum));
-    memset(&sithPlayer_g_bBonusMapBought, 0, sizeof(sithPlayer_g_bBonusMapBought));
-    memset(&sithPlayer_g_aPlayers, 0, sizeof(sithPlayer_g_aPlayers));
-    memset(&sithPlayer_g_impState, 0, sizeof(sithPlayer_g_impState));
+    STD_ZEROMEM(&sithPlayer_g_playerNum, sizeof(sithPlayer_g_playerNum));
+    STD_ZEROMEM(&sithPlayer_g_numPlayers, sizeof(sithPlayer_g_numPlayers));
+    STD_ZEROMEM(&sithPlayer_g_pLocalPlayerThing, sizeof(sithPlayer_g_pLocalPlayerThing));
+    STD_ZEROMEM(&sithPlayer_g_pLocalPlayer, sizeof(sithPlayer_g_pLocalPlayer));
+    STD_ZEROMEM(&sithPlayer_g_bPlayerInvulnerable, sizeof(sithPlayer_g_bPlayerInvulnerable));
+    STD_ZEROMEM(&sithPlayer_g_bInAetheriumSector, sizeof(sithPlayer_g_bInAetheriumSector));
+    STD_ZEROMEM(&sithPlayer_g_bGuybrush, sizeof(sithPlayer_g_bGuybrush));
+    STD_ZEROMEM(&sithPlayer_g_curLevelNum, sizeof(sithPlayer_g_curLevelNum));
+    STD_ZEROMEM(&sithPlayer_g_bBonusMapBought, sizeof(sithPlayer_g_bBonusMapBought));
+    STD_ZEROMEM(&sithPlayer_g_aPlayers, sizeof(sithPlayer_g_aPlayers));
+    STD_ZEROMEM(&sithPlayer_g_impState, sizeof(sithPlayer_g_impState));
 }
 
 void J3DAPI sithPlayer_Open(const wchar_t* awName)
@@ -131,8 +131,8 @@ void J3DAPI sithPlayer_PlacePlayers(SithWorld* pWorld)
                     pThing->flags |= SITH_TF_REMOTE;
                     pThing->thingInfo.actorInfo.pPlayer = pPlayer;
 
-                    rdMatrix_Copy34(&pPlayer->orient, &pThing->orient);
-                    rdVector_Copy3(&pPlayer->orient.dvec, &pThing->pos);
+                    pPlayer->orient      = pThing->orient;
+                    pPlayer->orient.dvec = pThing->pos;
 
                     ++numPlayers;
                 }
@@ -452,8 +452,9 @@ void J3DAPI sithPlayer_PlayerKilledAction(SithThing* pPlayerThing, const SithThi
 
     if ( (pPlayerThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0 )
     {
-        memset(&pPlayerThing->moveInfo.physics.rotThrust, 0, sizeof(pPlayerThing->moveInfo.physics.rotThrust));
-        memset(&pPlayerThing->moveInfo.physics.thrust, 0, sizeof(pPlayerThing->moveInfo.physics.thrust));
+        // Stop vehicle
+        rdVector_Zero3(&pPlayerThing->moveInfo.physics.rotThrust);
+        rdVector_Zero3(&pPlayerThing->moveInfo.physics.thrust);
     }
     else
     {

@@ -285,7 +285,7 @@ void J3DAPI sithCog_FreeWorldCogs(SithWorld* pWorld)
             sithCog_RemoveScript(&pWorld->aCogScripts[i]);
         }
 
-        stdMemory_Free(pWorld->aCogScripts);
+        STDFREE(pWorld->aCogScripts);
         pWorld->aCogScripts    = NULL;
         pWorld->sizeCogScripts = 0;
         pWorld->numCogScripts  = 0;
@@ -298,7 +298,7 @@ void J3DAPI sithCog_FreeWorldCogs(SithWorld* pWorld)
             sithCog_FreeEntry(&pWorld->aCogs[i]);
         }
 
-        stdMemory_Free(pWorld->aCogs);
+        STDFREE(pWorld->aCogs);
         pWorld->aCogs    = NULL;
         pWorld->sizeCogs = 0;
         pWorld->numCogs  = 0;
@@ -316,14 +316,14 @@ void J3DAPI sithCog_FreeScriptEntry(SithCogScript* pScript)
     {
         if ( pScript->aSymRefs[i].pDescription )
         {
-            stdMemory_Free(pScript->aSymRefs[i].pDescription);
+            STDFREE(pScript->aSymRefs[i].pDescription);
             pScript->aSymRefs[i].pDescription = NULL;
         }
     }
 
     if ( pScript->pCode )
     {
-        stdMemory_Free(pScript->pCode);
+        STDFREE(pScript->pCode);
         pScript->pCode = NULL;
     }
 }
@@ -335,7 +335,7 @@ void J3DAPI sithCog_FreeEntry(SithCog* pCog)
 
     if ( pCog->aHeap )
     {
-        stdMemory_Free(pCog->aHeap);
+        STDFREE(pCog->aHeap);
         pCog->heapSize = 0;
     }
 }
@@ -970,20 +970,20 @@ int J3DAPI sithCog_WriteCogsListBinary(tFileHandle fh, const SithWorld* pWorld)
     if ( (sith_g_pHS->pFileWrite(fh, aNames, sizeNames) == sizeNames)
         && (sith_g_pHS->pFileWrite(fh, aValues, sizeValues) == sizeValues) )
     {
-        stdMemory_Free(aNames);
-        stdMemory_Free(aValues);
+        STDFREE(aNames);
+        STDFREE(aValues);
         return 0;
     }
 
 error:
     if ( aNames )
     {
-        stdMemory_Free(aNames);
+        STDFREE(aNames);
     }
 
     if ( aValues )
     {
-        stdMemory_Free(aValues);
+        STDFREE(aValues);
     }
 
     return 1;
@@ -1046,8 +1046,8 @@ int J3DAPI sithCog_ReadCogsListBinary(tFileHandle fh, SithWorld* pWorld)
             }
         }
 
-        stdMemory_Free(aNames);
-        stdMemory_Free(aValues);
+        STDFREE(aNames);
+        STDFREE(aValues);
         return 0;
     }
 
@@ -1055,12 +1055,12 @@ error:
     SITHLOG_ERROR("Error Reading COGs\n");
     if ( aNames )
     {
-        stdMemory_Free(aNames);
+        STDFREE(aNames);
     }
 
     if ( aValues )
     {
-        stdMemory_Free(aValues);
+        STDFREE(aValues);
     }
 
     return 1;

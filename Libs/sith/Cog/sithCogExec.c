@@ -278,7 +278,7 @@ int J3DAPI sithCogExec_PopVector(SithCog* pCog, rdVector3* vec)
     SithCogSymbolValue value;
     if ( !sithCogExec_PopStack(pCog, &value) )
     {
-        memset(vec, 0, sizeof(rdVector3));
+        rdVector_Zero3(vec);
         return 0;
     }
 
@@ -287,11 +287,11 @@ int J3DAPI sithCogExec_PopVector(SithCog* pCog, rdVector3* vec)
     if ( value.type != SITHCOG_VALUE_VECTOR )
     {
         SITHLOG_ERROR("Cog %s: Expected vector, got int/flex constant.\n", pCog->aName);
-        memset(vec, 0, sizeof(rdVector3));
+        rdVector_Zero3(vec);
         return 0;
     }
 
-    rdVector_Copy3(vec, &value.val.vecValue);
+    *vec = value.val.vecValue;
     return 1;
 }
 
@@ -586,7 +586,7 @@ void J3DAPI sithCogExec_PushStack(SithCog* pCog, SithCogSymbolValue* pValue)
     if ( pCog->stackSize >= STD_ARRAYLEN(pCog->stack) ) // Fixed: Added GE check (was EQ) to make absolutely sure the stack doesn't exceed
     {
         SITHLOG_ERROR("Stack overflow in script %s.  Bottom element discarded.\n", pCog->pScript->aName);
-        memcpy(pCog->stack, &pCog->stack[1], (STD_ARRAYLEN(pCog->stack) - 1) * sizeof(SithCogSymbolValue));
+        STD_COPYMEM(pCog->stack, &pCog->stack[1], (STD_ARRAYLEN(pCog->stack) - 1) * sizeof(SithCogSymbolValue));
         static_assert((STD_ARRAYLEN(pCog->stack) - 1) * sizeof(SithCogSymbolValue) == 4080, "STD_ARRAYLEN(pCog->stack) - 1 * sizeof(SithCogSymbolValue) == 4080");
         --pCog->stackSize; /// TODO: make sure the call stack size is STD_ARRAYLEN(pCog->stack) - 1
     }
@@ -600,7 +600,7 @@ void J3DAPI sithCogExec_PushStack(SithCog* pCog, SithCogSymbolValue* pValue)
 void J3DAPI sithCogExec_PushInt(SithCog* pCog, int val)
 {
     SithCogSymbolValue value;
-    value.type = SITHCOG_VALUE_INT;
+    value.type         = SITHCOG_VALUE_INT;
     value.val.intValue = val;
     sithCogExec_PushStack(pCog, &value);
 }
@@ -609,7 +609,7 @@ void J3DAPI sithCogExec_PushInt(SithCog* pCog, int val)
 void J3DAPI sithCogExec_PushFlex(SithCog* pCog, float value)
 {
     SithCogSymbolValue val;
-    val.type = SITHCOG_VALUE_FLOAT;
+    val.type           = SITHCOG_VALUE_FLOAT;
     val.val.floatValue = value;
     sithCogExec_PushStack(pCog, &val);
 }
@@ -617,8 +617,8 @@ void J3DAPI sithCogExec_PushFlex(SithCog* pCog, float value)
 void J3DAPI sithCogExec_PushVector(SithCog* pCog, const rdVector3* vec)
 {
     SithCogSymbolValue value;
-    value.type = SITHCOG_VALUE_VECTOR;
-    rdVector_Copy3(&value.val.vecValue, vec);
+    value.type         = SITHCOG_VALUE_VECTOR;
+    value.val.vecValue = *vec;
     sithCogExec_PushStack(pCog, &value);
 }
 
@@ -828,7 +828,7 @@ void J3DAPI sithCogExec_ArrayOp(SithCog* pCog)
     int offset = sithCogExec_PopArray(pCog);
 
     SithCogSymbolValue value;
-    value.type = SITHCOG_VALUE_SYMBOLID;
+    value.type         = SITHCOG_VALUE_SYMBOLID;
     value.val.intValue = startIdx + offset;
     sithCogExec_PushStack(pCog, &value);
 }
@@ -838,13 +838,13 @@ void J3DAPI sithCogExec_NegFalseOps(SithCog* pCog, int opcode)
     SithCogSymbolValue value;
     if ( opcode == SITHCOGEXEC_OPCODE_CMPFALSE )
     {
-        value.type = SITHCOG_VALUE_INT;
+        value.type         = SITHCOG_VALUE_INT;
         value.val.intValue = sithCogExec_PopInt(pCog) == 0;
     }
     else if ( opcode == SITHCOGEXEC_OPCODE_NEG )
     {
         float fltval = sithCogExec_PopFlex(pCog);
-        value.type = SITHCOG_VALUE_FLOAT;
+        value.type           = SITHCOG_VALUE_FLOAT;
         value.val.floatValue = -fltval;
     }
     else
@@ -964,31 +964,31 @@ void J3DAPI sithCogExec_FloatOps(SithCog* pCog, int opcode)
             break;
 
         case SITHCOGEXEC_OPCODE_CMPGT:
-            value.type = SITHCOG_VALUE_INT;
+            value.type         = SITHCOG_VALUE_INT;
             value.val.intValue = a > (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPLS:
-            value.type = SITHCOG_VALUE_INT;
+            value.type         = SITHCOG_VALUE_INT;
             value.val.intValue = a < (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPEQ:
-            value.type = SITHCOG_VALUE_INT;
+            value.type         = SITHCOG_VALUE_INT;
             value.val.intValue = a == b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPLE:
-            value.type = SITHCOG_VALUE_INT;
+            value.type         = SITHCOG_VALUE_INT;
             value.val.intValue = a <= (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
 
         case SITHCOGEXEC_OPCODE_CMPGE:
-            value.type = SITHCOG_VALUE_INT;
+            value.type         = SITHCOG_VALUE_INT;
             value.val.intValue = a >= (double)b;
             sithCogExec_PushStack(pCog, &value);
             break;
@@ -1019,7 +1019,7 @@ SithCogSymbolValue* J3DAPI sithCogExec_GetSymbolValue(SithCogSymbolValue* pDest,
     {
         SITH_ASSERTREL(pValue->val.pointerValue != NULL);
         // TODO: Verify if pointer value should be assigned instead
-        pDest->type = SITHCOG_VALUE_INT;
+        pDest->type         = SITHCOG_VALUE_INT;
         pDest->val.intValue = *(uint32_t*)pValue->val.pointerValue;
     }
 

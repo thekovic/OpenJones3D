@@ -75,7 +75,8 @@ void sithCogParse_FreeParseTree(void)
 {
     if ( pSyntaxTree )
     {
-        stdMemory_Free(pSyntaxTree);
+        STDFREE(pSyntaxTree);
+        pSyntaxTree    = NULL; // Altered: Assigned NULL
         syntaxTreeSize = 0;
         numTreeNodes   = 0;
     }
@@ -93,12 +94,12 @@ int J3DAPI sithCogParse_Load(const char* pFilename, SithCogScript* pScript, int 
     }
 
     // Clear script & name
-    memset(pScript, 0, sizeof(SithCogScript));
+    STD_ZEROMEM(pScript, sizeof(SithCogScript));
     STD_STRCPY(pScript->aName, stdFileFromPath(pFilename));
 
     // Prepare parser
     nextlabel = 1;
-    memset(aLabelTable, -1, sizeof(aLabelTable));
+    STD_FILLMEM(aLabelTable, -1, sizeof(aLabelTable));
 
     if ( !stdConffile_ReadArgs() )
     {
@@ -106,7 +107,7 @@ int J3DAPI sithCogParse_Load(const char* pFilename, SithCogScript* pScript, int 
     }
 
     // Parse optional flags
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argName, "flags") == 0 )
+    if ( streq(stdConffile_g_entry.aArgs[0].argName, "flags") ) // TODO: case-insensitive cmp?
     {
         if ( sscanf_s(stdConffile_g_entry.aArgs[0].argValue, "%x", &pScript->flags) != 1 || !stdConffile_ReadArgs() )
         {
@@ -115,7 +116,7 @@ int J3DAPI sithCogParse_Load(const char* pFilename, SithCogScript* pScript, int 
     }
 
    // Parse symbol section
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "symbols") != 0 )
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "symbols") ) // TODO: case-insensitive cmp?
     {
         goto syntax_error;
     }
@@ -138,7 +139,7 @@ int J3DAPI sithCogParse_Load(const char* pFilename, SithCogScript* pScript, int 
         goto eof_error;
     }
 
-    if ( strcmp(stdConffile_g_entry.aArgs[0].argValue, "code") != 0
+    if ( !streq(stdConffile_g_entry.aArgs[0].argValue, "code") // TODO: case-insensitive cmp?
         || !sithCogParse_ParseSectionCode(pScript) )
     {
         goto syntax_error;
@@ -252,14 +253,14 @@ SithCogSymbolTable* J3DAPI sithCogParse_DuplicateSymbolTable(const SithCogSymbol
         goto error;
     }
 
-    memset(pTable, 0, sizeof(SithCogSymbolTable));
+    STD_ZEROMEM(pTable, sizeof(SithCogSymbolTable));
     pTable->aSymbols = (SithCogSymbol*)STDMALLOC(sizeof(SithCogSymbol) * pSource->numUsedSymbols);
     if ( !pTable->aSymbols )
     {
         goto error;
     }
 
-    memcpy(pTable->aSymbols, pSource->aSymbols, sizeof(SithCogSymbol) * pSource->numUsedSymbols);
+    STD_COPYMEM(pTable->aSymbols, pSource->aSymbols, sizeof(SithCogSymbol) * pSource->numUsedSymbols);
     pTable->tableSize      = pSource->numUsedSymbols;
     pTable->numUsedSymbols = pSource->numUsedSymbols;
     pTable->bIsCopy        = 1;
@@ -279,7 +280,7 @@ SithCogSymbolTable* J3DAPI sithCogParse_AllocSymbolTable(size_t numElements)
         goto error;
     }
 
-    memset(pTable, 0, sizeof(SithCogSymbolTable));
+    STD_ZEROMEM(pTable, sizeof(SithCogSymbolTable));
     pTable->aSymbols = (SithCogSymbol*)STDMALLOC(sizeof(SithCogSymbol) * numElements);
     if ( !pTable->aSymbols )
     {
@@ -292,7 +293,7 @@ SithCogSymbolTable* J3DAPI sithCogParse_AllocSymbolTable(size_t numElements)
         goto error;
     }
 
-    memset(pTable->aSymbols, 0, sizeof(SithCogSymbol) * numElements);
+    STD_ZEROMEM(pTable->aSymbols, sizeof(SithCogSymbol) * numElements);
     pTable->tableSize      = numElements;
     pTable->numUsedSymbols = 0;
     pTable->bIsCopy        = 0;
@@ -307,7 +308,7 @@ error:
 
     if ( pTable->aSymbols )
     {
-        stdMemory_Free(pTable->aSymbols);
+        STDFREE(pTable->aSymbols);
     }
 
     if ( pTable->pHashtbl )
@@ -315,7 +316,7 @@ error:
         stdHashtbl_Free(pTable->pHashtbl);
     }
 
-    stdMemory_Free(pTable);
+    STDFREE(pTable);
     return NULL;
 }
 
@@ -338,7 +339,7 @@ void J3DAPI sithCogParse_ReallocSymbolTable(SithCogSymbolTable* pTable)
     {
         if ( pTable->aSymbols[i].pName )
         {
-            stdMemory_Free(pTable->aSymbols[i].pName);
+            STDFREE(pTable->aSymbols[i].pName);
             pTable->aSymbols[i].pName = NULL;
         }
     }
@@ -362,23 +363,23 @@ void J3DAPI sithCogParse_FreeSymbolTable(SithCogSymbolTable* pTable)
             {
                 if ( pTable->aSymbols[i].pName )
                 {
-                    stdMemory_Free(pTable->aSymbols[i].pName);
+                    STDFREE(pTable->aSymbols[i].pName);
                 }
 
                 if ( pTable->aSymbols[i].value.type == SITHCOG_VALUE_STRING )
                 {
                     SITH_ASSERTREL(pTable->aSymbols[i].value.val.pString);
-                    stdMemory_Free(pTable->aSymbols[i].value.val.pString);
+                    STDFREE(pTable->aSymbols[i].value.val.pString);
                     pTable->aSymbols[i].value.val.pString = NULL;
                 }
             }
         }
 
-        stdMemory_Free(pTable->aSymbols);
+        STDFREE(pTable->aSymbols);
         pTable->aSymbols = NULL;
     }
 
-    stdMemory_Free(pTable);
+    STDFREE(pTable);
 }
 
 SithCogSymbol* J3DAPI sithCogParse_AddSymbol(SithCogSymbolTable* pTable, const char* pName)
@@ -413,7 +414,7 @@ void J3DAPI sithCogParse_SetSymbolValue(SithCogSymbol* pSymbol, const SithCogSym
 {
     SITH_ASSERTREL(pSymbol != NULL);
     SITH_ASSERTREL(pValue != NULL);
-    memcpy(&pSymbol->value, pValue, sizeof(pSymbol->value));
+    STD_COPYMEM(&pSymbol->value, pValue, sizeof(pSymbol->value));
 }
 
 SithCogSymbol* J3DAPI sithCogParse_GetSymbol(const SithCogSymbolTable* pLocal, const char* pName)
@@ -618,7 +619,7 @@ SithCogSyntaxNode* sithCogParse_GetNextNode(void)
     }
 
     SithCogSyntaxNode* pNode = &pSyntaxTree[numTreeNodes++];
-    memset(pNode, 0, sizeof(SithCogSyntaxNode));
+    STD_ZEROMEM(pNode, sizeof(SithCogSyntaxNode));
     return pNode;
 }
 
@@ -718,65 +719,65 @@ void J3DAPI sithCogParse_GenerateCode(const SithCogSyntaxNode* pNode)
 
 int J3DAPI sithCogParse_ParseSymbols(SithCogScript* pScript, int bParseDescription)
 {
-    while ( stdConffile_ReadArgs() && strcmp(stdConffile_g_entry.aArgs[0].argValue, "end") )
+    while ( stdConffile_ReadArgs() && !streq(stdConffile_g_entry.aArgs[0].argValue, "end") ) // TODO: case-insensitive cmp?
     {
         if ( pScript->pSymbolTable->numUsedSymbols >= pScript->pSymbolTable->tableSize )
         {
             SITHLOG_ERROR("Tried to define too many symbols (%d allocated)\n", pScript->pSymbolTable->tableSize);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "thing") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "thing") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_THING, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "surface") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "surface") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_SURFACE, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "sector") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "sector") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_SECTOR, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "sound") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "sound") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_SOUND, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "template") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "template") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_TEMPLATE, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "model") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "model") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_MODEL, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "keyframe") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "keyframe") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_KEYFRAME, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "cog") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "cog") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_COG, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "message") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "message") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseMessage(pScript);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "material") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "material") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_MATERIAL, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "flex") || !strcmp(stdConffile_g_entry.aArgs[0].argValue, "float") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "flex") || streq(stdConffile_g_entry.aArgs[0].argValue, "float") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseFlex(pScript, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "int") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "int") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseInt(pScript, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "vector") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "vector") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseVector(pScript, bParseDescription);
         }
-        else if ( !strcmp(stdConffile_g_entry.aArgs[0].argValue, "ai") )
+        else if ( streq(stdConffile_g_entry.aArgs[0].argValue, "ai") ) // TODO: case-insensitive cmp?
         {
             sithCogParse_ParseSymbolRef(pScript, SITHCOG_SYM_REF_AICLASS, bParseDescription);
         }
@@ -817,12 +818,12 @@ int J3DAPI sithCogParse_ParseSymbolRef(SithCogScript* pScript, SithCogSymbolRefT
     }
 
     SithCogSymbolValue value;
-    value.type = SITHCOG_VALUE_INT;
+    value.type         = SITHCOG_VALUE_INT;
     value.val.intValue = 0;
     sithCogParse_SetSymbolValue(pNewSym, &value);
 
     SithCogSymbolRef* pRef = &pScript->aSymRefs[pScript->numSymbolRefs];
-    memset(pRef, 0, sizeof(SithCogSymbolRef));
+    STD_ZEROMEM(pRef, sizeof(SithCogSymbolRef));
 
     pRef->type     = symbolType;
     pRef->mask     = SITHTHING_TYPEMASK(SITH_THING_FREE, SITH_THING_PLAYER);
@@ -830,15 +831,15 @@ int J3DAPI sithCogParse_ParseSymbolRef(SithCogScript* pScript, SithCogSymbolRefT
 
     for ( size_t i = 2; i < stdConffile_g_entry.numArgs; ++i )
     {
-        if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "local") == 0 )
+        if ( streq(stdConffile_g_entry.aArgs[i].argName, "local") ) // TODO: case-insensitive cmp?
         {
             pRef->bLocal |= 1u;
         }
-        else if ( bParseDescription && strcmp(stdConffile_g_entry.aArgs[i].argName, "desc") == 0 )
+        else if ( bParseDescription && streq(stdConffile_g_entry.aArgs[i].argName, "desc") ) // TODO: case-insensitive cmp?
         {
             if ( pRef->pDescription )
             {
-                stdMemory_Free(pRef->pDescription);
+                STDFREE(pRef->pDescription);
             }
 
             const char* pArg = stdConffile_g_entry.aArgs[i].argValue;
@@ -846,15 +847,15 @@ int J3DAPI sithCogParse_ParseSymbolRef(SithCogScript* pScript, SithCogSymbolRefT
             pRef->pDescription = (char*)STDMALLOC(descLen);
             stdUtil_StringCopy(pRef->pDescription, descLen, pArg);
         }
-        else if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "mask") == 0 )
+        else if ( streq(stdConffile_g_entry.aArgs[i].argName, "mask") ) // TODO: case-insensitive cmp?
         {
             sscanf_s(stdConffile_g_entry.aArgs[i].argValue, "%x", &pRef->mask);
         }
-        else if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "linkid") == 0 )
+        else if ( streq(stdConffile_g_entry.aArgs[i].argName, "linkid") ) // TODO: case-insensitive cmp?
         {
             pRef->linkId = atoi(stdConffile_g_entry.aArgs[i].argValue);
         }
-        else if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "nolink") == 0 )
+        else if ( streq(stdConffile_g_entry.aArgs[i].argName, "nolink") ) // TODO: case-insensitive cmp?
         {
             pRef->linkId = -1;
         }
@@ -887,14 +888,14 @@ int J3DAPI sithCogParse_ParseFlex(SithCogScript* pScript, int bParseDescription)
     char* pDesc = NULL;
     for ( size_t i = 2; i < stdConffile_g_entry.numArgs; ++i )
     {
-        if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "local") == 0 )
+        if ( streq(stdConffile_g_entry.aArgs[i].argName, "local") ) // TODO: case-insensitive cmp?
         {
             return 1;
         }
 
         if ( bParseDescription )
         {
-            if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "desc") == 0 )
+            if ( streq(stdConffile_g_entry.aArgs[i].argName, "desc") ) // TODO: case-insensitive cmp?
             {
                 const char* pArg = stdConffile_g_entry.aArgs[i].argValue;
                 size_t descLen = strlen(pArg) + 1;
@@ -931,14 +932,14 @@ int J3DAPI sithCogParse_ParseInt(SithCogScript* pScript, int bParseDescription)
     char* pDesc = NULL;
     for ( size_t i = 2; i < stdConffile_g_entry.numArgs; ++i )
     {
-        if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "local") == 0 )
+        if ( streq(stdConffile_g_entry.aArgs[i].argName, "local") ) // TODO: case-insensitive cmp?
         {
             return 1;
         }
 
         if ( bParseDescription )
         {
-            if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "desc") == 0 )
+            if ( streq(stdConffile_g_entry.aArgs[i].argName, "desc") ) // TODO: case-insensitive cmp?
             {
                 const char* pArg = stdConffile_g_entry.aArgs[i].argValue;
                 size_t descLen = strlen(pArg) + 1;
@@ -969,20 +970,20 @@ int J3DAPI sithCogParse_ParseVector(SithCogScript* pScript, int bParseDescriptio
 
     SithCogSymbolValue value;
     value.type = SITHCOG_VALUE_VECTOR;
-    memset(&value.val, 0, sizeof(value.val)); // TODO: Parse vector
+    STD_ZEROMEM(&value.val, sizeof(value.val)); // TODO: Parse vector
     sithCogParse_SetSymbolValue(pSym, &value);
 
     char* pDesc = NULL;
     for ( size_t i = 2; i < stdConffile_g_entry.numArgs; ++i )
     {
-        if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "local") == 0 )
+        if ( streq(stdConffile_g_entry.aArgs[i].argName, "local") ) // TODO: case-insensitive cmp?
         {
             return 1;
         }
 
         if ( bParseDescription )
         {
-            if ( strcmp(stdConffile_g_entry.aArgs[i].argName, "desc") == 0 )
+            if ( streq(stdConffile_g_entry.aArgs[i].argName, "desc") ) // TODO: case-insensitive cmp?
             {
                 const char* pArg = stdConffile_g_entry.aArgs[i].argValue;
                 size_t descLen = strlen(pArg) + 1;

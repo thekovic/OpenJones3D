@@ -75,7 +75,7 @@ void sithAIAwareness_Close(void)
     if ( bOpened )
     {
         SITH_ASSERTREL(sithAIAwareness_g_aSectors);
-        stdMemory_Free(sithAIAwareness_g_aSectors);
+        STDFREE(sithAIAwareness_g_aSectors);
         sithAIAwareness_g_aSectors = NULL;
 
         // Remove event task

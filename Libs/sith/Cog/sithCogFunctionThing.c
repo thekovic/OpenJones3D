@@ -5227,7 +5227,7 @@ void J3DAPI sithCogFunctionThing_SetThingInsertOffset(SithCog* pCog)
         return;
     }
 
-    rdVector_Copy3(&pModel3->insertOffset, &offset);
+    pModel3->insertOffset = offset;
     sithCogExec_PushVector(pCog, &pThing->renderData.data.pModel3->insertOffset); // Note, this looks right, it should return the new offset.
                                                                                   // tem_lavaboss.cog is the only script using this function
 }

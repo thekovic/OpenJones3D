@@ -71,9 +71,9 @@ void sithAI_InstallHooks(void)
 
 void sithAI_ResetGlobals(void)
 {
-    memset(&sithAI_g_bOpen, 0, sizeof(sithAI_g_bOpen));
-    memset(&sithAI_g_aControlBlocks, 0, sizeof(sithAI_g_aControlBlocks));
-    memset(&sithAI_g_lastUsedAIIndex, 0, sizeof(sithAI_g_lastUsedAIIndex));
+    STD_ZEROMEM(&sithAI_g_bOpen, sizeof(sithAI_g_bOpen));
+    STD_ZEROMEM(&sithAI_g_aControlBlocks, sizeof(sithAI_g_aControlBlocks));
+    STD_ZEROMEM(&sithAI_g_lastUsedAIIndex, sizeof(sithAI_g_lastUsedAIIndex));
 }
 
 int sithAI_Startup(void)
@@ -103,7 +103,7 @@ void sithAI_Shutdown(void)
     }
 
     SITH_ASSERTREL(aRegisteredInstincts && pRegisteredInstinctHashtbl);
-    stdMemory_Free(aRegisteredInstincts);
+    STDFREE(aRegisteredInstincts);
     stdHashtbl_Free(pRegisteredInstinctHashtbl);
     bStartup = false;
 }
@@ -157,8 +157,8 @@ void J3DAPI sithAI_Create(SithThing* pThing)
         pThing->controlInfo.aiControl.pLocal = &sithAI_g_aControlBlocks[aiIndex];
         SithAIControlBlock* pLocal = pThing->controlInfo.aiControl.pLocal;
 
-        rdVector_Copy3(&pLocal->homePos, &pThing->pos);
-        rdVector_Copy3(&pLocal->homeOrient, &pThing->orient.lvec);
+        pLocal->homePos    = pThing->pos;
+        pLocal->homeOrient = pThing->orient.lvec;
 
         pLocal->pClass       = pClass;
         pLocal->pOwner       = pThing;
@@ -190,7 +190,7 @@ void J3DAPI sithAI_Free(SithThing* pThing)
 
         if ( pThing->controlInfo.aiControl.pLocal->aFrames )
         {
-            stdMemory_Free(pThing->controlInfo.aiControl.pLocal->aFrames);
+            STDFREE(pThing->controlInfo.aiControl.pLocal->aFrames);
             pThing->controlInfo.aiControl.pLocal->aFrames = NULL;
         }
 
@@ -723,7 +723,8 @@ int J3DAPI sithAI_ProcessUnhandledEvent(SithAIControlBlock* pLocal, SithAIEventT
         }
         case SITHAI_EVENT_TOUCHED:
         {
-            if ( (pLocal->mode & SITHAI_MODE_MOVING) == 0 ) {
+            if ( (pLocal->mode & SITHAI_MODE_MOVING) == 0 )
+            {
                 return 0;
             }
 
@@ -889,7 +890,8 @@ int J3DAPI sithAI_EnableInstinct(SithAIControlBlock* pLocal, const char* pInstin
     int instinctIndex = sithAI_GetInstinctIndex(pLocal, pInstinct);
     if ( instinctIndex == -1 )
     {
-        if ( bEnable ) {
+        if ( bEnable )
+        {
             SITHLOG_ERROR("AI '%s' doesn't possess instinct '%s' for EnableInstinct() call.\n", pLocal->pOwner->aName, pInstinctName);
         }
         return 0;
@@ -992,7 +994,8 @@ int J3DAPI sithAI_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int ad
     SITH_ASSERTREL(pArg && pThing); // Moved here to the top
 
     SithAIControlBlock* pLocal = pThing->controlInfo.aiControl.pLocal;
-    if ( !pLocal ) {
+    if ( !pLocal )
+    {
         goto argument_error;
     }
 
@@ -1019,13 +1022,15 @@ int J3DAPI sithAI_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int ad
         }
         case SITHTHING_ARG_NUMFRAMES:
         {
-            if ( pLocal->sizeFrames ) {
+            if ( pLocal->sizeFrames )
+            {
                 goto argument_error;
             }
 
             SITH_ASSERTREL(!pLocal->aFrames);
             size_t size = atoi(pArg->argValue);
-            if ( size == 0 ) {
+            if ( size == 0 )
+            {
                 goto argument_error;
             }
 
@@ -1055,7 +1060,7 @@ int J3DAPI sithAI_AllocAIFrames(SithAIControlBlock* pLocal, size_t sizeFrames)
         return 1;
     }
 
-    memset(pLocal->aFrames, 0, sizeof(rdVector3) * sizeFrames);
+    STD_ZEROMEM(pLocal->aFrames, sizeof(rdVector3) * sizeFrames);
     pLocal->sizeFrames = sizeFrames;
     pLocal->numFrames  = 0;
     return 0;
@@ -1100,7 +1105,7 @@ int J3DAPI sithAI_CreateInstinctRegistry(size_t maxInstincts)
     pRegisteredInstinctHashtbl = stdHashtbl_New(2 * maxInstincts);
     if ( !pRegisteredInstinctHashtbl )
     {
-        stdMemory_Free(aRegisteredInstincts);
+        STDFREE(aRegisteredInstincts);
         SITHLOG_ERROR("Startup failure on AI - no mem for hashtable.\n");
         return 1;
     }
@@ -1113,7 +1118,7 @@ int J3DAPI sithAI_FreeAI(size_t aiNum)
     SITH_ASSERTREL((aiNum < STD_ARRAYLEN(sithAI_g_aControlBlocks)));
     SITH_ASSERTREL(numFreeAIs < STD_ARRAYLEN(sithAI_g_aControlBlocks));
 
-    memset(&sithAI_g_aControlBlocks[aiNum], 0, sizeof(SithAIControlBlock));
+    STD_ZEROMEM(&sithAI_g_aControlBlocks[aiNum], sizeof(SithAIControlBlock));
 
     if ( aiNum == sithAI_g_lastUsedAIIndex )
     {
@@ -1151,7 +1156,7 @@ int sithAI_CreateAI(void)
 
 void sithAI_ResetAllAIs(void)
 {
-    memset(sithAI_g_aControlBlocks, 0, sizeof(sithAI_g_aControlBlocks));
+    STD_ZEROMEM(sithAI_g_aControlBlocks, sizeof(sithAI_g_aControlBlocks));
     numFreeAIs = 0;
 
     for ( int aiNum = STD_ARRAYLEN(sithAI_g_aControlBlocks) - 1; aiNum >= 0; --aiNum )

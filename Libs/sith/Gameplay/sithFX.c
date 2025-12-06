@@ -140,12 +140,12 @@ void sithFX_InstallHooks(void)
 void sithFX_ResetGlobals(void)
 {
     int sithFX_g_lastChalkMarkNum_tmp = -1;
-    memcpy(&sithFX_g_lastChalkMarkNum, &sithFX_g_lastChalkMarkNum_tmp, sizeof(sithFX_g_lastChalkMarkNum));
+    STD_COPYMEM(&sithFX_g_lastChalkMarkNum, &sithFX_g_lastChalkMarkNum_tmp, sizeof(sithFX_g_lastChalkMarkNum));
 
     size_t sithFX_g_numChalkMarks_tmp = 0;
-    memcpy(&sithFX_g_numChalkMarks, &sithFX_g_numChalkMarks_tmp, sizeof(sithFX_g_numChalkMarks));
+    STD_COPYMEM(&sithFX_g_numChalkMarks, &sithFX_g_numChalkMarks_tmp, sizeof(sithFX_g_numChalkMarks));
 
-    memset(&sithFX_g_aChalkMarks, 0, sizeof(sithFX_g_aChalkMarks));
+    STD_ZEROMEM(&sithFX_g_aChalkMarks, sizeof(sithFX_g_aChalkMarks));
 }
 
 void sithFX_Reset(void)
@@ -181,7 +181,7 @@ void J3DAPI sithFX_DestroyFairyDustDeluxe(SithThing* pThing)
             pFairydust->aDusts[i] = NULL;
         }
 
-        stdMemory_Free(pThing->userblock.pFairydust);
+        STDFREE(pThing->userblock.pFairydust);
         pThing->userblock.pFairydust = NULL;
     }
 }
@@ -292,7 +292,7 @@ void J3DAPI sithFX_CreateFairyDustDelux(SithThing* pThing, const rdVector3* pPos
             }
             else
             {
-                stdMemory_Free(pFairydust);
+                STDFREE(pFairydust);
             }
         }
     }

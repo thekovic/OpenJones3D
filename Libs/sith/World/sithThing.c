@@ -552,7 +552,7 @@ int J3DAPI sithThing_RemoveSwapEntry(SithThing* pThing, int refnum)
                 pThing->pSwapList = pNextEntry;
             }
 
-            stdMemory_Free(pCurEntry);
+            STDFREE(pCurEntry);
             bFinished = true;
         }
         else
@@ -1261,7 +1261,7 @@ void J3DAPI sithThing_FreeWorldThings(SithWorld* pWorld)
     if ( pWorld->aThings )
     {
         sithThing_RemoveWorldThings(pWorld);
-        stdMemory_Free(pWorld->aThings);
+        STDFREE(pWorld->aThings);
 
         pWorld->aThings      = NULL;
         pWorld->numThings    = 0;
@@ -1278,7 +1278,7 @@ void J3DAPI sithThing_RemoveWorldThings(SithWorld* pWorld)
         for ( size_t i = 0; i < pWorld->numThings; ++i )
         {
             SithThing* pThing = &pWorld->aThings[i];
-            if ( pThing->type )
+            if ( pThing->type != SITH_THING_FREE )
             {
                 sithThing_RemoveThing(pWorld, pThing);
             }
@@ -1316,6 +1316,8 @@ void J3DAPI sithThing_LoadPostProcess(SithWorld* pWorld)
         }
         else
         {
+            // TODO: Following calls should probably be remove.
+            //       The free thing index should have already been put to sithThing_aFreeThingIdxs by sithThing_InitializeWorldThings
             sithThing_FreeThingIndex(pWorld, thingNum);
         }
     }
@@ -1351,7 +1353,7 @@ void J3DAPI sithThing_FreeThing(SithWorld* pWorld, SithThing* pThing)
 
     if ( pThing->moveType == SITH_MT_PATH && pThing->moveInfo.pathMovement.aFrames )
     {
-        stdMemory_Free(pThing->moveInfo.pathMovement.aFrames);
+        STDFREE(pThing->moveInfo.pathMovement.aFrames);
     }
 
     if ( pThing->controlType == SITH_CT_AI )
@@ -1380,7 +1382,7 @@ void J3DAPI sithThing_FreeThing(SithWorld* pWorld, SithThing* pThing)
 
     if ( pThing->userblock.pMinecar ) // Note This could UB as different union member could be set
     {
-        stdMemory_Free(pThing->userblock.pMinecar);
+        STDFREE(pThing->userblock.pMinecar);
         pThing->userblock.pMinecar = NULL;
     }
 

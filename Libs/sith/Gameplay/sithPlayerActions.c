@@ -87,17 +87,17 @@ void sithPlayerActions_InstallHooks(void)
 void sithPlayerActions_ResetGlobals(void)
 {
     int sithPlayerActions_g_jewelFlyingPuppetTrackNum_tmp = -1;
-    memcpy(&sithPlayerActions_g_jewelFlyingPuppetTrackNum, &sithPlayerActions_g_jewelFlyingPuppetTrackNum_tmp, sizeof(sithPlayerActions_g_jewelFlyingPuppetTrackNum));
+    STD_COPYMEM(&sithPlayerActions_g_jewelFlyingPuppetTrackNum, &sithPlayerActions_g_jewelFlyingPuppetTrackNum_tmp, sizeof(sithPlayerActions_g_jewelFlyingPuppetTrackNum));
 
-    memset(&sithPlayerActions_g_pCurLedgeSurface, 0, sizeof(sithPlayerActions_g_pCurLedgeSurface));
-    memset(&sithPlayerActions_g_pCurLedgeThingModelFace, 0, sizeof(sithPlayerActions_g_pCurLedgeThingModelFace));
-    memset(&sithPlayerActions_g_pCurLedgeThingModel, 0, sizeof(sithPlayerActions_g_pCurLedgeThingModel));
-    memset(&sithPlayerActions_g_pPlasma, 0, sizeof(sithPlayerActions_g_pPlasma));
-    memset(&sithPlayerActions_g_bJewelFlying, 0, sizeof(sithPlayerActions_g_bJewelFlying));
-    memset(&sithPlayerActions_g_bPlayerInvisible, 0, sizeof(sithPlayerActions_g_bPlayerInvisible));
-    memset(&sithPlayerActions_g_pChalkWriteSurf, 0, sizeof(sithPlayerActions_g_pChalkWriteSurf));
-    memset(&sithPlayerActions_g_chalkWritePos, 0, sizeof(sithPlayerActions_g_chalkWritePos));
-    memset(&sithPlayerActions_g_pChalkWriteSector, 0, sizeof(sithPlayerActions_g_pChalkWriteSector));
+    STD_ZEROMEM(&sithPlayerActions_g_pCurLedgeSurface, sizeof(sithPlayerActions_g_pCurLedgeSurface));
+    STD_ZEROMEM(&sithPlayerActions_g_pCurLedgeThingModelFace, sizeof(sithPlayerActions_g_pCurLedgeThingModelFace));
+    STD_ZEROMEM(&sithPlayerActions_g_pCurLedgeThingModel, sizeof(sithPlayerActions_g_pCurLedgeThingModel));
+    STD_ZEROMEM(&sithPlayerActions_g_pPlasma, sizeof(sithPlayerActions_g_pPlasma));
+    STD_ZEROMEM(&sithPlayerActions_g_bJewelFlying, sizeof(sithPlayerActions_g_bJewelFlying));
+    STD_ZEROMEM(&sithPlayerActions_g_bPlayerInvisible, sizeof(sithPlayerActions_g_bPlayerInvisible));
+    STD_ZEROMEM(&sithPlayerActions_g_pChalkWriteSurf, sizeof(sithPlayerActions_g_pChalkWriteSurf));
+    STD_ZEROMEM(&sithPlayerActions_g_chalkWritePos, sizeof(sithPlayerActions_g_chalkWritePos));
+    STD_ZEROMEM(&sithPlayerActions_g_pChalkWriteSector, sizeof(sithPlayerActions_g_pChalkWriteSector));
 }
 
 int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
@@ -456,7 +456,7 @@ int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
                             pRaftPlayerThing->thingInfo.actorInfo.endurance.raftLeakDamage = 1;
                         }
 
-                        sithCog_ThingSendMessageEx(pRaftPlayerThing, 0, SITHCOG_MSG_CALLBACK, 0, 16, 0, 0); // 16 - inflate start
+                        sithCog_ThingSendMessageEx(pRaftPlayerThing, NULL, SITHCOG_MSG_CALLBACK, 0, 16, 0, 0); // 16 - inflate start
                         return 1;
                     }
                 }
@@ -714,9 +714,9 @@ void J3DAPI sithPlayerActions_MoveToPlayerPosition(SithThing* pThing, size_t pla
     SithPlayer* pPlayer = &sithPlayer_g_aPlayers[playerNum];
     if ( (pPlayer->flags & SITH_PLAYER_PLACED) != 0 )
     {
-        pThing->orient = pPlayer->orient;
-        pThing->pos    = pThing->orient.dvec;
-        rdVector_Copy3(&pThing->orient.dvec, &rdroid_g_zeroVector3);
+        pThing->orient      = pPlayer->orient;
+        pThing->pos         = pThing->orient.dvec;
+        pThing->orient.dvec = rdroid_g_zeroVector3;
         sithThing_SetSector(pThing, pPlayer->pInSector, /*bNotify=*/0);
     }
 
