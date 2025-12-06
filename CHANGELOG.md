@@ -93,6 +93,14 @@
   - [QOL] Added config option to set extra capacity for static world sprites buffer (834cb1b)
   - [QOL] Added config option to set extra capacity for world things buffer (1e4245d)
   - Added reset of `sithPlayerControls` internal state upon open of game (4a1721e)
+  - Fixed collision physics calculations between 2 things where incorrect absolute value was applied over total impact speed made it always positive value (41327cb)
+  - Fixed incorrect absolution of total traveled distance in `sithCollision_MoveThing` (41327cb)
+  - Refactored cog module to use size `sizeCogs` value rather than value of`numCogs` when allocating world cog array (81ffc09)
+  - Reverted commit `2a757af` which introduced QOL for removing loop play flag from sound classes upon load (e73c4fe)  
+    Apparently this flag is needed in many cases (e.g.: path moving thing).  
+    This change reverts sound class play logic back to original,  
+    and the buggy sound class files can cause sound buffer to fill up. (e.g.: in aetherium level there are some creatures with loop flag for move soundfx)
+  - [QOL] Increased the sound buffer for simultaneously played sounds to 512 (e73c4fe)
 
 ### Display & Render:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)
@@ -121,6 +129,9 @@
   - Fixed water ripple position to be placed slightly above water surface in `sithFX` module (fa7dbf6)  
     Originally there was a bug where water ripple was placed slightly below water surface causing ripple to be clipped.
   - [QOL] Upgrade raft wake fx (929c21d)
+  - Increased the max collection distance of things to be rendered from 8.0 (80m) to 16.0 (160m) (0bd7b35)  
+    Fixes rendering glitches where objects were prematurely culled while still visible in camera view.
+    e.g.: sun sprite in Meroe level.
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
