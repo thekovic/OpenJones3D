@@ -26,6 +26,7 @@
 #include <sith/Main/sithString.h>
 #include <sith/World/sithModel.h>
 #include <sith/World/sithVoice.h>
+#include <sith/World/sithWeapon.h>
 #include <sith/World/sithWorld.h>
 
 #include <std/General/std.h>
@@ -4733,7 +4734,7 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     // Default to Run option
     CheckDlgButton(hDlg, 1202, jonesConfig_gamePlayOptions_bDefaultRun);// CB default run
 
-    // Added: Check box "Show Aim Reticle"
+    // Added: Check box "Aim Reticle"
     // Get the position of the base checkbox
     RECT rectCBShowText;
     GetWindowRect(hCBShowText, &rectCBShowText);
@@ -4743,13 +4744,16 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     ScreenToClient(hDlg, &pt);
 
     // Calculate the position for the new checkbox
+    UINT dpi = GetDpiForWindow(hDlg);
+    int spacing = MulDiv(8, dpi, USER_DEFAULT_SCREEN_DPI);
+
     int x = pt.x;
-    int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + 14;
+    int y = pt.y + (rectCBShowText.bottom - rectCBShowText.top) + spacing;
 
     // Create the reticle checkbox
     HWND hCBReticle = CreateWindow(
         "BUTTON",               // Class name for button/checkbox
-        "Show Aim Reticle",     // Text displayed on the checkbox
+        "Aim Reticle",          // Text displayed on the checkbox
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
         x,
         y,
@@ -4763,6 +4767,23 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
     J3D_UNUSED(hCBReticle);
 
     CheckDlgButton(hDlg, 1053, JonesReticle_IsEnabled());
+
+    // Added: Check box "Blood Splatter Effect"
+    CreateWindow(
+        "BUTTON",
+        "Blood Splatter Effect",
+        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+        x,
+        y + 20 + spacing,
+        200,                   // Width
+        20,                    // Height
+        hDlg,                  // Parent window handle (the dialog)
+        (HMENU)1054,           // Control ID
+        GetModuleHandle(NULL), // Instance handle
+        NULL                   // Additional creation config
+    );
+
+    CheckDlgButton(hDlg, 1054, sithWeapon_IsBloodSplatterEnabled());
 
     // Difficulty slider and text
     HWND hDifSlider = GetDlgItem(hDlg, 1050); // Difficulty slider control
@@ -4813,23 +4834,23 @@ int J3DAPI jonesConfig_GamePlayOptionsInitDlg(HWND hDlg)
         SetWindowText(hDifText, pDifficultyStr);
     }
 
-    // Added: Resize dialog to fit in new check box
+    // Added: Resize dialog to fit in new check boxes
     RECT rectDlg;
     GetWindowRect(hDlg, &rectDlg);
-    SetWindowPos(hDlg, NULL, 0, 0, rectDlg.right - rectDlg.left, (rectDlg.bottom - rectDlg.top) + 28, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+    SetWindowPos(hDlg, NULL, 0, 0, rectDlg.right - rectDlg.left, (rectDlg.bottom - rectDlg.top) + 66, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
 
     // Added: Move OK & Cancel buttons down
     HWND hBtnOk     = GetDlgItem(hDlg, 1);
     RECT rectBtnOk;
     GetWindowRect(hBtnOk, &rectBtnOk);
-    POINT ptBtnOk = { rectBtnOk.left, rectBtnOk.top + (rectBtnOk.bottom - rectBtnOk.top) / 2 + 14 };
+    POINT ptBtnOk = { rectBtnOk.left, rectBtnOk.top + (rectBtnOk.bottom - rectBtnOk.top) / 2 + 48 };
     ScreenToClient(hDlg, &ptBtnOk);
     SetWindowPos(hBtnOk, NULL, ptBtnOk.x, ptBtnOk.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
     HWND hBtnCancel = GetDlgItem(hDlg, 2);
     RECT rectBtnCancel;
     GetWindowRect(hBtnCancel, &rectBtnCancel);
-    POINT ptBtnCancel = { rectBtnCancel.left, rectBtnCancel.top + (rectBtnCancel.bottom - rectBtnCancel.top) / 2 + 14 };
+    POINT ptBtnCancel = { rectBtnCancel.left, rectBtnCancel.top + (rectBtnCancel.bottom - rectBtnCancel.top) / 2 + 48 };
     ScreenToClient(hDlg, &ptBtnCancel);
     SetWindowPos(hBtnCancel, NULL, ptBtnCancel.x, ptBtnCancel.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
@@ -4889,6 +4910,11 @@ void J3DAPI jonesConfig_GamePlayOptions_HandleWM_COMMAND(HWND hDlg, uint16_t con
         // Enable/Disable aim reticle
         int bReticleEnabled = IsDlgButtonChecked(hDlg, 1053);
         JonesReticle_Enable(bReticleEnabled);
+
+        // Added
+        // Enable/Disable blood splatter
+        int bSplatter = IsDlgButtonChecked(hDlg, 1054);
+        sithWeapon_EnableBloodSplatter(bSplatter);
 
         // Close dialog
         EndDialog(hDlg, controlID);

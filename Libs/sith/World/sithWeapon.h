@@ -15,6 +15,8 @@ J3D_EXTERN_C_START
 #define SITHWEAPON_HOLSTERPISTOL 2
 #define SITHWEAPON_HOLSTERBACK   3
 
+#define SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER "gameplay.bloodSplatter"
+
 void sithWeapon_Open(void);
 void sithWeapon_Close(void); // Added
 
@@ -64,13 +66,12 @@ void J3DAPI sithWeapon_ResetWeaponModel(SithThing* pThing);
 void J3DAPI sithWeapon_SetHolsterModel(SithThing* pThing, SithWeaponId weaponID, signed int meshNum);
 void J3DAPI sithWeapon_ResetHolsterModel(SithThing* pThing, int holsterNum);
 
-void J3DAPI sithWeapon_EnablBloodsplort(bool bEnable); // Added, found in debug version
+bool sithWeapon_IsBloodSplatterEnabled(void); // Added
+void J3DAPI sithWeapon_EnableBloodSplatter(bool bEnable); // Added, found in debug version
 
 void J3DAPI sithWeapon_SendMessageAim(SithThing* pThing, int bAim);
 void J3DAPI sithWeapon_SetActorKilledCallback(SithWeaponActorKilledCallback pfCallback);
 int J3DAPI sithWeapon_IsAiming(SithThing* pThing);
-
-void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing);
 
 SithWeaponId sithWeapon_GetLastWeapon(void);
 void J3DAPI sithWeapon_SetLastWeapon(SithWeaponId weaponNum);

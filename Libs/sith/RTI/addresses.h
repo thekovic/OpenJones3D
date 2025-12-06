@@ -2183,7 +2183,7 @@
 #define sithRenderSky_lookRollSin_ADDR 0x0059C178
 #define sithRender_lightMode_ADDR 0x017F9800
 #define sithRender_g_numVisibleSectors_ADDR 0x017F9804
-#define sithWeapon_bGenBloodsplort_ADDR 0x0052BD40
+#define sithWeapon_bGenBloodSplatter_ADDR 0x0052BD40
 #define sithWeapon_aMaxAimDistances_ADDR 0x0052BD48
 #define sithWeapon_lastPlayerWeaponID_ADDR 0x0056B6FC
 #define sithWeapon_bPlayerWeaponActivated_ADDR 0x0056B700

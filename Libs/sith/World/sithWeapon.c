@@ -35,18 +35,42 @@
 #include <sith/World/sithThing.h>
 #include <sith/World/sithWorld.h>
 
+#include <std/General/stdConfig.h>
 #include <std/General/stdMath.h>
 #include <std/General/stdUtil.h>
 #include <std/Win95/stdComm.h>
 
 #define SITHWEAPON_MAX_PROJECTILE_RICOCHETS 6
 
-static bool sithWeapon_bGenBloodsplort = true;
+static bool sithWeapon_bGenBloodSplatter = true;
 
-static const float sithWeapon_aMaxAimDistances[25] = { // up to SITHWEAPON_COMSHOTGUN
-    0.0f, 0.0f, 0.0f, 1.0f, 1.5f, 1.5f, 2.5f, 0.0f, 1.5f, 1.0f,
-    3.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-    1.5f, 1.5f, 2.5f, 1.5f, 1.0f
+static const float sithWeapon_aMaxAimDistances[25] =
+{
+    [SITHWEAPON_NO_WEAPON] =     0.0f,
+    [SITHWEAPON_FISTS]         = 0.0f,
+    [SITHWEAPON_WHIP]          = 0.0f,
+    [SITHWEAPON_PISTOL]        = 1.0f, // Pistol
+    [SITHWEAPON_TOKAREV]       = 1.5f,
+    [SITHWEAPON_MAUSER]        = 1.5f,
+    [SITHWEAPON_SIMONOV]       = 2.5f,
+    [SITHWEAPON_MACHETE]       = 0.0f,
+    [SITHWEAPON_SUBMACHINE]    = 1.5f,
+    [SITHWEAPON_SHOTGUN]       = 1.0f, // Shotgun
+    [SITHWEAPON_BAZOOKA]       = 3.0f,
+    [SITHWEAPON_GRENADE]       = 0.0f,
+    [SITHWEAPON_SATCHEL]       = 0.0f,
+    [SITHWEAPON_ZIPPO]         = 0.0f,
+    [SITHWEAPON_IMP1]          = 0.0f,
+    [SITHWEAPON_IMP2]          = 0.0f,
+    [SITHWEAPON_IMP3]          = 0.0f,
+    [SITHWEAPON_IMP4]          = 0.0f,
+    [SITHWEAPON_IMP5]          = 0.0f,
+    [SITHWEAPON_COMFISTS]      = 0.0f,
+    [SITHWEAPON_COMTOKAREV]    = 1.5f,
+    [SITHWEAPON_COMMAUSER]     = 1.5f,
+    [SITHWEAPON_COMSIMONOV]    = 2.5f,
+    [SITHWEAPON_COMSUBMACHINE] = 1.5f,
+    [SITHWEAPON_COMSHOTGUN]    = 1.0f
 };
 
 static SithWeaponId sithWeapon_lastPlayerWeaponID;
@@ -70,6 +94,10 @@ static SithWeaponActorKilledCallback sithWeapon_pfActorKilledCallback;
 
 void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon);
 int sithWeapon_IsLocalPlayerUnableToUseWeapon(void);
+
+
+static void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing); // Keeping for hooking on vanilla exe
+static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing); // Returns false if thing is vehicle, splort template not found, or fails to create sprite thing
 
 void sithWeapon_InstallHooks(void)
 {
@@ -129,6 +157,13 @@ void sithWeapon_ResetGlobals(void)
 void sithWeapon_Open(void)
 {
     sithWeapon_secWeaponActivationWaitEndTime = 0.0f;
+
+    // Added: Added blood splatter config read
+    sithWeapon_bGenBloodSplatter = stdConfig_GetBool(SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER, sithWeapon_bGenBloodSplatter);
+    if ( !stdConfig_Contains(SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER) )
+    {
+        stdConfig_SetBool(SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER, sithWeapon_bGenBloodSplatter);
+    }
 }
 
 void sithWeapon_Close(void)
@@ -350,6 +385,20 @@ int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId)
     return 1;
 }
 
+static void sithWeapon_CreateExplosionAtThingCollision(SithThing* pWeapon, const SithThing* pHitThing, const SithCollision* pCollision)
+{
+    if ( pCollision && pCollision->pFaceCollided )
+    {
+        rdVector3 expDir;
+        rdMatrix_TransformVector34(&expDir, &pCollision->pFaceCollided->normal, &pHitThing->orient);
+        sithWeapon_CreateWeaponExplosion(pWeapon, pWeapon->thingInfo.weaponInfo.pExplosionTemplate, &expDir, /*bRotate=*/1);
+    }
+    else
+    {
+        sithWeapon_CreateWeaponExplosion(pWeapon, pWeapon->thingInfo.weaponInfo.pExplosionTemplate, NULL, /*bRotate=*/0);
+    }
+}
+
 void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
 {
     SithWeaponInfo* pWeaponInfo = &pWeapon->thingInfo.weaponInfo;
@@ -398,23 +447,27 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
                 }
 
                 // Generate bloodsplort anf destroy projectile or explode projectile
-                if ( pVictim->thingInfo.actorInfo.health == 0.0f
-                    && (pWeaponInfo->flags & SITH_WF_ACTORKILLDESTROY) != 0
+                if ( (pWeaponInfo->flags & SITH_WF_BLOODSPLATTER) != 0
                     && (pVictim->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
+                #ifndef J3D_QOL_IMPROVEMENTS
+                    && pVictim->thingInfo.actorInfo.health == 0.0f
                     && pVictim->type != SITH_THING_PLAYER
-                    && sithWeapon_bGenBloodsplort )
+                #endif
+                    && sithWeapon_bGenBloodSplatter
+                    && sithWeapon_GenBloodSplatterEx(pVictim) )
                 {
-                    sithWeapon_GenBloodsplort(pVictim);
+                    // Altered: Replaced with new sithWeapon_GenBloodSplatterEx 
+                    //          and added fallback logic if function call fails
                     sithThing_DestroyThing(pWeapon);
                 }
                 else
                 {
-                    sithWeapon_CreateWeaponExplosion(pWeapon, pWeaponInfo->pExplosionTemplate, NULL, /*bRotate=*/0);
+                    sithWeapon_CreateExplosionAtThingCollision(pWeapon, pVictim, pCollision); // Altered: Replaced with the new sithWeapon_CreateExplosionAtThingCollision to rotate explosion sprite
                 }
             }
             else
             {
-                sithWeapon_CreateWeaponExplosion(pWeapon, pWeaponInfo->pExplosionTemplate, NULL, /*bRotate=*/0);
+                sithWeapon_CreateExplosionAtThingCollision(pWeapon, pVictim, pCollision); // Altered: Replaced with the new sithWeapon_CreateExplosionAtThingCollision to rotate explosion sprite
             }
 
             if ( pWeaponInfo->force != 0.0f && pVictim->moveType == SITH_MT_PHYSICS )
@@ -767,26 +820,17 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                     if ( pReboundProjectile )
                     {
                         rdVector3 projectDir;
-                        /*projectDir.x = pWeapon->pParent->pos.x - pWeapon->pos.x;
-                        projectDir.y = pWeapon->pParent->pos.y - pWeapon->pos.y;
-                        projectDir.z = pWeapon->pParent->pos.z - pWeapon->pos.z;*/
                         rdVector_Sub3(&projectDir, &pWeapon->pParent->pos, &pWeapon->pos);
                         rdVector_Normalize3Acc(&projectDir);
 
-                        // Set projectile LVect
-                        rdVector_Copy3(&pReboundProjectile->orient.lvec, &projectDir);
+                        // Set projectile LVec
+                        pReboundProjectile->orient.lvec = projectDir;
 
-                        // Set projectile RVect
-                        /*pReboundProjectile->orient.rvec.x = pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.uvec.z - pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.uvec.y;
-                        pReboundProjectile->orient.rvec.y = pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.uvec.x - pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.uvec.z;
-                        pReboundProjectile->orient.rvec.z = pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.uvec.y - pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.uvec.x;*/
+                        // Calc projectile RVec
                         rdVector_Cross3(&pReboundProjectile->orient.rvec, &pReboundProjectile->orient.lvec, &pReboundProjectile->orient.uvec);
                         rdVector_Normalize3Acc(&pReboundProjectile->orient.rvec);
 
-                        // Set projectile UVect
-                        /*pReboundProjectile->orient.uvec.x = pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.rvec.z - pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.rvec.y;
-                        pReboundProjectile->orient.uvec.y = pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.rvec.x - pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.rvec.z;
-                        pReboundProjectile->orient.uvec.z = pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.rvec.y - pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.rvec.x;*/
+                        // Calc projectile UVec
                         rdVector_Cross3(&pReboundProjectile->orient.uvec, &pReboundProjectile->orient.lvec, &pReboundProjectile->orient.rvec);
                         rdVector_Normalize3Acc(&pReboundProjectile->orient.uvec);
 
@@ -804,10 +848,8 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                     rdVector3 wepdir;
                     float wepspeed = rdVector_Normalize3(&wepdir, &pWeapon->moveInfo.physics.velocity);
 
-                    rdVector3 thdir;
-                    rdVector_Copy3(&thdir, &pThing->orient.lvec);
-
-                    thdir.z = thdir.z + 0.039999999f;
+                    rdVector3 thdir = pThing->orient.lvec;
+                    thdir.z += 0.039999999f;
                     rdVector_Normalize3Acc(&thdir);
 
                     float dot = rdVector_Dot3(&thdir, &wepdir);
@@ -816,43 +858,22 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                         pReboundProjectile = sithThing_CreateThing(pTemplate, pWeapon);
                         if ( pReboundProjectile )
                         {
-                            /*   if ( 2.0f * dot >= 0.0f )
-                               {
-                                   v6 = 2.0f * dot;
-                               }
-                               else
-                               {
-                                   v6 = -(2.0f * dot);
-                               }
-
-                               dist = v6;
-                               v19 = dist;*/
-
                             float dist = fabsf(2.0f * dot);
 
                             rdVector3 projectDir;
-                            projectDir.x = thdir.x * dist + wepdir.x;
-                            projectDir.y = thdir.y * dist + wepdir.y;
-                            projectDir.z = thdir.z * dist + wepdir.z;
+                            rdVector_ScaleAdd3(&projectDir, &thdir, dist, &wepdir);
                             rdVector_Normalize3Acc(&projectDir);
 
-                            rdVector_Copy3(&pReboundProjectile->orient.lvec, &projectDir);
+                            // Calculate new orient
+                            pReboundProjectile->orient.lvec = projectDir;
 
-                            /*pReboundProjectile->orient.rvec.x = pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.uvec.z - pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.uvec.y;
-                            pReboundProjectile->orient.rvec.y = pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.uvec.x - pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.uvec.z;
-                            pReboundProjectile->orient.rvec.z = pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.uvec.y - pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.uvec.x;*/
                             rdVector_Cross3(&pReboundProjectile->orient.rvec, &pReboundProjectile->orient.lvec, &pReboundProjectile->orient.uvec);
                             rdVector_Normalize3Acc(&pReboundProjectile->orient.rvec);
 
-                            /*pReboundProjectile->orient.uvec.x = pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.rvec.z - pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.rvec.y;
-                            pReboundProjectile->orient.uvec.y = pReboundProjectile->orient.lvec.z * pReboundProjectile->orient.rvec.x - pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.rvec.z;
-                            pReboundProjectile->orient.uvec.z = pReboundProjectile->orient.lvec.x * pReboundProjectile->orient.rvec.y - pReboundProjectile->orient.lvec.y * pReboundProjectile->orient.rvec.x;*/
                             rdVector_Cross3(&pReboundProjectile->orient.uvec, &pReboundProjectile->orient.lvec, &pReboundProjectile->orient.rvec);
                             rdVector_Normalize3Acc(&pReboundProjectile->orient.uvec);
 
-                            pReboundProjectile->moveInfo.physics.velocity.x = wepspeed * 0.75f * projectDir.x;
-                            pReboundProjectile->moveInfo.physics.velocity.y = wepspeed * 0.75f * projectDir.y;
-                            pReboundProjectile->moveInfo.physics.velocity.z = wepspeed * 0.75f * projectDir.z;
+                            rdVector_Scale3(&pReboundProjectile->moveInfo.physics.velocity, &projectDir, wepspeed * 0.75f);
                             sithCollision_MoveThing(pReboundProjectile, &pThing->orient.lvec, 0.059999999f, 5);
 
                             sithThing_DamageThing(pThing, pWeapon, 25.0f, SITH_DAMAGE_LIGHTNING);
@@ -891,14 +912,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
 
     if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_PROXIMITY) != 0 )
     {
-        /*flags = pWeapon->thingInfo.weaponInfo.flags;
-        flags &= ~0x1000;
-        pWeapon->thingInfo.weaponInfo.flags = flags;*/
         pWeapon->thingInfo.weaponInfo.flags &= ~SITH_WF_PROXIMITY;
-
-        /*v8 = pWeapon->thingInfo.weaponInfo.flags;
-        v8 |= 0x100u;
-        pWeapon->thingInfo.weaponInfo.flags = v8;*/
         pWeapon->thingInfo.weaponInfo.flags |= SITH_WF_EXPLODE;
 
         pWeapon->collide.size = 0.0f;
@@ -949,18 +963,23 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
 
         if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_THINGHITEXPLODE) != 0 )
         {
-            if ( pThing->thingInfo.actorInfo.health == 0.0f
-                && (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_ACTORKILLDESTROY) != 0
+            if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_BLOODSPLATTER) != 0
                 && (pThing->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
-                && pThing->type != SITH_THING_PLAYER
-                && sithWeapon_bGenBloodsplort )
+            #ifndef J3D_QOL_IMPROVEMENTS
+                && pVictim->thingInfo.actorInfo.health == 0.0f
+                && pVictim->type != SITH_THING_PLAYER
+            #endif
+                && sithWeapon_bGenBloodSplatter
+                && sithWeapon_GenBloodSplatterEx(pThing) )
+
             {
-                sithWeapon_GenBloodsplort(pThing);
+                // Altered: Replaced with new sithWeapon_GenBloodSplatterEx 
+                //          and added fallback logic if function call fails
                 sithThing_DestroyThing(pWeapon);
             }
             else
             {
-                sithWeapon_CreateWeaponExplosion(pWeapon, pWeapon->thingInfo.weaponInfo.pExplosionTemplate, NULL, /*bRotate=*/0);
+                sithWeapon_CreateExplosionAtThingCollision(pWeapon, pThing, pCollision); // Altered: Replaced with the new sithWeapon_CreateExplosionAtThingCollision to rotate explosion sprite
             }
 
             return 1;
@@ -997,9 +1016,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
         }
         else
         {
-            //expDir.x = 1.0f;
-            //expDir.y = 0.0f;
-            //expDir.z = 0.0f;
+            // TODO: why rdroid_g_xVector3 if bRotate=0?
             sithWeapon_CreateWeaponExplosion(pWeapon, pWeapon->thingInfo.weaponInfo.pExplosionTemplate, &rdroid_g_xVector3, /*bRotate=*/0);
         }
 
@@ -1094,9 +1111,8 @@ int J3DAPI sithWeapon_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pS
 
     if ( (pThing->thingInfo.weaponInfo.flags & SITH_WF_FACEHITEXPLODE) != 0 )
     {
-        rdVector3 surfNormal;
-        rdVector_Copy3(&surfNormal, &pSurf->face.normal);
-        SithThing* pExplosion = sithWeapon_CreateWeaponExplosion(pThing, pThing->thingInfo.weaponInfo.pExplosionTemplate, &surfNormal, 1);
+        rdVector3 surfNormal = pSurf->face.normal;
+        SithThing* pExplosion = sithWeapon_CreateWeaponExplosion(pThing, pThing->thingInfo.weaponInfo.pExplosionTemplate, &surfNormal, /*bRotate=*/1);
         if ( !pExplosion )
         {
             return 1;
@@ -1138,7 +1154,7 @@ void J3DAPI sithWeapon_DestroyWeapon(SithThing* pWeapon)
             pMaterial = pWeapon->attach.attachedToStructure.pSurfaceAttached->face.pMaterial;
         }
 
-        SithThing* pExplosion = sithWeapon_CreateWeaponExplosion(pWeapon, pWeapon->thingInfo.weaponInfo.pExplosionTemplate, 0, 0);
+        SithThing* pExplosion = sithWeapon_CreateWeaponExplosion(pWeapon, pWeapon->thingInfo.weaponInfo.pExplosionTemplate, NULL, /*bRotate=*/0);
         if ( pExplosion && pMaterial && (pExplosion->thingInfo.explosionInfo.flags & SITH_EF_UPDATEDEBRISMATERIAL) != 0 )
         {
             pExplosion->thingInfo.explosionInfo.pHitSurfaceMat = pMaterial;
@@ -1152,6 +1168,7 @@ void J3DAPI sithWeapon_DestroyWeapon(SithThing* pWeapon)
 
 SithThing* J3DAPI sithWeapon_CreateWeaponExplosion(SithThing* pWeapon, SithThing* pExplosionTemplate, const rdVector3* pDir, int bRotate)
 {
+    SITH_ASSERT(!bRotate || pDir);
     SITH_ASSERTREL(pWeapon->type == SITH_THING_WEAPON);
     SITH_ASSERTREL(pWeapon->moveType == SITH_MT_PHYSICS);
 
@@ -1168,33 +1185,21 @@ SithThing* J3DAPI sithWeapon_CreateWeaponExplosion(SithThing* pWeapon, SithThing
         return NULL;
     }
 
-    rdVector3 pos;
-    rdVector_Copy3(&pos, &pWeapon->pos);
+    rdVector3 pos = pWeapon->pos;
     rdMatrix34 orient = rdroid_g_identMatrix34;
 
     if ( bRotate )
     {
-        rdVector3 offset;
-        rdVector_Copy3(&offset, pDir);
+        rdVector3 offset = *pDir;
         rdVector_Scale3Acc(&offset, 0.001f); // offset /1000
-        /* offset.x = offset.x * 0.001f;
-         offset.y = offset.y * 0.001f;
-         offset.z = offset.z * 0.001f;*/
-
         rdVector_Add3Acc(&pos, &offset);
-        /*pos.x = pos.x + offset.x;
-        pos.y = pos.y + offset.y;
-        pos.z = pos.z + offset.z;*/
 
         // SetUVec & LVec
-        rdVector_Copy3(&orient.uvec, &rdroid_g_zVector3);
-        rdVector_Copy3(&orient.lvec, pDir);
+        orient.uvec = rdroid_g_zVector3;
+        orient.lvec = *pDir;
 
         // Calc RVect
         rdVector_Cross3(&orient.rvec, &orient.lvec, &orient.uvec);
-        /*orient.rvec.x = orient.lvec.y * orient.uvec.z - orient.lvec.z * orient.uvec.y;
-        orient.rvec.y = orient.lvec.z * orient.uvec.x - orient.lvec.x * orient.uvec.z;
-        orient.rvec.z = orient.lvec.x * orient.uvec.y - orient.lvec.y * orient.uvec.x;*/
     }
 
     SithThing* pParent    = sithThing_GetThingParent(pWeapon);
@@ -1985,9 +1990,18 @@ void J3DAPI sithWeapon_ResetHolsterModel(SithThing* pThing, int holsterNum)
     }
 }
 
-void J3DAPI sithWeapon_EnablBloodsplort(bool bEnable)
+bool sithWeapon_IsBloodSplatterEnabled(void)
 {
-    sithWeapon_bGenBloodsplort = bEnable;
+    return sithWeapon_bGenBloodSplatter;
+}
+
+void J3DAPI sithWeapon_EnableBloodSplatter(bool bEnable)
+{
+    if ( sithWeapon_bGenBloodSplatter != bEnable )
+    {
+        sithWeapon_bGenBloodSplatter = bEnable;
+        stdConfig_SetBool(SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER, bEnable); // Added
+    }
 }
 
 void J3DAPI sithWeapon_SendMessageAim(SithThing* pThing, int bAim)
@@ -2088,9 +2102,14 @@ int J3DAPI sithWeapon_IsAiming(SithThing* pThing)
 
 void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing)
 {
+    sithWeapon_GenBloodSplatterEx(pHitThing);
+}
+
+static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing)
+{
     SITH_ASSERTREL(pHitThing != NULL);
     SITH_ASSERTREL(pHitThing->renderData.data.pModel3 != NULL);
-    SITH_ASSERTREL((pHitThing->type == SITH_THING_ACTOR) || (pHitThing->type == SITH_THING_CORPSE));
+    SITH_ASSERTREL((pHitThing->type == SITH_THING_ACTOR) || (pHitThing->type == SITH_THING_CORPSE) || (pHitThing->type == SITH_THING_PLAYER));
 
     SithThing* pTemplate = NULL;
     rdMaterial* pMat = NULL;
@@ -2105,73 +2124,80 @@ void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing)
         pMat = sithMaterial_GetMaterialByIndex(SITHWORLD_STATICINDEX(179)); // gen_a4sprite_blood.mat
     }
 
-    if ( pTemplate )
+    if ( !pTemplate )
     {
-        SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pHitThing->pos, &pHitThing->orient, pHitThing->pInSector, NULL);
-        if ( pSprite )
-        {
-            int meshIdx = sithThing_GetThingMeshIndex(pHitThing, "intorso");
-            if ( meshIdx == -1 )
-            {
-                if ( !strncmp(pHitThing->aName, "snak", 4u) )
-                {
-                    meshIdx = sithThing_GetThingMeshIndex(pHitThing, "snhead");
-                }
-                else if ( !strncmp(pHitThing->aName, "spid", 4u) )
-                {
-                    meshIdx = sithThing_GetThingMeshIndex(pHitThing, "spbelly");
-                }
-                else if ( !strncmp(pHitThing->aName, "scor", 4u) )
-                {
-                    meshIdx = sithThing_GetThingMeshIndex(pHitThing, "scsect1");
-                }
-                else if ( !strncmp(pHitThing->aName, "komo", 4u) )
-                {
-                    meshIdx = sithThing_GetThingMeshIndex(pHitThing, "lineck");
-                }
-                else if ( !strncmp(pHitThing->aName, "cent", 4u) )
-                {
-                    meshIdx = sithThing_GetThingMeshIndex(pHitThing, "cphead");
-                }
-
-                if ( meshIdx == -1 )
-                {
-                    meshIdx = 0;
-                }
-
-                SITHLOG_STATUS("Blood splort attached to mesh number %d.\n", meshIdx);
-            }
-
-            sithThing_AttachThingToThingMesh(pSprite, pHitThing, meshIdx);
-            if ( pMat )
-            {
-                sithAnimate_StartMaterialAnim(pMat, 16.0f, (SithAnimateFlags)0);
-            }
-
-            float size = pHitThing->renderData.data.pModel3->size / 2.0f;
-            size = STDMATH_CLAMP(size, 0.01f, 0.1f);
-            //if ( size < 0.0099999998f )
-            //{
-            //    size = 0.0099999998f;
-            //}
-            //else if ( size > 0.1f )
-            //{
-            //    size = 0.1f;
-            //}
-
-            rdVector3 start;
-            start.x = size;
-            start.y = size;
-            start.z = 1.0f;
-
-            rdVector3 end;
-            size = size * 2.0f;
-            end.x = size;
-            end.y = size;
-            end.z = 1.0f;
-            sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
-        }
+        return false;
     }
+
+    SithThing* pSprite = sithThing_CreateThingAtPos(pTemplate, &pHitThing->pos, &pHitThing->orient, pHitThing->pInSector, NULL);
+    if ( !pSprite )
+    {
+        return false;
+    }
+
+    int meshIdx = sithThing_GetThingMeshIndex(pHitThing, "intorso");
+    if ( meshIdx == -1 )
+    {
+        if ( strneq(pHitThing->aName, "snak", 4u) )
+        {
+            meshIdx = sithThing_GetThingMeshIndex(pHitThing, "snhead");
+        }
+        else if ( strneq(pHitThing->aName, "spid", 4u) )
+        {
+            meshIdx = sithThing_GetThingMeshIndex(pHitThing, "spbelly");
+        }
+        else if ( strneq(pHitThing->aName, "scor", 4u) )
+        {
+            meshIdx = sithThing_GetThingMeshIndex(pHitThing, "scsect1");
+        }
+        else if ( strneq(pHitThing->aName, "komo", 4u) )
+        {
+            meshIdx = sithThing_GetThingMeshIndex(pHitThing, "lineck");
+        }
+        else if ( strneq(pHitThing->aName, "cent", 4u) )
+        {
+            meshIdx = sithThing_GetThingMeshIndex(pHitThing, "cphead");
+        }
+
+        if ( meshIdx == -1 )
+        {
+            if ( (pHitThing->flags & (SITH_TF_METAL | SITH_TF_EARTH | SITH_TF_SNOW | SITH_TF_WOOD)) != 0
+                || sithPhysics_IsVehicleThing(pHitThing) )
+            {
+                // We have either vehicle that has no human exposed to outside of vehicle
+                // or some other (non-human) actor
+                return false;
+            }
+
+            meshIdx = 0;
+        }
+
+    #ifdef J3D_DEBUG // Added: debug check
+        SITHLOG_STATUS("Blood splort attached to mesh number %d.\n", meshIdx);
+    #endif
+    }
+
+    sithThing_AttachThingToThingMesh(pSprite, pHitThing, meshIdx);
+    if ( pMat )
+    {
+        sithAnimate_StartMaterialAnim(pMat, 16.0f, (SithAnimateFlags)0);
+    }
+
+    float size = pHitThing->renderData.data.pModel3->size / 5.0f;
+    size = STDMATH_CLAMP(size, 0.001f, 0.02f);
+    rdVector3 start;
+    start.x = size;
+    start.y = size;
+    start.z = 1.0f;
+
+    rdVector3 end;
+    size = size * 2.0f;
+    end.x = size;
+    end.y = size;
+    end.z = 0.8f;
+    sithAnimate_StartAnimateSpriteSize(pSprite, &start, &end, 0.5f);
+
+    return true;
 }
 
 SithWeaponId sithWeapon_GetLastWeapon(void)

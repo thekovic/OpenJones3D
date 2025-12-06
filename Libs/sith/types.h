@@ -569,7 +569,7 @@ typedef enum eSithWeaponFlag
     SITH_WF_DECAYEMITSOUNDAWARENESSEVENT = 0x40000,
     SITH_WF_SURFACERICOCHET              = 0x80000,
     SITH_WF_EMITAITARGETEDEVENT          = 0x200000,
-    SITH_WF_ACTORKILLDESTROY             = 0x400000,
+    SITH_WF_BLOODSPLATTER                = 0x400000,
     SITH_WF_MOPHIABOMB                   = 0x800000,
 } SithWeaponFlag;
 
