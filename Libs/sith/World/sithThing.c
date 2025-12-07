@@ -1406,6 +1406,12 @@ void J3DAPI sithThing_FreeThing(SithWorld* pWorld, SithThing* pThing)
 
     if ( pThing->userblock.pMinecar ) // Note This could UB as different union member could be set
     {
+        // Added: Free user block entry
+        if ( pThing->moveType == SITH_MT_PHYSICS )
+        {
+            sithPhysics_FreeUserBlockEntry(pThing);
+        }
+
         STDFREE(pThing->userblock.pMinecar);
         pThing->userblock.pMinecar = NULL;
     }
@@ -1697,9 +1703,6 @@ void J3DAPI sithThing_EnterWater(SithThing* pThing, int bNoSplash)
                 && (pThing->thingInfo.weaponInfo.damageType & SITH_DAMAGE_IMPACT) != 0 )
             {
                 rdVector_Scale3Acc(&pThing->moveInfo.physics.velocity, 0.5f); // Slowdown weapon
-                /*    pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x * 0.5f;
-                    pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.velocity.y * 0.5f;
-                    pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.velocity.z * 0.5f;*/
             }
         }
     }
@@ -2545,9 +2548,6 @@ void J3DAPI sithThing_AttachThingToThing(SithThing* pThing, SithThing* pAttachTh
 
     rdVector3 dpos;
     rdVector_Sub3(&dpos, &pThing->pos, &pAttachThing->pos);
-    //dpos.x = pThing->pos.x - pAttachThing->pos.x;
-    //dpos.y = pThing->pos.y - pAttachThing->pos.y;
-    //dpos.z = pThing->pos.z - pAttachThing->pos.z;
     rdMatrix_TransformVectorOrtho34(&pThing->attach.posOffset, &dpos, &pAttachThing->orient);
 
     if ( (pAttachThing->flags & SITH_TF_COGLINKED) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_REMOTE)) == 0 )
@@ -2602,21 +2602,11 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
             if ( pAttached->moveType == SITH_MT_PHYSICS )
             {
                 rdVector_Add3Acc(&pThing->moveInfo.physics.velocity, &pAttached->moveInfo.physics.velocity);
-                /*pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x + pAttached->moveInfo.physics.velocity.x;
-                pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.velocity.y + pAttached->moveInfo.physics.velocity.y;
-                pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.velocity.z + pAttached->moveInfo.physics.velocity.z;*/
             }
 
             else if ( pAttached->moveType == SITH_MT_PATH )
             {
                 rdVector_MultAcc3(&pThing->moveInfo.physics.velocity, &pAttached->moveInfo.pathMovement.vecDeltaPos, pAttached->moveInfo.pathMovement.moveVel);
-
-                /*     pThing->moveInfo.physics.velocity.x = pAttached->moveInfo.pathMovement.vecDeltaPos.x * pAttached->moveInfo.pathMovement.moveVel
-                         + pThing->moveInfo.physics.velocity.x;
-                     pThing->moveInfo.physics.velocity.y = pAttached->moveInfo.pathMovement.vecDeltaPos.y * pAttached->moveInfo.pathMovement.moveVel
-                         + pThing->moveInfo.physics.velocity.y;
-                     pThing->moveInfo.physics.velocity.z = pAttached->moveInfo.pathMovement.vecDeltaPos.z * pAttached->moveInfo.pathMovement.moveVel
-                         + pThing->moveInfo.physics.velocity.z;*/
             }
         }
 
@@ -2664,9 +2654,6 @@ void J3DAPI sithThing_DetachThing(SithThing* pThing)
             rdVector3 scrollDir;
             sithAnimate_GetSurfaceScrollingDirection(pSurf, &scrollDir);
             rdVector_Add3Acc(&pThing->moveInfo.physics.velocity, &scrollDir);
-            /*     pThing->moveInfo.physics.velocity.x = pThing->moveInfo.physics.velocity.x + scrollDir.x;
-                 pThing->moveInfo.physics.velocity.y = pThing->moveInfo.physics.velocity.y + scrollDir.y;
-                 pThing->moveInfo.physics.velocity.z = pThing->moveInfo.physics.velocity.z + scrollDir.z;*/
         }
 
         if ( pThing->type == SITH_THING_PLAYER && (pSurf->flags & SITH_SURFACE_WHIPAIM) != 0 && (sithWhip_GetWhipSwingThing() || sithWhip_GetWhipClimbThing()) )

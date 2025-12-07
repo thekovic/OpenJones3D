@@ -4,6 +4,7 @@
 #include <rdroid/Math/rdMath.h>
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
+#include <rdroid/Primitives/rdModel3.h>
 
 #include <sith/AI/sithAIAwareness.h>
 #include <sith/Cog/sithCog.h>
@@ -138,19 +139,28 @@ static float sithPhysics_raftSolidSurfaceDragFactor = 1.1f;
 //
 static bool sithPhysics_bJeepExhaust; // Added: new var
 
+// Vehicle light on/off helper function
+static void J3DAPI sithPhysics_SetVehicleLight(SithVehicleLight* pLight, bool bOn);
+static void J3DAPI sithPhysics_SetVehicleLights(SithVehicleLights* pLights, bool bOn);
+
 // MineCar fx init functions
 void J3DAPI sithPhysics_InitMineCarFxState(SithThing* pThing, SithMineCarFxState* pFxState);
 void J3DAPI sithPhysics_InitVehicleFxState(SithThing* pThing, SithVehicleEngineFxState* pFxState);
+
 void J3DAPI sithPhysics_InitMineCarChassisDefault(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
 void J3DAPI sithPhysics_InitMineCarChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
 void J3DAPI sithPhysics_InitTrackTruckChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
 void J3DAPI sithPhysics_InitTrackJeepChassis(SithThing* pThing, SithVehicleChassisInfo* pChassisInfo);
+
 void J3DAPI sithPhysics_InitMineCarExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
 void J3DAPI sithPhysics_InitJeepExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
 void J3DAPI sithPhysics_InitTrackTruckExhaust(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
 void J3DAPI sithPhysics_InitMineCarExhaustDefault(SithThing* pThing, SithVehicleExhaustInfo* pExhaustInfo);
+
 void J3DAPI sithPhysics_InitMineCarState(SithThing* pThing, SithMineCarState* pState);
 void J3DAPI sithPhysics_InitTrackTruckState(SithThing* pThing, SithMineCarState* pState);
+
+void J3DAPI sithPhysics_InitPlayerMineCarLights(SithThing* pThing, SithVehicleLights* pLights);
 
 // MineCar fx update functions
 void J3DAPI sithPhysics_UpdateTrackVehicleFx(SithThing* pThing, SithMineCarUserBlock* pMineCarUserBlock, float secDeltaTime);
@@ -159,6 +169,10 @@ void J3DAPI sithPhysics_UpdateTrackJeepFx(SithThing* pThing, SithVehicleEngineFx
 void J3DAPI sithPhysics_UpdateTrackTruckFx(SithThing* pThing, SithVehicleEngineFxState* pFxState, float secDeltaTime);
 void J3DAPI sithPhysics_UpdateMineCarChassis(SithThing* pThing, const SithVehicleChassisInfo* pChasisInfo, float secDeltaTime);
 void J3DAPI sithPhysics_UpdateExhaustFx(SithThing* pThing, const SithVehicleExhaustInfo* pExhaustInfo, float secDeltaTime);
+
+// Minecar turn on/off functions (new)
+void J3DAPI sithPhysics_PowerOnMineCar(SithThing* pThing);
+void J3DAPI sithPhysics_PowerOffMineCar(SithThing* pThing);
 
 // Raft physics
 SithPhysicsWaterSurfaceType J3DAPI sithPhysics_CheckWaterSurfaceAtPos(const SithThing* pThing, float* pOutDistance, rdVector3* pOutNormal, const rdVector3* pPos, float secDeltaTime);
@@ -250,8 +264,8 @@ void sithPhysics_ResetGlobals(void)
     int sithPhysics_dword_538D38_tmp = 1;
     memcpy(&sithPhysics_dword_538D38, &sithPhysics_dword_538D38_tmp, sizeof(sithPhysics_dword_538D38));
 
-    memset(&sithPhysics_dword_58540C, 0, sizeof(sithPhysics_dword_58540C));
-    memset(&sithPhysics_flt_585410, 0, sizeof(sithPhysics_flt_585410));
+    STD_ZEROMEM(&sithPhysics_dword_58540C, sizeof(sithPhysics_dword_58540C));
+    STD_ZEROMEM(&sithPhysics_flt_585410, sizeof(sithPhysics_flt_585410));
 }
 
 void J3DAPI sithPhysics_Startup(void)
@@ -1636,7 +1650,7 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
     }
 
     SithMineCarUserBlock* pMinecar = pThing->userblock.pMinecar;
-    memset(pMinecar, 0, sizeof(SithMineCarUserBlock));
+    STD_ZEROMEM(pMinecar, sizeof(SithMineCarUserBlock));
 
     if ( !stdUtil_StrCmp(pThing->aName, "mineplayer") )
     {
@@ -1646,8 +1660,10 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
         sithPhysics_InitMineCarFxState(pThing, &pThing->userblock.pMinecar->fxstate);
         sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
         pThing->userblock.pMinecar->state.bEngineAnim = 1;
-    }
 
+        //Added: Make rear red light gouraud lit from default fullly lit
+        sithPhysics_InitPlayerMineCarLights(pThing, &pThing->userblock.pMinecar->state.lights);
+    }
     else if ( !stdUtil_StrCmp(pThing->aName, "killtruk") )
     {
         pMinecar->type = SITHMINECAR_KILLTRUCK_AI;
@@ -1656,7 +1672,6 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
         sithPhysics_InitTrackTruckState(pThing, &pThing->userblock.pMinecar->state);
         sithPhysics_InitVehicleFxState(pThing, &pThing->userblock.pMinecar->fxstate.engine);
     }
-
     else if ( !stdUtil_StrCmp(pThing->aName, "commietruck") )
     {
         pMinecar->type = SITHMINECAR_TRUCK_AI;
@@ -1665,7 +1680,6 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
         sithPhysics_InitTrackTruckState(pThing, &pThing->userblock.pMinecar->state);
         sithPhysics_InitVehicleFxState(pThing, &pThing->userblock.pMinecar->fxstate.engine);
     }
-
     else if ( !stdUtil_StrCmp(pThing->aName, "jeep_cs") || !stdUtil_StrCmp(pThing->aName, "jeep_cs_pyr") )
     {
         pMinecar->type = SITHMINECAR_JEEP_AI;
@@ -1674,7 +1688,6 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
         sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
         sithPhysics_InitVehicleFxState(pThing, &pThing->userblock.pMinecar->fxstate.engine);
     }
-
     else if ( !stdUtil_StrCmp(pThing->aName, "mine_2commcar") )
     {
         pMinecar->type = SITHMINECAR_MINECAR_AI;
@@ -1904,6 +1917,65 @@ void J3DAPI sithPhysics_InitTrackTruckState(SithThing* pThing, SithMineCarState*
     pState->unknown10          = 0.60000002f;
     pState->unknown9           = 0.80000001f;
     pState->bBraking           = 0;
+}
+
+void J3DAPI sithPhysics_InitPlayerMineCarLights(SithThing* pThing, SithVehicleLights* pLights)
+{
+    // TODO: A better solution would be to flag thing not to sync to savegame files
+    // First remove & destroy any attached thing
+    // This is required due to savegame preserves light things
+    SithThing* pNextAttach = NULL;
+    for ( SithThing* pAttach = pThing->pAttachedThing; pAttach; pAttach = pNextAttach )
+    {
+        pNextAttach = pAttach->pNextAttachedThing;
+        sithThing_DetachThing(pAttach);
+        sithThing_DestroyThing(pAttach);
+    }
+
+    pLights->numRearLights   = 1;
+    SithVehicleLight* pLight = &pLights->aRearLights[0];
+
+    rdModel3HNode* pLampJoint = rdModel3_FindNamedNode("bklamp", pThing->renderData.data.pModel3);
+    if ( pLampJoint )
+    {
+        // Set lamp polygon
+        pLight->prdLightMesh = &pThing->renderData.data.pModel3->aGeos[0].aMeshes[pLampJoint->meshIdx];
+
+        // Creat dynamic red light
+        SithThing* pLightTmpl = sithTemplate_GetTemplate("ghost");
+
+        if ( pLightTmpl ) // Fixed: Added null check
+        {
+            // Get lamp world position
+            // Lamp light is put slightly down and to the left of lamp mesh.
+            // That's due to the issues with dynamic lights and world surfaces, and hopefully all world surface won't be lit by this light.
+            rdVector3 lampPos = { 0.023807, -0.08997, 0.103777 - sithPhysics_GetThingHeight(pThing) }; // local space
+            rdMatrix_TransformVector34Acc(&lampPos, &pThing->orient);
+            rdVector_Add3Acc(&lampPos, &pThing->pos); // no make it world space
+
+            SithThing* pLightThing = sithThing_CreateThingAtPos(pLightTmpl, &lampPos, &pThing->orient, pThing->pInSector, pThing->pParent);
+            if ( pLightThing )
+            {
+                pLightThing->flags |= SITH_TF_EMITLIGHT;
+
+                pLightThing->light.color.red   = 1.0f;
+                pLightThing->light.color.green = 0.0f;
+                pLightThing->light.color.blue  = 0.0f;
+                pLightThing->light.color.alpha = 0.08f;
+
+                pLightThing->light.minRadius   = 0.08f;
+                pLightThing->light.maxRadius   = 0.08f;
+
+                pLight->pLightThing = pLightThing;
+
+                sithThing_AttachThingToThing(pLightThing, pThing);
+                pLightThing->attach.flags |= SITH_ATTACH_NOMOVE; // Make sure light won't swing around minecar
+            }
+        }
+    }
+
+    // Turn off all lights
+    sithPhysics_SetVehicleLights(pLights, /*bOn=*/false);
 }
 
 void J3DAPI sithPhysics_UpdateMineCarPhysics(SithThing* pThing, float secDeltaTime)
@@ -2136,33 +2208,41 @@ void J3DAPI sithPhysics_UpdateMineCarFx(SithThing* pThing, SithMineCarFxState* p
     {
         if ( pThing->moveStatus == SITHPLAYERMOVE_MINECAR_BOARDING )
         {
-            sithSoundClass_StopMode(pThing, SITHSOUNDCLASS_LWALKMETAL);
-            pCarState->pEngineAnim = NULL;
+      /*      sithSoundClass_StopMode(pThing, SITHSOUNDCLASS_LWALKMETAL);
+            SITH_ASSERTREL(!pCarState->pEngineAnim);
+            pCarState->pEngineAnim = NULL;*/
+
+            sithPhysics_PowerOffMineCar(pThing);
         }
         else if ( pThing->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_LEFT
             || pThing->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_RIGHT )
         {
-            sithSoundClass_StopMode(pThing, SITHSOUNDCLASS_LWALKMETAL);
+      /*      sithSoundClass_StopMode(pThing, SITHSOUNDCLASS_LWALKMETAL);
             if ( pCarState->pEngineAnim && pCarState->bEngineAnim )
             {
                 sithAnimate_Stop(pCarState->pEngineAnim);
                 pCarState->pEngineAnim = NULL;
-            }
+            }*/
+
+            sithPhysics_PowerOffMineCar(pThing);
+
         }
         else
         {
-            sithSoundClass_PlayModeFirstEx(pThing, SITHSOUNDCLASS_LWALKMETAL, sithPhysics_mineCarEngineVolume); // sol_minecar_motor_run.wav
+            sithPhysics_PowerOnMineCar(pThing);
 
-            if ( !pCarState->pEngineAnim && pCarState->bEngineAnim )
-            {
-                rdMaterial* pEngineMat = sithMaterial_Load("minecar_a_ngenfrnt.mat");
-                if ( pEngineMat )
-                {
-                    // Fixed: Added flag SITHANIMATE_NOSYNC to prevent engine animation from being written to savegame or over network.
-                    //        This prevents dangling engine mat animation on load since minecar state is not synced to savegame file.
-                    pCarState->pEngineAnim = sithAnimate_StartMaterialAnim(pEngineMat, sithPhysics_mineCarEngineAnimFPS, SITHANIMATE_LOOP | SITHANIMATE_NOSYNC);
-                }
-            }
+            //sithSoundClass_PlayModeFirstEx(pThing, SITHSOUNDCLASS_LWALKMETAL, sithPhysics_mineCarEngineVolume); // sol_minecar_motor_run.wav. Note indymine.snd flags this mode as play thing once so it's ok to call it multiple times
+
+            //if ( !pCarState->pEngineAnim && pCarState->bEngineAnim )
+            //{
+            //    rdMaterial* pEngineMat = sithMaterial_Load("minecar_a_ngenfrnt.mat");
+            //    if ( pEngineMat )
+            //    {
+            //        // Fixed: Added flag SITHANIMATE_NOSYNC to prevent engine animation from being written to savegame or over network.
+            //        //        This prevents dangling engine mat animation on load since minecar state is not synced to savegame file.
+            //        pCarState->pEngineAnim = sithAnimate_StartMaterialAnim(pEngineMat, sithPhysics_mineCarEngineAnimFPS, SITHANIMATE_LOOP | SITHANIMATE_NOSYNC);
+            //    }
+            //}
 
             if ( bUpdateEngineSndFx )
             {
@@ -2592,6 +2672,94 @@ void J3DAPI sithPhysics_UpdateExhaustFx(SithThing* pThing, const SithVehicleExha
         sithAnimate_StartAnimateSpriteSize(pSmoke, &startSize, &endSize, life);
         pSmoke->moveInfo.physics.velocity = smokeVel;
     }
+}
+
+void J3DAPI sithPhysics_SetVehicleLight(SithVehicleLight* pLight, bool bOn)
+{
+    if ( pLight->prdLightMesh )
+    {
+        pLight->prdLightMesh->lightMode = bOn ? RD_LIGHTING_NONE : RD_LIGHTING_GOURAUD;
+    }
+
+    if ( pLight->pLightThing )
+    {
+        if ( bOn )
+        {
+            pLight->pLightThing->flags |= SITH_TF_EMITLIGHT;
+            pLight->pLightThing->flags &= ~SITH_TF_DISABLED;
+        }
+        else
+        {
+            pLight->pLightThing->flags |= SITH_TF_DISABLED;
+            pLight->pLightThing->flags &= ~SITH_TF_EMITLIGHT;
+        }
+    }
+}
+
+void J3DAPI sithPhysics_SetVehicleLights(SithVehicleLights* pLights, bool bOn)
+{
+    for ( size_t i = 0; i < pLights->numFrontLights; i++ )
+    {
+        sithPhysics_SetVehicleLight(&pLights->aFrontLights[i], bOn);
+    }
+
+    for ( size_t i = 0; i < pLights->numRearLights; i++ )
+    {
+        sithPhysics_SetVehicleLight(&pLights->aRearLights[i], bOn);
+    }
+}
+
+void J3DAPI sithPhysics_PowerOnMineCar(SithThing* pThing)
+{
+    // Play motor run sound fx. The sound has to be repeatedly played as cog script might stop it.
+    // Note the indymine.snd flags this mode as play thing once so it's ok to call it multiple times
+    sithSoundClass_PlayModeFirstEx(pThing, SITHSOUNDCLASS_LWALKMETAL, sithPhysics_mineCarEngineVolume); // sol_minecar_motor_run.wav. 
+
+    SithMineCarState* pCarState = &pThing->userblock.pMinecar->state;
+    if ( !pCarState->bEngineRunning ) // Added
+    {
+
+
+        if ( !pCarState->pEngineAnim && pCarState->bEngineAnim )
+        {
+            rdMaterial* pEngineMat = sithMaterial_Load("minecar_a_ngenfrnt.mat");
+            if ( pEngineMat )
+            {
+                // Fixed: Added flag SITHANIMATE_NOSYNC to prevent engine animation from being written to savegame or over network.
+                //        This prevents dangling engine mat animation on load since minecar state is not synced to savegame file.
+                pCarState->pEngineAnim = sithAnimate_StartMaterialAnim(pEngineMat, sithPhysics_mineCarEngineAnimFPS, SITHANIMATE_LOOP | SITHANIMATE_NOSYNC);
+            }
+        }
+
+        // Added: Falowing is new code
+        pThing->flags |= SITH_TF_EMITLIGHT; // Added: Turn on rear red light
+        pThing->thingInfo.actorInfo.flags |= SITH_AF_HEADLIGHT;
+        pThing->thingInfo.actorInfo.headLightIntensity.alpha = 2.0f; // light range
+
+        sithPhysics_SetVehicleLights(&pCarState->lights, /*bOn=*/ true);
+        pCarState->bEngineRunning = true;
+    }
+}
+
+void J3DAPI sithPhysics_PowerOffMineCar(SithThing* pThing)
+{
+    SithMineCarState* pCarState = &pThing->userblock.pMinecar->state;
+    if ( pCarState->bEngineRunning ) // Added
+    {
+        sithSoundClass_StopMode(pThing, SITHSOUNDCLASS_LWALKMETAL);
+        if ( pCarState->pEngineAnim && pCarState->bEngineAnim )
+        {
+            sithAnimate_Stop(pCarState->pEngineAnim);
+            pCarState->pEngineAnim = NULL;
+        }
+
+        // Added: Falowing is new code
+        pThing->flags &= SITH_TF_EMITLIGHT; // Added: Turn on rear red light
+        pThing->thingInfo.actorInfo.flags &= ~SITH_AF_HEADLIGHT;
+        sithPhysics_SetVehicleLights(&pCarState->lights, /*bOn=*/ false);
+        pCarState->bEngineRunning = false;
+    }
+
 }
 
 void J3DAPI sithPhysics_UpdateRaftPhysics(SithThing* pThing, float secDeltaTime)
@@ -3155,6 +3323,38 @@ int J3DAPI sithPhysics_CheckForPointOnTrack(SithThing* pThing, const rdVector3* 
     }
 
     return bFound;
+}
+
+void J3DAPI sithPhysics_FreeVehicleLightEntry(SithVehicleLight* pLight)
+{
+    if ( pLight && pLight->pLightThing )
+    {
+        sithThing_DestroyThing(pLight->pLightThing);
+        pLight->pLightThing = NULL;
+    }
+}
+
+void J3DAPI sithPhysics_FreeUserBlockEntry(SithThing* pThing)
+{
+    if ( pThing->moveType == SITH_MT_PHYSICS )
+    {
+        if ( (pThing->moveInfo.physics.flags & SITH_PF_MINECAR) != 0 )
+        {
+            if ( pThing->userblock.pMinecar )
+            {
+                SithVehicleLights* pLights = &pThing->userblock.pMinecar->state.lights;
+                for ( size_t i = 0; i < pLights->numFrontLights; i++ )
+                {
+                    sithPhysics_FreeVehicleLightEntry(&pLights->aFrontLights[i]);
+                }
+
+                for ( size_t i = 0; i < pLights->numRearLights; i++ )
+                {
+                    sithPhysics_FreeVehicleLightEntry(&pLights->aRearLights[i]);
+                }
+            }
+        }
+    }
 }
 
 int J3DAPI sithPhysics_sub_487EC0(SithThing* pThing, void* pData, float* secDeltaTime, rdVector3* a4, rdVector3* a5, float a6)

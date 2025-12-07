@@ -1676,6 +1676,25 @@ typedef struct sSithVehicleChassisInfo
 } SithVehicleChassisInfo;
 static_assert(sizeof(SithVehicleChassisInfo) == 280, "sizeof(SithVehicleChassisInfo) == 280");
 
+// Light position and state for individual lights
+// Note, new struct
+typedef struct sSithVehicleLight
+{
+    bool bOn;                    // Current light state (on/off)
+    rdModel3Mesh* prdLightMesh;  // Pointer to light mesh on vehicle 3D model
+    SithThing* pLightThing;      // Dynamic light object
+} SithVehicleLight;
+
+// Vehicle lighting system
+// Note, new struct
+typedef struct sSithVehicleLightingInfo
+{
+    size_t numFrontLights;             // Number of active front lights
+    SithVehicleLight aFrontLights[4];  // Front headlights
+
+    size_t numRearLights;              // Number of active rear lights
+    SithVehicleLight aRearLights[4];   // Rear lights
+} SithVehicleLights;
 
 typedef struct sSithJeepWheelState
 {
@@ -1818,8 +1837,12 @@ typedef struct sSithMineCarState
     float unknown9;
     float unknown10;
     int bBraking;
+
+    // Following are new fields added in OJ3D v0.4
+    bool bEngineRunning;
+    SithVehicleLights lights;
 } SithMineCarState;
-static_assert(sizeof(SithMineCarState) == 48, "sizeof(SithMineCarState) == 48");
+static_assert(sizeof(SithMineCarState) == 156, "sizeof(SithMineCarState) == 156");
 
 typedef struct sSithMineCarFxState
 {

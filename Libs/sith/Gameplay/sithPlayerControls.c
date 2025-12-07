@@ -2922,7 +2922,6 @@ SithSurface* J3DAPI sithPlayerControls_FindClimbSurface(SithThing* pThing, const
     return bBlocked ? NULL : pClimbSurf;
 }
 
-
 int J3DAPI sithPlayerControls_BoardVehicle(SithThing* pThing, int bNoBoardAnim)
 {
     if ( sithInventory_GetCurrentWeapon(pThing) != SITHWEAPON_NO_WEAPON || sithWeapon_IsMountingWeapon(pThing) )
@@ -3221,9 +3220,10 @@ int J3DAPI sithPlayerControls_BoardVehicle(SithThing* pThing, int bNoBoardAnim)
         {
             pVehiclePlayerThing->moveStatus = SITHPLAYERMOVE_MINECAR_IDLE;
 
+            // Removed: Moved light turn on logic to sithPhysics
             // Turn on minecar lights
-            pVehiclePlayerThing->thingInfo.actorInfo.flags |= SITH_AF_HEADLIGHT;
-            pVehiclePlayerThing->thingInfo.actorInfo.headLightIntensity.alpha = 2.0f; // light range
+            //pVehiclePlayerThing->thingInfo.actorInfo.flags |= SITH_AF_HEADLIGHT;
+            //pVehiclePlayerThing->thingInfo.actorInfo.headLightIntensity.alpha = 2.0f; // light range
         }
         else // Play boarding animation
         {

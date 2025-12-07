@@ -390,8 +390,11 @@ void J3DAPI sithVehicleControls_PuppetCallback(SithThing* pThing, int track, rdK
                         sithVehicleControls_EndBoardCutscene(pThing);
                         pThing->thingInfo.actorInfo.bControlsDisabled = 0;
                         pThing->moveStatus = SITHPLAYERMOVE_MINECAR_IDLE;
-                        pThing->thingInfo.actorInfo.flags |= SITH_AF_HEADLIGHT;
-                        pThing->thingInfo.actorInfo.headLightIntensity.alpha = 2.0f;
+
+                        // Removed: Moved the light turn on logic to sithPhysics
+                        // pThing->flags |= SITH_TF_EMITLIGHT; // Added: Turn on rear red light
+                        // pThing->thingInfo.actorInfo.flags |= SITH_AF_HEADLIGHT;
+                        // pThing->thingInfo.actorInfo.headLightIntensity.alpha = 2.0f; // light range
                     }
                     break;
 

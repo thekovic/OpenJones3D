@@ -66,6 +66,8 @@ void J3DAPI sithPhysics_UpdateRaftPhysics(SithThing* pThing, float secDeltaTime)
 int J3DAPI sithPhysics_CreateJeepUserBlock(SithThing* pThing);
 void J3DAPI sithPhysics_UpdateJeepPhysics(SithThing* pThing, float secDeltaTime);
 
+void sithPhysics_FreeUserBlockEntry(SithThing* pThing); // New
+
 static inline bool J3DAPI sithPhysics_IsVehiclePhysics(const SithPhysicsInfo* pPhysics);
 static inline bool J3DAPI sithPhysics_IsVehicleThing(const SithThing* pThing);
 
