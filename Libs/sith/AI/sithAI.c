@@ -469,6 +469,7 @@ void J3DAPI sithAI_EmitEvent(SithAIControlBlock* pLocal, SithAIEventType event, 
 {
     if ( !pLocal->pClass
         || !pLocal->pOwner
+        || pLocal->pOwner->type == SITH_THING_FREE // Fixed: Added check for free thing. TODO: Research why thiswould be the case
         || (pLocal->pOwner->flags & (SITH_TF_DISABLED | SITH_TF_DYING | SITH_TF_DESTROYED)) != 0
         || (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_AIEVENTS_DISABLED) != 0
         || (pLocal->mode & SITHAI_MODE_DISABLED) != 0
