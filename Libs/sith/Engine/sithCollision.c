@@ -513,7 +513,7 @@ void J3DAPI sithCollision_RotateThing(SithThing* pThing, const rdMatrix34* pOrie
             if ( moveNorm.x != 0.0f || moveNorm.y != 0.0f || moveNorm.z != 0.0f )
             {
                 moveDist = rdVector_Normalize3Acc(&moveNorm);
-                sithCollision_MoveThing(pAttachedThing, &moveNorm, moveDist, 0);
+                sithCollision_MoveThing(pAttachedThing, &moveNorm, moveDist, 0x0);
             }
         }
 
@@ -1407,24 +1407,6 @@ int J3DAPI sithCollision_HandleThingHitSurface(SithThing* pThing, SithSurface* p
 
 int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* pThingCollided, SithCollision* pCollision, int bSecondThingIsSource)
 {
-    float crushDamge;
-    float v19;
-    int a5;
-    float hitImpact;
-    float z;
-    rdVector3 moveNorm;
-    float moveDist;
-    float hitMass;
-    float mass;
-    float hitImpactSpeed;
-    float impactSpeed;
-    SithThing* pHitThing;
-    rdVector3 hitNorm;
-    rdVector3 impactForce;
-    float totalImpactSpeed;
-    rdVector3 force;
-    SithThing* pThing;
-
     if ( pSrcThing->type == SITH_THING_COG
         && pThingCollided->type == SITH_THING_COG
         && (pSrcThing->flags & SITH_TF_MOVABLE) == 0
@@ -1433,17 +1415,14 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
         return 0;
     }
 
-    rdVector_Copy3(&hitNorm, &pCollision->hitNorm);
+    rdVector3 hitNorm = pCollision->hitNorm;
 
+    SithThing* pThing    = pSrcThing;
+    SithThing* pHitThing = pThingCollided;
     if ( bSecondThingIsSource )
     {
-        pThing = pThingCollided;
+        pThing    = pThingCollided;
         pHitThing = pSrcThing;
-    }
-    else
-    {
-        pThing = pSrcThing;
-        pHitThing = pThingCollided;
     }
 
     if ( (pThing->flags & SITH_TF_COGLINKED) != 0 && (pThing->flags & SITH_TF_REMOTE) == 0 && pThing->type != SITH_THING_ITEM )
@@ -1481,103 +1460,88 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
     {
         if ( pHitThing->moveType == SITH_MT_PHYSICS && pHitThing->moveInfo.physics.mass != 0.0f )
         {
-            a5 = 1;
-            mass = pThing->moveInfo.physics.mass;
+            int a5 = 1;
 
-            impactSpeed = -rdVector_Dot3(&pThing->moveInfo.physics.velocity, &hitNorm);
+            float mass        = pThing->moveInfo.physics.mass;
+            float impactSpeed = -rdVector_Dot3(&pThing->moveInfo.physics.velocity, &hitNorm);
 
-            hitMass = pHitThing->moveInfo.physics.mass;
+            float hitMass          = pHitThing->moveInfo.physics.mass;
+            float hitImpactSpeed   = rdVector_Dot3(&pHitThing->moveInfo.physics.velocity, &hitNorm);
 
-            hitImpactSpeed   = rdVector_Dot3(&pHitThing->moveInfo.physics.velocity, &hitNorm);
-            totalImpactSpeed = stdMath_ClipNearZero(impactSpeed + hitImpactSpeed);
+            float totalImpactSpeed = stdMath_ClipNearZero(impactSpeed + hitImpactSpeed);
 
             float totalMass = mass + hitMass;
             SITH_ASSERTREL(totalMass > 0.0f);
+
             if ( totalImpactSpeed <= 0.0f )
             {
                 return 0;
             }
+
+            if ( (pThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) == 0 )
+            {
+                totalImpactSpeed *= 0.5f;
+            }
+
+            if ( (pHitThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) == 0 )
+            {
+                totalImpactSpeed *= 0.5f;
+            }
+
+            rdVector3 force;
+            rdVector_Scale3(&force, &hitNorm, totalImpactSpeed);
+            rdVector_Scale3Acc(&force, (2.0f * mass * hitMass) / totalMass);
+
+            rdVector3 impactForce = RDVECTOR_NEG3(force);
+
+            if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0
+                || pHitThing->moveType == SITH_MT_PHYSICS && (pHitThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0 )
+            {
+                sithCollision_VehicleCollisionHandler(pThing, pHitThing, &force, &impactForce, &a5, &hitNorm, impactSpeed, hitImpactSpeed);
+            }
+            else if ( pThing->pAttachedThing && (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0
+                || (pThing->attach.flags & SITH_ATTACH_TAIL) != 0 )
+            {
+                float hitDot = fabsf(rdVector_Dot3(&pHitThing->orient.lvec, &hitNorm));
+                float thrust = rdVector_Len3(&pHitThing->moveInfo.physics.thrust);
+                totalImpactSpeed = thrust * sithTime_g_frameTimeFlex * hitDot;
+                totalImpactSpeed += impactSpeed + hitImpactSpeed;
+
+                rdVector_Scale3(&impactForce, &hitNorm, -(pHitThing->moveInfo.physics.mass * totalImpactSpeed));
+                rdVector_Scale3Acc(&impactForce, 1.2f);
+                rdVector_Zero3(&force);
+
+                a5 = 0;
+            }
+            else if ( pHitThing->pAttachedThing && (pHitThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0
+                || (pHitThing->attach.flags & SITH_ATTACH_TAIL) != 0 )
+            {
+                float hitDot = fabsf(rdVector_Dot3(&pThing->orient.lvec, &hitNorm));
+                float thrust = rdVector_Len3(&pThing->moveInfo.physics.thrust);
+                totalImpactSpeed = thrust * sithTime_g_frameTimeFlex * hitDot;
+                totalImpactSpeed += impactSpeed + hitImpactSpeed;
+
+                rdVector_Scale3(&force, &hitNorm, pThing->moveInfo.physics.mass * totalImpactSpeed);
+                rdVector_Scale3Acc(&force, 1.2f);
+                rdVector_Zero3(&impactForce);
+            }
+
+            sithPhysics_ApplyForce(pThing, &force);
+            sithPhysics_ApplyForce(pHitThing, &impactForce);
+
+            if ( a5 )
+            {
+                return sithCollision_sub_4AA1A0(pThing, &hitNorm, pCollision->distance, 0, 0);
+            }
             else
             {
-                if ( (pThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) == 0 )
-                {
-                    totalImpactSpeed = totalImpactSpeed * 0.5f;
-                }
-
-                if ( (pHitThing->moveInfo.physics.flags & SITH_PF_SURFACEBOUNCE) == 0 )
-                {
-                    totalImpactSpeed = totalImpactSpeed * 0.5f;
-                }
-
-                rdVector_Scale3(&force, &hitNorm, totalImpactSpeed);
-
-                force.x = mass * hitMass * 2.0f / (mass + hitMass) * force.x;
-                force.y = mass * hitMass * 2.0f / (mass + hitMass) * force.y;
-                force.z = mass * hitMass * 2.0f / (mass + hitMass) * force.z;
-
-                impactForce = RDVECTOR_NEG3(force);
-
-                if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0
-                    || pHitThing->moveType == SITH_MT_PHYSICS && (pHitThing->moveInfo.physics.flags & (SITH_PF_JEEP | SITH_PF_MINECAR)) != 0 )
-                {
-                    sithCollision_VehicleCollisionHandler(pThing, pHitThing, &force, &impactForce, &a5, &hitNorm, impactSpeed, hitImpactSpeed);
-                }
-
-                else if ( pThing->pAttachedThing && (pThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0
-                    || (pThing->attach.flags & SITH_ATTACH_TAIL) != 0 )
-                {
-                    float hitDot = fabsf(rdVector_Dot3(&pHitThing->orient.lvec, &hitNorm));
-                    float thrust = rdVector_Len3(&pHitThing->moveInfo.physics.thrust);
-                    totalImpactSpeed = thrust * sithTime_g_frameTimeFlex * hitDot;
-
-                    totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
-
-                    impactForce.x = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.x;
-                    impactForce.y = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.y;
-                    impactForce.z = -(pHitThing->moveInfo.physics.mass * totalImpactSpeed) * hitNorm.z;
-
-                    rdVector_Scale3Acc(&impactForce, 1.2f);
-                    rdVector_Zero3(&force);
-
-                    a5 = 0;
-                }
-
-                else if ( pHitThing->pAttachedThing && (pHitThing->pAttachedThing->attach.flags & SITH_ATTACH_TAIL) != 0
-                    || (pHitThing->attach.flags & SITH_ATTACH_TAIL) != 0 )
-                {
-                    float hitDot = fabsf(rdVector_Dot3(&pThing->orient.lvec, &hitNorm));
-                    float thrust = rdVector_Len3(&pThing->moveInfo.physics.thrust);
-                    totalImpactSpeed = thrust * sithTime_g_frameTimeFlex * hitDot;
-
-                    totalImpactSpeed = impactSpeed + hitImpactSpeed + totalImpactSpeed;
-
-                    force.x = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.x;
-                    force.y = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.y;
-                    force.z = pThing->moveInfo.physics.mass * totalImpactSpeed * hitNorm.z;
-
-                    force.x = force.x * 1.2f;
-                    force.y = force.y * 1.2f;
-                    force.z = force.z * 1.2f;
-                    rdVector_Zero3(&impactForce);
-                }
-
-                sithPhysics_ApplyForce(pThing, &force);
-                sithPhysics_ApplyForce(pHitThing, &impactForce);
-
-                if ( a5 )
-                {
-                    return sithCollision_sub_4AA1A0(pThing, &hitNorm, pCollision->distance, 0, 0);
-                }
-                else
-                {
-                    return 0;
-                }
+                return 0;
             }
         }
         else
         {
-            hitImpact = -(rdVector_Dot3(&pThing->moveInfo.physics.velocity, &hitNorm));
-            z = pThing->moveInfo.physics.velocity.z;
+            float hitImpact = -(rdVector_Dot3(&pThing->moveInfo.physics.velocity, &hitNorm));
+            float z = pThing->moveInfo.physics.velocity.z;
 
             if ( pThing->moveType == SITH_MT_PHYSICS && (pThing->moveInfo.physics.flags & SITH_PF_MINECAR) != 0 )
             {
@@ -1637,16 +1601,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
                     }
                 }
 
-                if ( hitImpact <= 1.0f )
-                {
-                    v19 = hitImpact;
-                }
-                else
-                {
-                    v19 = 1.0f;
-                }
-
-                hitImpact = v19;
+                hitImpact = J3DMIN(hitImpact, 1.0f);
                 if ( (pHitThing->flags & SITH_TF_METAL) != 0 )
                 {
                     sithSoundClass_PlayModeFirstEx(pThing, SITHSOUNDCLASS_HITMETAL, hitImpact);
@@ -1688,13 +1643,11 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
         }
         else
         {
-            moveDist = -hitDot;
-            moveNorm.x = -hitNorm.x;
-            moveNorm.y = -hitNorm.y;
-            moveNorm.z = -hitNorm.z;
-            moveDist = moveDist * 1.0001f;
-            float distMoved = sithCollision_MoveThing(pHitThing, &moveNorm, moveDist, 0);
+            float moveDist = -hitDot;
+            moveDist *= 1.0001f;
 
+            rdVector3 moveNorm = RDVECTOR_NEG3(hitNorm);
+            float distMoved = sithCollision_MoveThing(pHitThing, &moveNorm, moveDist, 0x0);
             if ( distMoved >= moveDist )
             {
                 return 1;
@@ -1702,7 +1655,7 @@ int J3DAPI sithCollision_ThingCollisionHandler(SithThing* pSrcThing, SithThing* 
 
             if ( (pThing->flags & SITH_TF_NOCRUSH) == 0 )
             {
-                crushDamge = (moveDist - distMoved) * 100.0f;
+                float crushDamge = (moveDist - distMoved) * 100.0f;
                 sithThing_DamageThing(pHitThing, pThing, crushDamge, SITH_DAMAGE_IMPACT);
             }
 
