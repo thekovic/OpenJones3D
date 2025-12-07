@@ -152,7 +152,8 @@ typedef enum erdClipOutcode
 // New flags not from OG engine
 typedef enum eRdPolyLineFlags
 {
-    RDPOLYLINE_UVTILE = 0x01
+    RDPOLYLINE_UVTILE   = 0x01, // tile texture instead of stretch
+    RDPOLYLINE_UVROTATE = 0x02  // rotate uvs for 90 degrees 
 } rdPolylineFlags;
 
 

@@ -244,39 +244,65 @@ void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const
     }
 
 
-    // Added: When uvtile flag set, tile polyline UVs instead of stretch as done by default.
+    // Added: When UV tile flag set, tile polyline UVs instead of stretch as done by default.
     //        This will make texture to repeat multiple times throughout the polyline.
-    if ( (pLine->data.pPolyline->flags & RDPOLYLINE_UVTILE) != 0 )
+    //
+    //        When UV rotate flag is set, rotate UV for 90 degrees.
+    if ( (pLine->data.pPolyline->flags & (RDPOLYLINE_UVTILE | RDPOLYLINE_UVROTATE)) != 0 )
     {
-        float actualLength = rdVector_Dist3(&aVerts[0], &aVerts[3]);
-        if ( actualLength > 0.0f )
+        rdPolyline* pPolyline = pLine->data.pPolyline;
+        float texRepeat = 1.0f;  // Default for non-tiling
+
+        if ( pPolyline->flags & RDPOLYLINE_UVTILE )
         {
-            rdPolyline* pPolyline = pLine->data.pPolyline;
-            float avgRadius = (pPolyline->baseRadius + pPolyline->tipRadius) / 2.0f;
-            float circumf = STDMATH_CIRCLE_CIRCUMF(avgRadius);
-
-            // Calculate what the repeat would be
-            float texRepeat = actualLength / circumf;
-            if ( texRepeat < 0.1f )
+            float actualLength = rdVector_Dist3(&aVerts[0], &aVerts[3]);
+            if ( actualLength > 0.0f )
             {
-                texRepeat = 0.1f;
+                    // Tile texture based on length
+                float avgRadius = (pPolyline->baseRadius + pPolyline->tipRadius) * 0.5f;
+                float circumf = STDMATH_CIRCLE_CIRCUMF(avgRadius);
+                texRepeat = actualLength / circumf;
+                if ( texRepeat < 0.1f )
+                {
+                    texRepeat = 0.1f;
+                }
             }
-
-            // Tile texture based on length
-            rdVector2 uvs[4];
-            uvs[0].x = texRepeat;
-            uvs[0].y = 0.0f;
-            uvs[1].x = texRepeat;
-            uvs[1].y = 1.0f;
-            uvs[2].x = 0.0f;
-            uvs[2].y = 1.0f;
-            uvs[3].x = 0.0f;
-            uvs[3].y = 0.0f;
-            aTVerts = uvs;
         }
+
+        rdVector2 aUVs[4];
+
+        // Check if UVs should be rotated 90 degrees
+        if ( pPolyline->flags & RDPOLYLINE_UVROTATE )
+        {
+            // Rotated 90 degrees clockwise: swap U/V and adjust orientation
+            // Original mapping: U along length, V around circumference
+            // Rotated mapping: V along length, U around circumference
+            aUVs[0].x = 0.0f;
+            aUVs[0].y = texRepeat;  // tip right
+            aUVs[1].x = 1.0f;
+            aUVs[1].y = texRepeat;  // tip left
+            aUVs[2].x = 1.0f;
+            aUVs[2].y = 0.0f;       // base left
+            aUVs[3].x = 0.0f;
+            aUVs[3].y = 0.0f;       // base right
+        }
+        else
+        {
+            // Standard mapping: U along length, V around circumference
+            aUVs[0].x = texRepeat;
+            aUVs[0].y = 0.0f;
+            aUVs[1].x = texRepeat;
+            aUVs[1].y = 1.0f;
+            aUVs[2].x = 0.0f;
+            aUVs[2].y = 1.0f;
+            aUVs[3].x = 0.0f;
+            aUVs[3].y = 0.0f;
+        }
+
+        aTVerts = aUVs;
     }
 
-    // Transform verts to screen space and assign to poly
+// Transform verts to screen space and assign to poly
     if ( !rdClip_FaceToPlane(rdCamera_g_pCurCamera->pFrustum, pPoly, pFace, aVerts, aTVerts, NULL, NULL) )
     {
         // Polyline face is fully outside the camera frustum
@@ -285,7 +311,7 @@ void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const
 
     for ( size_t i = 0; i < pFace->numVertices; ++i )
     {
-        rdVector_Copy4(&pPoly->aVertIntensities[i], &pFace->extraLight);
+        pPoly->aVertIntensities[i] = pFace->extraLight;
     }
 
     if ( (rdroid_g_curRenderOptions & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
