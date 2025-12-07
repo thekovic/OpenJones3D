@@ -191,7 +191,8 @@ int J3DAPI sithSurface_ReadAdjoinsListBinary(tFileHandle fh, SithWorld* pWorld)
 
         pAdjoin->flags         = pCndAdjoin->flags;
         pAdjoin->pMirrorAdjoin = NULL;
-        if ( pCndAdjoin->mirrorIdx != -1 ) {
+        if ( pCndAdjoin->mirrorIdx != -1 )
+        {
             pAdjoin->pMirrorAdjoin = &pWorld->aAdjoins[pCndAdjoin->mirrorIdx];
         }
 
@@ -420,25 +421,29 @@ int J3DAPI sithSurface_ReadSurfacesListBinary(tFileHandle fh, SithWorld* pWorld)
 
     // Free apMatArray
     // TODO: why is array is freed?
-    if ( pWorld->apMatArray ) {
+    if ( pWorld->apMatArray )
+    {
         stdMemory_Free(pWorld->apMatArray);
     }
     pWorld->apMatArray = NULL;
 
     size_t totalVerts;
     nRead = sith_g_pHS->pFileRead(fh, &totalVerts, sizeof(int)); static_assert(sizeof(int) == 4, "sizeof(int) == 4");
-    if ( nRead != 4 ) {
+    if ( nRead != 4 )
+    {
         return 1;
     }
 
     size_t sizeVerts = sizeof(CndSurfaceVertInfo) * totalVerts;
     aCndSurfVerts = (CndSurfaceVertInfo*)STDMALLOC(sizeVerts);
-    if ( !aCndSurfVerts ) {
+    if ( !aCndSurfVerts )
+    {
         return 1;
     }
 
     nRead = sith_g_pHS->pFileRead(fh, aCndSurfVerts, sizeVerts);
-    if ( nRead != sizeVerts ) {
+    if ( nRead != sizeVerts )
+    {
         goto error;
     }
 
@@ -449,19 +454,22 @@ int J3DAPI sithSurface_ReadSurfacesListBinary(tFileHandle fh, SithWorld* pWorld)
 
         int* aVerts = (int*)STDMALLOC(4 * pSurf->face.numVertices);
         pSurf->face.aVertices = aVerts;
-        if ( !pSurf->face.aVertices ) {
+        if ( !pSurf->face.aVertices )
+        {
             goto error;
         }
 
         int* aTexVerts = (int*)STDMALLOC(4 * pSurf->face.numVertices);
         pSurf->face.aTexVertices = aTexVerts;
-        if ( !pSurf->face.aTexVertices ) {
+        if ( !pSurf->face.aTexVertices )
+        {
             goto error;
         }
 
         rdVector4* aVertColors = (rdVector4*)STDMALLOC(sizeof(rdVector4) * pSurf->face.numVertices);
         pSurf->aIntensities = aVertColors;
-        if ( !pSurf->aIntensities ) {
+        if ( !pSurf->aIntensities )
+        {
             goto error;
         }
 
@@ -479,11 +487,13 @@ int J3DAPI sithSurface_ReadSurfacesListBinary(tFileHandle fh, SithWorld* pWorld)
     return 0;
 
 error:
-    if ( aCndSurfaces ) {
+    if ( aCndSurfaces )
+    {
         stdMemory_Free(aCndSurfaces);
     }
 
-    if ( aCndSurfVerts ) {
+    if ( aCndSurfVerts )
+    {
         stdMemory_Free(aCndSurfVerts);
     }
 
@@ -523,7 +533,8 @@ int J3DAPI sithSurface_WriteSurfacesListText(const SithWorld* pWorld)
             matIdx = -1;
         }
 
-        if ( matIdx == -1 && pSurf->face.geometryMode > RD_GEOMETRY_SOLID ) {
+        if ( matIdx == -1 && pSurf->face.geometryMode > RD_GEOMETRY_SOLID )
+        {
             pSurf->face.geometryMode  = RD_GEOMETRY_SOLID;
         }
 
@@ -615,8 +626,10 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
 
     int nRead = 0;
     size_t numAdjoins;
-    if ( nRead = stdConffile_ScanLine(" world adjoins %d", &numAdjoins), nRead != 1 ) {
-        if ( nRead < 0 ) {
+    if ( nRead = stdConffile_ScanLine(" world adjoins %d", &numAdjoins), nRead != 1 )
+    {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -629,7 +642,8 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
 
     for ( size_t i = 0; i < numAdjoins; i++ )
     {
-        if ( !stdConffile_ReadArgs() ) {
+        if ( !stdConffile_ReadArgs() )
+        {
             goto eof_error;
         }
 
@@ -654,8 +668,10 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
     // Parse surface
 
     size_t numSurfaces;
-    if ( nRead = stdConffile_ScanLine(" world surfaces %d", &numSurfaces), nRead != 1 ) {
-        if ( nRead < 0 ) {
+    if ( nRead = stdConffile_ScanLine(" world surfaces %d", &numSurfaces), nRead != 1 )
+    {
+        if ( nRead < 0 )
+        {
             goto eof_error;
         }
         goto syntax_error;
@@ -670,7 +686,8 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
     {
         SithSurface* pSurf = &pWorld->aSurfaces[i];
 
-        if ( !stdConffile_ReadArgs() ) {
+        if ( !stdConffile_ReadArgs() )
+        {
             goto eof_error;
         }
 
@@ -718,13 +735,15 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
 
         // geomode
         pFace->geometryMode = atoi(stdConffile_g_entry.aArgs[curArg++].argValue);
-        if ( !pFace->pMaterial && pFace->geometryMode > RD_GEOMETRY_SOLID ) {
+        if ( !pFace->pMaterial && pFace->geometryMode > RD_GEOMETRY_SOLID )
+        {
             pFace->geometryMode = RD_GEOMETRY_SOLID;
         }
 
         // lightmode
         pFace->lightingMode = atoi(stdConffile_g_entry.aArgs[curArg++].argValue);;
-        if ( (pSurf->flags & (SITH_SURFACE_CEILINGSKY | SITH_SURFACE_HORIZONSKY)) != 0 ) {
+        if ( (pSurf->flags & (SITH_SURFACE_CEILINGSKY | SITH_SURFACE_HORIZONSKY)) != 0 )
+        {
             pFace->lightingMode = RD_LIGHTING_NONE;
         }
 
@@ -770,17 +789,20 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
         // Alloc vert related buffers
         int* aVerts = (int*)STDMALLOC(sizeof(int) * numVerts);
         pFace->aVertices = aVerts;
-        if ( !pFace->aVertices ) {
+        if ( !pFace->aVertices )
+        {
             goto alloc_error;
         }
 
         pSurf->aIntensities = (rdVector4*)STDMALLOC(sizeof(rdVector4) * numVerts);
-        if ( !pSurf->aIntensities ) {
+        if ( !pSurf->aIntensities )
+        {
             goto alloc_error;
         }
 
         pFace->aTexVertices = (int*)STDMALLOC(sizeof(int) * numVerts);;
-        if ( !pFace->aTexVertices ) {
+        if ( !pFace->aTexVertices )
+        {
             goto alloc_error;
         }
 
@@ -789,7 +811,8 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
         {
             pFace->aVertices[j]    = atoi(stdConffile_g_entry.aArgs[curArg++].argValue);
 
-            if ( pFace->pMaterial ) {
+            if ( pFace->pMaterial )
+            {
                 pFace->aTexVertices[j] = atoi(stdConffile_g_entry.aArgs[curArg++].argValue);
             }
             else
@@ -820,7 +843,8 @@ int J3DAPI sithSurface_ReadSurfacesListText(SithWorld* pWorld, int bSkip)
         float nx, ny, nz;
         if ( nRead = stdConffile_ScanLine("%d: %f %f %f", &normNum, &nx, &ny, &nz), nRead != 4 )
         {
-            if ( nRead < 0 ) {
+            if ( nRead < 0 )
+            {
                 goto eof_error;
             }
             goto syntax_error;
@@ -872,7 +896,8 @@ int J3DAPI sithSurface_ValidateWorldSurfaces(const SithWorld* pWorld)
 
     for ( size_t i = 0; i < pWorld->numSurfaces; ++i )
     {
-        if ( !sithSurface_ValidateSurfacePointer(&pWorld->aSurfaces[i]) ) {
+        if ( !sithSurface_ValidateSurfacePointer(&pWorld->aSurfaces[i]) )
+        {
             return 0;
         }
     }
@@ -899,22 +924,22 @@ void J3DAPI sithSurface_HandleThingImpact(SithSurface* pSurf, SithThing* pThing,
 
 void J3DAPI sithSurface_PlaySurfaceHitSound(const SithSurface* pSurf, SithThing* pThing, int damageType)
 {
-    tSoundHandle hSnd;
     if ( (damageType & SITH_DAMAGE_MACHETE) != 0 )
     {
+        tSoundHandle hSnd;
         if ( (pSurf->flags & SITH_SURFACE_METAL) != 0 )
         {
-            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(82)); // 0x8052
+            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(82)); // gen_machete_hit_metal.wav
             sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.5f, 2.5f, SOUNDPLAY_ABSOLUTE_POS);
         }
-        else if ( (pSurf->flags & (SITH_SURFACE_SNOW | SITH_SURFACE_EARTH | 0x80000000)) != 0 ) // 0x80000000 - EARTH_ECHO
+        else if ( (pSurf->flags & (SITH_SURFACE_SNOW | SITH_SURFACE_EARTH | SITH_SURFACE_EARTHECHO)) != 0 )
         {
-            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(84)); //0x8054
+            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(84)); // gen_machete_hit_vine.wav
             sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.5f, 2.5f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else if ( (pSurf->flags & SITH_SURFACE_WEB) != 0 )
         {
-            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(85)); // 0x8055
+            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(85)); // gen_machete_hit_web.wav
             sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.5f, 2.5f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else
@@ -931,6 +956,56 @@ void J3DAPI sithSurface_PlaySurfaceHitSound(const SithSurface* pSurf, SithThing*
             sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.5f, 2.5f, SOUNDPLAY_ABSOLUTE_POS);
         }
     }
+#ifdef J3D_QOL_IMPROVEMENTS
+    else if ( pThing->type == SITH_THING_WEAPON // Just making sure we have weapon
+        && (damageType & SITH_DAMAGE_IMPACT) != 0
+        && (pThing->thingInfo.weaponInfo.flags & SITH_WF_SURFACERICOCHET) == 0 ) // Make sure ricochet flag is off as it should already handle sfx
+    {
+        if ( (pSurf->flags & SITH_SURFACE_METAL) != 0 )
+        {
+            tSoundHandle  hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(81)); // gen_machete_hit_stone.wav
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+        else if ( (pSurf->flags & SITH_SURFACE_SNOW) != 0 )
+        {
+            tSoundHandle  hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(110)); // fol_in_jumpsnow.wav
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+        else if ( (pSurf->flags & (SITH_SURFACE_EARTH | SITH_SURFACE_EARTHECHO)) != 0 )
+        {
+            tSoundHandle  hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(21)); // fol_in_rrunearth.wav
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+        else if ( (pSurf->flags & (SITH_SURFACE_WATER | SITH_SURFACE_SHALLOWWATER)) != 0 )
+        {
+            tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(26)); // fol_in_lwalkwater.wav
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+        else if ( (pSurf->flags & SITH_SURFACE_WEB) != 0 )
+        {
+            tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(85)); // gen_machete_hit_web.wav
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 0.65f, 0.1f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+        else if ( (pSurf->flags & (SITH_SURFACE_WOODECHO | SITH_SURFACE_WOOD)) != 0 )
+        {
+            tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(83)); // gen_machete_hit_wood.wav
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 0.65f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+        else if ( (pSurf->flags & (SITH_SURFACE_LAVA)) != 0 )
+        {
+            // No soundFX atm
+        }
+        else
+        {
+            // rand  gen_ricochet_a.wav or gen_ricochet_b.wav
+            size_t sndIdx = 141;
+            sndIdx += (rand() % 2);
+
+            tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(sndIdx));
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 0.9f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+        }
+    }
+#endif
 }
 
 int J3DAPI sithSurface_GetCenterPoint(const SithSurface* pSurface, rdVector3* centerpoint)
@@ -955,7 +1030,8 @@ int J3DAPI sithSurface_GetCenterPoint(const SithSurface* pSurface, rdVector3* ce
     }
 
     int bValid = sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, centerpoint, 0.0f, pSurface->pSector);
-    if ( !bValid ) {
+    if ( !bValid )
+    {
         SITHLOG_ERROR("Cannot place surface centerpoint in parent sector.\n");
     }
 
@@ -967,7 +1043,8 @@ void J3DAPI sithSurface_SyncSurface(SithSurface* pSurface)
     SITH_ASSERTREL(pSurface);
 
     pSurface->flags |= SITH_SURFACE_SYNC;
-    if ( sithSurface_numUnsyncedSurfaces < STD_ARRAYLEN(sithSurface_apUnsyncedSurfaces) ) {
+    if ( sithSurface_numUnsyncedSurfaces < STD_ARRAYLEN(sithSurface_apUnsyncedSurfaces) )
+    {
         sithSurface_apUnsyncedSurfaces[sithSurface_numUnsyncedSurfaces++] = pSurface;
     }
 }
@@ -976,7 +1053,8 @@ void sithSurface_SyncSurfaces(void)
 {
     if ( sithMessage_g_outputstream && sithSurface_numUnsyncedSurfaces )
     {
-        for ( size_t i = 0; i < sithSurface_numUnsyncedSurfaces; ++i ) {
+        for ( size_t i = 0; i < sithSurface_numUnsyncedSurfaces; ++i )
+        {
             sithDSS_SurfaceStatus(sithSurface_apUnsyncedSurfaces[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
         }
 
@@ -986,7 +1064,8 @@ void sithSurface_SyncSurfaces(void)
 
 SithSurface* J3DAPI sithSurface_GetSurfaceEx(const SithWorld* pWorld, int surfIdx)
 {
-    if ( pWorld && surfIdx >= 0 && surfIdx < pWorld->numSurfaces ) {
+    if ( pWorld && surfIdx >= 0 && surfIdx < pWorld->numSurfaces )
+    {
         return &pWorld->aSurfaces[surfIdx];
     }
     return NULL;
@@ -994,7 +1073,8 @@ SithSurface* J3DAPI sithSurface_GetSurfaceEx(const SithWorld* pWorld, int surfId
 
 int J3DAPI sithSurface_GetSurfaceIndex(const SithSurface* pSurf)
 {
-    if ( pSurf >= sithWorld_g_pCurrentWorld->aSurfaces && pSurf <= &sithWorld_g_pCurrentWorld->aSurfaces[sithWorld_g_pCurrentWorld->numSurfaces] ) {
+    if ( pSurf >= sithWorld_g_pCurrentWorld->aSurfaces && pSurf <= &sithWorld_g_pCurrentWorld->aSurfaces[sithWorld_g_pCurrentWorld->numSurfaces] )
+    {
         return pSurf - sithWorld_g_pCurrentWorld->aSurfaces;
     }
     return -1;
@@ -1002,7 +1082,8 @@ int J3DAPI sithSurface_GetSurfaceIndex(const SithSurface* pSurf)
 
 int J3DAPI sithSurface_GetSurfaceIndexEx(const SithWorld* pWorld, const SithSurface* pSurface)
 {
-    if ( pSurface >= pWorld->aSurfaces && pSurface <= &pWorld->aSurfaces[pWorld->numSurfaces] ) {
+    if ( pSurface >= pWorld->aSurfaces && pSurface <= &pWorld->aSurfaces[pWorld->numSurfaces] )
+    {
         return pSurface - pWorld->aSurfaces;
     }
     return -1;
