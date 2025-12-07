@@ -1247,7 +1247,17 @@ SithThing* J3DAPI sithFX_CreatePolylineThing(const SithThing* pSourceThing, Sith
 
     rdVector4 color = { .red=0.1f, .green=0.1f, .blue=0.1f, .alpha=1.0f };
 
-    rdPolyline* pPolyline = rdPolyline_New(pThing->aName, pMaterial->aName, pMaterial->aName, length, baseRadius, tipRadius, RD_GEOMETRY_FULL, RD_LIGHTING_GOURAUD, &color);
+    // Added: Added hardcoded check for rope, metal wire (vol elevator) mats to tile polyline UVs instead of stretching UVs.
+    //        Corrects visual rendering of polyline
+    rdPolylineFlags flags = { 0 };
+    if ( streqi(pMaterial->aName, "fhead_rope_sde.mat")
+        || streqi(pMaterial->aName, "riv_floor_metal.mat") )
+    {
+        flags = RDPOLYLINE_UVTILE;
+    }
+
+    // Altered Replaced rdPolyline_New with rdPolyline_NewEx to add flags
+    rdPolyline* pPolyline = rdPolyline_NewEx(pThing->aName, pMaterial->aName, length, baseRadius, tipRadius, RD_GEOMETRY_FULL, RD_LIGHTING_GOURAUD, &color, flags);
     if ( !pPolyline )
     {
         sithThing_RemoveThing(sithWorld_g_pCurrentWorld, pThing);
