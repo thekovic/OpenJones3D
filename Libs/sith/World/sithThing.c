@@ -1198,8 +1198,10 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
     tSoundHandle hSnd = 0;
     if ( (hitType & SITH_DAMAGE_IMPACT) != 0 )
     {
+        // Altered: Added impact sound fx for earth, wood, snow thing
         if ( !sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_HURTIMPACT) )
         {
+        #ifdef J3D_QOL_IMPROVEMENTS
             if ( (pThing->flags & SITH_TF_EARTH) != 0 )
             {
                 hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(84)); // gen_machete_hit_vine.wav
@@ -1213,6 +1215,9 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
                 hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(110)); // fol_in_jumpsnow.wav
             }
             else
+            #else
+            if ( (pThing->flags & (SITH_TF_EARTH | SITH_TF_SNOW | SITH_TF_WOOD)) == 0 )
+            #endif
             {
                 int sndIndex = rand() % 2 + 141; // gen_ricochet_a.wav or gen_ricochet_b.wav
                 hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(sndIndex));
