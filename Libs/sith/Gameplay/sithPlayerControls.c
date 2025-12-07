@@ -3168,6 +3168,8 @@ int J3DAPI sithPlayerControls_BoardVehicle(SithThing* pThing, int bNoBoardAnim)
         //
         // Board minecar
         //
+
+        // Save boarded vehicle thing so it will be moved to position where indy exited car
         sithPlayerControls_pBoardedVehicleThing = pVehicleThing;
         sithCamera_RestoreExtCamera();
 
@@ -3288,7 +3290,8 @@ void J3DAPI sithPlayerControls_ExitVehicle(SithThing* pVehiclePlayerThing)
         rdModel3* pModel3 = sithPlayerControls_pBoardedVehicleThing->renderData.data.pModel3;
         vehiclePosOffsetZ = pModel3->insertOffset.z - sithPhysics_GetThingHeight(pVehiclePlayerThing);
 
-        // TODO: Why is emitting light? This flag should be probably removed as it makes light glitches
+        // TODO: Why is emitting light?
+        // Fixed: Cleared light emit flag as the light was glitchy and could flicker on/off
         sithPlayerControls_pBoardedVehicleThing->flags &= ~SITH_TF_EMITLIGHT;
     }
     else if ( pVehiclePlayerThing->moveStatus == SITHPLAYERMOVE_MINECAR_UNBOARDING_RIGHT )
@@ -3305,8 +3308,9 @@ void J3DAPI sithPlayerControls_ExitVehicle(SithThing* pVehiclePlayerThing)
         rdModel3* pModel3 = sithPlayerControls_pBoardedVehicleThing->renderData.data.pModel3;
         vehiclePosOffsetZ = pModel3->insertOffset.z - sithPhysics_GetThingHeight(pVehiclePlayerThing);
 
-        // TODO: Why is emitting light? This flag should be probably removed as it makes light glitches
-        sithPlayerControls_pBoardedVehicleThing->flags |= SITH_TF_EMITLIGHT;
+        // TODO: Why is emitting light?
+        // Fixed: Cleared light emit flag as the light was glitchy and could flicker on/off
+        sithPlayerControls_pBoardedVehicleThing->flags &= ~SITH_TF_EMITLIGHT;
     }
     else // jeep
     {
