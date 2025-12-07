@@ -1537,9 +1537,9 @@ int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, floa
 
     // Set external camera - crawl key
     sithControl_GetKey(SITHCONTROL_CRAWLTOGGLE, &bPressed);
-    if ( bPressed && sithCamera_g_pCurCamera != &sithCamera_g_aCameras[1] )
+    if ( bPressed && sithCamera_g_pCurCamera != &sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM] )
     {
-        sithCamera_SetCurrentCamera(&sithCamera_g_aCameras[1]);
+        sithCamera_SetCurrentCamera(&sithCamera_g_aCameras[SITHCAMERA_EXTCAMERANUM]);
         return 1;
     }
 
@@ -1581,6 +1581,11 @@ int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, floa
     // If cur orbital camera, move it
     if ( sithCamera_g_pCurCamera->type == SITHCAMERA_ORBITAL )
     {
+        if ( sithCamera_g_pCurCamera->pPrimaryFocusThing != sithPlayer_g_pLocalPlayerThing )
+        {
+            sithCamera_SetCameraFocus(sithCamera_g_pCurCamera, sithPlayer_g_pLocalPlayerThing, NULL);
+        }
+
         rdVector3 pyr = { 0 };
         if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, &bPressed) )
         {
