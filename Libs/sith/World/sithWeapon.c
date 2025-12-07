@@ -966,8 +966,8 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
             if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_BLOODSPLATTER) != 0
                 && (pThing->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
             #ifndef J3D_QOL_IMPROVEMENTS
-                && pVictim->thingInfo.actorInfo.health == 0.0f
-                && pVictim->type != SITH_THING_PLAYER
+                && pThing->thingInfo.actorInfo.health == 0.0f
+                && pThing->type != SITH_THING_PLAYER
             #endif
                 && sithWeapon_bGenBloodSplatter
                 && sithWeapon_GenBloodSplatterEx(pThing) )
