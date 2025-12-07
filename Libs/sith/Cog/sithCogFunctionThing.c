@@ -5505,7 +5505,7 @@ void J3DAPI sithCogFunctionThing_MakeFairyDustDeluxe(SithCog* pCog)
         return;
     }
 
-    if ( pos.x == 0.0 && pos.y == 0.0 && pos.z == 0.0 )
+    if ( rdVector_IsZero3(&pos) )
     {
         sithFX_DestroyFairyDustDeluxe(pThing);
     }

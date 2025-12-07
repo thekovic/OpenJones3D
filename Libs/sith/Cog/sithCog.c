@@ -478,7 +478,7 @@ int J3DAPI sithCog_SendMessageEx(SithCog* pCog, SithCogMsgType messageType, Sith
 {
     SITH_ASSERTREL(pCog != NULL);
 
-    SithCogScript* pScript; pScript = pCog->pScript;
+    SithCogScript* pScript = pCog->pScript;
     SITH_ASSERTREL(pScript != NULL);
 
     SITH_ASSERTREL(messageType > 0);

@@ -165,13 +165,10 @@ void sithFX_ClearChalkMarks(void)
 
 void J3DAPI sithFX_DestroyFairyDustDeluxe(SithThing* pThing)
 {
-    SithFairyDustUserBlock* pFairydust;
-    int i;
-
     if ( pThing && pThing->userblock.pFairydust )
     {
-        pFairydust = pThing->userblock.pFairydust;
-        for ( i = 0; i < STD_ARRAYLEN(pFairydust->aDusts); ++i )
+        SithFairyDustUserBlock* pFairydust = pThing->userblock.pFairydust;
+        for ( size_t i = 0; i < STD_ARRAYLEN(pFairydust->aDusts); ++i )
         {
             if ( pFairydust->aDusts[i] && pFairydust->aDusts[i]->type != SITH_THING_FREE && (pFairydust->aDusts[i]->flags & SITH_TF_DESTROYED) == 0 )
             {
@@ -212,8 +209,7 @@ size_t J3DAPI sithFX_SetFairyDustSize(rdParticle* pParticle, size_t sizeFactor)
         sizeFactor = 2;
     }
 
-    float size = (float)sizeFactor * 0.0025f + 0.005f;
-    pParticle->size = size;
+    pParticle->size     = (float)sizeFactor * 0.0025f + 0.005f;
     pParticle->sizeHalf = pParticle->size / 2.0f;
     return sizeFactor;
 }
@@ -287,7 +283,7 @@ void J3DAPI sithFX_CreateFairyDustDelux(SithThing* pThing, const rdVector3* pPos
             if ( sithFX_CreateFairyDustDeluxDusts(pThing, pFairydust) )
             {
                 pFairydust->bCreateNormalFairyDust = 0;
-                pThing->userblock.pFairydust = pFairydust;
+                pThing->userblock.pFairydust       = pFairydust;
                 sithFX_msecLastCreatedFairyDustDeluxTime = sithTime_g_msecGameTime;
             }
             else
@@ -532,7 +528,7 @@ void J3DAPI sithFX_CreateRaftSplatterFX(SithThing* pThing, int bCreateSplash)
         pyr.y = 90.0f;
         pyr.z = 0.0f;
         rdMatrix_PreRotate34(&orient, &pyr);
-        orient.uvec = pThing->attach.pFace->normal; //Rutate up
+        orient.uvec = pThing->attach.pFace->normal; // Rotate up
 
         // Create splash
         SithThing* pSplash = sithThing_CreateThingAtPos(pSplashTpl, &pos, &orient, pThing->pInSector, NULL);

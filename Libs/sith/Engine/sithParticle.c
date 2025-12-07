@@ -128,7 +128,8 @@ int J3DAPI sithParticle_ParseArg(const StdConffileArg* pArg, SithThing* pThing, 
     {
         case SITHTHING_ARG_TYPEFLAGS:
         {
-            if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.particleInfo.flags) == 1 ) {
+            if ( sscanf_s(pArg->argValue, "%x", &pThing->thingInfo.particleInfo.flags) == 1 )
+            {
                 return 1;
             }
             return 0;
@@ -289,12 +290,14 @@ void J3DAPI sithParticle_Initalize(SithThing* pThing)
         rdThing_SetParticleCloud(&pThing->renderData, pParticle);
 
         float pitch = 720.0f;
-        if ( pInfo->pitchRange != 0.0f ) {
+        if ( pInfo->pitchRange != 0.0f )
+        {
             pitch = pInfo->pitchRange * 2.0f;
         }
 
         float yaw  = 720.0f;
-        if ( pInfo->yawRange != 0.0f ) {
+        if ( pInfo->yawRange != 0.0f )
+        {
             yaw = pInfo->yawRange * 2.0f;
         }
 
@@ -346,8 +349,6 @@ void J3DAPI sithParticle_Initalize(SithThing* pThing)
 
 void J3DAPI sithParticle_DestroyParticle(SithThing* pThing)
 {
-
-
     SITH_ASSERTREL(pThing && (pThing->type == SITH_THING_PARTICLE));
     pThing->thingInfo.particleInfo.flags &= ~SITHPARTICLE_FLAG_TIMEOUT_RATE;
 
