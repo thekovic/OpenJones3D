@@ -11,6 +11,7 @@
 
 #include <sound/Sound.h>
 
+#include <std/General/stdConfig.h>
 #include <std/General/stdMath.h>
 #include <std/General/stdMemory.h>
 #include <std/Win95/stdComm.h>
@@ -20,6 +21,8 @@ static uint16_t sithSoundMixer_channelGUIDSeed = 0; // Added: Init to 0
 
 static SithSector* sithSoundMixer_pCurSector = NULL; // Added: Init to null
 tSoundChannelHandle sithSoundMixer_hCurAmbientChannel;
+
+SithSoundMixerSwFalloffMode sithSoundMixer_swfalloff;
 
 int sithSoundMixer_GetNextChannelGUID(void);
 tSoundChannelFlag J3DAPI sithSoundMixer_PlayFlagsToChannelFlags(SoundPlayFlag flags);
@@ -70,6 +73,14 @@ int sithSoundMixer_Startup(void)
         return 1;
     }
 
+    // Added: Added config for sw mixer volume falloff mode
+    sithSoundMixer_swfalloff = stdConfig_GetInt(SITHSOUNDMIXER_CFG_SWMIXER_FALLOFFMODE, J3D_QOL_VALUE(SITHSOUNDMIXER_SW_FALLOFF_LOGARITHMIC, SITHSOUNDMIXER_SW_FALLOFF_LINEAR));
+    sithSoundMixer_swfalloff = STDMATH_CLAMP(sithSoundMixer_swfalloff, SITHSOUNDMIXER_SW_FALLOFF_LINEAR, SITHSOUNDMIXER_SW_FALLOFF_LOGARITHMIC);
+    if ( !stdConfig_Contains(SITHSOUNDMIXER_CFG_SWMIXER_FALLOFFMODE) )
+    {
+        stdConfig_SetInt(SITHSOUNDMIXER_CFG_SWMIXER_FALLOFFMODE, sithSoundMixer_swfalloff);
+    }
+
     sithSoundMixer_ClearAmbientSector();
     sithSoundMixer_bStartup = true;
     return 0;
@@ -93,21 +104,24 @@ void sithSoundMixer_ClearAmbientSector(void)
 
 void sithSoundMixer_Pause(void)
 {
-    if ( !stdComm_IsGameActive() ) {
+    if ( !stdComm_IsGameActive() )
+    {
         Sound_Pause();
     }
 }
 
 void sithSoundMixer_Resume(void)
 {
-    if ( !stdComm_IsGameActive() ) {
+    if ( !stdComm_IsGameActive() )
+    {
         Sound_Resume();
     }
 }
 
 tSoundChannelHandle J3DAPI sithSoundMixer_PlaySound(tSoundHandle hSnd, float volume, float pan, SoundPlayFlag playflags)
 {
-    if ( !sithSoundMixer_bStartup ) {
+    if ( !sithSoundMixer_bStartup )
+    {
         return 0;
     }
 
@@ -119,11 +133,13 @@ tSoundChannelHandle J3DAPI sithSoundMixer_PlaySound(tSoundHandle hSnd, float vol
 
 tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundPos(tSoundHandle hSnd, rdVector3* pos, SithSector* pSector, float volume, float minRadius, float maxRadius, SoundPlayFlag playflags)
 {
-    if ( !sithSoundMixer_bStartup ) {
+    if ( !sithSoundMixer_bStartup )
+    {
         return 0;
     }
 
-    if ( !sithCamera_g_pCurCamera ) {
+    if ( !sithCamera_g_pCurCamera )
+    {
         return 0;
     }
 
@@ -131,13 +147,15 @@ tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundPos(tSoundHandle hSnd, rdVect
     {
         rdVector3 dvec;
         rdVector_Sub3(&dvec, pos, &sithCamera_g_pCurCamera->lookPos);
-        if ( rdVector_Normalize3QuickAcc(&dvec) > maxRadius ) {
+        if ( rdVector_Normalize3QuickAcc(&dvec) > maxRadius )
+        {
             return 0;
         }
     }
 
     SoundEnvFlags envflags = 0;
-    if ( pSector && (pSector->flags & SITH_SECTOR_UNDERWATER) != 0 ) {
+    if ( pSector && (pSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
+    {
         envflags |= SOUND_ENV_UNDERWATER;
     }
 
@@ -150,11 +168,13 @@ tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundPos(tSoundHandle hSnd, rdVect
 tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundThing(tSoundHandle hSnd, const SithThing* pThing, float volume, float minRadius, float maxRadius, SoundPlayFlag playflags)
 {
     SITH_ASSERTREL(pThing);
-    if ( !sithSoundMixer_bStartup ) {
+    if ( !sithSoundMixer_bStartup )
+    {
         return 0;
     }
 
-    if ( !sithCamera_g_pCurCamera ) {
+    if ( !sithCamera_g_pCurCamera )
+    {
         return 0;
     }
 
@@ -162,7 +182,8 @@ tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundThing(tSoundHandle hSnd, cons
     {
         rdVector3 dvec;
         rdVector_Sub3(&dvec, &pThing->pos, &sithCamera_g_pCurCamera->lookPos);
-        if ( rdVector_Normalize3QuickAcc(&dvec) > maxRadius ) {
+        if ( rdVector_Normalize3QuickAcc(&dvec) > maxRadius )
+        {
             return 0;
         }
     }
@@ -301,14 +322,14 @@ int J3DAPI sithSoundMixer_GetThingInfo(int thingId, SoundThingInfo* pThingInfo)
         return 0;
     }
 
-    rdVector_Copy3(&pThingInfo->pos, &pThing->pos);
+    pThingInfo->pos = pThing->pos;
     if ( pThing->moveType == SITH_MT_PHYSICS )
     {
-        rdVector_Copy3(&pThingInfo->velocity, &pThing->moveInfo.physics.velocity);
+        pThingInfo->velocity = pThing->moveInfo.physics.velocity;
     }
     else
     {
-        rdVector_Set3(&pThingInfo->velocity, 0.0f, 0.0f, 0.0f);
+        rdVector_Zero3(&pThingInfo->velocity);
     }
 
     SoundEnvFlags envflags = pThingInfo->envflags;
@@ -325,9 +346,23 @@ int J3DAPI sithSoundMixer_GetThingInfo(int thingId, SoundThingInfo* pThingInfo)
     return 1;
 }
 
+float Atten_Inverse(float distance, float minRadius, float maxRadius, float baseVol)
+{
+    if ( distance <= minRadius )
+        return baseVol;
+    if ( distance >= maxRadius )
+        return 0.0f;
+
+    // map distance so we avoid volume blow-up
+    float d = distance - minRadius;
+    float denom = minRadius + d;
+    float newVolume = baseVol * (minRadius / denom);
+    return newVolume;
+}
+
 void J3DAPI sithSoundMixer_CalcCameraRelativeSoundMix(const SoundSpatialInfo* pSpatialInfo, float* volume, float* pan, float* pitch)
 {
-    float vol = pSpatialInfo->volume;
+    float newVolume = pSpatialInfo->volume;
     SoundEnvFlags flags = pSpatialInfo->flags;
 
     if ( sithCamera_g_pCurCamera )
@@ -337,10 +372,11 @@ void J3DAPI sithSoundMixer_CalcCameraRelativeSoundMix(const SoundSpatialInfo* pS
         rdVector_Sub3(&dir, &pos, &sithCamera_g_pCurCamera->lookPos);
         float dist = rdVector_Normalize3QuickAcc(&dir);
 
+        // Behind-listener attenuation
         float dot = rdVector_Dot3(&sithCamera_g_pCurCamera->orient.lvec, &dir);
         if ( dot < 0.0f )
         {
-            vol = (1.0f - -dot * 0.3f) * vol;
+            newVolume = (1.0f - -dot * 0.3f) * newVolume;
         }
 
         if ( pan )
@@ -350,39 +386,69 @@ void J3DAPI sithSoundMixer_CalcCameraRelativeSoundMix(const SoundSpatialInfo* pS
 
         if ( dist < pSpatialInfo->maxRadius && sithCamera_g_pCurCamera->pSector )
         {
-            if ( (flags & SOUND_ENV_UNDERWATER) == 0 || (sithCamera_g_pCurCamera->pSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
+            if ( (flags & SOUND_ENV_UNDERWATER) != 0 && (sithCamera_g_pCurCamera->pSector->flags & SITH_SECTOR_UNDERWATER) == 0 )
             {
-                if ( (flags & SOUND_ENV_UNDERWATER) == 0 && (sithCamera_g_pCurCamera->pSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
-                {
-                    dist = dist * 1.5f;
-                }
+                dist *= 1.5; // Sound travels 50% "farther" underwater
             }
-            else
+            else if ( (flags & SOUND_ENV_UNDERWATER) == 0 && (sithCamera_g_pCurCamera->pSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
             {
-                dist = dist * 1.5f;
+                dist *= 1.5; // Sound travels 50% "farther" underwater
             }
         }
 
         if ( volume )
         {
-            float minDist = dist - pSpatialInfo->minRadius;
-            if ( minDist <= 0.0f )
+            // Fixed: When minDistDelta <= 0 set the out volume to already modulated `vol`.
+            //        OG was assigning pSpatialInfo->volume in this case
+            float minDistDelta = dist - pSpatialInfo->minRadius;
+            if ( minDistDelta > 0.0 )
             {
-                vol = pSpatialInfo->volume;
-            }
-            else
-            {
-                float dminmax = 0.0f;
-                if ( pSpatialInfo->minRadius != pSpatialInfo->maxRadius )
+                // Altered: Added exponential & logarithmic falloff. OG was only linear
+                switch ( sithSoundMixer_swfalloff )
                 {
-                    dminmax = 1.0f / (pSpatialInfo->maxRadius - pSpatialInfo->minRadius);
-                }
+                    case SITHSOUNDMIXER_SW_FALLOFF_LINEAR: // OG
+                    {
+                        float dminmax = 0.0f;
+                        if ( pSpatialInfo->minRadius != pSpatialInfo->maxRadius )
+                        {
+                            dminmax = 1.0f / (pSpatialInfo->maxRadius - pSpatialInfo->minRadius);
+                        }
 
-                float volLev = STDMATH_CLAMP(minDist * dminmax, 0.0f, 1.0f);
-                vol = (1.0f - volLev) * vol;
+                        float volLev = STDMATH_CLAMP(minDistDelta * dminmax, 0.0f, 1.0f);
+                        newVolume = (1.0f - volLev) * newVolume;
+                    } break;
+                    case SITHSOUNDMIXER_SW_FALLOFF_EXPONENTIAL:
+                    {
+                        float range = pSpatialInfo->maxRadius - pSpatialInfo->minRadius;
+                        if ( range > 0.0f )
+                        {
+                            float normalizedDist = minDistDelta / range;
+                            normalizedDist = STDMATH_CLAMP(normalizedDist, 0.0f, 1.0f);
+
+                            // Exponential falloff (adjust exponent for steepness: 2.0-4.0 typical)
+                            float attenuation = powf(1.0f - normalizedDist, 3.0f);
+                            newVolume = attenuation * newVolume;
+                        }
+                    } break;
+                    default: // logarithmic
+                    {
+                        float range = pSpatialInfo->maxRadius - pSpatialInfo->minRadius;
+                        if ( range > 0.0f )
+                        {
+                            float normalizedDist = minDistDelta / range;
+                            normalizedDist = STDMATH_CLAMP(normalizedDist, 0.0f, 1.0f);
+
+                            // Logarithmic falloff (simulates decibels)
+                            // -40dB at max distance (barely audible)
+                            float dbAttenuation = -42.0f * normalizedDist;
+                            float attenuation = powf(10.0f, dbAttenuation / 20.0f);
+                            newVolume = attenuation * newVolume;
+                        }
+                    } break;
+                };
             }
 
-            *volume = vol;
+            *volume = newVolume;
         }
 
         if ( pitch )
@@ -400,7 +466,8 @@ void J3DAPI sithSoundMixer_StopAllSoundsThing(const SithThing* pThing)
 
 tSoundChannelHandle J3DAPI sithSoundMixer_GetChannelHandle(int guid)
 {
-    if ( guid ) {
+    if ( guid )
+    {
         return Sound_GetChannelHandle(guid);
     }
 
@@ -455,7 +522,8 @@ int J3DAPI sithSoundMixer_GameRestore(tFileHandle fh)
 
 int sithSoundMixer_GetNextChannelGUID(void)
 {
-    if ( !sithSoundMixer_channelGUIDSeed ) {
+    if ( !sithSoundMixer_channelGUIDSeed )
+    {
         sithSoundMixer_channelGUIDSeed = 1;
     }
 
@@ -465,11 +533,13 @@ int sithSoundMixer_GetNextChannelGUID(void)
 tSoundChannelFlag J3DAPI sithSoundMixer_PlayFlagsToChannelFlags(SoundPlayFlag flags)
 {
     tSoundChannelFlag chflags = (flags & SOUNDPLAY_LOOP) != 0 ? SOUND_CHANNEL_LOOP | SOUND_CHANNEL_PLAYING : SOUND_CHANNEL_PLAYING;
-    if ( (flags & SOUNDPLAY_PLAYONCE) != 0 ) {
+    if ( (flags & SOUNDPLAY_PLAYONCE) != 0 )
+    {
         chflags |= SOUND_CHANNEL_PLAYONCE;
     }
 
-    if ( (flags & SOUNDPLAY_PLAYTHINGONCE) != 0 ) {
+    if ( (flags & SOUNDPLAY_PLAYTHINGONCE) != 0 )
+    {
         chflags |= SOUND_CHANNEL_PLAYTHINGONCE;
     }
 

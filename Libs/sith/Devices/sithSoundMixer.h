@@ -9,13 +9,23 @@
 
 J3D_EXTERN_C_START
 
-// TODO: verify if function should mamybe be named stdSound_Startup
+#define SITHSOUNDMIXER_CFG_SWMIXER_FALLOFFMODE "sound.swmixer.falloff"
+
+// Added
+typedef enum
+{
+    SITHSOUNDMIXER_SW_FALLOFF_LINEAR      = 0,
+    SITHSOUNDMIXER_SW_FALLOFF_EXPONENTIAL = 1,
+    SITHSOUNDMIXER_SW_FALLOFF_LOGARITHMIC = 2,
+
+} SithSoundMixerSwFalloffMode;
+
 int sithSoundMixer_Startup(void);
 void J3DAPI sithSoundMixer_Shutdown();
 
 void J3DAPI sithSoundMixer_ClearAmbientSector();
-void sithSoundMixer_Pause(void); // Added
-void sithSoundMixer_Resume(void); // Added;
+void sithSoundMixer_Pause(void);  // Added
+void sithSoundMixer_Resume(void); // Added
 
 tSoundChannelHandle J3DAPI sithSoundMixer_PlaySound(tSoundHandle hSnd, float volume, float pan, SoundPlayFlag playflags);
 tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundPos(tSoundHandle hSnd, rdVector3* pos, SithSector* pSector, float volume, float minRadius, float maxRadius, SoundPlayFlag playflags);
