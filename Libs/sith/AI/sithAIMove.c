@@ -17,7 +17,7 @@ void sithAIMove_InstallHooks(void)
     // J3D_HOOKFUNC(sithAIMove_sub_4966D0);
     // J3D_HOOKFUNC(sithAIMove_sub_496820);
     // J3D_HOOKFUNC(sithAIMove_AIGetMoveState);
-    // J3D_HOOKFUNC(sithAIMove_sub_496A50);
+    // J3D_HOOKFUNC(sithAIMove_AISpecialTurn);
     // J3D_HOOKFUNC(sithAIMove_UpdateAIMove);
     // J3D_HOOKFUNC(sithAIMove_GetAIMoveModes);
     // J3D_HOOKFUNC(sithAIMove_SetSubMode);
@@ -27,8 +27,8 @@ void sithAIMove_InstallHooks(void)
     // J3D_HOOKFUNC(sithAIMove_AISetLookPosEyeLevel);
     // J3D_HOOKFUNC(sithAIMove_AISetMovePos);
     // J3D_HOOKFUNC(sithAIMove_AISetMoveTargetPos);
-    // J3D_HOOKFUNC(sithAIMove_sub_497FF0);
-    // J3D_HOOKFUNC(sithAIMove_sub_498890);
+    // J3D_HOOKFUNC(sithAIMove_AISpecialMove);
+    // J3D_HOOKFUNC(sithAIMove_AIFinalizeSpecialMove);
     // J3D_HOOKFUNC(sithAIMove_AIJump);
     // J3D_HOOKFUNC(sithAIMove_AIStop);
     // J3D_HOOKFUNC(sithAIMove_SetGoalReached);
@@ -112,9 +112,9 @@ int J3DAPI sithAIMove_AIGetMoveState(const SithAIControlBlock* pLocal)
     return J3D_TRAMPOLINE_CALL(sithAIMove_AIGetMoveState, pLocal);
 }
 
-int J3DAPI sithAIMove_sub_496A50(SithAIControlBlock* pLocal, float angle)
+int J3DAPI sithAIMove_AISpecialTurn(SithAIControlBlock* pLocal, float angle)
 {
-    return J3D_TRAMPOLINE_CALL(sithAIMove_sub_496A50, pLocal, angle);
+    return J3D_TRAMPOLINE_CALL(sithAIMove_AISpecialTurn, pLocal, angle);
 }
 
 float J3DAPI sithAIMove_UpdateAIMove(SithAIControlBlock* pLocal)
@@ -162,14 +162,14 @@ int J3DAPI sithAIMove_AISetMoveTargetPos(SithAIControlBlock* pLocal, const rdVec
     return J3D_TRAMPOLINE_CALL(sithAIMove_AISetMoveTargetPos, pLocal, moveToPos, moveSpeed);
 }
 
-int J3DAPI sithAIMove_sub_497FF0(SithAIControlBlock* pLocal, int armedModeState)
+int J3DAPI sithAIMove_AISpecialMove(SithAIControlBlock* pLocal, SithActorSpecialMoveFlags moveFlags)
 {
-    return J3D_TRAMPOLINE_CALL(sithAIMove_sub_497FF0, pLocal, armedModeState);
+    return J3D_TRAMPOLINE_CALL(sithAIMove_AISpecialMove, pLocal, moveFlags);
 }
 
-void J3DAPI sithAIMove_sub_498890(SithAIControlBlock* pLocal, int type)
+void J3DAPI sithAIMove_AIFinalizeSpecialMove(SithAIControlBlock* pLocal, int type)
 {
-    J3D_TRAMPOLINE_CALL(sithAIMove_sub_498890, pLocal, type);
+    J3D_TRAMPOLINE_CALL(sithAIMove_AIFinalizeSpecialMove, pLocal, type);
 }
 
 void J3DAPI sithAIMove_AIJump(SithAIControlBlock* pLocal, rdVector3* movePos, float a3)

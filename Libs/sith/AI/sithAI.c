@@ -12,6 +12,7 @@
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Gameplay/sithTime.h>
 #include <sith/RTI/symbols.h>
+#include <sith/World/sithActor.h>
 #include <sith/World/sithSurface.h>
 #include <sith/World/sithWeapon.h>
 
@@ -28,7 +29,7 @@ static SithAIRegisteredInstinct* aRegisteredInstincts;
 static size_t numRegisteredInstincts;
 static tHashTable* pRegisteredInstinctHashtbl;
 
-void J3DAPI sithAI_ProcessAIState(SithAIControlBlock* pLocal);
+void J3DAPI sithAI_ProcessAIStateChange(SithAIControlBlock* pLocal);
 void J3DAPI sithAI_InstinctUpdate(SithAIControlBlock* pLocal);
 int J3DAPI sithAI_ProcessBlockedEvent(SithAIControlBlock* pLocal, SithAIEventType aievent);
 int J3DAPI sithAI_ProcessUnhandledEvent(SithAIControlBlock* pLocal, SithAIEventType event, void* pObject);
@@ -47,7 +48,7 @@ void sithAI_InstallHooks(void)
     J3D_HOOKFUNC(sithAI_Create);
     J3D_HOOKFUNC(sithAI_Free);
     J3D_HOOKFUNC(sithAI_Process);
-    J3D_HOOKFUNC(sithAI_ProcessAIState);
+    J3D_HOOKFUNC(sithAI_ProcessAIStateChange);
     J3D_HOOKFUNC(sithAI_InstinctUpdate);
     J3D_HOOKFUNC(sithAI_ForceInstinctUpdate);
     J3D_HOOKFUNC(sithAI_EmitEvent);
@@ -212,7 +213,7 @@ void sithAI_Process(void)
                 && (pLocal->mode & SITHAI_MODE_BLOCK) == 0
                 && (pLocal->mode & (SITHAI_MODE_DISABLED | SITHAI_MODE_SLEEPING)) == 0 )
             {
-                sithAI_ProcessAIState(pLocal);
+                sithAI_ProcessAIStateChange(pLocal);
                 sithWeapon_UpdateActorWeaponState(pLocal->pOwner);
                 if ( pLocal->msecNextUpdate <= sithTime_g_msecGameTime && sithAIMove_AIGetMoveState(pLocal) <= 0 )
                 {
@@ -223,10 +224,10 @@ void sithAI_Process(void)
     }
 }
 
-void J3DAPI sithAI_ProcessAIState(SithAIControlBlock* pLocal)
+void J3DAPI sithAI_ProcessAIStateChange(SithAIControlBlock* pLocal)
 {
-    int aiState = pLocal->pOwner->aiState;
-    if ( !aiState )
+    SithActorStateChange* pStateChange = &pLocal->pOwner->thingInfo.actorInfo.stateChange;
+    if ( pStateChange->type == SITHACTORSTATECHANGE_ARMEDMODE )
     {
         if ( sithPuppet_IsAnyModeOnTrack(pLocal->pOwner, SITHPUPPETSUBMODE_STAND2WALK, SITHPUPPETSUBMODE_WALK2ATTACK) )
         {
@@ -234,24 +235,22 @@ void J3DAPI sithAI_ProcessAIState(SithAIControlBlock* pLocal)
         }
 
         sithPuppet_RemoveAllTracks(pLocal->pOwner);
-        sithPuppet_SetArmedMode(pLocal->pOwner, pLocal->pOwner->aiArmedModeState);
+        sithPuppet_SetArmedMode(pLocal->pOwner, pStateChange->params.armedMode);
 
         pLocal->pOwner->pPuppetState->submode = 0;
         pLocal->pOwner->moveStatus = SITHPLAYERMOVE_STILL;
         sithAIMove_UpdateAIMove(pLocal);
 
-        sithCog_ThingSendMessageEx(pLocal->pOwner, 0, SITHCOG_MSG_STATECHANGE, pLocal->pOwner->aiState, pLocal->pOwner->aiArmedModeState, 0, 0);
-        pLocal->pOwner->aiState = -1;
-        pLocal->pOwner->aiArmedModeState = -1;
+        sithCog_ThingSendMessageEx(pLocal->pOwner, 0, SITHCOG_MSG_STATECHANGE, pStateChange->type, pStateChange->params.armedMode, 0, 0);
+        sithActor_ResetStateChange(pLocal->pOwner);
         return;
     }
 
-    if ( aiState == 1 && sithTime_g_msecGameTime >= pLocal->msecPauseMoveUntil )
+    if ( pStateChange->type == SITHACTORSTATECHANGE_ANIMMOVE && sithTime_g_msecGameTime >= pLocal->msecPauseMoveUntil )
     {
-        sithAIMove_sub_497FF0(pLocal, pLocal->pOwner->aiArmedModeState);
-        sithCog_ThingSendMessageEx(pLocal->pOwner, 0, SITHCOG_MSG_STATECHANGE, pLocal->pOwner->aiState, pLocal->pOwner->aiArmedModeState, 0, 0);
-        pLocal->pOwner->aiState = -1;
-        pLocal->pOwner->aiArmedModeState = -1;
+        sithAIMove_AISpecialMove(pLocal, pStateChange->params.moveFlags);
+        sithCog_ThingSendMessageEx(pLocal->pOwner, 0, SITHCOG_MSG_STATECHANGE, pStateChange->type, pStateChange->params.moveFlags, 0, 0);
+        sithActor_ResetStateChange(pLocal->pOwner);
     }
 }
 

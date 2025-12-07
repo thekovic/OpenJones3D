@@ -924,7 +924,7 @@
 #define sithAI_Create_ADDR 0x0042A040
 #define sithAI_Free_ADDR 0x0042A180
 #define sithAI_Process_ADDR 0x0042A230
-#define sithAI_ProcessAIState_ADDR 0x0042A2E0
+#define sithAI_ProcessAIStateChange_ADDR 0x0042A2E0
 #define sithAI_InstinctUpdate_ADDR 0x0042A3B0
 #define sithAI_ForceInstinctUpdate_ADDR 0x0042A4A0
 #define sithAI_EmitEvent_ADDR 0x0042A5A0
@@ -1170,7 +1170,7 @@
 #define sithAIMove_sub_4966D0_ADDR 0x004966D0
 #define sithAIMove_sub_496820_ADDR 0x00496820
 #define sithAIMove_AIGetMoveState_ADDR 0x004969A0
-#define sithAIMove_sub_496A50_ADDR 0x00496A50
+#define sithAIMove_AISpecialTurn_ADDR 0x00496A50
 #define sithAIMove_UpdateAIMove_ADDR 0x00496BB0
 #define sithAIMove_GetAIMoveModes_ADDR 0x00496EA0
 #define sithAIMove_SetSubMode_ADDR 0x00497230
@@ -1180,8 +1180,8 @@
 #define sithAIMove_AISetLookPosEyeLevel_ADDR 0x00497BE0
 #define sithAIMove_AISetMovePos_ADDR 0x00497CF0
 #define sithAIMove_AISetMoveTargetPos_ADDR 0x00497F30
-#define sithAIMove_sub_497FF0_ADDR 0x00497FF0
-#define sithAIMove_sub_498890_ADDR 0x00498890
+#define sithAIMove_AISpecialMove_ADDR 0x00497FF0
+#define sithAIMove_AIFinalizeSpecialMove_ADDR 0x00498890
 #define sithAIMove_AIJump_ADDR 0x00498B00
 #define sithAIMove_AIStop_ADDR 0x00498B70
 #define sithAIMove_SetGoalReached_ADDR 0x00498BF0
@@ -1235,8 +1235,8 @@
 #define sithAIUtil_CompareAIWpntDistances_ADDR 0x0049D980
 #define sithAIUtil_RenderAIWaypoints_ADDR 0x0049D9C0
 #define sithAIUtil_CheckPathToPoint_ADDR 0x0049DB50
-#define sithAIUtil_sub_49DC90_ADDR 0x0049DC90
-#define sithAIUtil_sub_49DD20_ADDR 0x0049DD20
+#define sithAIUtil_CheckPosition_ADDR 0x0049DC90
+#define sithAIUtil_CheckFloorAtPos_ADDR 0x0049DD20
 #define sithAIUtil_MakeRandPoint_ADDR 0x0049E040
 #define sithAIUtil_RetryMakeRandPoint_ADDR 0x0049E5F0
 #define sithAIUtil_CheckPathToPos_ADDR 0x0049E790

@@ -33,6 +33,15 @@ void J3DAPI sithActor_DestroyActor(SithThing* pActor);
 void J3DAPI sithActor_DestroyCorpse(SithThing* pThing);
 int J3DAPI sithActor_ParseArg(const StdConffileArg* pArg, SithThing* pThing, int adjNum);
 
+static inline void sithActor_ResetStateChange(SithThing* pActor) // Added
+{
+    if ( pActor->type == SITH_THING_ACTOR || pActor->type == SITH_THING_PLAYER ) // Just make sure we have actor
+    {
+        pActor->thingInfo.actorInfo.stateChange.type                 = SITHACTORSTATECHANGE_NONE;
+        pActor->thingInfo.actorInfo.stateChange.params.moveFlags = (SithActorSpecialMoveFlags)-1;
+    }
+}
+
 // Helper hooking functions
 void sithActor_InstallHooks(void);
 void sithActor_ResetGlobals(void);

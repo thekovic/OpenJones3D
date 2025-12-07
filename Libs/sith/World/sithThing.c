@@ -1428,8 +1428,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
 
-            pThing->aiState = -1;
-            pThing->aiArmedModeState = -1;
+            sithActor_ResetStateChange(pThing);
             sithWeapon_InitalizeActor(pThing);
             sithActor_SetDifficulty(pThing);
         } break;
@@ -1449,8 +1448,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
                 rdVector_Set4(&pThing->thingInfo.actorInfo.voiceInfo.voiceColor.top, -1.0f, -1.0f, -1.0f, -1.0f);
             }
 
-            pThing->aiState = -1;
-            pThing->aiArmedModeState = -1;
+            sithActor_ResetStateChange(pThing);
             sithWeapon_InitalizeActor(pThing);
         } break;
 

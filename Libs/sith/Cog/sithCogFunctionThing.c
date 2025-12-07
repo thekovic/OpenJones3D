@@ -5383,7 +5383,7 @@ void J3DAPI sithCogFunctionThing_MoveThingToPos(SithCog* pCog)
 
 void J3DAPI sithCogFunctionThing_SetThingStateChange(SithCog* pCog)
 {
-    int armModeState  = sithCogExec_PopInt(pCog);
+    int type          = sithCogExec_PopInt(pCog);
     int state         = sithCogExec_PopInt(pCog);
     SithThing* pThing = sithCogExec_PopThing(pCog);
 
@@ -5399,8 +5399,8 @@ void J3DAPI sithCogFunctionThing_SetThingStateChange(SithCog* pCog)
         return;
     }
 
-    pThing->aiArmedModeState = armModeState;
-    pThing->aiState = state;
+    pThing->thingInfo.actorInfo.stateChange.type             = type;
+    pThing->thingInfo.actorInfo.stateChange.params.moveFlags = (SithActorSpecialMoveFlags)state; // Note could be also armedMode, depending on the type
 }
 
 void J3DAPI sithCogFunctionThing_StartQuetzAnim(SithCog* pCog)

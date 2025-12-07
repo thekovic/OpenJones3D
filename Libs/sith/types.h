@@ -1335,6 +1335,40 @@ typedef enum sSithMinecarControlsMoveState
     SITHMINECARCONTROLS_MOVE_CRUISING     = 4  // Moving at constant speed
 } SithMinecarControlsMoveState;
 
+//
+// SIth AI Actor animation state change structs
+//
+typedef enum eSithActorStateChangeType
+{
+    SITHACTORSTATECHANGE_NONE      = -1,
+    SITHACTORSTATECHANGE_ARMEDMODE = 0,  // Change puppet armed mode
+    SITHACTORSTATECHANGE_ANIMMOVE  = 1   // Execute AI animated movement
+} SithActorStateChangeType;
+
+// Combined flags for AI animated movements
+typedef enum eSithActorSpecialMoveFlags
+{
+    // Base movement type flags (0x1-0x40)
+    SITHACTORSPECIALMOVE_ROLL      = 0x01,  // Roll/hop
+    SITHACTORSPECIALMOVE_STRAFE    = 0x02,  // Strafe
+    SITHACTORSPECIALMOVE_TURN45    = 0x04,  // 45 deg turn
+    SITHACTORSPECIALMOVE_TURN90    = 0x08,  // 90 deg turn
+    SITHACTORSPECIALMOVE_TURN135   = 0x10,  // 135 deg turn
+    SITHACTORSPECIALMOVE_TURN180   = 0x20,  // 180 deg turn
+    SITHACTORSPECIALMOVE_MOUNTWALL = 0x40,  // 90 deg up wall mount
+
+    // Direction flags (0x100-0x400)
+    SITHACTORSPECIALMOVE_DIR_RANDOM = 0x100,  // Choose direction randomly
+    SITHACTORSPECIALMOVE_DIR_LEFT   = 0x200,  // Force left direction
+    SITHACTORSPECIALMOVE_DIR_RIGHT  = 0x400,  // Force right direction
+
+    // Evasion strategy flags (0x1000-0x8000)
+    SITHACTORSPECIALMOVE_EVADE_PERPENDICULAR = 0x1000,  // Move perpendicular to threat
+    SITHACTORSPECIALMOVE_EVADE_ANGLE         = 0x2000,  // Move at angle from threat
+    SITHACTORSPECIALMOVE_EVADE_AWAY          = 0x4000,  // Move directly away from threat
+    SITHACTORSPECIALMOVE_EVADE_PATHFIND      = 0x8000,  // Use path finding for evasion
+} SithActorSpecialMoveFlags;
+
 typedef struct sSithAIControlBlock SithAIControlBlock;
 typedef struct sSithAIInstinct SithAIInstinct;
 typedef struct sSithAIInstinctState SithAIInstinctState;
@@ -2046,6 +2080,19 @@ typedef struct sSithPlayer
 } SithPlayer;
 static_assert(sizeof(SithPlayer) == 1820, "sizeof(SithPlayer) == 1820");
 
+//
+// Actor info structs
+//
+typedef struct sSithActorStateChange
+{
+    SithActorStateChangeType type;
+    union
+    {
+        uint32_t armedMode;                   // When type == ARMEDMODE: puppet armed mode to set
+        SithActorSpecialMoveFlags moveFlags;  // When type == ANIMMOVE: SithActorSpecialMoveFlags combination
+    } params;
+} SithActorStateChange;
+
 typedef struct sSithActorInfo
 {
     SithActorFlag flags;
@@ -2086,8 +2133,9 @@ typedef struct sSithActorInfo
     int weaponSwapRefNum;
     rdVector3 vecUnknown0;
     SithActorVoiceInfo voiceInfo;
+    SithActorStateChange stateChange;
 } SithActorInfo;
-static_assert(sizeof(SithActorInfo) == 292, "sizeof(SithActorInfo) == 292");
+static_assert(sizeof(SithActorInfo) == 300, "sizeof(SithActorInfo) == 292");
 
 typedef struct sSithSpriteInfo
 {
@@ -2427,8 +2475,6 @@ struct sSithThing
     SithPuppetClass* pPuppetClass;
     SithPuppetState* pPuppetState;
     SithThingInfo thingInfo;
-    int aiState;
-    int aiArmedModeState;
     SithMoveInfo moveInfo;
     int moveFrame;
     float distanceMoved;

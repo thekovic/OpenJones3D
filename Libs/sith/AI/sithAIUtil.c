@@ -55,8 +55,8 @@ void sithAIUtil_InstallHooks(void)
     // J3D_HOOKFUNC(sithAIUtil_CompareAIWpntDistances);
     // J3D_HOOKFUNC(sithAIUtil_RenderAIWaypoints);
     // J3D_HOOKFUNC(sithAIUtil_CheckPathToPoint);
-    // J3D_HOOKFUNC(sithAIUtil_sub_49DC90);
-    // J3D_HOOKFUNC(sithAIUtil_sub_49DD20);
+    // J3D_HOOKFUNC(sithAIUtil_CheckPosition);
+    // J3D_HOOKFUNC(sithAIUtil_CheckFloorAtPos);
     // J3D_HOOKFUNC(sithAIUtil_MakeRandPoint);
     // J3D_HOOKFUNC(sithAIUtil_RetryMakeRandPoint);
     // J3D_HOOKFUNC(sithAIUtil_CheckPathToPos);
@@ -258,14 +258,14 @@ int J3DAPI sithAIUtil_CheckPathToPoint(SithThing* pViewer, const rdVector3* pTar
     return J3D_TRAMPOLINE_CALL(sithAIUtil_CheckPathToPoint, pViewer, pTarget, radius, pDistance, pHitNorm, bDetectThings, bSkipFloor);
 }
 
-int J3DAPI sithAIUtil_sub_49DC90(const SithAIControlBlock* pLocal, rdVector3* endPos, int* pbNoCollision)
+int J3DAPI sithAIUtil_CheckPosition(const SithAIControlBlock* pLocal, rdVector3* endPos, int* pbNoCollision)
 {
-    return J3D_TRAMPOLINE_CALL(sithAIUtil_sub_49DC90, pLocal, endPos, pbNoCollision);
+    return J3D_TRAMPOLINE_CALL(sithAIUtil_CheckPosition, pLocal, endPos, pbNoCollision);
 }
 
-int J3DAPI sithAIUtil_sub_49DD20(const SithAIControlBlock* pLocal, const rdVector3* startPos, SithSector* pStartSector, int* pbNoCollision)
+int J3DAPI sithAIUtil_CheckFloorAtPos(const SithAIControlBlock* pLocal, const rdVector3* startPos, SithSector* pStartSector, int* pbNoCollision)
 {
-    return J3D_TRAMPOLINE_CALL(sithAIUtil_sub_49DD20, pLocal, startPos, pStartSector, pbNoCollision);
+    return J3D_TRAMPOLINE_CALL(sithAIUtil_CheckFloorAtPos, pLocal, startPos, pStartSector, pbNoCollision);
 }
 
 int J3DAPI sithAIUtil_MakeRandPoint(SithAIControlBlock* pLocal, rdVector3* pPos, int flags, float angle, float* pDownCos, rdVector3* pDir, rdVector3* pDestPoint)

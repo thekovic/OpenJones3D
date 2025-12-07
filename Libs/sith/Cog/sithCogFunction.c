@@ -1848,7 +1848,7 @@ void J3DAPI sithCogFunction_CopyPlayerHolsters(SithCog* pCog)
         {
             sithThing_AddSwapEntry(pDestThing, meshNum, pSwapList->pSrcModel, pSwapList->srcMeshNum);
         }
-        pSwapList = pSwapList->pNextEntry; // Fixed: Infinite loop when meshNum == -1 by moving outside the if statement’s scope
+        pSwapList = pSwapList->pNextEntry; // Fixed: Infinite loop when meshNum == -1 by moving outside the if statement's scope
     }
 }
 

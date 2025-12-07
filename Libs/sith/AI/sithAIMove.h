@@ -31,7 +31,7 @@ int J3DAPI sithAIMove_sub_496550(SithAIControlBlock* pLocal, float secDeltaTime)
 int J3DAPI sithAIMove_sub_4966D0(SithAIControlBlock* pLocal, float secDeltaTime);
 int J3DAPI sithAIMove_sub_496820(SithAIControlBlock* pLocal, float secDeltaTime);
 int J3DAPI sithAIMove_AIGetMoveState(const SithAIControlBlock* pLocal);
-int J3DAPI sithAIMove_sub_496A50(SithAIControlBlock* pLocal, float angle);
+int J3DAPI sithAIMove_AISpecialTurn(SithAIControlBlock* pLocal, float angle);
 float J3DAPI sithAIMove_UpdateAIMove(SithAIControlBlock* pLocal);
 void J3DAPI sithAIMove_GetAIMoveModes(const SithThing* pThing, float moveSpeed, int moveDirection, SithThingMoveStatus* pOutMoveStatus, SithPuppetSubMode* pOutSubmode);
 int J3DAPI sithAIMove_SetSubMode(SithAIControlBlock* pLocal, SithThingMoveStatus moveStatus, SithPuppetSubMode submode);
@@ -41,8 +41,8 @@ void J3DAPI sithAIMove_AISetLookPos(SithAIControlBlock* pLocal, const rdVector3*
 void J3DAPI sithAIMove_AISetLookPosEyeLevel(SithAIControlBlock* pLocal, const rdVector3* targetPos);
 int J3DAPI sithAIMove_AISetMovePos(SithAIControlBlock* pLocal, const rdVector3* moveToPos, float moveSpeed);
 int J3DAPI sithAIMove_AISetMoveTargetPos(SithAIControlBlock* pLocal, const rdVector3* moveToPos, float moveSpeed);
-int J3DAPI sithAIMove_sub_497FF0(SithAIControlBlock* pLocal, int armedModeState);
-void J3DAPI sithAIMove_sub_498890(SithAIControlBlock* pLocal, int type);
+int J3DAPI sithAIMove_AISpecialMove(SithAIControlBlock* pLocal, SithActorSpecialMoveFlags moveFlags);
+void J3DAPI sithAIMove_AIFinalizeSpecialMove(SithAIControlBlock* pLocal, int type);
 void J3DAPI sithAIMove_AIJump(SithAIControlBlock* pLocal, rdVector3* movePos, float a3);
 void J3DAPI sithAIMove_AIStop(SithAIControlBlock* pLocal);
 void J3DAPI sithAIMove_SetGoalReached(SithAIControlBlock* pLocal);
