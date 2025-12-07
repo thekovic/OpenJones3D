@@ -2003,7 +2003,17 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                 case SITHPLAYERMOVE_JUMPLEFT:
                 case SITHPLAYERMOVE_JUMPRIGHT:
                 {
+                #ifdef J3D_SPEEDRUN_BUILD
                     pThing->moveStatus = SITHPLAYERMOVE_STILL;
+                #else
+                    // Fixed: Add check for thing is not attached to surface,and in this case make indy fall.
+                    //        This fix prevents player controls from being processed when roll move finishes in mid air.
+                    //        This blocking any hackish move that would prevent indy to get hurt when lends on the ground. 
+                    //        e.g. roll forward - walk back and fire, or side roll - use chalk etc...
+                    pThing->moveStatus =  pThing->attach.flags != 0
+                        ? SITHPLAYERMOVE_STILL
+                        : SITHPLAYERMOVE_FALLING;
+                #endif
                     break;
                 }
                 default:
