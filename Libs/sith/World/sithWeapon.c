@@ -2161,6 +2161,8 @@ static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing)
 
         if ( meshIdx == -1 )
         {
+            // Altered: Added qol to not gen splatter for special actor things
+        #ifdef J3D_QOL_IMPROVEMENTS
             if ( (pHitThing->flags & (SITH_TF_METAL | SITH_TF_EARTH | SITH_TF_SNOW | SITH_TF_WOOD)) != 0
                 || sithPhysics_IsVehicleThing(pHitThing) )
             {
@@ -2168,11 +2170,12 @@ static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing)
                 // or some other (non-human) actor
                 return false;
             }
+        #endif
 
             meshIdx = 0;
         }
 
-    #ifdef J3D_DEBUG // Added: debug check
+    #if defined(J3D_DEBUG) || !defined(J3D_QOL_IMPROVEMENTS) // Altered: debug check
         SITHLOG_STATUS("Blood splort attached to mesh number %d.\n", meshIdx);
     #endif
     }
@@ -2183,8 +2186,9 @@ static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing)
         sithAnimate_StartMaterialAnim(pMat, 16.0f, (SithAnimateFlags)0);
     }
 
-    float size = pHitThing->renderData.data.pModel3->size / 5.0f;
-    size = STDMATH_CLAMP(size, 0.001f, 0.02f);
+    float size = pHitThing->renderData.data.pModel3->size / J3D_QOL_VALUE(5.0f, 2.0f);    // Altered
+    size = STDMATH_CLAMP(size, J3D_QOL_VALUE(0.001f, 0.01f), J3D_QOL_VALUE(0.02f, 0.1f)); // Altered
+
     rdVector3 start;
     start.x = size;
     start.y = size;
