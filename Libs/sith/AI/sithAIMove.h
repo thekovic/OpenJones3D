@@ -30,25 +30,29 @@ double J3DAPI sithAIMove_sub_496200(SithAIControlBlock* pLocal, const rdVector3*
 int J3DAPI sithAIMove_sub_496550(SithAIControlBlock* pLocal, float secDeltaTime);
 int J3DAPI sithAIMove_sub_4966D0(SithAIControlBlock* pLocal, float secDeltaTime);
 int J3DAPI sithAIMove_sub_496820(SithAIControlBlock* pLocal, float secDeltaTime);
+
 int J3DAPI sithAIMove_AIGetMoveState(const SithAIControlBlock* pLocal);
 int J3DAPI sithAIMove_AISpecialTurn(SithAIControlBlock* pLocal, float angle);
+
 float J3DAPI sithAIMove_UpdateAIMove(SithAIControlBlock* pLocal);
+
 void J3DAPI sithAIMove_GetAIMoveModes(const SithThing* pThing, float moveSpeed, int moveDirection, SithThingMoveStatus* pOutMoveStatus, SithPuppetSubMode* pOutSubmode);
-int J3DAPI sithAIMove_SetSubMode(SithAIControlBlock* pLocal, SithThingMoveStatus moveStatus, SithPuppetSubMode submode);
+void J3DAPI sithAIMove_SetSubMode(SithAIControlBlock* pLocal, SithThingMoveStatus moveStatus, SithPuppetSubMode submode);
 void J3DAPI sithAIMove_PuppetCallback(SithThing* pThing, int trackNum, rdKeyMarkerType marker);
 void J3DAPI sithAIMove_AISetLookThing(SithAIControlBlock* pLocal, const SithThing* pThing);
 void J3DAPI sithAIMove_AISetLookPos(SithAIControlBlock* pLocal, const rdVector3* targetPos);
 void J3DAPI sithAIMove_AISetLookPosEyeLevel(SithAIControlBlock* pLocal, const rdVector3* targetPos);
 int J3DAPI sithAIMove_AISetMovePos(SithAIControlBlock* pLocal, const rdVector3* moveToPos, float moveSpeed);
 int J3DAPI sithAIMove_AISetMoveTargetPos(SithAIControlBlock* pLocal, const rdVector3* moveToPos, float moveSpeed);
+int J3DAPI sithAIMove_AISetMoveTargetPos2(SithAIControlBlock* pLocal, const rdVector3* moveToPos, float moveSpeed); // Added from debug
 int J3DAPI sithAIMove_AISpecialMove(SithAIControlBlock* pLocal, SithActorSpecialMoveFlags moveFlags);
-void J3DAPI sithAIMove_AIFinalizeSpecialMove(SithAIControlBlock* pLocal, int type);
 void J3DAPI sithAIMove_AIJump(SithAIControlBlock* pLocal, rdVector3* movePos, float a3);
 void J3DAPI sithAIMove_AIStop(SithAIControlBlock* pLocal);
 void J3DAPI sithAIMove_SetGoalReached(SithAIControlBlock* pLocal);
 void J3DAPI sithAIMove_Unreachable(SithAIControlBlock* pLocal);
 void J3DAPI sithAIMove_StopAIMovement(SithAIControlBlock* pLocal);
 void J3DAPI sithAIMove_ResetAILook(SithAIControlBlock* pLocal);
+
 void J3DAPI sithAIMove_UpdateBoss(SithAIControlBlock* pLocal, float secDeltaTime);
 void J3DAPI sithAIMove_sub_499090(SithAIControlBlock* pLocal, float secDeltaTime);
 void J3DAPI sithAIMove_sub_4996C0(SithAIControlBlock* pLocal, float a2);
