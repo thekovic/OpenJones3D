@@ -14,6 +14,7 @@
 
 #include <sith/World/sithWorld.h>
 
+#include <std/General/stdMath.h>
 #include <std/General/stdMemory.h>
 #include <std/General/stdUtil.h>
 
@@ -35,6 +36,11 @@ void rdPolyline_ResetGlobals(void)
 rdPolyline* J3DAPI rdPolyline_New(const char* pName, const char* pMatFilename, const char* pMatFilename2, float length, float baseRadius, float tipRadius, rdGeometryMode geoMode, rdLightMode lightMode, const rdVector4* pColor)
 {
     J3D_UNUSED(pMatFilename2);
+    return rdPolyline_NewEx(pName, pMatFilename, length, baseRadius, tipRadius, geoMode, lightMode, pColor, (rdPolylineFlags)0);
+}
+
+rdPolyline* J3DAPI rdPolyline_NewEx(const char* pName, const char* pMatFilename, float length, float baseRadius, float tipRadius, rdGeometryMode geoMode, rdLightMode lightMode, const rdVector4* pColor, rdPolylineFlags flags)
+{
     rdPolyline* pLine = (rdPolyline*)STDMALLOC(sizeof(rdPolyline));
     if ( !pLine )
     {
@@ -43,6 +49,8 @@ rdPolyline* J3DAPI rdPolyline_New(const char* pName, const char* pMatFilename, c
     }
 
     rdPolyline_NewEntry(pLine, pName, pMatFilename, length, baseRadius, tipRadius, geoMode, lightMode, pColor);
+    pLine->flags = flags;
+
     return pLine;
 }
 
@@ -210,6 +218,17 @@ int J3DAPI rdPolyline_Draw(const rdThing* pLine, const rdMatrix34* pOrient)
     rdPolyline_aView[3].y = viewMatrix.dvec.y;
     rdPolyline_aView[3].z = pPolyline->baseRadius * sinv + 0.0f * cosv + viewMatrix.dvec.z;
 
+    // Added: Bias vertices them slightly toward camera (view space) to resolve Z-fighting
+    float depthBias = 0.0001f;
+    for ( int i = 0; i < 2; ++i )
+    {
+        rdVector3 toCamera;
+        rdVector_Normalize3(&toCamera, &rdPolyline_aView[i]);
+        rdPolyline_aView[i].x -= toCamera.x * depthBias;
+        rdPolyline_aView[i].y -= toCamera.y * depthBias;
+        rdPolyline_aView[i].z -= toCamera.z * depthBias;
+    }
+
     rdPolyline_DrawFace(pLine, &pPolyline->face, rdPolyline_aView, pPolyline->apUVs);
     return 1;
 }
@@ -222,6 +241,39 @@ void J3DAPI rdPolyline_DrawFace(const rdThing* pLine, const rdFace* pFace, const
     {
         // TODO: Maybe log error?
         return;
+    }
+
+
+    // Added: When uvtile flag set, tile polyline UVs instead of stretch as done by default.
+    //        This will make texture to repeat multiple times throughout the polyline.
+    if ( (pLine->data.pPolyline->flags & RDPOLYLINE_UVTILE) != 0 )
+    {
+        float actualLength = rdVector_Dist3(&aVerts[0], &aVerts[3]);
+        if ( actualLength > 0.0f )
+        {
+            rdPolyline* pPolyline = pLine->data.pPolyline;
+            float avgRadius = (pPolyline->baseRadius + pPolyline->tipRadius) / 2.0f;
+            float circumf = STDMATH_CIRCLE_CIRCUMF(avgRadius);
+
+            // Calculate what the repeat would be
+            float texRepeat = actualLength / circumf;
+            if ( texRepeat < 0.1f )
+            {
+                texRepeat = 0.1f;
+            }
+
+            // Tile texture based on length
+            rdVector2 uvs[4];
+            uvs[0].x = texRepeat;
+            uvs[0].y = 0.0f;
+            uvs[1].x = texRepeat;
+            uvs[1].y = 1.0f;
+            uvs[2].x = 0.0f;
+            uvs[2].y = 1.0f;
+            uvs[3].x = 0.0f;
+            uvs[3].y = 0.0f;
+            aTVerts = uvs;
+        }
     }
 
     // Transform verts to screen space and assign to poly

@@ -149,6 +149,13 @@ typedef enum erdClipOutcode
     RDCLIP_OUTCODE_TOP    = 0x1000,
 } rdClipOutcode;
 
+// New flags not from OG engine
+typedef enum eRdPolyLineFlags
+{
+    RDPOLYLINE_UVTILE = 0x01
+} rdPolylineFlags;
+
+
 typedef struct srdCacheProcEntry rdCacheProcEntry;
 typedef struct srdFace rdFace;
 typedef struct srdKeyframe rdKeyframe;
@@ -433,6 +440,8 @@ typedef struct srdPolyline
     rdLightMode lightMode;
     rdFace face;
     rdVector2* apUVs;
+
+    rdPolylineFlags flags; // Added: new field
 } rdPolyline;
 
 typedef struct srdParticle
