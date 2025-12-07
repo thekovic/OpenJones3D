@@ -1886,13 +1886,13 @@ SithThing* J3DAPI sithThing_CreateThingAtPos(const SithThing* pTemplate, const r
     SithThing* pThing = sithThing_Create(pTemplate->type);
     if ( !pThing )
     {
-        SITHLOG_STATUS("Failed to create thing from template %s.\n", pTemplate->aName);
+        SITHLOG_ERROR("Failed to create thing from template %s.\n", pTemplate->aName); // Altered: Changed log level to error from status
         return NULL;
     }
 
     if ( pTemplate->aName[0] == '_' )
     {
-        SITHLOG_ERROR("Warning -- create object from base-class template %s\n", pTemplate->aName);
+        SITHLOG_WARNING("Warning -- create object from base-class template %s\n", pTemplate->aName); // Altered: Changed log level to warning from erro
     }
 
     sithThing_SetThingBasedOn(pThing, pTemplate);
@@ -3393,7 +3393,7 @@ int sithThing_GetFreeThingIndex(void)
 {
     if ( !sithThing_numFreeThings )
     {
-        SITHLOG_STATUS("Warning: out of object space - Create failure.\n");
+        SITHLOG_WARNING("Warning: out of object space - Create failure.\n"); // Altered: Changed log level to warning from status
         return -1;
     }
 
