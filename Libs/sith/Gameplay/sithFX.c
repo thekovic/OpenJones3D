@@ -1251,9 +1251,14 @@ SithThing* J3DAPI sithFX_CreatePolylineThing(const SithThing* pSourceThing, Sith
     //        Corrects visual rendering of polyline
     rdPolylineFlags flags = { 0 };
     if ( streqi(pMaterial->aName, "fhead_rope_sde.mat")
-        || streqi(pMaterial->aName, "riv_floor_metal.mat") )
+        || streqi(pMaterial->aName, "riv_floor_metal.mat")
+        || streqi(pMaterial->aName, "obj_vol_wire_tram.mat") )
     {
         flags = RDPOLYLINE_UVTILE;
+        if ( streqi(pMaterial->aName, "obj_vol_wire_tram.mat") ) // Needs to be rotated as texture is oriented up instead of right
+        {
+            flags |= RDPOLYLINE_UVROTATE;
+        }
     }
 
     // Altered Replaced rdPolyline_New with rdPolyline_NewEx to add flags
