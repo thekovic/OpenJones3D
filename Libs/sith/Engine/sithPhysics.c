@@ -2746,7 +2746,13 @@ void J3DAPI sithPhysics_PowerOffMineCar(SithThing* pThing)
     SithMineCarState* pCarState = &pThing->userblock.pMinecar->state;
     if ( pCarState->bEngineRunning ) // Added
     {
+        // Stop engine sound fx
         sithSoundClass_StopMode(pThing, SITHSOUNDCLASS_LWALKMETAL);
+
+        // Play engine stop sound fx
+        // Added: Moved from sithVehicleControls module
+        sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_STOPMOVE);// engine stop sol_minecar_motor_stop.wav
+
         if ( pCarState->pEngineAnim && pCarState->bEngineAnim )
         {
             sithAnimate_Stop(pCarState->pEngineAnim);

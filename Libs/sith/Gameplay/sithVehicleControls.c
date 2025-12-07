@@ -935,7 +935,8 @@ void J3DAPI sithVehicleControls_ProcessMineCarMove(SithThing* pThing, float secD
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STRAFERIGHT, sithVehicleControls_PuppetCallback);
         }
 
-        sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_STOPMOVE);// engine stop; sol_minecar_motor_stop.wav
+        // Removed: Moved to sithPhysics module
+        //sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_STOPMOVE);// engine stop; sol_minecar_motor_stop.wav
 
         pThing->thingInfo.actorInfo.bControlsDisabled    = 1;
         sithVehicleControls_curMineCarState.unboardState = SITHMINECARCONTROLS_UNBOARD_NONE;
