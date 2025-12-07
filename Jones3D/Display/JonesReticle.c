@@ -283,7 +283,7 @@ inline float J3DAPI JonesReticle_EaseOut(float t)
 }
 
 /**
-* Project 3D world position to screen space using engine's camera system
+* Project 3D world position to screen space using camera
 * Returns true if successful, false if behind camera or off-screen
 */
 bool J3DAPI JonesReticle_ProjectToScreen(const rdVector3* pWorldPos, const rdCamera* pCamera, JonesReticleScreenPos* pScreenPosOut)
@@ -428,16 +428,7 @@ static float J3DAPI JonesReticle_CalcDistanceScale(const JonesAimReticle* reticl
 
     // Calculate distance from camera to target
     rdVector3 camPos = rdCamera_g_camMatrix.dvec;
-    rdVector3 delta;
-    rdVector_Sub3(&delta, pTargetPos, &camPos);
-    float distance = rdVector_Len3(&delta);
-
-    distance = rdVector_Dist3(pTargetPos, &camPos);
-
-
-
-
-
+    float distance = rdVector_Dist3(pTargetPos, &camPos);
 
     // Clamp distance to min/max range
     if ( distance <= reticle->minDistance )
@@ -450,35 +441,16 @@ static float J3DAPI JonesReticle_CalcDistanceScale(const JonesAimReticle* reticl
         return reticle->maxDistanceScale;
     }
 
+    // inverse-distance interpolation
+    float invMin  = 1.0f / reticle->maxDistance;
+    float invMax  = 1.0f / reticle->minDistance;
+    float invDist = 1.0f / distance;
 
-
-
-    // Interpolate scale based on distance
-  /*  float t = (distance - reticle->minDistance) / (reticle->maxDistance - reticle->minDistance);
-    return reticle->minDistanceScale + (reticle->maxDistanceScale - reticle->minDistanceScale) * (t);*/
-
-        // inverse-distance interpolation
-    float invMin = 1.0f / reticle->maxDistance;
-    float invMax = 1.0f / reticle->minDistance;
-    float inv = 1.0f / distance;
-
-    // remap inv from [invMax .. invMin] to [0..1]
-    float t = (inv - invMax) / (invMin - invMax);
+    // remap invDist from [invMax .. invMin] to [0..1]
+    float t = (invDist - invMax) / (invMin - invMax);
 
     // lerp scale between minScale..maxScale (or vice versa)
     return reticle->minDistanceScale + (reticle->maxDistanceScale - reticle->minDistanceScale) * t;
-
-
-
-        // Normalize distance to 0-1 range
-    //float t = (distance - reticle->minDistance) / (reticle->maxDistance - reticle->minDistance);
-
-    //// Invert t so 0=far (small), 1=close (large)
-    //t = 1.0f - t;
-
-    //// Map to scale range
-    //float scale = reticle->maxDistanceScale + (reticle->minDistanceScale - reticle->maxDistanceScale) * t;
-    //return scale;
 }
 
 // Main function to draw the complete lock-on reticle with animation
@@ -505,7 +477,7 @@ void J3DAPI JonesReticle_Draw(const JonesAimReticle* reticle, const JonesReticle
             // Scale from large to normal size
             float t          = JonesReticle_EaseOut(reticle->animTime);
             float scaleRange = reticle->lockStartScale - 1.0f;
-            animScale        = reticle->lockStartScale - (scaleRange * t); // Start at 2.5x, end at 1.0x
+            animScale        = reticle->lockStartScale - (scaleRange * t); // Shrink
             alphaMultiplier  = t; // Fade in
         }
         break;
@@ -520,7 +492,7 @@ void J3DAPI JonesReticle_Draw(const JonesAimReticle* reticle, const JonesReticle
             // Scale from normal to large and fade out
             float t          = JonesReticle_EaseOut(reticle->animTime);
             float scaleRange = reticle->unlockEndScale - 1.0f;
-            animScale        = 1.0f + (scaleRange * t); // Grow from 1.0x to 1.5x
+            animScale        = 1.0f + (scaleRange * t); // Grow
             alphaMultiplier  = 1.0f - t; // Fade out
         }
         break;
