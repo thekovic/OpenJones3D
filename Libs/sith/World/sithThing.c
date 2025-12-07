@@ -1198,12 +1198,25 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
     tSoundHandle hSnd = 0;
     if ( (hitType & SITH_DAMAGE_IMPACT) != 0 )
     {
-        if ( !sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_HURTIMPACT) && (pThing->flags & (SITH_TF_EARTH | SITH_TF_SNOW | SITH_TF_WOOD)) == 0 )
+        if ( !sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_HURTIMPACT) )
         {
-            /* v2 = rand();
-             (v2 & 0xFF) = abs32(v2);*/
-            int sndIndex = rand() % 2 + 141; // gen_ricochet_a.wav or gen_ricochet_b.wav
-            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(sndIndex));
+            if ( (pThing->flags & SITH_TF_EARTH) != 0 )
+            {
+                hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(84)); // gen_machete_hit_vine.wav
+            }
+            else if ( (pThing->flags & SITH_TF_WOOD) != 0 )
+            {
+                hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(83)); // gen_machete_hit_wood.wav
+            }
+            else if ( (pThing->flags & SITH_TF_SNOW) != 0 )
+            {
+                hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(110)); // fol_in_jumpsnow.wav
+            }
+            else
+            {
+                int sndIndex = rand() % 2 + 141; // gen_ricochet_a.wav or gen_ricochet_b.wav
+                hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(sndIndex));
+            }
         }
     }
     else if ( (hitType & SITH_DAMAGE_MACHETE) != 0 && !sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_HURTMACHETE) )
@@ -1212,9 +1225,15 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
         {
             hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(82)); // 0x8052 - gen_machete_hit_metal.wav
         }
-        else if ( (pThing->flags & (SITH_TF_EARTH | SITH_TF_SNOW)) != 0 )
+        else if ( (pThing->flags & (SITH_TF_EARTH)) != 0 )
         {
             hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(84)); // 0x8054 - gen_machete_hit_vine.wav
+        }
+        // Altered: OG snow was handled via earth sound
+        else if ( (pThing->flags & (SITH_TF_SNOW)) != 0 )
+        {
+
+            hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(110)); // fol_in_jumpsnow.wav
         }
         else if ( (pThing->flags & SITH_TF_WOOD) != 0 )
         {
@@ -1228,7 +1247,7 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
 
     if ( hSnd )
     {
-        sithSoundMixer_PlaySoundThing(hSnd, pThing, 1.0f, 0.5f, 2.5f, (SoundPlayFlag)0);
+        sithSoundMixer_PlaySoundThing(hSnd, pThing, 1.0f, 0.15f, 5.8f, (SoundPlayFlag)0);
     }
 }
 
