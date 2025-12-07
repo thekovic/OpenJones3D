@@ -963,18 +963,19 @@ void J3DAPI sithSurface_PlaySurfaceHitSound(const SithSurface* pSurf, SithThing*
     {
         if ( (pSurf->flags & SITH_SURFACE_METAL) != 0 )
         {
-            tSoundHandle  hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(81)); // gen_machete_hit_stone.wav
-            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+            uint32_t sndIdx = rand() % 2 + 141; // gen_ricochet_a.wav or gen_ricochet_b.wav
+            tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(sndIdx));
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else if ( (pSurf->flags & SITH_SURFACE_SNOW) != 0 )
         {
             tSoundHandle  hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(110)); // fol_in_jumpsnow.wav
-            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else if ( (pSurf->flags & (SITH_SURFACE_EARTH | SITH_SURFACE_EARTHECHO)) != 0 )
         {
             tSoundHandle  hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(21)); // fol_in_rrunearth.wav
-            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else if ( (pSurf->flags & (SITH_SURFACE_WATER | SITH_SURFACE_SHALLOWWATER)) != 0 )
         {
@@ -984,12 +985,12 @@ void J3DAPI sithSurface_PlaySurfaceHitSound(const SithSurface* pSurf, SithThing*
         else if ( (pSurf->flags & SITH_SURFACE_WEB) != 0 )
         {
             tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(85)); // gen_machete_hit_web.wav
-            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 0.65f, 0.1f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else if ( (pSurf->flags & (SITH_SURFACE_WOODECHO | SITH_SURFACE_WOOD)) != 0 )
         {
             tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(83)); // gen_machete_hit_wood.wav
-            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 0.65f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
         }
         else if ( (pSurf->flags & (SITH_SURFACE_LAVA)) != 0 )
         {
@@ -997,12 +998,9 @@ void J3DAPI sithSurface_PlaySurfaceHitSound(const SithSurface* pSurf, SithThing*
         }
         else
         {
-            // rand  gen_ricochet_a.wav or gen_ricochet_b.wav
-            size_t sndIdx = 141;
-            sndIdx += (rand() % 2);
-
+            uint32_t sndIdx = rand() % 2 + 141; // gen_ricochet_a.wav or gen_ricochet_b.wav
             tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(sndIdx));
-            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 0.9f, 0.2f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
+            sithSoundMixer_PlaySoundPos(hSnd, &pThing->pos, pThing->pInSector, 1.0f, 0.15f, 5.8f, SOUNDPLAY_ABSOLUTE_POS);
         }
     }
 #endif
