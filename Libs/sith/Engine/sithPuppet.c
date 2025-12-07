@@ -191,7 +191,7 @@ void sithPuppet_InstallHooks(void)
     J3D_HOOKFUNC(sithPuppet_PlayKey);
     J3D_HOOKFUNC(sithPuppet_GetTrackNumForGUID);
     J3D_HOOKFUNC(sithPuppet_StopKey);
-    J3D_HOOKFUNC(sithPuppet_StopForceMove);
+    J3D_HOOKFUNC(sithPuppet_FinishForceMove);
     J3D_HOOKFUNC(sithPuppet_DefaultCallback);
     J3D_HOOKFUNC(sithPuppet_ReadStaticPuppetsListText);
     J3D_HOOKFUNC(sithPuppet_WriteStaticPuppetsListBinary);
@@ -480,7 +480,7 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
                         break;
 
                     default:
-                        sithPuppet_StopForceMove(pThing, 1);
+                        sithPuppet_FinishForceMove(pThing, 1);
                         bSkipUpdatingJoints = true;
                         break;
                 }
@@ -1627,7 +1627,7 @@ void J3DAPI sithPuppet_SwapSubMode(SithThing* pThing, SithPuppetSubMode newMode,
     }
 }
 
-void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks)
+void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
 {
     SITH_ASSERTREL(pThing);
 
@@ -1912,7 +1912,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                     {
                         if ( (pTrack->pSubmode->flags & RDKEYFRAME_FORCEMOVE) != 0 )
                         {
-                            sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
+                            sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/0);
                         }
 
                         break;
@@ -2434,7 +2434,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
 
                     if ( sithCollision_CheckFloorDistance(pThing, &moveNorm) > 0.14f )
                     {
-                        sithPuppet_StopForceMove(pThing, 1);
+                        sithPuppet_FinishForceMove(pThing, 1);
 
                         if ( pThing->moveStatus != SITHPLAYERMOVE_JUMPBACK && pThing->moveStatus != SITHPLAYERMOVE_FALLING )
                         {

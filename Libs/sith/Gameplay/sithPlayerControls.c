@@ -412,7 +412,7 @@ void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKe
                     if ( sithCollision_CheckFloorDistance(pThing, &downDir) > (0.09f + 0.02f) ) // if more than 20cm from ground. Note 0.09 (90cm)is height from bottom to center point of standing indy
                     {
                         // Hight to floor is more than 0.2m, stop animation and make indy fall.
-                        sithPuppet_StopForceMove(pThing, /*bStopTracks=*/1);
+                        sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/1);
 
                         // Give a gentle push in forward direction, so forward fall animation will play
                         rdVector_Scale3(&pThing->moveInfo.physics.velocity, &pThing->orient.lvec, 0.25f);
@@ -1694,7 +1694,7 @@ void J3DAPI sithPlayerControls_ProcessFallingMove(SithThing* pThing, float secDe
 
             if ( pThing->thingInfo.actorInfo.bForceMovePlay == 1 )
             {
-                sithPuppet_StopForceMove(pThing, /*bStopTracks=*/1);
+                sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/1);
             }
 
             // Grab the ledge

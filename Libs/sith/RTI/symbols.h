@@ -553,7 +553,7 @@
 #define sithPuppet_PlayKey_TYPE int (J3DAPI*)(rdPuppet*, rdKeyframe*, int, int, rdKeyframeFlags, rdPuppetTrackCallback)
 #define sithPuppet_GetTrackNumForGUID_TYPE int (J3DAPI*)(const SithThing*, uint32_t)
 #define sithPuppet_StopKey_TYPE int (J3DAPI*)(rdPuppet*, int, float)
-#define sithPuppet_StopForceMove_TYPE void (J3DAPI*)(SithThing*, int)
+#define sithPuppet_FinishForceMove_TYPE void (J3DAPI*)(SithThing*, int)
 #define sithPuppet_DefaultCallback_TYPE void (J3DAPI*)(SithThing*, int, rdKeyMarkerType)
 #define sithPuppet_ReadStaticPuppetsListText_TYPE int (J3DAPI*)(SithWorld*, int)
 #define sithPuppet_WriteStaticPuppetsListBinary_TYPE int (J3DAPI*)(tFileHandle, const SithWorld*)

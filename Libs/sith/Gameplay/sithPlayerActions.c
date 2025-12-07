@@ -784,7 +784,7 @@ void J3DAPI sithPlayerActions_ClimbPullUp(SithThing* pThing)
 
     sithPuppet_PlayForceMoveMode(pThing, SITHPUPPETSUBMODE_CLIMBPULLINGUP, NULL);
     sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
-    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory when climbing. Re-enabled in sithPuppet_StopForceMove
+    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory when climbing. Re-enabled in sithPuppet_FinishForceMove
                                                                        //        Originally it was enabled.
 }
 
@@ -1559,7 +1559,7 @@ void J3DAPI sithPlayerActions_Crawl2Stand(SithThing* pThing)
 
     if ( bCanMove )
     {
-        sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory items when crawling to stand. Re-enabled in sithPuppet_StopForceMove
+        sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory items when crawling to stand. Re-enabled in sithPuppet_FinishForceMove
         sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
         sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALKBACK);
 
@@ -2560,7 +2560,7 @@ int J3DAPI sithPlayerActions_FindAndAttachToClimbWall(SithThing* pThing)
             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLIDLE, NULL);
 
             pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
-            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory when climbing. Re-enabled in sithPuppet_StopForceMove
+            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0); // Fixed: Disable inventory when climbing. Re-enabled in sithPuppet_FinishForceMove
                                                                                //        Originally it was bug and inventory was enabled when climbing on wall.
             break;
         }

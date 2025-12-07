@@ -554,7 +554,7 @@
 #define sithPuppet_PlayKey_ADDR 0x00459480
 #define sithPuppet_GetTrackNumForGUID_ADDR 0x004595E0
 #define sithPuppet_StopKey_ADDR 0x00459660
-#define sithPuppet_StopForceMove_ADDR 0x004596E0
+#define sithPuppet_FinishForceMove_ADDR 0x004596E0
 #define sithPuppet_DefaultCallback_ADDR 0x00459CC0
 #define sithPuppet_ReadStaticPuppetsListText_ADDR 0x0045A810
 #define sithPuppet_WriteStaticPuppetsListBinary_ADDR 0x0045A990

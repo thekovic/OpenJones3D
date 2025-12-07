@@ -157,7 +157,7 @@ void J3DAPI sithWhip_FinishWhipSwing(SithThing* pThing)
 {
     if ( pThing->thingInfo.actorInfo.bForceMovePlay == 1 )
     {
-        sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
+        sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/0);
     }
 
     SithCog* pCog = sithCog_GetCogByIndex(SITHWORLD_STATICINDEX(8)); // weap_whip.cog
@@ -389,7 +389,7 @@ void J3DAPI sithWhip_WhipClimbPuppetCallback(SithThing* pThing, int track, rdKey
     {
         if ( pThing->thingInfo.actorInfo.bForceMovePlay == 1 )
         {
-            sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
+            sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/0);
         }
 
         sithPuppet_FreeTrackByIndex(pThing, track);
@@ -403,7 +403,7 @@ void J3DAPI sithWhip_ClimbDismountPuppetCallback(SithThing* pThing, int track, r
         sithWhip_bClimbDismountFinish = true;
         if ( pThing->thingInfo.actorInfo.bForceMovePlay == 1 )
         {
-            sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
+            sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/0);
         }
 
         sithPuppet_FreeTrackByIndex(pThing, track);

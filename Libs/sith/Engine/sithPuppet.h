@@ -65,7 +65,7 @@ int J3DAPI sithPuppet_GetTrackNumForGUID(const SithThing* pThing, uint32_t guid)
 
 int J3DAPI sithPuppet_StopKey(rdPuppet* pPuppet, int track, float fadeTime);
 void J3DAPI sithPuppet_SwapSubMode(SithThing* pThing, SithPuppetSubMode newMode, SithPuppetSubMode oldMode); // Added: From debug version
-void J3DAPI sithPuppet_StopForceMove(SithThing* pThing, int bStopTracks);
+void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks);
 
 void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarkerType markerType);
 
