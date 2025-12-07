@@ -973,7 +973,7 @@ void J3DAPI sithFX_CreateChalkMark(const rdVector3* pPos, const SithSurface* pAt
         bSearch = false;
         for ( size_t i = 0; i < sithFX_g_numChalkMarks && !bSearch && sithFX_g_aChalkMarks[i]; i++ )
         {
-            if ( strcmp(sithFX_g_aChalkMarks[i]->aName, sithFX_aChalkMarkNames[tplNum]) == 0 )
+            if ( streq(sithFX_g_aChalkMarks[i]->aName, sithFX_aChalkMarkNames[tplNum]) )
             {
                 bSearch = true;
             }
@@ -1032,9 +1032,9 @@ SithThing* J3DAPI sithFX_CreateThingOnSurface(const SithThing* pTemplate, const 
 
 void J3DAPI sithFX_UpdatePolyline(SithThing* pThing)
 {
-    if ( pThing->renderData.type == RD_THING_POLYLINE && strcmp(pThing->aName, "+laserbeam") )
+    if ( pThing->renderData.type == RD_THING_POLYLINE && !streq(pThing->aName, "+laserbeam") ) // TODO: maybe should also check for polyline mat gen_a4sfx_rbbeam_b.mat, as robot creates laser via CreatPolylineThing and not via CreatLaser function
     {
-        if ( strcmp(pThing->aName, "+lightning") == 0 )
+        if ( streq(pThing->aName, "+lightning") )
         {
             rdPolyline* pPolyline = pThing->renderData.data.pPolyline;
             pPolyline->face.texVertOffset.y = (SITH_RANDF() - 0.69999999f) * 0.079999998f + pPolyline->face.texVertOffset.y;
@@ -1044,8 +1044,18 @@ void J3DAPI sithFX_UpdatePolyline(SithThing* pThing)
                 pThing->renderData.data.pPolyline->face.matCelNum = (int32_t)(SITH_RAND() * (double)numCels);
             }
         }
-        else if ( strcmp(pThing->aName, "+plcogend") == 0 )
+        else if ( streq(pThing->aName, "+plcogend") )
         {
+            // Fixed: Added parent null check.
+            //        There might be issue in savegame system. Spoted this issue 
+            //        while loading nub game at robot scene, and indy was hit by robo laser.
+            if ( !pThing->pParent ) // unlikely
+            {
+                SITHLOG_ERROR("sithFX_UpdatePolyline: Strange the parent thing is gone, destroying polyline ...\n");
+                sithThing_DestroyThing(pThing);
+                return;
+            }
+
             rdVector3 look;
             rdVector_Sub3(&look, &pThing->pParent->pos, &pThing->pos);
             float lineLen = rdVector_Normalize3Acc(&look);
@@ -1053,7 +1063,7 @@ void J3DAPI sithFX_UpdatePolyline(SithThing* pThing)
             rdMatrix_BuildFromLook34(&pThing->orient, &look);
             pThing->renderData.data.pPolyline->length = lineLen;
         }
-        else if ( strcmp(pThing->aName, "+plcog") == 0 )
+        else if ( streq(pThing->aName, "+plcog") )
         {
             rdVector3 look;
             rdVector_Sub3(&look, &pThing->forceMoveStartPos, &pThing->pos);
