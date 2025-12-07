@@ -739,7 +739,7 @@
 #define sithAIInstinct_sub_494FF0_TYPE void (J3DAPI*)(const SithThing*, float)
 #define sithWhip_UpdateWhipAim_TYPE void (J3DAPI*)(SithThing*)
 #define sithWhip_StartWhipSwing_TYPE signed int (J3DAPI*)(SithThing*)
-#define sithWhip_DeactivateWhip_TYPE void (J3DAPI*)(SithThing*)
+#define sithWhip_FinishWhipSwing_TYPE void (J3DAPI*)(SithThing*)
 #define sithWhip_StartWhipClimb_TYPE int (J3DAPI*)(SithThing*, SithThing*)
 #define sithWhip_SetActorWhipClimbIdle_TYPE void (J3DAPI*)(SithThing*)
 #define sithWhip_FinishWhipClimbDismount_TYPE void (J3DAPI*)(SithThing*)

@@ -397,23 +397,42 @@ void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKe
                     {
                         sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, (SoundPlayFlag)0);
                     }
-                    break;
-                }
+                } break;
 
                 case RDKEYMARKER_ACTIVATERIGHTARMREST:
                 {
                     tSoundHandle hSnd = Sound_GetSoundHandle(SITHWORLD_STATICINDEX(24u)); // 0x8018 - fol_in_lrunhard.wav
+                    sithCamera_RestoreExtCamera();
+
+                #ifdef J3D_QOL_IMPROVEMENTS
+                    // Added
+                    // Player has landed after whip swing, check if height distance to solid floor is more than 0.2m.
+                    // And in this case stop animation and make player fall
+                    rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
+                    if ( sithCollision_CheckFloorDistance(pThing, &downDir) > (0.09f + 0.02f) ) // if more than 20cm from ground. Note 0.09 (90cm)is height from bottom to center point of standing indy
+                    {
+                        // Hight to floor is more than 0.2m, stop animation and make indy fall.
+                        sithPuppet_StopForceMove(pThing, /*bStopTracks=*/1);
+
+                        // Give a gentle push in forward direction, so forward fall animation will play
+                        rdVector_Scale3(&pThing->moveInfo.physics.velocity, &pThing->orient.lvec, 0.25f);
+
+                        pThing->moveStatus = SITHPLAYERMOVE_FALLING;
+                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_FALL, NULL);
+
+                        hSnd = 0; // don't play land sound
+                    }
+                #endif
+                    // Altered: Moved following if scope here form start of the case sope
                     if ( hSnd )
                     {
                         sithSoundMixer_PlaySound(hSnd, 1.0f, 0.0f, (SoundPlayFlag)0);
                     }
-                    sithCamera_RestoreExtCamera();
-                    break;
-                }
+                }  break;
 
                 case 0:
                     pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-                    sithWhip_DeactivateWhip(pThing);
+                    sithWhip_FinishWhipSwing(pThing);
                     break;
             }
             break;

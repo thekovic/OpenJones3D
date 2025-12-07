@@ -2018,26 +2018,12 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         #ifdef J3D_QOL_IMPROVEMENTS
             switch ( pThing->moveStatus )
             {
-                case SITHPLAYERMOVE_WHIPSWINGING: // Whip swing land key marker
+                case SITHPLAYERMOVE_WHIPSWINGING: // Here marker type is whip swing land
                 {
-                    // Added
-                    // Player has landed after whip swing, check if height distance to solid floor is more than 0.2m.
-                    // And in this case stop animation and make player fall
-                    rdVector3 downDir = RDVECTOR_NEG3(rdroid_g_zVector3);
-                    if ( sithCollision_CheckFloorDistance(pThing, &downDir) > 0.02f )
-                    {
-                        // Hight to floor is more than 0.2m, stop animation and make fall.
-                        sithPuppet_StopForceMove(pThing, /*bStopTracks=*/1);
-
-                        // Give a little push in forward direction
-                        pThing->moveInfo.physics.velocity.x = pThing->orient.lvec.x * 0.25f;
-                        pThing->moveInfo.physics.velocity.y = pThing->orient.lvec.y * 0.25f;
-                        pThing->moveInfo.physics.velocity.z = pThing->orient.lvec.z * 0.25f;
-
-                        pThing->moveStatus = SITHPLAYERMOVE_FALLING;
-                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_FALL, NULL);
-                    }
-                }
+                    // Added: Call player controls callback to handle possible whip swing land in mid air
+                    pThing->thingInfo.actorInfo.bControlsDisabled = 1; // Callback require disabled controls
+                    sithPlayerControls_PuppetCallback(pThing, track, markerType);
+                } break;
             };
         #endif
         }  break;

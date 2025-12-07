@@ -740,7 +740,7 @@
 #define sithAIInstinct_sub_494FF0_ADDR 0x00494FF0
 #define sithWhip_UpdateWhipAim_ADDR 0x004A0120
 #define sithWhip_StartWhipSwing_ADDR 0x004A01C0
-#define sithWhip_DeactivateWhip_ADDR 0x004A0450
+#define sithWhip_FinishWhipSwing_ADDR 0x004A0450
 #define sithWhip_StartWhipClimb_ADDR 0x004A04A0
 #define sithWhip_SetActorWhipClimbIdle_ADDR 0x004A05C0
 #define sithWhip_FinishWhipClimbDismount_ADDR 0x004A0620

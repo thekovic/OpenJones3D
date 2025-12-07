@@ -12,7 +12,7 @@ J3D_EXTERN_C_START
 void J3DAPI sithWhip_UpdateWhipAim(SithThing* pThing);
 
 signed int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing);
-void J3DAPI sithWhip_DeactivateWhip(SithThing* pThing);
+void J3DAPI sithWhip_FinishWhipSwing(SithThing* pThing);
 
 int J3DAPI sithWhip_StartWhipClimb(SithThing* pThing, SithThing* pWhippedThing);
 

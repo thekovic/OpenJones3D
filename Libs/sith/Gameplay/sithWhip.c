@@ -42,7 +42,7 @@ static bool sithWhip_bFoundWhipClimbThing = false; // Unused. Added: Init. to fa
 
 void J3DAPI sithWhip_WhipClimbDismount(SithThing* pThing);
 void J3DAPI sithWhip_CreatePlayerWhip(SithThing* pThing);
-void sithWhip_RemoveWhip(void);;
+void sithWhip_RemoveWhip(void);
 
 int J3DAPI sithWhip_SearchWhipSwingThing(SithThing* pThing);
 int J3DAPI sithWhip_SearchWhipClimbThing(SithThing* pThing);
@@ -51,7 +51,7 @@ void sithWhip_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithWhip_UpdateWhipAim);
     J3D_HOOKFUNC(sithWhip_StartWhipSwing);
-    J3D_HOOKFUNC(sithWhip_DeactivateWhip);
+    J3D_HOOKFUNC(sithWhip_FinishWhipSwing);
     J3D_HOOKFUNC(sithWhip_StartWhipClimb);
     J3D_HOOKFUNC(sithWhip_SetActorWhipClimbIdle);
     J3D_HOOKFUNC(sithWhip_FinishWhipClimbDismount);
@@ -156,18 +156,25 @@ int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing)
     return 1;
 }
 
-void J3DAPI sithWhip_DeactivateWhip(SithThing* pThing)
+void J3DAPI sithWhip_FinishWhipSwing(SithThing* pThing)
 {
     if ( pThing->thingInfo.actorInfo.bForceMovePlay == 1 )
     {
-        sithPuppet_StopForceMove(pThing, 0);
+        sithPuppet_StopForceMove(pThing, /*bStopTracks=*/0);
     }
 
     SithCog* pCog = sithCog_GetCogByIndex(SITHWORLD_STATICINDEX(8)); // weap_whip.cog
     if ( pCog )
     {
         sithCog_SendMessage(pCog, SITHCOG_MSG_DEACTIVATED, SITHCOG_SYM_REF_THING, -99, SITHCOG_SYM_REF_THING, pThing->idx, 0);
-        sithWhip_pWhipThing = NULL; // TODO: Not freed
+
+        // Added: Added check for whip thing and in case not destried notify it's cog
+        if ( sithWhip_pWhipThing && sithWhip_pWhipThing->type != SITH_THING_FREE )
+        {
+            // Notify script to detach & destroy whip and restore indy weapon model
+            sithCog_ThingSendMessageEx(sithWhip_pWhipThing, NULL, SITHCOG_MSG_CALLBACK, 0, RDKEYMARKER_TURNOFF, 0, 0);
+        }
+        sithWhip_pWhipThing = NULL; // Note, thing whip actor should be destroyed by weap_whip.cog script when calling DetachThingMesh
     }
 }
 
@@ -176,7 +183,7 @@ int J3DAPI sithWhip_StartWhipClimb(SithThing* pThing, SithThing* pWhippedThing)
     SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER));
 
     sithCamera_RestoreExtCamera();
-    sithInventory_SetSwimmingInventory(pThing, 0);
+    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0);
     sithWeapon_SetLastWeapon(SITHWEAPON_PISTOL);
 
     pThing->moveStatus = SITHPLAYERMOVE_WHIPCLIMB_START;
