@@ -1667,156 +1667,6 @@ typedef struct sSithVehicleExhaustInfo
 } SithVehicleExhaustInfo;
 static_assert(sizeof(SithVehicleExhaustInfo) == 136, "sizeof(SithVehicleExhaustInfo) == 136");
 
-
-typedef struct sSithJeepUserBlock
-{
-    int type;
-    SithVehicleExhaustInfo exhaustInfo;
-    int unknown35;
-    int unknown36;
-    int unknown37;
-    int unknown38;
-    int unknown39;
-    int unknown40;
-    int unknown41;
-    int unknown42;
-    int unknown43;
-    int unknown44;
-    int unknown45;
-    int unknown46;
-    int unknown47;
-    int unknown48;
-    int unknown49;
-    int unknown50;
-    int unknown51;
-    int unknown52;
-    int unknown53;
-    int unknown54;
-    int unknown55;
-    int unknown56;
-    int unknown57;
-    int unknown58;
-    int unknown59;
-    int unknown60;
-    int unknown61;
-    int unknown62;
-    int unknown63;
-    int unknown64;
-    int unknown65;
-    int unknown66;
-    int unknown67;
-    int unknown68;
-    int unknown69;
-    int unknown70;
-    int unknown71;
-    int unknown72;
-    int unknown73;
-    int unknown74;
-    int unknown75;
-    int unknown76;
-    int unknown77;
-    int unknown78;
-    int unknown79;
-    int unknown80;
-    int unknown81;
-    int unknown82;
-    int unknown83;
-    int unknown84;
-    int unknown85;
-    int unknown86;
-    int unknown87;
-    int unknown88;
-    int unknown89;
-    int unknown90;
-    int unknown91;
-    int unknown92;
-    int unknown93;
-    int unknown94;
-    int unknown95;
-    int unknown96;
-    int unknown97;
-    int unknown98;
-    int unknown99;
-    int unknown100;
-    int unknown101;
-    int unknown102;
-    int unknown103;
-    int unknown104;
-    int unknown105;
-    int unknown106;
-    int unknown107;
-    int unknown108;
-    int unknown109;
-    int unknown110;
-    int unknown111;
-    int unknown112;
-    int unknown113;
-    int unknown114;
-    int unknown115;
-    int unknown116;
-    int unknown117;
-    int unknown118;
-    int unknown119;
-    int unknown120;
-    int unknown121;
-    int unknown122;
-    int unknown123;
-    int unknown124;
-    int unknown125;
-    int unknown126;
-    int unknown127;
-    int unknown128;
-    int unknown129;
-    int unknown130;
-    int unknown131;
-    int unknown132;
-    int unknown133;
-    int unknown134;
-    int unknown135;
-    int unknown136;
-    int unknown137;
-    int unknown138;
-    int unknown139;
-    int unknown140;
-    int unknown141;
-    int unknown142;
-    int unknown143;
-    int unknown144;
-    int unknown145;
-    int unknown146;
-    int unknown147;
-    int unknown148;
-    int unknown149;
-    int unknown150;
-    int unknown151;
-    int unknown152;
-    int unknown153;
-    int unknown154;
-    int unknown155;
-    int unknown156;
-    int unknown157;
-    int unknown158;
-    int unknown159;
-    int unknown160;
-    int unknown161;
-    int unknown162;
-    int unknown163;
-    int unknown164;
-    int unknown165;
-    int unknown166;
-    int unknown167;
-    int unknown168;
-    int unknown169;
-    int unknown170;
-    int unknown171;
-    int unknown172;
-    int unknown173;
-    int unknown174;
-    int unknown175;
-    int unknown176;
-    SithVehicleEngineFxState fxstate;
-} SithJeepUserBlock;
-
 typedef struct sSithVehicleChassisInfo
 {
     size_t numNodes;
@@ -1825,6 +1675,45 @@ typedef struct sSithVehicleChassisInfo
     float wheelRadius;
 } SithVehicleChassisInfo;
 static_assert(sizeof(SithVehicleChassisInfo) == 280, "sizeof(SithVehicleChassisInfo) == 280");
+
+
+typedef struct sSithJeepWheelState
+{
+    uint32_t contactState;
+    float compressionDist;
+    float prevCompressionDist;
+    rdVector3 initPos;
+    rdVector3 curPos;
+    rdVector3 surfNormal;
+    rdMaterial* pSurfMaterial;
+    float width;
+} SithJeepWheelState;
+
+typedef struct sSithJeepState
+{
+    float width;
+    float length;
+    float height;
+    SithJeepWheelState aWheels[4];
+    rdVector3 avgPrevPos;
+    rdVector3 centerOfMass;
+    rdVector3 upVector;
+    int numGroundedWheels;
+    int bAllWheelsGrounded;
+    float timeAllWheelsGrounded;
+    int bSkidding;
+} SithJeepState;
+
+typedef struct sSithJeepUserBlock
+{
+    int type;
+    SithVehicleExhaustInfo exhaustInfo;
+    SithVehicleChassisInfo chassisInfo;
+    SithJeepState state;
+    SithVehicleEngineFxState fxstate;
+} SithJeepUserBlock;
+
+static_assert(sizeof(SithJeepUserBlock) == 716, "sizeof(SithJeepUserBlock) == 280");
 
 struct sSithSurfaceAdjoin
 {
