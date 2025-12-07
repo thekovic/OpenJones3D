@@ -104,9 +104,6 @@ int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing)
     float dot = rdVector_Dot3(&pThing->orient.rvec, &sithWhip_pWhipSwingThing->orient.lvec);
     if ( dot != 0.0f )
     {
-        rdVector3 newLVec;
-        rdVector_Copy3(&newLVec, &sithWhip_pWhipSwingThing->orient.lvec);
-
         rdVector3 pyr;
         if ( dot >= 0.0f )
         {
@@ -117,10 +114,11 @@ int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing)
             rdVector_Set3(&pyr, 0.0f, -90.0f, 0.0f);
         }
 
+        rdVector3 newLVec = sithWhip_pWhipSwingThing->orient.lvec;
         rdVector_Rotate3Acc(&newLVec, &pyr);
 
         // Set new LVec
-        rdVector_Copy3(&pThing->orient.lvec, &newLVec);
+        pThing->orient.lvec = newLVec;
 
         // Calculate RVec
         rdVector_Cross3(&pThing->orient.rvec, &pThing->orient.lvec, &rdroid_g_zVector3);
@@ -138,10 +136,9 @@ int J3DAPI sithWhip_StartWhipSwing(SithThing* pThing)
 
     sithWhip_pWhipSwingThing = NULL; // Note, no need to free as it's only reference pointer to world thing
 
-    pThing->moveStatus = SITHPLAYERMOVE_WHIPSWINGING;
+    pThing->moveStatus        = SITHPLAYERMOVE_WHIPSWINGING;
+    pThing->forceMoveStartPos = pThing->pos;
     pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-
-    rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
 
     SithCog* pCog = sithCog_GetCogByIndex(SITHWORLD_STATICINDEX(8)); // weap_whip.cog
     if ( pCog )
@@ -197,9 +194,9 @@ int J3DAPI sithWhip_StartWhipClimb(SithThing* pThing, SithThing* pWhippedThing)
 
     pThing->pos.x = pWhippedThing->pos.x;
     pThing->pos.y = pWhippedThing->pos.y;
-    rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
 
-    pThing->collide.movesize = 0.055f;
+    pThing->forceMoveStartPos = pThing->pos;
+    pThing->collide.movesize  = 0.055f;
 
     sithWhip_CreatePlayerWhip(pThing);
     if ( !sithWhip_pWhipThing )
@@ -259,7 +256,7 @@ void J3DAPI sithWhip_WhipClimbDismount(SithThing* pThing)
 
     sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_DRAWWEAPON, NULL);
 
-    pThing->moveStatus = SITHPLAYERMOVE_FALLING;
+    pThing->moveStatus   = SITHPLAYERMOVE_FALLING;
     pThing->attach.flags = 0;
     pThing->moveInfo.physics.flags |= SITH_PF_USEGRAVITY;
     sithInventory_SetSwimmingInventory(pThing, 1);
@@ -284,7 +281,7 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
             }
             else
             {
-                rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
+                pThing->forceMoveStartPos = pThing->pos;
                 sithPuppet_PlayForceMoveMode(pThing, SITHPUPPETSUBMODE_WHIPCLIMBDISMOUNT, sithWhip_ClimbDismountPuppetCallback);
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBDOWNONTO);
 
@@ -302,7 +299,7 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
             // Move up
             if ( pThing->attach.posOffset.z <= 3.0f )
             {
-                rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
+                pThing->forceMoveStartPos = pThing->pos;
 
                 sithPuppet_PlayForceMoveMode(pThing, SITHPUPPETSUBMODE_WHIPCLIMBUP, NULL);
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBHANDLEFT);
@@ -316,7 +313,7 @@ void J3DAPI sithWhip_ProcessWhipClimbMove(SithThing* pThing, float secDeltaTime)
             // Move down
             if ( pThing->attach.posOffset.z > 0.0f )
             {
-                rdVector_Copy3(&pThing->forceMoveStartPos, &pThing->pos);
+                pThing->forceMoveStartPos = pThing->pos;
 
                 sithPuppet_PlayForceMoveMode(pThing, SITHPUPPETSUBMODE_WHIPCLIMBDOWN, NULL);
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBHANDRIGHT);
@@ -370,8 +367,7 @@ void J3DAPI sithWhip_WhipClimbPuppetCallback(SithThing* pThing, int track, rdKey
         {
             sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponSwapRefNum);
 
-            rdVector3 pos;
-            rdVector_Copy3(&pos, &sithWhip_pWhipThing->pos);
+            rdVector3 pos = sithWhip_pWhipThing->pos;
 
             sithWhip_RemoveWhip(); // Note, the function also frees sithWhip_pWhipThing
 
@@ -475,8 +471,7 @@ int J3DAPI sithWhip_SearchWhipSwingThing(SithThing* pThing)
     sithWhip_pWhipSwingThing = NULL;
 
     // Search for whip swing thing in the forward,up direction at max distance 0.65 (6.5m)
-    rdVector3 moveNorm;
-    rdVector_Copy3(&moveNorm, &pThing->orient.lvec);
+    rdVector3 moveNorm = pThing->orient.lvec;
     moveNorm.z = sqrtf(moveNorm.x * moveNorm.x + moveNorm.y * moveNorm.y);
     rdVector_Normalize3Acc(&moveNorm);
 
@@ -493,12 +488,15 @@ int J3DAPI sithWhip_SearchWhipSwingThing(SithThing* pThing)
             break;
         }
 
+        // TODO: Refactor and add else scope to null found swing thing and break out of scope in case any other collision is found in the path
         if ( (pCollision->type & SITHCOLLISION_THING) != 0 && pCollision->pThingCollided != pThing && (pCollision->pThingCollided->flags & SITH_TF_WHIPSWING) != 0 )
         {
             sithWhip_pWhipSwingThing = pCollision->pThingCollided;
             break;
         }
     }
+
+    // TODO: Add collision search in forward direction from current position for 8m, to detect if there is anything blocking whip swing trajectory.
 
     sithCollision_DecreaseStackLevel();
     return sithWhip_pWhipSwingThing != NULL;
@@ -554,13 +552,14 @@ void J3DAPI sithWhip_CreatePlayerWhip(SithThing* pThing)
 {
     SITH_ASSERTREL((pThing != NULL) && (pThing->type == SITH_THING_PLAYER) && (pThing->renderData.pPuppet != NULL));
 
-    int handMeshIdx = sithThing_GetThingMeshIndex(pThing, "inrhand");
     const SithThing* pTemplate = sithTemplate_GetTemplate("+whip_actor");
     if ( !pTemplate )
     {
         // TODO: maybe add debug log
         return;
     }
+
+    int handMeshIdx = sithThing_GetThingMeshIndex(pThing, "inrhand"); // Altered: Moved down here from the start of the scope
     if ( handMeshIdx == -1 )
     {
         return;
@@ -584,7 +583,7 @@ void sithWhip_RemoveWhip(void)
     if ( sithWhip_pWhipThing )
     {
         sithWhip_pWhipThing->thingInfo.actorInfo.pThingMeshAttached = NULL;
-        sithWhip_pWhipThing->thingInfo.actorInfo.attachMeshNum = 0;
+        sithWhip_pWhipThing->thingInfo.actorInfo.attachMeshNum      = 0;
 
         sithThing_RemoveThing(sithWorld_g_pCurrentWorld, sithWhip_pWhipThing);
         sithWhip_pWhipThing = NULL;
