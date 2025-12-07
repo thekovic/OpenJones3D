@@ -4,6 +4,7 @@
 
 #include <rdroid/Math/rdMatrix.h>
 #include <rdroid/Math/rdVector.h>
+#include <rdroid/Engine/rdLight.h>
 
 #include <sith/AI/sithAI.h>
 #include <sith/AI/sithAIAwareness.h>
@@ -42,7 +43,9 @@
 
 #define SITHWEAPON_MAX_PROJECTILE_RICOCHETS 6
 
-static bool sithWeapon_bGenBloodSplatter = true;
+static bool sithWeapon_bGenBloodSplatter                = true;
+static bool sithWeapon_bProjectileFireFlashFx           = J3D_QOL_VALUE(true, false); // OG fire flash fx didn't work due to light range error, thus is disabled by default
+static float sithWeapon_projectileFireFlashAmbThreshold = 0.5f;
 
 static const float sithWeapon_aMaxAimDistances[25] =
 {
@@ -163,6 +166,19 @@ void sithWeapon_Open(void)
     if ( !stdConfig_Contains(SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER) )
     {
         stdConfig_SetBool(SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER, sithWeapon_bGenBloodSplatter);
+    }
+
+    // Added: Added weapon fire flash fx config read
+    sithWeapon_bProjectileFireFlashFx = stdConfig_GetBool(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED, sithWeapon_bProjectileFireFlashFx);
+    if ( !stdConfig_Contains(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED) )
+    {
+        stdConfig_SetBool(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED, sithWeapon_bProjectileFireFlashFx);
+    }
+
+    sithWeapon_projectileFireFlashAmbThreshold = stdConfig_GetFloat(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD, sithWeapon_projectileFireFlashAmbThreshold);
+    if ( !stdConfig_Contains(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD) )
+    {
+        stdConfig_SetFloat(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD, sithWeapon_projectileFireFlashAmbThreshold);
     }
 }
 
@@ -410,8 +426,7 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
         searchFlags = 0x200;
     }
 
-    rdVector3 moveNorm;
-    rdVector_Copy3(&moveNorm, &pWeapon->orient.lvec);
+    rdVector3 moveNorm = pWeapon->orient.lvec;
     sithCollision_SearchForCollisions(pWeapon->pInSector, pWeapon, &pWeapon->pos, &moveNorm, pWeaponInfo->range, pWeapon->collide.movesize, searchFlags);
 
     while ( 1 )
@@ -474,9 +489,6 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
             {
                 rdVector3 force;
                 rdVector_Scale3(&force, &moveNorm, pWeaponInfo->force);
-                /* force.x = pInfo->weaponInfo.force * moveNorm.x;
-                 force.y   = pInfo->weaponInfo.force * moveNorm.y;
-                 force.z   = pInfo->weaponInfo.force * moveNorm.z;*/
                 sithPhysics_ApplyForce(pVictim, &force);
             }
 
@@ -594,7 +606,7 @@ SithThing* J3DAPI sithWeapon_WeaponFire(SithThing* pShooter, const SithThing* pP
         sithAIAwareness_CreateTransmittingEvent(pShooter->pInSector, &pShooter->pos, 0, 3.0f, pShooter);
     }
 
-    if ( pShooter->type == SITH_THING_PLAYER && (pProjectileTemplate->thingInfo.weaponInfo.damageType & (SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS)) == 0 )// 0x838 - SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS
+    if ( pShooter->type == SITH_THING_PLAYER && (pProjectileTemplate->thingInfo.weaponInfo.damageType & (SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS)) == 0 ) // 0x838 - SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS
     {
         sithAIAwareness_CreateTransmittingEvent(pShooter->pInSector, &pShooter->pos, 3, 1.5f, pShooter);
     }
@@ -622,13 +634,10 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
         rdMatrix34 projectileOrient;
         rdMatrix_BuildFromLook34(&projectileOrient, pFireDir);
 
-        if ( (pShooter->thingInfo.actorInfo.fireOffset.x != 0.0f
-            || pShooter->thingInfo.actorInfo.fireOffset.y != 0.0f
-            || pShooter->thingInfo.actorInfo.fireOffset.z != 0.0f)
+        if ( !rdVector_IsZero3(&pShooter->thingInfo.actorInfo.fireOffset)
             && pShooter->controlType != SITH_CT_AI )
         {
-            rdVector3 fireOffset;
-            rdVector_Copy3(&fireOffset, &pShooter->thingInfo.actorInfo.fireOffset);
+            rdVector3 fireOffset = pShooter->thingInfo.actorInfo.fireOffset;
             if ( ((uint8_t)flags & (uint8_t)SITHFIREPROJECTILE_RIGHTHAND_FIRE) != 0 )
             {
                 int jointIdx = sithThing_GetThingJointIndex(pShooter, "inrhand");
@@ -652,13 +661,9 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
             }
 
             rdVector_Add3Acc(pFirePos, &fireOffset);
-            /*pFirePos->x = pFirePos->x + fireOffset.x;
-            pFirePos->y = pFirePos->y + fireOffset.y;
-            pFirePos->z = pFirePos->z + fireOffset.z;*/
         }
 
-        rdVector3 offsetPos;
-        rdVector_Copy3(&offsetPos, &pShooter->pos);
+        rdVector3 offsetPos = pShooter->pos;
 
         // Find offset sector
         rdVector3 shooterOffset;
@@ -666,11 +671,7 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
         shooterOffset.y = 0.0f;
         shooterOffset.z = 0.050000001f;
         rdMatrix_TransformVector34Acc(&shooterOffset, &pShooter->orient);
-
         rdVector_Add3Acc(&offsetPos, &shooterOffset);
-        /*offsetPos.x = offsetPos.x + shooterOffset.x;
-        offsetPos.y = offsetPos.y + shooterOffset.y;
-        offsetPos.z = offsetPos.z + shooterOffset.z;*/
 
         SithSector* pSector = sithCollision_FindSectorInRadius(pShooter->pInSector, &pShooter->pos, &offsetPos, 0.0f);
         if ( !pSector )
@@ -700,9 +701,7 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
 
         if ( (flags & SITHFIREPROJECTILE_SCALE_VELOCITY) != 0 )
         {
-            pProjectile->moveInfo.physics.velocity.x = pProjectile->moveInfo.physics.velocity.x * extra;
-            pProjectile->moveInfo.physics.velocity.y = pProjectile->moveInfo.physics.velocity.y * extra;
-            pProjectile->moveInfo.physics.velocity.z = pProjectile->moveInfo.physics.velocity.z * extra;
+            rdVector_Scale3Acc(&pProjectile->moveInfo.physics.velocity, extra);
         }
 
         if ( (flags & SITHFIREPROJECTILE_SCALE_DAMAGE) != 0 )
@@ -721,29 +720,19 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
         }
 
         rdVector3 moveNorm;
-        if ( secDeltaTime > 0.02f )
+        if ( secDeltaTime > 0.02f ) // 0.02 - 50 fps
         {
             sithPhysics_UpdateThing(pProjectile, secDeltaTime);
             float moveDist = rdVector_Normalize3(&moveNorm, &pProjectile->moveInfo.physics.deltaVelocity);
             if ( moveDist > 0.0f )
             {
-                sithCollision_MoveThing(pProjectile, &moveNorm, moveDist, pProjectile->moveInfo.physics.flags);// // TODO: [BUG] Using physics.flags here is probably wrong???
+                sithCollision_MoveThing(pProjectile, &moveNorm, moveDist, pProjectile->moveInfo.physics.flags); // TODO: [BUG] Using physics.flags here is probably wrong???
             }
         }
 
         // Now search for projectile target
         float speed = rdVector_Normalize3(&moveNorm, &pProjectile->moveInfo.physics.velocity);
         float moveDist = J3DMIN(speed * 3.0f, 5.0f);
-        //if ( speed * 3.0f >= 5.0f )
-        //{
-        //    v12 = 5.0f;
-        //}
-        //else
-        //{
-        //    v12 = v19 * 3.0f;
-        //}
-
-        //moveDist = v12;
 
         sithCollision_SearchForCollisions(pProjectile->pInSector, pProjectile, &pProjectile->pos, &moveNorm, moveDist, pProjectile->collide.movesize, 2);
         SithCollision* pCollision = sithCollision_PopStack();
@@ -893,7 +882,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
                         sithSoundMixer_PlaySoundThing(hSnd, pReboundProjectile, 1.0f, 0.5f, 2.0f, SOUNDPLAY_PLAYTHINGONCE | SOUNDPLAY_THING_POS);
                     }
 
-                    memset(&pWeapon->moveDir, 0, sizeof(pWeapon->moveDir));
+                    rdVector_Zero3(&pWeapon->moveDir);
                     sithThing_DestroyThing(pWeapon);
                     return 1;
                 }
@@ -1040,14 +1029,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
         {
             sithThing_AttachThingToThing(pWeapon, pThing);
             sithPhysics_SetThingLook(pWeapon, &pCollision->hitNorm, 0.0f);
-            /* v10 = pWeapon->attach.flags;
-             (v10 & 0xFF) = v10 | SITH_ATTACH_NOMOVE;
-             pWeapon->attach.flags = v10;*/
-            pWeapon->attach.flags |= SITH_ATTACH_NOMOVE;
-
-            /*v11 = pWeapon->moveInfo.physics.flags;
-            (v11 & 0xFF) = v11 | SITH_PF_USEGRAVITY;
-            pWeapon->moveInfo.physics.flags = v11;*/
+            pWeapon->attach.flags           |= SITH_ATTACH_NOMOVE;
             pWeapon->moveInfo.physics.flags |= SITH_PF_USEGRAVITY;
         }
 
@@ -1061,6 +1043,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
 int J3DAPI sithWeapon_SurfaceCollisionHandler(SithThing* pThing, SithSurface* pSurf, SithCollision* pStack)
 {
     SITH_ASSERTREL(pThing->type == SITH_THING_WEAPON);
+
 
     if ( pThing->moveType != SITH_MT_PHYSICS )
     {
@@ -1620,8 +1603,8 @@ int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, 
 {
     SITH_ASSERTREL(pShooter);
 
-    rdMatrix_Copy34(pOutOrient, pStartOrient);
-    rdVector_Copy3(&pOutOrient->dvec, pFireOffset);
+    *pOutOrient      = *pStartOrient;
+    pOutOrient->dvec = *pFireOffset;
 
     int curWeaponID = pShooter->thingInfo.actorInfo.curWeaponID;
     if ( curWeaponID <= SITHWEAPON_WHIP || curWeaponID >= SITHWEAPON_GRENADE || curWeaponID == SITHWEAPON_MACHETE )
@@ -1645,7 +1628,7 @@ int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, 
         }
 
         int targetNum = -1;
-        float curDot = -1.0f;
+        float curDot  = -1.0f;
         for ( size_t i = 0; i < numThings; ++i )
         {
             if ( aTarget[i] && aTarget[i] != pShooter && (aTarget[i]->thingInfo.actorInfo.flags & SITH_AF_NOTARGET) == 0 ) // Fixed: Added check for aTarget[i] != NULL 
@@ -1653,23 +1636,15 @@ int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, 
                 if ( sithCollision_CheckThingLOS(pShooter, aTarget[i], 0) )
                 {
                     rdVector3 toDargetDir;
-                    /*toDargetDir.x = aTarget[i]->pos.x - pShooter->pos.x;
-                    toDargetDir.y = aTarget[i]->pos.y - pShooter->pos.y;
-                    toDargetDir.z = aTarget[i]->pos.z - pShooter->pos.z;*/
-
                     rdVector_Sub3(&toDargetDir, &aTarget[i]->pos, &pShooter->pos);
                     if ( rdVector_Len3(&toDargetDir) > 0.0f )
                     {
 
-                        rdVector3 curDir;
-                        rdVector_Copy3(&curDir, &pOutOrient->lvec);
+                        rdVector3 curDir = pOutOrient->lvec;
                         rdVector_Normalize3Acc(&toDargetDir);
                         rdVector_Normalize3Acc(&curDir);
 
                         float dot = fabsf(rdVector_Dot3(&curDir, &toDargetDir));
-                        /*v7 = rdVector_Dot3(&curDir, &toDargetDir) >= 0.0f
-                            ? rdVector_Dot3(&curDir, &toDargetDir)
-                            : -(rdVector_Dot3(&curDir, &toDargetDir));*/
                         if ( targetNum < 0 || dot >(double)curDot )
                         {
                             curDot    = dot;
@@ -1701,31 +1676,21 @@ int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, 
         return 0;
     }
 
-    rdVector3 targetPos;
-    rdVector_Copy3(&targetPos, &pTarget->pos);
+    rdVector3 targetPos = pTarget->pos;
 
     float zOffset = pTarget->thingInfo.actorInfo.eyeOffset.z;
     if ( (pTarget->thingInfo.actorInfo.flags & SITH_AF_HUMAN) != 0 )
     {
-        zOffset = zOffset * 0.25f;           // don't aim head
+        zOffset *= 0.25f; // don't aim head
     }
-
     else if ( curWeaponID == SITHWEAPON_SUBMACHINE || curWeaponID == SITHWEAPON_SHOTGUN )
     {
-        zOffset = zOffset * 0.5f;            // aim at torso
+        zOffset *=  0.5f; // aim at torso
     }
 
-    targetPos.z = targetPos.z + zOffset;
+    targetPos.z += zOffset;
 
-    /*v21.x = targetPos.x - pFireOffset->x;
-    v21.y = targetPos.y - pFireOffset->y;
-    v21.z = targetPos.z - pFireOffset->z;
-    a = rdVector_Dot3(&v21, &v21);
-    if ( sqrtf(a) > 0.0f )*/
-
-    rdVector3 vecTargetFire;
-    rdVector_Sub3(&vecTargetFire, &targetPos, pFireOffset);
-    if ( rdVector_Len3(&vecTargetFire) > 0.0f )
+    if ( rdVector_Dist3(&targetPos, pFireOffset) > 0.0f )
     {
         rdMatrix_LookAt(pOutOrient, pFireOffset, &targetPos, 0.0f);
         return 1;
@@ -1743,16 +1708,17 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
         return 0;
     }
 
-    rdVector3 fireOffset;
+    rdVector3 fireOffset = { 0 }; // Fixed: Init to zero. OG didn't inited and the bullet could be fired in random direction and in worse case caused assertion error in sithCollision system
     if ( pShooter->type == SITH_THING_ACTOR )
     {
-        rdVector3 targetPos;
-        rdVector_Copy3(&fireOffset, &pShooter->thingInfo.actorInfo.vecUnknown0);
-        rdVector_Copy3(&targetPos, &pShooter->controlInfo.aiControl.pLocal->targetPos);
+        fireOffset = pShooter->thingInfo.actorInfo.vecUnknown0;
+        rdVector3 targetPos = pShooter->controlInfo.aiControl.pLocal->targetPos;
         return sithWeapon_FireProjectileEx(pShooter, pProjectile, hFireSnd, submode, pFireOffset, &targetPos, extra, flags, autoAimFovX, autoAimFovZ, &fireOffset, /*bUseFireOffset*/1);
     }
 
-    rdMatrix34 fireOrient;
+    // Player from here on
+
+    rdMatrix34 fireOrient = pShooter->orient;
     if ( (flags & SITHFIREPROJECTILE_RIGHTHAND_FIRE) != 0 )
     {
         int jointIdx = sithThing_GetThingJointIndex(pShooter, "inrhand");
@@ -1762,7 +1728,7 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
             return 0;
         }
 
-        rdMatrix_Copy34(&fireOrient, &pShooter->renderData.paJointMatrices[jointIdx]);
+        fireOrient = pShooter->renderData.paJointMatrices[jointIdx];
         rdVector_Set3(&fireOffset, 0.0f, -90.0f, 0.0f);
         rdMatrix_PreRotate34(&fireOrient, &fireOffset);
     }
@@ -1775,18 +1741,13 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
             return 0;
         }
 
-        rdMatrix_Copy34(&fireOrient, &pShooter->renderData.paJointMatrices[jointIdx]);
-        rdVector_Set3(&fireOffset, 0.0f, 0.0f, 0.0f); // Fixed: Init to 0
+        fireOrient = pShooter->renderData.paJointMatrices[jointIdx];
         rdMatrix_PreRotate34(&fireOrient, &fireOffset);
-    }
-    else
-    {
-        rdMatrix_Copy34(&fireOrient, &pShooter->orient);
     }
 
     if ( rdVector_IsZero3(pFireOffset) )
     {
-        rdVector_Copy3(pFireOffset, &pShooter->pos);
+        *pFireOffset = pShooter->pos;
     }
 
     rdMatrix34 matAimError;
@@ -1800,14 +1761,14 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
     }
     else
     {
-        rdMatrix_Copy34(&matAimError, &fireOrient);
+        matAimError = fireOrient;
         if ( pAimError->x != 0.0f || pAimError->y != 0.0f || pAimError->z != 0.0f )
         {
             rdMatrix_PreRotate34(&matAimError, pAimError);
         }
     }
 
-    rdVector_Copy3(&fireOffset, &matAimError.lvec);
+    fireOffset = matAimError.lvec;
     float secDeltaTime = 0.0f;
     if ( (flags & SITHFIREPROJECTILE_RAPID_FIRE) != 0 )
     {
@@ -2406,40 +2367,25 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
 
     if ( rdVector_IsZero3(pFirePos) )
     {
-        rdVector_Copy3(pFirePos, &pShooter->pos);
+        *pFirePos = pShooter->pos;
     }
 
-    rdVector3 fireDir;
+    rdVector3 fireDir = pShooter->orient.lvec;
     if ( bUseFireOffset == 1 )
     {
         if ( pShooter->thingInfo.actorInfo.fireOffset.x != 0.0f
             || pShooter->thingInfo.actorInfo.fireOffset.y != 0.0f
             || pShooter->thingInfo.actorInfo.fireOffset.z != 0.0f )
         {
-            rdVector3 shooterFireOffset;
-            rdVector_Copy3(&shooterFireOffset, &pShooter->thingInfo.actorInfo.fireOffset);
+            rdVector3 shooterFireOffset = pShooter->thingInfo.actorInfo.fireOffset;
             rdMatrix_TransformVector34Acc(&shooterFireOffset, &pShooter->orient);
 
             rdVector_Add3Acc(pFirePos, &shooterFireOffset);
-            /* pFirePos->x = pFirePos->x + shooterFireOffset.x;
-             pFirePos->y = pFirePos->y + shooterFireOffset.y;
-             pFirePos->z = pFirePos->z + shooterFireOffset.z;*/
         }
 
         rdVector_Sub3(&fireDir, pTargetPos, pFirePos);
-        /*fireDir.x = pTargetPos->x - pFirePos->x;
-        fireDir.y = pTargetPos->y - pFirePos->y;
-        fireDir.z = pTargetPos->z - pFirePos->z;*/
-
         rdVector_Add3Acc(&fireDir, pFireOffset);
-        /*fireDir.x = fireDir.x + pFireOffset->x;
-        fireDir.y = fireDir.y + pFireOffset->y;
-        fireDir.z = fireDir.z + pFireOffset->z;*/
         rdVector_Normalize3Acc(&fireDir);
-    }
-    else
-    {
-        rdVector_Copy3(&fireDir, &pShooter->orient.lvec);
     }
 
     float sedDeltaTime = 0.0f;
@@ -2514,25 +2460,32 @@ void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
     int meshIdx = sithThing_GetThingMeshIndex(pThing, "inrhand");
     if ( pHandModel && meshIdx != -1 )
     {
-        pThing->thingInfo.actorInfo.weaponSwapRefNum = sithThing_AddSwapEntry(pThing, meshIdx, pHandModel, 0);
+        pThing->thingInfo.actorInfo.weaponSwapRefNum  = sithThing_AddSwapEntry(pThing, meshIdx, pHandModel, 0);
         pThing->thingInfo.actorInfo.secWeaponSwapTime = sithTime_g_secGameTime + 0.025f;
-        SithThing* pGhostTpl = sithTemplate_GetTemplate("ghost");
 
-        SithThing* pFlash = sithThing_CreateThingAtPos(pGhostTpl, pos, &pThing->orient, pThing->pInSector, pThing->pParent);
-        if ( pFlash )
+        // Altered: Added check for flash fx enabled and ambient light intensity
+        if ( sithWeapon_bProjectileFireFlashFx
+            && rdLight_GetIntensity(&pThing->pInSector->ambientLight) < sithWeapon_projectileFireFlashAmbThreshold )
         {
-            pFlash->flags |= SITH_TF_EMITLIGHT;
-            pFlash->msecLifeLeft = 50;
+            SithThing* pGhostTpl = sithTemplate_GetTemplate("ghost");
+            if ( pGhostTpl ) // Fixed: Added null check
+            {
+                SithThing* pFlash = sithThing_CreateThingAtPos(pGhostTpl, pos, &pThing->orient, pThing->pInSector, pThing->pParent);
+                if ( pFlash )
+                {
+                    pFlash->flags |= SITH_TF_EMITLIGHT;
+                    pFlash->msecLifeLeft = 50;
 
-            pFlash->light.color.red   = 0.5f;
-            pFlash->light.color.green = 0.5f;
-            pFlash->light.color.blue  = 0.5f;
+                    pFlash->light.color.red   = 0.5f;
+                    pFlash->light.color.green = 0.5f;
+                    pFlash->light.color.blue  = 0.5f;
+                    pFlash->light.color.alpha = 0.2f; // Fixed: Assign alpha/range for the flesh effect to appear.
+                                                      //        OG didn't assign alpha range value and the flash light wasn't visible 
 
-            // TODO: Keeping this off for now as don't know if this was the intended way originally
-            //pFlash->light.color.alpha = 1.0f; // Added: Setting alpha greater than 0.1 makes flash effect. 
-
-            pFlash->light.minRadius   = 0.2f;
-            pFlash->light.maxRadius   = 0.40000001f;
+                    pFlash->light.minRadius   = 0.2f;
+                    pFlash->light.maxRadius   = 0.40000001f;
+                }
+            }
         }
     }
 }
