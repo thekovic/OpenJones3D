@@ -702,6 +702,10 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
             break;
 
         case SITHPLAYERMOVE_CLIMBIDLE:
+        case SITHPLAYERMOVE_CLIMBING_UP:    // Added: Was added so the climbing speed can be updated
+        case SITHPLAYERMOVE_CLIMBING_DOWN:  // Added: Was added so the climbing speed can be updated
+        case SITHPLAYERMOVE_CLIMBING_LEFT:  // Added: Was added so the climbing speed can be updated
+        case SITHPLAYERMOVE_CLIMBING_RIGHT: // Added: Was added so the climbing speed can be updated
             sithPlayerControls_ProcessClimbMove(pPlayerThing, secDeltaTime);
             break;
 
@@ -961,18 +965,107 @@ void J3DAPI sithPlayerControls_ProcessGeneralMove(SithThing* pThing, float secDe
     }
 }
 
+// New function
+static void J3DAPI sithPlayerControls_UpdateClimbingSpeed(SithThing* pThing, bool bFastClimb)
+{
+#ifdef J3D_QOL_IMPROVEMENTS
+    switch ( pThing->moveStatus )
+    {
+        case SITHPLAYERMOVE_MOUNTING_WALL:
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_MOUNTWALL, bFastClimb ? 1.4f : 1.0f);
+            break;
+        case SITHPLAYERMOVE_PULLINGUP:
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBPULLINGUP, bFastClimb ? 1.4f : 1.0f);
+            break;
+        case SITHPLAYERMOVE_CLIMBING_UP:
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLUP, bFastClimb ? 1.4f : 1.0f);
+            break;
+
+        case SITHPLAYERMOVE_CLIMBING_DOWN:
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLDOWN, bFastClimb ? 1.4f : 1.0f);
+            break;
+
+        case SITHPLAYERMOVE_CLIMBING_RIGHT:
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLRIGHT, bFastClimb ? 1.3f : 1.0f);
+            break;
+
+        case SITHPLAYERMOVE_CLIMBING_LEFT:
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLLEFT, bFastClimb ? 1.3f : 1.0f);
+            break;
+    };
+#endif
+}
+
+// New func
+static bool J3DAPI sithPlayerControls_StopClimbing(SithThing* pThing)
+{
+    switch ( pThing->moveStatus )
+    {
+        case SITHPLAYERMOVE_CLIMBING_UP:
+            sithPuppet_StopMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLUP, 0.0f);
+            return true;
+
+        case SITHPLAYERMOVE_CLIMBING_DOWN:
+            sithPuppet_StopMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLDOWN, 0.0f);
+            return true;
+
+        case SITHPLAYERMOVE_CLIMBING_RIGHT:
+            sithPuppet_StopMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLRIGHT, 0.0f);
+            return true;
+
+        case SITHPLAYERMOVE_CLIMBING_LEFT:
+            sithPuppet_StopMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLLEFT, 0.0f);
+            return true;
+    };
+
+    return false;
+}
+
 void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDeltaTime)
 {
     J3D_UNUSED(secDeltaTime);
+
+    bool bFastClimb= false;
+    if ( (sithControl_g_controlOptions & 2) != 0
+        || sithControl_GetKey(SITHCONTROL_RUNFWD, NULL)
+        || sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
+    {
+        bFastClimb = true;
+    }
+
+    // Cancel run if always-run is on and ACT1 is pressed (toggle behavior)
+    if ( (sithControl_g_controlOptions & 2) != 0 && sithControl_GetKey(SITHCONTROL_ACT1, NULL) )
+    {
+        bFastClimb = false;
+    }
+
     if ( pThing->thingInfo.actorInfo.bControlsDisabled
         || pThing->thingInfo.actorInfo.bForceMovePlay == 1
         || (pThing->type != SITH_THING_ACTOR && pThing->type != SITH_THING_PLAYER) )
     {
+    #ifdef J3D_QOL_IMPROVEMENTS
+        // Added: Update climbing animation playback speed
+        sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb);
+
+        // Added: Jump off from wall climbing if jump key was pressed
+        if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL)
+            && !sithPlayerControls_bJumpKeyActive )
+
+        {
+            if ( sithPlayerControls_StopClimbing(pThing) )
+            {
+                sithPlayerActions_UnmountWall(pThing, sithPlayerControls_climbPupTrackNum);
+                sithPlayerControls_climbPupTrackNum = -1;
+            }
+            sithPlayerControls_bJumpKeyActive   = true;
+        }
+    #endif
         return;
     }
 
     // Nullify velocity
     rdVector_Zero3(&pThing->moveInfo.physics.velocity);
+
 
     // Note, sithPlayerControls_climbPupTrackNum is never set to puppet track num.
     // Must be a leftover from an earlier implementation.
@@ -992,7 +1085,9 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
             {
                 sithPuppet_StopKey(pThing->renderData.pPuppet, sithPlayerControls_climbPupTrackNum, 0.0f);
                 sithPlayerControls_climbPupTrackNum = -1;
+
                 sithPlayerActions_ClimbPullUp(pThing);
+                sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb); // Added: Speedup play if runmode is enabled
             }
         }
     }
@@ -1022,13 +1117,18 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
                 {
                     sithPuppet_StopKey(pThing->renderData.pPuppet, sithPlayerControls_climbPupTrackNum, 0.0f);
                     sithPlayerControls_climbPupTrackNum = -1;
+
                     sithPlayerActions_ClimbPullUp(pThing);
+                    sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb); // Added: Speedup play if runmode is enabled
                 }
                 return;
             }
 
             sithPlayerActions_ClimbMove(pThing, pSurf, /*direction*/1);
         }
+
+        // Added: Speedup play if runmode is enabled
+        sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb);
     }
     // Handle Climb Down key
     else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
@@ -1047,6 +1147,9 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
                 sithPlayerActions_ClimbMove(pThing, pSurf, /*direction=*/2);
             }
         }
+
+        // Added: Speedup play if runmode is enabled
+        sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb);
     }
     // Handle Climb Right key
     else if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
@@ -1065,6 +1168,9 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
                 sithPlayerActions_ClimbMove(pThing, pSurf, /*direction=*/3);
             }
         }
+
+        // Added: Speedup play if runmode is enabled
+        sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb);
     }
     // Handle Climb Left key
     else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
@@ -1083,6 +1189,9 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
                 sithPlayerActions_ClimbMove(pThing, pSurf, /*direction=*/4);
             }
         }
+
+        // Added: Speedup play if runmode is enabled
+        sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb);
     }
 }
 
@@ -3836,6 +3945,9 @@ void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDelt
                             sithPuppet_RemoveAllTracks(pThing);
                             sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_MOUNTWALL, sithPlayerControls_PuppetCallback);
                             sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
+
+                            // Added: Speedup play if runmode is enabled
+                            sithPlayerControls_UpdateClimbingSpeed(pThing, bRun);
 
                             pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
                             bWallMounted = true;
