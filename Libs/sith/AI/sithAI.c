@@ -635,13 +635,13 @@ int J3DAPI sithAI_ProcessUnhandledEvent(SithAIControlBlock* pLocal, SithAIEventT
 
             #ifdef J3D_QOL_IMPROVEMENTS
                 // Move in the same direction
-                int pathFlags = 0x4002; // 0x2 - yaw | 0x4000 - random
+                int pathFlags = 0xC002; // 0x2 - yaw | 0x4000 - random | 0x8000 - rand 180 deg dir flip
             #else
                 // Move in the opposite direction
                 rdVector_Neg3Acc(&heading); // TODO: Note, commenting out the this line will make AI not to move back and forth
                 sithAIUtil_ApplyForce(pLocal, &heading, 0.05f);
 
-                int pathFlags = 0xC002; // 0x2 - yaw | 0x4000 - random | 0x8000 - rand neg rvec, but this only works when 0x1 flag is set
+                int pathFlags = 0xC002; // 0x2 - yaw | 0x4000 - random | 0x8000 - rand neg 
             #endif
 
                 if ( (pLocal->mode & SITHAI_MODE_ACTIVE) != 0 )
