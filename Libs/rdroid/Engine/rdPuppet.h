@@ -19,12 +19,14 @@ void J3DAPI rdPuppet_RemoveTrack(rdPuppet* pPuppet, int32_t track);
 
 int J3DAPI rdPuppet_SetStatus(rdPuppet* pPuppet, int32_t track, rdPuppetTrackStatus status);
 void J3DAPI rdPuppet_SetCallback(rdPuppet* pPuppet, int32_t track, rdPuppetTrackCallback pfCallback);
+
 int J3DAPI rdPuppet_PlayTrack(rdPuppet* pPuppet, int32_t track);
-int J3DAPI rdPuppet_FadeInTrack(rdPuppet* pPuppet, int32_t track, float speed);
-int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float speed);
+int J3DAPI rdPuppet_FadeInTrack(rdPuppet* pPuppet, int32_t track, float fadeDuration);
+int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float fadeDuration);
 void J3DAPI rdPuppet_SetTrackSpeed(rdPuppet* pPuppet, int32_t track, float fps);
-void J3DAPI rdPuppet_SetTrackNoise(rdPuppet* pPuppet, int32_t track, float noise); // Added
-void J3DAPI rdPuppet_SetTrackPriority(rdPuppet* pPuppet, int32_t track, int lowPri, int heighPri); // Added
+void J3DAPI rdPuppet_SetPlaybackSpeed(rdPuppet* pPuppet, int32_t track, float speed); // Added new
+void J3DAPI rdPuppet_SetTrackNoise(rdPuppet* pPuppet, int32_t track, float noise); // Added from debug
+void J3DAPI rdPuppet_SetTrackPriority(rdPuppet* pPuppet, int32_t track, int lowPri, int heighPri); // Added from debug
 
 void J3DAPI rdPuppet_AdvanceTrack(rdPuppet* pPuppet, int32_t track, float frames);
 int J3DAPI rdPuppet_UpdateTracks(rdPuppet* pPuppet, float secDeltaTime);

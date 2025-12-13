@@ -527,13 +527,13 @@ static_assert(sizeof(rdKeyframe) == 224, "sizeof(rdKeyframe) == 224");
 typedef struct srdPuppetTrack
 {
     rdPuppetTrackStatus status;
-    int unknown0;
+    float playbackSpeed;    // Altered: Repurposed to playback speed of type float. Originally the usage was unknown the var might be 32 bit integer or 32 bit float
     int lowPriority;
     int highPriority;
     float fps;
     float noise;
-    float playSpeed;
-    float fadeSpeed;
+    float blendWeight;       // Blend/fade level (0-1)
+    float fadeRate;          // Rate of fade in blend weight per second
     size_t aCurKfNodeEntryNums[RDPUPPET_MAX_KFNODES]; // TODO: make this field rt variable
     float curFrame;
     float prevFrame;

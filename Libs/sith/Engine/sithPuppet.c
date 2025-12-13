@@ -2042,7 +2042,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         case RDKEYMARKER_RUNLEFTFOOT:
         case RDKEYMARKER_RUNRIGHTFOOT:
         {
-            if ( pThing->renderData.pPuppet->aTracks[track].playSpeed >= 0.5f
+            if ( pThing->renderData.pPuppet->aTracks[track].blendWeight >= 0.5f
                 && (pThing->flags & SITH_TF_DYING) == 0
                 && pThing->type != SITH_THING_CORPSE
                 && pThing->attach.flags
@@ -2207,7 +2207,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         }
         case RDKEYMARKER_SWIMLEFT:
         {
-            if ( pThing->renderData.pPuppet->aTracks[track].playSpeed >= 0.5f && pThing->pSoundClass )
+            if ( pThing->renderData.pPuppet->aTracks[track].blendWeight >= 0.5f && pThing->pSoundClass )
             {
                 if ( pThing->pInSector && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
                 {
@@ -2228,7 +2228,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         }
         case RDKEYMARKER_TREAD:
         {
-            if ( pThing->renderData.pPuppet->aTracks[track].playSpeed >= 0.5f && pThing->pSoundClass )
+            if ( pThing->renderData.pPuppet->aTracks[track].blendWeight >= 0.5f && pThing->pSoundClass )
             {
                 if ( pThing->pInSector && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
                 {
@@ -2249,7 +2249,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         }
         case RDKEYMARKER_DIED:
         {
-            if ( pThing->renderData.pPuppet->aTracks[track].playSpeed >= 0.5f && (pThing == sithPlayer_g_pLocalPlayerThing || pThing->attach.flags) )
+            if ( pThing->renderData.pPuppet->aTracks[track].blendWeight >= 0.5f && (pThing == sithPlayer_g_pLocalPlayerThing || pThing->attach.flags) )
             {
                 sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_CORPSEHIT);
             }
@@ -2324,7 +2324,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         }
         case RDKEYMARKER_SWIMRIGHT:
         {
-            if ( pThing->renderData.pPuppet->aTracks[track].playSpeed >= 0.5f && pThing->pSoundClass )
+            if ( pThing->renderData.pPuppet->aTracks[track].blendWeight >= 0.5f && pThing->pSoundClass )
             {
                 if ( pThing->pInSector && (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 )
                 {

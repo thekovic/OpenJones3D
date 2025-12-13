@@ -234,7 +234,10 @@ int J3DAPI sithDSS_PuppetStatus(const SithThing* pThing, DPID idTo, unsigned int
             /**(int32_t*)pCurOut = pPuppet->aTracks[i].pKFTrack->idx;
             pCurOut += 4;*/
 
-            SITHDSS_PUSHINT32(pPuppet->aTracks[i].unknown0);
+            // Altered: Changed to serialize 32bit float type, as struct field was repurposed.
+            //          Originally this field was not used but was serialized as 32 bit integer
+            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].playbackSpeed);
+           // SITHDSS_PUSHINT32(pPuppet->aTracks[i].unknown0);
             /**(int32_t*)pCurOut = pPuppet->aTracks[i].unknown0;
             pCurOut += 4;*/
 
@@ -251,8 +254,8 @@ int J3DAPI sithDSS_PuppetStatus(const SithThing* pThing, DPID idTo, unsigned int
             /**(float*)pCurOut = pPuppet->aTracks[i].fps;
             pCurOut += 4;*/
 
-            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].playSpeed);
-            /* *(float*)pCurOut = pPuppet->aTracks[i].playSpeed;
+            SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].blendWeight);
+            /* *(float*)pCurOut = pPuppet->aTracks[i].blendWeight;
              pCurOut += 4;*/
 
             SITHDSS_PUSHFLOAT(pPuppet->aTracks[i].curFrame);
@@ -379,7 +382,15 @@ int J3DAPI sithDSS_ProcessPuppetStatus(const SithMessage* pMsg)
 
             pPuppet->aTracks[i].pKFTrack = sithPuppet_GetKeyframeByIndex(kfIdx);
 
-            pPuppet->aTracks[i].unknown0 = SITHDSS_POPINT32();
+            // Altered: Changed to deserialize 32bit float type, as struct field was repurposed.
+            //          Originally this field was not used but was desrialized as 32 bit integer
+            pPuppet->aTracks[i].playbackSpeed = SITHDSS_POPFLOAT();
+            if ( pPuppet->aTracks[i].playbackSpeed <= 0.0f ) // Added: Added check for 0, and in this case set it to 1.0f
+            {
+                pPuppet->aTracks[i].playbackSpeed = 1.0f;
+            }
+
+           // pPuppet->aTracks[i].unknown0 = SITHDSS_POPINT32();
             /*pPuppet->aTracks[i].unknown0 = *(int32_t*)pCurIn;
             pCurIn += 4;*/
 
@@ -395,8 +406,8 @@ int J3DAPI sithDSS_ProcessPuppetStatus(const SithMessage* pMsg)
             /*pPuppet->aTracks[i].fps = *(float*)pCurIn;
             pCurIn += 4;*/
 
-            pPuppet->aTracks[i].playSpeed = SITHDSS_POPFLOAT();
-            /*pPuppet->aTracks[i].playSpeed = *(float*)pCurIn;
+            pPuppet->aTracks[i].blendWeight = SITHDSS_POPFLOAT();
+            /*pPuppet->aTracks[i].blendWeight = *(float*)pCurIn;
             pCurIn += 4;*/
 
             pPuppet->aTracks[i].curFrame = SITHDSS_POPFLOAT();

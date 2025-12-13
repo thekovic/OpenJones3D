@@ -45,7 +45,7 @@ rdPuppet* J3DAPI rdPuppet_New(rdThing* pParent)
     }
 
     // Fixed: Moved memset after null pointer check to avoid write to null ptr
-    memset(pPuppet, 0, sizeof(rdPuppet));
+    STD_ZEROMEM(pPuppet, sizeof(rdPuppet));
 
     rdPuppet_NewEntry(pPuppet, pParent);
     pParent->pPuppet = pPuppet;
@@ -62,8 +62,9 @@ void J3DAPI rdPuppet_NewEntry(rdPuppet* pPuppet, rdThing* parent)
     pPuppet->pThing  = parent;
     for ( size_t trackNum = 0; trackNum < RDPUPPET_MAX_TRACKS; ++trackNum )
     {
-        pPuppet->aTracks[trackNum].curFrame  = 0.0f;
-        pPuppet->aTracks[trackNum].prevFrame = 0.0f;
+        pPuppet->aTracks[trackNum].playbackSpeed = 1.0f; // Added
+        pPuppet->aTracks[trackNum].curFrame      = 0.0f;
+        pPuppet->aTracks[trackNum].prevFrame     = 0.0f;
         rdPuppet_RemoveTrack(pPuppet, trackNum);
     }
 }
@@ -120,12 +121,13 @@ int J3DAPI rdPuppet_AddTrack(rdPuppet* pPuppet, rdKeyframe* pKFTrack, int lowPri
     }
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track];
-    pTrack->fps          = pKFTrack->fps;
-    pTrack->pKFTrack     = pKFTrack;
-    pTrack->playSpeed    = 0.0f;
-    pTrack->lowPriority  = lowPriority;
-    pTrack->highPriority = highPriority;
-    pTrack->status      |= RDPUPPET_TRACK_UNKNOWN_1;
+    pTrack->playbackSpeed = 1.0f; // Added
+    pTrack->fps           = pKFTrack->fps;
+    pTrack->pKFTrack      = pKFTrack;
+    pTrack->blendWeight   = 0.0f;
+    pTrack->lowPriority   = lowPriority;
+    pTrack->highPriority  = highPriority;
+    pTrack->status       |= RDPUPPET_TRACK_UNKNOWN_1;
 
     rdPuppet_ResetTrack(pPuppet, track);
     return track;
@@ -164,58 +166,57 @@ void J3DAPI rdPuppet_SetCallback(rdPuppet* pPuppet, int32_t track, rdPuppetTrack
 
 int J3DAPI rdPuppet_PlayTrack(rdPuppet* pPuppet, int32_t track)
 {
+    RD_ASSERTREL(pPuppet != NULL); // Fixed: Moved here
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
     RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->status |= RDPUPPET_TRACK_PLAYING;
     pTrack->status &= ~RDPUPPET_TRACK_PAUSED;
-    pPuppet->aTracks[track].playSpeed = 1.0f;
+    pPuppet->aTracks[track].blendWeight = 1.0f;
     return 1;
 }
 
-int J3DAPI rdPuppet_FadeInTrack(rdPuppet* pPuppet, int32_t track, float speed)
+int J3DAPI rdPuppet_FadeInTrack(rdPuppet* pPuppet, int32_t track, float fadeDuration)
 {
+    RD_ASSERTREL(pPuppet != NULL); // Fixed: Moved here
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
     RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->status &= ~RDPUPPET_TRACK_FADEOUT;
     pTrack->status |= RDPUPPET_TRACK_FADEIN | RDPUPPET_TRACK_PLAYING;
-    if ( speed <= 0.0f )
+    if ( fadeDuration <= 0.0f )
     {
-        pPuppet->aTracks[track].fadeSpeed = 1.0f;
+        pPuppet->aTracks[track].fadeRate = 1.0f;
     }
     else
     {
-        pPuppet->aTracks[track].fadeSpeed = 1.0f / speed;
+        pPuppet->aTracks[track].fadeRate = 1.0f / fadeDuration;
     }
 
     return 1;
 }
 
-int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float speed)
+int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float fadeDuration)
 {
-
+    RD_ASSERTREL(pPuppet != NULL); // Fixed: Moved here
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
     RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
 
     pTrack->status &= ~RDPUPPET_TRACK_FADEIN;
     pTrack->status |= RDPUPPET_TRACK_FADEOUT;
-    if ( speed <= 0.0f )
+    if ( fadeDuration <= 0.0f )
     {
-        pPuppet->aTracks[track].fadeSpeed = 1.0f;
+        pPuppet->aTracks[track].fadeRate = 1.0f;
     }
     else
     {
-        pPuppet->aTracks[track].fadeSpeed = 1.0f / speed;
+        pPuppet->aTracks[track].fadeRate = 1.0f / fadeDuration;
     }
 
     return 1;
@@ -223,18 +224,27 @@ int J3DAPI rdPuppet_FadeOutTrack(rdPuppet* pPuppet, int32_t track, float speed)
 
 void J3DAPI rdPuppet_SetTrackSpeed(rdPuppet* pPuppet, int32_t track, float fps)
 {
+    RD_ASSERTREL(pPuppet != NULL); // Fixed: Moved here
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks))); // Added
-    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track];
     RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
     pTrack->fps = fps;
 }
 
+void J3DAPI rdPuppet_SetPlaybackSpeed(rdPuppet* pPuppet, int32_t track, float speed)
+{
+    RD_ASSERTREL(pPuppet != NULL);
+    RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
+    RD_ASSERTREL(speed > 0.0f);
+
+    pPuppet->aTracks[track].playbackSpeed = speed;
+}
+
 void J3DAPI rdPuppet_SetTrackNoise(rdPuppet* pPuppet, int32_t track, float noise)
 {
+    RD_ASSERTREL(pPuppet != NULL); // Fixed: Moved here
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet != NULL);
 
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track]; // Fixed: Moved after pPuppet null check to prevent null pointer access
     RD_ASSERTREL(pTrack != NULL); // TODO: What's the point of this check?
@@ -263,8 +273,8 @@ void J3DAPI rdPuppet_SetTrackPriority(rdPuppet* pPuppet, int32_t track, int lowP
 
 void J3DAPI rdPuppet_AdvanceTrack(rdPuppet* pPuppet, int32_t track, float frames)
 {
+    RD_ASSERTREL(pPuppet != NULL); // Fixed: Moved here
     RD_ASSERTREL((track >= 0) && (track < STD_ARRAYLEN(pPuppet->aTracks)));
-    RD_ASSERTREL(pPuppet);
     RD_ASSERTREL(frames >= 0.0f);
 
     if ( !pPuppet->aTracks[track].pKFTrack )
@@ -309,11 +319,13 @@ void J3DAPI rdPuppet_AdvanceTrack(rdPuppet* pPuppet, int32_t track, float frames
             pTrack->curFrame -= (float)pTrack->pKFTrack->numFrames * progress;
 
             // Fixed: Added bounds check
-            if ( pPuppet->pThing->data.pModel3->numHNodes < STD_ARRAYLEN(pTrack->aCurKfNodeEntryNums) ) {
-                memset(pTrack->aCurKfNodeEntryNums, 0, sizeof(pTrack->aCurKfNodeEntryNums[0]) * pPuppet->pThing->data.pModel3->numHNodes);
+            if ( pPuppet->pThing->data.pModel3->numHNodes < STD_ARRAYLEN(pTrack->aCurKfNodeEntryNums) )
+            {
+                STD_ZEROMEM(pTrack->aCurKfNodeEntryNums, sizeof(pTrack->aCurKfNodeEntryNums[0]) * pPuppet->pThing->data.pModel3->numHNodes);
             }
-            else {
-                memset(pTrack->aCurKfNodeEntryNums, 0, sizeof(pTrack->aCurKfNodeEntryNums));
+            else
+            {
+                STD_ZEROMEM(pTrack->aCurKfNodeEntryNums, sizeof(pTrack->aCurKfNodeEntryNums));
             }
         }
     }
@@ -389,23 +401,23 @@ int J3DAPI rdPuppet_UpdateTracks(rdPuppet* pPuppet, float secDeltaTime)
 
             if ( (pTrack->status & RDPUPPET_TRACK_PAUSED) == 0 )
             {
-                float frames = pTrack->fps * secDeltaTime;
+                float frames = pTrack->fps * secDeltaTime * pTrack->playbackSpeed; // Altered: Added multiplication by playbackSpeed
                 rdPuppet_AdvanceTrack(pPuppet, trackNum, frames);
             }
 
             if ( (pTrack->status & RDPUPPET_TRACK_FADEIN) != 0 )
             {
-                pTrack->playSpeed += pTrack->fadeSpeed * secDeltaTime;
-                if ( pTrack->playSpeed >= 1.0f )
+                pTrack->blendWeight += pTrack->fadeRate * secDeltaTime;
+                if ( pTrack->blendWeight >= 1.0f )
                 {
-                    pTrack->playSpeed = 1.0f;
+                    pTrack->blendWeight = 1.0f;
                     pTrack->status &= ~RDPUPPET_TRACK_FADEIN;
                 }
             }
             else if ( (pTrack->status & RDPUPPET_TRACK_FADEOUT) != 0 )
             {
-                pTrack->playSpeed -= pTrack->fadeSpeed * secDeltaTime;
-                if ( pTrack->playSpeed <= 0.0f )
+                pTrack->blendWeight -= pTrack->fadeRate * secDeltaTime;
+                if ( pTrack->blendWeight <= 0.0f )
                 {
                     if ( (pTrack->status & RDPUPPET_TRACK_FADEOUT_PAUSE_ON_LAST_FRAME) != 0 )
                     {
@@ -432,18 +444,20 @@ void J3DAPI rdPuppet_ResetTrack(rdPuppet* pPuppet, int32_t track)
     rdPuppetTrack* pTrack = &pPuppet->aTracks[track];
 
     // Fixed: Added bounds check
-    if ( pPuppet->pThing->data.pModel3->numHNodes < STD_ARRAYLEN(pTrack->aCurKfNodeEntryNums) ) {
-        memset(pTrack->aCurKfNodeEntryNums, 0, sizeof(pTrack->aCurKfNodeEntryNums[0]) * pPuppet->pThing->data.pModel3->numHNodes);
+    if ( pPuppet->pThing->data.pModel3->numHNodes < STD_ARRAYLEN(pTrack->aCurKfNodeEntryNums) )
+    {
+        STD_ZEROMEM(pTrack->aCurKfNodeEntryNums, sizeof(pTrack->aCurKfNodeEntryNums[0]) * pPuppet->pThing->data.pModel3->numHNodes);
     }
-    else {
-        memset(pTrack->aCurKfNodeEntryNums, 0, sizeof(pTrack->aCurKfNodeEntryNums));
+    else
+    {
+        STD_ZEROMEM(pTrack->aCurKfNodeEntryNums, sizeof(pTrack->aCurKfNodeEntryNums));
     }
 
-    pPuppet->aTracks[track].curFrame  = 0.0f;
-    pPuppet->aTracks[track].prevFrame = 0.0f;
-    pPuppet->aTracks[track].status    = RDPUPPET_TRACK_PLAYING | RDPUPPET_TRACK_UNKNOWN_1;
+    pPuppet->aTracks[track].playbackSpeed = 1.0f; // Added
+    pPuppet->aTracks[track].curFrame      = 0.0f;
+    pPuppet->aTracks[track].prevFrame     = 0.0f;
+    pPuppet->aTracks[track].status        = RDPUPPET_TRACK_PLAYING | RDPUPPET_TRACK_UNKNOWN_1;
 }
-
 
 void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPlacement)
 {
@@ -456,8 +470,9 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
     }
     if ( !pPuppet || pPuppet->bPaused )
     {
-        for ( size_t nodeNum = 0; nodeNum < pModel3->numHNodes; ++nodeNum ) {
-            rdMatrix_Copy34(&prdThing->paJointMatrices[nodeNum], &pModel3->aHierarchyNodes[nodeNum].meshOrient);
+        for ( size_t nodeNum = 0; nodeNum < pModel3->numHNodes; ++nodeNum )
+        {
+            prdThing->paJointMatrices[nodeNum] = pModel3->aHierarchyNodes[nodeNum].meshOrient;
         }
         rdThing_AccumulateMatrices(prdThing, pModel3->aHierarchyNodes, pPlacement);
         prdThing->rdFrameNum = rdCache_GetFrameNum();
@@ -483,13 +498,16 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
                         ++nodeIdx;
                         while ( !bFinish )
                         {
-                            if ( nodeIdx == pKfNode->numEntries - 1 ) {
+                            if ( nodeIdx == pKfNode->numEntries - 1 )
+                            {
                                 bFinish = true;
                             }
-                            else if ( pTrack->curFrame >= (double)pKfNode->aEntries[nodeIdx + 1].frame ) {
+                            else if ( pTrack->curFrame >= (double)pKfNode->aEntries[nodeIdx + 1].frame )
+                            {
                                 ++nodeIdx;
                             }
-                            else {
+                            else
+                            {
                                 bFinish = true;
                             }
                         }
@@ -506,11 +524,11 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
         rdModel3HNode* pNode = &pModel3->aHierarchyNodes[nodeNum];
         int highPri = 0;
         int lowPri  = 0;
-        float playSpeed       = 0.0f;
+        float blendWeight     = 0.0f;
         float lowPriPlaySpeed = 0.0f;
 
-        rdVector3 newPos = { 0 };
-        rdVector3 newPyr = { 0 };
+        rdVector3 highPriPos = { 0 };
+        rdVector3 highPriPyr = { 0 };
         rdVector3 lowPriPos = { 0 };
         rdVector3 lowPriPyr = { 0 };
 
@@ -523,7 +541,7 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
                 if ( (pTrack->status & RDPUPPET_TRACK_PLAYING) != 0
                     && pTrack->pKFTrack->aNodes[pNode->num].numEntries
                     && priority >= lowPri
-                    && (priority >= highPri || playSpeed < 1.0f) )
+                    && (priority >= highPri || blendWeight < 1.0f) )
                 {
                     if ( pTrack->pKFTrack->numJoints <= pNode->num )
                     {
@@ -544,7 +562,7 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
                     }
                     else
                     {
-                        rdVector_Copy3(&dkfpos, &pKfFrame->pos);
+                        dkfpos = pKfFrame->pos;
                     }
 
                     if ( (pKfFrame->flags & 2) != 0 )// drot
@@ -555,7 +573,7 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
                     }
                     else
                     {
-                        rdVector_Copy3(&dkfrot, &pKfFrame->rot);
+                        dkfrot = pKfFrame->rot;
                     }
 
                     rdVector_Sub3Acc(&dkfpos, &pNode->pos);
@@ -565,46 +583,46 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
                     dkfrot.yaw   = stdMath_NormalizeAngleAcute(dkfrot.yaw);
                     dkfrot.roll  = stdMath_NormalizeAngleAcute(dkfrot.roll);
 
-                    if ( pTrack->playSpeed < 1.0f )
+                    if ( pTrack->blendWeight < 1.0f )
                     {
-                        rdVector_Scale3Acc(&dkfpos, pTrack->playSpeed);
-                        rdVector_Scale3Acc(&dkfrot, pTrack->playSpeed);
+                        rdVector_Scale3Acc(&dkfpos, pTrack->blendWeight);
+                        rdVector_Scale3Acc(&dkfrot, pTrack->blendWeight);
                     }
 
                     if ( priority == highPri )
                     {
-                        playSpeed += pTrack->playSpeed;
-                        rdVector_Add3Acc(&newPos, &dkfpos);
-                        rdVector_Add3Acc(&newPyr, &dkfrot);
+                        blendWeight += pTrack->blendWeight;
+                        rdVector_Add3Acc(&highPriPos, &dkfpos);
+                        rdVector_Add3Acc(&highPriPyr, &dkfrot);
                     }
                     else if ( priority > highPri )
                     {
-                        lowPriPlaySpeed = playSpeed;
+                        lowPriPlaySpeed = blendWeight;
                         lowPri          = highPri;
                         highPri         = priority;
-                        playSpeed       = pTrack->playSpeed;
+                        blendWeight     = pTrack->blendWeight;
 
-                        rdVector_Copy3(&lowPriPos, &newPos);
-                        rdVector_Copy3(&lowPriPyr, &newPyr);
+                        lowPriPos = highPriPos;
+                        lowPriPyr = highPriPyr;
 
-                        rdVector_Copy3(&newPos, &dkfpos);
-                        rdVector_Copy3(&newPyr, &dkfrot);
+                        highPriPos = dkfpos;
+                        highPriPyr = dkfrot;
                     }
 
                     else if ( priority > lowPri )
                     {
-                        lowPriPlaySpeed = pTrack->playSpeed;
+                        lowPriPlaySpeed = pTrack->blendWeight;
                         lowPri          = priority;
 
-                        rdVector_Copy3(&lowPriPos, &dkfpos);
-                        rdVector_Copy3(&lowPriPyr, &dkfrot);
+                        lowPriPos = dkfpos;
+                        lowPriPyr = dkfrot;
                     }
                     else // must be lees then lowPri
                     {
                         RD_ASSERTREL(priority == lowPri);
                         RD_ASSERTREL(highPri != lowPri);
 
-                        lowPriPlaySpeed = lowPriPlaySpeed + pTrack->playSpeed;
+                        lowPriPlaySpeed = lowPriPlaySpeed + pTrack->blendWeight;
                         rdVector_Add3Acc(&lowPriPos, &dkfpos);
                         rdVector_Add3Acc(&lowPriPyr, &dkfrot);
                     }
@@ -612,12 +630,12 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
             }
         }
 
-        if ( playSpeed >= 1.0f || lowPriPlaySpeed <= 0.0f )
+        if ( blendWeight >= 1.0f || lowPriPlaySpeed <= 0.0f )
         {
-            if ( playSpeed > 1.0f )
+            if ( blendWeight > 1.0f )
             {
-                rdVector_InvScale3Acc(&newPos, playSpeed); // newPos / playSpeed
-                rdVector_InvScale3Acc(&newPyr, playSpeed);
+                rdVector_InvScale3Acc(&highPriPos, blendWeight); // highPriPos / blendWeight
+                rdVector_InvScale3Acc(&highPriPyr, blendWeight);
             }
         }
         else
@@ -628,24 +646,24 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
                 rdVector_InvScale3Acc(&lowPriPyr, lowPriPlaySpeed);
             }
 
-            float lerpFact = 1.0f - playSpeed;
-            newPos.x += lowPriPos.x * lerpFact;
-            newPos.y += lowPriPos.y * lerpFact;
-            newPos.z += lowPriPos.z * lerpFact;
+            float lerpFact = 1.0f - blendWeight;
+            highPriPos.x += lowPriPos.x * lerpFact;
+            highPriPos.y += lowPriPos.y * lerpFact;
+            highPriPos.z += lowPriPos.z * lerpFact;
 
-            newPyr.pitch += lowPriPyr.pitch * lerpFact;
-            newPyr.yaw   += lowPriPyr.yaw * lerpFact;
-            newPyr.roll  += lowPriPyr.roll * lerpFact;
+            highPriPyr.pitch += lowPriPyr.pitch * lerpFact;
+            highPriPyr.yaw   += lowPriPyr.yaw * lerpFact;
+            highPriPyr.roll  += lowPriPyr.roll * lerpFact;
         }
 
-        rdVector_Add3Acc(&newPos, &pNode->pos);
+        rdVector_Add3Acc(&highPriPos, &pNode->pos);
 
-        newPyr.pitch = stdMath_NormalizeAngleAcute(newPyr.pitch);
-        newPyr.yaw   = stdMath_NormalizeAngleAcute(newPyr.yaw);
-        newPyr.roll  = stdMath_NormalizeAngleAcute(newPyr.roll);
-        rdVector_Add3Acc(&newPyr, &pNode->pyr);
+        highPriPyr.pitch = stdMath_NormalizeAngleAcute(highPriPyr.pitch);
+        highPriPyr.yaw   = stdMath_NormalizeAngleAcute(highPriPyr.yaw);
+        highPriPyr.roll  = stdMath_NormalizeAngleAcute(highPriPyr.roll);
+        rdVector_Add3Acc(&highPriPyr, &pNode->pyr);
 
-        rdMatrix_Build34(&prdThing->paJointMatrices[nodeNum], &newPyr, &newPos);
+        rdMatrix_Build34(&prdThing->paJointMatrices[nodeNum], &highPriPyr, &highPriPos);
 
         if ( prdThing->apTweakedAngles[nodeNum].x != 0.0f || prdThing->apTweakedAngles[nodeNum].y != 0.0f || prdThing->apTweakedAngles[nodeNum].z != 0.0f )
         {
