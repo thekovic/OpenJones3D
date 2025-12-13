@@ -99,6 +99,15 @@ int J3DAPI sithPuppet_StopMode(SithThing* pThing, SithPuppetSubMode submode, flo
 int J3DAPI sithPuppet_SynchMode(SithThing* pThing, SithPuppetSubMode oldMode, SithPuppetSubMode newMode, float a4, int bReverse);
 void J3DAPI sithPuppet_ClearMode(SithThing* pThing, SithPuppetSubMode mode);
 
+/**
+ * Sets playback speed for any currently playing track with mode equal to `submode`.
+ * @param pThing        - Actor thing to set submode speed
+ * @param submode       - The playing submode to set the playback speed fot
+ * @param playbackSpeed - The new playback speed. Must be > 0.0. Normal play is at speed 1.0
+ * @return on success returns true, otherwise false (invalid submode, thing has no puppet class, submode has no keyframe set).
+ */
+bool J3DAPI sithPuppet_SetModeSpeed(SithThing* pThing, SithPuppetSubMode submode, float playbackSpeed); // Added new
+
 void J3DAPI sithPuppet_RemoveTrackByIndex(SithThing* pThing, int trackNum);
 int J3DAPI sithPuppet_NewTrack(SithThing* pThing, SithPuppetClassSubmode* pSubmode, int trackNum, SithPuppetSubMode submode);
 void J3DAPI sithPuppet_AddTrack(SithThing* pThing, SithPuppetTrack* pNewTrack);

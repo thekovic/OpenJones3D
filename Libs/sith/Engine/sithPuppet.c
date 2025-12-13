@@ -3436,6 +3436,33 @@ void J3DAPI sithPuppet_ClearMode(SithThing* pThing, SithPuppetSubMode mode)
     }
 }
 
+bool J3DAPI sithPuppet_SetModeSpeed(SithThing* pThing, SithPuppetSubMode submode, float playbackSpeed)
+{
+    SITH_ASSERTREL(pThing && pThing->pPuppetState && pThing->renderData.pPuppet);
+
+    if ( !pThing->pPuppetClass || (size_t)submode >= SITH_PUPPET_NUMSUBMODES ) // Fixed: cast submode to unsigned to catch negative OOB
+    {
+        return false;
+    }
+
+    rdKeyframe* pKeyframe = pThing->pPuppetClass->aModes[pThing->pPuppetState->majorMode][submode].pKeyframe;
+    if ( !pKeyframe )
+    {
+        return false;
+    }
+
+    for ( size_t track = 0; track < RDPUPPET_MAX_TRACKS; ++track )
+    {
+        rdPuppetTrack* pTrack = &pThing->renderData.pPuppet->aTracks[track];
+        if ( pTrack->pKFTrack == pKeyframe )
+        {
+            rdPuppet_SetPlaybackSpeed(pThing->renderData.pPuppet, track, playbackSpeed);
+        }
+    }
+
+    return true;
+}
+
 void J3DAPI sithPuppet_RemoveTrackByIndex(SithThing* pThing, int trackNum)
 {
     for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack; pTrack = pTrack->pNextTrack )
