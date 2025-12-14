@@ -188,7 +188,23 @@ void J3DAPI rdMatrix_BuildFromVectorAngle34(rdMatrix34* mat, const rdVector3* ve
     float sinAngle, cosAngle;
     stdMath_SinCos(angle, &sinAngle, &cosAngle);
 
-    if ( vec->z < 1.0f && vec->z > -1.0f )
+    // Fixed: Added normalized check as vec->z might be wrongly normalized 
+    //        and due to rounding errors close to -1.0f
+    if ( stdMath_ClipNearZero(1.0f + vec->z) == 0.0f ) // vec->z <= -1.0f
+    {
+        mat->rvec = (rdVector3){ cosAngle, -sinAngle, 0.0f };
+        mat->lvec = (rdVector3){ sinAngle, cosAngle, 0.0f };
+        mat->uvec = rdroid_g_zVector3;// (rdVector3) { 0.0f, 0.0f, 1.0f };
+    }
+    // Fixed: Added normalized check as vec->z might be wrongly normalized 
+    //        and due to rounding errors close to 1.0f
+    else if ( stdMath_ClipNearZero(1.0f - vec->z) == 0.0f ) // vec->z >= 1.0f
+    {
+        mat->rvec = (rdVector3){ cosAngle, sinAngle, 0.0f };
+        mat->lvec = (rdVector3){ -sinAngle, cosAngle, 0.0f };
+        mat->uvec = rdroid_g_zVector3; // (rdVector3) { 0.0f, 0.0f, 1.0f };
+    }
+    else // ( vec->z < 1.0f && vec->z > -1.0f )
     {
         float oneMinusCos = 1.0f - cosAngle; // 2*sin(angle/2)^2
         float xx = vec->x * vec->x;
@@ -212,18 +228,6 @@ void J3DAPI rdMatrix_BuildFromVectorAngle34(rdMatrix34* mat, const rdVector3* ve
         mat->lvec.z = oneMinusCos * yz + xs;
         mat->uvec.x = oneMinusCos * xz + ys;
         mat->uvec.y = oneMinusCos * yz - xs;
-    }
-    else if ( vec->z <= -1.0f )
-    {
-        mat->rvec = (rdVector3){ cosAngle, -sinAngle, 0.0f };
-        mat->lvec = (rdVector3){ sinAngle, cosAngle, 0.0f };
-        mat->uvec = rdroid_g_zVector3;// (rdVector3) { 0.0f, 0.0f, 1.0f };
-    }
-    else // vec->z >= 1.0f
-    {
-        mat->rvec = (rdVector3){ cosAngle, sinAngle, 0.0f };
-        mat->lvec = (rdVector3){ -sinAngle, cosAngle, 0.0f };
-        mat->uvec = rdroid_g_zVector3; // (rdVector3) { 0.0f, 0.0f, 1.0f };
     }
 
     mat->dvec = rdroid_g_zeroVector3;//(rdVector3){ 0.0f, 0.0f, 0.0f };
@@ -287,7 +291,8 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
     {
         float sinYaw = (float)(vecFwd.y / fwdLenXY);
         pyr->yaw = 90.0f - stdMath_ArcSin3(sinYaw);
-        if ( vecFwd.x > 0.0f ) {
+        if ( vecFwd.x > 0.0f )
+        {
             pyr->yaw = -pyr->yaw;
         }
     }
@@ -296,7 +301,8 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
         float sinYaw = -negRightX;
         pyr->yaw  = 0.0f;
         pyr->roll = 90.0f - stdMath_ArcSin3(sinYaw);
-        if ( (negRightY > 0.0f && vecFwd.z > 0.0f) || (negRightY < 0.0f && vecFwd.z < 0.0f) ) {
+        if ( (negRightY > 0.0f && vecFwd.z > 0.0f) || (negRightY < 0.0f && vecFwd.z < 0.0f) )
+        {
             pyr->roll = -pyr->roll;
         }
     }
@@ -306,15 +312,18 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
     if ( fwdLenXY >= 0.001 )
     {
         float sinPitch = (float)((vecFwd.x * vecFwd.x + vecFwd.y * vecFwd.y) / fwdLenXY);
-        if ( sinPitch < 1.0f ) {
+        if ( sinPitch < 1.0f )
+        {
             pyr->pitch = 90.0f - stdMath_ArcSin3(sinPitch);
         }
-        else {
+        else
+        {
             pyr->pitch = 0.0f;
         }
     }
 
-    if ( vecFwd.z < 0.0f ) {
+    if ( vecFwd.z < 0.0f )
+    {
         pyr->pitch = -pyr->pitch;
     }
 
@@ -328,15 +337,18 @@ void J3DAPI rdMatrix_ExtractAngles34(const rdMatrix34* mat, rdVector3* pyr)
         float sinRoll = (float)((negUpY * negRightX + vecFwd.x * negRightY) / upXYLen);
         if ( sinRoll < 1.0f )
         {
-            if ( sinRoll > -1.0f ) {
+            if ( sinRoll > -1.0f )
+            {
                 pyr->roll= 90.0f - stdMath_ArcSin3(sinRoll);
             }
-            else {
+            else
+            {
                 pyr->roll = 180.0f;
             }
         }
 
-        if ( negRightZ < 0.0f ) {
+        if ( negRightZ < 0.0f )
+        {
             pyr->roll = -pyr->roll;
         }
     }
