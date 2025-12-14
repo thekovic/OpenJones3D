@@ -2115,10 +2115,10 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                 else
                 {
                     SithSoundClassMode sndmode = 0;
-                    int sndModeOffset = markerType - 1;
+                    int sndModeOffset = markerType - 1; // 1 - SITHSOUNDCLASS_CREATE ?
                     if ( (unsigned int)(markerType - 1) > 1 )
                     {
-                        sndModeOffset = markerType - 6;
+                        sndModeOffset = markerType - 6; // 6 might be SITHSOUNDCLASS_LWALKHARD
                     }
 
                     if ( (pThing->attach.flags & SITH_ATTACH_THINGFACE) != 0 )
@@ -2148,15 +2148,15 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                         {
                             if ( (pSurfaceAttached->flags & SITH_SURFACE_METAL) != 0 )
                             {
-                                sndmode = SITHSOUNDCLASS_CREATE;
+                                sndmode = SITHSOUNDCLASS_CREATE; // will offset to SITHSOUNDCLASS_LWALKMETAL
                             }
                             else if ( (pSurfaceAttached->flags & SITH_SURFACE_WATER) != 0 )
                             {
-                                sndmode = SITHSOUNDCLASS_ACTIVATE;
+                                sndmode = SITHSOUNDCLASS_ACTIVATE; // code below will offset to SITHSOUNDCLASS_LWALKWATER
                             }
                             else if ( (pSurfaceAttached->flags & SITH_SURFACE_SHALLOWWATER) != 0 )
                             {
-                                sndmode = SITHSOUNDCLASS_STARTMOVE;
+                                sndmode = SITHSOUNDCLASS_STARTMOVE; // code below will offset to SITHSOUNDCLASS_LWALKPUDDLE
                             }
                             else if ( (pSurfaceAttached->flags & SITH_SURFACE_EARTH) != 0 )
                             {
@@ -2188,13 +2188,15 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
                             }
                             else
                             {
-                                sndmode = 0;
+                                sndmode = 0; // should offset to SITHSOUNDCLASS_LWALKHARD
                             }
                         }
                     }
 
-                    sithSoundClass_PlayModeRandom(pThing, (SithSoundClassMode)(sndModeOffset + 4 * sndmode + 6));
+                    sithSoundClass_PlayModeRandom(pThing, (SithSoundClassMode)(sndModeOffset + 4 * sndmode + 6)); // 6 might be SITHSOUNDCLASS_LWALKHARD and 4 is 4 states of moving: left/right walk & left/right run
 
+                    // SITHSOUNDCLASS_ACTIVATE  - offsets to SITHSOUNDCLASS_LWALKWATER
+                    // SITHSOUNDCLASS_STARTMOVE - offsets to SITHSOUNDCLASS_LWALKPUDDLE
                     if ( sndmode == SITHSOUNDCLASS_ACTIVATE || sndmode == SITHSOUNDCLASS_STARTMOVE )
                     {
                         sithFX_CreateWaterRipple(pThing);
