@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+static float sithPuppet_watersurfaceTurnFactor = 0.0005f;
+
 typedef struct sCndKeyframeMarker
 {
     float frame;
@@ -743,20 +745,20 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
     {
         case SITHPLAYERMOVE_STILL:
         {
-            if ( axis <= 1 ) // left or forward
+            if ( axis <= 1 ) // right or forward
             {
+                // Check if negative speed, that is walk back
                 if ( moveSpeed < 0.0f )
                 {
                     submode = SITHPUPPETSUBMODE_WALKBACK;
                     pThing->moveStatus = SITHPLAYERMOVE_WALKING;
                 }
-
-                else if ( moveSpeed <= 0.000099999997f )
+                else if ( moveSpeed <= 0.000099999997f ) // still
                 {
                     submode = SITHPUPPETSUBMODE_STAND;
                     pThing->moveStatus = SITHPLAYERMOVE_STILL;
                 }
-                else
+                else // else walk
                 {
                     submode = SITHPUPPETSUBMODE_WALK;
                     pThing->moveStatus = SITHPLAYERMOVE_WALKING;
@@ -782,9 +784,9 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                     pThing->moveStatus = SITHPLAYERMOVE_FALLING;
                 }
             }
-            else // 99 not moving
+            else // 99 not moving i.e. check for turning
             {
-                moveSpeed = pThing->moveInfo.physics.angularVelocity.y * 0.00019999999f; // TODO: Verify if  it's ok setting yaw speed to move speed here
+                moveSpeed = pThing->moveInfo.physics.angularVelocity.yaw * 0.00019999999f;
                 if ( moveSpeed < -0.01f )
                 {
                     submode = SITHPUPPETSUBMODE_TURNRIGHT;
@@ -902,7 +904,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                 }
                 else  // left or up or not moving
                 {
-                    float yawSpeed = pThing->moveInfo.physics.angularVelocity.y * 0.00019999999f;
+                    float yawSpeed = pThing->moveInfo.physics.angularVelocity.yaw * 0.00019999999f;
                     if ( yawSpeed < -0.01f ) // rotate right
                     {
                         submode = SITHPUPPETSUBMODE_TURNRIGHT;
@@ -1000,9 +1002,10 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                 bSwimming = true;
             }
 
-            if ( axis == 1 ) // left
+            if ( axis == 1 ) // Forward axis Y
             {
-                if ( moveSpeed < -0.04f ) // rotate/move right
+
+                if ( moveSpeed < -0.04f ) // Swim backward
                 {
                     submode = SITHPUPPETSUBMODE_WALKBACK;
                     if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_WALKBACK
@@ -1013,11 +1016,12 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                         sithFX_CreateWaterRipple(pThing);
                     }
                 }
-                else if ( moveSpeed <= 0.04f ) // still
+                else if ( moveSpeed <= 0.04f ) // Still
                 {
+                    // Submerged still
                     if ( (pThing->flags & SITH_TF_SUBMERGED) != 0 && (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 || bFloating )
                     {
-                        submode = SITHPUPPETSUBMODE_RISING;
+                        submode = SITHPUPPETSUBMODE_RISING; // underwater float
                         if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_RISING
                             || SITH_ISFRAMECYCLE(pThing->idx, 4) && SITH_RAND() < 0.30000001f) // On every 4th frame and at random
                             && !bFloating )
@@ -1026,11 +1030,39 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                             sithFX_CreateBubble(pThing);
                         }
                     }
-                    else
+                    else // Water surface still
                     {
+                    #ifdef J3D_QOL_IMPROVEMENTS
+                        // Altered: Added turn left/right submode play and move speed calculation
+                        moveSpeed = pThing->moveInfo.physics.angularVelocity.yaw * sithPuppet_watersurfaceTurnFactor;
+                        if ( moveSpeed < -0.01f )
+                        {
+                            submode = SITHPUPPETSUBMODE_TURNRIGHT;
+                        }
+                        else if ( moveSpeed <= 0.01f )
+                        {
+                            submode = SITHPUPPETSUBMODE_STAND;
+                        }
+                        else
+                        {
+                            submode = SITHPUPPETSUBMODE_TURNLEFT;
+                        }
+                    #else
                         submode = SITHPUPPETSUBMODE_STAND;
-                        if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_STAND
-                            || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // On every 8th frame and at random
+                    #endif
+
+                        // Added: Added simulated soundfx play since turn animations don't have any keymarkers
+                        if ( (submode == SITHPUPPETSUBMODE_TURNLEFT
+                            || submode == SITHPUPPETSUBMODE_TURNRIGHT)
+                            && SITH_ISFRAMECYCLE(pThing->idx, 16) && SITH_RAND() < 0.25000001f )
+                        {
+                            sithSoundClass_PlayModeFirst(pThing, SITH_RAND() >= 0.5 ? SITHSOUNDCLASS_RSWIMSURFACE : SITHSOUNDCLASS_LSWIMSURFACE);
+                        }
+
+                        if ( ((pThing->pPuppetState->submode != SITHPUPPETSUBMODE_STAND
+                            && pThing->pPuppetState->submode != SITHPUPPETSUBMODE_TURNLEFT
+                            && pThing->pPuppetState->submode != SITHPUPPETSUBMODE_TURNRIGHT) // Altered: Added check for turn submodes
+                            || SITH_ISFRAMECYCLE(pThing->idx, 16) && SITH_RAND() < 0.30000001f) // Altered: on every 16th frame, was every 8th frame
                             && !bFloating )
                         {
                             sithFX_CreateWaterRipple(pThing);
@@ -1039,7 +1071,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                 }
                 else if ( (pThing->flags & SITH_TF_SUBMERGED) != 0 && (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 || bFloating )
                 {
-                    // Here is turning/moving left
+                    // Underwater swim forward
 
                     submode = SITHPUPPETSUBMODE_RUN;
                     if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_RUN
@@ -1050,7 +1082,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                         sithFX_CreateBubble(pThing);
                     }
                 }
-                else
+                else //Surface swim forward
                 {
                     submode = SITHPUPPETSUBMODE_WALK;
                     if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_WALK
@@ -1062,11 +1094,12 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                     }
                 }
             }
+            // Axis right or up or  99 - not moving
             else if ( (pThing->flags & SITH_TF_SUBMERGED) != 0 && (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 || bFloating )
             {
-                 // axis forward or up or not moving
+                // Underwater still or turning
 
-                submode = SITHPUPPETSUBMODE_RISING;
+                submode = SITHPUPPETSUBMODE_RISING; // underwater still
                 if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_RISING
                     || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // On every 8th frame and at random
                     && !bFloating )
@@ -1074,13 +1107,40 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
                     sithFX_CreateBubble(pThing);
                 }
             }
-            else
+            else // Water surface still or turning
             {
-                // On water surface here
+            #ifdef J3D_QOL_IMPROVEMENTS
+                // Altered: Added turn left/right submode play and move speed calculation
+                moveSpeed = pThing->moveInfo.physics.angularVelocity.yaw * sithPuppet_watersurfaceTurnFactor;
+                if ( moveSpeed < -0.01f )
+                {
+                    submode = SITHPUPPETSUBMODE_TURNRIGHT;
+                }
+                else if ( moveSpeed <= 0.01f )
+                {
+                    submode = SITHPUPPETSUBMODE_STAND;
+                }
+                else
+                {
+                    submode = SITHPUPPETSUBMODE_TURNLEFT;
+                }
 
+            #else
                 submode = SITHPUPPETSUBMODE_STAND;
-                if ( (pThing->pPuppetState->submode != SITHPUPPETSUBMODE_STAND
-                    || SITH_ISFRAMECYCLE(pThing->idx, 8) && SITH_RAND() < 0.30000001f) // on every 8th frame and at random
+            #endif
+
+                // Added: Added simulated soundfx play since turn animations don't have any keymarkers
+                if ( (submode == SITHPUPPETSUBMODE_TURNLEFT
+                    || submode == SITHPUPPETSUBMODE_TURNRIGHT)
+                    && SITH_ISFRAMECYCLE(pThing->idx, 16) && SITH_RAND() < 0.25000001f )
+                {
+                    sithSoundClass_PlayModeFirst(pThing, SITH_RAND() >= 0.5 ? SITHSOUNDCLASS_RSWIMSURFACE : SITHSOUNDCLASS_LSWIMSURFACE);
+                }
+
+                if ( ((pThing->pPuppetState->submode != SITHPUPPETSUBMODE_STAND
+                    && pThing->pPuppetState->submode != SITHPUPPETSUBMODE_TURNLEFT
+                    && pThing->pPuppetState->submode != SITHPUPPETSUBMODE_TURNRIGHT) // Altered: Added check for turn submodes
+                    || SITH_ISFRAMECYCLE(pThing->idx, 16) && SITH_RAND() < 0.30000001f) // Altered: on every 16th frame, was eveeveryrty 8th frame
                     && !bFloating )
                 {
                     // Create ripples in water
@@ -1113,7 +1173,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
         }
         case SITHPLAYERMOVE_JEEP_IDLE:
         {
-            float yawSpeed = pThing->moveInfo.physics.angularVelocity.y * 0.00019999999f;
+            float yawSpeed = pThing->moveInfo.physics.angularVelocity.yaw * 0.00019999999f;
             if ( moveSpeed <= 0.001f && (moveSpeed >= -0.001f || sithControl_GetKey(SITHCONTROL_BACK, 0)) )
             {
                 if ( moveSpeed < -0.001f )
