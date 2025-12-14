@@ -69,6 +69,7 @@ static int sithPlayerControls_climbPupTrackNum;
 
 // Swim controls vars
 static float sithPlayerControls_secSwimIdleTime   = 0.0f; // Fixed: Init to 0.0f
+static float sithPlayerControls_secSwimBoostTimer = 0.0f; // Added
 static float sithPlayerControls_swimPitchTurnRate = 60.0f;
 static float sithPlayerControls_swimMaxPitchAngle = 75.0f;
 static float sithPlayerControls_swimYawTurnRate   = 75.0f;
@@ -504,6 +505,12 @@ int J3DAPI sithPlayerControls_Process(SithThing* pPlayerThing, float secDeltaTim
     else
     {
         sithPlayerControls_secSwimIdleTime = 0.0f;
+    }
+
+    // Added: Decrement swim boost timer
+    if ( sithPlayerControls_secSwimBoostTimer > 0.0f )
+    {
+        sithPlayerControls_secSwimBoostTimer = J3DMAX(sithPlayerControls_secSwimBoostTimer - secDeltaTime, 0.0f);
     }
 
     if ( sithPuppet_g_bPlayerLeapForward && pPlayerThing->moveStatus != SITHPLAYERMOVE_RUNNING )
@@ -1930,6 +1937,15 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
     const float pitchRate = sithPlayerControls_swimPitchTurnRate;
     const float yawRate   = sithPlayerControls_swimYawTurnRate;
 
+    // Added: Check for swim boost key pressed
+    int bBoostJustPrezzed;
+    bool bBoootPressed = sithControl_GetKey(SITHCONTROL_RUNFWD, &bBoostJustPrezzed)
+        || sithControl_GetKey(SITHCONTROL_ACT1, &bBoostJustPrezzed);
+
+    // Make new boost move QOL
+    bBoostJustPrezzed = J3D_QOL_VALUE(bBoostJustPrezzed, 0);
+    bBoootPressed     = J3D_QOL_VALUE(bBoootPressed, false);
+
     // TODO: Check for thing in sector!
 
     if ( (pThing->flags & SITH_TF_SUBMERGED) == 0
@@ -2027,8 +2043,72 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
         // if not on water surface push thing forward, i.e. swim
         else if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 )
         {
-            // TODO: Add swim thrust when run key is pressed
-            pPhysics->thrust.y = sithPlayerControls_CalculateThrust(pActor, 2.0f, sithPlayerControls_moveFactorNormal);
+            float directionFactor = 2.0f; // Default
+
+            // Added: Swim boost logic
+            //        When swim boost key is pressed swim faster for 3 sec at expense of endurance penalty
+            if ( sithPlayerControls_secSwimBoostTimer == 0.0f && bBoostJustPrezzed )
+            {
+                sithPlayerControls_secSwimBoostTimer = 3.0f;
+
+            }
+            else if ( sithPlayerControls_secSwimBoostTimer > 0.0f && bBoootPressed )
+            {
+                float enduranceRate = 2.5f;
+
+                // If swimming in direction of water current add extra endurance penalty
+                if ( (pThing->pInSector->flags & SITH_SECTOR_USETHRUST) != 0 )
+                {
+                    rdVector3 swimDir      = pThing->orient.lvec;
+                    rdVector3 waterVel     = pThing->pInSector->thrust;
+                    float currentSpeed     = rdVector_Len3(&waterVel);
+
+                    if ( currentSpeed > 0.0f )
+                    {
+                        rdVector3 thrustDir;
+                        rdVector_Normalize3(&thrustDir, &waterVel);
+
+                        // Projection of water velocity onto swim direction
+                        float projected = rdVector_Dot3(&thrustDir, &swimDir) * currentSpeed;
+
+                        // Opposing current component (positive when slowing movement)
+                        float oppose = -projected;
+                        if ( oppose < 0.0f )
+                        {
+                            oppose = 0.0f; // if current helps forward, no penalty
+                        }
+
+                        // Apply endurance penalty from opposing current
+                        enduranceRate *= (1.0f + oppose * 2.5f);
+
+                        // Adjust directionFactor
+                        // Penalize when resisting current, boost a bit when aiding
+                        directionFactor *= (1.8f - oppose * 1.5f);
+                    }
+                    else
+                    {
+                        // no current
+                        directionFactor *= 1.8f;
+                    }
+                }
+                else
+                {
+                    // no current
+                    directionFactor *= 1.8f;
+                }
+
+                // Apply underwater endurance penalty
+                pThing->thingInfo.actorInfo.endurance.msecUnderwater += enduranceRate * secDeltaTime * 1000.0f;
+
+                // Puff some bubblez
+                if ( SITH_RAND() < 0.30000001f )
+                {
+                    sithFX_CreateBubble(pThing);
+                }
+            }
+
+            // Calculate new swim thrust
+            pPhysics->thrust.y = sithPlayerControls_CalculateThrust(pActor, directionFactor, sithPlayerControls_moveFactorNormal);
 
             if ( (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
             {
@@ -2067,6 +2147,12 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
             pThing->forceMoveStartPos = pThing->pos;
             sithPuppet_PlayForceMoveMode(pThing, SITHPUPPETSUBMODE_DIVEFROMSURFACE, NULL);
 
+            // Added: Speed up dive if boost key pressed
+            if ( bBoootPressed )
+            {
+                sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_DIVEFROMSURFACE, 1.3f);
+            }
+
             if ( sithPlayerControls_secCommentWaitTimer == 0.0f )
             {
                 sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_EXITWATERSLOW);
@@ -2084,19 +2170,28 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
         pPhysics->thrust.z = 0.0f;
     }
 
+
     //
     // Process forward/backward pitch control
-    // TODO: add turn thrust on run key press
     //
+
+    bool bBoostTurn = bBoootPressed && stdMath_ClipNearZero(pPhysics->thrust.y) == 0;
+
     if ( sithControl_GetKey(SITHCONTROL_FORWARD, NULL) )
     {
-        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 )
+
+        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 )
+        {
+        // On water surface move forward
+            pPhysics->thrust.y = sithPlayerControls_CalculateThrust(pActor, 1.0f, sithPlayerControls_moveFactorNormal);
+        }
+        else
         {
             // Underwater pitch up
             rdVector3 pyr;
             rdMatrix_ExtractAngles34(&pThing->orient, &pyr);
 
-            float angleDelta = -pitchRate * sithTime_g_frameTimeFlex;
+            float angleDelta = -pitchRate * sithTime_g_frameTimeFlex * (bBoostTurn ? 1.5f : 1.0f); // Altered: Added boost turn
             if ( fabsf(angleDelta + pyr.pitch) <= sithPlayerControls_swimMaxPitchAngle )
             {
                 rdVector3 newLook = { angleDelta, 0.0f, 0.0f };
@@ -2104,9 +2199,6 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
             }
             return;
         }
-
-        // On water surface move forward
-        pPhysics->thrust.y = sithPlayerControls_CalculateThrust(pActor, 1.0f, sithPlayerControls_moveFactorNormal);
     }
     else if ( sithControl_GetKey(SITHCONTROL_BACK, NULL) )
     {
@@ -2121,7 +2213,7 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
             rdVector3 pyr;
             rdMatrix_ExtractAngles34(&pThing->orient, &pyr);
 
-            float angleDelta = pitchRate * sithTime_g_frameTimeFlex;
+            float angleDelta = pitchRate * sithTime_g_frameTimeFlex * (bBoostTurn ? 1.5f : 1.0f); // Altered: Added boost turn
             if ( fabsf(angleDelta + pyr.pitch) <= sithPlayerControls_swimMaxPitchAngle )
             {
                 rdVector3 newLook = { angleDelta, 0.0f, 0.0f };
@@ -2137,29 +2229,34 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
 
     //
     // Process turn keys
-    //  TODO: add turn thrust on run key press
     //
     if ( sithControl_GetKey(SITHCONTROL_TURNRIGHT, NULL) )
     {
-        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 )
+
+        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 )
         {
-            rdVector3 newLook = { 0.0f, -yawRate * sithTime_g_frameTimeFlex, 0.0f };
+            pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(pActor, -1.0f, -1.0f, 1.0f);
+        }
+        else
+        {
+            // Altered: Added boost turn
+            rdVector3 newLook = { 0.0f, -yawRate * sithTime_g_frameTimeFlex * (bBoostTurn ? 1.5f : 1.0f), 0.0f };
             rdMatrix_PostRotate34(&pThing->orient, &newLook);
             return;
         }
-
-        pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(pActor, -1.0f, -1.0f, 1.0f);
     }
     else if ( sithControl_GetKey(SITHCONTROL_TURNLEFT, NULL) )
     {
-        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) == 0 )
+        if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 )
         {
-            rdVector3 newLook = { 0.0f, yawRate * sithTime_g_frameTimeFlex, 0.0f };
+            pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(pActor, 1.0f, 1.0f, 1.0f);
+        }
+        {
+            // Altered: Added boost turn
+            rdVector3 newLook = { 0.0f, yawRate * sithTime_g_frameTimeFlex * (bBoostTurn ? 1.5f : 1.0f), 0.0f };
             rdMatrix_PostRotate34(&pThing->orient, &newLook);
             return;
         }
-
-        pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(pActor, 1.0f, 1.0f, 1.0f);
     }
     else
     {

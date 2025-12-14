@@ -45,7 +45,7 @@ void J3DAPI sithPlayerControls_SetVehicleBoardedThing(SithThing* pThing);
  * @param speedFactor - Extra speed factor.
  * @return
  */
-inline float sithPlayerControls_CalculateThrust(SithActorInfo* pActor, float direction, float speedFactor)
+static inline float sithPlayerControls_CalculateThrust(SithActorInfo* pActor, float direction, float speedFactor)
 {
     return (pActor->maxThrust + pActor->extraSpeed) * direction * speedFactor;
 }
@@ -57,7 +57,7 @@ inline float sithPlayerControls_CalculateThrust(SithActorInfo* pActor, float dir
 * @param speedFactor  - Extra speed factor.
 * @param secDeltaTime - Frame time delta
 */
-inline float sithPlayerControls_CalculateAcceleratedThrust(SithActorInfo* pActor, float direction, float speedFactor, float secDeltaTime)
+static inline float sithPlayerControls_CalculateAcceleratedThrust(SithActorInfo* pActor, float direction, float speedFactor, float secDeltaTime)
 {
     // TODO: Would make sens to refactor this formula and remove frame time dependency altogether
     return (pActor->maxThrust * direction * speedFactor) + (direction * secDeltaTime);
@@ -70,7 +70,7 @@ inline float sithPlayerControls_CalculateAcceleratedThrust(SithActorInfo* pActor
 * @param keyDirection  - Key direction. Should be negative for right turn
 * @param speedFactor   - Extra speed factor. Should be <= 1.0f
 */
-inline float sithPlayerControls_CalculateAngularVelocity(SithActorInfo* pActor, float axisDirection, float keyDirection, float speedFactor)
+static inline float sithPlayerControls_CalculateAngularVelocity(SithActorInfo* pActor, float axisDirection, float keyDirection, float speedFactor)
 {
     speedFactor = J3DMIN(speedFactor, 1.0f);
     // TODO: Replace sithTime_g_fps with fixed step, e.g. 25.0f
