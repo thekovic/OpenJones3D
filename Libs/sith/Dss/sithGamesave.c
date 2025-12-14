@@ -469,9 +469,15 @@ int sithGamesave_Process(void)
         // Restore game from savegame file, and notify master cog
         // Note, notifying via restoring file is not done as it won't do notification when restoring file is not auto save file
         bError = sithGamesave_RestoreFile(sithGamesave_aCurFilename, /*bNotify*/0);
-        if ( sithCog_g_pMasterCog )
+
+        // Fixed: Added check for ineditor flag not being set. 
+        //        This fixes restoring savegame that was saved under ineditor flag to not play intro cutscene 
+        if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
         {
-            sithCog_SendMessage(sithCog_g_pMasterCog, SITHCOG_MSG_USER0, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_NONE, 0, 0);
+            if ( sithCog_g_pMasterCog )
+            {
+                sithCog_SendMessage(sithCog_g_pMasterCog, SITHCOG_MSG_USER0, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_NONE, 0, 0);
+            }
         }
     }
 
@@ -627,9 +633,14 @@ int J3DAPI sithGamesave_RestoreFile(const char* pFilename, int bNotify)
     sithTime_SetGameTime(header.msecGameTime);
     SITHLOG_STATUS("RESTORE: returning SUCCESS!\n");
 
-    if ( bNotify == 1 )
+    // Fixed: Added check for ineditor flag not being set. 
+    //        This fixes restoring savegame that was saved under ineditor flag to not play intro cutscene 
+    if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) == 0 )
     {
-        sithGamesave_NotifyRestored(pFilename);
+        if ( bNotify == 1 )
+        {
+            sithGamesave_NotifyRestored(pFilename);
+        }
     }
 
     return 0; // Restore succeeded
