@@ -2,6 +2,7 @@
 #include <j3dcore/j3dhook.h>
 
 #include <sith/Engine/sithAnimate.h>
+#include <sith/Engine/sithCollision.h>
 #include <sith/Engine/sithPhysics.h>
 #include <sith/Engine/sithParticle.h>
 #include <sith/Gameplay/sithTime.h>
@@ -410,41 +411,70 @@ void J3DAPI sithFX_CreateWaterRipple(SithThing* pThing)
             return;
         }
 
-        rdVector3 pos, start, end;
+        SithSector* pRippleSec = pThing->pInSector;
+        rdVector3 rippleUVec = rdroid_g_zVector3;
+
+        rdVector3 ripplePos, start, end;
         if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0
             || (pThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
         {
             float size = pThing->collide.movesize;
             start.x = size;
             start.y = size;
-            start.z = 1.0f;
+            start.z = 0.8f; // Altered: Changed ripple alpha to 0.8f from 1.0f
 
             size = pThing->collide.movesize * 4.0f;
             end.x = size;
             end.y = size;
             end.z = 0.0f;
 
-            pos = pThing->pos;
-            pos.z += pThing->attach.distToWaterSurface + sithFX_surfaceOffsetZ; // Altered: Replaced 0.001 constant with sithFX_surfaceOffsetZ
+            // Fixed: Added search for water surface position.
+            //        This fixes potential wrong ripple position when e.g.: climbing out of water where ripple 
+            //        could be created at position some distance above the water surface.
+            ripplePos = pThing->pos;
+            ripplePos.z += pThing->attach.distToWaterSurface + sithFX_surfaceOffsetZ; // Altered: Replaced 0.001 constant with sithFX_surfaceOffsetZ
+            SithSurface* pWaterSurf = sithCollision_FindWaterSurface(pThing->pInSector, &pThing->pos, &ripplePos, pThing->collide.movesize);
+            if ( pWaterSurf )
+            {
+                pRippleSec = pWaterSurf->pSector;
+                rippleUVec = pWaterSurf->face.normal;
+                ripplePos.z += sithFX_surfaceOffsetZ;
+            }
         }
         else
         {
             float size = pThing->collide.movesize / 4.0f;
             start.x = size;
             start.y = size;
-            start.z = 1.0f;
+            start.z = 0.5f; // Altered: Changed ripple alpha to 0.5f from 1.0f
 
             size = pThing->collide.movesize * 2.0f;
             end.x = size;
             end.y = size;
             end.z = 0.0f;
 
-            pos = pThing->pos;
-            pos.z -= pThing->collide.movesize * 2.0f;
+            // Fixed: Added search for water surface position.
+            //        Since OG did fixed position at thing.z - movesize*2 depending on 
+            //        the water height the ripple could be crated under the water or above the water.
+            //        The position is now placed directly on the water surface by searching for the exact position of water surface below thing.
+            ripplePos = pThing->pos;
+            ripplePos.z -= sithPhysics_GetThingHeight(pThing);
+            SithSurface* pWaterSurf = sithCollision_FindWaterSurface(pThing->pInSector, &pThing->pos, &ripplePos, pThing->collide.movesize);
+            if ( pWaterSurf )
+            {
+                pRippleSec = pWaterSurf->pSector;
+                rippleUVec = pWaterSurf->face.normal;
+                ripplePos.z += sithFX_surfaceOffsetZ;
+            }
+            else
+            {
+                // Fallback to OG code
+                ripplePos.z = pThing->pos.z - pThing->collide.movesize * 2.0f;
+            }
         }
 
         // Altered: Replaced OG code with sithFX_CreateThingFacingUp
-        SithThing* pSprite = sithFX_CreateThingFacingUp(pTemplate, &pos, pThing->pInSector, &rdroid_g_zVector3); // Note: don't change zVector to thing uvec as thing might not look up
+        SithThing* pSprite = sithFX_CreateThingFacingUp(pTemplate, &ripplePos, pRippleSec, &rippleUVec); // Note: don't change zVector to thing uvec as thing might not look up
         if ( !pSprite )
         {
             SITHLOG_ERROR("Can't make a ripple, no thing space!\n");
