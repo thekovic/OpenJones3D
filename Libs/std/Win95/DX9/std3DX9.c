@@ -112,9 +112,10 @@ static IDirect3DIndexBuffer9* std3D_pIndexBuffer = NULL;
 
 // Shader system state
 static bool std3D_bShadersActive = true;
-static StdShaderHandle std3D_defaultShader = STDSHADER_INVALIDHANDLE;
-static StdShaderHandle std3D_defaultShaderWf = STDSHADER_INVALIDHANDLE;
-static StdShaderHandle std3D_activeShader = STDSHADER_INVALIDHANDLE;
+static StdShaderHandle std3D_defaultShader    = STDSHADER_INVALIDHANDLE;
+static StdShaderHandle std3D_defaultShaderWf  = STDSHADER_INVALIDHANDLE;
+static StdShaderHandle std3D_activeShader     = STDSHADER_INVALIDHANDLE;
+static LPDIRECT3DTEXTURE9 std3D_pWhiteTexture = NULL; // Required for solid mode
 
 static int std3D_InitRenderState(void);
 static int std3D_BuildDeviceList(void);
@@ -182,14 +183,14 @@ void std3D_ResetGlobals(void)
 {
     float std3D_g_fogDensity_tmp = 1.0f;
     memcpy(&std3D_g_fogDensity, &std3D_g_fogDensity_tmp, sizeof(std3D_g_fogDensity));
-    memset(&std3D_g_maxVertices, 0, sizeof(std3D_g_maxVertices));
+    STD_ZEROMEM(&std3D_g_maxVertices, sizeof(std3D_g_maxVertices));
 }
 
 int std3D_Startup(void)
 {
     STD_ASSERTREL(bStartup == false);
-    memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
-    memset(std3D_aDevices, 0, sizeof(std3D_aDevices));
+    STD_ZEROMEM(std3D_aTextureFormats, sizeof(std3D_aTextureFormats));
+    STD_ZEROMEM(std3D_aDevices, sizeof(std3D_aDevices));
 
     std3D_pDirect3D = stdDisplay_GetDirect3D();
     if ( !std3D_pDirect3D )
@@ -234,8 +235,8 @@ void std3D_Shutdown(void)
 
     stdShader_Shutdown();
 
-    memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
-    memset(std3D_aDevices, 0, sizeof(std3D_aDevices));
+    STD_ZEROMEM(std3D_aTextureFormats, sizeof(std3D_aTextureFormats));
+    STD_ZEROMEM(std3D_aDevices, sizeof(std3D_aDevices));
 
     std3D_pD3Device     = NULL;
     std3D_pDirect3D     = NULL;
@@ -600,6 +601,13 @@ static int std3D_CopyVertexDataToBuffer(const LPD3DTLVERTEX aVerts, size_t numVe
 
 static bool J3DAPI std3D_SetTexture(LPDIRECT3DTEXTURE9 pTex)
 {
+    // In case of using shaders & solid draw (untextured) set white texture
+    // in order for solid mode to render correctly ().
+    if ( std3D_bShadersActive && !pTex )
+    {
+        pTex = std3D_pWhiteTexture;
+    }
+
     HRESULT d3dres = IDirect3DDevice9_SetTexture(std3D_pD3Device, 0, (IDirect3DBaseTexture9*)pTex);
     if ( d3dres != D3D_OK )
     {
@@ -608,10 +616,6 @@ static bool J3DAPI std3D_SetTexture(LPDIRECT3DTEXTURE9 pTex)
     }
 
     std3D_pD3DTex = pTex;
-    if ( std3D_bShadersActive )
-    {
-        stdShader_EnableUntexturedMode(pTex == NULL);
-    }
     return true;
 }
 
@@ -977,7 +981,7 @@ void J3DAPI std3D_SetRenderState(Std3DRenderState rdflags)
 
 void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuffers, size_t numMipLevels, StdColorFormatType formatType)
 {
-    memset(pTexture, 0, sizeof(tSystemTexture));
+    STD_ZEROMEM(pTexture, sizeof(tSystemTexture));
 
     if ( !std3D_numTextureFormats )
     {
@@ -1068,7 +1072,7 @@ error:
     {
         stdMemory_Free(pTexture->apMipmaps);
     }
-    memset(pTexture, 0, sizeof(tSystemTexture));
+    STD_ZEROMEM(pTexture, sizeof(tSystemTexture));
 
     STDLOG_ERROR("Done error exit from std3D_AllocSystemTexture.\n");
     return;
@@ -1115,7 +1119,7 @@ void J3DAPI std3D_ClearSystemTexture(tSystemTexture* pTex)
         IDirect3DTexture9_Release(pTex->pCachedTexture);
     }
 
-    memset(pTex, 0, sizeof(tSystemTexture));
+    STD_ZEROMEM(pTex, sizeof(tSystemTexture));
 }
 
 void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorFormatType format)
@@ -1232,7 +1236,7 @@ void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorForma
             void* pSrcPixels  = pCacheTexture->apMipmaps[mmNum]->pPixels + row * pCacheTexture->apMipmaps[mmNum]->rasterInfo.rowSize;
             void* pDestPixels = (uint8_t*)destRect.pBits + row * destRect.Pitch;
             size_t rowBytes   = J3DMIN(pCacheTexture->apMipmaps[mmNum]->rasterInfo.rowSize, destRect.Pitch);
-            memcpy(pDestPixels, pSrcPixels, rowBytes);
+            STD_COPYMEM(pDestPixels, pSrcPixels, rowBytes);
         }
 
         // Unlock both textures
@@ -1973,7 +1977,7 @@ static void std3D_InitTextureFormats(void)
         if ( IDirect3D9_CheckDeviceFormat(std3D_pDirect3D, std3D_curDevice, D3DDEVTYPE_HAL, stdDisplay_g_backBuffer.surface.desc.Format, 0, D3DRTYPE_TEXTURE, formats[i]) == D3D_OK )
         {
             StdTextureFormat* pTexFormat = &std3D_aTextureFormats[std3D_numTextureFormats];
-            memset(pTexFormat, 0, sizeof(StdTextureFormat));
+            STD_ZEROMEM(pTexFormat, sizeof(StdTextureFormat));
 
             pTexFormat->ddPixelFmt = formats[i];
 
@@ -2134,7 +2138,7 @@ const char* J3DAPI std3D_D3DGetStatus(HRESULT res)
 StdDisplayEnvironment* J3DAPI std3D_BuildDisplayEnvironment()
 {
     StdDisplayEnvironment* pDeviceList = (StdDisplayEnvironment*)STDMALLOC(sizeof(StdDisplayEnvironment));
-    memset(pDeviceList, 0, sizeof(StdDisplayEnvironment));
+    STD_ZEROMEM(pDeviceList, sizeof(StdDisplayEnvironment));
 
     if ( !stdDisplay_Startup() )
     {
@@ -2153,7 +2157,7 @@ StdDisplayEnvironment* J3DAPI std3D_BuildDisplayEnvironment()
         StdDisplayInfo* pCurInfo = pDeviceList->aDisplayInfos;
         for ( size_t deviceNum = 0; deviceNum < pDeviceList->numInfos; ++deviceNum )
         {
-            memset(pCurInfo, 0, sizeof(StdDisplayInfo));
+            STD_ZEROMEM(pCurInfo, sizeof(StdDisplayInfo));
 
             if ( stdDisplay_GetDevice(deviceNum, &pCurInfo->displayDevice) )
             {
@@ -2323,6 +2327,48 @@ void std3D_ReleaseVertexBuffers(void)
     }
 }
 
+bool std3D_CreateWhiteTexture(void)
+{
+    // Create 1x1 texture
+    tSysPixelFormat format =  std3D_aTextureFormats[std3D_RGBATextureFormat].ddPixelFmt;
+    HRESULT hr = IDirect3DDevice9_CreateTexture(
+        std3D_pD3Device,
+        1,                          // width
+        1,                          // height
+        1,                          // mip levels
+        D3DUSAGE_DYNAMIC,           // usage
+        format,
+        D3DPOOL_DEFAULT,            // GPU pool
+        &std3D_pWhiteTexture,
+        NULL
+    );
+
+    if ( hr != D3D_OK )
+    {
+        STDLOG_ERROR("Failed to create white texture: 0x%08X\n", hr);
+        return false;
+    }
+
+    // Lock and fill with white
+    D3DLOCKED_RECT lockedRect = { 0 };
+    hr = IDirect3DTexture9_LockRect(std3D_pWhiteTexture, 0, &lockedRect, NULL, 0);
+    if ( hr != D3D_OK )
+    {
+        STDLOG_ERROR("Failed to lock white texture: 0x%08X\n", hr);
+        IDirect3DTexture9_Release(std3D_pWhiteTexture);
+        std3D_pWhiteTexture = NULL;
+        return false;
+    }
+
+      // Write white pixel - IMPORTANT: Check your format!
+    // D3DFMT_A8R8G8B8 is ARGB order in memory
+    uint32_t* pPixel = (uint32_t*)lockedRect.pBits;
+    *pPixel = 0xFFFFFFFF;  // A=FF, R=FF, G=FF, B=FF
+    IDirect3DTexture9_UnlockRect(std3D_pWhiteTexture, 0);
+
+    return true;
+}
+
 bool std3D_InitShaderSystem(void)
 {
     std3D_bShadersActive = false;
@@ -2376,20 +2422,46 @@ bool std3D_InitShaderSystem(void)
         return false;
     }
 
+    if ( !std3D_CreateWhiteTexture() )
+    {
+        STDLOG_ERROR("Failed to create white texture for shader\n");
+        return false;
+    }
+
     std3D_bShadersActive = true;
     return true;
 }
 
 void std3D_ShutdownShaderSystem(void)
 {
+    if ( !std3D_bShadersActive )
+    {
+        return;
+    }
+
     if ( std3D_defaultShader )
     {
         stdShader_Free(std3D_defaultShader);
         std3D_defaultShader = STDSHADER_INVALIDHANDLE;
     }
 
+    if ( std3D_defaultShaderWf )
+    {
+        stdShader_Free(std3D_defaultShaderWf);
+        std3D_defaultShaderWf = STDSHADER_INVALIDHANDLE;
+    }
+
     std3D_activeShader = STDSHADER_INVALIDHANDLE; // Important, reset active shader to STDSHADER_INVALIDHANDLE to avoid dangling handle on next system init
+
+    if ( std3D_pWhiteTexture )
+    {
+        IDirect3DTexture9_Release(std3D_pWhiteTexture);
+        std3D_pWhiteTexture = NULL;
+    }
+
     stdShader_Close();
+
+    std3D_bShadersActive = false;
 }
 
 tSysDevice3D* std3D_GetD3DDevice(void)

@@ -12,20 +12,7 @@ sampler2D g_texture : register(s0);
 
 float4 main(PS_INPUT input) : COLOR 
 {
-    float4 texColor;
-    if (g_bUntextured)
-    {
-        // solid color
-        texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    }
-    else
-    {
-        // Use texture coordinates directly - they should already be perspective correct
-        // from the original TL vertex calculation
-        texColor = tex2D(g_texture, input.texCoord.xy);
-    }
-
-    // TODO: In case of texture being 0 nothing will be rendered!
+    float4 texColor   = tex2D(g_texture, input.texCoord.xy);
     float4 finalColor = texColor * input.diffuse;
     finalColor = ApplyFog(finalColor, input.rhw);
     return finalColor;

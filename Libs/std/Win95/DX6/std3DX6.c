@@ -310,14 +310,14 @@ void std3D_ResetGlobals(void)
 {
     float std3D_g_fogDensity_tmp = 1.0f;
     memcpy(&std3D_g_fogDensity, &std3D_g_fogDensity_tmp, sizeof(std3D_g_fogDensity));
-    memset(&std3D_g_maxVertices, 0, sizeof(std3D_g_maxVertices));
+    STD_ZEROMEM(&std3D_g_maxVertices, sizeof(std3D_g_maxVertices));
 }
 
 int std3D_Startup(void)
 {
     STD_ASSERTREL(bStartup == 0);
-    memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
-    memset(std3D_aDevices, 0, sizeof(std3D_aDevices));
+    STD_ZEROMEM(std3D_aTextureFormats, sizeof(std3D_aTextureFormats));
+    STD_ZEROMEM(std3D_aDevices, sizeof(std3D_aDevices));
 
     std3D_lpDD = stdDisplay_GetSystemDevice();
     if ( !std3D_lpDD )
@@ -363,8 +363,8 @@ void std3D_Shutdown(void)
     }
     std3D_pD3Device = NULL;
 
-    memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
-    memset(std3D_aDevices, 0, sizeof(std3D_aDevices));
+    STD_ZEROMEM(std3D_aTextureFormats, sizeof(std3D_aTextureFormats));
+    STD_ZEROMEM(std3D_aDevices, sizeof(std3D_aDevices));
 
     std3D_pDirect3D  = NULL;
     std3D_numDevices = 0;
@@ -898,7 +898,7 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
 {
     LPDIRECTDRAWSURFACE4 pSrcSurf    = NULL;
     LPDIRECTDRAWSURFACE4 pSrcSurfTmp = NULL;
-    memset(pTexture, 0, sizeof(tSystemTexture));
+    STD_ZEROMEM(pTexture, sizeof(tSystemTexture));
 
     if ( !std3D_numTextureFormats )
     {
@@ -973,7 +973,7 @@ void J3DAPI std3D_AllocSystemTexture(tSystemTexture* pTexture, tVBuffer** apVBuf
     for ( size_t mmNum = 0; mmNum < numMipLevels; ++mmNum )
     {
         DDSURFACEDESC2 ddsdMipMap;
-        memset(&ddsdMipMap, 0, sizeof(ddsdMipMap));
+        STD_ZEROMEM(&ddsdMipMap, sizeof(ddsdMipMap));
         ddsdMipMap.dwSize = sizeof(DDSURFACEDESC2);
         ddres = IDirectDrawSurface4_Lock(pSrcSurf, NULL, &ddsdMipMap, DDLOCK_WAIT, NULL);
         if ( ddres != DD_OK )
@@ -1131,7 +1131,7 @@ void J3DAPI std3D_ClearSystemTexture(tSystemTexture* pTex)
         IDirect3DTexture2_Release(pTex->pCachedTexture);
     }
 
-    memset(pTex, 0, sizeof(tSystemTexture));
+    STD_ZEROMEM(pTex, sizeof(tSystemTexture));
 }
 
 void J3DAPI std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorFormatType format)
@@ -1845,7 +1845,7 @@ void J3DAPI std3D_GetZBufferFormat(DDPIXELFORMAT* pPixelFormat)
     {
         if ( std3D_pCurDevice )
         {
-            memset(pPixelFormat, 0, sizeof(DDPIXELFORMAT));
+            STD_ZEROMEM(pPixelFormat, sizeof(DDPIXELFORMAT));
 
             pPixelFormat->dwZBufferBitDepth = 0xFFFFu;
             IDirect3D3_EnumZBufferFormats(std3D_pDirect3D, &std3D_pCurDevice->duid, std3D_EnumZBufferFormatsCallback, pPixelFormat);
@@ -2180,7 +2180,7 @@ const char* J3DAPI std3D_D3DGetStatus(HRESULT res)
 StdDisplayEnvironment* J3DAPI std3D_BuildDisplayEnvironment()
 {
     StdDisplayEnvironment* pDeviceList = (StdDisplayEnvironment*)STDMALLOC(sizeof(StdDisplayEnvironment));
-    memset(pDeviceList, 0, sizeof(StdDisplayEnvironment));
+    STD_ZEROMEM(pDeviceList, sizeof(StdDisplayEnvironment));
 
     if ( !stdDisplay_Startup() )
     {
@@ -2199,7 +2199,7 @@ StdDisplayEnvironment* J3DAPI std3D_BuildDisplayEnvironment()
         StdDisplayInfo* pCurInfo = pDeviceList->aDisplayInfos;
         for ( size_t deviceNum = 0; deviceNum < pDeviceList->numInfos; ++deviceNum )
         {
-            memset(pCurInfo, 0, sizeof(StdDisplayInfo));
+            STD_ZEROMEM(pCurInfo, sizeof(StdDisplayInfo));
 
             if ( stdDisplay_GetDevice(deviceNum, &pCurInfo->displayDevice) )
             {

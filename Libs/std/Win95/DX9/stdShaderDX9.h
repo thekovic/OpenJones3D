@@ -15,7 +15,6 @@
 // For following register offsets see common.hlsli
 #define STDSHADERDX9_PS_FOGPARAM_REGISTER         0
 #define STDSHADERDX9_PS_FOGCOLOR_REGISTER         1
-#define STDSHADERDX9_PS_UNTEXTURED_REGISTER       0 // float
 
 #define STDSHADERDX9_PS_CONSTANTS_START_REGISTER 8
 #define STDSHADERDX9_MAX_PS_PARAMS               224 - STDSHADERDX9_PS_CONSTANTS_START_REGISTER // 224 - default max constant registers in D3D9

@@ -83,7 +83,6 @@ void stdShader_Close(void);
 bool J3DAPI stdShader_SetViewport(const StdShaderViewport vp);
 bool J3DAPI stdShader_SetFog(bool enable, float start, float end, float depthDactor, const StdShaderVector color);
 bool stdShader_DisableFog(void);
-bool stdShader_EnableUntexturedMode(bool bEnable);
 
 // Shader op
 StdShaderHandle stdShader_GetShader(const char* pName); // Get shader handle by name
