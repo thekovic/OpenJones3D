@@ -1312,7 +1312,7 @@
 #define sithCommand_MemoryDump_TYPE int (J3DAPI*)(const SithConsoleCommand*, const char*)
 #define sithCommand_CipherText_TYPE char* (J3DAPI*)(const char*)
 #define sithCogExec_Execute_TYPE void (J3DAPI*)(SithCog*)
-#define sithCogExec_ExecuteMessage_TYPE void (J3DAPI*)(SithCog*, int)
+#define sithCogExec_ExecuteMessage_TYPE void (J3DAPI*)(SithCog*, size_t)
 #define sithCogExec_PopSymbol_TYPE int (J3DAPI*)(SithCog*, SithCogSymbolValue*)
 #define sithCogExec_PopFlex_TYPE float (J3DAPI*)(SithCog*)
 #define sithCogExec_PopInt_TYPE int (J3DAPI*)(SithCog*)

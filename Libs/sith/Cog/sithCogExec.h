@@ -46,7 +46,7 @@ typedef enum eSithCogExecOpcode
 } SithCogExecOpcode;
 
 void J3DAPI sithCogExec_Execute(SithCog* pCog);
-void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum);
+void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, size_t handlerNum);
 
 int J3DAPI sithCogExec_PopSymbol(SithCog* pCog, SithCogSymbolValue* pVal);
 float J3DAPI sithCogExec_PopFlex(SithCog* pCog);

@@ -145,14 +145,18 @@ void J3DAPI sithCogExec_Execute(SithCog* pCog)
     }
 }
 
-void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, int handlerNum)
+void J3DAPI sithCogExec_ExecuteMessage(SithCog* pCog, size_t handlerNum)
 {
     SITH_ASSERTREL(pCog != NULL);
+    SITH_ASSERT(pCog->pScript != NULL); // Added
+    SITH_ASSERT(handlerNum < pCog->pScript->numHandlers); // Added
 
     SithCogScript* pScript = pCog->pScript;
     if ( pCog->pScript->aHandlers[handlerNum].codeOffset < 0 )
     {
-        SITHLOG_ERROR("Cog %s: Message type %d not defined in the code.\n", pCog->aName, handlerNum);
+        SITHLOG_ERROR("Cog %s: Message type %d not defined in the code.\n",
+            pCog->aName, pCog->pScript->aHandlers[handlerNum].type  // Fixed: User correct handler message type in log format. OG: was using handlerNum
+        );
         return;
     }
 
