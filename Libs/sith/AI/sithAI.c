@@ -623,6 +623,14 @@ int J3DAPI sithAI_ProcessUnhandledEvent(SithAIControlBlock* pLocal, SithAIEventT
     switch ( event )
     {
         case SITHAI_EVENT_HIT_FLOOR:
+            // Fixed: Notify underwater thing that path is not reachable due to hit floor surface
+            //        This fixes e.g.: sharks getting head stuck in the floor surface in lagoon level
+            if ( pLocal->pOwner->pInSector && (pLocal->pOwner->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
+            {
+                sithAIMove_Unreachable(pLocal);
+                return 0;
+            }
+
             return 1;
         case SITHAI_EVENT_HIT_CLIFF:
         {
