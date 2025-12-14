@@ -806,7 +806,7 @@
 #define sithCollision_PopStack_TYPE SithCollision* (*)(void)
 #define sithCollision_FindSectorInRadius_TYPE SithSector* (J3DAPI*)(SithSector*, const rdVector3*, rdVector3*, float)
 #define sithCollision_FindSectorAtThing_TYPE SithSector* (J3DAPI*)(SithThing*, SithSector*, const rdVector3*, rdVector3*, float)
-#define sithCollision_FindWaterSector_TYPE SithSector* (J3DAPI*)(SithSector*, rdVector3*, rdVector3*, float)
+#define sithCollision_FindWaterSector_TYPE SithSector* (J3DAPI*)(SithSector*, const rdVector3*, rdVector3*, float)
 #define sithCollision_CheckLOS_TYPE int (J3DAPI*)(SithSector*, const rdVector3*, const rdVector3*, float)
 #define sithCollision_CheckThingLOS_TYPE int (J3DAPI*)(const SithThing*, const SithThing*, int)
 #define sithCollision_RotateThing_TYPE void (J3DAPI*)(SithThing*, const rdMatrix34*)

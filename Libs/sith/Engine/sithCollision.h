@@ -14,9 +14,12 @@ void sithCollision_Shutdown(void);
 void J3DAPI sithCollision_AddCollisionHandler(SithThingType type1, SithThingType type2, CollisionHandlerThing pProcessFunc, int (J3DAPI* pUnknownFunc)(SithThing*, SithThing*));
 void J3DAPI sithCollision_AddSurfaceCollisionHandler(SithThingType type, CollisionHandlerSurface fpHandler);
 SithCollision* sithCollision_PopStack(void);
+
 SithSector* J3DAPI sithCollision_FindSectorInRadius(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius);
 SithSector* J3DAPI sithCollision_FindSectorAtThing(SithThing* pThing, SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius);
-SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVector3* startPos, rdVector3* endPos, float radius);
+SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius);
+SithSurface* J3DAPI sithCollision_FindWaterSurface(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius); // Added new
+
 int J3DAPI sithCollision_CheckLOS(SithSector* pStartSector, const rdVector3* startPos, const rdVector3* endPos, float radius);
 int J3DAPI sithCollision_CheckThingLOS(const SithThing* pViewer, const SithThing* pTarget, int a3);
 void J3DAPI sithCollision_RotateThing(SithThing* pThing, const rdMatrix34* pOrient);

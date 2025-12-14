@@ -322,7 +322,7 @@ SithSector* J3DAPI sithCollision_FindSectorAtThing(SithThing* pThing, SithSector
     return pSector;
 }
 
-SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVector3* startPos, rdVector3* endPos, float radius)
+SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius)
 {
     SithSector* pSector;
     float moveDist;
@@ -374,6 +374,36 @@ SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, rdVec
 
     sithCollision_DecreaseStackLevel();
     return pSector;
+}
+
+SithSurface* J3DAPI sithCollision_FindWaterSurface(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius)
+{
+    SITH_ASSERT(startPos && endPos && pStartSector);
+    if ( sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, endPos, 0.0f, pStartSector) )
+    {
+        return pStartSector;
+    }
+
+    rdVector3 moveNorm;
+    rdVector_Sub3(&moveNorm, endPos, startPos);
+    float moveDist = rdVector_Normalize3Acc(&moveNorm);
+
+    sithCollision_SearchForCollisions(pStartSector, NULL, startPos, &moveNorm, moveDist, radius, 0x01);
+
+    SithSurface* pWaterSurf = NULL;
+    for ( SithCollision* pCollision = sithCollision_PopStack(); pCollision; pCollision = sithCollision_PopStack() )
+    {
+        if ( (pCollision->type & (SITHCOLLISION_ADJOINCROSS | SITHCOLLISION_ADJOINTOUCH | SITHCOLLISION_WORLD)) != 0
+            && ((pCollision->pSurfaceCollided->flags & (SITH_SURFACE_WATER)) != 0) )
+        {
+            rdVector_ScaleAdd3(endPos, &moveNorm, pCollision->distance, startPos);
+            pWaterSurf = pCollision->pSurfaceCollided;
+            break;
+        }
+    }
+
+    sithCollision_DecreaseStackLevel();
+    return pWaterSurf;
 }
 
 int J3DAPI sithCollision_sub_4D5EB3(SithSector* pStartSector, const rdVector3* startPos, const rdVector3* endPos, float radius)
