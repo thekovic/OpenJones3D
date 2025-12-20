@@ -4652,12 +4652,18 @@ void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDelta
             }
             else
             {
+                // Fixed: Clear walk move before executing jump move.
+                //        This prevents playing walk animation while in air.
+                sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
                 sithPlayerControls_curJumpDirection = 0;
                 sithPlayerActions_JumpStart(pThing);
             }
         }
         else
         {
+            // Fixed: Clear walk move before executing jump move.
+            //        This prevents playing walk animation while in air.
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_WALK);
             sithPlayerControls_curJumpDirection = 0;
             sithPlayerActions_JumpStart(pThing);
         }
