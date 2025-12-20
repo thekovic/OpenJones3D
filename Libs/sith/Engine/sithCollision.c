@@ -245,7 +245,7 @@ SithSector* J3DAPI sithCollision_FindSectorInRadius(SithSector* pStartSector, co
     SITH_ASSERTREL(startPos && endPos && pStartSector);
     if ( sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, endPos, 0.0f, pStartSector) )
     {
-        return pStartSector; // Shall returned sector be null here?
+        return pStartSector;
     }
 
     moveNorm.x = endPos->x - startPos->x;
@@ -324,27 +324,21 @@ SithSector* J3DAPI sithCollision_FindSectorAtThing(SithThing* pThing, SithSector
 
 SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius)
 {
-    SithSector* pSector;
-    float moveDist;
-    SithCollision* pCollision;
-    rdVector3 moveNorm;
-
     SITH_ASSERTREL(startPos && endPos && pStartSector);
     if ( sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, endPos, 0.0f, pStartSector) )
     {
         return pStartSector;
     }
 
-    moveNorm.x = endPos->x - startPos->x;
-    moveNorm.y = endPos->y - startPos->y;
-    moveNorm.z = endPos->z - startPos->z;
-    moveDist = rdVector_Normalize3Acc(&moveNorm);
+    rdVector3 moveNorm;
+    rdVector_Sub3(&moveNorm, endPos, startPos);
+    float moveDist = rdVector_Normalize3Acc(&moveNorm);
 
-    pSector = pStartSector;
+    SithSector* pSector = pStartSector;
     sithCollision_SearchForCollisions(pStartSector, NULL, startPos, &moveNorm, moveDist, radius, 0x01);
     while ( 1 )
     {
-        pCollision = sithCollision_PopStack();
+        SithCollision* pCollision = sithCollision_PopStack();
         if ( !pCollision )
         {
             break;
@@ -379,9 +373,9 @@ SithSector* J3DAPI sithCollision_FindWaterSector(SithSector* pStartSector, const
 SithSurface* J3DAPI sithCollision_FindWaterSurface(SithSector* pStartSector, const rdVector3* startPos, rdVector3* endPos, float radius)
 {
     SITH_ASSERT(startPos && endPos && pStartSector);
-    if ( sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, endPos, 0.0f, pStartSector) )
+    if ( !sithIntersect_IsSphereInSector(sithWorld_g_pCurrentWorld, startPos, 0.0f, pStartSector) )
     {
-        return pStartSector;
+        return NULL;
     }
 
     rdVector3 moveNorm;
@@ -652,25 +646,16 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
 
     if ( pThing->moveType == SITH_MT_PATH )
     {
-        /*v2 = flags;
-        (v2 & 0xFF) = flags | 4;
-        flags = v2;*/
         flags |= 0x04;
     }
 
     if ( (flags & 0x01) == 0 )
     {
-        /*v6 = flags;
-        v6 = flags | 0x800;
-        flags = v6;*/
         flags |= 0x800;
     }
 
     if ( pThing->type == SITH_THING_PLAYER )
     {
-        /*v7 = flags;
-        v7 = flags | 0x8000;
-        flags = v7;*/
         flags |= 0x8000;
     }
 
@@ -688,9 +673,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
             {
                 rdVector3 dAttPos;
                 rdVector_Sub3(&dAttPos, &prevAttPos, &pAttached->pos);
-                /* v32 = prevAttPos.x - pVictim->pos.x;
-                 v33 = prevAttPos.y - pVictim->pos.y;
-                 v34 = prevAttPos.z - pVictim->pos.z;*/
+
                 if ( pAttached->thingInfo.actorInfo.bForceMovePlay )
                 {
                     pAttached->forceMoveStartPos.x = pAttached->forceMoveStartPos.x + dAttPos.x;
@@ -783,7 +766,7 @@ float J3DAPI sithCollision_MoveThing(SithThing* pThing, const rdVector3* moveNor
                     {
                         // Do leap jump
                         pThing->moveStatus = SITHPLAYERMOVE_LEAPFWD;
-                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LEAPLEFT, 0);
+                        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LEAPLEFT, NULL);
                         sithPuppet_g_bPlayerLeapForward = 0;
                         return moveDist;
                     }
@@ -920,6 +903,7 @@ LABEL_61:
         }
 
         sithCollision_DecreaseStackLevel();
+
         if ( bCollided )
         {
             v46 = v46 + distance;
@@ -958,6 +942,12 @@ LABEL_61:
 
     v46 = stdMath_ClipNearZero(v46);
 
+    // TODO: Following scope should probably not check for collision type as
+    //       non-collidable things (type == SITH_COLLIDE_NONE) will always fell out of world.
+    //       Example of such things are underwater +bubbles where they might fly out of water through the worlds surfaces.
+    // 
+    //       Side note, if this change put in place make extensive tests to make sure there isn't any case that relies on 
+    //       non-collidable things to be able to move out of world, e.g.: particles.
     if ( pThing->collide.type
         && pThing->moveType == SITH_MT_PHYSICS
         && (pThing->attach.flags & SITH_ATTACH_TAIL) == 0
@@ -1358,7 +1348,7 @@ int J3DAPI sithCollision_HandleThingHitSurface(SithThing* pThing, SithSurface* p
             {
                 if ( pThing->moveStatus == SITHPLAYERMOVE_UNKNOWN_82 )
                 {
-                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LAND, 0);
+                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_LAND, NULL);
                     pThing->moveStatus = SITHPLAYERMOVE_JEEP_IDLE;
                     sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_LANDHARD);
                 }
