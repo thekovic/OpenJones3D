@@ -24,7 +24,8 @@ bool rdFont_bFontColorSet = false;
 rdLightMode rdFont_lightingMode;
 rdFontColor rdFont_aFontColors;
 
-void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont* pFont);
+static void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont* pFont);
+static void J3DAPI rdFont_DrawCharScaled(size_t chr, float x, float y, float z, const rdFont* pFont, float fontSizePt); // New
 
 void rdFont_InstallHooks(void)
 {
@@ -287,7 +288,8 @@ void J3DAPI rdFont_Free(rdFont* pFont)
 
 void J3DAPI rdFont_SetFontColorDiffuse(const rdFontColor apColor)
 {
-    for ( size_t i = 0; i < STD_ARRAYLEN(rdFont_aFontColors); ++i ) {
+    for ( size_t i = 0; i < STD_ARRAYLEN(rdFont_aFontColors); ++i )
+    {
         rdVector_Copy4(&rdFont_aFontColors[i], &apColor[i]);
     }
 
@@ -297,7 +299,8 @@ void J3DAPI rdFont_SetFontColorDiffuse(const rdFontColor apColor)
 
 void J3DAPI rdFont_SetFontColor(const rdFontColor apColor)
 {
-    for ( size_t i = 0; i < STD_ARRAYLEN(rdFont_aFontColors); ++i ) {
+    for ( size_t i = 0; i < STD_ARRAYLEN(rdFont_aFontColors); ++i )
+    {
         rdVector_Copy4(&rdFont_aFontColors[i], &apColor[i]);
     }
 
@@ -308,37 +311,70 @@ void J3DAPI rdFont_SetFontColor(const rdFontColor apColor)
 rdFontColor* rdFont_DuplicateFontColor(void)
 {
     rdFontColor* aColor = (rdFontColor*)STDMALLOC(sizeof(rdFontColor));
-    if ( !aColor ) {
+    if ( !aColor )
+    {
         return NULL;
     }
 
-    for ( size_t i = 0; i < STD_ARRAYLEN(rdFont_aFontColors); ++i ) {
+    for ( size_t i = 0; i < STD_ARRAYLEN(rdFont_aFontColors); ++i )
+    {
         rdVector_Copy4(aColor[i], &rdFont_aFontColors[i]);
     }
 
     return aColor;
 }
 
-const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, float widthScale)
+size_t J3DAPI rdFont_GetTextWidthEx(const char* pText, const rdFont* pFont, float fontSizePt)
+{
+    if ( !pFont || !pText )
+    {
+        return 0;
+    }
+
+    float fontScale = fontSizePt / (float)pFont->fontSize;
+    float textWidth = 0.0f;
+    const size_t texLen = strlen(pText);
+
+    for ( size_t i = 0; i < texLen; ++i )
+    {
+        size_t curChar = (uint8_t)pText[i];
+        if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
+        {
+            curChar = '?';
+        }
+
+        textWidth = (float)pFont->aGlyphs[curChar].baselineOriginX * fontScale + textWidth;
+    }
+
+    return (size_t)textWidth;
+}
+
+size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont)
+{
+    return rdFont_GetTextWidthEx(pText, pFont, (float)pFont->fontSize);
+}
+
+const char* J3DAPI rdFont_GetWrapLineEx(const char* pText, const rdFont* pFont, float widthScale, float fontSizePt)
 {
     if ( !pFont || !pText )
     {
         return NULL;
     }
 
+    float fontScale = fontSizePt / (float)pFont->fontSize;
     float textWidth = 0.0f;
     const char* pTextEnd = NULL;
     const size_t textLen = strlen(pText);
 
     for ( size_t i = 0; i < textLen; ++i )
     {
-        size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
+        size_t curChar = (uint8_t)pText[i];
         if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
         {
             curChar = '?';
         }
 
-        textWidth = (float)pFont->aGlyphs[curChar].baselineOriginX + textWidth;
+        textWidth = (float)pFont->aGlyphs[curChar].baselineOriginX * fontScale + textWidth;
         if ( RD_REF_WIDTH * widthScale < textWidth )
         {
             if ( pTextEnd )
@@ -358,31 +394,12 @@ const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, fl
     return NULL;
 }
 
-size_t J3DAPI rdFont_GetTextWidth(const char* pText, const rdFont* pFont)
+const char* J3DAPI rdFont_GetWrapLine(const char* pText, const rdFont* pFont, float widthScale)
 {
-    if ( !pFont || !pText )
-    {
-        return 0;
-    }
-
-    float  textWidth = 0.0f;
-    const size_t texLen = strlen(pText);
-
-    for ( size_t i = 0; i < texLen; ++i )
-    {
-        size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
-        if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
-        {
-            curChar = '?';
-        }
-
-        textWidth = (float)pFont->aGlyphs[curChar].baselineOriginX + textWidth;
-    }
-
-    return (size_t)textWidth;
+    return rdFont_GetWrapLineEx(pText, pFont, widthScale, (float)pFont->fontSize);
 }
 
-void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+void J3DAPI rdFont_DrawTextLineEx(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags, float fontSizePt)
 {
     int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
     int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;
@@ -393,12 +410,15 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
 
         uint32_t width, height;
         stdDisplay_GetBackBufferSize(&width, &height);
+
         double swidth  = (double)width / RD_REF_WIDTH;
         double sheight = (double)height / RD_REF_HEIGHT;
 
+        float fontScale = fontSizePt / (float)pFont->fontSize; // Added
+
         double curPosX = (double)width * x;
         double curPosY = (double)height * y;
-        curPosY = (double)pFont->fontSize * sheight + curPosY;
+        curPosY += (double)pFont->fontSize * sheight * fontScale; // Altered: Added multiply by fontScale
 
         if ( bAlignCenter || bAlignRight )
         {
@@ -411,12 +431,12 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
                     curChar = '?';
                 }
 
-                textWidth = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + textWidth;
+                textWidth += (double)pFont->aGlyphs[curChar].baselineOriginX * swidth * fontScale; // Altered: Added multiply by fontScale
             }
 
             if ( bAlignCenter )
             {
-                textWidth = textWidth / 2.0f;
+                textWidth /= 2.0f;
             }
 
             curPosX = curPosX - textWidth;
@@ -436,28 +456,106 @@ void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, co
 
             if ( pFont->aGlyphs[curChar].baselineOriginY != -1 )
             {
-                double nextPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + curPosX;
+                double nextPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth * fontScale + curPosX; // Altered: Added multiply by fontScale
                 if ( nextPosX >= 0.0f )
                 {
                     if ( RD_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RD_REF_WIDTH * swidth >= curPosX )
                     {
-                        rdFont_DrawChar(curChar, (float)curPosX, (float)curPosY, z, pFont);
+                        rdFont_DrawCharScaled(curChar, (float)curPosX, (float)curPosY, z, pFont, fontSizePt);
                     }
                 }
 
-                curPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + curPosX;
+                curPosX += (double)pFont->aGlyphs[curChar].baselineOriginX * swidth * fontScale; // Altered: Added multiply by fontScale
             }
         }
     }
 }
 
+void J3DAPI rdFont_DrawTextLine(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+{
+    rdFont_DrawTextLineEx(pText, x, y, z, pFont, alignFlags, (float)pFont->fontSize);
+}
+
 void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont* pFont)
 {
-    float gwidth = pFont->aGlyphs[chr].right - pFont->aGlyphs[chr].left;
-    gwidth *= 256.0f;
+    rdFont_DrawCharScaled(chr, x, y, z, pFont, pFont->fontSize);
+}
 
+void J3DAPI rdFont_DrawTextLineClippedEx(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags, float fontSizePt)
+{
+    int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
+    int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;
+    if ( pFont && bAlignCenter ^ bAlignRight ^ alignFlags & RDFONT_ALIGNLEFT )
+    {
+        uint32_t width, height;
+        stdDisplay_GetBackBufferSize(&width, &height);
+        double swidth = (double)width / RD_REF_WIDTH;
+        double sheight = (double)height / RD_REF_HEIGHT;
+
+        float fontScale = fontSizePt / (float)pFont->fontSize; // Added
+
+        double curPosX = (double)width * x;
+        double curPosY = (double)height * y;
+        curPosY += (double)pFont->fontSize * sheight * fontScale; // Altered: Added multiply by fontScale
+
+        size_t textLen = strlen(pText);
+        if ( bAlignCenter || bAlignRight )
+        {
+            double textWidth = 0.0f;
+            for ( size_t i = 0; i < textLen; ++i )
+            {
+                size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
+                if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
+                {
+                    curChar = '?';
+                }
+                textWidth += (double)pFont->aGlyphs[curChar].baselineOriginX * swidth * fontScale; // Altered: Added multiply by fontScale
+            }
+            if ( bAlignCenter )
+            {
+                textWidth /= 2.0f;
+            }
+            curPosX = curPosX - textWidth;
+        }
+
+        for ( size_t i = 0; i < textLen; ++i )
+        {
+            size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
+            if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
+            {
+                curChar = '?';
+            }
+            else
+            {
+                double nextPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth * fontScale + curPosX; // Altered: Added multiply by fontScale
+                if ( nextPosX >= 0.0f )
+                {
+                    if ( RD_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RD_REF_WIDTH * swidth >= curPosX
+                        && curPosY >= 0 && RD_REF_HEIGHT * sheight >= curPosY )
+                    {
+                        rdFont_DrawCharScaled(curChar, (float)curPosX, (float)curPosY, z, pFont, fontSizePt);
+                    }
+                }
+            }
+            curPosX += (double)pFont->aGlyphs[curChar].baselineOriginX * swidth * fontScale; // Altered: Added multiply by fontScale
+        }
+    }
+}
+
+void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
+{
+    rdFont_DrawTextLineClippedEx(pText, x, y, z, pFont, alignFlags, (float)pFont->fontSize);
+}
+
+void J3DAPI rdFont_DrawCharScaled(size_t chr, float x, float y, float z, const rdFont* pFont, float fontSizePt)
+{
+    // This function is part of the OG rdFont_DrawChar with added font size scale
+
+    // Added: Calculate scale factor based on desired pt size vs atlas pt size
+    float fontScale = fontSizePt / (float)pFont->fontSize;
+
+    float gwidth = pFont->aGlyphs[chr].right - pFont->aGlyphs[chr].left;
     float gheight = pFont->aGlyphs[chr].bottom - pFont->aGlyphs[chr].top;
-    gheight *= 256.0f;
 
     rdCacheProcEntry* pPoly = rdCache_GetAlphaProcEntry();
     if ( !pPoly )
@@ -470,7 +568,12 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     float swidth  = (float)width / RD_REF_WIDTH;
     float sheight = (float)height / RD_REF_HEIGHT;
 
-    y = y - (float)pFont->aGlyphs[chr].baselineOriginY * sheight;
+    // Altered: font size
+    float scaledWidth  = gwidth * 256.0f * swidth * fontScale;
+    float scaledHeight = gheight * 256.0f * sheight * fontScale;
+
+    // Apply font scale
+    y = y - (float)pFont->aGlyphs[chr].baselineOriginY * sheight * fontScale;
 
     pPoly->flags        = RD_FF_TEX_CLAMP_Y | RD_FF_TEX_CLAMP_X | RD_FF_TEX_TRANSLUCENT;
     pPoly->lightingMode = rdFont_lightingMode;
@@ -482,31 +585,31 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     pCurVert->sx  = x;
     pCurVert->sy  = y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;
     pCurVert->tu  = pFont->aGlyphs[chr].left;
     pCurVert->tv  = pFont->aGlyphs[chr].top;
     ++pCurVert;
 
-    pCurVert->sx  = gwidth * swidth + x;
+    pCurVert->sx  = scaledWidth + x;
     pCurVert->sy  = y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;
     pCurVert->tu  = pFont->aGlyphs[chr].right;
     pCurVert->tv  = pFont->aGlyphs[chr].top;
     ++pCurVert;
 
-    pCurVert->sx  = gwidth * swidth + x;
-    pCurVert->sy  = gheight * sheight + y;
+    pCurVert->sx  = scaledWidth + x;
+    pCurVert->sy  = scaledHeight + y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;
     pCurVert->tu  = pFont->aGlyphs[chr].right;
     pCurVert->tv  = pFont->aGlyphs[chr].bottom;
     ++pCurVert;
 
     pCurVert->sx  = x;
-    pCurVert->sy  = gheight * sheight + y;
+    pCurVert->sy  = scaledHeight + y;
     pCurVert->sz  = z;
-    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;//0.000030518044f;
+    pCurVert->rhw = RD_FIXEDPOINT_RHW_SCALE_X1;
     pCurVert->tu  = pFont->aGlyphs[chr].left;
     pCurVert->tv  = pFont->aGlyphs[chr].bottom;
 
@@ -514,7 +617,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     {
         if ( rdFont_lightingMode == RD_LIGHTING_DIFFUSE )
         {
-            rdVector_Copy4(&pPoly->extraLight, &rdFont_aFontColors[0]);
+            pPoly->extraLight = rdFont_aFontColors[0];
         }
         else
         {
@@ -528,7 +631,7 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
         {
             if ( rdFont_lightingMode == RD_LIGHTING_GOURAUD )
             {
-                rdVector_Copy4(&pPoly->aVertIntensities[i], &rdFont_aFontColors[i]);
+                pPoly->aVertIntensities[i] = rdFont_aFontColors[i];
             }
             else
             {
@@ -538,67 +641,4 @@ void J3DAPI rdFont_DrawChar(size_t chr, float x, float y, float z, const rdFont*
     }
 
     rdCache_AddAlphaProcFace(pPoly->numVertices);
-}
-
-void J3DAPI rdFont_DrawTextLineClipped(const char* pText, float x, float y, float z, const rdFont* pFont, int alignFlags)
-{
-    int bAlignRight = alignFlags & RDFONT_ALIGNRIGHT;
-    int bAlignCenter = alignFlags & RDFONT_ALIGNCENTER;
-    if ( pFont && bAlignCenter ^ bAlignRight ^ alignFlags & RDFONT_ALIGNLEFT )// 2 - bAlignLeft
-    {
-        uint32_t width, height;
-        stdDisplay_GetBackBufferSize(&width, &height);
-        double swidth = (double)width / RD_REF_WIDTH;
-        double sheight = (double)height / RD_REF_HEIGHT;
-
-        double curPosX = (double)width * x;
-        double curPosY = (double)height * y;
-        curPosY = (double)pFont->fontSize * sheight + curPosY;
-
-        size_t textLen = strlen(pText);
-        if ( bAlignCenter || bAlignRight )
-        {
-            double textWidth = 0.0f;
-            for ( size_t i = 0; i < textLen; ++i )
-            {
-                size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
-                if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
-                {
-                    curChar = '?';
-                }
-
-                textWidth = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + textWidth;
-            }
-
-            if ( bAlignCenter )
-            {
-                textWidth = textWidth / 2.0f;
-            }
-
-            curPosX = curPosX - textWidth;
-        }
-
-        for ( size_t i = 0; i < textLen; ++i )
-        {
-            size_t curChar = (uint8_t)pText[i]; // Note, has to cast to uint8_t first for the case of negative char to remain within range [0,255]
-            if ( pFont->aGlyphs[curChar].baselineOriginY == -pFont->fontSize )
-            {
-                curChar = '?';
-            }
-            else
-            {
-                double nextPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + curPosX;
-                if ( nextPosX >= 0.0f )
-                {
-                    if ( RD_REF_WIDTH * swidth >= nextPosX && curPosX >= 0.0f && RD_REF_WIDTH * swidth >= curPosX
-                        && curPosY >= 0 && RD_REF_HEIGHT * sheight >= curPosY )
-                    {
-                        rdFont_DrawChar(curChar, (float)curPosX, (float)curPosY, z, pFont);
-                    }
-                }
-            }
-
-            curPosX = (double)pFont->aGlyphs[curChar].baselineOriginX * swidth + curPosX;
-        }
-    }
 }
