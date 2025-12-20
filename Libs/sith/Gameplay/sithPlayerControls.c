@@ -209,6 +209,22 @@ void sithPlayerControls_Reset(void)
     sithPlayerControls_curOrbCamDist          = 0.2f;
 }
 
+void sithPlayerControls_StopMovementEx(SithThing* pThing, SithPuppetSubMode mode, rdPuppetTrackCallback pfCallback) // New
+{
+    // Stops thing movement, clears mode and plays stand mode
+
+    pThing->moveStatus = SITHPLAYERMOVE_STILL;
+    sithPhysics_ResetThingMovement(pThing);
+
+    sithPuppet_ClearMode(pThing, mode);
+    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, pfCallback);
+}
+
+void sithPlayerControls_StopMovement(SithThing* pThing) // New
+{
+    sithPlayerControls_StopMovementEx(pThing, pThing->pPuppetState->submode, NULL);
+}
+
 void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKeyMarkerType markerType)
 {
     if ( !pThing->thingInfo.actorInfo.bControlsDisabled )
@@ -2098,7 +2114,7 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
                 }
 
                 // Apply underwater endurance penalty
-                pThing->thingInfo.actorInfo.endurance.msecUnderwater += enduranceRate * secDeltaTime * 1000.0f;
+                pThing->thingInfo.actorInfo.endurance.msecUnderwater += (tStdTime)(enduranceRate * secDeltaTime * 1000.0f);
 
                 // Puff some bubblez
                 if ( SITH_RAND() < 0.30000001f )
@@ -2182,7 +2198,7 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
 
         if ( (pThing->moveInfo.physics.flags & SITH_PF_ONWATERSURFACE) != 0 )
         {
-        // On water surface move forward
+            // On water surface move forward
             pPhysics->thrust.y = sithPlayerControls_CalculateThrust(pActor, 1.0f, sithPlayerControls_moveFactorNormal);
         }
         else
@@ -2251,6 +2267,7 @@ void J3DAPI sithPlayerControls_ProcessSwimMove(SithThing* pThing, float secDelta
         {
             pPhysics->angularVelocity.yaw = sithPlayerControls_CalculateAngularVelocity(pActor, 1.0f, 1.0f, 1.0f);
         }
+        else
         {
             // Altered: Added boost turn
             rdVector3 newLook = { 0.0f, yawRate * sithTime_g_frameTimeFlex * (bBoostTurn ? 1.5f : 1.0f), 0.0f };
@@ -2702,7 +2719,7 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
 
     // Altered: Added smooth interpolation
     sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime);
-    sithWeapon_SendMessageAim(pThing, 0);
+    sithWeapon_SendMessageAim(pThing, /*bAim=*/0);
 }
 
 int J3DAPI sithPlayerControls_CheckAimRange(SithThing* pThing, const rdVector3* pStartPos, const rdVector3* pTargetPos, float minCosHorizontal, float minCosHorizontalNear, float minCosVertical, float maxAimDist)
@@ -3953,6 +3970,33 @@ bool J3DAPI sithPlayerControls_CanStrafeMove(SithThing* pThing, int bMoveRight)
     return bCanMove;
 }
 
+bool sithPlayerControls_CanClimbOn1m(SithThing* pThing)
+{
+#ifdef J3D_QOL_IMPROVEMENTS
+    // Added: Alow climbing on 1m when having weapon mounted
+    bool bCanClimb = sithInventory_GetCurrentWeapon(pThing) <= SITHWEAPON_IMP5;
+#else
+    bool bCanClimb = !sithPlayerActions_HasActiveWeapon(pThing);
+#endif
+    // Altered: OG did search for 2m climb surface/object first
+    return bCanClimb && sithPlayerActions_CanClimbOn1m(pThing) == 1;
+}
+
+bool sithPlayerControls_CanClimbOn2m(SithThing* pThing)
+{
+#ifdef J3D_QOL_IMPROVEMENTS
+    // Added: Alow climbing on 1m when having weapon mounted
+    int curWeapon = sithInventory_GetCurrentWeapon(pThing);
+
+    bool bCanClimb = (curWeapon < SITHWEAPON_BAZOOKA)
+        || (curWeapon >= SITHWEAPON_GRENADE && curWeapon <= SITHWEAPON_IMP5 && curWeapon != SITHWEAPON_ZIPPO);
+#else
+    bool bCanClimb = !sithPlayerActions_HasActiveWeapon(pThing);
+#endif
+    // Altered: OG did search for 2m climb surface/object first
+    return bCanClimb && sithPlayerActions_CanClimbOn2m(pThing) == 1;
+}
+
 void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun)
 {
     J3D_UNUSED(secDeltaTime);
@@ -3991,16 +4035,16 @@ void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDelt
         if ( sithControl_GetKey(SITHCONTROL_JUMP, NULL) && !sithPlayerControls_bJumpKeyActive )
         {
             // Try 2m climb
-            if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
-                && !sithPlayerActions_HasActiveWeapon(pThing) )
+            // Altered: Replaced sithPlayerActions_CanClimbOn2m(pThing) == 1 &&!sithPlayerActions_HasActiveWeapon check with sithPlayerControls_CanDoClimbOn2m
+            if ( sithPlayerControls_CanClimbOn2m(pThing) )
             {
                 sithPlayerActions_ClimbOn2m(pThing);
                 return;
             }
 
             // Try 1m climb
-            if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
-                && !sithPlayerActions_HasActiveWeapon(pThing) )
+            // Altered: Replaced sithPlayerActions_CanClimbOn1m(pThing) == 1 && !sithPlayerActions_HasActiveWeapon check with sithPlayerControls_CanDoClimbOn1m
+            if ( sithPlayerControls_CanClimbOn1m(pThing) )
             {
                 sithPlayerActions_ClimbOn1m(pThing);
                 return;
@@ -4570,21 +4614,29 @@ void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDelta
         && !pThing->thingInfo.actorInfo.bForceMovePlay )
     {
         // Try 2m climb
-        if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
-            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        // Altered: Replaced sithPlayerActions_CanClimbOn2m(pThing) == 1 &&!sithPlayerActions_HasActiveWeapon check with sithPlayerControls_CanDoClimbOn2m
+        if ( sithPlayerControls_CanClimbOn2m(pThing) )
         {
-            sithPuppet_RemoveAllTracks(pThing);
-            sithPhysics_ResetThingMovement(pThing);
+            // Fixed: Replaced removing all tracks which might also remove armed mode
+            //        with new StopMovement function
+            // sithPuppet_RemoveAllTracks(pThing);
+            // sithPhysics_ResetThingMovement(pThing);
+            sithPlayerControls_StopMovement(pThing);
+
             sithPlayerActions_ClimbOn2m(pThing);
             return;
         }
 
         // Try 1m climb
-        if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
-            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        // Altered: Replaced sithPlayerActions_CanClimbOn1m(pThing) == 1 &&!sithPlayerActions_HasActiveWeapon check with sithPlayerControls_CanDoClimbOn1m
+        if ( sithPlayerControls_CanClimbOn1m(pThing) )
         {
-            sithPuppet_RemoveAllTracks(pThing);
-            sithPhysics_ResetThingMovement(pThing);
+            // Fixed: Replaced removing all tracks which might also remove armed mode
+            //        with new StopMovement function
+            // sithPuppet_RemoveAllTracks(pThing);
+            // sithPhysics_ResetThingMovement(pThing);
+            sithPlayerControls_StopMovement(pThing);
+
             sithPlayerActions_ClimbOn1m(pThing);
             return;
         }
@@ -4776,21 +4828,30 @@ void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float secDeltaT
         && !pThing->thingInfo.actorInfo.bForceMovePlay )
     {
         // Try 2m climb
-        if ( sithPlayerActions_CanClimbOn2m(pThing) == 1
-            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        // Altered: Replaced sithPlayerActions_CanClimbOn2m(pThing) == 1 &&!sithPlayerActions_HasActiveWeapon check with sithPlayerControls_CanDoClimbOn2m
+        if ( sithPlayerControls_CanClimbOn2m(pThing) )
         {
-            sithPuppet_RemoveAllTracks(pThing);
-            sithPhysics_ResetThingMovement(pThing);
+            // Fixed: Replaced removing all tracks which might also remove armed mode
+            //        with new StopMovement function
+            // sithPuppet_RemoveAllTracks(pThing);
+            // sithPhysics_ResetThingMovement(pThing);
+            sithPlayerControls_StopMovement(pThing);
+
             sithPlayerActions_ClimbOn2m(pThing);
             return;
         }
 
         // Try 1m climb
-        if ( sithPlayerActions_CanClimbOn1m(pThing) == 1
-            && !sithPlayerActions_HasActiveWeapon(pThing) )
+        // Altered: Replaced sithPlayerActions_CanClimbOn1m(pThing) == 1 &&!sithPlayerActions_HasActiveWeapon check with sithPlayerControls_CanDoClimbOn1m
+        if ( sithPlayerControls_CanClimbOn1m(pThing) )
         {
-            sithPuppet_RemoveAllTracks(pThing);
-            sithPhysics_ResetThingMovement(pThing);
+            // Fixed: Replaced removing all tracks which might also remove armed mode
+            //        with new StopMovement function
+            // sithPuppet_RemoveAllTracks(pThing);
+            // sithPhysics_ResetThingMovement(pThing);
+            sithPlayerControls_StopMovement(pThing);
+
+            // Do climb move
             sithPlayerActions_ClimbOn1m(pThing);
             return;
         }

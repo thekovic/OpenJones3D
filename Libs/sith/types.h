@@ -1941,9 +1941,11 @@ static_assert(sizeof(SithParticleInfo) == 48, "sizeof(SithParticleInfo) == 48");
 
 typedef union sSithActorEndurance
 {
-    unsigned int msecUnderwater;
+    tStdTime msecUnderwater;
     unsigned int raftLeakDamage;
 } SithActorEndurance;
+static_assert(sizeof(SithActorEndurance) == 4, "sizeof(SithActorEndurance) == 4");
+
 
 typedef struct sVGradiantColor
 {
