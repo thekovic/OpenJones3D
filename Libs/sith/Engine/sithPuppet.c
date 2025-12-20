@@ -23,6 +23,7 @@
 #include <sith/Gameplay/sithWhip.h>
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithSoundClass.h>
+#include <sith/World/sithWeapon.h>
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdConffile.h>
@@ -232,7 +233,7 @@ void sithPuppet_InstallHooks(void)
 
 void sithPuppet_ResetGlobals(void)
 {
-    memset(&sithPuppet_g_bPlayerLeapForward, 0, sizeof(sithPuppet_g_bPlayerLeapForward));
+    STD_ZEROMEM(&sithPuppet_g_bPlayerLeapForward, sizeof(sithPuppet_g_bPlayerLeapForward));
 }
 
 int sithPuppet_Startup(void)
@@ -287,7 +288,7 @@ void J3DAPI sithPuppet_New(SithThing* pThing)
         return; // Fixed: Added return to prevent writting to and accessing null pointer
     }
 
-    memset(pThing->pPuppetState, 0, sizeof(SithPuppetState));
+    STD_ZEROMEM(pThing->pPuppetState, sizeof(SithPuppetState));
 
     if ( pThing->pInSector && (pThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0
         || (pThing->pInSector->flags & SITH_SECTOR_AETHERIUM) != 0 && pThing->type == SITH_THING_PLAYER )
@@ -312,11 +313,11 @@ void J3DAPI sithPuppet_Free(SithThing* pThing)
             for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pNextTrack )
             {
                 pNextTrack = pTrack->pNextTrack;
-                stdMemory_Free(pTrack);
+                STDFREE(pTrack);
             }
         }
 
-        stdMemory_Free(pThing->pPuppetState);
+        STDFREE(pThing->pPuppetState);
         pThing->pPuppetState = NULL;
     }
 }
@@ -345,7 +346,7 @@ void J3DAPI sithPuppet_RemoveAllTracks(SithThing* pThing)
         rdPuppet_RemoveTrack(pThing->renderData.pPuppet, pTrack->trackNum);
         if ( pTrack->pNextTrack != STDMEMORY_FREEDPTR )
         {
-            stdMemory_Free(pTrack);
+            STDFREE(pTrack);
         }
     }
 
@@ -420,7 +421,7 @@ void J3DAPI sithPuppet_UpdatePuppet(SithThing* pThing, float secDeltaTime)
             if ( moveNorm.x != 0.0f || moveNorm.y != 0.0f || moveNorm.z != 0.0f )
             {
                 float moveDist = rdVector_Normalize3Acc(&moveNorm);
-                sithCollision_MoveThing(pThing, &moveNorm, moveDist, 0);
+                sithCollision_MoveThing(pThing, &moveNorm, moveDist, 0x0);
             }
 
             rdVector_Sub3(&moveNorm, &pThing->pos, &pThing->renderData.paJointMatrices->dvec);
@@ -1174,7 +1175,7 @@ float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback
         case SITHPLAYERMOVE_JEEP_IDLE:
         {
             float yawSpeed = pThing->moveInfo.physics.angularVelocity.yaw * 0.00019999999f;
-            if ( moveSpeed <= 0.001f && (moveSpeed >= -0.001f || sithControl_GetKey(SITHCONTROL_BACK, 0)) )
+            if ( moveSpeed <= 0.001f && (moveSpeed >= -0.001f || sithControl_GetKey(SITHCONTROL_BACK, NULL)) )
             {
                 if ( moveSpeed < -0.001f )
                 {
@@ -1665,7 +1666,7 @@ void J3DAPI sithPuppet_SwapSubMode(SithThing* pThing, SithPuppetSubMode newMode,
             sithPuppet_StopFridgetTrack(pThing);
 
             SithPuppetTrack* pTrack;
-            for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )// TODO: Dont compare against the 0xDDDDDD address
+            for ( pTrack = pThing->pPuppetState->pFirstTrack; pTrack && pTrack != STDMEMORY_FREEDPTR; pTrack = pTrack->pNextTrack )
             {
                 if ( pTrack->submode == oldMode )
                 {
@@ -1699,7 +1700,7 @@ void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
         sithPhysics_FindFloor(pThing, 1);
 
         pThing->renderData.bSkipBuildingJoints = 0;
-        rdVector_Copy3(&pThing->orient.dvec, &pThing->pos);
+        pThing->orient.dvec = pThing->pos;
         rdPuppet_BuildJointMatrices(&pThing->renderData, &pThing->orient);
         pThing->orient.dvec = rdroid_g_zeroVector3;
 
@@ -1729,7 +1730,7 @@ void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
     }
 
     pThing->renderData.bSkipBuildingJoints = 0;
-    rdVector_Copy3(&pThing->orient.dvec, &pThing->pos);
+    pThing->orient.dvec = pThing->pos;
     rdPuppet_BuildJointMatrices(&pThing->renderData, &pThing->orient);
     pThing->orient.dvec = rdroid_g_zeroVector3;
 
@@ -1822,8 +1823,8 @@ void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
             sithPhysics_ResetThingMovement(pThing);
 
             pThing->collide.movesize = 0.04f;
-            sithPhysics_FindFloor(pThing, 1);
-            sithInventory_SetSwimmingInventory(pThing, 1);
+            sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
+            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1);
             break;
         }
         case SITHPLAYERMOVE_WHIPCLIMB_START:
@@ -2259,12 +2260,12 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         }
         case RDKEYMARKER_SWING:
         {
-            pThing->unknownFlags |= 2u;
+            pThing->unknownFlags |= 0x02u;
             break;
         }
         case RDKEYMARKER_SWINGFINISH:
         {
-            pThing->unknownFlags &= ~2u;
+            pThing->unknownFlags &= ~0x02u;
             break;
         }
         case RDKEYMARKER_SWIMLEFT:
@@ -2611,7 +2612,7 @@ int J3DAPI sithPuppet_ReadStaticPuppetsListBinary(tFileHandle fh, SithWorld* pWo
     {
         if ( aFilenames )
         {
-            stdMemory_Free(aFilenames);
+            STDFREE(aFilenames);
         }
 
         return 1;
@@ -2625,7 +2626,7 @@ int J3DAPI sithPuppet_ReadStaticPuppetsListBinary(tFileHandle fh, SithWorld* pWo
             {
                 if ( aFilenames )
                 {
-                    stdMemory_Free(aFilenames);
+                    STDFREE(aFilenames);
                 }
 
                 return 1;
@@ -2634,7 +2635,7 @@ int J3DAPI sithPuppet_ReadStaticPuppetsListBinary(tFileHandle fh, SithWorld* pWo
             ++pName;
         }
 
-        stdMemory_Free(aFilenames);
+        STDFREE(aFilenames);
         return 0;
     }
 }
@@ -2658,7 +2659,7 @@ SithPuppetClass* J3DAPI sithPuppet_LoadPuppetClass(const char* pFilename)
     }
 
     pClass = &pWorld->aPuppetClasses[pWorld->numPuppetClasses];
-    memset(pClass, 0, sizeof(SithPuppetClass));
+    STD_ZEROMEM(pClass, sizeof(SithPuppetClass));
 
     STD_STRCPY(pClass->aName, pFilename);
 
@@ -2782,7 +2783,7 @@ int J3DAPI sithPuppet_AllocWorldPuppets(SithWorld* pWorld, size_t size)
 
     pWorld->sizePuppetClasses = size;
     pWorld->numPuppetClasses  = 0;
-    memset(pWorld->aPuppetClasses, 0, sizeof(SithPuppetClass) * pWorld->sizePuppetClasses);
+    STD_ZEROMEM(pWorld->aPuppetClasses, sizeof(SithPuppetClass) * pWorld->sizePuppetClasses);
     return 0;
 }
 
@@ -2801,7 +2802,7 @@ void J3DAPI sithPuppet_FreeWorldPuppets(SithWorld* pWorld)
         sithPuppet_ClassCacheRemove(&pWorld->aPuppetClasses[i]);
     }
 
-    stdMemory_Free(pWorld->aPuppetClasses);
+    STDFREE(pWorld->aPuppetClasses);
     pWorld->aPuppetClasses    = NULL;
     pWorld->numPuppetClasses  = 0;
     pWorld->sizePuppetClasses = 0;
@@ -2895,7 +2896,7 @@ int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, const SithW
     CndKeyframeInfo* aKeyInfos = (CndKeyframeInfo*)STDMALLOC(sizeInfos);
     if ( aKeyInfos )
     {
-        memset(aKeyInfos, 0, sizeInfos);
+        STD_ZEROMEM(aKeyInfos, sizeInfos);
 
         uint32_t aSizes[3] = { 0 }; // Note, must be 32 bit
 
@@ -2918,19 +2919,19 @@ int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, const SithW
         aMarkers = (CndKeyframeMarker*)STDMALLOC(sizeof(CndKeyframeMarker) * aSizes[0]);
         if ( aMarkers )
         {
-            memset(aMarkers, 0, sizeMarkers);
+            STD_ZEROMEM(aMarkers, sizeMarkers);
 
             size_t sizeNodes = sizeof(CndKeyframeNode) * aSizes[1];
             aNodes = (CndKeyframeNode*)STDMALLOC(sizeof(CndKeyframeNode) * aSizes[1]);
             if ( aNodes )
             {
-                memset(aNodes, 0, sizeNodes);
+                STD_ZEROMEM(aNodes, sizeNodes);
 
                 size_t sizeEntries = sizeof(rdKeyframeNodeEntry) * aSizes[2];
                 aEntries = (rdKeyframeNodeEntry*)STDMALLOC(sizeof(rdKeyframeNodeEntry) * aSizes[2]);
                 if ( aEntries )
                 {
-                    memset(aEntries, 0, sizeEntries);
+                    STD_ZEROMEM(aEntries, sizeEntries);
 
                     CndKeyframeInfo* pCurInfo      = aKeyInfos;
                     CndKeyframeMarker* pCurMarker  = aMarkers;
@@ -2996,22 +2997,22 @@ int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, const SithW
 
     if ( aKeyInfos )
     {
-        stdMemory_Free(aKeyInfos);
+        STDFREE(aKeyInfos);
     }
 
     if ( aMarkers )
     {
-        stdMemory_Free(aMarkers);
+        STDFREE(aMarkers);
     }
 
     if ( aNodes )
     {
-        stdMemory_Free(aNodes);
+        STDFREE(aNodes);
     }
 
     if ( aEntries )
     {
-        stdMemory_Free(aEntries);
+        STDFREE(aEntries);
     }
 
     return bError;
@@ -3032,7 +3033,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* p
         aInfos = (CndKeyframeInfo*)STDMALLOC(sizeof(CndKeyframeInfo) * numKeyframes);
         if ( aInfos )
         {
-            memset(aInfos, 0, sizeInfos);
+            STD_ZEROMEM(aInfos, sizeInfos);
 
             uint32_t aSizes[3]; // Note must be 32 bit int
             static_assert(sizeof(aSizes) == 12, "sizeof(aSizes) == 12");
@@ -3042,19 +3043,19 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* p
                 aMarkers = (CndKeyframeMarker*)STDMALLOC(sizeof(CndKeyframeMarker) * aSizes[0]);
                 if ( aMarkers )
                 {
-                    memset(aMarkers, 0, sizeMarkers);
+                    STD_ZEROMEM(aMarkers, sizeMarkers);
 
                     size_t sizeNodes = sizeof(CndKeyframeNode) * aSizes[1];
                     aNodes = (CndKeyframeNode*)STDMALLOC(sizeof(CndKeyframeNode) * aSizes[1]);
                     if ( aNodes )
                     {
-                        memset(aNodes, 0, sizeNodes);
+                        STD_ZEROMEM(aNodes, sizeNodes);
 
                         size_t sizeEntries = sizeof(rdKeyframeNodeEntry) * aSizes[2];
                         aEntries = (rdKeyframeNodeEntry*)STDMALLOC(sizeof(rdKeyframeNodeEntry) * aSizes[2]);
                         if ( aEntries )
                         {
-                            memset(aEntries, 0, sizeEntries);
+                            STD_ZEROMEM(aEntries, sizeEntries);
 
                             // Read all keyframes data and assign to world keyframes
                             if ( sith_g_pHS->pFileRead(fh, aInfos, sizeInfos) == sizeInfos
@@ -3112,7 +3113,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* p
                                             goto error;
                                         }
 
-                                        memset(pKeyframe->aNodes, 0, aKeyNodes);
+                                        STD_ZEROMEM(pKeyframe->aNodes, aKeyNodes);
 
                                         for ( size_t j = 0; j < pCurInfo->numNodes; ++j )
                                         {
@@ -3129,7 +3130,7 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* p
                                                 goto error;
                                             }
 
-                                            memcpy(pNode->aEntries, pCurEntry, sizeof(rdKeyframeNodeEntry) * pNode->numEntries);
+                                            STD_COPYMEM(pNode->aEntries, pCurEntry, sizeof(rdKeyframeNodeEntry) * pNode->numEntries);
                                             pCurEntry += pCurNode->numEntries;
                                             ++pCurNode;
                                         }
@@ -3152,22 +3153,22 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* p
 error:
     if ( aInfos )
     {
-        stdMemory_Free(aInfos);
+        STDFREE(aInfos);
     }
 
     if ( aMarkers )
     {
-        stdMemory_Free(aMarkers);
+        STDFREE(aMarkers);
     }
 
     if ( aNodes )
     {
-        stdMemory_Free(aNodes);
+        STDFREE(aNodes);
     }
 
     if ( aEntries )
     {
-        stdMemory_Free(aEntries);
+        STDFREE(aEntries);
     }
 
     return bError;
@@ -3250,7 +3251,7 @@ int J3DAPI sithPuppet_AllocWorldKeyframes(SithWorld* pWorld, size_t size)
 
     pWorld->sizeKeyframes = size;
     pWorld->numKeyframes  = 0;
-    memset(pWorld->aKeyframes, 0, sizeof(rdKeyframe) * pWorld->sizeKeyframes);
+    STD_ZEROMEM(pWorld->aKeyframes, sizeof(rdKeyframe) * pWorld->sizeKeyframes);
     return 0;
 }
 
@@ -3270,7 +3271,7 @@ void J3DAPI sithPuppet_FreeWorldKeyframes(SithWorld* pWorld)
         rdKeyframe_FreeEntry(&pWorld->aKeyframes[i]);
     }
 
-    stdMemory_Free(pWorld->aKeyframes);
+    STDFREE(pWorld->aKeyframes);
     pWorld->aKeyframes    = NULL;
     pWorld->numKeyframes  = 0;
     pWorld->sizeKeyframes = 0;
@@ -3449,7 +3450,7 @@ int J3DAPI sithPuppet_SynchMode(SithThing* pThing, SithPuppetSubMode oldMode, Si
     }
 
     int trackNum = pTrack->trackNum;
-    int newTrackNum = sithPuppet_PlayMode(pThing, newMode, 0);
+    int newTrackNum = sithPuppet_PlayMode(pThing, newMode, NULL);
     if ( newTrackNum == -1 )
     {
         SITHLOG_ERROR("SynchMode(): Failed to play new mode '%s' for THING '%s'.\n", sithPuppet_aStrSubModes[newMode], pThing->aName);
@@ -3590,7 +3591,7 @@ void J3DAPI sithPuppet_FreeTrack(SithThing* pThing, SithPuppetTrack* pTrack)
         if ( pFirstTrack == pTrack )
         {
             pThing->pPuppetState->pFirstTrack = pFirstTrack->pNextTrack;
-            stdMemory_Free(pFirstTrack);
+            STDFREE(pFirstTrack);
         }
         else
         {
@@ -3600,7 +3601,7 @@ void J3DAPI sithPuppet_FreeTrack(SithThing* pThing, SithPuppetTrack* pTrack)
                 if ( pCurTrack == pTrack )
                 {
                     SithPuppetTrack* pNextTrack = pCurTrack->pNextTrack;
-                    stdMemory_Free(pCurTrack);
+                    STDFREE(pCurTrack);
                     pPrevTrack->pNextTrack = pNextTrack;
                     return;
                 }
@@ -3619,7 +3620,7 @@ void J3DAPI sithPuppet_FreeTrackByIndex(SithThing* pThing, int trackNum)
         if ( pFirstTrack->trackNum == trackNum )
         {
             pThing->pPuppetState->pFirstTrack = pFirstTrack->pNextTrack;
-            stdMemory_Free(pFirstTrack);
+            STDFREE(pFirstTrack);
         }
         else
         {
@@ -3629,7 +3630,7 @@ void J3DAPI sithPuppet_FreeTrackByIndex(SithThing* pThing, int trackNum)
                 if ( pCurTrack->trackNum == trackNum )
                 {
                     SithPuppetTrack* pNextTrack = pCurTrack->pNextTrack;
-                    stdMemory_Free(pCurTrack);
+                    STDFREE(pCurTrack);
                     pPrevTrack->pNextTrack = pNextTrack;
                     return;
                 }
@@ -3671,7 +3672,7 @@ void J3DAPI sithPuppet_ClearTrackList(SithThing* pThing)
     for ( SithPuppetTrack* pCurTrack = pThing->pPuppetState->pFirstTrack; pCurTrack; pCurTrack = pNextTrack )
     {
         pNextTrack = pCurTrack->pNextTrack;
-        stdMemory_Free(pCurTrack);
+        STDFREE(pCurTrack);
     }
 
     pThing->pPuppetState->pFirstTrack = NULL;

@@ -84,8 +84,8 @@ static SithSurface* sithRender_aAlphaAdjoins[SITHRENDER_MAX_VISIBLE_SECTORS / 2]
 // Transformers & Clipping vars
 static rdPrimit3 sithRender_clipFaceView;
 static rdPrimit3 sithRender_faceView;
-static rdVector3 sithRender_aClipVertices[MAX_CLIP_VERTICIES] = { 0 }; // Added: Init to 0
-static rdVector3 sithRender_aTransformedClipVertices[MAX_CLIP_VERTICIES] = { 0 }; // Added: Init to 0
+static rdVector3 sithRender_aClipVertices[MAX_CLIP_VERTICIES]               = { 0 }; // Added: Init to 0
+static rdVector3 sithRender_aTransformedClipVertices[MAX_CLIP_VERTICIES]    = { 0 }; // Added: Init to 0
 static rdVector3 sithRender_aSurfaceTransformedVertices[MAX_CLIP_VERTICIES] = { 0 }; // Added: Init to 0
 
 // PVS vars
@@ -649,7 +649,7 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
     sithRender_aSectorFrustrums[sithRender_numSecorFrustrums] =  *pFrustrum;
     pSector->pClipFrustum = &sithRender_aSectorFrustrums[sithRender_numSecorFrustrums++];
 
-    // Collect emitted thing lights (ambient spot light & actor head light)
+    // Collect thing lights (ambient spot light & actor head light)
     for ( pThing = pSector->pFirstThingInSector; pThing && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights); pThing = pThing->pNextThingInSector )
     {
         if ( (pThing->flags & SITH_TF_EMITLIGHT) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_INVISIBLE | SITH_TF_DESTROYED)) == 0 )

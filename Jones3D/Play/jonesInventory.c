@@ -155,7 +155,7 @@ int J3DAPI jonesInventory_ResetGameStatistics()
         return 1;
     }
 
-    memset(jonesInventory_pGameStatistics, 0, sizeof(SithGameStatistics));
+    STD_ZEROMEM(jonesInventory_pGameStatistics, sizeof(SithGameStatistics));
 
     jonesInventory_pGameStatistics->aLevelStatistic[0].levelStartIQPoints = 150;
     jonesInventory_pGameStatistics->totalIQPoints = 150;

@@ -291,7 +291,7 @@ int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
         if ( curItem == 57  // limpraft
             && !sithInventory_GetCurrentWeapon(pThing)
             && !sithWeapon_IsMountingWeapon(pThing)
-            && !sithPhysics_IsVehicleThing(pThing))
+            && !sithPhysics_IsVehicleThing(pThing) )
         {
             if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
                 && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_ISFLOOR) != 0
@@ -2012,7 +2012,7 @@ int J3DAPI sithPlayerActions_CanClimbOn1m(SithThing* pThing)
 
     float thingHeight  = sithPhysics_GetThingHeight(pThing);
     rdVector3 startPos = pThing->pos;
-    startPos.z = startPos.z - thingHeight + 0.097999997f;
+    startPos.z = (startPos.z - thingHeight) + 0.097999997f;
 
     SithSector* pStartSec = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
     if ( !pStartSec )

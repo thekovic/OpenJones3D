@@ -226,7 +226,7 @@ void J3DAPI sithPlayerControls_PuppetCallback(SithThing* pThing, int track, rdKe
     {
         pThing->moveStatus = SITHPLAYERMOVE_STILL;
         pThing->thingInfo.actorInfo.bControlsDisabled = 0;
-        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, 0);
+        sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_STAND, NULL);
         return;
     }
 
@@ -2445,7 +2445,7 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
                 case SITHPLAYERMOVE_FALLING: // Fixed: Added falling case
                     sithPlayerControls_pTargetThing = NULL;
                     sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime); // Altered: Added smooth interpolation
-                    sithWeapon_SendMessageAim(pThing, 0);
+                    sithWeapon_SendMessageAim(pThing, /*bAim=*/0);
                     return;
 
                 default:
@@ -2458,7 +2458,7 @@ void J3DAPI sithPlayerControls_ProcessWeaponAim(SithThing* pThing, float secDelt
         {
             sithPlayerControls_pTargetThing = NULL;
             sithPlayerControls_RotateAimJointsEx(pThing, 0.0f, 0.0f, secDeltaTime); // Altered: Added smooth interpolation
-            sithWeapon_SendMessageAim(pThing, 0);
+            sithWeapon_SendMessageAim(pThing, /*bAim=*/0);
             return;
         }
     }

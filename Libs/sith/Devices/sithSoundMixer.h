@@ -34,6 +34,12 @@ tSoundChannelHandle J3DAPI sithSoundMixer_PlaySoundThing(tSoundHandle hSnd, cons
 void J3DAPI sithSoundMixer_StopSound(tSoundChannelHandle hChannel);
 void sithSoundMixer_StopAll(void);
 
+/**
+ * Fades sound volume. If new volume is 0.0f the sound will stop playing and be removed from playing channel list
+ * @param hChannel
+ * @param volume
+ * @param secFadeTime
+ */
 void J3DAPI sithSoundMixer_FadeVolume(tSoundChannelHandle hChannel, float volume, float secFadeTime);
 void J3DAPI sithSoundMixer_SetVolume(tSoundChannelHandle hChannel, float volume); // Added
 
