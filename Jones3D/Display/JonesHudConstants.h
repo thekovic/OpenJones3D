@@ -2,6 +2,7 @@
 #define JONESHUDCONSTANTS_H
 #include <Jones3D/types.h>
 #include <rdroid/types.h>
+#include <std/General/stdColor.h>
 
 // HUD constants
 static const size_t JonesHud_msecGameOverWait = 5000; // 5 sec
@@ -44,7 +45,7 @@ static const tStoreItem JonesHud_aStoreItems[14] = {
 // Sound fx indices to jones3Dstatic sound list
 // TODO: Replace indices in the list with some constants
 // Note, from index 7 to the end are indy voice lines for the item that can't be activated (e.g. whoops)
-static const int JonesHud_aSoundFxIdxs[13] = { -1, 52, 54, 53, -1, 57, 56, 59, 60, 61, 62, 136, 137 };
+static const int JonesHud_aSoundFxIdxs[13] = { 1, 52, 54, 53, -1, 57, 56, 59, 60, 61, 62, 136, 137 };
 
 
 // Inventory menu item constants
@@ -831,5 +832,35 @@ static tJonesCreditEntry JonesHud_aCredits[325] =
     { "\xA9 LUCASARTS ENTERTAINMENT COMPANY LLC", 2, 0 },
     { "JONES_STR_HCOPY", 2, 0 }
 };
+
+/**
+ * Converts rdVector4 color (0.0-1.0 float range) to tStdColor (0-255 uint8 range).
+ *
+ * @param pColor - Pointer to rdVector4 color with components in range [0.0, 1.0].
+ * @return tStdColor value that can be used with stdConfig color functions.
+ */
+static inline tStdColor JonesHud_RdVector4ToStdColor(const rdVector4* pColor)
+{
+    return STD_RGBA(
+        (uint8_t)(pColor->x * 255.0f),
+        (uint8_t)(pColor->y * 255.0f),
+        (uint8_t)(pColor->z * 255.0f),
+        (uint8_t)(pColor->w * 255.0f)
+    );
+}
+
+/**
+ * Converts tStdColor (0-255 uint8 range) to rdVector4 color (0.0-1.0 float range).
+ *
+ * @param color - tStdColor value from stdConfig color functions.
+ * @param pOutColor - Pointer to rdVector4 to store the converted color.
+ */
+static inline void JonesHud_StdColorToRdVector4(tStdColor color, rdVector4* pOutColor)
+{
+    pOutColor->x = STD_GETRED(color) / 255.0f;
+    pOutColor->y = STD_GETGREEN(color) / 255.0f;
+    pOutColor->z = STD_GETBLUE(color) / 255.0f;
+    pOutColor->w = STD_GETALPHA(color) / 255.0f;
+}
 
 #endif // JONESHUDCONSTANTS_H
