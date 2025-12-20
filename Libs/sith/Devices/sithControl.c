@@ -944,7 +944,7 @@ void sithControl_EnableDevControls(bool bEnable)
 {
     if ( bEnable )
     {
-        sithControl_BindControl(SITHCONTROL_ACTIVATE, DIK_F11, (SithControlBindFlag)0); // Added: Change to DIK_F11 from DIK_GRAVE; required atm for cycle cameras in devmode 
+        sithControl_BindControl(SITHCONTROL_CAMERAMODE, DIK_F11, (SithControlBindFlag)0); // Added: Changed to DIK_F11 from DIK_GRAVE; and _ACTIVEATE to SITHCONTROL_CAMERAMODE
 
         // Following are bindings from debug version
         sithControl_BindControl(SITHCONTROL_DEBUG, DIK_BACK, (SithControlBindFlag)0);

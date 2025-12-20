@@ -1704,7 +1704,8 @@ int J3DAPI sithPlayerControls_ProcessEditorDebugControls(SithThing* pThing, floa
     }
 
     // Cycle camera - activate key
-    sithControl_GetKey(SITHCONTROL_ACTIVATE, &bPressed);
+    // Altered: Changed from SITHCONTROL_ACTIVATE to  SITHCONTROL_CAMERAMODE
+    sithControl_GetKey(SITHCONTROL_CAMERAMODE, &bPressed);
     if ( bPressed )
     {
         sithCamera_CycleCamera();
