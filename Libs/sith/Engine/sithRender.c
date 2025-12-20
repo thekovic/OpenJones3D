@@ -405,7 +405,7 @@ void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum
                     else
                     {
                         rdClipFrustum frustrum;
-                        sithRender_BuildClipFrustrum(&frustrum, sithRender_clipFaceView.numVertices, 3.4028235e38f, 3.4028235e38f, -3.4028235e38f, -3.4028235e38f);
+                        sithRender_BuildClipFrustrum(&frustrum, sithRender_clipFaceView.numVertices, FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX); // OG FLT_MAX was defined as 3.4028235e38f;
                         sithRender_BuildVisibleSectorList(pAdjoin->pAdjoinSector, &frustrum);
                     }
                 }
@@ -575,7 +575,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
                         }
                         else
                         {
-                            sithRender_BuildClipFrustrum(&frustum, sithRender_clipFaceView.numVertices, 3.4028235e38f, 3.4028235e38f, -3.4028235e38f, -3.4028235e38f);
+                            sithRender_BuildClipFrustrum(&frustum, sithRender_clipFaceView.numVertices, FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX); // OG FLT_MAX was defined as 3.4028235e38f;
                             pAdjoinSector->pClipFrustum = &frustum;
                         }
 

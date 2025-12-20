@@ -198,7 +198,7 @@ float J3DAPI sithAIAwareness_CheckAdjoinDistance(const SithSurfaceAdjoin* pAdjoi
     }
     else
     {
-        hitDist = 3.4028235e38f;
+        hitDist = FLT_MAX; // OG FLT_MAX was defined as 3.4028235e38f;
         for ( size_t i = 0; i < pSurface->face.numVertices; ++i )
         {
             rdVector3 vec;
