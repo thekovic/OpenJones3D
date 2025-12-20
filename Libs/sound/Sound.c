@@ -672,7 +672,7 @@ int J3DAPI Sound_Restore(tFileHandle fh)
                 maxEntropy = Sound_handleEntropy;
             }
 
-            tSoundHandle hSnd = 0;
+            tSoundHandle hSnd = SOUND_INVALIDHANDLE;
             if ( Sound_state == SOUNDSTATE_OPEN )
             {
                 if ( bankNum == SOUNDBANK_STATIC_NUM )
@@ -2303,7 +2303,7 @@ static void Sound_UpdateFades(void) // Added
             tSoundChannel* pChannel = Sound_GetChannel(pFade->hChannel);
             if ( !pChannel )
             {
-                pFade->hChannel = 0;
+                pFade->hChannel = SOUND_INVALIDHANDLE;
                 continue;
             }
 
@@ -2327,7 +2327,7 @@ static void Sound_UpdateFades(void) // Added
 
                     if ( (float)newValue == pFade->endValue )
                     {
-                        pFade->hChannel = 0;
+                        pFade->hChannel = SOUND_INVALIDHANDLE;
                     }
                 }
             }
@@ -2348,7 +2348,7 @@ static void Sound_UpdateFades(void) // Added
                     pChannel->flags &= ~SOUND_CHANNEL_VOLUMEFADE;
                 }
 
-                pFade->hChannel = 0;
+                pFade->hChannel = SOUND_INVALIDHANDLE;
             }
         }
     }
