@@ -52,8 +52,24 @@ void J3DAPI sithPuppet_UpdateThingMoveTracks(SithThing* pThing, float secDeltaTi
 float J3DAPI sithPuppet_UpdateThingMove(SithThing* pThing, rdPuppetTrackCallback pAxis);
 
 int J3DAPI sithPuppet_SetSubMode(SithThing* pThing, SithPuppetSubMode newSubMode, rdPuppetTrackCallback pfCallback);
+
+/**
+ * Sets new move mode and removes any playing track.
+ * @param pThing        - Puppet thing to set new move mode
+ * @param newMode       - The new move mode
+ */
 void J3DAPI sithPuppet_SetMoveMode(SithThing* pThing, SithPuppetMoveMode newMode);
+
+/**
+ * Sets new move mode and removes tracks only if current mode is different that newMode or if `bRemoveTracks` == true.
+ * @param pThing        - Puppet thing to set new move mode
+ * @param newMode       - The new move mode
+ * @param bRemoveTracks - If true all currently playing tracks will be removed  regardless if newMode is same as current move mode.
+ */
+void J3DAPI sithPuppet_SetMoveModeEx(SithThing* pThing, SithPuppetMoveMode newMode, bool bRemoveTracks); // New;
+
 void J3DAPI sithPuppet_SetArmedMode(SithThing* pThing, unsigned int newMode);
+unsigned int J3DAPI sithPuppet_GetArmedMode(SithThing* pThing); // New
 
 // On success trackIdx is returned, 
 // -99 is returned when submode already plays 

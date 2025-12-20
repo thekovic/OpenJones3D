@@ -1426,8 +1426,21 @@ void J3DAPI sithPuppet_SetMoveMode(SithThing* pThing, SithPuppetMoveMode newMode
 {
     SITH_ASSERTREL(newMode < SITH_PUPPET_NUMMOVEMODES);
 
+    // Altered: Replace OG code with the call to new sithPuppet_SetMoveModeEx function
+    sithPuppet_SetMoveModeEx(pThing, newMode, /*bRemoveTracks=*/true); // Note, OG removed all tracks so keep it like that
+}
+
+void J3DAPI sithPuppet_SetMoveModeEx(SithThing* pThing, SithPuppetMoveMode newMode, bool bRemoveTracks)
+{
+    SITH_ASSERTREL(newMode < SITH_PUPPET_NUMMOVEMODES);
+
     if ( pThing->pPuppetClass && pThing->pPuppetState )
     {
+        if ( pThing->pPuppetState->moveMode == newMode && !bRemoveTracks )
+        {
+            return;
+        }
+
         pThing->pPuppetState->majorMode = SITH_PUPPET_GETMOVEMAJORMODE(pThing, newMode);
         pThing->pPuppetState->moveMode  = newMode;
 
@@ -1443,6 +1456,15 @@ void J3DAPI sithPuppet_SetMoveMode(SithThing* pThing, SithPuppetMoveMode newMode
     }
 }
 
+SithPuppetMoveMode J3DAPI sithPuppet_GetMoveMode(SithThing* pThing)
+{
+    if ( pThing->pPuppetClass )
+    {
+        return pThing->pPuppetState->moveMode;
+    }
+    return SITHPUPPET_MOVEMODE_NORMAL;
+}
+
 void J3DAPI sithPuppet_SetArmedMode(SithThing* pThing, unsigned int newMode)
 {
     SITH_ASSERTREL(newMode < SITH_PUPPET_NUMARMEDMODES);
@@ -1451,6 +1473,15 @@ void J3DAPI sithPuppet_SetArmedMode(SithThing* pThing, unsigned int newMode)
         pThing->pPuppetState->armedMode = newMode;
         pThing->pPuppetState->majorMode = SITH_PUPPET_GETARMEDMAJORMODE(pThing, newMode);
     }
+}
+
+unsigned int J3DAPI sithPuppet_GetArmedMode(SithThing* pThing)
+{
+    if ( pThing->pPuppetClass )
+    {
+        return pThing->pPuppetState->armedMode;
+    }
+    return 0;
 }
 
 int J3DAPI sithPuppet_PlayMode(SithThing* pThing, SithPuppetSubMode submode, rdPuppetTrackCallback pfCallback)
