@@ -362,7 +362,7 @@ void J3DAPI sithWeapon_Update(SithThing* pThing, float secDeltaTime)
 
 int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId)
 {
-    SITH_ASSERTREL(pThing && ((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR))); // Fixed: Move to begining of the scope
+    SITH_ASSERTREL(pThing && ((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR))); // Fixed: Move to beginning of the scope
 
     if ( pThing->type == SITH_THING_PLAYER )
     {

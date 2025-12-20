@@ -1893,7 +1893,7 @@ SithThing* J3DAPI sithThing_CreateThingAtPos(const SithThing* pTemplate, const r
 
     if ( pTemplate->aName[0] == '_' )
     {
-        SITHLOG_WARNING("Warning -- create object from base-class template %s\n", pTemplate->aName); // Altered: Changed log level to warning from erro
+        SITHLOG_WARNING("Warning -- create object from base-class template %s\n", pTemplate->aName); // Altered: Changed log level to warning from error
     }
 
     sithThing_SetThingBasedOn(pThing, pTemplate);

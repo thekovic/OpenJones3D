@@ -98,8 +98,8 @@ void sithSoundMixer_Shutdown(void)
 
 void sithSoundMixer_ClearAmbientSector(void)
 {
-    sithSoundMixer_pCurSector = NULL;
-    sithSoundMixer_hCurAmbientChannel = 0;
+    sithSoundMixer_pCurSector         = NULL;
+    sithSoundMixer_hCurAmbientChannel = SOUND_INVALIDHANDLE;
 }
 
 void sithSoundMixer_Pause(void)
@@ -266,7 +266,7 @@ void sithSoundMixer_Update(void)
 
     if ( sithCamera_g_pCurCamera->pSector != sithSoundMixer_pCurSector )
     {
-        tSoundHandle hSndPrev = 0;
+        tSoundHandle hSndPrev = SOUND_INVALIDHANDLE;
         float sndVolPrev      = 0.0f;
         if ( sithSoundMixer_pCurSector )
         {
@@ -279,7 +279,7 @@ void sithSoundMixer_Update(void)
         float sndVol = sithSoundMixer_pCurSector->ambientSoundVolume;
         if ( sithSoundMixer_pCurSector->ambientSoundVolume == 0.0f )
         {
-            hSnd = 0;
+            hSnd = SOUND_INVALIDHANDLE;
         }
 
         if ( hSnd == hSndPrev )
@@ -294,7 +294,7 @@ void sithSoundMixer_Update(void)
             if ( sithSoundMixer_hCurAmbientChannel )
             {
                 sithSoundMixer_FadeVolume(sithSoundMixer_hCurAmbientChannel, 0.0f, 0.5f);
-                sithSoundMixer_hCurAmbientChannel = 0;
+                sithSoundMixer_hCurAmbientChannel = SOUND_INVALIDHANDLE;
             }
 
             if ( hSnd )
