@@ -1843,9 +1843,15 @@ void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
             }
 
             pThing->moveInfo.physics.flags &= ~SITH_PF_ONWATERSURFACE;
-            sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
-            sithPhysics_FindFloor(pThing, 1);
-            sithInventory_SetSwimmingInventory(pThing, 1);
+
+            // Altered: Replaced with call to sithPuppet_SetMoveModeEx 
+            // Fixed: Do not remove all tracks by default.
+            //        This change resolves the animation state glitch where weapon is armed
+            //        and setting normal move mode via call to `sithPuppet_SetMoveMode` would remove all weapon selected animations.
+            sithPuppet_SetMoveModeEx(pThing, SITHPUPPET_MOVEMODE_NORMAL, /*bRemoveTracks=*/ J3D_QOL_VALUE(false, true));
+
+            sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
+            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1);
             break;
         }
         case SITHPLAYERMOVE_PULLINGUP_1M:
