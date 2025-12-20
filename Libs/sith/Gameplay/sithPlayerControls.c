@@ -979,25 +979,25 @@ static void J3DAPI sithPlayerControls_UpdateClimbingSpeed(SithThing* pThing, boo
     switch ( pThing->moveStatus )
     {
         case SITHPLAYERMOVE_MOUNTING_WALL:
-            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_MOUNTWALL, bFastClimb ? 1.4f : 1.0f);
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_MOUNTWALL, bFastClimb ? 1.6f : 1.0f);
             break;
         case SITHPLAYERMOVE_PULLINGUP:
             sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBPULLINGUP, bFastClimb ? 1.4f : 1.0f);
             break;
         case SITHPLAYERMOVE_CLIMBING_UP:
-            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLUP, bFastClimb ? 1.4f : 1.0f);
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLUP, bFastClimb ? 1.6f : 1.0f);
             break;
 
         case SITHPLAYERMOVE_CLIMBING_DOWN:
-            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLDOWN, bFastClimb ? 1.4f : 1.0f);
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLDOWN, bFastClimb ? 1.6f : 1.0f);
             break;
 
         case SITHPLAYERMOVE_CLIMBING_RIGHT:
-            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLRIGHT, bFastClimb ? 1.3f : 1.0f);
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLRIGHT, bFastClimb ? 1.4f : 1.0f);
             break;
 
         case SITHPLAYERMOVE_CLIMBING_LEFT:
-            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLLEFT, bFastClimb ? 1.3f : 1.0f);
+            sithPuppet_SetModeSpeed(pThing, SITHPUPPETSUBMODE_CLIMBWALLLEFT, bFastClimb ? 1.4f : 1.0f);
             break;
     };
 #endif
