@@ -2137,43 +2137,37 @@ void J3DAPI sithCollision_sub_4DA7DB(SithThing* pThing, float a2)
 
 SithThing* J3DAPI sithCollision_FindItemThing(SithThing* pThing, int* pbFoundFloorItem)
 {
-    rdVector3 moveNorm;
-    SithThing* pThingCollided;
-    SithSector* pSector;
-    float radius;
-    float moveDist;
-    SithCollision* pCollision;
-    rdVector3 startPos;
-    int curWeaponID;
-    int searchFlags;
+    SITH_ASSERTREL(pThing); // Fixed: Moved this assert to beginning of the function scope. OG was after weapon check
 
-    searchFlags = 0x04;
-    curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-    moveDist = 0.079999998f;
+    int curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+
     if ( curWeaponID && curWeaponID != SITHWEAPON_ZIPPO )
     {
         return NULL;
     }
 
-    SITH_ASSERTREL(pThing);
-    radius = 0.025f;
     if ( !pThing->pInSector )
     {
         return NULL;
     }
 
-    rdVector_Copy3(&moveNorm, &pThing->orient.lvec);
-    rdVector_Copy3(&startPos, &pThing->pos);
-    startPos.z = startPos.z + radius;
+    // Search for item in forward direction
+    float radius = 0.025f; // 25cm
 
-    pSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
+    rdVector3 moveNorm = pThing->orient.lvec;
+    rdVector3 startPos = pThing->pos;
+    startPos.z += radius;
+
+    SithSector* pSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
     if ( !pSector )
     {
         return NULL;
     }
 
-    sithCollision_SearchForCollisions(pSector, NULL, &startPos, &moveNorm, moveDist, radius, searchFlags);
-    pCollision = sithCollision_PopStack();
+    float moveDist = 0.08f; // 80 cm
+    sithCollision_SearchForCollisions(pSector, NULL, &startPos, &moveNorm, moveDist, radius, 0x04);
+
+    SithCollision* pCollision = sithCollision_PopStack();
     if ( pCollision )
     {
         while ( pCollision )
@@ -2182,34 +2176,36 @@ SithThing* J3DAPI sithCollision_FindItemThing(SithThing* pThing, int* pbFoundFlo
             {
                 SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
                 SITH_ASSERTREL(pCollision->pThingCollided != NULL);
-                pThingCollided = pCollision->pThingCollided;
-                if ( pThingCollided->type == SITH_THING_ITEM )
+                SithThing* pHitThing = pCollision->pThingCollided;
+                if ( pHitThing->type == SITH_THING_ITEM )
                 {
                     sithCollision_DecreaseStackLevel();
                     *pbFoundFloorItem = 0;
-                    return pThingCollided;
+                    return pHitThing;
                 }
             }
 
             pCollision = sithCollision_PopStack();
         }
     }
-
     sithCollision_DecreaseStackLevel();
-    moveNorm.x = 0.0f;
-    moveNorm.y = 0.0f;
-    moveNorm.z = -1.0f;
 
-    startPos.x = pThing->orient.lvec.x * 0.025f + pThing->pos.x;
-    startPos.y = pThing->orient.lvec.y * 0.025f + pThing->pos.y;
-    startPos.z = pThing->orient.lvec.z * 0.025f + pThing->pos.z;
+   // No item thing was found in forward direction,
+   // now search for floor item
+
+    moveNorm = RDVECTOR_NEG3(rdroid_g_zVector3);
+    rdVector_ScaleAdd3(&startPos, &pThing->orient.lvec, 0.025f, &pThing->pos); // TODO: hmm why 25 cm forward?
+
     pSector = sithCollision_FindSectorInRadius(pThing->pInSector, &pThing->pos, &startPos, 0.0f);
     if ( !pSector )
     {
         return NULL;
     }
 
-    sithCollision_SearchForCollisions(pSector, NULL, &startPos, &moveNorm, moveDist, radius, searchFlags);
+    // Altered: Increased search radius for 20%.
+    //          Makes easier for indy to find items positioned directly below him
+    radius *= 1.2f;
+    sithCollision_SearchForCollisions(pSector, NULL, &startPos, &moveNorm, moveDist, radius, 0x04);
     pCollision = sithCollision_PopStack();
     if ( pCollision )
     {
@@ -2219,12 +2215,12 @@ SithThing* J3DAPI sithCollision_FindItemThing(SithThing* pThing, int* pbFoundFlo
             {
                 SITH_ASSERTREL(pCollision->pSurfaceCollided == NULL);
                 SITH_ASSERTREL(pCollision->pThingCollided != NULL);
-                pThingCollided = pCollision->pThingCollided;
-                if ( pThingCollided->type == SITH_THING_ITEM )
+                SithThing* pHitThing = pCollision->pThingCollided;
+                if ( pHitThing->type == SITH_THING_ITEM )
                 {
                     sithCollision_DecreaseStackLevel();
                     *pbFoundFloorItem = 1;
-                    return pThingCollided;
+                    return pHitThing;
                 }
             }
 
@@ -2446,7 +2442,7 @@ void J3DAPI sithCollision_PushSurfaceCollision(SithSurface* pSurf, float distanc
 
 SithCollision* sithCollision_PopClosest(void)
 {
-    float distance = 3.4028235e38f;
+    float distance = FLT_MAX; // OG FLT_MAX was defined as 3.4028235e38f;
     SithCollision* pClosest   = NULL;
     SithCollision* pCollision = sithCollision_aCollisions[stackLevel];
 
