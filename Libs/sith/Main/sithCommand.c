@@ -11,6 +11,7 @@
 #include <sith/Dss/sithMulti.h>
 #include <sith/Engine/sithCamera.h>
 #include <sith/Engine/sithIntersect.h>
+#include <sith/Engine/sithPhysics.h>
 #include <sith/Engine/sithPuppet.h>
 #include <sith/Gameplay/sithEvent.h>
 #include <sith/Gameplay/sithInventory.h>
@@ -175,17 +176,30 @@ int J3DAPI sithCommand_Fixme(const SithConsoleCommand* pFunc, const char* pArg)
         return 0;
     }
 
-    sithPlayer_g_pLocalPlayerThing->moveStatus = SITHPLAYERMOVE_STILL;
+#ifndef J3D_SPEEDRUN_BUILD
+    // Fixed: Fixes missing floorstick flag, 
+    //        stopping correctly all currently played forcemove tracks, 
+    //        and detaches thing from any attached surface/object
+    pThing->moveInfo.physics.flags |= SITH_PF_FLOORSTICK;
+    if ( pThing->thingInfo.actorInfo.bForceMovePlay )
+    {
+        sithPuppet_FinishForceMove(pThing, /*bStopTracks=*/1);
+    }
+    sithThing_DetachThing(pThing);
+#endif
+
+    pThing->moveStatus       = SITHPLAYERMOVE_STILL;
     pThing->collide.movesize = 0.04f;
 
     pThing->thingInfo.actorInfo.bControlsDisabled = 0;
     pThing->thingInfo.actorInfo.bForceMovePlay    = 0;
 
     pThing->moveInfo.physics.flags &= ~SITH_PF_ALIGNSURFACE;
-    pThing->moveInfo.physics.flags |= SITH_PF_ALIGNUP;  // 0x800 - SITH_PF_ALIGNUP
+    pThing->moveInfo.physics.flags |= SITH_PF_ALIGNUP;
     pThing->moveInfo.physics.height = 0.09f;
 
     sithPuppet_SetMoveMode(pThing, SITHPUPPET_MOVEMODE_NORMAL);
+
     return 1;
 }
 
