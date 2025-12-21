@@ -1109,12 +1109,12 @@ void sithRender_CollectThingLights(const SithThing* pThing)
             && !rdVector_IsZero3((const rdVector3*)&pThing->thingInfo.actorInfo.headLightIntensity) )
         {
             sithRender_aThingLights[sithRender_numThingLights].color     = pThing->thingInfo.actorInfo.headLightIntensity;
-            sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius; // TODO: this might be a bug and pThing->thingInfo.actorInfo.headLightIntensity.alpha should be used
-            sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius; // TODO: this might be a bug and pThing->thingInfo.actorInfo.headLightIntensity.alpha should be used
+            sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha; // Fixed: Replaced assigning pThing->light.minRadius with headLightIntensity.alpha to match code in sithRender_BuildVisibleSector
+            sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha; // Fixed: Replaced assigning pThing->light.maxRadius with headLightIntensity.alpha to match code in sithRender_BuildVisibleSector
 
             rdVector3 lightPos;
-            rdMatrix_TransformPoint34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient);
-            rdVector_Add3Acc(&lightPos, &pThing->pos);
+            rdMatrix_TransformVector34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient); // Fixed: Replaced clall to rdMatrix_TransformPoint34 with rdMatrix_TransformVector34
+            rdVector_Add3Acc(&lightPos, &pThing->pos);                                                        //        Fixes light flickering as pThing->orient.dvec might not be zero
 
             rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aThingLights[sithRender_numThingLights], &lightPos);
             ++sithRender_numThingLights;
