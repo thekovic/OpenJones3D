@@ -1136,7 +1136,7 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
             SithSurface* pSurf = sithPlayerControls_FindClimbSurface(pThing, &upDir, /*climbDir=*/1, &bHitNoneClimbSurf);
             if ( !pSurf || bHitNoneClimbSurf )
             {
-                if ( !bHitNoneClimbSurf )
+                if ( !bHitNoneClimbSurf && sithPlayerActions_CanPullUp(pThing) == 1 ) // Fixed: Added pull up check
                 {
                     sithPuppet_StopKey(pThing->renderData.pPuppet, sithPlayerControls_climbPupTrackNum, 0.0f);
                     sithPlayerControls_climbPupTrackNum = -1;
@@ -1144,6 +1144,7 @@ void J3DAPI sithPlayerControls_ProcessClimbMove(SithThing* pThing, float secDelt
                     sithPlayerActions_ClimbPullUp(pThing);
                     sithPlayerControls_UpdateClimbingSpeed(pThing, bFastClimb); // Added: Speedup play if runmode is enabled
                 }
+
                 return;
             }
 
