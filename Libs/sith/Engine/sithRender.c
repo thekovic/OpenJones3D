@@ -737,8 +737,8 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
                 sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha;
 
                 rdVector3 lightPos;
-                rdMatrix_TransformPoint34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient);
-                rdVector_Add3Acc(&lightPos, &pThing->pos);
+                rdMatrix_TransformVector34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient); // Fixed: Replaced clall to rdMatrix_TransformPoint34 with rdMatrix_TransformVector34
+                rdVector_Add3Acc(&lightPos, &pThing->pos);                                                        //        Fixes light flickering as pThing->orient.dvec might not be zero
 
                 rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aThingLights[sithRender_numThingLights], &lightPos);
                 ++sithRender_numThingLights;
@@ -1088,7 +1088,9 @@ void sithRender_CollectThingLights(const SithThing* pThing)
 
     if ( sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
         && (pThing->flags & SITH_TF_EMITLIGHT) != 0
-        && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) == 0 )
+        && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_INVISIBLE | SITH_TF_DESTROYED)) == 0 ) // Fixed: Added check for SITH_TF_INVISIBLE flag, 
+                                                                                               //        OG this flag was checked only in sithRender_BuildVisibleSector
+                                                                                               //        but not in case of sithRender_BuildVisibleThingSector
     {
         // Collect thing light if range is > 0.01f
         if ( !rdVector_IsZero3((const rdVector3*)&pThing->light.color)
