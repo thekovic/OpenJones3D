@@ -342,8 +342,8 @@
 #define sithRender_PVSBuildVisibleSector_ADDR 0x00444AA0
 #define sithRender_BuildVisibleSector_ADDR 0x00444B30
 #define sithRender_RenderSectors_ADDR 0x00444E20
-#define sithRender_BuildVisibleSectorsThingList_ADDR 0x00445200
-#define sithRender_BuildSectorThingList_ADDR 0x00445280
+#define sithRender_BuildVisibleThingSectorList_ADDR 0x00445200
+#define sithRender_CollectVisibleThingSector_ADDR 0x00445280
 #define sithRender_BuildDynamicLights_ADDR 0x00445580
 #define sithRender_RenderThings_ADDR 0x004458A0
 #define sithRender_RenderThing_ADDR 0x00445D00

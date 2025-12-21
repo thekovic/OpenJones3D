@@ -112,8 +112,8 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
 
 void sithRender_RenderSectors(void);
 
-void sithRender_BuildVisibleSectorsThingList(void);
-void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistance, float startDistance);
+void sithRender_BuildVisibleThingSectorList(void);
+void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curDistance, float startDistance);
 
 void sithRender_BuildDynamicLights(void);
 void sithRender_RenderThings(void);
@@ -137,8 +137,8 @@ void sithRender_InstallHooks(void)
     J3D_HOOKFUNC(sithRender_PVSBuildVisibleSector);
     J3D_HOOKFUNC(sithRender_BuildVisibleSector);
     J3D_HOOKFUNC(sithRender_RenderSectors);
-    J3D_HOOKFUNC(sithRender_BuildVisibleSectorsThingList);
-    J3D_HOOKFUNC(sithRender_BuildSectorThingList);
+    J3D_HOOKFUNC(sithRender_BuildVisibleThingSectorList);
+    J3D_HOOKFUNC(sithRender_CollectVisibleThingSector);
     J3D_HOOKFUNC(sithRender_BuildDynamicLights);
     J3D_HOOKFUNC(sithRender_RenderThings);
     J3D_HOOKFUNC(sithRender_RenderThing);
@@ -325,7 +325,7 @@ void sithRender_Draw(void)
         sithRender_BuildVisibleSectorList(sithCamera_g_pCurCamera->pSector, rdCamera_g_pCurCamera->pFrustum);
     }
 
-    sithRender_BuildVisibleSectorsThingList();
+    sithRender_BuildVisibleThingSectorList();
     if ( sithRender_numVisibleThingSectors > STD_ARRAYLEN(sithRender_aThingSectors) ) // Note, this was originally prolly put in place to inform level designers of too many visible thing sectors
     {
         RDLOG_ERROR("Too many sectors with things in view %d of %d\n", STD_ARRAYLEN(sithRender_aThingSectors), sithRender_numVisibleThingSectors); // TODO: Why using RDLOG
@@ -837,8 +837,16 @@ void sithRender_RenderSectors(void)
     rdCache_Flush();
 }
 
-void sithRender_BuildVisibleSectorsThingList(void)
+void sithRender_BuildVisibleThingSectorList(void)
 {
+    // Function to build list of sectors with things in view.
+    // It traverses all visible sectors and their adjoins to find sectors with things.
+    // It collects these sectors and collects lights from things.
+    //
+    // Note: OG allowed only one traversal path through each sector to collect things.
+    //       When QOL improvements are enabled, multiple traversal paths are allowed,
+    //       enabling more sectors with things to be collected.
+
     for ( size_t i = 0; i < sithRender_g_numVisibleSectors; ++i )
     {
         SithSector* pSector = sithRender_aVisibleSectors[i];
@@ -856,13 +864,13 @@ void sithRender_BuildVisibleSectorsThingList(void)
             {
                 pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
                 float distance = pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
-                sithRender_BuildSectorThingList(pAdjoin->pAdjoinSector, 0.0f, distance);
+                sithRender_CollectVisibleThingSector(pAdjoin->pAdjoinSector, 0.0f, distance);
             }
         }
     }
 }
 
-void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistance, float startDistance)
+void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curDistance, float startDistance)
 {
     if ( pSector->renderTick != sithMain_g_curRenderTick )
     {
@@ -941,7 +949,7 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
                 if ( distance < SITHRENDER_MAXTHINGCOLLECTDISTANCE )
                 {
                     pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
-                    sithRender_BuildSectorThingList(pAdjoin->pAdjoinSector, distance, 0.0f);
+                    sithRender_CollectVisibleThingSector(pAdjoin->pAdjoinSector, distance, 0.0f);
                 }
             }
         }
