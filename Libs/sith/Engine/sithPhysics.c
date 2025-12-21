@@ -160,7 +160,7 @@ void J3DAPI sithPhysics_InitMineCarExhaustDefault(SithThing* pThing, SithVehicle
 void J3DAPI sithPhysics_InitMineCarState(SithThing* pThing, SithMineCarState* pState);
 void J3DAPI sithPhysics_InitTrackTruckState(SithThing* pThing, SithMineCarState* pState);
 
-void J3DAPI sithPhysics_InitPlayerMineCarLights(SithThing* pThing, SithVehicleLights* pLights);
+void J3DAPI sithPhysics_InitMineCarLights(SithThing* pThing, SithVehicleLights* pLights);
 
 // MineCar fx update functions
 void J3DAPI sithPhysics_UpdateTrackVehicleFx(SithThing* pThing, SithMineCarUserBlock* pMineCarUserBlock, float secDeltaTime);
@@ -1661,8 +1661,8 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
         sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
         pThing->userblock.pMinecar->state.bEngineAnim = 1;
 
-        //Added: Make rear red light gouraud lit from default fullly lit
-        sithPhysics_InitPlayerMineCarLights(pThing, &pThing->userblock.pMinecar->state.lights);
+        // Added
+        sithPhysics_InitMineCarLights(pThing, &pThing->userblock.pMinecar->state.lights);
     }
     else if ( !stdUtil_StrCmp(pThing->aName, "killtruk") )
     {
@@ -1695,6 +1695,9 @@ int J3DAPI sithPhysics_CreateMineCarUserBlock(SithThing* pThing)
         sithPhysics_InitMineCarChassis(pThing, &pThing->userblock.pMinecar->chassisInfo);
         sithPhysics_InitMineCarFxState(pThing, &pThing->userblock.pMinecar->fxstate);
         sithPhysics_InitMineCarState(pThing, &pThing->userblock.pMinecar->state);
+
+        // Added
+        sithPhysics_InitMineCarLights(pThing, &pThing->userblock.pMinecar->state.lights);
     }
     else
     {
@@ -1919,7 +1922,7 @@ void J3DAPI sithPhysics_InitTrackTruckState(SithThing* pThing, SithMineCarState*
     pState->bBraking           = 0;
 }
 
-void J3DAPI sithPhysics_InitPlayerMineCarLights(SithThing* pThing, SithVehicleLights* pLights)
+void J3DAPI sithPhysics_InitMineCarLights(SithThing* pThing, SithVehicleLights* pLights)
 {
     // TODO: A better solution would be to flag thing not to sync to savegame files
     // First remove & destroy any attached thing
@@ -1932,14 +1935,26 @@ void J3DAPI sithPhysics_InitPlayerMineCarLights(SithThing* pThing, SithVehicleLi
         sithThing_DestroyThing(pAttach);
     }
 
-    pLights->numRearLights   = 1;
-    SithVehicleLight* pLight = &pLights->aRearLights[0];
-
-    rdModel3HNode* pLampJoint = rdModel3_FindNamedNode("bklamp", pThing->renderData.data.pModel3);
-    if ( pLampJoint )
+    // Init front light
+    rdModel3HNode* pFrLampJoint = rdModel3_FindNamedNode("frlamp", pThing->renderData.data.pModel3);
+    if ( pFrLampJoint )
     {
-        // Set lamp polygon
-        pLight->prdLightMesh = &pThing->renderData.data.pModel3->aGeos[0].aMeshes[pLampJoint->meshIdx];
+        SithVehicleLight* pLight = &pLights->aFrontLights[0];
+        pLights->numFrontLights  = 1;
+
+        // Set lamp mesh
+        pLight->prdLightMesh = &pThing->renderData.data.pModel3->aGeos[0].aMeshes[pFrLampJoint->meshIdx];
+    }
+
+   // Init rear light
+    rdModel3HNode* pBkLampJoint = rdModel3_FindNamedNode("bklamp", pThing->renderData.data.pModel3);
+    if ( pBkLampJoint )
+    {
+        SithVehicleLight* pLight = &pLights->aRearLights[0];
+        pLights->numRearLights   = 1;
+
+        // Set lamp mesh
+        pLight->prdLightMesh = &pThing->renderData.data.pModel3->aGeos[0].aMeshes[pBkLampJoint->meshIdx];
 
         // Creat dynamic red light
         SithThing* pLightTmpl = sithTemplate_GetTemplate("ghost");
