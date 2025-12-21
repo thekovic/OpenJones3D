@@ -27,6 +27,11 @@ J3D_EXTERN_C_START
 #define JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE            "engine.renderer.lighting"
 #define JONESDISPLAY_CFG_ENGINE_RENDER_FOGENABLED              "engine.renderer.fog.enabled"
 #define JONESDISPLAY_CFG_ENGINE_RENDER_FOGDENSITY              "engine.renderer.fog.density"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE "engine.renderer.maxThingCollectDistance"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_MAXLIGHTCOLLECTDISTANCE "engine.renderer.maxLightCollectDistance"
+
+
+
 // Returns 0 for success and 1 indicating error
 int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings);
 void JonesDisplay_Shutdown(void);

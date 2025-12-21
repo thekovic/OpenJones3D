@@ -280,12 +280,26 @@ int J3DAPI JonesDisplay_Open(JonesDisplaySettings* pSettings)
         return 1;
     }
 
-    //rendflags = sithRender_GetRenderFlags();
-    //(rendflags & 0xFF) = rendflags | RDROID_USE_AMBIENT_CAMERA_LIGHT;
-    sithRender_SetRenderFlags(sithRender_GetRenderFlags() | RDROID_USE_AMBIENT_CAMERA_LIGHT);
+    // Added: Load max thing/light collect distances from config
+    float maxThingColectDist = stdConfig_GetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE, SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT);
+    if ( !stdConfig_Contains(JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE) )
+    {
+        stdConfig_SetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE, maxThingColectDist);
+    }
+
+    float maxLightColectDist = stdConfig_GetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_MAXLIGHTCOLLECTDISTANCE, SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT);
+    if ( !stdConfig_Contains(JONESDISPLAY_CFG_ENGINE_RENDER_MAXLIGHTCOLLECTDISTANCE) )
+    {
+        stdConfig_SetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_MAXLIGHTCOLLECTDISTANCE, maxLightColectDist);
+    }
 
     rdSetGeometryMode(pSettings->geoMode);
     sithRender_SetLightingMode(pSettings->lightMode);
+    sithRender_SetRenderFlags(sithRender_GetRenderFlags() | RDROID_USE_AMBIENT_CAMERA_LIGHT);
+
+    // Added: Set max thing/light collect distances
+    sithRender_SetMaxThingCollectDistance(maxThingColectDist);
+    sithRender_SetMaxLightCollectDistance(maxLightColectDist);
 
     StdVideoMode displayMode;
     if ( stdDisplay_GetCurrentVideoMode(&displayMode) )

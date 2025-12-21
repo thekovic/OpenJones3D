@@ -43,9 +43,11 @@
 #include <math.h>
 #include <stdint.h>
 
-#define SITHRENDER_MAXTHINGCOLLECTDISTANCE    16.0f                   // Max distance from each visible sector to collect things to be rendered. Altered: Changed to 16 (160m) form 8 (80m)
-#define SITHRENDER_MAXTHINGLIGHTS             RDCAMERA_MAX_LIGHTS / 2 // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS-1
-#define SITHRENDER_MAXSECTORLIGHTS            (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
+#define SITHRENDER_MAXTHINGLIGHTS   RDCAMERA_MAX_LIGHTS / 2  // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS - 1 (1 for sector light)
+#define SITHRENDER_MAXSECTORLIGHTS  (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
+
+static float sithRender_maxThingCollectDistance = SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT;
+static float sithRender_maxLightCollectDistance = SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT;
 
 // There are 2 types of thing light the dynamic light that affect emitting thing and surrounding area,
 // and there is flat light that lits only the emitting thing.
@@ -236,6 +238,26 @@ void J3DAPI sithRender_SetLightingMode(rdLightMode mode)
 rdLightMode sithRender_GetLightingMode(void)
 {
     return sithRender_lightMode;
+}
+
+float sithRender_GetMaxThingCollectDistance(void)
+{
+    return sithRender_maxThingCollectDistance;
+}
+
+void J3DAPI sithRender_SetMaxThingCollectDistance(float distance)
+{
+    sithRender_maxThingCollectDistance = distance;
+}
+
+float sithRender_GetMaxLightCollectDistance(void)
+{
+    return sithRender_maxLightCollectDistance;
+}
+
+void J3DAPI sithRender_SetMaxLightCollectDistance(float distance)
+{
+    sithRender_maxLightCollectDistance = distance;
 }
 
 void sithRender_RenderScene(void)
@@ -876,14 +898,12 @@ void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curD
     {
         pSector->renderTick = sithMain_g_curRenderTick;
 
-        SithThing* pThing = pSector->pFirstThingInSector;
-        if ( pThing )
+        // Added: Added check for new light collection distance
+        if ( curDistance < sithRender_maxLightCollectDistance )
         {
-            for ( ; pThing; pThing = pThing->pNextThingInSector )
+            for ( SithThing* pThing = pSector->pFirstThingInSector; pThing; pThing = pThing->pNextThingInSector )
             {
-                // Collect emitted thing lights (ambient spot light & actor head light)
-                // TODO: the lights were collected also in sithRender_BuildVisibleSector.
-                //       Verify that collecting them here is really necessary
+                // Collect thing lights (ambient spot light & actor head light)
 
                 if ( sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
                     && (pThing->flags & SITH_TF_EMITLIGHT) != 0
@@ -921,7 +941,7 @@ void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curD
                 }
             }
 
-            if ( curDistance < SITHRENDER_MAXTHINGCOLLECTDISTANCE )
+            if ( curDistance < sithRender_maxThingCollectDistance ) // Altered: Replaced with new max thing collection distance
             {
                 ++sithRender_numVisibleThingSectors;
                 if ( sithRender_numThingSectors < SITHRENDER_MAX_SECTORS_WITH_THINGS )
@@ -946,7 +966,7 @@ void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curD
             if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 && pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick )
             {
                 float distance = startDistance + curDistance + pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
-                if ( distance < SITHRENDER_MAXTHINGCOLLECTDISTANCE )
+                if ( distance < J3DMAX(sithRender_maxThingCollectDistance, sithRender_maxLightCollectDistance) ) // Altered: Replaced with new max collection distance
                 {
                     pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
                     sithRender_CollectVisibleThingSector(pAdjoin->pAdjoinSector, distance, 0.0f);

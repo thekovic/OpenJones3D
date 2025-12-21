@@ -11,6 +11,14 @@ J3D_EXTERN_C_START
 #define SITHRENDER_MAX_VISIBLE_SECTORS     4096 // Altered: Was 128
 #define SITHRENDER_MAX_SECTORS_WITH_THINGS SITHRENDER_MAX_VISIBLE_SECTORS * 2 // Altered: Was 256
 
+
+#define SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT J3D_QOL_VALUE(16.0f, 8.0f)  // Max distance from each visible sector to collect things to be rendered. Altered: Changed to 16 (160m) form 8 (80m)
+#define SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT J3D_QOL_VALUE(50.0f, 8.0f)  // Max distance from each visible sector to collect emitting lights. 
+                                                                               // This is new configurable variable. Originally, light collecting distance was limited to things collecting distance (8.0f) and 
+                                                                               // max number of collected things - SITHRENDER_MAX_SECTORS_WITH_THINGS
+                                                                               // The new default distance - 500m was determined based on the light flickering issue in Babylon level (court yard)
+
+
 #define sithRender_g_fogDensity J3D_DECL_FAR_VAR(sithRender_g_fogDensity, float)
 // extern float sithRender_g_fogDensity ;
 
@@ -46,6 +54,12 @@ int sithRender_GetRenderFlags(void);
 
 void J3DAPI sithRender_SetLightingMode(rdLightMode mode);
 rdLightMode sithRender_GetLightingMode(void); // Added
+
+float sithRender_GetMaxThingCollectDistance(void); // New
+void J3DAPI sithRender_SetMaxThingCollectDistance(float distance); // New
+
+float sithRender_GetMaxLightCollectDistance(void); // New
+void J3DAPI sithRender_SetMaxLightCollectDistance(float distance); // New
 
 //!< Renders sithWorld_g_pCurrentWorld from position of sithCamera_g_pCurCamera
 void sithRender_RenderScene(void); // Added from debug
