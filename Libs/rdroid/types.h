@@ -487,6 +487,7 @@ typedef union srdThingData
     rdCamera* pCamera;
     rdLight* pLight;
 } rdThingData;
+static_assert(sizeof(rdThingData) == 4, "sizeof(rdThingData) == 4");
 
 typedef struct srdKeyframeNodeEntry
 {

@@ -14,9 +14,7 @@ void rdMath_InstallHooks(void)
 }
 
 void rdMath_ResetGlobals(void)
-{
-
-}
+{}
 
 float J3DAPI rdMath_DeltaAngleNormalized(const rdVector3* pVectorX, const rdVector3* pVectorY, const rdVector3* pVectorZ)
 {

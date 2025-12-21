@@ -429,7 +429,8 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -494,7 +495,8 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
             {
                 float planeProj = pFrustrum->rightPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -559,7 +561,8 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
             {
                 float planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -624,7 +627,8 @@ int J3DAPI rdClip_Face3WPVS(rdClipFrustum* pFrustrum, rdVector3* aVertices, size
             {
                 float planeProj = pFrustrum->bottomPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -1390,7 +1394,8 @@ int J3DAPI rdClip_Face3GS(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -1539,7 +1544,8 @@ int J3DAPI rdClip_Face3GS(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             {
                 float planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -1613,7 +1619,8 @@ int J3DAPI rdClip_Face3GS(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             {
                 float planeProj = pFrustrum->bottomPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -2150,7 +2157,8 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -2297,7 +2305,8 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             {
                 float planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -2370,7 +2379,8 @@ int J3DAPI rdClip_Face3GT(const rdClipFrustum* pFrustrum, rdVector3* aVertices, 
             {
                 float planeProj = pFrustrum->bottomPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -2916,7 +2926,8 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
             {
                 float planeProj = pFrustrum->leftPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->x - pPrevVert->x);
                 float clippedY  = pCurVert->y * pPrevVert->x - pPrevVert->y * pCurVert->x;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -3099,7 +3110,8 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
             {
                 float planeProj = pFrustrum->topPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 
@@ -3190,7 +3202,8 @@ int J3DAPI rdClip_Face3T(const rdClipFrustum* pFrustrum, rdVector3* aVertices, r
             {
                 float planeProj = pFrustrum->bottomPlane * (pCurVert->y - pPrevVert->y) - (pCurVert->z - pPrevVert->z);
                 float clippedY  = pPrevVert->z * pCurVert->y - pCurVert->z * pPrevVert->y;
-                if ( planeProj != 0.0f ) {
+                if ( planeProj != 0.0f )
+                {
                     clippedY = clippedY / planeProj;
                 }
 

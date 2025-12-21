@@ -7,6 +7,7 @@
 #include <rdroid/Main/rdroid.h>
 #include <rdroid/RTI/addresses.h>
 
+#include <std/General/stdUtil.h>
 #include <std/types.h>
 
 J3D_EXTERN_C_START
@@ -14,8 +15,8 @@ J3D_EXTERN_C_START
 #define rdroid_g_identMatrix34 J3D_DECL_FAR_VAR(rdroid_g_identMatrix34, const rdMatrix34)
 // extern const rdMatrix34 rdroid_g_identMatrix34 ;
 
-inline void J3DAPI rdMatrix_Identity34(rdMatrix34* mat); // Added
-void J3DAPI rdMatrix_Copy34(rdMatrix34* dest, const rdMatrix34* src);
+static inline void J3DAPI rdMatrix_Identity34(rdMatrix34* mat); // Added
+static inline  void J3DAPI rdMatrix_Copy34(rdMatrix34* dest, const rdMatrix34* src);
 
 void J3DAPI rdMatrix_Build34(rdMatrix34* mat, const rdVector3* pyr, const rdVector3* pos);
 void J3DAPI rdMatrix_BuildFromLook34(rdMatrix34* mat, const rdVector3* look);
@@ -52,15 +53,15 @@ void J3DAPI rdMatrix_TransformPoint34Acc(rdVector3* dest, const rdMatrix34* mat)
 void J3DAPI rdMatrix_TransformPointList34(const rdMatrix34* mat, const rdVector3* aSrc, rdVector3* aDest, size_t size);
 
 
-inline void J3DAPI rdMatrix_Identity34(rdMatrix34* mat)
+void J3DAPI rdMatrix_Identity34(rdMatrix34* mat)
 {
-    memcpy(mat, &rdroid_g_identMatrix34, sizeof(rdMatrix34));
+    STD_COPYMEM(mat, &rdroid_g_identMatrix34, sizeof(rdMatrix34));
 }
 
-inline void J3DAPI rdMatrix_Copy34(rdMatrix34* dest, const rdMatrix34* src)
+void J3DAPI rdMatrix_Copy34(rdMatrix34* dest, const rdMatrix34* src)
 {
     RD_ASSERT(dest != src); // Added
-    memcpy(dest, src, sizeof(rdMatrix34));
+    STD_COPYMEM(dest, src, sizeof(rdMatrix34));
 }
 
 // Helper hooking functions
