@@ -4003,6 +4003,67 @@ bool sithPlayerControls_CanClimbOn2m(SithThing* pThing)
     return bCanClimb && sithPlayerActions_CanClimbOn2m(pThing) == 1;
 }
 
+bool J3DAPI sithPlayerControls_TryMountClimbWall(SithThing* pThing, bool bQuickMount)
+{
+    // TODO: this could be new sithPlayerActions function FindAndMountClimbWall
+    if ( sithInventory_GetCurrentWeapon(pThing) == SITHWEAPON_NO_WEAPON && !sithWeapon_IsMountingWeapon(pThing) ) //TODO: why not use sithPlayerActions_HasActiveWeapon
+    {
+        float moveDist = pThing->collide.movesize * 2.0f;
+        sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &pThing->orient.lvec, moveDist, pThing->collide.movesize, 0xA00);
+
+        bool bWallMounted = false;
+        SithCollision* pCollision;
+        while ( (pCollision = sithCollision_PopStack()) != NULL )
+        {
+            if ( ((pCollision->type & SITHCOLLISION_WORLD) != 0
+                || (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0)
+                && pCollision->pSurfaceCollided
+                && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_CLIMBABLE) != 0 )
+            {
+                rdVector3 surfNormal = RDVECTOR_NEG3(pCollision->pSurfaceCollided->face.normal);
+                surfNormal.z = 0.0f;
+                rdVector_Normalize3Acc(&surfNormal);
+
+                rdVector3 dir = pThing->orient.lvec;
+                dir.z = 0.0f;
+                rdVector_Normalize3Acc(&dir);
+
+                if ( rdVector_Dot3(&dir, &surfNormal) > 0.80000001f )
+                {
+                    pThing->moveStatus = SITHPLAYERMOVE_MOUNTING_WALL;
+                    pThing->thingInfo.actorInfo.bControlsDisabled = 1;
+
+                    sithPhysics_ResetThingMovement(pThing);
+                    sithPlayerActions_CenterOnClimbSurface(pThing, pCollision->pSurfaceCollided);
+                    sithThing_AttachThingToClimbSurface(pThing, pCollision->pSurfaceCollided);
+
+                    sithPuppet_RemoveAllTracks(pThing);
+                    sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_MOUNTWALL, sithPlayerControls_PuppetCallback);
+                    sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
+
+                    // Added: Speedup play if runmode is enabled
+                    sithPlayerControls_UpdateClimbingSpeed(pThing, bQuickMount);
+
+                    pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
+                    bWallMounted = true;
+
+                    sithPlayerControls_bJumpKeyActive = true;
+                    sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0);
+                    break;
+                }
+            }
+        }
+
+        sithCollision_DecreaseStackLevel();
+        if ( bWallMounted )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDeltaTime, float moveFactor, bool bRun)
 {
     J3D_UNUSED(secDeltaTime);
@@ -4057,60 +4118,10 @@ void J3DAPI sithPlayerControls_ProcessStillMove(SithThing* pThing, float secDelt
             }
 
             // Try mounting wall for climbing
-            // TODO: this could be new sithPlayerActions function FindAndMountClimbWall
-            if ( sithInventory_GetCurrentWeapon(pThing) == SITHWEAPON_NO_WEAPON && !sithWeapon_IsMountingWeapon(pThing) ) //TODO: why not use sithPlayerActions_HasActiveWeapon
+            // Altered: Replaced OG inlined coded with call to the new sithPlayerControls_TryMountClimbWall function
+            if ( sithPlayerControls_TryMountClimbWall(pThing, /*bQuickMount=*/bRun) )
             {
-                float moveDist = pThing->collide.movesize * 2.0f;
-                sithCollision_SearchForCollisions(pThing->pInSector, pThing, &pThing->pos, &pThing->orient.lvec, moveDist, pThing->collide.movesize, 0xA00);
-
-                bool bWallMounted = false;
-                SithCollision* pCollision;
-                while ( (pCollision = sithCollision_PopStack()) != NULL )
-                {
-                    if ( ((pCollision->type & SITHCOLLISION_WORLD) != 0
-                        || (pCollision->type & SITHCOLLISION_ADJOINCROSS) != 0)
-                        && pCollision->pSurfaceCollided
-                        && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_CLIMBABLE) != 0 )
-                    {
-                        rdVector3 surfNormal = RDVECTOR_NEG3(pCollision->pSurfaceCollided->face.normal);
-                        surfNormal.z = 0.0f;
-                        rdVector_Normalize3Acc(&surfNormal);
-
-                        rdVector3 dir = pThing->orient.lvec;
-                        dir.z = 0.0f;
-                        rdVector_Normalize3Acc(&dir);
-
-                        if ( rdVector_Dot3(&dir, &surfNormal) > 0.80000001f )
-                        {
-                            pThing->moveStatus = SITHPLAYERMOVE_MOUNTING_WALL;
-                            pThing->thingInfo.actorInfo.bControlsDisabled = 1;
-
-                            sithPhysics_ResetThingMovement(pThing);
-                            sithPlayerActions_CenterOnClimbSurface(pThing, pCollision->pSurfaceCollided);
-                            sithThing_AttachThingToClimbSurface(pThing, pCollision->pSurfaceCollided);
-
-                            sithPuppet_RemoveAllTracks(pThing);
-                            sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_MOUNTWALL, sithPlayerControls_PuppetCallback);
-                            sithSoundClass_PlayModeFirst(pThing, SITHSOUNDCLASS_CLIMBONTO);
-
-                            // Added: Speedup play if runmode is enabled
-                            sithPlayerControls_UpdateClimbingSpeed(pThing, bRun);
-
-                            pThing->moveInfo.physics.flags &= ~SITH_PF_FLOORSTICK;
-                            bWallMounted = true;
-
-                            sithPlayerControls_bJumpKeyActive = true;
-                            sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/0);
-                            break;
-                        }
-                    }
-                }
-
-                sithCollision_DecreaseStackLevel();
-                if ( bWallMounted )
-                {
-                    return;
-                }
+                return;
             }
 
             //
@@ -4647,7 +4658,16 @@ void J3DAPI sithPlayerControls_ProcessWalkMove(SithThing* pThing, float secDelta
             return;
         }
 
-        // Note: in still jump case, check for no force move play is performed first
+    #ifdef J3D_QOL_IMPROVEMENTS
+        // Added: Try mounting wall for climbing
+        //        OG no option to walk and mount wall
+        if ( sithPlayerControls_TryMountClimbWall(pThing, /*bQuickMount*/true) )
+        {
+            return;
+        }
+    #endif
+
+         // Note: in still jump case, check for no force move play is performed first
         if ( pThing->attach.flags && (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0 )
         {
             float floorDot = rdVector_Dot3(&pThing->attach.pFace->normal, &rdroid_g_zVector3);
@@ -4867,6 +4887,15 @@ void J3DAPI sithPlayerControls_ProcessRunMove(SithThing* pThing, float secDeltaT
             sithPlayerActions_ClimbOn1m(pThing);
             return;
         }
+
+    #ifdef J3D_QOL_IMPROVEMENTS
+        // Added: Try mounting wall for climbing
+        //        OG no option to walk and mount wall
+        if ( sithPlayerControls_TryMountClimbWall(pThing, /*bQuickMount*/true) )
+        {
+            return;
+        }
+    #endif
 
         // No climb, perform jump by moving to jump state
         sithPuppet_g_bPlayerLeapForward = 1;
