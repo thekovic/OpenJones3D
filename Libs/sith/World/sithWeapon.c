@@ -673,6 +673,16 @@ SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const Sit
         rdMatrix_TransformVector34Acc(&shooterOffset, &pShooter->orient);
         rdVector_Add3Acc(&offsetPos, &shooterOffset);
 
+        // Fixed: Check for pFirePos to be NAN and prevent engine crashing
+        //        This can happen in some cases when for example thing->renderData.paJointMatrices[idx].dvec is NAN.
+        //        e.g.: comminecar driving in-front of indy and firing back at indy (usually at the station when driving up hill)
+        //        TODO: Investigate why paJointMatrices would have nan values
+        if ( rdVector_IsNAN3(pFirePos) )
+        {
+            SITHLOG_ERROR("Uh-oh.  Received NAN fire position.  Weapon fire failed.\n");
+            return NULL;
+        }
+
         SithSector* pSector = sithCollision_FindSectorInRadius(pShooter->pInSector, &pShooter->pos, &offsetPos, 0.0f);
         if ( !pSector )
         {
@@ -2373,13 +2383,10 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
     rdVector3 fireDir = pShooter->orient.lvec;
     if ( bUseFireOffset == 1 )
     {
-        if ( pShooter->thingInfo.actorInfo.fireOffset.x != 0.0f
-            || pShooter->thingInfo.actorInfo.fireOffset.y != 0.0f
-            || pShooter->thingInfo.actorInfo.fireOffset.z != 0.0f )
+        if ( !rdVector_IsZero3(&pShooter->thingInfo.actorInfo.fireOffset) )
         {
             rdVector3 shooterFireOffset = pShooter->thingInfo.actorInfo.fireOffset;
             rdMatrix_TransformVector34Acc(&shooterFireOffset, &pShooter->orient);
-
             rdVector_Add3Acc(pFirePos, &shooterFireOffset);
         }
 
