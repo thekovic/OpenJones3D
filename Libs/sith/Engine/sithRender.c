@@ -326,7 +326,7 @@ void sithRender_Draw(void)
     }
 
     sithRender_BuildVisibleSectorsThingList();
-    if ( sithRender_numVisibleThingSectors > STD_ARRAYLEN(sithRender_aThingSectors) )
+    if ( sithRender_numVisibleThingSectors > STD_ARRAYLEN(sithRender_aThingSectors) ) // Note, this was originally prolly put in place to inform level designers of too many visible thing sectors
     {
         RDLOG_ERROR("Too many sectors with things in view %d of %d\n", STD_ARRAYLEN(sithRender_aThingSectors), sithRender_numVisibleThingSectors); // TODO: Why using RDLOG
     }
@@ -844,7 +844,15 @@ void sithRender_BuildVisibleSectorsThingList(void)
         SithSector* pSector = sithRender_aVisibleSectors[i];
         for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
         {
+        #ifdef J3D_QOL_IMPROVEMENTS
+            // Altered: Allow already processed sectors to iterate through all their adjoins again
+            //          and find any unprocessed sectors. This change enables multiple traversal paths
+            //          to pass through already processed sectors and collect any remaining sectors.
+            if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
+            #else
+            // Legacy mode prevent crwaling through already processed sector
             if ( pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick && (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
+            #endif
             {
                 pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
                 float distance = pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
@@ -915,6 +923,16 @@ void J3DAPI sithRender_BuildSectorThingList(SithSector* pSector, float curDistan
             }
         }
 
+    }
+
+    // Altered: Allow already processed sectors to iterate through all their adjoins again
+    //          and find any unprocessed sectors. This change enables multiple traversal paths
+    //          to pass through already processed sectors and collect any remaining sectors.
+#ifndef J3D_QOL_IMPROVEMENTS
+    // Legacy mode
+    if ( pSector->renderTick != sithMain_g_curRenderTick )
+    #endif // !J3D_QOL_IMPROVEMENTS
+    {
         for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
         {
             if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 && pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick )
