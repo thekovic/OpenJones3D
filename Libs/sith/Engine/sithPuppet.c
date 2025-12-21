@@ -27,6 +27,7 @@
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdConffile.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMath.h>
 #include <std/General/stdMemory.h>
@@ -38,6 +39,7 @@
 #include <string.h>
 
 static float sithPuppet_watersurfaceTurnFactor = 0.0005f;
+static bool sithPuppet_bCndLoadExternal        = J3D_QOL_VALUE(true, false); // Added
 
 typedef struct sCndKeyframeMarker
 {
@@ -238,6 +240,8 @@ void sithPuppet_ResetGlobals(void)
 
 int sithPuppet_Startup(void)
 {
+    // TODO: Add startup guard
+
     sithPuppet_pClassHashtable = stdHashtbl_New(64u);
     sithPuppet_pKeyHashtable   = stdHashtbl_New(512u);
 
@@ -251,6 +255,13 @@ int sithPuppet_Startup(void)
     for ( size_t modeNum = 1; modeNum < STD_ARRAYLEN(sithPuppet_aStrSubModes); ++modeNum )
     {
         stdHashtbl_Add(sithPuppet_pHashtblSubmodes, sithPuppet_aStrSubModes[modeNum], (void*)modeNum);
+    }
+
+    // Added: Load config values
+    sithPuppet_bCndLoadExternal = stdConfig_GetBool(SITHPUPPET_CFG_CNDWORLDKEYFRAMES_LOADEXTERNAL, sithPuppet_bCndLoadExternal);
+    if ( !stdConfig_Contains(SITHPUPPET_CFG_CNDWORLDKEYFRAMES_LOADEXTERNAL) )
+    {
+        stdConfig_SetBool(SITHPUPPET_CFG_CNDWORLDKEYFRAMES_LOADEXTERNAL, sithPuppet_bCndLoadExternal);
     }
 
     return 0;
@@ -3056,6 +3067,14 @@ int J3DAPI sithPuppet_WriteStaticKeyframesListBinary(tFileHandle fh, const SithW
     return bError;
 }
 
+static bool sithPuppet_KeyframeFileExists(const char* pFilename)
+{
+    char aPath[128];
+    SITH_ASSERT(strlen(pFilename) < 128);
+    STD_FORMAT(aPath, "%s%c%s", "3do\\key", '\\', pFilename);
+    return stdUtil_FileExists(aPath);
+}
+
 int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* pWorld)
 {
     int bError = 1;
@@ -3118,65 +3137,84 @@ int J3DAPI sithPuppet_ReadStaticKeyframesListBinary(tFileHandle fh, SithWorld* p
                                         }
 
                                         ++pCurInfo;
+                                        continue;
                                     }
-                                    else
+
+                                    // Added: Load external keyframe if enabled and file exists
+                                    if ( sithPuppet_bCndLoadExternal && sithPuppet_KeyframeFileExists(pCurInfo->name) )
                                     {
-                                        rdKeyframe* pKeyframe = &pWorld->aKeyframes[pWorld->numKeyframes];
-
-                                        STD_STRCPY(pKeyframe->aName, pCurInfo->name);
-                                        pKeyframe->flags      = pCurInfo->flags;
-                                        pKeyframe->type       = pCurInfo->type;
-                                        pKeyframe->numFrames  = pCurInfo->numFrames;
-                                        pKeyframe->fps        = pCurInfo->fps;
-                                        pKeyframe->numMarkers = pCurInfo->numMarkers;
-                                        pKeyframe->numJoints  = pCurInfo->numJoints;
-
-                                        for ( size_t j = 0; j < pCurInfo->numMarkers; ++j )
+                                        rdKeyframe* pKfTrack = sithPuppet_LoadKeyframe(pCurInfo->name);
+                                        if ( pKfTrack )
                                         {
-                                            pKeyframe->aMarkerFrames[j] = pCurMarker->frame;
-                                            pKeyframe->aMarkerTypes[j] = pCurMarker->type;
-                                            ++pCurMarker;
-                                        }
+                                            pCurMarker += pCurInfo->numMarkers;
+                                            for ( size_t j = 0; j < pCurInfo->numNodes; ++j )
+                                            {
+                                                pCurEntry += pCurNode->numEntries;
+                                                ++pCurNode;
+                                            }
 
-                                        pKeyframe->idx = pWorld->numKeyframes;
-                                        if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
-                                        {
-                                            pKeyframe->idx = SITHWORLD_STATICINDEX(pKeyframe->idx);
+                                            ++pCurInfo;
+                                            continue;
                                         }
+                                    }
 
-                                        size_t aKeyNodes = sizeof(rdKeyframeNode) * pCurInfo->numJoints;
-                                        pKeyframe->aNodes = (rdKeyframeNode*)STDMALLOC(aKeyNodes);
-                                        if ( !pKeyframe->aNodes )
+                                    // The keyframe is not in the system yet, so load it
+
+                                    rdKeyframe* pKeyframe = &pWorld->aKeyframes[pWorld->numKeyframes];
+
+                                    STD_STRCPY(pKeyframe->aName, pCurInfo->name);
+                                    pKeyframe->flags      = pCurInfo->flags;
+                                    pKeyframe->type       = pCurInfo->type;
+                                    pKeyframe->numFrames  = pCurInfo->numFrames;
+                                    pKeyframe->fps        = pCurInfo->fps;
+                                    pKeyframe->numMarkers = pCurInfo->numMarkers;
+                                    pKeyframe->numJoints  = pCurInfo->numJoints;
+
+                                    for ( size_t j = 0; j < pCurInfo->numMarkers; ++j )
+                                    {
+                                        pKeyframe->aMarkerFrames[j] = pCurMarker->frame;
+                                        pKeyframe->aMarkerTypes[j] = pCurMarker->type;
+                                        ++pCurMarker;
+                                    }
+
+                                    pKeyframe->idx = pWorld->numKeyframes;
+                                    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
+                                    {
+                                        pKeyframe->idx = SITHWORLD_STATICINDEX(pKeyframe->idx);
+                                    }
+
+                                    size_t aKeyNodes = sizeof(rdKeyframeNode) * pCurInfo->numJoints;
+                                    pKeyframe->aNodes = (rdKeyframeNode*)STDMALLOC(aKeyNodes);
+                                    if ( !pKeyframe->aNodes )
+                                    {
+                                        goto error;
+                                    }
+
+                                    STD_ZEROMEM(pKeyframe->aNodes, aKeyNodes);
+
+                                    for ( size_t j = 0; j < pCurInfo->numNodes; ++j )
+                                    {
+
+                                        rdKeyframeNode* pNode = &pKeyframe->aNodes[pCurNode->nodeNum];
+                                        pNode->nodeNum    = pCurNode->nodeNum;
+                                        pNode->numEntries = pCurNode->numEntries;
+                                        STD_STRCPY(pNode->aMeshName, pCurNode->meshName);
+
+                                        rdKeyframeNodeEntry* aKeyEntries = (rdKeyframeNodeEntry*)STDMALLOC(sizeof(rdKeyframeNodeEntry) * pNode->numEntries);
+                                        pNode->aEntries = aKeyEntries;
+                                        if ( !pNode->aEntries )
                                         {
                                             goto error;
                                         }
 
-                                        STD_ZEROMEM(pKeyframe->aNodes, aKeyNodes);
-
-                                        for ( size_t j = 0; j < pCurInfo->numNodes; ++j )
-                                        {
-
-                                            rdKeyframeNode* pNode = &pKeyframe->aNodes[pCurNode->nodeNum];
-                                            pNode->nodeNum    = pCurNode->nodeNum;
-                                            pNode->numEntries = pCurNode->numEntries;
-                                            STD_STRCPY(pNode->aMeshName, pCurNode->meshName);
-
-                                            rdKeyframeNodeEntry* aKeyEntries = (rdKeyframeNodeEntry*)STDMALLOC(sizeof(rdKeyframeNodeEntry) * pNode->numEntries);
-                                            pNode->aEntries = aKeyEntries;
-                                            if ( !pNode->aEntries )
-                                            {
-                                                goto error;
-                                            }
-
-                                            STD_COPYMEM(pNode->aEntries, pCurEntry, sizeof(rdKeyframeNodeEntry) * pNode->numEntries);
-                                            pCurEntry += pCurNode->numEntries;
-                                            ++pCurNode;
-                                        }
-
-                                        sithPuppet_KeyCacheAdd(pKeyframe);
-                                        ++pCurInfo;
-                                        ++pWorld->numKeyframes;
+                                        STD_COPYMEM(pNode->aEntries, pCurEntry, sizeof(rdKeyframeNodeEntry) * pNode->numEntries);
+                                        pCurEntry += pCurNode->numEntries;
+                                        ++pCurNode;
                                     }
+
+                                    sithPuppet_KeyCacheAdd(pKeyframe);
+                                    ++pCurInfo;
+                                    ++pWorld->numKeyframes;
                                 }
 
                                 bError = 0;
