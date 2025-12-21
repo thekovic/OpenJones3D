@@ -665,7 +665,7 @@ void J3DAPI rdPuppet_BuildJointMatrices(rdThing* prdThing, const rdMatrix34* pPl
 
         rdMatrix_Build34(&prdThing->paJointMatrices[nodeNum], &highPriPyr, &highPriPos);
 
-        if ( prdThing->apTweakedAngles[nodeNum].x != 0.0f || prdThing->apTweakedAngles[nodeNum].y != 0.0f || prdThing->apTweakedAngles[nodeNum].z != 0.0f )
+        if ( !rdVector_IsZero3(&prdThing->apTweakedAngles[nodeNum]) )
         {
             rdMatrix_PreRotate34(&prdThing->paJointMatrices[nodeNum], &prdThing->apTweakedAngles[nodeNum]);
         }
