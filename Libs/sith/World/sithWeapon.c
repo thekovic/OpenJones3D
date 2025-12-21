@@ -169,16 +169,16 @@ void sithWeapon_Open(void)
     }
 
     // Added: Added weapon fire flash fx config read
-    sithWeapon_bProjectileFireFlashFx = stdConfig_GetBool(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED, sithWeapon_bProjectileFireFlashFx);
-    if ( !stdConfig_Contains(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED) )
+    sithWeapon_bProjectileFireFlashFx = stdConfig_GetBool(SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_ENABLED, sithWeapon_bProjectileFireFlashFx);
+    if ( !stdConfig_Contains(SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_ENABLED) )
     {
-        stdConfig_SetBool(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED, sithWeapon_bProjectileFireFlashFx);
+        stdConfig_SetBool(SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_ENABLED, sithWeapon_bProjectileFireFlashFx);
     }
 
-    sithWeapon_projectileFireFlashAmbThreshold = stdConfig_GetFloat(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD, sithWeapon_projectileFireFlashAmbThreshold);
-    if ( !stdConfig_Contains(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD) )
+    sithWeapon_projectileFireFlashAmbThreshold = stdConfig_GetFloat(SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_THRESHOLD, sithWeapon_projectileFireFlashAmbThreshold);
+    if ( !stdConfig_Contains(SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_THRESHOLD) )
     {
-        stdConfig_SetFloat(SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD, sithWeapon_projectileFireFlashAmbThreshold);
+        stdConfig_SetFloat(SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_THRESHOLD, sithWeapon_projectileFireFlashAmbThreshold);
     }
 }
 

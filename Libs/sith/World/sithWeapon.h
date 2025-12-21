@@ -15,9 +15,9 @@ J3D_EXTERN_C_START
 #define SITHWEAPON_HOLSTERPISTOL 2
 #define SITHWEAPON_HOLSTERBACK   3
 
-#define SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER                 "gameplay.bloodSplatter"
-#define SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_ENABLED   "graphics.vfx.weapon.fireFlash.enabled"
-#define SITHWEAPON_CFG_GRAPHICS_VFX_WEAPONFIREFLASH_THRESHOLD "graphics.vfx.weapon.fireFlash.ambientThreshold"
+#define SITHWEAPON_CFG_GAMEPLAY_BLOODSPLATTER                       "gameplay.bloodSplatter"
+#define SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_ENABLED   "engine.renderer.vfx.weapon.fireFlash.enabled"
+#define SITHWEAPON_CFG_ENGINERENDERER_VFX_WEAPONFIREFLASH_THRESHOLD "engine.renderer.vfx.weapon.fireFlash.ambientThreshold"
 
 void sithWeapon_Open(void);
 void sithWeapon_Close(void); // Added
