@@ -8,6 +8,7 @@
 #include <sith/World/sithWorld.h>
 
 #include <std/General/stdConffile.h>
+#include <std/General/stdConfig.h>
 #include <std/General/stdFnames.h>
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMemory.h>
@@ -15,16 +16,25 @@
 #include <std/Win95/std3D.h>
 #include <std/Win95/stdDisplay.h>
 
-#define SITHMATERIAL_TABLESIZE               1024u
+#define SITHMATERIAL_TABLESIZE                1024u
 #define SITHMATERIAL_EXTRABUFFERSIZE          64u
-#define SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS 32u // Added
 
-static bool sithMaterial_bMaterialStartup     = false; // Added
-static tHashTable* sithMaterial_pHashtable = NULL; // Added: Init to 0
+static bool sithMaterial_bMaterialStartup  = false; // Added
+static tHashTable* sithMaterial_pHashtable = NULL;  // Fixed: Init to 0
+
+static size_t sithMaterial_staticBufferExtraCapacity = 32; // Added
+
+static bool sithMaterial_bCndLoadExternal = J3D_QOL_VALUE(true, false); // Added
+
 
 rdMaterial* J3DAPI sithMaterial_CacheFind(const char* pName);
 void J3DAPI sithMaterial_CacheAdd(rdMaterial* pMat);
 int J3DAPI sithMaterial_CacheRemove(const rdMaterial* pMat);
+
+static inline size_t sithMaterial_GetTextureByteSize(size_t width, size_t height, size_t bpp, size_t numMipLevels);
+static inline size_t sithMaterial_GetTotalPixelDataSize(size_t width, size_t height, size_t bpp, size_t numMipLevels, size_t numCells);
+static inline size_t sithMaterial_GetCndMaterialPixelDataSize(const CndMaterialInfo* pInfo);
+static bool sithMaterial_FileExists(const char* pFilename);
 
 void sithMaterial_InstallHooks(void)
 {
@@ -59,6 +69,19 @@ int sithMaterial_Startup(void)
     {
         SITHLOG_ERROR("Could not allocate material hashtable.\n");
         return 1;
+    }
+
+    // Added: Load config values
+    sithMaterial_staticBufferExtraCapacity = stdConfig_GetInt(SITHMATERIAL_CFG_STATICWORLDMATERIALS_EXTRACAPACITY, sithMaterial_staticBufferExtraCapacity);
+    if ( !stdConfig_Contains(SITHMATERIAL_CFG_STATICWORLDMATERIALS_EXTRACAPACITY) )
+    {
+        stdConfig_SetInt(SITHMATERIAL_CFG_STATICWORLDMATERIALS_EXTRACAPACITY, sithMaterial_staticBufferExtraCapacity);
+    }
+
+    sithMaterial_bCndLoadExternal = stdConfig_GetBool(SITHMATERIAL_CFG_CNDWORLDMATERIALS_LOADEXTERNAL, sithMaterial_bCndLoadExternal);
+    if ( !stdConfig_Contains(SITHMATERIAL_CFG_CNDWORLDMATERIALS_LOADEXTERNAL) )
+    {
+        stdConfig_SetBool(SITHMATERIAL_CFG_CNDWORLDMATERIALS_LOADEXTERNAL, sithMaterial_bCndLoadExternal);
     }
 
     sithMaterial_bMaterialStartup = true;
@@ -101,7 +124,7 @@ void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
 
     if ( pWorld->aMaterials )
     {
-        stdMemory_Free(pWorld->aMaterials);
+        STDFREE(pWorld->aMaterials);
     }
 
     pWorld->aMaterials   = NULL;
@@ -109,7 +132,7 @@ void J3DAPI sithMaterial_FreeWorldMaterials(SithWorld* pWorld)
 
     if ( pWorld->apMatArray )
     {
-        stdMemory_Free(pWorld->apMatArray);
+        STDFREE(pWorld->apMatArray);
     }
 
     pWorld->apMatArray = NULL;
@@ -173,7 +196,7 @@ int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
 
     if ( pWorld->apMatArray )
     {
-        stdMemory_Free(pWorld->apMatArray);
+        STDFREE(pWorld->apMatArray);
     }
 
     pWorld->apMatArray = (rdMaterial**)STDMALLOC(sizeof(pWorld->apMatArray) * numMaterials);
@@ -219,17 +242,19 @@ int J3DAPI sithMaterial_WriteMaterialsListBinary(tFileHandle fh, const SithWorld
         goto error;
     }
 
-    memset(aMatInfos, 0, sizeInfos);
+    STD_ZEROMEM(aMatInfos, sizeInfos);
     CndMaterialInfo* pCurInfo = aMatInfos;
 
-  // Calculate the required pixeldata buffer size for all materials
+    // Calculate the required pixeldata buffer size for all materials
 
     size_t sizePixelBuffers = 0;
     for ( size_t i = 0; i < pWorld->numMaterials; ++i )
     {
         const rdMaterial* pMat = &pWorld->aMaterials[i];
         pCurInfo->numMipLevels = std3D_GetMipMapCount(pMat->aTextures);
-        size_t texSize = 4 * rdMaterial_GetMipSize(pMat->width, pMat->height, pCurInfo->numMipLevels) * pMat->numCels; // Changed: Raised pixel size to 4 bytes from 2 bytes to allow 32 bit textures
+
+        // Altered: Raised pixel size to 4 bytes from 2 bytes to allow 32 bit textures
+        size_t texSize = sithMaterial_GetTotalPixelDataSize(pMat->width, pMat->height, /*bpp=*/32, pCurInfo->numMipLevels, pMat->numCels);
         sizePixelBuffers += texSize;
         ++pCurInfo;
     }
@@ -240,7 +265,7 @@ int J3DAPI sithMaterial_WriteMaterialsListBinary(tFileHandle fh, const SithWorld
         goto error;
     }
 
-    memset(aPixelBuffers, 0, sizePixelBuffers);
+    STD_ZEROMEM(aPixelBuffers, sizePixelBuffers);
     uint8_t* pCurPixelBuffer = aPixelBuffers;
 
     // Reset cur info pointer
@@ -275,7 +300,7 @@ int J3DAPI sithMaterial_WriteMaterialsListBinary(tFileHandle fh, const SithWorld
         {
             goto error;
         }
-        memcpy(&pCurInfo->colorInfo, &matHeader.colorInfo, sizeof(pCurInfo->colorInfo));
+        STD_COPYMEM(&pCurInfo->colorInfo, &matHeader.colorInfo, sizeof(pCurInfo->colorInfo));
 
         // Skip records
         if ( sith_g_pHS->pFileSeek(fhMat, sizeof(rdMatRecordHeader) * pMat->numCels, 1) ) // 1 - seek from cur pos
@@ -285,7 +310,7 @@ int J3DAPI sithMaterial_WriteMaterialsListBinary(tFileHandle fh, const SithWorld
 
         // Now read pixledata if mat from mat file.
         // TODO: maybe a check should be made for colorInfo.bpp <= 32?
-        size_t texSize = (matHeader.colorInfo.bpp / 8) * rdMaterial_GetMipSize(pMat->width, pMat->height, pCurInfo->numMipLevels); // Fixed: Using actual pixel size from first texture; was hardcoded to 2 bytes - 16 bpp
+        size_t texSize = sithMaterial_GetTextureByteSize(pMat->width, pMat->height, matHeader.colorInfo.bpp, pCurInfo->numMipLevels); // Fixed: Using actual pixel size from first texture; was hardcoded to 2 bytes - 16 bpp
         for ( size_t j = 0; j < pMat->numCels; ++j )
         {
             if ( sith_g_pHS->pFileSeek(fhMat, sizeof(rdMatTextureHeader), 1) )
@@ -336,15 +361,38 @@ error:
 
     if ( aMatInfos )
     {
-        stdMemory_Free(aMatInfos);
+        STDFREE(aMatInfos);
     }
 
     if ( aPixelBuffers )
     {
-        stdMemory_Free(aPixelBuffers);
+        STDFREE(aPixelBuffers);
     }
 
     return bError;
+}
+
+size_t sithMaterial_GetTextureByteSize(size_t width, size_t height, size_t bpp, size_t numMipLevels)
+{
+    return (bpp / 8) * rdMaterial_GetMipSize(width, height, numMipLevels);
+}
+
+size_t sithMaterial_GetTotalPixelDataSize(size_t width, size_t height, size_t bpp, size_t numMipLevels, size_t numCells)
+{
+    return sithMaterial_GetTextureByteSize(width, height, bpp, numMipLevels) * numCells;
+}
+
+size_t sithMaterial_GetCndMaterialPixelDataSize(const CndMaterialInfo* pInfo)
+{
+    return  sithMaterial_GetTotalPixelDataSize(pInfo->width, pInfo->height, pInfo->colorInfo.bpp, pInfo->numMipLevels, pInfo->numCels);
+}
+
+bool sithMaterial_FileExists(const char* pFilename)
+{
+    char aPath[128] = { 0 };
+    SITH_ASSERT(strlen(pFilename) < STD_ARRAYLEN(aPath)); // Changed: Moved this check down here
+    stdFnames_MakePath(aPath, STD_ARRAYLEN(aPath), "mat", pFilename);
+    return stdUtil_FileExists(aPath);
 }
 
 int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorld)
@@ -358,7 +406,7 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
     // Free existing mat pointer array
     if ( pWorld->apMatArray )
     {
-        stdMemory_Free(pWorld->apMatArray);
+        STDFREE(pWorld->apMatArray);
     }
 
     // Allocate mat pointer array and world material array
@@ -381,7 +429,7 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
     {
         goto error;
     }
-    memset(aMatInfos, 0, sizeInfos);
+    STD_ZEROMEM(aMatInfos, sizeInfos);
 
     // Read the size of pixeldata buffer from CND file
     size_t sizePixelBuffers;
@@ -397,7 +445,7 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
     {
         goto error;
     }
-    memset(aPixelBuffers, 0, sizePixelBuffers);
+    STD_ZEROMEM(aPixelBuffers, sizePixelBuffers);
 
     // Read pixeldata buffer from CND file 
     nRead = sith_g_pHS->pFileRead(fh, aMatInfos, sizeInfos);
@@ -426,114 +474,132 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
         if ( pMat )
         {
             // Material already loaded, skip 
-            size_t texSize = (pCurInfo->colorInfo.bpp / 8) // Fixed: Calculate exact pixel size. Was hardcoded to 2 bytes - 16 bpp
-                * rdMaterial_GetMipSize(pMat->width, pMat->height, pCurInfo->numMipLevels)
-                * pMat->numCels;
+            // Altered: Replaced inline code with new sithMaterial_GetCndMaterialPixelDataSize function
+            // Fixed: Calculate exact pixel size. Was hardcoded to 2 bytes - 16 bpp
+            // Fixed: Use all texture data from pCurInfo. OG was using width, height and num cels from pMat
+            //        which could lead to incorrect size calculation if the cached material 
+            //        had different dimensions or num cels than the one being loaded.
+            size_t texSize   = sithMaterial_GetCndMaterialPixelDataSize(pCurInfo);
             pCurPixelBuffer += texSize; // Increase cur pixeldata pos
             pWorld->apMatArray[matNum] = pMat;
+            continue;
         }
         else
         {
-            // Material not loaded in the system yet, load it now
-
-            pMat = &pWorld->aMaterials[worldMatIdx++];
-            pWorld->apMatArray[matNum] = pMat;
-
-            STD_STRCPY(pMat->aName, pCurInfo->aName);
-
-            pMat->numCels    = pCurInfo->numCels;
-            pMat->formatType = std3D_GetColorFormat(&pCurInfo->colorInfo);
-
-            ColorInfo desiredColorFormat;
-            int bHasColorKey;
-            LPDDCOLORKEY pColorKey;
-            std3D_GetTextureFormat(pMat->formatType, &desiredColorFormat, &bHasColorKey, &pColorKey);
-
-            // Fixed: Use correct color format type, since it might be different than stored texture format (e.g. RGBA5551 -> RGBA8888; STDCOLOR_FORMAT_RGBA_1BITALPHA -> STDCOLOR_FORMAT_RGBA).
-            //        This fixes rendering issue where converted 1-bit alpha texture will still be interpreted as 1-bit alpha texture and
-            //        when alpha reaches certain threshold (0xA0 - 0.627 or lower) the polygon becomes invisible (not rendered). See std3D_SetRenderState.
-            // 
-            //        Note: Due to this change all 1-bit alpha textures of 3DO models that were changed to 32bit format will be pushed to alpha buffer of rdCache (see rdModel3_DrawFace).
-            //              Since there might be now more alpha polygons to render than in the OG version the rdCahce alpha buffer had to be increased or risking some polygons not being rendered, i.e.: transparent adjoin surfaces.
-            //              Example of this issue is intro cutscene of 9 - Olmec Valley level, where river is briefly not rendered due too small alpha buffer size.
-            pMat->formatType = std3D_GetColorFormat(&desiredColorFormat);
-
-            pMat->width     = pCurInfo->width;
-            pMat->height    = pCurInfo->height;
-            pMat->aTextures = NULL;
-
-            if ( pMat->numCels )
+            // Added: Try loading materials form file system first
+            if ( sithMaterial_bCndLoadExternal && sithMaterial_FileExists(pCurInfo->aName) )
             {
-                pMat->aTextures = (tSystemTexture*)STDMALLOC(sizeof(tSystemTexture) * pMat->numCels);
-                if ( !pMat->aTextures )
+                pMat = sithMaterial_Load(pCurInfo->aName);
+                if ( pMat )
                 {
-                    goto error;
+                    size_t texSize   = sithMaterial_GetCndMaterialPixelDataSize(pCurInfo);
+                    pCurPixelBuffer += texSize; // Increase cur pixeldata pos
+                    pWorld->apMatArray[matNum] = pMat;
+                    continue;
                 }
-                memset(pMat->aTextures, 0, sizeof(tSystemTexture) * pMat->numCels);
             }
+        }
 
-            apBuffers = (tVBuffer**)STDMALLOC(sizeof(apBuffers) * pCurInfo->numMipLevels);
-            if ( !apBuffers )
+        // Material not loaded in the system yet, load it from pixeldata buffer
+
+        pMat = &pWorld->aMaterials[worldMatIdx++];
+        pWorld->apMatArray[matNum] = pMat;
+
+        STD_STRCPY(pMat->aName, pCurInfo->aName);
+
+        pMat->numCels    = pCurInfo->numCels;
+        pMat->formatType = std3D_GetColorFormat(&pCurInfo->colorInfo);
+
+        ColorInfo desiredColorFormat;
+        int bHasColorKey;
+        LPDDCOLORKEY pColorKey;
+        std3D_GetTextureFormat(pMat->formatType, &desiredColorFormat, &bHasColorKey, &pColorKey);
+
+        // Fixed: Use correct color format type, since it might be different than stored texture format (e.g. RGBA5551 -> RGBA8888; STDCOLOR_FORMAT_RGBA_1BITALPHA -> STDCOLOR_FORMAT_RGBA).
+        //        This fixes rendering issue where converted 1-bit alpha texture will still be interpreted as 1-bit alpha texture and
+        //        when alpha reaches certain threshold (0xA0 - 0.627 or lower) the polygon becomes invisible (not rendered). See std3D_SetRenderState.
+        // 
+        //        Note: Due to this change all 1-bit alpha textures of 3DO models that were changed to 32bit format will be pushed to alpha buffer of rdCache (see rdModel3_DrawFace).
+        //              Since there might be now more alpha polygons to render than in the OG version the rdCahce alpha buffer had to be increased or risking some polygons not being rendered, i.e.: transparent adjoin surfaces.
+        //              Example of this issue is intro cutscene of 9 - Olmec Valley level, where river is briefly not rendered due too small alpha buffer size.
+        pMat->formatType = std3D_GetColorFormat(&desiredColorFormat);
+
+        pMat->width     = pCurInfo->width;
+        pMat->height    = pCurInfo->height;
+        pMat->aTextures = NULL;
+
+        if ( pMat->numCels )
+        {
+            pMat->aTextures = (tSystemTexture*)STDMALLOC(sizeof(tSystemTexture) * pMat->numCels);
+            if ( !pMat->aTextures )
             {
                 goto error;
             }
-            memset(apBuffers, 0, sizeof(apBuffers) * pCurInfo->numMipLevels);
-
-            // Alloc texture MipMap VBuffers
-            memcpy(&rasterInfo.colorInfo, &pCurInfo->colorInfo, sizeof(rasterInfo.colorInfo));
-            for ( size_t i = 0; i < pCurInfo->numMipLevels; ++i )
-            {
-                rasterInfo.width  = pMat->width >> i;
-                rasterInfo.height = pMat->height >> i;
-                apBuffers[i] = stdDisplay_VBufferNew(&rasterInfo, /*bUseVSurface=*/0, /*bUseVideoMemory=*/0);
-                if ( !apBuffers[i] )
-                {
-                    goto error;
-                }
-            }
-
-            // Construct material from pixeldata 
-            for ( size_t i = 0; i < pMat->numCels; ++i )
-            {
-                for ( size_t j = 0; j < pCurInfo->numMipLevels; ++j )
-                {
-                    memcpy(&apBuffers[j]->rasterInfo.colorInfo, &rasterInfo.colorInfo, sizeof(apBuffers[j]->rasterInfo.colorInfo));
-
-                    // Fixed: Update row size and size before calling to match the new color info
-                    apBuffers[j]->rasterInfo.rowSize = (apBuffers[j]->rasterInfo.colorInfo.bpp / 8) * apBuffers[j]->rasterInfo.width;
-                    apBuffers[j]->rasterInfo.size    = apBuffers[j]->rasterInfo.rowSize * apBuffers[j]->rasterInfo.height;
-
-                    stdDisplay_VBufferLock(apBuffers[j]);
-                    memcpy(apBuffers[j]->pPixels, pCurPixelBuffer, apBuffers[j]->rasterInfo.size);
-                    stdDisplay_VBufferUnlock(apBuffers[j]);
-
-                    // Now convert pixeldata to desired color format
-                    pCurPixelBuffer += apBuffers[j]->rasterInfo.size; // Fixed: Increment pCurPixelBuffer before assigning new tVBuffer to apBuffers[j]
-                    apBuffers[j] = stdDisplay_VBufferConvertColorFormat(&desiredColorFormat, apBuffers[j], bHasColorKey, pColorKey);
-                }
-
-                std3D_AllocSystemTexture(&pMat->aTextures[i], apBuffers, pCurInfo->numMipLevels, pMat->formatType);
-            }
-
-            for ( size_t i = 0; i < pCurInfo->numMipLevels; ++i )
-            {
-                stdDisplay_VBufferFree(apBuffers[i]);
-                apBuffers[i] = 0;
-            }
-
-            stdMemory_Free(apBuffers);
-            apBuffers = NULL;
-
-            sithMaterial_CacheAdd(pMat);
-
-            pMat->num = pWorld->numMaterials;
-            if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
-            {
-                pMat->num = SITHWORLD_STATICINDEX(pMat->num);
-            }
-
-            ++pWorld->numMaterials;
+            STD_ZEROMEM(pMat->aTextures, sizeof(tSystemTexture) * pMat->numCels);
         }
+
+        apBuffers = (tVBuffer**)STDMALLOC(sizeof(apBuffers) * pCurInfo->numMipLevels);
+        if ( !apBuffers )
+        {
+            goto error;
+        }
+        STD_ZEROMEM(apBuffers, sizeof(apBuffers) * pCurInfo->numMipLevels);
+
+        // Alloc texture MipMap VBuffers
+        STD_COPYMEM(&rasterInfo.colorInfo, &pCurInfo->colorInfo, sizeof(rasterInfo.colorInfo));
+        for ( size_t i = 0; i < pCurInfo->numMipLevels; ++i )
+        {
+            rasterInfo.width  = pMat->width >> i;
+            rasterInfo.height = pMat->height >> i;
+            apBuffers[i] = stdDisplay_VBufferNew(&rasterInfo, /*bUseVSurface=*/0, /*bUseVideoMemory=*/0);
+            if ( !apBuffers[i] )
+            {
+                goto error;
+            }
+        }
+
+        // Construct material from pixeldata 
+        for ( size_t i = 0; i < pMat->numCels; ++i )
+        {
+            for ( size_t j = 0; j < pCurInfo->numMipLevels; ++j )
+            {
+                memcpy(&apBuffers[j]->rasterInfo.colorInfo, &rasterInfo.colorInfo, sizeof(apBuffers[j]->rasterInfo.colorInfo));
+
+                // Fixed: Update row size and size before calling to match the new color info
+                apBuffers[j]->rasterInfo.rowSize = (apBuffers[j]->rasterInfo.colorInfo.bpp / 8) * apBuffers[j]->rasterInfo.width;
+                apBuffers[j]->rasterInfo.size    = apBuffers[j]->rasterInfo.rowSize * apBuffers[j]->rasterInfo.height;
+
+                stdDisplay_VBufferLock(apBuffers[j]);
+                memcpy(apBuffers[j]->pPixels, pCurPixelBuffer, apBuffers[j]->rasterInfo.size);
+                stdDisplay_VBufferUnlock(apBuffers[j]);
+
+                // Now convert pixeldata to desired color format
+                pCurPixelBuffer += apBuffers[j]->rasterInfo.size; // Fixed: Increment pCurPixelBuffer before assigning new tVBuffer to apBuffers[j]
+                apBuffers[j] = stdDisplay_VBufferConvertColorFormat(&desiredColorFormat, apBuffers[j], bHasColorKey, pColorKey);
+            }
+
+            std3D_AllocSystemTexture(&pMat->aTextures[i], apBuffers, pCurInfo->numMipLevels, pMat->formatType);
+        }
+
+        for ( size_t i = 0; i < pCurInfo->numMipLevels; ++i )
+        {
+            stdDisplay_VBufferFree(apBuffers[i]);
+            apBuffers[i] = 0;
+        }
+
+        STDFREE(apBuffers);
+        apBuffers = NULL;
+
+        sithMaterial_CacheAdd(pMat);
+
+        pMat->num = pWorld->numMaterials;
+        if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
+        {
+            pMat->num = SITHWORLD_STATICINDEX(pMat->num);
+        }
+
+        ++pWorld->numMaterials;
+
     }
 
     bError = 0; // Success
@@ -541,17 +607,17 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
 error:
     if ( aMatInfos )
     {
-        stdMemory_Free(aMatInfos);
+        STDFREE(aMatInfos);
     }
 
     if ( aPixelBuffers )
     {
-        stdMemory_Free(aPixelBuffers);
+        STDFREE(aPixelBuffers);
     }
 
     if ( apBuffers )
     {
-        stdMemory_Free(apBuffers);
+        STDFREE(apBuffers);
     }
 
     return bError;
@@ -634,10 +700,11 @@ int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMateria
 {
     SITH_ASSERTREL(pWorld->aMaterials == NULL);
 
-    // Added: Make sure the material buffer is enough big to load in extra textures of original HD models.
-    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 && sithModel_IsHiPolyEnabled() )
+    // Added: Add extra buffer capacity for static worlds
+    //        Make sure the material buffer is enough big to load in extra textures of original HD models.
+    if ( (pWorld->state & SITH_WORLD_STATE_STATIC) != 0 )
     {
-        numMaterials += SITHMATERIAL_EXTRABUFFERSIZE_HDMODELS;
+        numMaterials += sithMaterial_staticBufferExtraCapacity;
     }
 
     pWorld->aMaterials = (rdMaterial*)STDMALLOC(sizeof(rdMaterial) * numMaterials);
@@ -646,7 +713,7 @@ int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMateria
         return 1;
     }
 
-    memset(pWorld->aMaterials, 0, sizeof(rdMaterial) * numMaterials);
+    STD_ZEROMEM(pWorld->aMaterials, sizeof(rdMaterial) * numMaterials);
 
     pWorld->sizeMaterials = numMaterials;
     pWorld->numMaterials  = 0;
@@ -657,13 +724,13 @@ int J3DAPI sithMaterial_AllocWorldMaterials(SithWorld* pWorld, size_t numMateria
     }
 
     sithMaterial_pHashtable = stdHashtbl_New(SITHMATERIAL_TABLESIZE); // ???, startup should already alloc table
-    if ( sithMaterial_pHashtable )
+    if ( !sithMaterial_pHashtable )
     {
-        return 0;
+        STDFREE(pWorld->aMaterials);
+        return 1;
     }
 
-    stdMemory_Free(pWorld->aMaterials);
-    return 1;
+    return 0;
 }
 
 rdMaterial* J3DAPI sithMaterial_CacheFind(const char* pName)

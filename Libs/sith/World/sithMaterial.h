@@ -9,6 +9,9 @@
 
 J3D_EXTERN_C_START
 
+#define SITHMATERIAL_CFG_STATICWORLDMATERIALS_EXTRACAPACITY "engine.world.static.materials.extraCapacity"
+#define SITHMATERIAL_CFG_CNDWORLDMATERIALS_LOADEXTERNAL     "engine.world.cnd.materials.loadExternal"
+
 int sithMaterial_Startup(void);
 void sithMaterial_Shutdown(void);
 
