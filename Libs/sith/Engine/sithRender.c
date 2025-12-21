@@ -1210,7 +1210,7 @@ void sithRender_RenderThings(void)
                     || pCurThing != sithCamera_g_pCurCamera->pPrimaryFocusThing) )
             {
                 // Transform thing pos to view (camera) space
-                rdMatrix_TransformPoint34(&pCurThing->transformedPos, &pCurThing->pos, &rdCamera_g_pCurCamera->viewMatrix);
+                rdMatrix_TransformPoint34(&pCurThing->cameraSpacePos, &pCurThing->pos, &rdCamera_g_pCurCamera->viewMatrix);
 
                 rdThing* prdThing = &pCurThing->renderData;
                 float radius = 0.0f; // Added: Init to 0;
@@ -1270,7 +1270,7 @@ void sithRender_RenderThings(void)
                 else
                 {
                     // Render only if thing is inside frustum or intersects with frustum
-                    prdThing->frustumCull = rdClip_SphereInFrustrum(pSector->pClipFrustum, &pCurThing->transformedPos, radius);
+                    prdThing->frustumCull = rdClip_SphereInFrustrum(pSector->pClipFrustum, &pCurThing->cameraSpacePos, radius);
                     if ( prdThing->frustumCull != RDFRUSTUMCULL_OUTSIDE )
                     {
                         bRender = true;
@@ -1365,7 +1365,7 @@ int J3DAPI sithRender_RenderThing(SithThing* pThing)
 
     // Note: Looks like some part of the code is missing.
     // In JKDF2 (OpenJKDF2), here is section of code that adds light flashing effect to player view
-    stdMath_Dist3D1(pThing->transformedPos.x, pThing->transformedPos.y, pThing->transformedPos.z);
+    stdMath_Dist3D1(pThing->cameraSpacePos.x, pThing->cameraSpacePos.y, pThing->cameraSpacePos.z);
 
     pThing->thingInfo.explosionInfo.flags &= ~SITH_EF_BLINDPLAYER;// 0x100 - SITH_EF_BLINDPLAYER
     return drawResult;

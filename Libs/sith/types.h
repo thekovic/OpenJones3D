@@ -2382,7 +2382,7 @@ struct sSithThing
     rdVector3 pos;
     rdVector3 forceMoveStartPos;
     rdThing renderData;
-    rdVector3 transformedPos;
+    rdVector3 cameraSpacePos;
     SithThingLight light;
     size_t renderFrame;
     SithSoundClass* pSoundClass;
