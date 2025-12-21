@@ -156,17 +156,13 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
 
     if ( !bFaceCol )
     {
-        hitNorm->x = moveNorm->x * hitDistance + startPos->x;
-        hitNorm->y = moveNorm->y * hitDistance + startPos->y;
-        hitNorm->z = moveNorm->z * hitDistance + startPos->z;
-
+        rdVector_ScaleAdd3(hitNorm, moveNorm, hitDistance, startPos);
         rdVector_Sub3Acc(hitNorm, &pCheck->pos);
         rdVector_Normalize3Acc(hitNorm);
 
         *pHitDistance = hitDistance;
         return SITHCOLLISION_THING;
     }
-
 
     rdVector3 dir, pos;
     bool bThingFaceCol = false;
@@ -177,8 +173,8 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
         pComplex      = pCheck;
         bThingFaceCol = false;
 
-        rdVector_Copy3(&dir, moveNorm);
-        rdVector_Copy3(&pos, startPos);
+        dir = *moveNorm;
+        pos = *startPos;
     }
     else
     {
@@ -189,14 +185,21 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
         bThingFaceCol = true;
 
         rdVector_Neg3(&dir, moveNorm);
-        rdVector_Copy3(&pos, &pCheck->pos);
+        pos = pCheck->pos;
     }
 
     SITH_ASSERTREL(pComplex->renderData.type == RD_THING_MODEL3);
 
     rdMatrix34 tmat;
-    rdVector_Copy3(&pComplex->orient.dvec, &pComplex->pos); // TODO: Verify if this isn't a bug setting dvec here; might need tmp mat instead 
+    pComplex->orient.dvec = pComplex->pos;
     rdMatrix_InvertOrtho34(&tmat, &pComplex->orient);
+
+    // Fixed: Cleared previously assigned dvec.
+    //        OG code was missing this step, and could lead to incorrect transform
+    //        in any other place in engine that depended on dvec being zeroed out.
+    rdVector_Zero3(&pComplex->orient.dvec);
+
+    // Transform to wolrd space
     rdMatrix_TransformPoint34Acc(&pos, &tmat);
     rdMatrix_TransformVector34Acc(&dir, &tmat);
 
