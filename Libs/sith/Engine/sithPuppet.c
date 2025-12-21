@@ -1783,9 +1783,9 @@ void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
         case SITHPLAYERMOVE_CLIMBING_LEFT:
         case SITHPLAYERMOVE_CLIMBING_RIGHT:
         {
-            pThing->moveStatus = SITHPLAYERMOVE_CLIMBIDLE;
+            pThing->moveStatus       = SITHPLAYERMOVE_CLIMBIDLE;
             pThing->collide.movesize = 0.04f;
-            if ( pThing->attach.attachedToStructure.pThingAttached )
+            if ( pThing->attach.attachedToStructure.pSurfaceAttached )
             {
                 sithPlayerActions_CenterOnClimbSurface(pThing, pThing->attach.attachedToStructure.pSurfaceAttached);
             }
@@ -1849,6 +1849,7 @@ void J3DAPI sithPuppet_FinishForceMove(SithThing* pThing, int bStopTracks)
             //        This change resolves the animation state glitch where weapon is armed
             //        and setting normal move mode via call to `sithPuppet_SetMoveMode` would remove all weapon selected animations.
             sithPuppet_SetMoveModeEx(pThing, SITHPUPPET_MOVEMODE_NORMAL, /*bRemoveTracks=*/ J3D_QOL_VALUE(false, true));
+            sithPuppet_ClearMode(pThing, SITHPUPPETSUBMODE_CLIMBWALLIDLE); // Added: Clear climb idle mode since setting normal mode won't clear tracks anymore.
 
             sithPhysics_FindFloor(pThing, /*bNoSurfaceImpactUpdate=*/1);
             sithInventory_SetSwimmingInventory(pThing, /*bItemsAvailable=*/1);
