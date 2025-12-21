@@ -1167,6 +1167,7 @@ LABEL_102:
 
     // Set camera orient based on new pos and look pos
     rdMatrix_LookAt(&pCamera->orient, &newPos, &newLookPos, 0.0f);
+    rdMatrix_Normalize34(&pCamera->orient);
 
     memcpy(&sithCamera_g_camSpot, &newPos, sizeof(sithCamera_g_camSpot));
     memcpy(&sithCamera_g_camLookSpot, &newLookPos, sizeof(sithCamera_g_camLookSpot));
