@@ -3056,6 +3056,10 @@ SithSurface* J3DAPI sithPlayerControls_FindClimbSurface(SithThing* pThing, const
         if ( (pCollision->type & SITHCOLLISION_WORLD) != 0 )
         {
             if ( pCollision->pSurfaceCollided
+                // Fixed: Added check for found surf != attachedSurf 
+                //        This resolves not do left or right climb move animation as it will stick indy right back onto current surface.
+                //        Note, up/dowm climb doesn't suffer from this issue because sithPlayerActions_CenterOnClimbSurface centers thing on climb surf only in XY dir. 
+                && ((climbDir == 1 || climbDir == 2) || pCollision->pSurfaceCollided != pThing->attach.attachedToStructure.pSurfaceAttached)
                 && (pCollision->pSurfaceCollided->flags & SITH_SURFACE_CLIMBABLE) != 0 )
             {
                 rdVector3 faceNormal = pCollision->pSurfaceCollided->face.normal;
