@@ -45,7 +45,7 @@ static const tStoreItem JonesHud_aStoreItems[14] = {
 // Sound fx indices to jones3Dstatic sound list
 // TODO: Replace indices in the list with some constants
 // Note, from index 7 to the end are indy voice lines for the item that can't be activated (e.g. whoops)
-static const int JonesHud_aSoundFxIdxs[13] = { 1, 52, 54, 53, -1, 57, 56, 59, 60, 61, 62, 136, 137 };
+static const int JonesHud_aSoundFxIdxs[13] = { -1, 52, 54, 53, -1, 57, 56, 59, 60, 61, 62, 136, 137 };
 
 
 // Inventory menu item constants

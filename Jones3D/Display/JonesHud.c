@@ -88,8 +88,10 @@ static size_t JonesHud_msecGameOverWaitDeltaTime = 0;
 static int JonesHud_bShowMenu;
 static int JonesHud_bMenuEnabled;
 static int JonesHud_bMapOpen;
-static bool JonesHud_bMenuMusicEnabled = true; // Added
-static float JonesHud_menuMusicVolume  = 0.65f; // Added
+static bool JonesHud_bMenuMusicEnabled       = true; // Added
+static char JonesHud_aMenuMusicFilename[64]  = "mus_gen_maploadloop.wav"; // Added
+static float JonesHud_menuMusicVolume        = 0.55f; // Added
+static float JonesHud_menuMusicFadeDuratuion = 0.75f; // Added
 
 static int JonesHud_bRestoreActivated;
 static int JonesHud_bRestoreGameStatistics;
@@ -537,18 +539,33 @@ int JonesHud_Open(void)
         stdConfig_SetInt(JONESHUD_CFG_MENU_CLOSE_SLIDE_DURATION, JonesHud_msecMenuCloseSlideDuration);
     }
 
+    // Menu music config
     JonesHud_bMenuMusicEnabled = stdConfig_GetBool(JONESHUD_CFG_MENU_MUSICENABLED, JonesHud_bMenuMusicEnabled);
     if ( !stdConfig_Contains(JONESHUD_CFG_MENU_MUSICENABLED) )
     {
         stdConfig_SetBool(JONESHUD_CFG_MENU_MUSICENABLED, JonesHud_bMenuMusicEnabled);
     }
 
-    JonesHud_menuMusicVolume = stdConfig_GetBool(JONESHUD_CFG_MENU_MUSICEVOLUME, JonesHud_menuMusicVolume);
-    if ( !stdConfig_Contains(JONESHUD_CFG_MENU_MUSICEVOLUME) )
+    stdConfig_GetString(JONESHUD_CFG_MENU_MUSICFILENAME, JonesHud_aMenuMusicFilename,
+        sizeof(JonesHud_aMenuMusicFilename), JonesHud_aMenuMusicFilename);
+    if ( !stdConfig_Contains(JONESHUD_CFG_MENU_MUSICFILENAME) )
     {
-        stdConfig_SetBool(JONESHUD_CFG_MENU_MUSICEVOLUME, JonesHud_menuMusicVolume);
+        stdConfig_SetString(JONESHUD_CFG_MENU_MUSICFILENAME, JonesHud_aMenuMusicFilename);
     }
 
+    JonesHud_menuMusicVolume = stdConfig_GetFloat(JONESHUD_CFG_MENU_MUSICEVOLUME, JonesHud_menuMusicVolume);
+    if ( !stdConfig_Contains(JONESHUD_CFG_MENU_MUSICEVOLUME) )
+    {
+        stdConfig_SetFloat(JONESHUD_CFG_MENU_MUSICEVOLUME, JonesHud_menuMusicVolume);
+    }
+
+    JonesHud_menuMusicFadeDuratuion = stdConfig_GetFloat(JONESHUD_CFG_MENU_FADEDURATION, JonesHud_menuMusicFadeDuratuion);
+    if ( !stdConfig_Contains(JONESHUD_CFG_MENU_FADEDURATION) )
+    {
+        stdConfig_SetFloat(JONESHUD_CFG_MENU_FADEDURATION, JonesHud_menuMusicFadeDuratuion);
+    }
+
+    // Menu item config
     JonesHud_menuItemScale = stdConfig_GetFloat(JONESHUD_CFG_MENU_ITEM_SCALE, JonesHud_menuItemScale);
     if ( !stdConfig_Contains(JONESHUD_CFG_MENU_ITEM_SCALE) )
     {
@@ -583,6 +600,7 @@ int JonesHud_Open(void)
     // Added: Initialize current move duration to configured value
     JonesHud_msecMenuItemMoveCurDuration = JonesHud_msecMenuItemMoveDuration;
 
+    // Menu column config
     JonesHud_menuColumnHeight = stdConfig_GetFloat(JONESHUD_CFG_MENU_COLUMN_HEIGHT, JonesHud_menuColumnHeight);
     if ( !stdConfig_Contains(JONESHUD_CFG_MENU_COLUMN_HEIGHT) )
     {
@@ -1103,14 +1121,14 @@ void JonesHud_Process(void) // maybe this function should be called something el
             }
         }
 
-        if ( JonesHud_bCutsceneStart && (JonesHud_hudState & 1) == 0 && !jonesCog_g_bMenuVisible )
+        if ( JonesHud_bCutsceneStart && (JonesHud_hudState & 0x01) == 0 && !jonesCog_g_bMenuVisible )
         {
             // Menu is closed, start previously started cutscene
             JonesHud_bCutsceneStart = 0;
             jonesCog_StartCutscene(NULL);
         }
 
-        if ( JonesHud_bInterfaceEnabled && (JonesHud_hudState & 1) == 0 && !jonesCog_g_bMenuVisible )
+        if ( JonesHud_bInterfaceEnabled && (JonesHud_hudState & 0x01) == 0 && !jonesCog_g_bMenuVisible )
         {
             // Menu is closed show in game HUD
             JonesHud_bInterfaceEnabled = 0;
@@ -1132,7 +1150,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
                 sithCamera_ResetAllCameras();
             }
 
-            sithGamesave_Restore(JonesHud_aSlectedNdsFilePath, 1);
+            sithGamesave_Restore(JonesHud_aSlectedNdsFilePath, /*bNotifyCog=*/1);
             STD_ZEROMEM(JonesHud_aSlectedNdsFilePath, sizeof(JonesHud_aSlectedNdsFilePath));
             JonesHud_bRestoreActivated = 0;
         }
@@ -1140,7 +1158,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
         {
             // Render Menu
 
-            if ( JonesHud_bMapOpen && !sithPlayerControls_g_bCutsceneMode && (JonesHud_hudState & 1) == 0 )
+            if ( JonesHud_bMapOpen && !sithPlayerControls_g_bCutsceneMode && (JonesHud_hudState & 0x01) == 0 )
             {
                 JonesHud_bMapOpen = 0;
                 sithOverlayMap_ToggleMap();
@@ -1193,7 +1211,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
                 else
                 {
                     sithInventory_GetCurrentWeapon(sithPlayer_g_pLocalPlayerThing);
-                    float impState = sithPlayer_g_impState * 1000.0f / 1800.0f;
+                    float impState = sithPlayer_g_impState * 1000.0f / 1800.0f; // Convert to percentage
                     if ( impState <= 0.0f || impState > 100.0f )
                     {
                         JonesHud_bIMPState = 0;
@@ -1214,7 +1232,7 @@ void JonesHud_Process(void) // maybe this function should be called something el
             else
             {
                 sithInventory_SetCurrentItem(sithPlayer_g_pLocalPlayerThing, 0);
-                if ( (JonesHud_hudState & 0x1) != 0 ) // Is inventory menu opened?
+                if ( (JonesHud_hudState & 0x01) != 0 ) // Is inventory menu opened?
                 {
                     // Inventory menu opened
 
@@ -1543,7 +1561,7 @@ void JonesHud_MenuClose(void)
     // Added: Stop menu music 
     if ( JonesHud_hSndChannelMusic != SOUND_INVALIDHANDLE )
     {
-        sithSoundMixer_FadeVolume(JonesHud_hSndChannelMusic, 0.0f, 0.65f);
+        sithSoundMixer_FadeVolume(JonesHud_hSndChannelMusic, 0.0f, JonesHud_menuMusicFadeDuratuion);
         JonesHud_hSndChannelMusic = SOUND_INVALIDHANDLE;
     }
 
@@ -2672,13 +2690,19 @@ int JonesHud_InitializeMenu(void)
 
 void JonesHud_InitializeMenuSounds(void)
 {
-    for ( size_t i = 0; i < STD_ARRAYLEN(JonesHud_aSoundFxIdxs); ++i )
+    // Altered: Changed start idx to 1 as 0 is reserved for ambient music
+    for ( size_t i = 1; i < STD_ARRAYLEN(JonesHud_aSoundFxIdxs); ++i )
     {
         if ( JonesHud_aSoundFxIdxs[i] > -1 )
         {
             int sndIdx = SITHWORLD_STATICINDEX(JonesHud_aSoundFxIdxs[i]);
             JonesHud_aSoundFxHandles[i] = Sound_GetSoundHandle(sndIdx);
         }
+    }
+
+    if ( JonesHud_bMenuMusicEnabled && JonesHud_aMenuMusicFilename[0] )
+    {
+        JonesHud_aSoundFxHandles[0] = sithSound_Load(sithWorld_g_pStaticWorld, JonesHud_aMenuMusicFilename);
     }
 }
 

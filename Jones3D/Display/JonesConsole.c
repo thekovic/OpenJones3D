@@ -478,7 +478,7 @@ int J3DAPI JonesConsole_PVS(const SithConsoleCommand* pFunc, const char* pArg)
     J3D_UNUSED(pFunc);
     J3D_UNUSED(pArg);
 
-    sithRender_TogglePVS();
+    sithRender_TogglePVSCull();
     return 1;
 }
 

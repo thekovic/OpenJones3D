@@ -43,11 +43,22 @@
 #include <math.h>
 #include <stdint.h>
 
+typedef struct sSithRenderSectorQueueEntry
+{
+    SithSector* pSector;
+    float distance;
+} SithRenderSectorQueueEntry;
+
+// Queue for BFS traversal
+typedef struct sSithRenderSectorQueue
+{
+    size_t head;
+    size_t tail;
+    SithRenderSectorQueueEntry aEntries[SITHRENDER_MAX_VISIBLE_THING_SECTORS * 4];
+} SithRenderSectorQueue;
+
 #define SITHRENDER_MAXTHINGLIGHTS   RDCAMERA_MAX_LIGHTS / 2  // 64; note this var must not exceed RDCAMERA_MAX_LIGHTS - 1 (1 for sector light)
 #define SITHRENDER_MAXSECTORLIGHTS  (RDCAMERA_MAX_LIGHTS - SITHRENDER_MAXTHINGLIGHTS)
-
-static float sithRender_maxThingCollectDistance = SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT;
-static float sithRender_maxLightCollectDistance = SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT;
 
 // There are 2 types of thing light the dynamic light that affect emitting thing and surrounding area,
 // and there is flat light that lits only the emitting thing.
@@ -57,25 +68,41 @@ static float sithRender_maxLightCollectDistance = SITHRENDER_MAXLIGHTCOLLECTDIST
 
 #define SITHRENDER_MAXSCREENSHOTS 100u
 
+// Render state vars
 static int sithRender_renderflags;
 rdLightMode sithRender_lightMode;
 
-static int (J3DAPI* sithRender_pExtraThingRenderFunc)(SithThing* pThing);
-
-static bool sithRender_bResetCameraAspect;
-
-// Sector render vars
-static size_t sithRender_numRenderedSectors;
-static size_t sithRender_curCamSectorIdx; // Not used for anything particular
+// Sector occlusion related vars
+static size_t sithRender_numSectorFrustums;
+static rdClipFrustum sithRender_aSectorFrustrums[SITHRENDER_MAX_VISIBLE_SECTORS];
 
 static SithSector* sithRender_aVisibleSectors[SITHRENDER_MAX_VISIBLE_SECTORS];
 
-static size_t sithRender_numVisibleThingSectors;
-static size_t sithRender_numThingSectors;
-static SithSector* sithRender_aThingSectors[SITHRENDER_MAX_SECTORS_WITH_THINGS];
+// PVS vars
+static bool sithRender_bPVSCull = true;
+static size_t sithRender_curPVSIndex;
+static size_t sithRender_lastPVSIndex;
+static uint8_t* sithRender_aAdjoinTable;
+static SithSurfaceAdjoin* sithRender_aVisibleAdjoins[SITHRENDER_MAX_VISIBLE_SECTORS];
 
-static size_t sithRender_numSecorFrustrums;
-static rdClipFrustum sithRender_aSectorFrustrums[SITHRENDER_MAX_VISIBLE_SECTORS];
+// Visible thing sector(s) related vars
+static SithRenderThingTraversal sithRender_culledSectorTraversalMode = SITHRENDER_CULLEDSECTOR_TRAVERSALMODE_DEFAULT; // Added
+
+static size_t sithRender_totalVisibleThingSectors;
+static size_t sithRender_numVisibleThingSectors;
+static SithSector* sithRender_aVisibleThingSectors[SITHRENDER_MAX_VISIBLE_THING_SECTORS];
+
+static float sithRender_maxThingCollectDistance = SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT;
+static float sithRender_maxLightCollectDistance = SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT;
+
+// Queue for BFS traversal
+static SithRenderSectorQueue sithRender_visitedSectorQueue = { 0 };
+
+// Rendering vars
+static bool sithRender_bResetCameraAspect;
+static size_t sithRender_curCamSectorIdx; // Not used for anything particular
+
+static size_t sithRender_numRenderedSectors;
 
 static size_t sithRender_numSectorPointLights;
 static rdLight sithRender_aSectorPointLights[SITHRENDER_MAXSECTORLIGHTS];
@@ -90,37 +117,36 @@ static rdVector3 sithRender_aClipVertices[MAX_CLIP_VERTICIES]               = { 
 static rdVector3 sithRender_aTransformedClipVertices[MAX_CLIP_VERTICIES]    = { 0 }; // Added: Init to 0
 static rdVector3 sithRender_aSurfaceTransformedVertices[MAX_CLIP_VERTICIES] = { 0 }; // Added: Init to 0
 
-// PVS vars
-static bool sithRender_bPVSClipEnabled = true;
-static size_t sithRender_curPVSIndex;
-static size_t sithRender_lastPVSIndex;
-static uint8_t* sithRender_aAdjoinTable;
-static SithSurfaceAdjoin* sithRender_aVisibleAdjoins[SITHRENDER_MAX_VISIBLE_SECTORS];
-
 // Thing render vars
+static int (J3DAPI* sithRender_pExtraThingRenderFunc)(SithThing* pThing);
+
 static size_t sithRender_numSpritesToDraw;
 
 static size_t sithRender_numThingLights;
 static rdLight sithRender_aThingLights[SITHRENDER_MAXTHINGLIGHTS];
 
-void sithRender_Draw(void);
+static void sithRender_Draw(void);
 
-void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pFrustrum);
-void J3DAPI sithRender_BuildVisibleSurface(SithSurface* pSurface);
-void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, size_t numVertices, float orthLeft, float orthTop, float orthRight, float orthBottom);
-void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pClipFrustum);
-void J3DAPI sithRender_PVSBuildVisibleSector(SithSector* pSector);
-void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrustum* pFrustrum);
+static void J3DAPI sithRender_BuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pFrustrum);
+static void J3DAPI sithRender_BuildVisibleSurface(SithSurface* pSurface);
+static void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, size_t numVertices, float orthLeft, float orthTop, float orthRight, float orthBottom);
+static void J3DAPI sithRender_BuildVisibleSectorListPVS(SithSector* pSector, rdClipFrustum* pClipFrustum);
+static void J3DAPI sithRender_BuildVisibleSectorPVS(SithSector* pSector);
+static void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrustum* pFrustrum);
 
-void sithRender_RenderSectors(void);
+static void sithRender_RenderSectors(void);
 
-void sithRender_BuildVisibleThingSectorList(void);
-void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curDistance, float startDistance);
+static void sithRender_BuildVisibleThingSectorList(void);
+static void sithRender_BuildVisibleThingSectorListDFS(void); // New legacy sithRender_BuildVisibleThingSectorList put into this func
+static void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curDistance, float startDistance);
+static void sithRender_BuildVisibleThingSectorListBFS(void); // New
 
-void sithRender_BuildDynamicLights(void);
-void sithRender_RenderThings(void);
-int J3DAPI sithRender_RenderThing(SithThing* pThing);
-void sithRender_RenderAlphaAdjoins(void);
+static inline void sithRender_CollectThingLights(const SithThing* pThing); // New
+
+static void sithRender_BuildDynamicLights(void);
+static void sithRender_RenderThings(void);
+static int J3DAPI sithRender_RenderThing(SithThing* pThing);
+static void sithRender_RenderAlphaAdjoins(void);
 
 void sithRender_InstallHooks(void)
 {
@@ -135,8 +161,8 @@ void sithRender_InstallHooks(void)
     J3D_HOOKFUNC(sithRender_BuildVisibleSectorList);
     J3D_HOOKFUNC(sithRender_BuildVisibleSurface);
     J3D_HOOKFUNC(sithRender_BuildClipFrustrum);
-    J3D_HOOKFUNC(sithRender_PVSBuildVisibleSectorList);
-    J3D_HOOKFUNC(sithRender_PVSBuildVisibleSector);
+    J3D_HOOKFUNC(sithRender_BuildVisibleSectorListPVS);
+    J3D_HOOKFUNC(sithRender_BuildVisibleSectorPVS);
     J3D_HOOKFUNC(sithRender_BuildVisibleSector);
     J3D_HOOKFUNC(sithRender_RenderSectors);
     J3D_HOOKFUNC(sithRender_BuildVisibleThingSectorList);
@@ -240,6 +266,16 @@ rdLightMode sithRender_GetLightingMode(void)
     return sithRender_lightMode;
 }
 
+void J3DAPI sithRender_SetCulledSectorTraversalMode(SithRenderThingTraversal mode)
+{
+    sithRender_culledSectorTraversalMode = mode;
+}
+
+SithRenderThingTraversal sithRender_GetCulledSectorTraversalMode(void)
+{
+    return sithRender_culledSectorTraversalMode;
+}
+
 float sithRender_GetMaxThingCollectDistance(void)
 {
     return sithRender_maxThingCollectDistance;
@@ -283,9 +319,14 @@ void sithRender_RenderScene(void)
     sithConsole_Flush();
 }
 
-void sithRender_TogglePVS(void)
+void J3DAPI sithRender_EnablePVSCull(bool bEnable)
 {
-    sithRender_bPVSClipEnabled = !sithRender_bPVSClipEnabled;
+    sithRender_bPVSCull = bEnable;
+}
+
+void sithRender_TogglePVSCull(void)
+{
+    sithRender_bPVSCull = !sithRender_bPVSCull;
 }
 
 void sithRender_Draw(void)
@@ -322,25 +363,25 @@ void sithRender_Draw(void)
         sithRender_bResetCameraAspect = false;
     }
 
-    sithRender_g_numVisibleSectors    = 0;
-    sithRender_numThingSectors        = 0;
-    sithRender_numThingLights         = 0;
-    sithRender_numSecorFrustrums      = 0;
-    sithRender_numAlphaAdjoins        = 0;
-    sithRender_numSpritesToDraw       = 0;
-    sithRender_numVisibleThingSectors = 0;
-    sithRender_numRenderedSectors     = 0;
-    sithRender_g_numDrawnThings       = 0;
-    sithRender_g_numVisibleAdjoins    = 0;
+    sithRender_g_numVisibleSectors      = 0;
+    sithRender_numVisibleThingSectors   = 0;
+    sithRender_numThingLights           = 0;
+    sithRender_numSectorFrustums        = 0;
+    sithRender_numAlphaAdjoins          = 0;
+    sithRender_numSpritesToDraw         = 0;
+    sithRender_totalVisibleThingSectors = 0;
+    sithRender_numRenderedSectors       = 0;
+    sithRender_g_numDrawnThings         = 0;
+    sithRender_g_numVisibleAdjoins      = 0;
 
     rdCamera_ClearLights(rdCamera_g_pCurCamera);
 
     sithRender_curCamSectorIdx = sithCamera_g_pCurCamera->pSector - sithWorld_g_pCurrentWorld->aSectors; // TODO: ?? redundant
 
     // Collect sector and things to draw
-    if ( sithRender_bPVSClipEnabled && sithWorld_g_pCurrentWorld->aPVS )
+    if ( sithRender_bPVSCull && sithWorld_g_pCurrentWorld->aPVS )
     {
-        sithRender_PVSBuildVisibleSectorList(sithCamera_g_pCurCamera->pSector, rdCamera_g_pCurCamera->pFrustum);
+        sithRender_BuildVisibleSectorListPVS(sithCamera_g_pCurCamera->pSector, rdCamera_g_pCurCamera->pFrustum);
     }
     else
     {
@@ -348,9 +389,9 @@ void sithRender_Draw(void)
     }
 
     sithRender_BuildVisibleThingSectorList();
-    if ( sithRender_numVisibleThingSectors > STD_ARRAYLEN(sithRender_aThingSectors) ) // Note, this was originally prolly put in place to inform level designers of too many visible thing sectors
+    if ( sithRender_totalVisibleThingSectors > STD_ARRAYLEN(sithRender_aVisibleThingSectors) ) // Note, this was originally prolly put in place to inform level designers of too many visible thing sectors
     {
-        RDLOG_ERROR("Too many sectors with things in view %d of %d\n", STD_ARRAYLEN(sithRender_aThingSectors), sithRender_numVisibleThingSectors); // TODO: Why using RDLOG
+        RDLOG_ERROR("Too many sectors with things in view %d of %d\n", STD_ARRAYLEN(sithRender_aVisibleThingSectors), sithRender_totalVisibleThingSectors); // TODO: Why using RDLOG
     }
 
     if ( (sithRender_renderflags & RDROID_USE_AMBIENT_CAMERA_LIGHT) != 0 )
@@ -364,7 +405,7 @@ void sithRender_Draw(void)
     // Now draw everything
     sithRender_RenderSectors();
 
-    if ( sithRender_numThingSectors > 0 )
+    if ( sithRender_numVisibleThingSectors > 0 )
     {
         sithRender_RenderThings();
     }
@@ -500,7 +541,7 @@ void J3DAPI sithRender_BuildClipFrustrum(rdClipFrustum* pFrustrum, size_t numVer
     rdCamera_SetFrustrum(rdCamera_g_pCurCamera, pFrustrum, left, top, right, bottom);
 }
 
-void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrustum* pClipFrustum)
+void J3DAPI sithRender_BuildVisibleSectorListPVS(SithSector* pSector, rdClipFrustum* pClipFrustum)
 {
     sithPVS_SetTable(sithRender_aAdjoinTable, &sithWorld_g_pCurrentWorld->aPVS[pSector->pvsIdx], sithWorld_g_pCurrentWorld->numAdjoins);
     STD_ZEROMEM(sithRender_aVisibleAdjoins, sizeof(sithRender_aVisibleAdjoins));
@@ -516,7 +557,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
     pClipFrustum->orthoBottomPlane = (float)height;
 
     pSector->pClipFrustum = pClipFrustum;
-    sithRender_PVSBuildVisibleSector(pSector);
+    sithRender_BuildVisibleSectorPVS(pSector);
 
     while ( sithRender_curPVSIndex <= sithRender_lastPVSIndex )
     {
@@ -553,7 +594,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
                 rdClip_ClipFacePVS(pFrustum, &sithRender_faceView, &sithRender_clipFaceView);
                 //numVertices = sithRender_clipFaceView.numVertices;
 
-                if ( (sithRender_clipFaceView.numVertices || (rdClip_g_faceStatus & 1) != 0)
+                if ( (sithRender_clipFaceView.numVertices || (rdClip_g_faceStatus & 0x01) != 0)
                     && (!pSurface->face.pMaterial || pSurface->face.pMaterial->formatType != STDCOLOR_FORMAT_RGB
                         || (pSurface->face.flags & RD_FF_TEX_TRANSLUCENT) != 0
                         || pSurface->face.geometryMode == RD_GEOMETRY_NONE)
@@ -565,7 +606,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
                     SithSector* pAdjoinSector = pAdjoin->pAdjoinSector;
                     if ( pAdjoinSector->renderTick == sithMain_g_curRenderTick ) // If sector was already build at current frame then  build only it's clip frustum
                     {
-                        if ( (rdClip_g_faceStatus & 1) != 0 )
+                        if ( (rdClip_g_faceStatus & 0x01) != 0 )
                         {
                             sithRender_BuildClipFrustrum(
                                 pAdjoinSector->pClipFrustum,
@@ -591,7 +632,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
                     else
                     {
                         rdClipFrustum frustum;
-                        if ( (rdClip_g_faceStatus & 1) != 0 )
+                        if ( (rdClip_g_faceStatus & 0x01) != 0 )
                         {
                             pAdjoinSector->pClipFrustum = pFrustum;
                         }
@@ -601,7 +642,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
                             pAdjoinSector->pClipFrustum = &frustum;
                         }
 
-                        sithRender_PVSBuildVisibleSector(pAdjoinSector);
+                        sithRender_BuildVisibleSectorPVS(pAdjoinSector);
                     }
                 }
             }
@@ -616,7 +657,7 @@ void J3DAPI sithRender_PVSBuildVisibleSectorList(SithSector* pSector, rdClipFrus
     }
 }
 
-void J3DAPI sithRender_PVSBuildVisibleSector(SithSector* pSector)
+void J3DAPI sithRender_BuildVisibleSectorPVS(SithSector* pSector)
 {
     // Update PVS stuff
     for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
@@ -645,9 +686,6 @@ void J3DAPI sithRender_PVSBuildVisibleSector(SithSector* pSector)
 
 void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrustum* pFrustrum)
 {
-    SithThing* pThing;
-    rdVector3 lightPos;
-
     pSector->renderTick = sithMain_g_curRenderTick;
     if ( sithRender_g_numVisibleSectors >= STD_ARRAYLEN(sithRender_aVisibleSectors) )
     {
@@ -668,11 +706,11 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
     }
 
     // Assign sectors frustum
-    sithRender_aSectorFrustrums[sithRender_numSecorFrustrums] =  *pFrustrum;
-    pSector->pClipFrustum = &sithRender_aSectorFrustrums[sithRender_numSecorFrustrums++];
+    sithRender_aSectorFrustrums[sithRender_numSectorFrustums] = *pFrustrum;
+    pSector->pClipFrustum = &sithRender_aSectorFrustrums[sithRender_numSectorFrustums++];
 
     // Collect thing lights (ambient spot light & actor head light)
-    for ( pThing = pSector->pFirstThingInSector; pThing && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights); pThing = pThing->pNextThingInSector )
+    for ( SithThing* pThing = pSector->pFirstThingInSector; pThing && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights); pThing = pThing->pNextThingInSector )
     {
         if ( (pThing->flags & SITH_TF_EMITLIGHT) != 0 && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_INVISIBLE | SITH_TF_DESTROYED)) == 0 )
         {
@@ -698,6 +736,7 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
                 sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha;
                 sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->thingInfo.actorInfo.headLightIntensity.alpha;
 
+                rdVector3 lightPos;
                 rdMatrix_TransformPoint34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient);
                 rdVector_Add3Acc(&lightPos, &pThing->pos);
 
@@ -707,7 +746,7 @@ void J3DAPI sithRender_BuildVisibleSector(SithSector* pSector, const rdClipFrust
         }
     }
 
-    sithRender_aThingSectors[sithRender_numThingSectors++] = pSector;
+    sithRender_aVisibleThingSectors[sithRender_numVisibleThingSectors++] = pSector;
 }
 
 void sithRender_RenderSectors(void)
@@ -861,28 +900,43 @@ void sithRender_RenderSectors(void)
 
 void sithRender_BuildVisibleThingSectorList(void)
 {
-    // Function to build list of sectors with things in view.
-    // It traverses all visible sectors and their adjoins to find sectors with things.
-    // It collects these sectors and collects lights from things.
+    // Altered: Added new BFS traversal option
+    switch ( sithRender_culledSectorTraversalMode )
+    {
+        case SITHRENDER_THING_TRAVERSAL_BFS:
+            sithRender_BuildVisibleThingSectorListBFS();
+            break;
+
+        case SITHRENDER_THING_TRAVERSAL_LDFS:
+        default: // Legacy custom DFS alog
+            sithRender_BuildVisibleThingSectorListDFS();
+            break;
+    };
+}
+
+void sithRender_BuildVisibleThingSectorListDFS(void)
+{
+    // Function builds a list of sectors with visible things (i.e. thing that should be rendered) and their lights.
     //
-    // Note: OG allowed only one traversal path through each sector to collect things.
-    //       When QOL improvements are enabled, multiple traversal paths are allowed,
-    //       enabling more sectors with things to be collected.
+    // Algorithm: vanilla DFS-like recursive sector traversal
+    //
+    // Iterates through previously built visible sector list and recursively traverses adjoins of each visible sector.
+    // Sectors are marked as processed on first encounter using a frame tick,
+    // which prevents revisiting them through alternative paths.
+    //
+    // Traversal order depends on adjoin order and accumulated path distance.
+    // Sector traversal is distance-limited and may miss sectors that are
+    // reachable via shorter or different paths later in the traversal.
+    //
+    // This behavior is kept for legacy compatibility.
 
     for ( size_t i = 0; i < sithRender_g_numVisibleSectors; ++i )
     {
         SithSector* pSector = sithRender_aVisibleSectors[i];
         for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
         {
-        #ifdef J3D_QOL_IMPROVEMENTS
-            // Altered: Allow already processed sectors to iterate through all their adjoins again
-            //          and find any unprocessed sectors. This change enables multiple traversal paths
-            //          to pass through already processed sectors and collect any remaining sectors.
-            if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
-            #else
             // Legacy mode prevent crwaling through already processed sector
             if ( pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick && (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
-            #endif
             {
                 pAdjoin->pAdjoinSector->pClipFrustum = pSector->pClipFrustum;
                 float distance = pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
@@ -894,6 +948,8 @@ void sithRender_BuildVisibleThingSectorList(void)
 
 void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curDistance, float startDistance)
 {
+    // Recursive legacy DFS-like visible thing sector collection function
+
     if ( pSector->renderTick != sithMain_g_curRenderTick )
     {
         pSector->renderTick = sithMain_g_curRenderTick;
@@ -903,64 +959,20 @@ void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curD
         {
             for ( SithThing* pThing = pSector->pFirstThingInSector; pThing; pThing = pThing->pNextThingInSector )
             {
-                // Collect thing lights (ambient spot light & actor head light)
-
-                if ( sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
-                    && (pThing->flags & SITH_TF_EMITLIGHT) != 0
-                    && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) == 0 )
-                {
-                    // Collect thing light if range is > 0.01f
-                    if ( !rdVector_IsZero3((rdVector3*)&pThing->light.color)
-                        && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
-                    {
-                        sithRender_aThingLights[sithRender_numThingLights].color     = pThing->light.color;
-                        sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius;
-                        sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius;
-
-                        rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aThingLights[sithRender_numThingLights], &pThing->pos);
-                        ++sithRender_numThingLights;
-                    }
-
-                    // Collect actor head light
-                    if ( (pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER)
-                        && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
-                        && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
-                        && !rdVector_IsZero3((rdVector3*)&pThing->thingInfo.actorInfo.headLightIntensity) )
-                    {
-                        sithRender_aThingLights[sithRender_numThingLights].color     = pThing->thingInfo.actorInfo.headLightIntensity;
-                        sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius;
-                        sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius;
-
-                        rdVector3 lightPos;
-                        rdMatrix_TransformPoint34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient);
-                        rdVector_Add3Acc(&lightPos, &pThing->pos);
-
-                        rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aThingLights[sithRender_numThingLights], &lightPos);
-                        ++sithRender_numThingLights;
-                    }
-                }
-            }
-
-            if ( curDistance < sithRender_maxThingCollectDistance ) // Altered: Replaced with new max thing collection distance
-            {
-                ++sithRender_numVisibleThingSectors;
-                if ( sithRender_numThingSectors < SITHRENDER_MAX_SECTORS_WITH_THINGS )
-                {
-                    sithRender_aThingSectors[sithRender_numThingSectors++] = pSector;
-                }
+                // Altered: Replaced inplace code with the new function
+                sithRender_CollectThingLights(pThing);
             }
         }
 
-    }
+        if ( curDistance < sithRender_maxThingCollectDistance ) // Altered: Replaced with new max thing collection distance
+        {
+            ++sithRender_totalVisibleThingSectors;
+            if ( sithRender_numVisibleThingSectors < SITHRENDER_MAX_VISIBLE_THING_SECTORS )
+            {
+                sithRender_aVisibleThingSectors[sithRender_numVisibleThingSectors++] = pSector;
+            }
+        }
 
-    // Altered: Allow already processed sectors to iterate through all their adjoins again
-    //          and find any unprocessed sectors. This change enables multiple traversal paths
-    //          to pass through already processed sectors and collect any remaining sectors.
-#ifndef J3D_QOL_IMPROVEMENTS
-    // Legacy mode
-    if ( pSector->renderTick != sithMain_g_curRenderTick )
-    #endif // !J3D_QOL_IMPROVEMENTS
-    {
         for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
         {
             if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 && pAdjoin->pAdjoinSector->renderTick != sithMain_g_curRenderTick )
@@ -972,6 +984,140 @@ void J3DAPI sithRender_CollectVisibleThingSector(SithSector* pSector, float curD
                     sithRender_CollectVisibleThingSector(pAdjoin->pAdjoinSector, distance, 0.0f);
                 }
             }
+        }
+    }
+}
+
+void sithRender_BuildVisibleThingSectorListBFS(void)
+{
+    // Function builds a list of sectors with visible things (i.e. thing that should be rendered) and their lights.
+    //
+    // Algorithm: Breadth-first sector traversal (BFS)
+    //
+    // Iterates through previously built visible sector list and traverses all adjoins of each sector level-by-level
+    // using a queue. Multiple paths may reach the same sector, but traversal
+    // is bounded by configured collection distances.
+    //
+    // Ensures all reachable sectors within range are processed regardless of
+    // traversal order, preventing missed thing or dynamic light collection
+    // caused by path-order dependency like in case of sithRender_BuildVisibleThingSectorListDFS function. 
+
+    sithRender_visitedSectorQueue.head = 0;
+    sithRender_visitedSectorQueue.tail = 0;
+
+    float maxDistance = J3DMAX(sithRender_maxThingCollectDistance, sithRender_maxLightCollectDistance);
+
+    // Initialize queue with already collected visible sectors
+    for ( size_t i = 0; i < sithRender_g_numVisibleSectors; ++i )
+    {
+        SithSector* pSector = sithRender_aVisibleSectors[i];
+        for ( SithSurfaceAdjoin* pAdjoin = pSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
+        {
+            if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 )
+            {
+                float distance = pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
+                if ( distance < maxDistance && sithRender_visitedSectorQueue.tail < STD_ARRAYLEN(sithRender_visitedSectorQueue.aEntries) )
+                {
+                    SithSector* pNextSector   = pAdjoin->pAdjoinSector;
+                    pNextSector->pClipFrustum = pSector->pClipFrustum;
+                    sithRender_visitedSectorQueue.aEntries[sithRender_visitedSectorQueue.tail++] = (SithRenderSectorQueueEntry){
+                          .pSector  = pNextSector,
+                          .distance = distance
+                    };
+                }
+            }
+        }
+    }
+
+    // Process queue
+    while ( sithRender_visitedSectorQueue.head < sithRender_visitedSectorQueue.tail )
+    {
+        SithRenderSectorQueueEntry* pEntry = &sithRender_visitedSectorQueue.aEntries[sithRender_visitedSectorQueue.head++];
+        SithSector* pCurSector = pEntry->pSector;
+        float curDistance      = pEntry->distance;
+
+        // Collect things and lights only once per sector
+        if ( pCurSector->renderTick != sithMain_g_curRenderTick )
+        {
+            pCurSector->renderTick = sithMain_g_curRenderTick;
+
+            // Collect lights
+            if ( curDistance < sithRender_maxLightCollectDistance )
+            {
+                for ( SithThing* pThing = pCurSector->pFirstThingInSector; pThing; pThing = pThing->pNextThingInSector )
+                {
+                    sithRender_CollectThingLights(pThing);
+                }
+            }
+
+            // Collect things
+            if ( curDistance < sithRender_maxThingCollectDistance )
+            {
+                ++sithRender_totalVisibleThingSectors;
+                if ( sithRender_numVisibleThingSectors < SITHRENDER_MAX_VISIBLE_THING_SECTORS )
+                {
+                    sithRender_aVisibleThingSectors[sithRender_numVisibleThingSectors++] = pCurSector;
+                }
+            }
+
+            // Add adjoining sectors to queue
+            for ( SithSurfaceAdjoin* pAdjoin = pCurSector->pFirstAdjoin; pAdjoin; pAdjoin = pAdjoin->pNextAdjoin )
+            {
+                // Only add if adjoin is visible and it's sector is not already processed
+                SithSector* pNextSector = pAdjoin->pAdjoinSector;
+                if ( (pAdjoin->flags & SITH_ADJOIN_VISIBLE) != 0 && pNextSector->renderTick != sithMain_g_curRenderTick )
+                {
+                    float distance = curDistance + pAdjoin->distance + pAdjoin->pMirrorAdjoin->distance;
+                    if ( distance < maxDistance && sithRender_visitedSectorQueue.tail < STD_ARRAYLEN(sithRender_visitedSectorQueue.aEntries) )
+                    {
+                        pNextSector->pClipFrustum = pCurSector->pClipFrustum;
+                        sithRender_visitedSectorQueue.aEntries[sithRender_visitedSectorQueue.tail++] = (SithRenderSectorQueueEntry){
+                           .pSector  = pNextSector,
+                           .distance = distance
+                        };
+                    }
+                }
+            }
+        }
+    }
+}
+
+void sithRender_CollectThingLights(const SithThing* pThing)
+{
+    // Collect thing spot light & actor head light
+
+    if ( sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
+        && (pThing->flags & SITH_TF_EMITLIGHT) != 0
+        && (pThing->flags & (SITH_TF_DISABLED | SITH_TF_DESTROYED)) == 0 )
+    {
+        // Collect thing light if range is > 0.01f
+        if ( !rdVector_IsZero3((const rdVector3*)&pThing->light.color)
+            && SITHRENDER_ISDYNAMICLIGHT(pThing->light.color.alpha) )
+        {
+            sithRender_aThingLights[sithRender_numThingLights].color     = pThing->light.color;
+            sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius;
+            sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius;
+
+            rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aThingLights[sithRender_numThingLights], &pThing->pos);
+            ++sithRender_numThingLights;
+        }
+
+        // Collect actor head light
+        if ( (pThing->type == SITH_THING_ACTOR || pThing->type == SITH_THING_PLAYER)
+            && sithRender_numThingLights < STD_ARRAYLEN(sithRender_aThingLights)
+            && (pThing->thingInfo.actorInfo.flags & SITH_AF_HEADLIGHT) != 0
+            && !rdVector_IsZero3((const rdVector3*)&pThing->thingInfo.actorInfo.headLightIntensity) )
+        {
+            sithRender_aThingLights[sithRender_numThingLights].color     = pThing->thingInfo.actorInfo.headLightIntensity;
+            sithRender_aThingLights[sithRender_numThingLights].minRadius = pThing->light.minRadius; // TODO: this might be a bug and pThing->thingInfo.actorInfo.headLightIntensity.alpha should be used
+            sithRender_aThingLights[sithRender_numThingLights].maxRadius = pThing->light.maxRadius; // TODO: this might be a bug and pThing->thingInfo.actorInfo.headLightIntensity.alpha should be used
+
+            rdVector3 lightPos;
+            rdMatrix_TransformPoint34(&lightPos, &pThing->thingInfo.actorInfo.lightOffset, &pThing->orient);
+            rdVector_Add3Acc(&lightPos, &pThing->pos);
+
+            rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aThingLights[sithRender_numThingLights], &lightPos);
+            ++sithRender_numThingLights;
         }
     }
 }
@@ -1046,9 +1192,9 @@ void sithRender_RenderThings(void)
 
     rdModel3_EnableFogRendering(sithWorld_g_pCurrentWorld->fog.bEnabled);
 
-    for ( size_t i = 0; i < sithRender_numThingSectors; ++i )
+    for ( size_t i = 0; i < sithRender_numVisibleThingSectors; ++i )
     {
-        SithSector* pSector = sithRender_aThingSectors[i];
+        SithSector* pSector = sithRender_aVisibleThingSectors[i];
 
         rdVector4 sectorAmbientLight;
         rdVector_Add4(&sectorAmbientLight, &pSector->ambientLight, &pSector->extraLight);
@@ -1092,8 +1238,8 @@ void sithRender_RenderThings(void)
                         sithRender_aSectorPointLights[sithRender_numSectorPointLights].color     = pSector->light.color;
                         sithRender_aSectorPointLights[sithRender_numSectorPointLights].minRadius = pSector->light.minRadius;
                         sithRender_aSectorPointLights[sithRender_numSectorPointLights].maxRadius = pSector->light.maxRadius;
-                        rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aSectorPointLights[sithRender_numSectorPointLights], &pSector->light.pos);
 
+                        rdCamera_AddLight(rdCamera_g_pCurCamera, &sithRender_aSectorPointLights[sithRender_numSectorPointLights], &pSector->light.pos);
                         bLightSet = true;
                     }break;
 

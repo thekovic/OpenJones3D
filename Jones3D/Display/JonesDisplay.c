@@ -280,6 +280,20 @@ int J3DAPI JonesDisplay_Open(JonesDisplaySettings* pSettings)
         return 1;
     }
 
+    // Added: Load PVS enabled setting from config
+    bool bPVSCull = stdConfig_GetBool(JONESDISPLAY_CFG_ENGINE_RENDER_PVSENABLED, true);
+    if ( !stdConfig_Contains(JONESDISPLAY_CFG_ENGINE_RENDER_PVSENABLED) )
+    {
+        stdConfig_SetBool(JONESDISPLAY_CFG_ENGINE_RENDER_PVSENABLED, bPVSCull);
+    }
+
+    // Added: Load culled sector traversal mode from config
+    SithRenderThingTraversal traversalMode = (SithRenderThingTraversal)stdConfig_GetInt(JONESDISPLAY_CFG_ENGINE_RENDER_CULLEDSECTORTRAVERSALMODE, SITHRENDER_CULLEDSECTOR_TRAVERSALMODE_DEFAULT);
+    if ( !stdConfig_Contains(JONESDISPLAY_CFG_ENGINE_RENDER_CULLEDSECTORTRAVERSALMODE) )
+    {
+        stdConfig_SetInt(JONESDISPLAY_CFG_ENGINE_RENDER_CULLEDSECTORTRAVERSALMODE, traversalMode);
+    }
+
     // Added: Load max thing/light collect distances from config
     float maxThingColectDist = stdConfig_GetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE, SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT);
     if ( !stdConfig_Contains(JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE) )
@@ -297,7 +311,11 @@ int J3DAPI JonesDisplay_Open(JonesDisplaySettings* pSettings)
     sithRender_SetLightingMode(pSettings->lightMode);
     sithRender_SetRenderFlags(sithRender_GetRenderFlags() | RDROID_USE_AMBIENT_CAMERA_LIGHT);
 
-    // Added: Set max thing/light collect distances
+    // Added: Enable/disable PVS culling
+    sithRender_EnablePVSCull(bPVSCull);
+
+    // Added: Set culled sector traversal mode and max collect distances
+    sithRender_SetCulledSectorTraversalMode(traversalMode);
     sithRender_SetMaxThingCollectDistance(maxThingColectDist);
     sithRender_SetMaxLightCollectDistance(maxLightColectDist);
 

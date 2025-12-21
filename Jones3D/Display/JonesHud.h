@@ -25,7 +25,9 @@ J3D_EXTERN_C_START
 #define JONESHUD_CFG_MENU_CLOSE_START_SLIDE_DURATION    "ui.menu.closeStartSlideDuration"
 #define JONESHUD_CFG_MENU_CLOSE_SLIDE_DURATION          "ui.menu.closeSlideDuration"
 #define JONESHUD_CFG_MENU_MUSICENABLED                  "ui.menu.music.enabled"
-#define JONESHUD_CFG_MENU_MUSICEVOLUME                  "ui.menu.music.volume"
+#define JONESHUD_CFG_MENU_MUSICFILENAME                 "ui.menu.music.music"
+#define JONESHUD_CFG_MENU_MUSICEVOLUME                  "ui.menu.music.file"
+#define JONESHUD_CFG_MENU_FADEDURATION                  "ui.menu.music.fade"
 
 #define JONESHUD_CFG_ITEM_CHANGED_SHOW_DURATION         "ui.hud.itemChanged.showDuration"
 #define JONESHUD_CFG_ITEM_CHANGED_SLIDE_EASE_IN_RATE    "ui.hud.itemChanged.slideEaseInRate"

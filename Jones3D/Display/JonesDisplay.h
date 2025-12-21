@@ -22,14 +22,15 @@ J3D_EXTERN_C_START
 #define JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE      "graphics.refreshRate"
 #define JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL "graphics.performanceLevel"
 
-#define JONESDISPLAY_CFG_ENGINE_RENDER_HIPOLY                  "engine.renderer.hipoly"
-#define JONESDISPLAY_CFG_ENGINE_RENDER_GEOMETRYMODE            "engine.renderer.geometry"
-#define JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE            "engine.renderer.lighting"
-#define JONESDISPLAY_CFG_ENGINE_RENDER_FOGENABLED              "engine.renderer.fog.enabled"
-#define JONESDISPLAY_CFG_ENGINE_RENDER_FOGDENSITY              "engine.renderer.fog.density"
-#define JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE "engine.renderer.maxThingCollectDistance"
-#define JONESDISPLAY_CFG_ENGINE_RENDER_MAXLIGHTCOLLECTDISTANCE "engine.renderer.maxLightCollectDistance"
-
+#define JONESDISPLAY_CFG_ENGINE_RENDER_HIPOLY                    "engine.renderer.hipoly"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_GEOMETRYMODE              "engine.renderer.geometry"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE              "engine.renderer.lighting"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_FOGENABLED                "engine.renderer.fog.enabled"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_FOGDENSITY                "engine.renderer.fog.density"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_PVSENABLED                "engine.renderer.culling.pvs.enabled"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_CULLEDSECTORTRAVERSALMODE "engine.renderer.culling.culledSectorTraversal.mode"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_MAXTHINGCOLLECTDISTANCE   "engine.renderer.culling.culledSectorTraversal.maxThingCollectDistance"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_MAXLIGHTCOLLECTDISTANCE   "engine.renderer.culling.culledSectorTraversal.maxLightCollectDistance"
 
 
 // Returns 0 for success and 1 indicating error

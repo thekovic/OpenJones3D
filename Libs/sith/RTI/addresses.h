@@ -338,8 +338,8 @@
 #define sithRender_BuildVisibleSectorList_ADDR 0x004443B0
 #define sithRender_BuildVisibleSurface_ADDR 0x004445C0
 #define sithRender_BuildClipFrustrum_ADDR 0x00444660
-#define sithRender_PVSBuildVisibleSectorList_ADDR 0x00444780
-#define sithRender_PVSBuildVisibleSector_ADDR 0x00444AA0
+#define sithRender_BuildVisibleSectorListPVS_ADDR 0x00444780
+#define sithRender_BuildVisibleSectorPVS_ADDR 0x00444AA0
 #define sithRender_BuildVisibleSector_ADDR 0x00444B30
 #define sithRender_RenderSectors_ADDR 0x00444E20
 #define sithRender_BuildVisibleThingSectorList_ADDR 0x00445200
@@ -2149,12 +2149,12 @@
 #define sithRender_numSpritesToDraw_ADDR 0x00564FC8
 #define sithRender_numAlphaAdjoins_ADDR 0x00564FCC
 #define sithRender_aTransformedClipVertices_ADDR 0x005653D0
-#define sithRender_numThingSectors_ADDR 0x00565790
+#define sithRender_numVisibleThingSectors_ADDR 0x00565790
 #define sithRender_aView_ADDR 0x00565798
 #define sithRender_aSectorPointLights_ADDR 0x005657B8
 #define sithRender_aThingLights_ADDR 0x005663B8
-#define sithRender_aThingSectors_ADDR 0x00566FB8
-#define sithRender_numSecorFrustrums_ADDR 0x005673B8
+#define sithRender_aVisibleThingSectors_ADDR 0x00566FB8
+#define sithRender_numSectorFrustums_ADDR 0x005673B8
 #define sithRender_aSectorFrustrums_ADDR 0x005673C0
 #define sithRender_curSectorIdx_ADDR 0x0056A1C4
 #define sithRender_aAlphaAdjoins_ADDR 0x0056A1C8
@@ -2167,7 +2167,7 @@
 #define sithRender_g_numThingPolys_ADDR 0x0056A69C
 #define sithRender_g_numAlphaThingPoly_ADDR 0x0056A6A0
 #define sithRender_g_numVisibleAdjoins_ADDR 0x0056A6A4
-#define sithRender_numVisibleThingSectors_ADDR 0x0056A6A8
+#define sithRender_totalVisibleThingSectors_ADDR 0x0056A6A8
 #define sithRender_bResetCameraAspect_ADDR 0x0056A6AC
 #define sithRender_pfUnknownFunc_ADDR 0x0056A6B0
 #define sithRender_aAdjoinTable_ADDR 0x0056A6B4

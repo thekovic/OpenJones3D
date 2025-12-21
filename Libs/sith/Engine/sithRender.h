@@ -8,15 +8,33 @@
 #include <std/types.h>
 
 J3D_EXTERN_C_START
-#define SITHRENDER_MAX_VISIBLE_SECTORS     4096 // Altered: Was 128
-#define SITHRENDER_MAX_SECTORS_WITH_THINGS SITHRENDER_MAX_VISIBLE_SECTORS * 2 // Altered: Was 256
+
+// Traversal algorithm types
+typedef enum eSithRenderThingTraversal
+{
+    // DFS: original legacy custom Depth-First Search traversal (order-dependent, single-path per sector).
+    // DFS-like traversal that marks sectors as visited on first encounter.
+    // Traversal order depends on adjoin order and accumulated path distance.
+    // May miss sectors reachable via alternative or shorter paths.
+    SITHRENDER_THING_TRAVERSAL_LDFS = 0,
+
+    // BFS: breadth-first traversal allowing multi-path coverage.
+    // Traverses sectors level-by-level, allowing multiple paths to reach
+    // the same sector. Ensures full sector coverage within collection
+    // distance limits and avoids path-order dependency.
+    SITHRENDER_THING_TRAVERSAL_BFS = 1
+} SithRenderThingTraversal;
 
 
-#define SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT J3D_QOL_VALUE(16.0f, 8.0f)  // Max distance from each visible sector to collect things to be rendered. Altered: Changed to 16 (160m) form 8 (80m)
-#define SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT J3D_QOL_VALUE(50.0f, 8.0f)  // Max distance from each visible sector to collect emitting lights. 
-                                                                               // This is new configurable variable. Originally, light collecting distance was limited to things collecting distance (8.0f) and 
-                                                                               // max number of collected things - SITHRENDER_MAX_SECTORS_WITH_THINGS
-                                                                               // The new default distance - 500m was determined based on the light flickering issue in Babylon level (court yard)
+#define SITHRENDER_MAX_VISIBLE_SECTORS       4096 // Altered: Was 128
+#define SITHRENDER_MAX_VISIBLE_THING_SECTORS SITHRENDER_MAX_VISIBLE_SECTORS * 2 // Altered: Was 256
+
+#define SITHRENDER_CULLEDSECTOR_TRAVERSALMODE_DEFAULT J3D_QOL_VALUE(SITHRENDER_THING_TRAVERSAL_BFS, SITHRENDER_THING_TRAVERSAL_LDFS)
+#define SITHRENDER_MAXTHINGCOLLECTDISTANCE_DEFAULT    J3D_QOL_VALUE(16.0f, 8.0f)  // Max distance from each visible sector to collect things to be rendered. Altered: Changed to 16 (160m) form 8 (80m)
+#define SITHRENDER_MAXLIGHTCOLLECTDISTANCE_DEFAULT    J3D_QOL_VALUE(16.0f, 8.0f)  // Max distance from each visible sector to collect emitting lights. 
+                                                                                  // This is the new configurable variable. Originally, light collecting distance was limited to things collecting distance (8.0f) and 
+                                                                                  // max number of collected things - SITHRENDER_MAX_VISIBLE_THING_SECTORS
+                                                                                 // The new default distance - 60m was determined based on the light flickering issue in Babylon level (court yard)
 
 
 #define sithRender_g_fogDensity J3D_DECL_FAR_VAR(sithRender_g_fogDensity, float)
@@ -55,16 +73,48 @@ int sithRender_GetRenderFlags(void);
 void J3DAPI sithRender_SetLightingMode(rdLightMode mode);
 rdLightMode sithRender_GetLightingMode(void); // Added
 
+/**
+ * Sets the visible thing sector collection traversal algorithm.
+ * @param mode - Traversal algorithm to use (LEGACY DFS or BFS).
+ */
+void J3DAPI sithRender_SetCulledSectorTraversalMode(SithRenderThingTraversal mode); // New
+
+/**
+ * Gets the current visible thing sector collection traversal algorithm.
+ * @return Current traversal mode.
+ */
+SithRenderThingTraversal sithRender_GetCulledSectorTraversalMode(void); // New
+
+/**
+ * Retrieves the maximum path distance to travel from each visible sector into culled sectors for collecting visible things sectors.
+ * @return Maximum thing collection distance.
+ */
 float sithRender_GetMaxThingCollectDistance(void); // New
+
+/**
+ * Sets the maximum path distance to travel from each visible sector into culled sectors for collecting visible things sectors.
+ * @param distance - Maximum thing collection distance.
+ */
 void J3DAPI sithRender_SetMaxThingCollectDistance(float distance); // New
 
+/**
+ * Retrieves the maximum path distance to travel from each visible sector into culled sectors for collecting dynamic lights.
+ * @return Maximum light collection distance.
+ */
 float sithRender_GetMaxLightCollectDistance(void); // New
+
+/**
+ * Sets the maximum path distance to travel from each visible sector into culled sectors for collecting dynamic lights.
+ * @param distance - Maximum light collection distance.
+ */
 void J3DAPI sithRender_SetMaxLightCollectDistance(float distance); // New
+
 
 //!< Renders sithWorld_g_pCurrentWorld from position of sithCamera_g_pCurCamera
 void sithRender_RenderScene(void); // Added from debug
 
-void sithRender_TogglePVS(void); // Added from debug
+void J3DAPI sithRender_EnablePVSCull(bool bEnable); // New
+void sithRender_TogglePVSCull(void); // Added from debug
 
 int sithRender_MakeScreenShot(void);
 
