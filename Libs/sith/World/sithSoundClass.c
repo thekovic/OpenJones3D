@@ -8,6 +8,8 @@
 #include <sith/RTI/symbols.h>
 #include <sith/World/sithVoice.h>
 
+#include <sound/Sound.h>
+
 #include <std/General/stdConffile.h>
 #include <std/General/stdHashtbl.h>
 #include <std/General/stdMemory.h>
@@ -442,7 +444,7 @@ int J3DAPI sithSoundClass_LoadEntry(SithWorld* pWorld, SithSoundClass* pClass, c
             continue;
         }
 
-        memset(pEntry, 0, sizeof(SithSoundClassEntry));
+        STD_ZEROMEM(pEntry, sizeof(SithSoundClassEntry));
         pEntry->hSnd      = hSnd;
         pEntry->playflags = flags;
         pEntry->minRadius = 0.5f;
@@ -504,7 +506,7 @@ int J3DAPI sithSoundClass_AllocSoundClasses(SithWorld* pWorld, size_t size)
 
     pWorld->sizeSoundClasses = size;
     pWorld->numSoundClasses  = 0;
-    memset(pWorld->aSoundClasses, 0, sizeof(SithSoundClass) * size);
+    STD_ZEROMEM(pWorld->aSoundClasses, sizeof(SithSoundClass) * size);
     return 0;
 }
 
@@ -547,18 +549,18 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayModeFirstEx(SithThing* pThing, Sit
     SITH_ASSERTREL(pThing);
     if ( !pThing->pSoundClass )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( (size_t)mode >= STD_ARRAYLEN(sithSoundClass_aSoundModeNames) )
     {
         SITHLOG_ERROR("Sound mode %d out of range.\n", mode);
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( !pThing->pSoundClass->aEntries[mode] )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     return sithSoundClass_PlayModeEntry(pThing, mode, pThing->pSoundClass->aEntries[mode], volume);
@@ -569,18 +571,18 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayModeFirst(SithThing* pThing, SithS
     SITH_ASSERTREL(pThing);
     if ( !pThing->pSoundClass )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( (size_t)mode >= STD_ARRAYLEN(sithSoundClass_aSoundModeNames) )
     {
         SITHLOG_ERROR("Sound mode %d out of range.\n", mode);
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( !pThing->pSoundClass->aEntries[mode] )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     return sithSoundClass_PlayModeEntry(pThing, mode, pThing->pSoundClass->aEntries[mode], 1.0f);
@@ -591,24 +593,24 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayModeRandom(SithThing* pThing, Sith
     if ( !pThing )
     {
         SITHLOG_ERROR("NULL thing in sithSoundClass_PlayModeRandom()");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( !pThing->pSoundClass )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( (size_t)mode >= STD_ARRAYLEN(sithSoundClass_aSoundModeNames) )
     {
         SITHLOG_ERROR("Sound modes out of range.\n");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     SithSoundClassEntry* pEntry = pThing->pSoundClass->aEntries[mode];
     if ( !pEntry )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( pEntry->numEntries <= 1u )
@@ -635,24 +637,24 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayVoiceModeRandom(SithThing* pThing,
     if ( !pThing )
     {
         SITHLOG_ERROR("NULL thing in sithSoundClass_PlayModeRandom()");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( !pThing->pSoundClass )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( (size_t)mode >= STD_ARRAYLEN(sithSoundClass_aSoundModeNames) )
     {
         SITHLOG_ERROR("Sound modes out of range.\n");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     SithSoundClassEntry* pModeEntry = pThing->pSoundClass->aEntries[mode];
     if ( !pModeEntry )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( pModeEntry->numEntries <= 1u )
@@ -680,24 +682,24 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayPlayerVoiceModeRandom(SithThing* p
     if ( !pThing )
     {
         SITHLOG_ERROR("NULL thing in sithSoundClass_PlayModeRandom()");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( !pThing->pSoundClass )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( (size_t)mode >= STD_ARRAYLEN(sithSoundClass_aSoundModeNames) )
     {
         SITHLOG_ERROR("Sound modes out of range.\n");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     SithSoundClassEntry* pModeEntry = pThing->pSoundClass->aEntries[mode];
     if ( !pModeEntry )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( pModeEntry->numEntries <= 1u )
@@ -732,19 +734,19 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayMode(SithThing* pThing, SithSoundC
     SITH_ASSERTREL(pThing);
     if ( !pThing->pSoundClass )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( (size_t)mode >= STD_ARRAYLEN(sithSoundClass_aSoundModeNames) )
     {
         SITHLOG_ERROR("Sound modes out of range.\n");
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     SithSoundClassEntry* pEntry = pThing->pSoundClass->aEntries[mode];
     if ( !pEntry )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     if ( pEntry->numEntries <= 1 )
@@ -873,7 +875,7 @@ tSoundChannelHandle J3DAPI sithSoundClass_PlayModeEntry(SithThing* pThing, SithS
 {
     if ( !pEntry->hSnd )
     {
-        return 0;
+        return SOUND_INVALIDHANDLE;
     }
 
     float playVolume = pEntry->maxVolume * volume;

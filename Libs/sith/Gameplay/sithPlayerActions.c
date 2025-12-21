@@ -2920,8 +2920,6 @@ void J3DAPI sithPlayerActions_QuickTurnLeft(SithThing* pThing)
 
 void J3DAPI sithPlayerActions_QuickTurnRight(SithThing* pThing)
 {
-    ;
-
     if ( !pThing )
     {
         SITHLOG_ERROR("Bad thing pointer to QuickTurnRight()");
