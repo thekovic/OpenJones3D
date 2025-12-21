@@ -14,11 +14,6 @@ J3D_EXTERN_C_START
 #define JONESDISPLAY_CFG_GRAPHICS_DUALMONITOR      "graphics.dualMonitor"
 #define JONESDISPLAY_CFG_GRAPHICS_BUFFERING        "graphics.buffering"
 #define JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER     "graphics.mipmapFilter"
-#define JONESDISPLAY_CFG_GRAPHICS_FOG              "graphics.fog"
-#define JONESDISPLAY_CFG_GRAPHICS_FOGDENSITY       "graphics.fogDensity"
-#define JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE     "graphics.geometryMode"
-#define JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE     "graphics.lightingMode"
-#define JONESDISPLAY_CFG_GRAPHICS_HIPOLY           "graphics.hipoly"
 #define JONESDISPLAY_CFG_GRAPHICS_DISPLAY          "graphics.display"
 #define JONESDISPLAY_CFG_GRAPHICS_DEVICE           "graphics.device"
 #define JONESDISPLAY_CFG_GRAPHICS_WIDTH            "graphics.width"
@@ -27,6 +22,11 @@ J3D_EXTERN_C_START
 #define JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE      "graphics.refreshRate"
 #define JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL "graphics.performanceLevel"
 
+#define JONESDISPLAY_CFG_ENGINE_RENDER_HIPOLY                  "engine.renderer.hipoly"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_GEOMETRYMODE            "engine.renderer.geometry"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE            "engine.renderer.lighting"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_FOGENABLED              "engine.renderer.fog.enabled"
+#define JONESDISPLAY_CFG_ENGINE_RENDER_FOGDENSITY              "engine.renderer.fog.density"
 // Returns 0 for success and 1 indicating error
 int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings);
 void JonesDisplay_Shutdown(void);

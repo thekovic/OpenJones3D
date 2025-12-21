@@ -2650,8 +2650,8 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->displaySettings.bBuffering   = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_BUFFERING, false);
     pConfig->displaySettings.filter       = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, STD3D_MIPMAPFILTER_TRILINEAR); // Altered: Set trilinear as default (OG bilinear)
 
-    pConfig->displaySettings.bFog       = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_FOG, true);
-    pConfig->displaySettings.fogDensity = stdConfig_GetFloat(JONESDISPLAY_CFG_GRAPHICS_FOGDENSITY, 1.0f);
+    pConfig->displaySettings.bFog       = stdConfig_GetBool(JONESDISPLAY_CFG_ENGINE_RENDER_FOGENABLED, true);
+    pConfig->displaySettings.fogDensity = stdConfig_GetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_FOGDENSITY, 1.0f);
     std3D_EnableFog(pConfig->displaySettings.bFog, pConfig->displaySettings.fogDensity);
 
     sithRender_g_fogDensity = pConfig->displaySettings.fogDensity * 100.0f;
@@ -2664,10 +2664,10 @@ void J3DAPI JonesMain_LoadSettings(StdDisplayEnvironment* pDisplayEnv, JonesStat
     pConfig->logLevel   = stdConfig_GetInt(JONESCONFIG_CFG_LOG_LEVEL, JONES_LOGLEVEL_NORMAL);
     pConfig->performanceLevel = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, 4);
 
-    pConfig->displaySettings.geoMode   = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE, RD_GEOMETRY_FULL);
-    pConfig->displaySettings.lightMode = stdConfig_GetInt(JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE, RD_LIGHTING_GOURAUD);
+    pConfig->displaySettings.geoMode   = stdConfig_GetInt(JONESDISPLAY_CFG_ENGINE_RENDER_GEOMETRYMODE, RD_GEOMETRY_FULL);
+    pConfig->displaySettings.lightMode = stdConfig_GetInt(JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE, RD_LIGHTING_GOURAUD);
 
-    int bHiPoly = stdConfig_GetBool(JONESDISPLAY_CFG_GRAPHICS_HIPOLY, true); // Changed: Enable by default, was disabled
+    int bHiPoly = stdConfig_GetBool(JONESDISPLAY_CFG_ENGINE_RENDER_HIPOLY, true); // Changed: Enable by default, was disabled
     sithModel_EnableHiPoly(bHiPoly); // Added
 
     JonesMain_pStartupDisplayEnv = pDisplayEnv;
@@ -3112,7 +3112,7 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_BPP, JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].rasterInfo.colorInfo.bpp);
             stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_REFRESHRATE, JonesMain_pStartupDisplayEnv->aDisplayInfos[pState->displaySettings.displayDeviceNum].aModes[pState->displaySettings.videoModeNum].refreshRate);
             stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, pState->displaySettings.filter);
-            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_HIPOLY, sithModel_IsHiPolyEnabled()); // Added
+            stdConfig_SetBool(JONESDISPLAY_CFG_ENGINE_RENDER_HIPOLY, sithModel_IsHiPolyEnabled()); // Added
 
             stdConfig_SetString(JONESCONFIG_CFG_GAMEPLAY_STARTLEVEL, pState->aCurLevelFilename);
 
@@ -3129,8 +3129,8 @@ void J3DAPI JonesMain_DevDialogHandleCommand(HWND hWnd, int controlId, LPARAM lP
             stdConfig_SetString(SITH_CFG_INSTALLPATH, pState->aInstallPath); // Changed: Changed setting key from 'User Path' to 'Install Path'
             stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_PERFORMANCELEVEL, pState->performanceLevel);
 
-            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE, pState->displaySettings.geoMode);
-            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE, pState->displaySettings.lightMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_ENGINE_RENDER_GEOMETRYMODE, pState->displaySettings.geoMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE, pState->displaySettings.lightMode);
 
             EndDialog(hWnd, controlId); // Close dialog
         }

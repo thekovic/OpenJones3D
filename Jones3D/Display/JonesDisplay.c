@@ -150,6 +150,7 @@ int J3DAPI JonesDisplay_Startup(JonesDisplaySettings* pSettings)
     }
 
     rdSetGeometryMode(pSettings->geoMode);
+
     if ( sithWorld_g_pCurrentWorld )
     {
         sithWorld_g_pCurrentWorld->state |= SITH_WORLD_STATE_UPDATE_FOG;
@@ -233,6 +234,7 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
             videoMode.rasterInfo.colorInfo.bpp       = 16;  // TODO: make it 24/32 BPP
             videoMode.refreshRate                    = 60;  // Added
             videoMode.rasterInfo.colorInfo.colorMode = STDCOLOR_RGB;
+
             pDisplaySettings->videoModeNum = JonesMain_FindClosestVideoMode(pEnv, &videoMode, pDisplaySettings->displayDeviceNum);
 
             videoMode = pInfo->aModes[pDisplaySettings->videoModeNum];
@@ -249,8 +251,8 @@ void J3DAPI JonesDisplay_SetDefaultVideoMode(const StdDisplayEnvironment* pEnv, 
             stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_MIPMAPFILTER, pDisplaySettings->filter);
             stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_WINDOW, pDisplaySettings->bWindowMode);
             stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_DUALMONITOR, pDisplaySettings->bDualMonitor);
-            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_GEOMETRYMODE, pDisplaySettings->geoMode);
-            stdConfig_SetInt(JONESDISPLAY_CFG_GRAPHICS_LIGHTINGMODE, pDisplaySettings->lightMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_ENGINE_RENDER_GEOMETRYMODE, pDisplaySettings->geoMode);
+            stdConfig_SetInt(JONESDISPLAY_CFG_ENGINE_RENDER_LIGHTINGMODE, pDisplaySettings->lightMode);
         }
         else
         {

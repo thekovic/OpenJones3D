@@ -7598,9 +7598,9 @@ void J3DAPI jonesConfig_DisplaySettings_HandleWM_COMMAND(HWND hWnd, int ctrlID, 
                 // Set new fog config
 
                 float fogDensity = sithRender_g_fogDensity / 100.0f;
-                stdConfig_SetFloat(JONESDISPLAY_CFG_GRAPHICS_FOGDENSITY, fogDensity);
+                stdConfig_SetFloat(JONESDISPLAY_CFG_ENGINE_RENDER_FOGDENSITY, fogDensity);
 
-                stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_FOG, pSettings->bFog);
+                stdConfig_SetBool(JONESDISPLAY_CFG_ENGINE_RENDER_FOGENABLED, pSettings->bFog);
                 std3D_EnableFog(pSettings->bFog, sithRender_g_fogDensity);
 
                 if ( sithWorld_g_pCurrentWorld )
@@ -8148,7 +8148,7 @@ void J3DAPI jonesConfig_AdvanceDisplaySettings_HandleWM_COMMAND(HWND hDlg, int c
 
             int bHiPoly = IsDlgButtonChecked(hDlg, 1052);
             sithModel_EnableHiPoly(bHiPoly);
-            stdConfig_SetBool(JONESDISPLAY_CFG_GRAPHICS_HIPOLY, bHiPoly);
+            stdConfig_SetBool(JONESDISPLAY_CFG_ENGINE_RENDER_HIPOLY, bHiPoly);
 
             if ( (bHiPoly != 0) != (bCurBHiPoly != 0) )
             {
