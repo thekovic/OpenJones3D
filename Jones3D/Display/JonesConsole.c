@@ -65,8 +65,8 @@ void J3DAPI JonesConsole_EnableDevMode(bool bEnable); // Added
 int J3DAPI JonesConsole_DevMode(const SithConsoleCommand* pFunc, const char* pArg); // Added
 int J3DAPI JonesConsole_InEditor(const SithConsoleCommand* pFunc, const char* pArg); // Added
 int J3DAPI JonesConsole_Money(const SithConsoleCommand* pFunc, const char* pArg); // Added
-int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* pArg); // Added
-int J3DAPI JonesConsole_Indicator(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI JonesConsole_Menu(const SithConsoleCommand* pFunc, const char* pArg); // Added
+int J3DAPI JonesConsole_Hud(const SithConsoleCommand* pFunc, const char* pArg); // Added
 
 void JonesConsole_InstallHooks(void)
 {
@@ -158,8 +158,8 @@ int JonesConsole_Open(void)
     sithConsole_RegisterCommand(JonesConsole_DevMode, "devmode", 0);  // Added
     sithConsole_RegisterCommand(JonesConsole_InEditor, "ineditor", SITHCONSOLE_DEVMODE); // Added
     sithConsole_RegisterCommand(JonesConsole_Money, "money", SITHCONSOLE_DEVMODE);       // Added
-    sithConsole_RegisterCommand(JonesConsole_Interface, "menu", SITHCONSOLE_DEVMODE);    // Added
-    sithConsole_RegisterCommand(JonesConsole_Indicator, "hud", SITHCONSOLE_DEVMODE);     // Added
+    sithConsole_RegisterCommand(JonesConsole_Menu, "menu", SITHCONSOLE_DEVMODE);    // Added
+    sithConsole_RegisterCommand(JonesConsole_Hud, "hud", SITHCONSOLE_DEVMODE);     // Added
 
     // Added
     if ( (sithMain_g_sith_mode.debugModeFlags & SITHDEBUG_INEDITOR) != 0 )
@@ -615,13 +615,13 @@ int J3DAPI JonesConsole_Money(const SithConsoleCommand* pFunc, const char* pArg)
     return 1;
 }
 
-int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* pArg)
+int J3DAPI JonesConsole_Menu(const SithConsoleCommand* pFunc, const char* pArg)
 {
     J3D_UNUSED(pFunc);
 
     if ( !pArg )
     {
-        SITHCONSOLE_PRINTF("interface %s", JonesHud_IsMenuEnabled() ? "on" : "off");
+        SITHCONSOLE_PRINTF("menu %s", JonesHud_IsMenuEnabled() ? "on" : "off");
         return 0;
     }
 
@@ -636,13 +636,13 @@ int J3DAPI JonesConsole_Interface(const SithConsoleCommand* pFunc, const char* p
     return 1;
 }
 
-int J3DAPI JonesConsole_Indicator(const SithConsoleCommand* pFunc, const char* pArg)
+int J3DAPI JonesConsole_Hud(const SithConsoleCommand* pFunc, const char* pArg)
 {
     J3D_UNUSED(pFunc);
 
     if ( !pArg )
     {
-        SITHCONSOLE_PRINTF("indicator %s", jonesCog_g_bShowHealthHUD ? "on" : "off");
+        SITHCONSOLE_PRINTF("hud %s", jonesCog_g_bShowHealthHUD ? "on" : "off");
         return 0;
     }
 
