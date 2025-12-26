@@ -1047,9 +1047,9 @@ void JonesHud_ToggleMenu(void)
     }
     else if ( JonesHud_bMenuEnabled )
     {
-        if ( (JonesHud_hudState & 1) != 0 ) // If menu already opened then close it
+        if ( (JonesHud_hudState & 0x01) != 0 ) // If menu already opened then close it
         {
-            if ( (JonesHud_hudState & 4) == 0 && (JonesHud_hudState & 8) == 0 && (JonesHud_hudState & 1) != 0 )
+            if ( (JonesHud_hudState & 0x04) == 0 && (JonesHud_hudState & 0x08) == 0 && (JonesHud_hudState & 0x01) != 0 )
             {
                 jonesCog_g_bMenuVisible = 0;
                 JonesHud_MenuClose();
@@ -1612,7 +1612,8 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
             JonesHud_curEnduranceState    = -1.0f;
         }
 
-        if ( JonesHud_curEnduranceState == enduranceState )
+        bool bFade = JonesHud_curEnduranceState == enduranceState && (JonesHud_hudState & 0x01) == 0; // Altered: Add check for menu not opened
+        if ( bFade )
         {
             if ( JonesHud_curEnduranceIndAlpha > JonesHud_enduranceIndFade
                 && JonesHud_curEnduranceState == enduranceState
@@ -1633,7 +1634,7 @@ void J3DAPI JonesHud_RenderEnduranceIndicator(float enduranceState)
 
         // Draw indicator bar
         JonesHud_curEnduranceState = enduranceState;
-        JonesHud_DrawEnduranceIndicator(enduranceState, JonesHud_curEnduranceIndAlpha * 0.7f); // Altered: Reduced opacity by 30% to not overlap visually with overlay texture
+        JonesHud_DrawEnduranceIndicator(enduranceState, JonesHud_curEnduranceIndAlpha * (JonesHud_curEnduranceIndAlpha == JonesHud_enduranceIndFade ? 0.7f : 1.0f)); // Altered: Reduced opacity by 30% to not overlap visually with overlay texture
 
         rdVector4 color = JonesHud_colorWhite;
         color.alpha     = JonesHud_curEnduranceIndAlpha;
@@ -1687,7 +1688,7 @@ void J3DAPI JonesHud_DrawEnduranceIndicator(float state, float alpha)
 
     float angle = (float)progress * 0.01f * 360.0f;
     rdVector4 maskColor = JonesHud_colorBlack;
-    maskColor.alpha = alpha;
+    maskColor.alpha     = alpha;
 
     JonesHud_enduranceIndBarPos.z = RD_FIXEDPOINT_RHW_SCALE_X2; // this will make to draw_icon above base color (yellow, blue, pink)
     JonesHud_enduranceIndBarPos.w = RD_FIXEDPOINT_RHW_SCALE_X2;
@@ -2902,8 +2903,8 @@ void J3DAPI JonesHud_UpdateItem(JonesHudMenuItem* pItem)
 
                     case 0x80:
                         pItem->flags &= ~0x80;
-                        pItem->flags |= 2u;
-                        if ( (JonesHud_hudState & 4) == 0
+                        pItem->flags |= 0x02u;
+                        if ( (JonesHud_hudState & 0x04) == 0
                             && pItem->nextRightItemId != -1
                             && JonesHud_apMenuItems[pItem->nextRightItemId]
                             && JonesHud_apMenuItems[pItem->nextRightItemId]->id != JonesHud_rootMenuItemId )
