@@ -205,9 +205,10 @@ static float JonesHud_healthIndPosY       = 0.942857142f;
 static float JonesHud_healthIndFade       = J3D_QOL_VALUE(0.65f, 0.2f);
 static int JonesHud_msecHealthIndFadeTime = 3000;
 
-static rdVector4 JonesHud_healthIndColorFull = { 0.14f, 0.69f, 0.0f, 0.0f };
-static rdVector4 JonesHud_healthIndColorMed  = { 1.0f , 0.76999998f, 0.0f, 0.0f };
-static rdVector4 JonesHud_healthIndColorLow  = { 0.82999998f , 0.055f , 0.0f , 0.0f };
+static rdVector4 JonesHud_healthIndColorFull     = { 0.20f, 0.78f, 0.30f, 0.0f };
+static rdVector4 JonesHud_healthIndColorMedium   = { 0.85f, 0.85f, 0.3f, 0.0f };
+static rdVector4 JonesHud_healthIndColorLow      = { 0.69f , 0.07f , 0.15f , 0.0f };
+static rdVector4 JonesHud_healthIndColorCritical = { 0.15f , 0.15f , 0.15f , 0.0f };
 
 // Health indicator materials
 static rdMaterial* JonesHud_pHealthIndBaseMat                 = NULL;
@@ -237,9 +238,9 @@ static float JonesHud_enduranceIndPosY   = J3D_QOL_VALUE(0.95f, 0.942857142f);
 static float JonesHud_enduranceIndFade   = J3D_QOL_VALUE(0.70f, 0.2f);
 static int JonesHud_msecEnduranceIndTime = 3000;
 
-static rdVector4 JonesHud_enduranceIndColorOxygen    = { 0.40000001f ,  0.69999999f , 0.89999998f ,  0.0f };
-static rdVector4 JonesHud_enduranceIndColorRaft      = { 1.0f , 0.76999998f, 0.0f, 0.0f };
-static rdVector4 JonesHud_enduranceIndColorIMPEnergy = { 1.0f , 0.0f , 1.0f, 0.0f };
+static rdVector4 JonesHud_enduranceIndColorOxygen    = { 0.40000001f, 0.69999999f, 0.89999998f,  0.0f };
+static rdVector4 JonesHud_enduranceIndColorRaft      = { 0.95f , 0.5f, 0.2f, 0.0f };
+static rdVector4 JonesHud_enduranceIndColorIMPEnergy = { 0.678f, 0.325f, 0.678f, 0.0f };
 
 // Endurance indicator materials
 static rdMaterial* JonesHud_pEnduranceIndOverlayMat      = NULL;
@@ -693,12 +694,12 @@ int JonesHud_Open(void)
     }
     JonesHud_StdColorToRdVector4(colorFull, &JonesHud_healthIndColorFull);
 
-    tStdColor colorMed = stdConfig_GetColor(JONESHUD_CFG_HEALTH_IND_COLOR_MED, JonesHud_RdVector4ToStdColor(&JonesHud_healthIndColorMed));
+    tStdColor colorMed = stdConfig_GetColor(JONESHUD_CFG_HEALTH_IND_COLOR_MED, JonesHud_RdVector4ToStdColor(&JonesHud_healthIndColorMedium));
     if ( !stdConfig_Contains(JONESHUD_CFG_HEALTH_IND_COLOR_MED) )
     {
         stdConfig_SetColorRGB(JONESHUD_CFG_HEALTH_IND_COLOR_MED, colorMed);
     }
-    JonesHud_StdColorToRdVector4(colorMed, &JonesHud_healthIndColorMed);
+    JonesHud_StdColorToRdVector4(colorMed, &JonesHud_healthIndColorMedium);
 
     tStdColor colorLow = stdConfig_GetColor(JONESHUD_CFG_HEALTH_IND_COLOR_LOW, JonesHud_RdVector4ToStdColor(&JonesHud_healthIndColorLow));
     if ( !stdConfig_Contains(JONESHUD_CFG_HEALTH_IND_COLOR_LOW) )
@@ -706,6 +707,13 @@ int JonesHud_Open(void)
         stdConfig_SetColorRGB(JONESHUD_CFG_HEALTH_IND_COLOR_LOW, colorLow);
     }
     JonesHud_StdColorToRdVector4(colorLow, &JonesHud_healthIndColorLow);
+
+    tStdColor colorCritical = stdConfig_GetColor(JONESHUD_CFG_HEALTH_IND_COLOR_CRITICAL, JonesHud_RdVector4ToStdColor(&JonesHud_healthIndColorCritical));
+    if ( !stdConfig_Contains(JONESHUD_CFG_HEALTH_IND_COLOR_CRITICAL) )
+    {
+        stdConfig_SetColorRGB(JONESHUD_CFG_HEALTH_IND_COLOR_CRITICAL, colorCritical);
+    }
+    JonesHud_StdColorToRdVector4(colorCritical, &JonesHud_healthIndColorCritical);
 
     //
     // Endurance indicator config
@@ -1390,7 +1398,18 @@ void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height)
 
     float aspectScale   =  JonesHud_heightAspectRatioScale;
     float healthIndSize = (aspectScale * JonesHud_healthIndSize); // Altered: OG: 60.0f
-    JonesHud_healthIndRect.x      = ((RD_REF_WIDTH - JonesHud_healthIndSize) * JonesHud_healthIndPosX) * aspectScale;  // Altered: OG: JonesHud_widthAspectRatioScale * 24.0f;
+
+    if ( JonesHud_healthIndPosX <= 1.0f )
+    {
+        // Fixed anchored position to left
+        JonesHud_healthIndRect.x = ((RD_REF_WIDTH - JonesHud_healthIndSize) * JonesHud_healthIndPosX) * aspectScale;  // Altered: OG: JonesHud_widthAspectRatioScale * 24.0f;
+    }
+    else
+    {
+        // Relative position to screen width
+        JonesHud_healthIndRect.x = ((float)width - healthIndSize) * (JonesHud_healthIndPosX - 1.0f); // Altered: OG: JonesHud_widthAspectRatioScale * 24.0f;
+    }
+
     JonesHud_healthIndRect.y      = ((RD_REF_HEIGHT - JonesHud_healthIndSize) * JonesHud_healthIndPosY) * aspectScale; // Altered: OG: (float)height - JonesHud_healthIndRect.x - JonesHud_heightAspectRatioScale * 60.0f;
     JonesHud_healthIndRect.width  = healthIndSize; // Altered: OG: JonesHud_widthAspectRatioScale * 60.0
     JonesHud_healthIndRect.height = healthIndSize; // Altered: OG: JonesHud_heightAspectRatioScale * 60.0
@@ -1401,7 +1420,17 @@ void J3DAPI JonesHud_UpdateHUDLayout(uint32_t width, uint32_t height)
     JonesHud_healthIndBarPos.w = 0.0f;
 
     float enduranceInd = (aspectScale * JonesHud_enduranceIndSize);
-    JonesHud_enduranceRect.x      = ((RD_REF_WIDTH - JonesHud_enduranceIndSize) * JonesHud_enduranceIndPosX) * aspectScale;  // Altered: OG: (float)width - JonesHud_healthIndRect.x - JonesHud_healthIndRect.width;
+    if ( JonesHud_enduranceIndPosX <= 1.0f )
+    {
+        // Fixed anchored position to left
+        JonesHud_enduranceRect.x = ((RD_REF_WIDTH - JonesHud_enduranceIndSize) * JonesHud_enduranceIndPosX) * aspectScale;  // Altered: OG: JonesHud_healthIndRect.x + JonesHud_healthIndRect.width + JonesHud_widthAspectRatioScale * 8.0f;
+    }
+    else
+    {
+        // Relative position to screen width
+        JonesHud_enduranceRect.x = ((float)width - enduranceInd) * (JonesHud_enduranceIndPosX - 1.0f); // Altered: OG: JonesHud_healthIndRect.x + JonesHud_healthIndRect.width + JonesHud_widthAspectRatioScale * 8.0f;
+    }
+
     JonesHud_enduranceRect.y      = ((RD_REF_HEIGHT - JonesHud_enduranceIndSize) * JonesHud_enduranceIndPosY) * aspectScale; // Altered: OG: JonesHud_healthIndRect.y 
     JonesHud_enduranceRect.width  = enduranceInd; // Altered: OG: JonesHud_healthIndRect.width 
     JonesHud_enduranceRect.height = enduranceInd; // Altered: OG: JonesHud_healthIndRect.height
@@ -1705,17 +1734,16 @@ void J3DAPI JonesHud_DrawEnduranceIndicator(float state, float alpha)
     rdVector4 indColor = { 0 };
     if ( (sithPlayer_g_pLocalPlayerThing->moveInfo.physics.flags & SITH_PF_RAFT) != 0 )
     {
-        indColor = JonesHud_colorYellow;
+        indColor = JonesHud_enduranceIndColorRaft;
     }
     else if ( sithPlayer_g_pLocalPlayerThing->pInSector
         && (sithPlayer_g_pLocalPlayerThing->pInSector->flags & SITH_SECTOR_UNDERWATER) != 0 )
     {
-        indColor = JonesHud_skyBlue;
+        indColor = JonesHud_enduranceIndColorOxygen;
     }
     else if ( JonesHud_bIMPState )
     {
-        // IM parts bar color
-        indColor = JonesHud_colorPink;
+        indColor = JonesHud_enduranceIndColorIMPEnergy;
     }
 
     indColor.alpha = alpha;
@@ -1904,7 +1932,7 @@ void J3DAPI JonesHud_RenderHealthIndicatorHit(float healthState)
 
         float health = sithPlayer_g_pLocalPlayerThing->thingInfo.actorInfo.health;
         if ( JonesHud_pCurInvChangedItem && JonesHud_pCurInvChangedItem->pos.x <= -0.13f
-            || (JonesHud_hudState & 1) != 0
+            || (JonesHud_hudState & 0x01) != 0
             || health == 0.0f
             || JonesHud_curHealth != health )
         {
@@ -1936,32 +1964,23 @@ void J3DAPI JonesHud_DrawHealthIndicatorBase(float state, float alpha, float z, 
 
     rect.x = JonesHud_healthIndRect.x;
     rect.y = JonesHud_healthIndRect.y;
-    rect.width = JonesHud_healthIndRect.width;
+    rect.width  = JonesHud_healthIndRect.width;
     rect.height = JonesHud_healthIndRect.height;
 
     if ( state >= 100.01f )
     {
         if ( state >= 200.01f )
         {
-            color.red   = JonesHud_colorGreen.red;
-            color.green = JonesHud_colorGreen.green;
-            color.blue  = JonesHud_colorGreen.blue;
-            color.alpha = JonesHud_colorGreen.alpha;
+            color =  JonesHud_healthIndColorFull;
         }
         else
         {
-            color.red   = JonesHud_colorYellow.red;
-            color.green = JonesHud_colorYellow.green;
-            color.blue  = JonesHud_colorYellow.blue;
-            color.alpha = JonesHud_colorYellow.alpha;
+            color = JonesHud_healthIndColorMedium;
         }
     }
     else
     {
-        color.red   = JonesHud_colorRed.red;
-        color.green = JonesHud_colorRed.green;
-        color.blue  = JonesHud_colorRed.blue;
-        color.alpha = JonesHud_colorRed.alpha;
+        color = JonesHud_healthIndColorLow;
     }
 
     color.alpha = alpha;
@@ -1986,25 +2005,16 @@ void J3DAPI JonesHud_DrawHealthIndicatorBar(float health, float alpha, float z, 
         {
             if ( health >= 200.01f )
             {
-                color.red   = JonesHud_colorYellow.red;
-                color.green = JonesHud_colorYellow.green;
-                color.blue  = JonesHud_colorYellow.blue;
-                color.alpha = JonesHud_colorYellow.alpha;
+                color =  JonesHud_healthIndColorMedium;
             }
             else
             {
-                color.red   = JonesHud_colorRed.red;
-                color.green = JonesHud_colorRed.green;
-                color.blue  = JonesHud_colorRed.blue;
-                color.alpha = JonesHud_colorRed.alpha;
+                color = JonesHud_healthIndColorLow;
             }
         }
         else
         {
-            color.red   = JonesHud_colorBlack.red;
-            color.green = JonesHud_colorBlack.green;
-            color.blue  = JonesHud_colorBlack.blue;
-            color.alpha = JonesHud_colorBlack.alpha;
+            color = JonesHud_healthIndColorCritical;
         }
 
         JonesHud_healthIndBarPos.z = z;

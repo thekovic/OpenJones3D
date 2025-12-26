@@ -43,8 +43,9 @@ J3D_EXTERN_C_START
 #define JONESHUD_CFG_HEALTH_IND_HIT_OVERLAY_MAT         "ui.hud.indicators.health.textures.overlayHit"
 #define JONESHUD_CFG_HEALTH_IND_POISONED_OVERLAY_MAT    "ui.hud.indicators.health.textures.overlayPoisoned"
 #define JONESHUD_CFG_HEALTH_IND_COLOR_FULL              "ui.hud.indicators.health.colors.full"
-#define JONESHUD_CFG_HEALTH_IND_COLOR_MED               "ui.hud.indicators.health.colors.med"
+#define JONESHUD_CFG_HEALTH_IND_COLOR_MED               "ui.hud.indicators.health.colors.medium"
 #define JONESHUD_CFG_HEALTH_IND_COLOR_LOW               "ui.hud.indicators.health.colors.low"
+#define JONESHUD_CFG_HEALTH_IND_COLOR_CRITICAL          "ui.hud.indicators.health.colors.critical"
 
 #define JONESHUD_CFG_ENDURANCE_IND_SIZE                 "ui.hud.indicators.endurance.size"
 #define JONESHUD_CFG_ENDURANCE_IND_POS_X                "ui.hud.indicators.endurance.posX"
