@@ -625,6 +625,11 @@ void J3DAPI sithFX_CreateRaftWakeFX(SithThing* pThing)
         ripplePos.x = (SITH_RANDF() - 0.5f) * 0.03f;
         ripplePos.y = (SITH_RANDF() - 0.5f) * 0.03f;
 
+        // Move position slightly forward based on movement direction
+        rdVector3 moveNorm;
+        rdVector_Normalize3(&moveNorm, &pThing->moveInfo.physics.velocity);
+        rdVector_MultAcc3(&ripplePos, &moveNorm, 0.0423);
+
         // Transform to water surface
         sithFX_TransformPointToAttachSurface(&ripplePos, pThing);
 
@@ -651,10 +656,8 @@ void J3DAPI sithFX_CreateRaftWakeFX(SithThing* pThing)
         {
             // Adjust size based on the raft orient and movement direction
             // i.e.: side raft movement should make larger wakes
-            rdVector3 moveNorm;
-            rdVector_Normalize3(&moveNorm, &pThing->moveInfo.physics.velocity);
             float moveDot = rdVector_Dot3(&pThing->orient.lvec, &moveNorm);
-            size = J3DMIN(size * 1.f / fabsf(moveDot), size * 1.4f);
+            size = J3DMIN(size * 2.0f / fabsf(moveDot), size * 2.9f);
 
             pRipple->renderData.data.pSprite3 = sithFX_pWakeRippleSprite;
         }
