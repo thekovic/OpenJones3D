@@ -199,7 +199,7 @@ int J3DAPI sithMaterial_ReadMaterialsListText(SithWorld* pWorld, int bSkip)
         STDFREE(pWorld->apMatArray);
     }
 
-    pWorld->apMatArray = (rdMaterial**)STDMALLOC(sizeof(pWorld->apMatArray) * numMaterials);
+    pWorld->apMatArray = (rdMaterial**)STDMALLOC(sizeof(pWorld->apMatArray) * pWorld->sizeMaterials); // Altered: Use pWorld->sizeMaterials instead of numMaterials to allocate apMatArray
     if ( !pWorld->apMatArray )
     {
         // TODO: Maybe add alloc error log
@@ -403,6 +403,12 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
     tVBuffer** apBuffers       = NULL;
     tRasterInfo rasterInfo     = { 0 };
 
+    size_t numMaterials = pWorld->numMaterials; // Note, must be cached because alloc function resets it to 0
+    if ( sithMaterial_AllocWorldMaterials(pWorld, pWorld->sizeMaterials) )
+    {
+        goto error;
+    }
+
     // Free existing mat pointer array
     if ( pWorld->apMatArray )
     {
@@ -410,15 +416,10 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
     }
 
     // Allocate mat pointer array and world material array
-
+    // Altered: Moved after call to sithMaterial_AllocWorldMaterials as it can alter the sizeMaterials value,
+    //          and to match with the allocation in sithMaterial_ReadMaterialsListText.
     pWorld->apMatArray = (rdMaterial**)STDMALLOC(sizeof(pWorld->apMatArray) * pWorld->sizeMaterials);
     if ( !pWorld->apMatArray )
-    {
-        return 1;
-    }
-
-    size_t numMaterials = pWorld->numMaterials; // Note, must be cached because alloc function resets it to 0
-    if ( sithMaterial_AllocWorldMaterials(pWorld, pWorld->sizeMaterials) )
     {
         goto error;
     }
@@ -463,7 +464,7 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
 
     // Now construct materials form mat infos and pixeldata
 
-    size_t worldMatIdx = 0;
+    size_t curWorldMatIdx = 0;
     uint8_t* pCurPixelBuffer = aPixelBuffers;
 
     for ( size_t matNum = 0; matNum < numMaterials; matNum++ )
@@ -495,6 +496,7 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
                     size_t texSize   = sithMaterial_GetCndMaterialPixelDataSize(pCurInfo);
                     pCurPixelBuffer += texSize; // Increase cur pixeldata pos
                     pWorld->apMatArray[matNum] = pMat;
+                    curWorldMatIdx++;
                     continue;
                 }
             }
@@ -502,7 +504,8 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
 
         // Material not loaded in the system yet, load it from pixeldata buffer
 
-        pMat = &pWorld->aMaterials[worldMatIdx++];
+        SITH_ASSERT(curWorldMatIdx == pWorld->numMaterials);
+        pMat = &pWorld->aMaterials[curWorldMatIdx++]; // TODO: curWorldMatIdx would probably be replaced by pWorld->numMaterials
         pWorld->apMatArray[matNum] = pMat;
 
         STD_STRCPY(pMat->aName, pCurInfo->aName);
@@ -563,14 +566,14 @@ int J3DAPI sithMaterial_ReadMaterialsListBinary(tFileHandle fh, SithWorld* pWorl
         {
             for ( size_t j = 0; j < pCurInfo->numMipLevels; ++j )
             {
-                memcpy(&apBuffers[j]->rasterInfo.colorInfo, &rasterInfo.colorInfo, sizeof(apBuffers[j]->rasterInfo.colorInfo));
+                STD_COPYMEM(&apBuffers[j]->rasterInfo.colorInfo, &rasterInfo.colorInfo, sizeof(apBuffers[j]->rasterInfo.colorInfo));
 
                 // Fixed: Update row size and size before calling to match the new color info
                 apBuffers[j]->rasterInfo.rowSize = (apBuffers[j]->rasterInfo.colorInfo.bpp / 8) * apBuffers[j]->rasterInfo.width;
                 apBuffers[j]->rasterInfo.size    = apBuffers[j]->rasterInfo.rowSize * apBuffers[j]->rasterInfo.height;
 
                 stdDisplay_VBufferLock(apBuffers[j]);
-                memcpy(apBuffers[j]->pPixels, pCurPixelBuffer, apBuffers[j]->rasterInfo.size);
+                STD_COPYMEM(apBuffers[j]->pPixels, pCurPixelBuffer, apBuffers[j]->rasterInfo.size);
                 stdDisplay_VBufferUnlock(apBuffers[j]);
 
                 // Now convert pixeldata to desired color format
