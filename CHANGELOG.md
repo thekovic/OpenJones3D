@@ -5,7 +5,7 @@
     * Added DirectInput8 port for `stdControl` module (a465622)
     * Added DirectSound8 port for `sound` module (9fde6dc)
     * Abstracted `stdComm` (a465622)
-  - Refactored & Added new rdVector functions: (5239a55, 68dc8b7, f1ed7a9, b23651f, a74d948, bff6f47)
+  - Refactored & Added new rdVector functions: (5239a55, 68dc8b7, f1ed7a9, b23651f, a74d948, bff6f47, 6aab22c)
     * `rdVector_IsZero2`, `rdVector_IsZero3`, `rdVector_IsZero4`
     * `rdVector_ScaleAdd2Acc`, `rdVector_ScaleAdd3Acc`, `rdVector_ScaleAdd4Acc`
     * `rdVector_MultAcc2`, `rdVector_MultAcc3`, `rdVector_MultAcc4` 
@@ -14,6 +14,7 @@
     * `rdVector_Equal2`, `rdVector_Equal3`, `rdVector_Equal4`,
     * `rdVector_SmoothDamp2`, `rdVector_SmoothDamp3`, `rdVector_SmoothDamp4`
     * `rdVector_SmoothDamp2Acc`, `rdVector_SmoothDamp3Acc`, `rdVector_SmoothDamp4Acc`
+    * `rdVector_IsNAN2`, `rdVector_IsNAN3`, `rdVector_IsNAN4`
   - Added dead code found in debug version (b042bea)
   - Added new macro `RDVECTOR_NEG3` (e78e93b)
   - Fixed names of thing move animation functions in `sithAnimate` module (db77fe8)
@@ -26,6 +27,7 @@
     * `sithPlayerActions` (67f2eab)
     * `sithVehicleControls` (63685d3)
     * `sithPlayerControls` (d31ee9b)
+    * `sithAIMove` [incomplete] (05c806d)
   - Moved high poly option to advance display settings (7b58bff)
   - Fixed selecting stored MipMap filter mode in developer dialog (ad1633c)
   - Added new graphic options for MSAA, anisotropic texture filtering and mipmap auto gen to display settings (77df36d)
@@ -67,12 +69,17 @@
   - Changed definition of 3D vector constants to be defined in the code (a74d948)
   - Added `rdModel3` functions for bending joints with smooth damp interpolation (7f762e3)
   - Added `sithActor` head rotating function with optional delta smooth damp interpolation (6c43467)
+  - Added vehicle check function for thing object and physics info (7add165)
+  - Refactored `SithActor` & `SithThing` structs and move ai state change fields to `SithActor` (2f71a7e)
+  - Renamed `sithPuppet_StopForceMove` to `sithPuppet_FinishForceMove` (88f971a)
+  - Added new `sithPuppet` module functions `sithPuppet_SetMoveModeEx` & `sithPuppet_GetArmedMode` (4e964f7)
+  - Renamed `SithThing` field `transformedPos` -> `cameraSpacePos` (1786796)
 
 ### Engine:
   - Added check for zero size in lip sync data generation to prevent allocation errors (f79736b)
   - Added functionality to write user-mode minidump information when an unhandled exception occurs (6fc4ad5)
   - Added stack trace printing to the log when an assert error occurs (6fc4ad5)
-  - Renamed developer console commands (357c287)  
+  - Renamed developer console commands (357c287, c00c681)  
     * `interface` -> `menu`
     * `indicator` -> `hud`
   - Fixed returning correct variable in `stdControl_IsOpen` (ae3146d)
@@ -101,8 +108,69 @@
     This change reverts sound class play logic back to original,  
     and the buggy sound class files can cause sound buffer to fill up. (e.g.: in aetherium level there are some creatures with loop flag for move soundfx)
   - [QOL] Increased the sound buffer for simultaneously played sounds to 512 (e73c4fe)
+  - Added new exponential and logarithmic modes for sound falloff by distance to software mixer, complementing the existing linear mode (0c41b49)  
+    These new modes provide more realistic sound attenuation options:
+    * **Exponential**: Sharper drop-off for rapid volume reduction over distance.
+    * **Logarithmic**: Smoother transitions for gradual volume reduction.  
 
-### Display & Render:
+    The sound falloff mode can now be configured in engine config file.
+
+  - Added extra check for null parent pointer on polyline update (83d50f1)
+  - Refactored the minecart turned on/off state effects and unified them under the `sithPhysics` module (f70d670, b6f081a)  
+    This change consolidates the logic previously spread across `sithVehicleControls` and `sithPlayerControls`.
+  - Fixed orbital camera focus thing when player enters vehicle (c0becd1)
+  - Implemented animation playback speed control, allowing animations to be sped up or slowed down (8e42cfe)
+  - Improved AI actor pathfinding behavior when reaching a cliff (41a4b6e)
+  - Implemented playback speed control for puppet mode animations (0bdc507)
+  - Fixed notifying underwater thing that goal is unreachable when it hits floor surface (e3eb556)  
+    This fix prevents potential underwater thing to get stuck at the floor surface indefinitely while trying to reach its goal position.  
+    e.g.: shark in lagoon level might get stuck in sand floor surface.
+  - Fixed COG script message type in COG execution error log (5d64205)
+  - Added new water surface & position search collision function `sithCollision_FindWaterSurface` (c6b55b9)
+  - Fixed potential division by zero in `rdMatrix_BuildFromVectorAngle34` when input vector's `z` component is not correctly normalized (88700c1).  
+    Previously, incorrectly normalized `z` values could result in division by zero, producing NaN values.  
+    This resolves numerous issues where due to float type precision error the `z` value was close to +-1.0f.  
+    Most notably this fixes sprite rendering issues where rotated sprite vertices could result in NaN values,  
+    causing sprites to fail to render visually.
+  - Fixed puppet active animations are no longer removed when performing a 2m climb move in normal move mode. (1532c06)  
+    Resolves issue where active puppet animations (e.g., weapon armed) were removed after a 2m climb animation in normal move mode.
+  - Updated camera switch control function to `SITHCONTROL_CAMERAMODE` (b5da9a3)
+  - Increased renderer thing collection distance to 160m (cd3ef85)  
+    This change increases the maximum distance at which objects are collected for rendering from 80m to 160m,  
+    which fixes rendering issues where distant objects were incorrectly culled.  
+    e.g.: sun sprite in Meroe level.
+  - Added separate light collection distance (cd3ef85)  
+    This change increases the maximum distance at which dynamic lights are collected for rendering.  
+    Substantially resolves issues where distant lights would flicker at different camera angles due to being culled prematurely.
+  - Implemented new BFS algorithm for culled-sector traversal for thing and light collection (efc861e)
+    Introduced an optional BFS-based algorithm for building visible thing sector list and collecting dynamic lights.  
+    The BFS traversal improves upon the legacy order-dependent DFS-like approach and  
+    enables multi-path propagation through already visited sectors (previously limited  
+    to a single traversal path).  
+
+    When enabled, this prevents missed lights and objects, fixes traversal-order-dependent  
+    artifacts such as dynamic light flickering (e.g. in the Babylon level), and ensures  
+    consistent thing/light collection up to the configured maximum distance.  
+
+  - Fixed normalizing camera orient matrix in `sithCamera_Update` (a96f610)
+  - Fixed potential game crash when weapon fire position has NAN value (3831043)
+  - Fix missing dvec reset in thing orient matrix (a8e0432)  
+    Clears the orient matrix translation component after inversion to ensure it  
+    remains rotation-only. Prevents translation state leakage that could cause incorrect world-space  
+    transforms. Fixes rare but persistent transform errors that could propagate  
+    across frames, especially for non-rendered things.
+  - Added optional external material loading during CND parsing (c012b07)  
+    Adds support to load materials from external files or GOB resources first  
+    while parsing the materials section in CND files. This enables modding  
+    without modifying original level files and preserves the original CND  
+    material behavior when external assets are unavailable.
+  - Added optional external keyframes loading during CND parsing (c012b07)  
+    Adds support to load keyframes from external files or GOB resources first  
+    while parsing the keyframes section in CND files. This enables modding  
+    without modifying original level files and preserves the original CND  
+    keyframe behavior when external assets are unavailable.
+
+### Graphics:
   - Fixed an issue where active textures used in the current render frame were being removed from the cache prematurely in low VRAM situations (f37ecb7)
     Fixes issue [#28](https://github.com/smlu/OpenJones3D/issues/28)
   - Fixed missing alpha lerp & fixed minor bugs in `rdClip_Face3T` clip function (a8b6907)
@@ -128,14 +196,47 @@
     This was vanilla engine bug where no display device was selected resulting in game reporting no 3D cards found.
   - Fixed water ripple position to be placed slightly above water surface in `sithFX` module (fa7dbf6)  
     Originally there was a bug where water ripple was placed slightly below water surface causing ripple to be clipped.
-  - [QOL] Upgrade raft wake fx (929c21d)
+  - [QOL] Enhanced raft wake fx (929c21d, 26f277f)
   - Increased the max collection distance of things to be rendered from 8.0 (80m) to 16.0 (160m) (0bd7b35)  
     Fixes rendering glitches where objects were prematurely culled while still visible in camera view.
     e.g.: sun sprite in Meroe level.
+  - Fixed weapon fire flash FX by correcting the light range and added config options (5453817)
+  - Added new texture-tiling render option to `rdPolyline` module (c947bd9)
+  - Fixed texture tiling on rope and metal-wire polylines by hardcoding textures that need UV tiling (12419d0, abf4b32)
+    This fixes rope polyline texture issue in river level and issue with texture tiling for elevator metal wire in volcano level
+  - Added new texture-rotate render option to `rdPolyline` module (281620c)
+  - Added new red rear light attached to minecar when car is turned on (f70d670)
+  - Fixed the minecart rear light polygon effect to appear turned off when the cart is not running (f70d670, 26ef2e8)
+  - Fixed the minecart front light polygon effect to appear turned off when the cart is not running (f70d670, 26ef2e8)
+  - Fixed issue with dynamic light of static minecar (797251c, 26ef2e8)
+  - [QOL] Implemented turn movement animation playback for water surface movement (ba57877)
+  - Fixed water ripple creation on the ripple surface (18e09d5)  
+    The engine previously offset ripple positions at a fixed distance from the thing position,  
+    which could cause ripples to appear incorrectly above or below the water surface.  
+    This was particularly noticeable during actions like climbing out of water.  
+    Ripples now spawn precisely at the water surface level.
+  - Added new text rendering functions that support font size scaling (0c97fa8)
+  - Refactored and Redesigned HUD and inventory menu UI (96d430b, efc861e, ea0d1ad, f0dad58)  
+    * Adjusted HUD indicator scaling for improved visibility.
+    * Repositioned and resized the endurance indicator.
+    * Redesigned the inventory menu:
+      - Scaled down item elements for better clarity.
+      - Increased column size for improved organization.
+      - Smoothed item movement animations using smooth damp interpolation.
+      - Added ambient theme music that plays while the inventory menu is open.
+    * Exposed HUD and menu constants to a config file for customization.
+  - Fixed actor headlight position (b647d11, a589b92)  
+    The headlight offset was incorrectly transformed to world space by applying `actor.orient.dvec` in the calculation.  
+    This caused the headlight to be mispositioned when `dvec` was not zero and could cause light flickering issues.
+  - Fixed actor head light range (b647d11)  
+    The actor light min/max range were incorrectly assigned to the head light min/max range fields  
+    in the process of culled sector collection. Now the head light range is correctly set to the alpha field of it's color.
+  - Fixed actor head light not to lit when actor has invisible flag set (a589b92)  
+    This prevents actor head light from being rendered when the actor is invisible.
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
-  - [QOL] Enhanced whip-swing movement to stop animation early and make Indy fall when landing on non-solid surfaces (air) (8a2548c)
+  - [QOL] Enhanced whip-swing movement to stop animation early and make Indy fall when landing on non-solid surfaces (i.e.: mid air) (8a2548c, b4100ab)
   - [QOL] Enhanced smooth transition of idle camera to external camera (572aaec)
   - Fixed ledge detection (32acc4c)  
     This fixes detection of ledges positioned 0.2 units (2 meters) from the ground.  
@@ -153,6 +254,29 @@
     The reticle design was inspired by the N64 port of the game and The Legend of Zelda: Ocarina.
   - [QOL] Added smooth damp interpolation for twisting actors' aiming joints (301fe1f)  
     This improves the fluidity and realism of animations during auto-aiming.
+  - [QOL] Added blood splatter effect when actor is hit by a weapon thing (51ec333, 02578a2)  
+    This extends the existing blood splatter effect (originally only triggered on actor death)  
+    to spawn every time an actor is hit by a weapon.
+  - [QOL] Added sound effects for projectile impact collisions with world surfaces (51ec333)  
+    This enhances gameplay feedback by playing appropriate sounds when projectiles collide with level surfaces, such as walls or terrain.
+  - [QOL] Enhanced sound effects for projectile impact collisions with cog thing (51ec333)  
+    This adds projectile impact sound fx fpr cog things flagged as snow, earth or wood. (07cecb3, 2aaa779)
+  - Fixed an issue where the player's move status was not set to falling when a roll move ended in mid-air (ca74780)  
+    This resolves a glitch where the player could initiate unintended actions (e.g.: jump, backward move, chalk draw) after a roll, allowing slow-fall exploits.
+  - [QOL] Implemented climb move speed boost when "run by default" is enabled or the run key is pressed (9845bde, bc1fd0f)
+  - [QOL] Added underwater swim boost mechanic (af0516e)  
+    Pressing the run/boost key while underwater triggers a 3-second speed boost at the cost of endurance penalty
+  - Fixed `user0` message not being sent to the master COG on game restore from savegame when `SITHDEBUG_INEDITOR` flag is set (7896215)  
+    Previously, the engine would incorrectly send the `user0` message during savegame restoration,  
+    causing the intro cutscene to play even when the `SITHDEBUG_INEDITOR` flag was set.  
+    This fix ensures the message is suppressed in this scenario, preventing unintended cutscene playback.
+  - Fixed `fixme` console command to restore player floorstick physics flag and stop forcemove animation on game restore (00ac4c2)
+  - Players can now climb 1m and 2m thing objects or surfaces while carrying a weapon (482be1c, 4586a8c)
+  - Fixed an issue where the walk animation would incorrectly persist during jumps (b990683)
+  - Increased floor item search radius by 20% (0429f98)
+  - Prevented playing climb-pullup animation when movement could be blocked (144d684)
+  - Fixed not to play climb left/right animation when found climb surface is currently attached surface (c0b8367)
+  - [QOL] Enabled mounting climb surface while walking/running (8e1f3e3)
 
 ## v0.3.1
 ### General:
