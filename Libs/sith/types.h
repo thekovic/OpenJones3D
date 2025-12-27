@@ -1300,6 +1300,11 @@ typedef enum eSithMasterMode
     SITH_MODE_UNKNOWN_2 = 2,
 } SithMasterMode;
 
+typedef enum eSithSubModes
+{
+    SITH_SUBMODE_SYNC = 0x08
+} SithSubModes;
+
 typedef enum eSithMultiJoinStatus J3D_ENUM_TYPE(int32_t)
 {
     SITHMULTI_JOIN_OK            = 0,
