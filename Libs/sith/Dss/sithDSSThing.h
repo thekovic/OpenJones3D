@@ -3,6 +3,7 @@
 #include <j3dcore/j3d.h>
 #include <rdroid/types.h>
 #include <sith/types.h>
+#include <sith/Devices/sithComm.h>
 #include <sith/Main/sithMain.h>
 #include <sith/RTI/addresses.h>
 #include <std/types.h>
@@ -35,8 +36,8 @@ int J3DAPI sithDSSThing_Death(const SithThing* pThing, const SithThing* pKiller,
 int J3DAPI sithDSSThing_ProcessDeath(const SithMessage* pMsg);
 int J3DAPI sithDSSThing_DamageThing(const SithThing* pVictim, const SithThing* pPurpetrator, float damage, SithDamageType hitType, DPID idTo, unsigned int outstream);
 int J3DAPI sithDSSThing_ProcessDamage(const SithMessage* pMsg);
-int J3DAPI sithDSSThing_FullDescription(const SithThing* pThing, DPID idTo, unsigned int outstream);
-int J3DAPI sithDSSThing_ProcessFullDescription(const SithMessage* pMsg);
+int J3DAPI sithDSSThing_ThingFullDescription(const SithThing* pThing, DPID idTo, SithMessageStream outstream);
+int J3DAPI sithDSSThing_ProcessThingFullDescription(const SithMessage* pMsg);
 int J3DAPI sithDSSThing_PathMove(const SithThing* pThing, int16_t frame, float speed, int moveType, DPID idTO, unsigned int outstream);
 int J3DAPI sithDSSThing_ProcessPathMove(const SithMessage* pMsg);
 int J3DAPI sithDSSThing_Attachment(const SithThing* pThing, DPID idTo, unsigned int outstream, unsigned int sendFlags);

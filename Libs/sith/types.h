@@ -1529,10 +1529,10 @@ typedef struct sSithCollide
 
 struct sSithThingSwapEntry
 {
-    int entryNum;
-    int meshNum;
+    int entryNum; // serialized as uint32_t
+    int meshNum;  // serialized as int16_t
     rdModel3* pSrcModel;
-    int srcMeshNum;
+    int srcMeshNum; // serialized as int16_t
     SithThingSwapEntry* pNextEntry;
 };
 
@@ -1916,7 +1916,7 @@ typedef struct sSithWeaponInfo
     SithDamageType damageType;
     float damage;
     SithThing* pExplosionTemplate;
-    size_t numRicochets;
+    size_t numRicochets; // Important, serialized as uint16_t
     float rate;
     float minDamage;
     int unknown6;
@@ -1946,6 +1946,7 @@ static_assert(sizeof(SithParticleInfo) == 48, "sizeof(SithParticleInfo) == 48");
 
 typedef union sSithActorEndurance
 {
+    // Important: do not change types since this is serialized as 32-bit int in sithDSSThing
     tStdTime msecUnderwater;
     unsigned int raftLeakDamage;
 } SithActorEndurance;
@@ -2289,7 +2290,7 @@ typedef struct sSithPathFrame
 typedef struct sSithPathMoveInfo
 {
     size_t sizeFrames;
-    size_t numFrames;
+    size_t numFrames; // serialized as uint16_t
     SithPathFrame* aFrames;
     SithPathMoveMode mode;
     rdVector3 vecDeltaPos;
@@ -2301,10 +2302,10 @@ typedef struct sSithPathMoveInfo
     rdVector3 goalPYR;
     rdVector3 rotateToPYR;
     float rotDelta;
-    size_t numBlockedMoves;
-    int currentFrame; // can be -1
-    size_t nextFrame;
-    size_t goalFrame;
+    size_t numBlockedMoves; // serialized as uint16_t
+    int currentFrame; // can be -1, serialized as int16_t
+    size_t nextFrame; // serialized as uint16_t
+    size_t goalFrame; // serialized as uint16_t
 } SithPathMoveInfo;
 static_assert(sizeof(SithPathMoveInfo) == 144, "sizeof(SithPathMoveInfo) == 144");
 

@@ -1849,8 +1849,8 @@
 #define sithDSSThing_ProcessDeath_ADDR 0x0047C1D0
 #define sithDSSThing_DamageThing_ADDR 0x0047C2F0
 #define sithDSSThing_ProcessDamage_ADDR 0x0047C380
-#define sithDSSThing_FullDescription_ADDR 0x0047C440
-#define sithDSSThing_ProcessFullDescription_ADDR 0x0047CDD0
+#define sithDSSThing_ThingFullDescription_ADDR 0x0047C440
+#define sithDSSThing_ProcessThingFullDescription_ADDR 0x0047CDD0
 #define sithDSSThing_PathMove_ADDR 0x0047D9A0
 #define sithDSSThing_ProcessPathMove_ADDR 0x0047DAA0
 #define sithDSSThing_Attachment_ADDR 0x0047DC40

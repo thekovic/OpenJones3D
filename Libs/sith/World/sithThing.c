@@ -3288,7 +3288,7 @@ void sithThing_SyncThings(void)
 
         if ( (sithThing_aSyncFlags[i] & SITHTHING_SYNC_FULL) != 0 )
         {
-            sithDSSThing_FullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
+            sithDSSThing_ThingFullDescription(sithThing_apUnsyncedThings[i], SITHMESSAGE_SENDTOJOINEDPLAYERS, SITHMESSAGE_STREAM_ALL);
             return;
         }
 

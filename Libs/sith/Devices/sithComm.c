@@ -142,7 +142,8 @@ void sithMessage_ProcessMessages(void)
         {
             SITHLOG_ERROR("Ignored message type %d from non-active sender %x.\n", sithMulti_g_message.type, sithMessage_senderId);
 
-            if ( stdComm_IsGameHost() ) {
+            if ( stdComm_IsGameHost() )
+            {
                 sithMulti_QuitPlayer(sithMessage_senderId);
             }
         }
@@ -440,8 +441,8 @@ void sithMessage_InitMessageHandlers(void)
     sithMessage_RegisterFunction(SITHDSS_COGMESSAGE, sithDSSCog_ProcessMessage);
     sithMessage_RegisterFunction(SITHDSS_THINGSTATE, sithDSSThing_ProcessStateUpdate);
     sithMessage_RegisterFunction(SITHDSS_PLAYSOUND, sithDSSThing_ProcessPlaySound);
-    sithMessage_RegisterFunction(SITHDSS_PLAYKEY, sithDSSThing_ProcessFullDescription);
-    sithMessage_RegisterFunction(SITHDSS_THINGFULLDESC, sithDSSThing_ProcessFullDescription);
+    sithMessage_RegisterFunction(SITHDSS_PLAYKEY, sithDSSThing_ProcessThingFullDescription);
+    sithMessage_RegisterFunction(SITHDSS_THINGFULLDESC, sithDSSThing_ProcessThingFullDescription);
     sithMessage_RegisterFunction(SITHDSS_COGSTATE, sithDSSCog_ProcessCogState);
     sithMessage_RegisterFunction(SITHDSS_SURFACESTATUS, sithDSS_ProcessSurfaceStatus);
     sithMessage_RegisterFunction(SITHDSS_AISTATUS, sithDSS_ProcessAIStatus);

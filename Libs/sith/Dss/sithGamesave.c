@@ -212,7 +212,7 @@ int J3DAPI sithGamesave_SaveCurrentWorld(SithMessageStream outstream)
         const SithThing* pThing = &pWorld->aThings[i];
         if ( sithThing_CanSync(pThing) )
         {
-            int bError = sithDSSThing_FullDescription(pThing, DPID_ALLPLAYERS, outstream);
+            int bError = sithDSSThing_ThingFullDescription(pThing, DPID_ALLPLAYERS, outstream);
             if ( bError )
             {
                 return bError;
