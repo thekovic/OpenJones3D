@@ -125,7 +125,9 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
     float hitDistance = 0.0f;
 
     // TODO: [DEAD] Note, this is additional code found in debug version that is skipped.
-    //if ( true && pThing ) // maybe special collflag could be tested 
+    //       The issue is that the vox code can be too aggressive in some cases, causing collision to block movement.
+    //       e.g.: sol intro cutscene the minecar gets stuck/stopped after entering the scene.
+    //if ( true && pThing ) // maybe special collflag could be tested or box collide type
     if ( false )
     {
         if ( pCheck->collide.height > 0.0f )
@@ -199,7 +201,7 @@ SithCollisionType J3DAPI sithIntersect_CheckSphereThingIntersection(SithThing* p
     //        in any other place in engine that depended on dvec being zeroed out.
     rdVector_Zero3(&pComplex->orient.dvec);
 
-    // Transform to wolrd space
+    // Transform to world space
     rdMatrix_TransformPoint34Acc(&pos, &tmat);
     rdMatrix_TransformVector34Acc(&dir, &tmat);
 

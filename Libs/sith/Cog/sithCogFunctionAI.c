@@ -975,7 +975,7 @@ void J3DAPI sithCogFunctionAI_AIRunOver(SithCog* pCog)
     params.param3 = 0;
     sithEvent_CreateEvent(SITHCOG_TASKID, &params, (uint32_t)(duration * 1000.0f));
 
-    SithCog* pItemCog = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID)->pCog;
+    SithCog* pItemCog = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.curWeaponID)->pCog;
     if ( pItemCog )
     {
         sithCog_SendMessage(pItemCog, SITHCOG_MSG_DESELECTED, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);

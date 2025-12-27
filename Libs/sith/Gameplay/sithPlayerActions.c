@@ -108,7 +108,7 @@ int J3DAPI sithPlayerActions_Activate(SithThing* pThing)
     }
 
     // Activate only if no weapon is currently selected
-    int typeId = pThing->thingInfo.actorInfo.curWeaponID;
+    int typeId = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
     if ( typeId != SITHWEAPON_NO_WEAPON && typeId < (unsigned int)SITHWEAPON_ZIPPO )
     {
         return 0;

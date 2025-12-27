@@ -1198,8 +1198,8 @@ void J3DAPI sithThing_PlayCogDamageSound(SithThing* pThing, SithDamageType hitTy
     tSoundHandle hSnd = 0;
     if ( (hitType & SITH_DAMAGE_IMPACT) != 0 )
     {
-        // Altered: Added impact sound fx for earth, wood, snow thing
-        if ( !sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_HURTIMPACT) )
+        // Altered: Added impact sound fx for earth, wood, snow thing when cog has no HURTIMPACT soundmode
+        if ( sithSoundClass_PlayModeRandom(pThing, SITHSOUNDCLASS_HURTIMPACT) == SOUND_INVALIDHANDLE )
         {
         #ifdef J3D_QOL_IMPROVEMENTS
             if ( (pThing->flags & SITH_TF_EARTH) != 0 )
@@ -1435,7 +1435,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
             }
 
             sithActor_ResetStateChange(pThing);
-            sithWeapon_InitalizeActor(pThing);
+            sithWeapon_InitalizeActorWeapon(pThing);
             sithActor_SetDifficulty(pThing);
         } break;
 
@@ -1455,7 +1455,7 @@ void J3DAPI sithThing_Initialize(const SithWorld* pWorld, SithThing* pThing, int
             }
 
             sithActor_ResetStateChange(pThing);
-            sithWeapon_InitalizeActor(pThing);
+            sithWeapon_InitalizeActorWeapon(pThing);
         } break;
 
         case SITH_THING_PARTICLE:

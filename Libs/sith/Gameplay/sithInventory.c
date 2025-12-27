@@ -211,7 +211,7 @@ int J3DAPI sithInventory_GetCurrentWeapon(const SithThing* pThing)
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
     if ( pThing->type == SITH_THING_ACTOR && pThing->controlInfo.aiControl.pLocal )
     {
-        return pThing->thingInfo.actorInfo.curWeaponID;
+        return pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
     }
 
     if ( pThing->type != SITH_THING_PLAYER )

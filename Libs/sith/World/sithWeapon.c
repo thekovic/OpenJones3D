@@ -43,6 +43,8 @@
 
 #define SITHWEAPON_MAX_PROJECTILE_RICOCHETS 6
 
+#define SITHWEAPON_TIMENOTSET -1.0f
+
 static bool sithWeapon_bGenBloodSplatter                = true;
 static bool sithWeapon_bProjectileFireFlashFx           = J3D_QOL_VALUE(true, false); // OG fire flash fx didn't work due to light range error, thus is disabled by default
 static float sithWeapon_projectileFireFlashAmbThreshold = 0.5f;
@@ -95,9 +97,12 @@ static int sithWeapon_playerBackHolsterSwapRefNum;
 static SithControlFunction sithWeapon_bufferedWaponKeyId;
 static SithWeaponActorKilledCallback sithWeapon_pfActorKilledCallback;
 
+
+SithThing* J3DAPI sithWeapon_WeaponFire(SithThing* pShooter, const SithThing* pProjectileTemplate, const rdVector3* pFireDir, rdVector3* pFirePos, tSoundHandle hFireSnd, SithPuppetSubMode submode, float extra, SithFireProjectileFlags projectileFlags, float secDeltaTime);
+SithThing* J3DAPI sithWeapon_WeaponFireProjectile(SithThing* pShooter, const SithThing* pProjectileTemplate, const rdVector3* pFireDir, rdVector3* pFirePos, tSoundHandle hFireSnd, SithPuppetSubMode submode, float extra, SithFireProjectileFlags flags, float secDeltaTime);
+
 void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon);
 int sithWeapon_IsLocalPlayerUnableToUseWeapon(void);
-
 
 static void J3DAPI sithWeapon_GenBloodsplort(SithThing* pHitThing); // Keeping for hooking on vanilla exe
 static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing); // Returns false if thing is vehicle, splort template not found, or fails to create sprite thing
@@ -105,8 +110,8 @@ static bool J3DAPI sithWeapon_GenBloodSplatterEx(SithThing* pHitThing); // Retur
 void sithWeapon_InstallHooks(void)
 {
     J3D_HOOKFUNC(sithWeapon_Open);
-    J3D_HOOKFUNC(sithWeapon_InitalizeActor);
-    J3D_HOOKFUNC(sithWeapon_UpdateActorWeaponState);
+    J3D_HOOKFUNC(sithWeapon_InitalizeActorWeapon);
+    J3D_HOOKFUNC(sithWeapon_UpdateActorWeapon);
     J3D_HOOKFUNC(sithWeapon_Update);
     J3D_HOOKFUNC(sithWeapon_SelectWeapon);
     J3D_HOOKFUNC(sithWeapon_HandleImpact);
@@ -185,22 +190,23 @@ void sithWeapon_Open(void)
 void sithWeapon_Close(void)
 {}
 
-void J3DAPI sithWeapon_InitalizeActor(SithThing* pThing)
+void J3DAPI sithWeapon_InitalizeActorWeapon(SithThing* pThing)
 {
     SITH_ASSERTREL((pThing->type == SITH_THING_ACTOR) || (pThing->type == SITH_THING_PLAYER));
 
-    pThing->thingInfo.actorInfo.secWeaponActivationStartTime   = -1.0f;
-    pThing->thingInfo.actorInfo.secTimeLastRapidFired          = -1.0f;
-    pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = -1.0f;
-    pThing->thingInfo.actorInfo.secWeaponActivationWaitTime    = -1.0f;
-    pThing->thingInfo.actorInfo.secAimWaitEndTime              = 0.0f;
-    pThing->thingInfo.actorInfo.secWeaponSwapTime              = -1.0f;
-    pThing->thingInfo.actorInfo.selectedWeaponID               = -1;
-    pThing->thingInfo.actorInfo.curWeaponID                    = 0;
-    pThing->thingInfo.actorInfo.deselectedWeaponID             = -1;
-    pThing->thingInfo.actorInfo.weaponSwapRefNum               = -1;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationStartTime   = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime     = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime    = SITHWEAPON_TIMENOTSET; // TODO: Check if this should be 0.0f, the field is used in some calculations without checking for -1.0f and may lead to issues (i.e. subtracting -1 second)
+    pThing->thingInfo.actorInfo.weaponInfo.secAimWaitEndTime        = 0.0f;
+    pThing->thingInfo.actorInfo.weaponInfo.secSwapTime              = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID         = SITHWEAPON_NOWEAPONSELECTED;
+    pThing->thingInfo.actorInfo.weaponInfo.curWeaponID              = SITHWEAPON_NO_WEAPON;
+    pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID       = SITHWEAPON_NOWEAPONDESELECTED;
+    pThing->thingInfo.actorInfo.weaponInfo.swapRefNum               = -1;
 
-    rdVector_Set3(&pThing->thingInfo.actorInfo.vecUnknown0, 0, 0, 0);
+    // Altered: Replaced with rdVector_Zero3
+    rdVector_Zero3(&pThing->thingInfo.actorInfo.weaponInfo.vecUnknown0);
 
     sithWeapon_secWeaponActivationWaitEndTime = 0.0f;
 
@@ -208,7 +214,7 @@ void J3DAPI sithWeapon_InitalizeActor(SithThing* pThing)
     {
         sithWeapon_lastPlayerWeaponID              = SITHWEAPON_PISTOL;
         sithWeapon_bufferedWaponKeyId              = -1;
-        sithWeapon_deactivatedPlayerWeaponID       = -1;
+        sithWeapon_deactivatedPlayerWeaponID       = SITHWEAPON_NOWEAPONDESELECTED;
         sithWeapon_playerWhipHolsterSwapRefNum     = -1;
         sithWeapon_playerPistolHolsterSwapRefNum   = -1;
         sithWeapon_playerBackHolsterSwapRefNum     = -1;
@@ -219,32 +225,32 @@ void J3DAPI sithWeapon_InitalizeActor(SithThing* pThing)
     }
 }
 
-void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
+void J3DAPI sithWeapon_UpdateActorWeapon(SithThing* pThing)
 {
-    if ( pThing->thingInfo.actorInfo.secWeaponSwapTime > 0.0f && sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secWeaponSwapTime )
+    if ( pThing->thingInfo.actorInfo.weaponInfo.secSwapTime > 0.0f && sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.weaponInfo.secSwapTime )
     {
-        pThing->thingInfo.actorInfo.secWeaponSwapTime = -1.0f;
-        sithWeapon_SetWeaponModel(pThing, (SithWeaponId)pThing->thingInfo.actorInfo.curWeaponID);
+        pThing->thingInfo.actorInfo.weaponInfo.secSwapTime = SITHWEAPON_TIMENOTSET;
+        sithWeapon_SetWeaponModel(pThing, (SithWeaponId)pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
     }
 
-    if ( sithWeapon_deactivatedPlayerWeaponID == -1 || pThing->type != SITH_THING_PLAYER )
+    if ( sithWeapon_deactivatedPlayerWeaponID == SITHWEAPON_NOWEAPONDESELECTED || pThing->type != SITH_THING_PLAYER )
     {
         if ( pThing->type == SITH_THING_PLAYER && sithWeapon_IsLocalPlayerUnableToUseWeapon() )
         {
             if ( sithWeapon_bPlayerWeaponActivated == 1 )
             {
-                sithWeapon_bPlayerWeaponActivated    = 0;
-                sithWeapon_deactivatedPlayerWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+                sithWeapon_bPlayerWeaponActivated          = 0;
+                sithWeapon_deactivatedPlayerWeaponID       = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
                 sithWeapon_secPlayerWeaponDeactivationTime = sithTime_g_secGameTime;
             }
         }
-        else if ( pThing->thingInfo.actorInfo.deselectedWeaponID == -1 )
+        else if ( pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID == SITHWEAPON_NOWEAPONDESELECTED )
         {
-            if ( pThing->thingInfo.actorInfo.selectedWeaponID == -1 )
+            if ( pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID == SITHWEAPON_NOWEAPONSELECTED )
             {
-                if ( pThing->thingInfo.actorInfo.secWeaponActivationWaitTime <= 0.0f )
+                if ( pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime <= 0.0f )
                 {
-                    if ( pThing->type == SITH_THING_PLAYER && pThing->thingInfo.actorInfo.curWeaponID == SITHWEAPON_WHIP )
+                    if ( pThing->type == SITH_THING_PLAYER && pThing->thingInfo.actorInfo.weaponInfo.curWeaponID == SITHWEAPON_WHIP )
                     {
                         if ( (pThing->attach.flags & SITH_ATTACH_SURFACE) != 0
                             && (pThing->attach.attachedToStructure.pSurfaceAttached->flags & SITH_SURFACE_WHIPAIM) != 0
@@ -258,14 +264,14 @@ void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
                         }
                     }
                 }
-                else if ( sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime )
+                else if ( sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime )
                 {
-                    SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID);
+                    SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
                     if ( pItem->pCog )
                     {
                         sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_FIRE, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);
-                        pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = sithTime_g_secGameTime
-                            + pThing->thingInfo.actorInfo.secWeaponActivationWaitTime;
+                        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = sithTime_g_secGameTime
+                            + pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime;
                     }
 
                     if ( pThing->type == SITH_THING_PLAYER && sithWeapon_bPlayerWeaponActivated != 1 )
@@ -276,25 +282,25 @@ void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
                 }
             }
             else if ( (pThing->type != SITH_THING_PLAYER || sithTime_g_secGameTime >= (double)sithWeapon_secMountWait)
-                && sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secAimWaitEndTime )
+                && sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.weaponInfo.secAimWaitEndTime )
             {
-                SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.selectedWeaponID);
+                SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID);
                 if ( (pItem->flags & SITHINVENTORY_TYPE_WEAPON) != 0 && pItem->pCog )
                 {
-                    pThing->thingInfo.actorInfo.secTimeLastRapidFired = -1.0f;
+                    pThing->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime = SITHWEAPON_TIMENOTSET;
                     sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_SELECTED, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);
                 }
 
                 if ( pThing->type == SITH_THING_PLAYER )
                 {
-                    sithInventory_SetCurrentWeapon(pThing, (SithWeaponId)pThing->thingInfo.actorInfo.selectedWeaponID);
+                    sithInventory_SetCurrentWeapon(pThing, (SithWeaponId)pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID);
                 }
 
-                pThing->thingInfo.actorInfo.curWeaponID = pThing->thingInfo.actorInfo.selectedWeaponID;
-                pThing->thingInfo.actorInfo.selectedWeaponID = -1;
+                pThing->thingInfo.actorInfo.weaponInfo.curWeaponID      = pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID;
+                pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID = SITHWEAPON_NOWEAPONSELECTED;
             }
         }
-        else if ( sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secAimWaitEndTime )
+        else if ( sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.weaponInfo.secAimWaitEndTime )
         {
             if ( pThing->type == SITH_THING_PLAYER && sithWeapon_bPlayerWeaponActivated == 1 )
             {
@@ -302,10 +308,10 @@ void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
             }
             else
             {
-                SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.deselectedWeaponID);
+                SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID);
                 if ( pItem->pCog )
                 {
-                    sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_DESELECTED, SITHCOG_SYM_REF_INT, pThing->thingInfo.actorInfo.selectedWeaponID, SITHCOG_SYM_REF_THING, pThing->idx, 0);
+                    sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_DESELECTED, SITHCOG_SYM_REF_INT, pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID, SITHCOG_SYM_REF_THING, pThing->idx, 0);
                 }
 
                 if ( pThing->type == SITH_THING_PLAYER )
@@ -314,24 +320,24 @@ void J3DAPI sithWeapon_UpdateActorWeaponState(SithThing* pThing)
                     sithInventory_SetCurrentWeapon(pThing, SITHWEAPON_NO_WEAPON);
                     if ( (pItem->flags & SITHINVENTORY_TYPE_PLAYERWEAPON) != 0 )
                     {
-                        sithWeapon_lastPlayerWeaponID = pThing->thingInfo.actorInfo.deselectedWeaponID;
+                        sithWeapon_lastPlayerWeaponID = pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID;
                     }
                 }
 
-                pThing->thingInfo.actorInfo.curWeaponID        = SITHWEAPON_NO_WEAPON;
-                pThing->thingInfo.actorInfo.deselectedWeaponID = -1;
+                pThing->thingInfo.actorInfo.weaponInfo.curWeaponID        = SITHWEAPON_NO_WEAPON;
+                pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID = SITHWEAPON_NOWEAPONDESELECTED;
             }
         }
     }
     else if ( sithTime_g_secGameTime >= (double)sithWeapon_secPlayerWeaponDeactivationTime )
     {
-        SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID);
+        SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
         if ( pItem->pCog )
         {
             sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_DEACTIVATED, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);
         }
 
-        sithWeapon_deactivatedPlayerWeaponID = -1;
+        sithWeapon_deactivatedPlayerWeaponID = SITHWEAPON_NOWEAPONDESELECTED;
     }
 }
 
@@ -366,10 +372,10 @@ int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId)
 
     if ( pThing->type == SITH_THING_PLAYER )
     {
-        pThing->thingInfo.actorInfo.curWeaponID = sithInventory_GetCurrentWeapon(pThing);
+        pThing->thingInfo.actorInfo.weaponInfo.curWeaponID = sithInventory_GetCurrentWeapon(pThing);
     }
 
-    if ( typeId == pThing->thingInfo.actorInfo.curWeaponID || pThing->thingInfo.actorInfo.selectedWeaponID != -1 )
+    if ( typeId == pThing->thingInfo.actorInfo.weaponInfo.curWeaponID || pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID != SITHWEAPON_NOWEAPONSELECTED )
     {
         return 0;
     }
@@ -390,14 +396,14 @@ int J3DAPI sithWeapon_SelectWeapon(SithThing* pThing, SithWeaponId typeId)
         return 0;
     }
 
-    if ( pThing->thingInfo.actorInfo.secWeaponActivationStartTime != -1.0f && pThing->type == SITH_THING_PLAYER )
+    if ( pThing->thingInfo.actorInfo.weaponInfo.secActivationStartTime != SITHWEAPON_TIMENOTSET && pThing->type == SITH_THING_PLAYER )
     {
-        sithWeapon_deactivatedPlayerWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-        sithWeapon_secPlayerWeaponDeactivationTime = pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime;
+        sithWeapon_deactivatedPlayerWeaponID       = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
+        sithWeapon_secPlayerWeaponDeactivationTime = pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime;
     }
 
-    pThing->thingInfo.actorInfo.deselectedWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-    pThing->thingInfo.actorInfo.selectedWeaponID   = typeId;
+    pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
+    pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID   = typeId;
     return 1;
 }
 
@@ -461,7 +467,7 @@ void J3DAPI sithWeapon_HandleImpact(SithThing* pWeapon)
                     sithWeapon_pfActorKilledCallback(sithGetGameDifficulty());
                 }
 
-                // Generate bloodsplort anf destroy projectile or explode projectile
+                // Generate bloodsplort and destroy projectile or explode projectile
                 if ( (pWeaponInfo->flags & SITH_WF_BLOODSPLATTER) != 0
                     && (pVictim->thingInfo.actorInfo.flags & SITH_AF_DROID) == 0
                 #ifndef J3D_QOL_IMPROVEMENTS
@@ -606,7 +612,7 @@ SithThing* J3DAPI sithWeapon_WeaponFire(SithThing* pShooter, const SithThing* pP
         sithAIAwareness_CreateTransmittingEvent(pShooter->pInSector, &pShooter->pos, 0, 3.0f, pShooter);
     }
 
-    if ( pShooter->type == SITH_THING_PLAYER && (pProjectileTemplate->thingInfo.weaponInfo.damageType & (SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS)) == 0 ) // 0x838 - SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS
+    if ( pShooter->type == SITH_THING_PLAYER && (pProjectileTemplate->thingInfo.weaponInfo.damageType & (SITH_DAMAGE_ELECTROWHIP | SITH_DAMAGE_WHIP | SITH_DAMAGE_MACHETE | SITH_DAMAGE_FISTS)) == 0 )
     {
         sithAIAwareness_CreateTransmittingEvent(pShooter->pInSector, &pShooter->pos, 3, 1.5f, pShooter);
     }
@@ -806,7 +812,7 @@ int J3DAPI sithWeapon_ThingCollisionHandler(SithThing* pWeapon, SithThing* pThin
 
     if ( (pWeapon->thingInfo.weaponInfo.flags & SITH_WF_MOPHIABOMB) != 0 && pThing->type == SITH_THING_PLAYER )
     {
-        if ( pThing->thingInfo.actorInfo.curWeaponID == SITHWEAPON_MIRROR )
+        if ( pThing->thingInfo.actorInfo.weaponInfo.curWeaponID == SITHWEAPON_MIRROR )
         {
             SithThing* pTemplate = sithTemplate_GetTemplate("+mardukhit");
             if ( pTemplate )
@@ -1204,7 +1210,7 @@ SithThing* J3DAPI sithWeapon_CreateWeaponExplosion(SithThing* pWeapon, SithThing
         return NULL;
     }
 
-    SithInventoryType* pItem = sithInventory_GetType(pParent->thingInfo.actorInfo.curWeaponID);
+    SithInventoryType* pItem = sithInventory_GetType(pParent->thingInfo.actorInfo.weaponInfo.curWeaponID);
     if ( pItem->pCog )
     {
         sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_CREATED, SITHCOG_SYM_REF_THING, pExplosion->idx, SITHCOG_SYM_REF_NONE, 0, 0);
@@ -1237,52 +1243,52 @@ void J3DAPI sithWeapon_SetMountWait(float secWait)
 void J3DAPI sithWeapon_SetFireWait(SithThing* pThing, float waitTime)
 {
     SITH_ASSERTREL(pThing && ((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR)));
-    if ( waitTime == -1.0f )
+    if ( waitTime == SITHWEAPON_TIMENOTSET )
     {
-        pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = -1.0f;
-        pThing->thingInfo.actorInfo.secWeaponActivationWaitTime    = -1.0f;
+        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = SITHWEAPON_TIMENOTSET;
+        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime    = SITHWEAPON_TIMENOTSET; // TODO: Bug? Should this be 0.0f?
     }
     else
     {
-        pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = sithTime_g_secGameTime + waitTime;
-        pThing->thingInfo.actorInfo.secWeaponActivationWaitTime    = waitTime;
+        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = sithTime_g_secGameTime + waitTime;
+        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime    = waitTime;
     }
 }
 
 void J3DAPI sithWeapon_SetAimWait(SithThing* pThing, float waitTime)
 {
     SITH_ASSERTREL(pThing && ((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR)));
-    pThing->thingInfo.actorInfo.secAimWaitEndTime = sithTime_g_secGameTime + waitTime;
+    pThing->thingInfo.actorInfo.weaponInfo.secAimWaitEndTime = sithTime_g_secGameTime + waitTime;
 }
 
 void J3DAPI sithWeapon_ActivateWeapon(SithThing* pThing, SithCog* pCog, float waitTime)
 {
     J3D_UNUSED(pCog);
 
-    pThing->thingInfo.actorInfo.secWeaponActivationWaitTime = waitTime;
-    pThing->thingInfo.actorInfo.secWeaponActivationStartTime = sithTime_g_secGameTime;
-    if ( pThing->thingInfo.actorInfo.secWeaponActivationWaitTime > 0.0f )
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime  = waitTime;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationStartTime = sithTime_g_secGameTime;
+    if ( pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime > 0.0f )
     {
-        pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = sithTime_g_secGameTime + pThing->thingInfo.actorInfo.secWeaponActivationWaitTime;
+        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = sithTime_g_secGameTime + pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime;
     }
     else
     {
-        pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = -1.0f;
+        pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = SITHWEAPON_TIMENOTSET;
     }
 }
 
 float J3DAPI sithWeapon_DeactivateWeapon(SithThing* pThing)
 {
     float waitTime = 0.0f;
-    if ( pThing->thingInfo.actorInfo.secWeaponActivationStartTime != -1.0f )
+    if ( pThing->thingInfo.actorInfo.weaponInfo.secActivationStartTime != SITHWEAPON_TIMENOTSET )
     {
-        waitTime = sithTime_g_secGameTime - pThing->thingInfo.actorInfo.secWeaponActivationStartTime;
+        waitTime = sithTime_g_secGameTime - pThing->thingInfo.actorInfo.weaponInfo.secActivationStartTime;
     }
 
-    pThing->thingInfo.actorInfo.secWeaponActivationStartTime   = -1.0f;
-    pThing->thingInfo.actorInfo.secTimeLastRapidFired          = -1.0f;
-    pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime = -1.0f;
-    pThing->thingInfo.actorInfo.secWeaponActivationWaitTime    = 0.0f;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationStartTime   = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime     = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime = SITHWEAPON_TIMENOTSET;
+    pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime    = 0.0f;
     return waitTime;
 }
 
@@ -1308,7 +1314,7 @@ int J3DAPI sithWeapon_ProcessWeaponControls(SithThing* pThing, float secDeltaTim
         return 0;
     }
 
-    SithWeaponId curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+    SithWeaponId curWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
     SithInventoryType* pItem = sithInventory_GetType(curWeaponID);
     if ( (pThing->thingInfo.actorInfo.flags & SITH_AF_CONTROLSDISABLED) != 0 && (pItem->flags & SITHINVENTORY_TYPE_UNKNOWN_200) == 0 )
     {
@@ -1416,8 +1422,8 @@ int J3DAPI sithWeapon_ProcessWeaponControls(SithThing* pThing, float secDeltaTim
                 }
 
                 sithWeapon_bufferedWaponKeyId = -1;
-                sithWeapon_secWeaponActivationWaitEndTime = pThing->thingInfo.actorInfo.secAimWaitEndTime
-                    + pThing->thingInfo.actorInfo.secWeaponActivationWaitTime;
+                sithWeapon_secWeaponActivationWaitEndTime = pThing->thingInfo.actorInfo.weaponInfo.secAimWaitEndTime
+                    + pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitTime;
             }
         }
         else if ( sithWeapon_bPlayerWeaponActivated == 1 )
@@ -1544,7 +1550,7 @@ int J3DAPI sithWeapon_ProcessWeaponControls(SithThing* pThing, float secDeltaTim
                 break;
         }
 
-        SITHLOG_STATUS("Processed buffered weapon key %d.\n", sithWeapon_bufferedWaponKeyId);
+        SITHLOG_DEBUG("Processed buffered weapon key %d.\n", sithWeapon_bufferedWaponKeyId); // Altered: Change log level to debug from status
         sithWeapon_bufferedWaponKeyId = -1;
         return 0;
     }
@@ -1555,13 +1561,13 @@ int J3DAPI sithWeapon_ProcessWeaponControls(SithThing* pThing, float secDeltaTim
 
 void J3DAPI sithWeapon_DeselectWeapon(SithThing* pThing)
 {
-    int typeId = pThing->thingInfo.actorInfo.curWeaponID;
+    int typeId = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
     if ( typeId )
     {
         if ( (sithInventory_GetType(typeId)->flags & SITHINVENTORY_TYPE_WEAPON) != 0 )
         {
-            pThing->thingInfo.actorInfo.deselectedWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-            pThing->thingInfo.actorInfo.selectedWeaponID   = SITHWEAPON_NO_WEAPON;
+            pThing->thingInfo.actorInfo.weaponInfo.deselectedWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
+            pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID   = SITHWEAPON_NO_WEAPON;
         }
     }
 }
@@ -1573,25 +1579,25 @@ int J3DAPI sithWeapon_IsMountingWeapon(const SithThing* pThing)
         return 1;
     }
 
-    if ( pThing->thingInfo.actorInfo.selectedWeaponID != -1 )
+    if ( pThing->thingInfo.actorInfo.weaponInfo.selectedWeaponID != SITHWEAPON_NOWEAPONSELECTED )
     {
         return 1;
     }
 
-    if ( sithTime_g_secGameTime >= (double)pThing->thingInfo.actorInfo.secAimWaitEndTime )
+    if ( sithTime_g_secGameTime < (double)pThing->thingInfo.actorInfo.weaponInfo.secAimWaitEndTime )
     {
-        return sithTime_g_secGameTime < (double)pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime;
+        return 1;
     }
 
-    return 1;
+    return sithTime_g_secGameTime < (double)pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime;
 }
 
 int J3DAPI sithWeapon_HasWeaponSelected(const SithThing* pThing)
 {
     SITH_ASSERTREL(pThing);
     if ( pThing->type == SITH_THING_PLAYER
-        && pThing->thingInfo.actorInfo.curWeaponID >= SITHWEAPON_FISTS
-        && pThing->thingInfo.actorInfo.curWeaponID <= SITHWEAPON_BAZOOKA )
+        && pThing->thingInfo.actorInfo.weaponInfo.curWeaponID >= SITHWEAPON_FISTS
+        && pThing->thingInfo.actorInfo.weaponInfo.curWeaponID <= SITHWEAPON_BAZOOKA )
     {
         return 1;
     }
@@ -1606,7 +1612,7 @@ int J3DAPI sithWeapon_HasWeaponSelected(const SithThing* pThing)
         return 0;
     }
 
-    return pThing->thingInfo.actorInfo.curWeaponID >= SITHWEAPON_COMTOKAREV && pThing->thingInfo.actorInfo.curWeaponID <= SITHWEAPON_COMSHOTGUN;
+    return pThing->thingInfo.actorInfo.weaponInfo.curWeaponID >= SITHWEAPON_COMTOKAREV && pThing->thingInfo.actorInfo.weaponInfo.curWeaponID <= SITHWEAPON_COMSHOTGUN;
 }
 
 int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, const rdMatrix34* pStartOrient, const rdVector3* pFireOffset, float autoAimFovX, float autoAimFovZ)
@@ -1616,7 +1622,7 @@ int J3DAPI sithWeapon_GetAimOrient(rdMatrix34* pOutOrient, SithThing* pShooter, 
     *pOutOrient      = *pStartOrient;
     pOutOrient->dvec = *pFireOffset;
 
-    int curWeaponID = pShooter->thingInfo.actorInfo.curWeaponID;
+    int curWeaponID = pShooter->thingInfo.actorInfo.weaponInfo.curWeaponID;
     if ( curWeaponID <= SITHWEAPON_WHIP || curWeaponID >= SITHWEAPON_GRENADE || curWeaponID == SITHWEAPON_MACHETE )
     {
         if ( autoAimFovX == 0.0f || autoAimFovZ == 0.0f )
@@ -1721,7 +1727,7 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
     rdVector3 fireOffset = { 0 }; // Fixed: Init to zero. OG didn't inited and the bullet could be fired in random direction and in worse case caused assertion error in sithCollision system
     if ( pShooter->type == SITH_THING_ACTOR )
     {
-        fireOffset = pShooter->thingInfo.actorInfo.vecUnknown0;
+        fireOffset = pShooter->thingInfo.actorInfo.weaponInfo.vecUnknown0;
         rdVector3 targetPos = pShooter->controlInfo.aiControl.pLocal->targetPos;
         return sithWeapon_FireProjectileEx(pShooter, pProjectile, hFireSnd, submode, pFireOffset, &targetPos, extra, flags, autoAimFovX, autoAimFovZ, &fireOffset, /*bUseFireOffset*/1);
     }
@@ -1783,25 +1789,25 @@ SithThing* J3DAPI sithWeapon_FireProjectile(SithThing* pShooter, const SithThing
     if ( (flags & SITHFIREPROJECTILE_RAPID_FIRE) != 0 )
     {
         float numExpectedFires = 1.0f;
-        if ( pShooter->thingInfo.actorInfo.secTimeLastRapidFired != -1.0f && pShooter->thingInfo.actorInfo.secWeaponActivationWaitTime > 0.0f )
+        if ( pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime != SITHWEAPON_TIMENOTSET && pShooter->thingInfo.actorInfo.weaponInfo.secActivationWaitTime > 0.0f )
         {
-            numExpectedFires = (sithTime_g_secGameTime - pShooter->thingInfo.actorInfo.secTimeLastRapidFired)
-                / pShooter->thingInfo.actorInfo.secWeaponActivationWaitTime
+            numExpectedFires = (sithTime_g_secGameTime - pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime)
+                / pShooter->thingInfo.actorInfo.weaponInfo.secActivationWaitTime
                 - 1.0f;
         }
 
-        pShooter->thingInfo.actorInfo.secTimeLastRapidFired = sithTime_g_secGameTime;
+        pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime = sithTime_g_secGameTime;
         SITH_ASSERTREL(numExpectedFires < 10);
         while ( numExpectedFires > 1.0f )
         {
             numExpectedFires = numExpectedFires - 1.0f;
-            secDeltaTime = pShooter->thingInfo.actorInfo.secWeaponActivationWaitTime * numExpectedFires;
+            secDeltaTime = pShooter->thingInfo.actorInfo.weaponInfo.secActivationWaitTime * numExpectedFires;
             sithWeapon_WeaponFire(pShooter, pProjectile, &fireOffset, pFireOffset, 0, submode, extra, flags, secDeltaTime);
         }
     }
     else
     {
-        pShooter->thingInfo.actorInfo.secTimeLastRapidFired = -1.0f;
+        pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime = SITHWEAPON_TIMENOTSET;
     }
 
     return sithWeapon_WeaponFire(pShooter, pProjectile, &fireOffset, pFireOffset, hFireSnd, submode, extra, flags, secDeltaTime);
@@ -1815,14 +1821,14 @@ void J3DAPI sithWeapon_DeactivateCurrentWeapon(SithThing* pThing)
     {
         if ( sithWeapon_bPlayerWeaponActivated == 1 )
         {
-            sithWeapon_bPlayerWeaponActivated = 0;
-            sithWeapon_deactivatedPlayerWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
-            sithWeapon_secPlayerWeaponDeactivationTime = pThing->thingInfo.actorInfo.secWeaponActivationWaitEndTime;
+            sithWeapon_bPlayerWeaponActivated          = 0;
+            sithWeapon_deactivatedPlayerWeaponID       = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
+            sithWeapon_secPlayerWeaponDeactivationTime = pThing->thingInfo.actorInfo.weaponInfo.secActivationWaitEndTime;
         }
     }
     else // Actor
     {
-        SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID);
+        SithInventoryType* pItem = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
         if ( pItem->pCog )
         {
             sithCog_SendMessage(pItem->pCog, SITHCOG_MSG_DEACTIVATED, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);
@@ -1836,9 +1842,9 @@ int J3DAPI sithWeapon_SelectNextWeapon(SithThing* pThing)
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
 
     int curWeaponID = sithWeapon_lastPlayerWeaponID;
-    if ( pThing->thingInfo.actorInfo.curWeaponID != SITHWEAPON_NO_WEAPON )
+    if ( pThing->thingInfo.actorInfo.weaponInfo.curWeaponID != SITHWEAPON_NO_WEAPON )
     {
-        curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+        curWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
         if ( curWeaponID > sithInventory_FindNextTypeID(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON) )
         {
             sithWeapon_DeselectWeapon(pThing);
@@ -1861,9 +1867,9 @@ int J3DAPI sithWeapon_SelectPreviousWeapon(SithThing* pThing)
     SITH_ASSERTREL(pThing->type == SITH_THING_PLAYER);
 
     int curWeaponID = sithWeapon_lastPlayerWeaponID;
-    if ( pThing->thingInfo.actorInfo.curWeaponID != SITHWEAPON_NO_WEAPON )
+    if ( pThing->thingInfo.actorInfo.weaponInfo.curWeaponID != SITHWEAPON_NO_WEAPON )
     {
-        curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+        curWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
         if ( curWeaponID < sithInventory_FindPreviousTypeID(pThing, curWeaponID, SITHINVENTORY_TYPE_PLAYERWEAPON) )
         {
             sithWeapon_DeselectWeapon(pThing);
@@ -1890,7 +1896,7 @@ void J3DAPI sithWeapon_SetWeaponModel(SithThing* pThing, SithWeaponId weaponID)
     int meshIdx = sithThing_GetThingMeshIndex(pThing, "inrhand");
     if ( meshIdx != -1 )
     {
-        pThing->thingInfo.actorInfo.weaponSwapRefNum = sithThing_AddSwapEntry(pThing, meshIdx, sithInventory_g_aTypes[weaponID].pModel, 0);
+        pThing->thingInfo.actorInfo.weaponInfo.swapRefNum = sithThing_AddSwapEntry(pThing, meshIdx, sithInventory_g_aTypes[weaponID].pModel, 0);
     }
 }
 
@@ -1898,7 +1904,7 @@ void J3DAPI sithWeapon_ResetWeaponModel(SithThing* pThing)
 {
     SITH_ASSERTREL(pThing);
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
-    sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponSwapRefNum);
+    sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponInfo.swapRefNum);
 }
 
 void J3DAPI sithWeapon_SetHolsterModel(SithThing* pThing, SithWeaponId weaponID, signed int meshNum)
@@ -1979,7 +1985,7 @@ void J3DAPI sithWeapon_SendMessageAim(SithThing* pThing, int bAim)
 {
     // TODO: COG messages could be sent via thing cog overloads
 
-    int curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+    int curWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
     SithInventoryType* pWaponItem = sithInventory_GetType(curWeaponID);
     if ( !pWaponItem || !pWaponItem->pCog )
     {
@@ -2001,7 +2007,7 @@ void J3DAPI sithWeapon_SendMessageAim(SithThing* pThing, int bAim)
                     sithWeapon_bLocalPlayerAiming = 1;
                 }
             }
-            else if ( pThing->thingInfo.actorInfo.curWeaponID != SITHWEAPON_WHIP || !sithWhip_GetWhipSwingThing() && !sithWhip_GetWhipClimbThing() )
+            else if ( pThing->thingInfo.actorInfo.weaponInfo.curWeaponID != SITHWEAPON_WHIP || !sithWhip_GetWhipSwingThing() && !sithWhip_GetWhipClimbThing() )
             {
                 if ( sithWeapon_bLocalPlayerAiming )
                 {
@@ -2062,7 +2068,7 @@ int J3DAPI sithWeapon_IsAiming(SithThing* pThing)
         return 0;
     }
 
-    bool bWeaponSelected = pThing->thingInfo.actorInfo.curWeaponID >= SITHWEAPON_COMTOKAREV && pThing->thingInfo.actorInfo.curWeaponID <= SITHWEAPON_COMSHOTGUN;
+    bool bWeaponSelected = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID >= SITHWEAPON_COMTOKAREV && pThing->thingInfo.actorInfo.weaponInfo.curWeaponID <= SITHWEAPON_COMSHOTGUN;
     if ( bWeaponSelected && sithPuppet_IsModeOnTrack(pThing, SITHPUPPETSUBMODE_AIMWEAPON) )
     {
         return 1;
@@ -2395,32 +2401,32 @@ SithThing* J3DAPI sithWeapon_FireProjectileEx(SithThing* pShooter, const SithThi
         rdVector_Normalize3Acc(&fireDir);
     }
 
-    float sedDeltaTime = 0.0f;
+    float secDeltaTime = 0.0f;
     if ( (flags & SITHFIREPROJECTILE_RAPID_FIRE) != 0 )
     {
         float numExpectedFires = 1.0f;
-        if ( pShooter->thingInfo.actorInfo.secTimeLastRapidFired != -1.0f && pShooter->thingInfo.actorInfo.secWeaponActivationWaitTime > 0.0f )
+        if ( pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime != SITHWEAPON_TIMENOTSET && pShooter->thingInfo.actorInfo.weaponInfo.secActivationWaitTime > 0.0f )
         {
-            numExpectedFires = (sithTime_g_secGameTime - pShooter->thingInfo.actorInfo.secTimeLastRapidFired)
-                / pShooter->thingInfo.actorInfo.secWeaponActivationWaitTime
+            numExpectedFires = (sithTime_g_secGameTime - pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime)
+                / pShooter->thingInfo.actorInfo.weaponInfo.secActivationWaitTime
                 - 1.0f;
         }
 
-        pShooter->thingInfo.actorInfo.secTimeLastRapidFired = sithTime_g_secGameTime;
+        pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime = sithTime_g_secGameTime;
         SITH_ASSERTREL(numExpectedFires < 10);
         while ( numExpectedFires > 1.0f )
         {
             numExpectedFires = numExpectedFires - 1.0f;
-            sedDeltaTime = pShooter->thingInfo.actorInfo.secWeaponActivationWaitTime * numExpectedFires;
-            sithWeapon_WeaponFire(pShooter, pProjectile, &fireDir, pFirePos, 0, submode, extra, flags, sedDeltaTime);
+            secDeltaTime     = pShooter->thingInfo.actorInfo.weaponInfo.secActivationWaitTime * numExpectedFires;
+            sithWeapon_WeaponFire(pShooter, pProjectile, &fireDir, pFirePos, 0, submode, extra, flags, secDeltaTime);
         }
     }
     else
     {
-        pShooter->thingInfo.actorInfo.secTimeLastRapidFired = -1.0f;
+        pShooter->thingInfo.actorInfo.weaponInfo.secLastRapidFireTime = SITHWEAPON_TIMENOTSET;
     }
 
-    return sithWeapon_WeaponFire(pShooter, pProjectile, &fireDir, pFirePos, hSndFire, submode, extra, flags, sedDeltaTime);
+    return sithWeapon_WeaponFire(pShooter, pProjectile, &fireDir, pFirePos, hSndFire, submode, extra, flags, secDeltaTime);
 }
 
 void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
@@ -2429,7 +2435,7 @@ void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
     SITH_ASSERTREL((pThing->type == SITH_THING_PLAYER) || (pThing->type == SITH_THING_ACTOR));
 
     rdModel3* pHandModel = NULL;
-    switch ( pThing->thingInfo.actorInfo.curWeaponID )
+    switch ( pThing->thingInfo.actorInfo.weaponInfo.curWeaponID )
     {
         case SITHWEAPON_PISTOL:
             pHandModel = sithModel_GetModelByIndex(SITHWORLD_STATICINDEX(83)); // weap_revolver_fire.3do
@@ -2467,8 +2473,8 @@ void J3DAPI sithWeapon_CreateWeaponFireFx(SithThing* pThing, rdVector3* pos)
     int meshIdx = sithThing_GetThingMeshIndex(pThing, "inrhand");
     if ( pHandModel && meshIdx != -1 )
     {
-        pThing->thingInfo.actorInfo.weaponSwapRefNum  = sithThing_AddSwapEntry(pThing, meshIdx, pHandModel, 0);
-        pThing->thingInfo.actorInfo.secWeaponSwapTime = sithTime_g_secGameTime + 0.025f;
+        pThing->thingInfo.actorInfo.weaponInfo.swapRefNum  = sithThing_AddSwapEntry(pThing, meshIdx, pHandModel, 0);
+        pThing->thingInfo.actorInfo.weaponInfo.secSwapTime = sithTime_g_secGameTime + 0.025f;
 
         // Altered: Added check for flash fx enabled and ambient light intensity
         if ( sithWeapon_bProjectileFireFlashFx

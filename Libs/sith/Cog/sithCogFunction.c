@@ -1353,7 +1353,7 @@ void J3DAPI sithCogFunction_SelectWeaponWait(SithCog* pCog)
     }
 
     // Return the current weapon ID
-    sithCogExec_PushInt(pCog, pThing->thingInfo.actorInfo.curWeaponID);
+    sithCogExec_PushInt(pCog, pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
 
     if ( !sithWeapon_SelectWeapon(pThing, (SithWeaponId)typeID) )
     {
@@ -1372,7 +1372,7 @@ void J3DAPI sithCogFunction_DeselectWeapon(SithCog* pCog)
         sithCogExec_PushInt(pCog, -1);
         return;
     }
-    sithCogExec_PushInt(pCog, pThing->thingInfo.actorInfo.curWeaponID);
+    sithCogExec_PushInt(pCog, pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
     sithWeapon_DeselectWeapon(pThing);
 }
 
@@ -1395,7 +1395,7 @@ void J3DAPI sithCogFunction_DeselectWeaponWait(SithCog* pCog)
         return;
     }
 
-    int weaponID = pThing->thingInfo.actorInfo.curWeaponID;
+    int weaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
     if ( weaponID == SITHWEAPON_GRENADE )
     {
         sithCog_SendMessage(sithInventory_g_aTypes[SITHWEAPON_GRENADE].pCog, SITHCOG_MSG_BLOCKED, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0);

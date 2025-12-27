@@ -354,8 +354,8 @@
 #define sithRenderSky_HorizonFaceToPlane_ADDR 0x004B38A0
 #define sithRenderSky_CeilingFaceToPlane_ADDR 0x004B39A0
 #define sithWeapon_Open_ADDR 0x004467D0
-#define sithWeapon_InitalizeActor_ADDR 0x004467E0
-#define sithWeapon_UpdateActorWeaponState_ADDR 0x004468B0
+#define sithWeapon_InitalizeActorWeapon_ADDR 0x004467E0
+#define sithWeapon_UpdateActorWeapon_ADDR 0x004468B0
 #define sithWeapon_Update_ADDR 0x00446C00
 #define sithWeapon_SelectWeapon_ADDR 0x00446CC0
 #define sithWeapon_HandleImpact_ADDR 0x00446DC0

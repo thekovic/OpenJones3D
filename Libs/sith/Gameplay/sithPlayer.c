@@ -250,7 +250,7 @@ void J3DAPI sithPlayer_Update(SithPlayer* pPlayer, float secDetaTime)
 
     SithThing* pThing = pPlayer->pThing;
     SITH_ASSERTREL(pThing);
-    sithWeapon_UpdateActorWeaponState(pThing);
+    sithWeapon_UpdateActorWeapon(pThing);
 
     // Did thing fall into falldeth sector?
     if ( !pThing->attach.flags

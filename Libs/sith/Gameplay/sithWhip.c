@@ -225,7 +225,7 @@ void J3DAPI sithWhip_SetActorWhipClimbIdle(SithThing* pThing)
     pThing->attach.posOffset.z = 0.0f;
 
     sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_WHIPCLIMBIDLE, NULL);
-    sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponSwapRefNum);
+    sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponInfo.swapRefNum);
 }
 
 void J3DAPI sithWhip_FinishWhipClimbDismount(SithThing* pThing)
@@ -251,7 +251,7 @@ void J3DAPI sithWhip_WhipClimbDismount(SithThing* pThing)
     sithPuppet_StopMode(pThing, SITHPUPPETSUBMODE_WHIPCLIMBIDLE, 0.0f);
 
     sithInventory_SetCurrentWeapon(pThing, SITHWEAPON_WHIP);
-    pThing->thingInfo.actorInfo.curWeaponID = SITHWEAPON_WHIP;
+    pThing->thingInfo.actorInfo.weaponInfo.curWeaponID = SITHWEAPON_WHIP;
     sithWeapon_SetWeaponModel(pThing, SITHWEAPON_WHIP);
 
     sithPuppet_PlayMode(pThing, SITHPUPPETSUBMODE_DRAWWEAPON, NULL);
@@ -365,7 +365,7 @@ void J3DAPI sithWhip_WhipClimbPuppetCallback(SithThing* pThing, int track, rdKey
     {
         if ( markerType == RDKEYMARKER_CLIMB )
         {
-            sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponSwapRefNum);
+            sithThing_RemoveSwapEntry(pThing, pThing->thingInfo.actorInfo.weaponInfo.swapRefNum);
 
             rdVector3 pos = sithWhip_pWhipThing->pos;
 
@@ -571,7 +571,7 @@ void J3DAPI sithWhip_CreatePlayerWhip(SithThing* pThing)
         rdModel3* pWhipHandModel = sithModel_GetModelByIndex(SITHWORLD_STATICINDEX(31)); // whip hand - weap_whip.3do
         if ( pWhipHandModel )
         {
-            pThing->thingInfo.actorInfo.weaponSwapRefNum = sithThing_AddSwapEntry(pThing, handMeshIdx, pWhipHandModel, /*meshNumSrc=*/0);
+            pThing->thingInfo.actorInfo.weaponInfo.swapRefNum = sithThing_AddSwapEntry(pThing, handMeshIdx, pWhipHandModel, /*meshNumSrc=*/0);
         }
 
         sithThing_AttachThingToThingMesh(sithWhip_pWhipThing, pThing, handMeshIdx);

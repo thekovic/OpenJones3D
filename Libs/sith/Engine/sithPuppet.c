@@ -517,7 +517,7 @@ void J3DAPI sithPuppet_PlayFidgetMode(SithThing* pThing)
     SITH_ASSERTREL(pThing);
     SITH_ASSERTREL(pThing->pPuppetState);
 
-    if ( (pThing->type != SITH_THING_PLAYER || !pThing->thingInfo.actorInfo.curWeaponID)
+    if ( (pThing->type != SITH_THING_PLAYER || !pThing->thingInfo.actorInfo.weaponInfo.curWeaponID)
         && (pThing->controlType != SITH_CT_AI || !pThing->controlInfo.aiControl.pLocal || (pThing->controlInfo.aiControl.pLocal->mode & SITHAI_MODE_BLOCK) == 0) )
     {
         for ( SithPuppetTrack* pTrack = pThing->pPuppetState->pFirstTrack; pTrack; pTrack = pTrack->pNextTrack )
@@ -2285,7 +2285,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
         {
             if ( pThing->controlType == SITH_CT_AI && pThing->controlInfo.aiControl.pLocal )
             {
-                SithInventoryType* pInvType = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID);
+                SithInventoryType* pInvType = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
                 if ( pInvType->pCog )
                 {
                     sithCog_SendMessageEx(pInvType->pCog, SITHCOG_MSG_FIRE, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0, -1, 0, 0, 0);
@@ -2298,7 +2298,7 @@ void J3DAPI sithPuppet_DefaultCallback(SithThing* pThing, int track, rdKeyMarker
             }
             else if ( pThing->controlType == SITH_CT_PLAYER )
             {
-                SithInventoryType* pCog = sithInventory_GetType(pThing->thingInfo.actorInfo.curWeaponID);
+                SithInventoryType* pCog = sithInventory_GetType(pThing->thingInfo.actorInfo.weaponInfo.curWeaponID);
                 if ( pCog->pCog )
                 {
                     sithCog_SendMessageEx(pCog->pCog, SITHCOG_MSG_FIRE, SITHCOG_SYM_REF_NONE, 0, SITHCOG_SYM_REF_THING, pThing->idx, 0, -1, 0, 0, 0);

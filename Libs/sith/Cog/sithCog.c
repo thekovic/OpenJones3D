@@ -1927,7 +1927,7 @@ void J3DAPI sithCog_ProcessCog(SithCog* pCog)
         }
         case SITHCOG_STATUS_WAITING_ACTOR_WEAPON_DESELECT_FINISH:
         {
-            if ( sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].thingInfo.actorInfo.deselectedWeaponID != -1
+            if ( sithWorld_g_pCurrentWorld->aThings[pCog->statusParams[0]].thingInfo.actorInfo.weaponInfo.deselectedWeaponID != SITHWEAPON_NOWEAPONDESELECTED
                 || sithWeapon_GetMountWait() > (double)sithTime_g_secGameTime )
             {
                 // Weapon still not deselected

@@ -214,7 +214,7 @@ void sithAI_Process(void)
                 && (pLocal->mode & (SITHAI_MODE_DISABLED | SITHAI_MODE_SLEEPING)) == 0 )
             {
                 sithAI_ProcessAIStateChange(pLocal);
-                sithWeapon_UpdateActorWeaponState(pLocal->pOwner);
+                sithWeapon_UpdateActorWeapon(pLocal->pOwner);
                 if ( pLocal->msecNextUpdate <= sithTime_g_msecGameTime && sithAIMove_AIGetMoveState(pLocal) <= 0 )
                 {
                     sithAI_InstinctUpdate(pLocal);

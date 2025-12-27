@@ -2002,10 +2002,28 @@ typedef struct sSithActorStateChange
     SithActorStateChangeType type;
     union
     {
+        // Important: Do not change types since armedMode is serialized as 32-bit int in sithDSSThing
         uint32_t armedMode;                   // When type == ARMEDMODE: puppet armed mode to set
         SithActorSpecialMoveFlags moveFlags;  // When type == ANIMMOVE: SithActorSpecialMoveFlags combination
     } params;
 } SithActorStateChange;
+static_assert(sizeof(SithActorStateChange) == 8, "sizeof(SithActorStateChange) == 8");
+
+typedef struct sSithActorWeaponInfo
+{
+    float secActivationStartTime;
+    float secLastRapidFireTime;
+    float secActivationWaitEndTime;
+    float secActivationWaitTime;
+    float secAimWaitEndTime;
+    float secSwapTime;
+    int selectedWeaponID;
+    int curWeaponID;
+    int deselectedWeaponID;
+    int swapRefNum;
+    rdVector3 vecUnknown0;
+} SithActorWeaponInfo;
+static_assert(sizeof(SithActorWeaponInfo) == 52, "sizeof(SithActorWeaponInfo) == 52");
 
 typedef struct sSithActorInfo
 {
@@ -2035,17 +2053,7 @@ typedef struct sSithActorInfo
     int bForceMovePlay;
     int bControlsDisabled;
     SithPlayer* pPlayer;
-    float secWeaponActivationStartTime;
-    float secTimeLastRapidFired;
-    float secWeaponActivationWaitEndTime;
-    float secWeaponActivationWaitTime;
-    float secAimWaitEndTime;
-    float secWeaponSwapTime;
-    int selectedWeaponID;
-    int curWeaponID;
-    int deselectedWeaponID;
-    int weaponSwapRefNum;
-    rdVector3 vecUnknown0;
+    SithActorWeaponInfo weaponInfo;
     SithActorVoiceInfo voiceInfo;
     SithActorStateChange stateChange;
 } SithActorInfo;

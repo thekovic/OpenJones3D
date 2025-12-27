@@ -2139,7 +2139,7 @@ SithThing* J3DAPI sithCollision_FindItemThing(SithThing* pThing, int* pbFoundFlo
 {
     SITH_ASSERTREL(pThing); // Fixed: Moved this assert to beginning of the function scope. OG was after weapon check
 
-    int curWeaponID = pThing->thingInfo.actorInfo.curWeaponID;
+    int curWeaponID = pThing->thingInfo.actorInfo.weaponInfo.curWeaponID;
 
     if ( curWeaponID && curWeaponID != SITHWEAPON_ZIPPO )
     {
