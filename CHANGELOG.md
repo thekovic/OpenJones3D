@@ -1,4 +1,5 @@
 ## v0.4.0
+### DirectX 9 Port, Redesigned HUD, Auto Aim Reticle, Enhanced Graphics & Gameplay QOL Improvements
 ### General:
   - Added **DirectX 9** port:
     * Added Direct3D9 port for `stdDisplay` & `std3D` modules (6290b4b)
@@ -74,6 +75,9 @@
   - Renamed `sithPuppet_StopForceMove` to `sithPuppet_FinishForceMove` (88f971a)
   - Added new `sithPuppet` module functions `sithPuppet_SetMoveModeEx` & `sithPuppet_GetArmedMode` (4e964f7)
   - Renamed `SithThing` field `transformedPos` -> `cameraSpacePos` (1786796)
+  - Refactored `SithActorInfo` strict by replacing weapon state fields with new `SithActorWeaponInfo` struct (b3656d7)
+  - Renamed `sithWeapon_InitializeActor` -> `sithWeapon_InitializeActorWeapon` (b3656d7)
+  - Renamed `sithWeapon_UpdateActorWeaponState` -> `sithWeapon_UpdateActorWeapon` (b3656d7)
 
 ### Engine:
   - Added check for zero size in lip sync data generation to prevent allocation errors (f79736b)
@@ -159,7 +163,7 @@
     remains rotation-only. Prevents translation state leakage that could cause incorrect world-space  
     transforms. Fixes rare but persistent transform errors that could propagate  
     across frames, especially for non-rendered things.
-  - Added optional external material loading during CND parsing (c012b07)  
+  - Added optional external material loading during CND parsing (c012b07, f8c3e94)  
     Adds support to load materials from external files or GOB resources first  
     while parsing the materials section in CND files. This enables modding  
     without modifying original level files and preserves the original CND  
@@ -233,6 +237,7 @@
     in the process of culled sector collection. Now the head light range is correctly set to the alpha field of it's color.
   - Fixed actor head light not to lit when actor has invisible flag set (a589b92)  
     This prevents actor head light from being rendered when the actor is invisible.
+  - Added new HD HUD indicator textures [PR #38](https://github.com/smlu/OpenJones3D/pull/38)
 
 ### Game play:
   - Fixed bug in `sithPlayer_Update` where force move animation could be stopped when required distance to move was almost zero (127aa92)
