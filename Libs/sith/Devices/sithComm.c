@@ -441,7 +441,7 @@ void sithMessage_InitMessageHandlers(void)
     sithMessage_RegisterFunction(SITHDSS_COGMESSAGE, sithDSSCog_ProcessMessage);
     sithMessage_RegisterFunction(SITHDSS_THINGSTATE, sithDSSThing_ProcessStateUpdate);
     sithMessage_RegisterFunction(SITHDSS_PLAYSOUND, sithDSSThing_ProcessPlaySound);
-    sithMessage_RegisterFunction(SITHDSS_PLAYKEY, sithDSSThing_ProcessThingFullDescription);
+    sithMessage_RegisterFunction(SITHDSS_PLAYKEY, sithDSSThing_ProcessPlayKey);
     sithMessage_RegisterFunction(SITHDSS_THINGFULLDESC, sithDSSThing_ProcessThingFullDescription);
     sithMessage_RegisterFunction(SITHDSS_COGSTATE, sithDSSCog_ProcessCogState);
     sithMessage_RegisterFunction(SITHDSS_SURFACESTATUS, sithDSS_ProcessSurfaceStatus);
